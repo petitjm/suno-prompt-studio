@@ -14,16 +14,18 @@ function stripCodeFences(text: string) {
     .trim()
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-
-    const dna =
-      dnaProfiles.find((profile) => profile.id === body.dnaId) || dnaProfiles[0]
-
-    const lyricsOnly = Boolean(body.lyricsOnly)
-
-    const prompt = `
+async function generateForDNA({
+  openai,
+  body,
+  dna,
+  lyricsOnly,
+}: {
+  openai: OpenAI
+  body: any
+  dna: any
+  lyricsOnly: boolean
+}) {
+  const prompt = `
 You are a songwriting assistant that creates Suno-ready outputs.
 
 USER INPUT:
@@ -121,16 +123,58 @@ Extra rules for lyrics-only mode:
 ` : ''}
 `
 
-    const response = await openai.responses.create({
-      model: 'gpt-4o-mini',
-      input: prompt,
+  const response = await openai.responses.create({
+    model: 'gpt-4o-mini',
+    input: prompt,
+  })
+
+  const content = response.output_text || ''
+  const cleaned = stripCodeFences(content)
+  const parsed = JSON.parse(cleaned)
+
+  return {
+    dna_id: dna.id,
+    dna_name: dna.name,
+    ...parsed,
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const lyricsOnly = Boolean(body.lyricsOnly)
+    const multiVersion = Boolean(body.multiVersion)
+
+    if (multiVersion) {
+      const selectedDNAs = dnaProfiles.filter((profile) =>
+        ['mpj-master', 'commercial-hit', 'raw-folk'].includes(profile.id)
+      )
+
+      const versions = await Promise.all(
+        selectedDNAs.map((dna) =>
+          generateForDNA({
+            openai,
+            body,
+            dna,
+            lyricsOnly,
+          })
+        )
+      )
+
+      return NextResponse.json({ versions })
+    }
+
+    const dna =
+      dnaProfiles.find((profile) => profile.id === body.dnaId) || dnaProfiles[0]
+
+    const single = await generateForDNA({
+      openai,
+      body,
+      dna,
+      lyricsOnly,
     })
 
-    const content = response.output_text || ''
-    const cleaned = stripCodeFences(content)
-    const parsed = JSON.parse(cleaned)
-
-    return NextResponse.json(parsed)
+    return NextResponse.json(single)
   } catch (error: any) {
     console.error('Generate route error:', error)
 

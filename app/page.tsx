@@ -2,12 +2,18 @@
 import { CSSProperties, useState } from 'react'
 
 type ResultType = {
+  dna_id?: string
+  dna_name?: string
   style_short?: string
   style_detailed?: string
   lyrics_brief?: string
   lyrics_full?: string
   lyrics_template?: string
   error?: string
+}
+
+type GenerateResponse = ResultType & {
+  versions?: ResultType[]
 }
 
 type ThemeIdeasResponse = {
@@ -18,6 +24,14 @@ type ThemeIdeasResponse = {
 
 type HookIdeasResponse = {
   hooks?: string[]
+  error?: string
+}
+
+type VideoResponse = {
+  global_style?: string
+  character_prompt?: string
+  video_concept?: string
+  scene_prompts?: { section: string; prompt: string }[]
   error?: string
 }
 
@@ -58,11 +72,15 @@ export default function Home() {
     perspective: 'Balanced',
     songFocus: 'Balanced',
     liveFriendly: true,
+    multiVersion: false,
   })
 
-  const [result, setResult] = useState<ResultType | null>(null)
+  const [result, setResult] = useState<GenerateResponse | null>(null)
+  const [videoResult, setVideoResult] = useState<VideoResponse | null>(null)
+
   const [loading, setLoading] = useState(false)
   const [rewritingLyrics, setRewritingLyrics] = useState(false)
+  const [videoLoading, setVideoLoading] = useState(false)
 
   const [themeIdeas, setThemeIdeas] = useState<string[]>([])
   const [refinedTheme, setRefinedTheme] = useState('')
@@ -191,11 +209,12 @@ export default function Home() {
         perspective: form.perspective,
         songFocus: form.songFocus,
         liveFriendly: form.liveFriendly,
+        multiVersion: form.multiVersion,
       }),
     })
 
     const text = await res.text()
-    let data: ResultType
+    let data: GenerateResponse
 
     try {
       data = JSON.parse(text)
@@ -214,6 +233,7 @@ export default function Home() {
     try {
       setLoading(true)
       setResult(null)
+      setVideoResult(null)
 
       const data = await requestGeneration(false)
       setResult(data)
@@ -231,12 +251,16 @@ export default function Home() {
 
       const data = await requestGeneration(true)
 
-      setResult((prev) => ({
-        ...prev,
-        lyrics_brief: data.lyrics_brief,
-        lyrics_full: data.lyrics_full,
-        error: undefined,
-      }))
+      if (data.versions) {
+        setResult(data)
+      } else {
+        setResult((prev) => ({
+          ...prev,
+          lyrics_brief: data.lyrics_brief,
+          lyrics_full: data.lyrics_full,
+          error: undefined,
+        }))
+      }
     } catch (err: any) {
       console.error('Lyrics rewrite failed:', err)
       setResult((prev) => ({
@@ -245,6 +269,51 @@ export default function Home() {
       }))
     } finally {
       setRewritingLyrics(false)
+    }
+  }
+
+  const handleGenerateVideo = async () => {
+    try {
+      setVideoLoading(true)
+      setVideoResult(null)
+
+      const lyricsSource =
+        result?.lyrics_full ||
+        result?.versions?.[0]?.lyrics_full ||
+        ''
+
+      const res = await fetch('/api/video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          genre: form.genre,
+          moods: form.moods,
+          theme: form.theme,
+          hook: form.hook,
+          dnaId: form.dnaId,
+          lyrics: lyricsSource,
+        }),
+      })
+
+      const text = await res.text()
+      let data: VideoResponse
+
+      try {
+        data = JSON.parse(text)
+      } catch {
+        throw new Error('Video route not found or returned HTML instead of JSON')
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate video prompts')
+      }
+
+      setVideoResult(data)
+    } catch (err: any) {
+      console.error('Video generation failed:', err)
+      setVideoResult({ error: err.message || 'Video generation failed' })
+    } finally {
+      setVideoLoading(false)
     }
   }
 
@@ -432,11 +501,80 @@ export default function Home() {
       ? { gridTemplateColumns: '1fr' }
       : {}
 
+  const renderSingleVersion = (data: ResultType) => (
+    <div>
+      <div style={outputCardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={outputTitleStyle}>Style (Short)</div>
+          <button
+            onClick={() => copyToClipboard(data.style_short || '')}
+            style={copyButtonStyle}
+          >
+            Copy
+          </button>
+        </div>
+        <div>{data.style_short}</div>
+      </div>
+
+      <div style={outputCardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={outputTitleStyle}>Style (Detailed)</div>
+          <button
+            onClick={() => copyToClipboard(data.style_detailed || '')}
+            style={copyButtonStyle}
+          >
+            Copy
+          </button>
+        </div>
+        <div>{data.style_detailed}</div>
+      </div>
+
+      {data.lyrics_full && (
+        <div style={outputCardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={outputTitleStyle}>Full Lyrics</div>
+            <button
+              onClick={() => copyToClipboard(data.lyrics_full || '')}
+              style={copyButtonStyle}
+            >
+              Copy
+            </button>
+          </div>
+          <pre
+            style={{
+              whiteSpace: 'pre-wrap',
+              margin: 0,
+              fontFamily: 'inherit',
+              lineHeight: '1.6',
+            }}
+          >
+            {data.lyrics_full}
+          </pre>
+        </div>
+      )}
+
+      {data.lyrics_brief && (
+        <div style={outputCardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={outputTitleStyle}>Lyrics Brief</div>
+            <button
+              onClick={() => copyToClipboard(data.lyrics_brief || '')}
+              style={copyButtonStyle}
+            >
+              Copy
+            </button>
+          </div>
+          <div>{data.lyrics_brief}</div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div style={pageStyle}>
       <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
       <p style={subHeaderStyle}>
-        Build Suno-ready style prompts and lyric directions using your creative DNA.
+        Build Suno-ready style prompts, full lyrics, and OpenArt-ready video prompts using your creative DNA.
       </p>
 
       <div style={{ ...layoutStyle, ...responsiveStyle }}>
@@ -696,6 +834,29 @@ export default function Home() {
             </div>
           </div>
 
+          <div style={sectionStyle}>
+            <label style={labelStyle}>Generation Mode</label>
+            <div style={rowWrapStyle}>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, multiVersion: false })}
+                style={buttonStyle(form.multiVersion === false)}
+              >
+                Single Version
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, multiVersion: true })}
+                style={buttonStyle(form.multiVersion === true)}
+              >
+                Multi-Version
+              </button>
+            </div>
+            <div style={helperStyle}>
+              Multi-Version generates MPJ Master, Commercial Hit, and Raw Folk side by side.
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button
               onClick={handleGenerate}
@@ -722,6 +883,19 @@ export default function Home() {
             >
               {rewritingLyrics ? 'Rewriting...' : 'Rewrite Lyrics Only'}
             </button>
+
+            <button
+              onClick={handleGenerateVideo}
+              disabled={videoLoading || !result}
+              style={{
+                ...secondaryActionButtonStyle,
+                opacity: videoLoading || !result ? 0.6 : 1,
+                cursor: videoLoading || !result ? 'default' : 'pointer',
+                minWidth: '180px',
+              }}
+            >
+              {videoLoading ? 'Generating Video...' : 'OpenArt Mode'}
+            </button>
           </div>
         </div>
 
@@ -738,99 +912,82 @@ export default function Home() {
                 </div>
                 <div>{result.error}</div>
               </div>
-            ) : (
+            ) : result.versions && result.versions.length > 0 ? (
               <div>
-                <div style={outputCardStyle}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div style={outputTitleStyle}>Style (Short)</div>
-                    <button
-                      onClick={() => copyToClipboard(result.style_short || '')}
-                      style={copyButtonStyle}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <div>{result.style_short}</div>
-                </div>
-
-                <div style={outputCardStyle}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div style={outputTitleStyle}>Style (Detailed)</div>
-                    <button
-                      onClick={() => copyToClipboard(result.style_detailed || '')}
-                      style={copyButtonStyle}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <div>{result.style_detailed}</div>
-                </div>
-
-                {result.lyrics_full && (
-                  <div style={outputCardStyle}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={outputTitleStyle}>Full Lyrics</div>
-                      <button
-                        onClick={() => copyToClipboard(result.lyrics_full || '')}
-                        style={copyButtonStyle}
-                      >
-                        Copy
-                      </button>
+                {result.versions.map((version) => (
+                  <div key={version.dna_id} style={{ ...outputCardStyle, backgroundColor: '#2f2f35' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
+                      {version.dna_name}
                     </div>
-                    <pre
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        margin: 0,
-                        fontFamily: 'inherit',
-                        lineHeight: '1.6',
-                      }}
-                    >
-                      {result.lyrics_full}
-                    </pre>
+                    {renderSingleVersion(version)}
                   </div>
-                )}
-
-                {result.lyrics_template && (
-                  <div style={outputCardStyle}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={outputTitleStyle}>Lyrics Template</div>
-                      <button
-                        onClick={() => copyToClipboard(result.lyrics_template || '')}
-                        style={copyButtonStyle}
-                      >
-                        Copy
-                      </button>
-                    </div>
-                    <pre
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        margin: 0,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {result.lyrics_template}
-                    </pre>
-                  </div>
-                )}
-
-                {result.lyrics_brief && (
-                  <div style={outputCardStyle}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={outputTitleStyle}>Lyrics Brief</div>
-                      <button
-                        onClick={() => copyToClipboard(result.lyrics_brief || '')}
-                        style={copyButtonStyle}
-                      >
-                        Copy
-                      </button>
-                    </div>
-                    <div>{result.lyrics_brief}</div>
-                  </div>
-                )}
+                ))}
               </div>
+            ) : (
+              renderSingleVersion(result)
             )
           ) : (
             <div style={emptyStateStyle}>No output yet</div>
+          )}
+
+          {videoResult && (
+            <div style={{ marginTop: '24px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
+                OpenArt Output
+              </h2>
+
+              {videoResult.error ? (
+                <div style={errorStyle}>{videoResult.error}</div>
+              ) : (
+                <div>
+                  <div style={outputCardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={outputTitleStyle}>Global Style</div>
+                      <button
+                        onClick={() => copyToClipboard(videoResult.global_style || '')}
+                        style={copyButtonStyle}
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div>{videoResult.global_style}</div>
+                  </div>
+
+                  <div style={outputCardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={outputTitleStyle}>Character Prompt</div>
+                      <button
+                        onClick={() => copyToClipboard(videoResult.character_prompt || '')}
+                        style={copyButtonStyle}
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div>{videoResult.character_prompt}</div>
+                  </div>
+
+                  <div style={outputCardStyle}>
+                    <div style={outputTitleStyle}>Video Concept</div>
+                    <div>{videoResult.video_concept}</div>
+                  </div>
+
+                  {videoResult.scene_prompts?.map((scene, index) => (
+                    <div key={`${scene.section}-${index}`} style={outputCardStyle}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={outputTitleStyle}>{scene.section}</div>
+                        <button
+                          onClick={() => copyToClipboard(scene.prompt || '')}
+                          style={copyButtonStyle}
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div>{scene.prompt}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
