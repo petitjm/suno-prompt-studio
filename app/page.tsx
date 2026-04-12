@@ -58,6 +58,7 @@ export default function Home() {
 
   const [result, setResult] = useState<ResultType | null>(null)
   const [loading, setLoading] = useState(false)
+const [rewritingLyrics, setRewritingLyrics] = useState(false)
 
   const [themeIdeas, setThemeIdeas] = useState<string[]>([])
   const [refinedTheme, setRefinedTheme] = useState('')
@@ -581,9 +582,33 @@ export default function Home() {
             />
           </div>
 
-          <button onClick={handleGenerate} disabled={loading} style={generateButtonStyle}>
-            {loading ? 'Generating...' : 'Generate Song'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+  <button
+    onClick={handleGenerate}
+    disabled={loading}
+    style={{
+      ...generateButtonStyle,
+      width: 'auto',
+      flex: 1,
+      minWidth: '180px',
+    }}
+  >
+    {loading ? 'Generating...' : 'Generate Song'}
+  </button>
+
+  <button
+    onClick={handleRewriteLyrics}
+    disabled={rewritingLyrics || !result}
+    style={{
+      ...actionButtonStyle,
+      opacity: rewritingLyrics || !result ? 0.6 : 1,
+      cursor: rewritingLyrics || !result ? 'default' : 'pointer',
+      minWidth: '180px',
+    }}
+  >
+    {rewritingLyrics ? 'Rewriting...' : 'Rewrite Lyrics Only'}
+  </button>
+</div>
         </div>
 
         <div style={panelStyle}>

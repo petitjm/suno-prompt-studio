@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     const dna =
       dnaProfiles.find((profile) => profile.id === body.dnaId) || dnaProfiles[0]
 
+    const lyricsOnly = Boolean(body.lyricsOnly)
+
     const prompt = `
 You are a songwriting assistant that creates Suno-ready outputs.
 
@@ -41,6 +43,9 @@ Structure Bias: ${dna.structure_bias}
 Instrumentation Bias: ${dna.instrumentation_bias.join(', ')}
 Avoid: ${dna.avoid.join(', ')}
 
+MODE:
+${lyricsOnly ? 'Rewrite lyrics only. Keep the same overall song concept and style direction, but generate fresh lyrics.' : 'Generate full output.'}
+
 Return valid JSON only with exactly these keys:
 {
   "style_short": "string",
@@ -54,11 +59,29 @@ Rules:
 - style_detailed should be richer but still practical
 - lyrics_brief should summarise the song direction in 1 to 3 sentences
 - lyrics_full should be complete lyrics, not an outline
-- lyrics_full should use section labels like [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus]
-- lyrics_full should be singable, emotionally clear, and grounded in vivid imagery
-- keep the lyrics aligned with the user's genre, mood, theme, hook, and selected DNA
+- lyrics_full MUST use real line breaks (\\n) between every line
+- each lyric line must be on its own line
+- format lyrics_full like:
+
+[Verse 1]
+Line one
+Line two
+
+[Chorus]
+Line one
+Line two
+
+- include section headers like [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus]
+- keep lines short, natural, and singable
 - include the hook naturally in the chorus
 - avoid markdown code fences
+
+${lyricsOnly ? `
+Extra rules for lyrics-only mode:
+- keep style_short and style_detailed aligned with the same concept
+- do not radically change the concept, only refresh the lyrics
+- make the new lyrics noticeably different from a generic first pass
+` : ''}
 `
 
     const response = await openai.responses.create({
