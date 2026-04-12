@@ -16,6 +16,11 @@ type ThemeIdeasResponse = {
   error?: string
 }
 
+type HookIdeasResponse = {
+  hooks?: string[]
+  error?: string
+}
+
 const dnaOptions = [
   { id: 'mpj-master', label: 'MPJ Master' },
   { id: 'commercial-hit', label: 'Commercial Hit' },
@@ -42,15 +47,6 @@ const moodOptions = [
   'Warm',
 ]
 
-const hookSuggestions = [
-  'I just want to come home',
-  'Still standing here',
-  'This road knows my name',
-  'Hold on to me',
-  'I won’t let go',
-  'Somewhere back to you',
-]
-
 export default function Home() {
   const [form, setForm] = useState({
     genre: '',
@@ -66,6 +62,9 @@ export default function Home() {
   const [themeIdeas, setThemeIdeas] = useState<string[]>([])
   const [refinedTheme, setRefinedTheme] = useState('')
   const [themeLoading, setThemeLoading] = useState(false)
+
+  const [hookIdeas, setHookIdeas] = useState<string[]>([])
+  const [hookLoading, setHookLoading] = useState(false)
 
   const toggleMood = (mood: string) => {
     setForm((prev) => ({
@@ -90,9 +89,7 @@ export default function Home() {
 
       const res = await fetch('/api/theme-ideas', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           theme: form.theme,
           genre: form.genre,
@@ -129,6 +126,51 @@ export default function Home() {
     }
   }
 
+  const handleSuggestHooks = async () => {
+    try {
+      if (!form.theme.trim()) {
+        setHookIdeas([])
+        return
+      }
+
+      setHookLoading(true)
+      setHookIdeas([])
+
+      const res = await fetch('/api/hook-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme: form.theme,
+          genre: form.genre,
+          moods: form.moods,
+          dnaId: form.dnaId,
+        }),
+      })
+
+      const text = await res.text()
+      let data: HookIdeasResponse
+
+      try {
+        data = JSON.parse(text)
+      } catch {
+        setHookIdeas([])
+        return
+      }
+
+      if (!res.ok) {
+        setHookIdeas([])
+        return
+      }
+
+      setHookIdeas(data.hooks || [])
+    } catch (err) {
+      console.error('Hook suggestion failed:', err)
+      setHookIdeas([])
+    } finally {
+      setHookLoading(false)
+    }
+  }
+
   const handleGenerate = async () => {
     try {
       setLoading(true)
@@ -136,9 +178,7 @@ export default function Home() {
 
       const res = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           genre: form.genre,
           moods: form.moods,
@@ -293,6 +333,17 @@ export default function Home() {
     fontWeight: 600,
   }
 
+  const secondaryActionButtonStyle: CSSProperties = {
+    padding: '10px 14px',
+    borderRadius: '12px',
+    border: '1px solid #52525b',
+    backgroundColor: '#3f3f46',
+    color: 'white',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 600,
+  }
+
   const generateButtonStyle: CSSProperties = {
     width: '100%',
     padding: '14px 16px',
@@ -348,9 +399,9 @@ export default function Home() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={headerStyle}>🎸 Suno Prompt Studio COPY TEST</h1>
+      <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
       <p style={subHeaderStyle}>
-        Build Suno-ready style prompts and lyric  directions using your creative DNA.
+        Build Suno-ready style prompts and lyric directions using your creative DNA.
       </p>
 
       <div style={{ ...layoutStyle, ...responsiveStyle }}>
@@ -429,7 +480,7 @@ export default function Home() {
               Start with a rough idea. The app can suggest alternative angles.
             </div>
 
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={handleSuggestThemes}
@@ -472,21 +523,55 @@ export default function Home() {
 
           <div style={sectionStyle}>
             <label style={labelStyle}>Hook</label>
-            <div style={{ ...rowWrapStyle, marginBottom: '12px' }}>
-              {hookSuggestions.map((suggestion) => {
-                const selected = form.hook === suggestion
-                return (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => setForm({ ...form, hook: suggestion })}
-                    style={buttonStyle(selected)}
-                  >
-                    {suggestion}
-                  </button>
-                )
-              })}
+            <div style={helperStyle}>
+              Generate hook ideas from your theme, or type your own.
             </div>
+
+            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleSuggestHooks}
+                disabled={hookLoading || !form.theme.trim()}
+                style={{
+                  ...actionButtonStyle,
+                  opacity: hookLoading || !form.theme.trim() ? 0.6 : 1,
+                  cursor: hookLoading || !form.theme.trim() ? 'default' : 'pointer',
+                }}
+              >
+                {hookLoading ? 'Generating...' : 'Suggest Hooks'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSuggestHooks}
+                disabled={hookLoading || !form.theme.trim()}
+                style={{
+                  ...secondaryActionButtonStyle,
+                  opacity: hookLoading || !form.theme.trim() ? 0.6 : 1,
+                  cursor: hookLoading || !form.theme.trim() ? 'default' : 'pointer',
+                }}
+              >
+                Regenerate Hooks
+              </button>
+            </div>
+
+            {hookIdeas.length > 0 && (
+              <div style={{ ...rowWrapStyle, marginTop: '12px', marginBottom: '12px' }}>
+                {hookIdeas.map((suggestion) => {
+                  const selected = form.hook === suggestion
+                  return (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setForm({ ...form, hook: suggestion })}
+                      style={buttonStyle(selected)}
+                    >
+                      {suggestion}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             <input
               placeholder="Custom hook phrase"
@@ -554,33 +639,55 @@ export default function Home() {
                       </button>
                     </div>
                     <pre
+  style={{
+    whiteSpace: 'pre-wrap',
+    margin: 0,
+    fontFamily: 'inherit',
+    lineHeight: '1.6',
+  }}
+>
+                      {result.lyrics_full}
+                    </pre>
+                  </div>
+                )}
+
+                {result.lyrics_template && (
+                  <div style={outputCardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={outputTitleStyle}>Lyrics Template</div>
+                      <button
+                        onClick={() => copyToClipboard(result.lyrics_template || '')}
+                        style={copyButtonStyle}
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <pre
                       style={{
                         whiteSpace: 'pre-wrap',
                         margin: 0,
                         fontFamily: 'inherit',
                       }}
                     >
-                      {result.lyrics_full}
+                      {result.lyrics_template}
                     </pre>
                   </div>
                 )}
 
-               
-
                 {result.lyrics_brief && (
-  <div style={outputCardStyle}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-      <div style={outputTitleStyle}>Lyrics Brief</div>
-      <button
-        onClick={() => copyToClipboard(result.lyrics_brief || '')}
-        style={copyButtonStyle}
-      >
-        Copy
-      </button>
-    </div>
-    <div>{result.lyrics_brief}</div>
-  </div>
-)}
+                  <div style={outputCardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={outputTitleStyle}>Lyrics Brief</div>
+                      <button
+                        onClick={() => copyToClipboard(result.lyrics_brief || '')}
+                        style={copyButtonStyle}
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div>{result.lyrics_brief}</div>
+                  </div>
+                )}
               </div>
             )
           ) : (
