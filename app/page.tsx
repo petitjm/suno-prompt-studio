@@ -595,6 +595,28 @@ const [rewritingLyrics, setRewritingLyrics] = useState(false)
   >
     {loading ? 'Generating...' : 'Generate Song'}
   </button>
+  const handleRewriteLyrics = async () => {
+  try {
+    setRewritingLyrics(true)
+
+    const data = await requestGeneration(true)
+
+    setResult((prev) => ({
+      ...prev,
+      lyrics_brief: data.lyrics_brief,
+      lyrics_full: data.lyrics_full,
+      error: undefined,
+    }))
+  } catch (err: any) {
+    console.error('Lyrics rewrite failed:', err)
+    setResult((prev) => ({
+      ...prev,
+      error: err.message || 'Lyrics rewrite failed',
+    }))
+  } finally {
+    setRewritingLyrics(false)
+  }
+}
 
   <button
     onClick={handleRewriteLyrics}
