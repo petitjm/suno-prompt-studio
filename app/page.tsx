@@ -27,11 +27,17 @@ type HookIdeasResponse = {
   error?: string
 }
 
-type VideoResponse = {
+type VideoVersion = {
+  dna_id?: string
+  dna_name?: string
   global_style?: string
   character_prompt?: string
   video_concept?: string
   scene_prompts?: { section: string; prompt: string }[]
+}
+
+type VideoResponse = VideoVersion & {
+  versions?: VideoVersion[]
   error?: string
 }
 
@@ -113,12 +119,15 @@ export default function Home() {
       const res = await fetch('/api/theme-ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theme: form.theme,
-          genre: form.genre,
-          moods: form.moods,
-          dnaId: form.dnaId,
-        }),
+       body: JSON.stringify({
+  genre: form.genre,
+  moods: form.moods,
+  theme: form.theme,
+  hook: form.hook,
+  dnaId: form.dnaId,
+  lyrics: lyricsSource,
+  multiVersion: form.multiVersion,
+}),
       })
 
       const text = await res.text()
@@ -569,7 +578,55 @@ export default function Home() {
       )}
     </div>
   )
+  const renderVideoVersion = (video: VideoVersion) => (
+  <div>
+    <div style={outputCardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <div style={outputTitleStyle}>Global Style</div>
+        <button
+          onClick={() => copyToClipboard(video.global_style || '')}
+          style={copyButtonStyle}
+        >
+          Copy
+        </button>
+      </div>
+      <div>{video.global_style}</div>
+    </div>
 
+    <div style={outputCardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <div style={outputTitleStyle}>Character Prompt</div>
+        <button
+          onClick={() => copyToClipboard(video.character_prompt || '')}
+          style={copyButtonStyle}
+        >
+          Copy
+        </button>
+      </div>
+      <div>{video.character_prompt}</div>
+    </div>
+
+    <div style={outputCardStyle}>
+      <div style={outputTitleStyle}>Video Concept</div>
+      <div>{video.video_concept}</div>
+    </div>
+
+    {video.scene_prompts?.map((scene, index) => (
+      <div key={`${scene.section}-${index}`} style={outputCardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={outputTitleStyle}>{scene.section}</div>
+          <button
+            onClick={() => copyToClipboard(scene.prompt || '')}
+            style={copyButtonStyle}
+          >
+            Copy
+          </button>
+        </div>
+        <div>{scene.prompt}</div>
+      </div>
+    ))}
+  </div>
+)
   return (
     <div style={pageStyle}>
       <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
@@ -931,64 +988,32 @@ export default function Home() {
           )}
 
           {videoResult && (
-            <div style={{ marginTop: '24px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
-                OpenArt Output
-              </h2>
+  <div style={{ marginTop: '24px' }}>
+    <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
+      OpenArt Output
+    </h2>
 
-              {videoResult.error ? (
-                <div style={errorStyle}>{videoResult.error}</div>
-              ) : (
-                <div>
-                  <div style={outputCardStyle}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={outputTitleStyle}>Global Style</div>
-                      <button
-                        onClick={() => copyToClipboard(videoResult.global_style || '')}
-                        style={copyButtonStyle}
-                      >
-                        Copy
-                      </button>
-                    </div>
-                    <div>{videoResult.global_style}</div>
-                  </div>
-
-                  <div style={outputCardStyle}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={outputTitleStyle}>Character Prompt</div>
-                      <button
-                        onClick={() => copyToClipboard(videoResult.character_prompt || '')}
-                        style={copyButtonStyle}
-                      >
-                        Copy
-                      </button>
-                    </div>
-                    <div>{videoResult.character_prompt}</div>
-                  </div>
-
-                  <div style={outputCardStyle}>
-                    <div style={outputTitleStyle}>Video Concept</div>
-                    <div>{videoResult.video_concept}</div>
-                  </div>
-
-                  {videoResult.scene_prompts?.map((scene, index) => (
-                    <div key={`${scene.section}-${index}`} style={outputCardStyle}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <div style={outputTitleStyle}>{scene.section}</div>
-                        <button
-                          onClick={() => copyToClipboard(scene.prompt || '')}
-                          style={copyButtonStyle}
-                        >
-                          Copy
-                        </button>
-                      </div>
-                      <div>{scene.prompt}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+    {videoResult.error ? (
+      <div style={errorStyle}>{videoResult.error}</div>
+    ) : videoResult.versions && videoResult.versions.length > 0 ? (
+      <div>
+        {videoResult.versions.map((video) => (
+          <div
+            key={video.dna_id}
+            style={{ ...outputCardStyle, backgroundColor: '#2f2f35' }}
+          >
+            <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
+              {video.dna_name}
             </div>
-          )}
+            {renderVideoVersion(video)}
+          </div>
+        ))}
+      </div>
+    ) : (
+      renderVideoVersion(videoResult)
+    )}
+  </div>
+)}
         </div>
       </div>
     </div>
