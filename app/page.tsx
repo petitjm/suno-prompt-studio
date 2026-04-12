@@ -565,28 +565,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {result.lyrics_template && (
-  <div style={outputCardStyle}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-      <div style={outputTitleStyle}>Lyrics Template</div>
-      <button
-        onClick={() => copyToClipboard(result.lyrics_template || '')}
-        style={copyButtonStyle}
-      >
-        Copy
-      </button>
-    </div>
-    <pre
-      style={{
-        whiteSpace: 'pre-wrap',
-        margin: 0,
-        fontFamily: 'inherit',
-      }}
-    >
-      {result.lyrics_template}
-    </pre>
-  </div>
-)}
+               
 
                 {result.lyrics_brief && (
   <div style={outputCardStyle}>

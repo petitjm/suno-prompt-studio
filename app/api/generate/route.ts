@@ -19,10 +19,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
 
     const dna =
-      dnaProfiles.find(profile => profile.id === body.dnaId) || dnaProfiles[0]
+      dnaProfiles.find((profile) => profile.id === body.dnaId) || dnaProfiles[0]
 
     const prompt = `
-You are a Suno prompt generator.
+You are a songwriting assistant that creates Suno-ready outputs.
 
 USER INPUT:
 Genre: ${body.genre}
@@ -46,15 +46,19 @@ Return valid JSON only with exactly these keys:
   "style_short": "string",
   "style_detailed": "string",
   "lyrics_brief": "string",
-  "lyrics_template": "string"
+  "lyrics_full": "string"
 }
 
 Rules:
 - style_short should be concise and Suno-friendly
 - style_detailed should be richer but still practical
-- lyrics_brief should reflect the chosen DNA
-- lyrics_template should use section labels like [Verse 1], [Chorus], [Bridge]
-- do not use markdown code fences
+- lyrics_brief should summarise the song direction in 1 to 3 sentences
+- lyrics_full should be complete lyrics, not an outline
+- lyrics_full should use section labels like [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus]
+- lyrics_full should be singable, emotionally clear, and grounded in vivid imagery
+- keep the lyrics aligned with the user's genre, mood, theme, hook, and selected DNA
+- include the hook naturally in the chorus
+- avoid markdown code fences
 `
 
     const response = await openai.responses.create({
@@ -68,7 +72,7 @@ Rules:
 
     return NextResponse.json(parsed)
   } catch (error: any) {
-    console.error('API route error:', error)
+    console.error('Generate route error:', error)
 
     return NextResponse.json(
       { error: error?.message || 'Failed to generate output' },
