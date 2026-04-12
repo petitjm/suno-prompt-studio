@@ -235,6 +235,73 @@ export default function Home() {
     return data
   }
 
+  const requestVideoForDNA = async ({
+    dnaId,
+    lyrics,
+    dnaName,
+  }: {
+    dnaId: string
+    lyrics: string
+    dnaName?: string
+  }): Promise<VideoVersion> => {
+    const res = await fetch('/api/video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        genre: form.genre,
+        moods: form.moods,
+        theme: form.theme,
+        hook: form.hook,
+        dnaId,
+        lyrics,
+        multiVersion: false,
+      }),
+    })
+
+    const text = await res.text()
+    let data: VideoResponse
+
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error('Video route not found or returned HTML instead of JSON')
+    }
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to generate video prompts')
+    }
+
+    return {
+      dna_id: dnaId,
+      dna_name: dnaName,
+      global_style: data.global_style,
+      character_prompt: data.character_prompt,
+      video_concept: data.video_concept,
+      scene_prompts: data.scene_prompts,
+    }
+  }
+
+  const rebuildVideoFromSongResult = async (songResult: GenerateResponse) => {
+    if (songResult.versions && songResult.versions.length > 0) {
+      const versions = await Promise.all(
+        songResult.versions.map((version) =>
+          requestVideoForDNA({
+            dnaId: version.dna_id || 'mpj-master',
+            dnaName: version.dna_name,
+            lyrics: version.lyrics_full || '',
+          })
+        )
+      )
+      return { versions } as VideoResponse
+    }
+
+    return requestVideoForDNA({
+      dnaId: songResult.dna_id || form.dnaId,
+      dnaName: songResult.dna_name,
+      lyrics: songResult.lyrics_full || '',
+    })
+  }
+
   const handleGenerate = async () => {
     try {
       setLoading(true)
@@ -256,16 +323,11 @@ export default function Home() {
       setRewritingLyrics(true)
 
       const data = await requestGeneration(true)
+      setResult(data)
 
-      if (data.versions) {
-        setResult(data)
-      } else {
-        setResult((prev) => ({
-          ...prev,
-          lyrics_brief: data.lyrics_brief,
-          lyrics_full: data.lyrics_full,
-          error: undefined,
-        }))
+      if (videoResult) {
+        const refreshedVideo = await rebuildVideoFromSongResult(data)
+        setVideoResult(refreshedVideo)
       }
     } catch (err: any) {
       console.error('Lyrics rewrite failed:', err)
@@ -283,39 +345,12 @@ export default function Home() {
       setVideoLoading(true)
       setVideoResult(null)
 
-      const lyricsSource =
-        result?.lyrics_full ||
-        result?.versions?.[0]?.lyrics_full ||
-        ''
-
-      const res = await fetch('/api/video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          genre: form.genre,
-          moods: form.moods,
-          theme: form.theme,
-          hook: form.hook,
-          dnaId: form.dnaId,
-          lyrics: lyricsSource,
-          multiVersion: form.multiVersion,
-        }),
-      })
-
-      const text = await res.text()
-      let data: VideoResponse
-
-      try {
-        data = JSON.parse(text)
-      } catch {
-        throw new Error('Video route not found or returned HTML instead of JSON')
+      if (!result) {
+        throw new Error('Generate a song first before creating OpenArt prompts')
       }
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to generate video prompts')
-      }
-
-      setVideoResult(data)
+      const rebuilt = await rebuildVideoFromSongResult(result)
+      setVideoResult(rebuilt)
     } catch (err: any) {
       console.error('Video generation failed:', err)
       setVideoResult({ error: err.message || 'Video generation failed' })
