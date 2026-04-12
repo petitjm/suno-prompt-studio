@@ -327,6 +327,17 @@ export default function Home() {
       : {}
 
   return (
+
+  const copyButtonStyle: CSSProperties = {
+  padding: '4px 10px',
+  borderRadius: '8px',
+  border: '1px solid #52525b',
+  backgroundColor: '#3f3f46',
+  color: 'white',
+  cursor: 'pointer',
+  fontSize: '12px',
+}
+
     <div style={pageStyle}>
       <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
       <p style={subHeaderStyle}>
@@ -455,6 +466,14 @@ export default function Home() {
             <div style={{ ...rowWrapStyle, marginBottom: '12px' }}>
               {hookSuggestions.map((suggestion) => {
                 const selected = form.hook === suggestion
+                const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text || '')
+    alert('Copied!')
+  } catch (err) {
+    console.error('Copy failed', err)
+  }
+}
                 return (
                   <button
                     key={suggestion}
@@ -497,19 +516,51 @@ export default function Home() {
             ) : (
               <div>
                 <div style={outputCardStyle}>
-                  <div style={outputTitleStyle}>Style (Short)</div>
-                  <div>{result.style_short}</div>
-                </div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+    <div style={outputTitleStyle}>Style (Short)</div>
+    <button
+      onClick={() => copyToClipboard(result.style_short || '')}
+      style={copyButtonStyle}
+    >
+      Copy
+    </button>
+  </div>
+  <div>{result.style_short}</div>
+</div>
+
+               <div style={outputCardStyle}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+    <div style={outputTitleStyle}>Style (Detailed)</div>
+    <button
+      onClick={() => copyToClipboard(result.style_detailed || '')}
+      style={copyButtonStyle}
+    >
+      Copy
+    </button>
+  </div>
+  <div>{result.style_detailed}</div>
+</div>
 
                 <div style={outputCardStyle}>
-                  <div style={outputTitleStyle}>Style (Detailed)</div>
-                  <div>{result.style_detailed}</div>
-                </div>
-
-                <div style={outputCardStyle}>
-                  <div style={outputTitleStyle}>Lyrics Brief</div>
-                  <div>{result.lyrics_brief}</div>
-                </div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+    <div style={outputTitleStyle}>Full Lyrics</div>
+    <button
+      onClick={() => copyToClipboard(result.lyrics_full || '')}
+      style={copyButtonStyle}
+    >
+      Copy
+    </button>
+  </div>
+  <pre
+    style={{
+      whiteSpace: 'pre-wrap',
+      margin: 0,
+      fontFamily: 'inherit',
+    }}
+  >
+    {result.lyrics_full}
+  </pre>
+</div>
 
                 <div style={outputCardStyle}>
                   <div style={outputTitleStyle}>Lyrics Template</div>
