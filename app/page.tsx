@@ -39,7 +39,7 @@ const genreOptions = [
 ]
 
 const moodOptions = [
-  'Reflective',
+  'Reflectivebody: JSON.stringify
   'Hopeful',
   'Melancholic',
   'Heartfelt',
@@ -49,12 +49,16 @@ const moodOptions = [
 
 export default function Home() {
   const [form, setForm] = useState({
-    genre: '',
-    moods: [] as string[],
-    theme: '',
-    hook: '',
-    dnaId: 'mpj-master',
-  })
+  genre: '',
+  moods: [] as string[],
+  theme: '',
+  hook: '',
+  dnaId: 'mpj-master',
+  languageStyle: 'Balanced',
+  perspective: 'Balanced',
+  songFocus: 'Balanced',
+  liveFriendly: true,
+})
 
   const [result, setResult] = useState<ResultType | null>(null)
   const [loading, setLoading] = useState(false)
@@ -93,7 +97,18 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           theme: form.theme,
-          genre: form.genre,
+          genre: fbody: JSON.stringify({
+  genre: form.genre,
+  moods: form.moods,
+  theme: form.theme,
+  hook: form.hook,
+  dnaId: form.dnaId,
+  lyricsOnly,
+  languageStyle: form.languageStyle,
+  perspective: form.perspective,
+  songFocus: form.songFocus,
+  liveFriendly: form.liveFriendly,
+}),orm.genre,
           moods: form.moods,
           dnaId: form.dnaId,
         }),
@@ -171,6 +186,87 @@ export default function Home() {
       setHookLoading(false)
     }
   }
+
+            <div style={sectionStyle}>
+            <label style={labelStyle}>Lyric Direction Controls</label>
+
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
+                Style of language
+              </div>
+              <div style={rowWrapStyle}>
+                {['Conversational', 'Balanced', 'Poetic'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setForm({ ...form, languageStyle: option })}
+                    style={buttonStyle(form.languageStyle === option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
+                Perspective
+              </div>
+              <div style={rowWrapStyle}>
+                {['Personal', 'Balanced', 'Universal'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setForm({ ...form, perspective: option })}
+                    style={buttonStyle(form.perspective === option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
+                Song focus
+              </div>
+              <div style={rowWrapStyle}>
+                {['Story', 'Balanced', 'Hook-driven'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setForm({ ...form, songFocus: option })}
+                    style={buttonStyle(form.songFocus === option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
+                Live-friendly phrasing
+              </div>
+              <div style={rowWrapStyle}>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, liveFriendly: true })}
+                  style={buttonStyle(form.liveFriendly === true)}
+                >
+                  On
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, liveFriendly: false })}
+                  style={buttonStyle(form.liveFriendly === false)}
+                >
+                  Off
+                </button>
+              </div>
+            </div>
+          </div>
+
 
   const requestGeneration = async (lyricsOnly: boolean) => {
     const res = await fetch('/api/generate', {

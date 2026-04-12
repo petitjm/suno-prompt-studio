@@ -31,6 +31,10 @@ Genre: ${body.genre}
 Mood: ${Array.isArray(body.moods) ? body.moods.join(', ') : ''}
 Theme: ${body.theme}
 Hook: ${body.hook}
+Language Style: ${body.languageStyle || 'Balanced'}
+Perspective: ${body.perspective || 'Balanced'}
+Song Focus: ${body.songFocus || 'Balanced'}
+Live-Friendly Phrasing: ${body.liveFriendly ? 'On' : 'Off'}
 
 CREATIVE DNA:
 Name: ${dna.name}
@@ -74,7 +78,27 @@ Line two
 - include section headers like [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus]
 - keep lines short, natural, and singable
 - include the hook naturally in the chorus
-- avoid markdown code fences
+- avoid markdown code - language style should follow the selected setting:
+  - Conversational = plainspoken, natural, direct
+  - Balanced = clear and expressive without over-stylising
+  - Poetic = more lyrical and image-rich, but still singable
+
+- perspective should follow the selected setting:
+  - Personal = intimate, specific, emotionally close
+  - Balanced = mix of personal detail and broader relatability
+  - Universal = easier for listeners to project themselves into
+
+- song focus should follow the selected setting:
+  - Story = more narrative development in verses
+  - Balanced = equal attention to verses and chorus
+  - Hook-driven = stronger repetition and chorus emphasis
+
+- if live-friendly phrasing is On:
+  - keep lines easier to sing live
+  - prefer clear diction and memorable phrasing
+  - avoid overly dense or awkward wording
+
+
 
 ${lyricsOnly ? `
 Extra rules for lyrics-only mode:
