@@ -348,9 +348,9 @@ export default function Home() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
+      <h1 style={headerStyle}>🎸 Suno Prompt Studio COPY TEST</h1>
       <p style={subHeaderStyle}>
-        Build Suno-ready style prompts and lyric directions using your creative DNA.
+        Build Suno-ready style prompts and lyric  directions using your creative DNA.
       </p>
 
       <div style={{ ...layoutStyle, ...responsiveStyle }}>
