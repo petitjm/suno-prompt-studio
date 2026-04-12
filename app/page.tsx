@@ -58,7 +58,7 @@ export default function Home() {
 
   const [result, setResult] = useState<ResultType | null>(null)
   const [loading, setLoading] = useState(false)
-const [rewritingLyrics, setRewritingLyrics] = useState(false)
+  const [rewritingLyrics, setRewritingLyrics] = useState(false)
 
   const [themeIdeas, setThemeIdeas] = useState<string[]>([])
   const [refinedTheme, setRefinedTheme] = useState('')
@@ -172,45 +172,71 @@ const [rewritingLyrics, setRewritingLyrics] = useState(false)
     }
   }
 
+  const requestGeneration = async (lyricsOnly: boolean) => {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        genre: form.genre,
+        moods: form.moods,
+        theme: form.theme,
+        hook: form.hook,
+        dnaId: form.dnaId,
+        lyricsOnly,
+      }),
+    })
+
+    const text = await res.text()
+    let data: ResultType
+
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error('API route not found or returned HTML instead of JSON')
+    }
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Something went wrong')
+    }
+
+    return data
+  }
+
   const handleGenerate = async () => {
     try {
       setLoading(true)
       setResult(null)
 
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          genre: form.genre,
-          moods: form.moods,
-          theme: form.theme,
-          hook: form.hook,
-          dnaId: form.dnaId,
-        }),
-      })
-
-      const text = await res.text()
-      let data: ResultType
-
-      try {
-        data = JSON.parse(text)
-      } catch {
-        console.error('Non-JSON response:', text)
-        setResult({ error: 'API route not found or returned HTML instead of JSON' })
-        return
-      }
-
-      if (!res.ok) {
-        setResult({ error: data.error || 'Something went wrong' })
-        return
-      }
-
+      const data = await requestGeneration(false)
       setResult(data)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Request failed:', err)
-      setResult({ error: 'Request failed' })
+      setResult({ error: err.message || 'Request failed' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRewriteLyrics = async () => {
+    try {
+      setRewritingLyrics(true)
+
+      const data = await requestGeneration(true)
+
+      setResult((prev) => ({
+        ...prev,
+        lyrics_brief: data.lyrics_brief,
+        lyrics_full: data.lyrics_full,
+        error: undefined,
+      }))
+    } catch (err: any) {
+      console.error('Lyrics rewrite failed:', err)
+      setResult((prev) => ({
+        ...prev,
+        error: err.message || 'Lyrics rewrite failed',
+      }))
+    } finally {
+      setRewritingLyrics(false)
     }
   }
 
@@ -583,54 +609,32 @@ const [rewritingLyrics, setRewritingLyrics] = useState(false)
           </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-  <button
-    onClick={handleGenerate}
-    disabled={loading}
-    style={{
-      ...generateButtonStyle,
-      width: 'auto',
-      flex: 1,
-      minWidth: '180px',
-    }}
-  >
-    {loading ? 'Generating...' : 'Generate Song'}
-  </button>
-  const handleRewriteLyrics = async () => {
-  try {
-    setRewritingLyrics(true)
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              style={{
+                ...generateButtonStyle,
+                width: 'auto',
+                flex: 1,
+                minWidth: '180px',
+              }}
+            >
+              {loading ? 'Generating...' : 'Generate Song'}
+            </button>
 
-    const data = await requestGeneration(true)
-
-    setResult((prev) => ({
-      ...prev,
-      lyrics_brief: data.lyrics_brief,
-      lyrics_full: data.lyrics_full,
-      error: undefined,
-    }))
-  } catch (err: any) {
-    console.error('Lyrics rewrite failed:', err)
-    setResult((prev) => ({
-      ...prev,
-      error: err.message || 'Lyrics rewrite failed',
-    }))
-  } finally {
-    setRewritingLyrics(false)
-  }
-}
-
-  <button
-    onClick={handleRewriteLyrics}
-    disabled={rewritingLyrics || !result}
-    style={{
-      ...actionButtonStyle,
-      opacity: rewritingLyrics || !result ? 0.6 : 1,
-      cursor: rewritingLyrics || !result ? 'default' : 'pointer',
-      minWidth: '180px',
-    }}
-  >
-    {rewritingLyrics ? 'Rewriting...' : 'Rewrite Lyrics Only'}
-  </button>
-</div>
+            <button
+              onClick={handleRewriteLyrics}
+              disabled={rewritingLyrics || !result}
+              style={{
+                ...actionButtonStyle,
+                opacity: rewritingLyrics || !result ? 0.6 : 1,
+                cursor: rewritingLyrics || !result ? 'default' : 'pointer',
+                minWidth: '180px',
+              }}
+            >
+              {rewritingLyrics ? 'Rewriting...' : 'Rewrite Lyrics Only'}
+            </button>
+          </div>
         </div>
 
         <div style={panelStyle}>
@@ -686,13 +690,13 @@ const [rewritingLyrics, setRewritingLyrics] = useState(false)
                       </button>
                     </div>
                     <pre
-  style={{
-    whiteSpace: 'pre-wrap',
-    margin: 0,
-    fontFamily: 'inherit',
-    lineHeight: '1.6',
-  }}
->
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        margin: 0,
+                        fontFamily: 'inherit',
+                        lineHeight: '1.6',
+                      }}
+                    >
                       {result.lyrics_full}
                     </pre>
                   </div>
