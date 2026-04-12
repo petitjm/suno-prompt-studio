@@ -333,6 +333,140 @@ export default function Home() {
     }
   }
 
+  const buildExportText = () => {
+    const lines: string[] = []
+
+    lines.push('SUNO PROMPT STUDIO EXPORT')
+    lines.push('========================')
+    lines.push('')
+
+    lines.push('INPUTS')
+    lines.push('------')
+    lines.push(`DNA: ${form.dnaId}`)
+    lines.push(`Genre: ${form.genre}`)
+    lines.push(`Moods: ${form.moods.join(', ')}`)
+    lines.push(`Theme: ${form.theme}`)
+    lines.push(`Hook: ${form.hook}`)
+    lines.push('')
+
+    lines.push('LYRIC DIRECTION CONTROLS')
+    lines.push('------------------------')
+    lines.push(`Language Style: ${form.languageStyle}`)
+    lines.push(`Perspective: ${form.perspective}`)
+    lines.push(`Song Focus: ${form.songFocus}`)
+    lines.push(`Live-Friendly: ${form.liveFriendly ? 'On' : 'Off'}`)
+    lines.push(`Generation Mode: ${form.multiVersion ? 'Multi-Version' : 'Single Version'}`)
+    lines.push('')
+
+    if (result) {
+      lines.push('SONG OUTPUT')
+      lines.push('-----------')
+      lines.push('')
+
+      if (result.versions && result.versions.length > 0) {
+        result.versions.forEach((version, index) => {
+          lines.push(`VERSION ${index + 1}: ${version.dna_name || version.dna_id || 'Unknown'}`)
+          lines.push('----------------------------------------')
+          lines.push(`Style (Short): ${version.style_short || ''}`)
+          lines.push('')
+          lines.push('Style (Detailed):')
+          lines.push(version.style_detailed || '')
+          lines.push('')
+          lines.push('Lyrics Brief:')
+          lines.push(version.lyrics_brief || '')
+          lines.push('')
+          lines.push('Full Lyrics:')
+          lines.push(version.lyrics_full || '')
+          lines.push('')
+        })
+      } else {
+        lines.push(`Style (Short): ${result.style_short || ''}`)
+        lines.push('')
+        lines.push('Style (Detailed):')
+        lines.push(result.style_detailed || '')
+        lines.push('')
+        lines.push('Lyrics Brief:')
+        lines.push(result.lyrics_brief || '')
+        lines.push('')
+        lines.push('Full Lyrics:')
+        lines.push(result.lyrics_full || '')
+        lines.push('')
+      }
+    }
+
+    if (videoResult) {
+      lines.push('OPENART OUTPUT')
+      lines.push('--------------')
+      lines.push('')
+
+      if (videoResult.versions && videoResult.versions.length > 0) {
+        videoResult.versions.forEach((video, index) => {
+          lines.push(`VIDEO VERSION ${index + 1}: ${video.dna_name || video.dna_id || 'Unknown'}`)
+          lines.push('----------------------------------------')
+          lines.push('Global Style:')
+          lines.push(video.global_style || '')
+          lines.push('')
+          lines.push('Character Prompt:')
+          lines.push(video.character_prompt || '')
+          lines.push('')
+          lines.push('Video Concept:')
+          lines.push(video.video_concept || '')
+          lines.push('')
+
+          if (video.scene_prompts?.length) {
+            lines.push('Scene Prompts:')
+            video.scene_prompts.forEach((scene) => {
+              lines.push(`[${scene.section}]`)
+              lines.push(scene.prompt || '')
+              lines.push('')
+            })
+          }
+        })
+      } else {
+        lines.push('Global Style:')
+        lines.push(videoResult.global_style || '')
+        lines.push('')
+        lines.push('Character Prompt:')
+        lines.push(videoResult.character_prompt || '')
+        lines.push('')
+        lines.push('Video Concept:')
+        lines.push(videoResult.video_concept || '')
+        lines.push('')
+
+        if (videoResult.scene_prompts?.length) {
+          lines.push('Scene Prompts:')
+          videoResult.scene_prompts.forEach((scene) => {
+            lines.push(`[${scene.section}]`)
+            lines.push(scene.prompt || '')
+            lines.push('')
+          })
+        }
+      }
+    }
+
+    return lines.join('\n')
+  }
+
+  const handleSaveToFile = () => {
+    const text = buildExportText()
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+
+    const a = document.createElement('a')
+    const safeTheme = (form.theme || 'song-idea')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    a.href = url
+    a.download = `suno-prompt-studio-${safeTheme}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+
+    URL.revokeObjectURL(url)
+  }
+
   const pageStyle: CSSProperties = {
     minHeight: '100vh',
     backgroundColor: '#18181b',
@@ -952,6 +1086,19 @@ export default function Home() {
               }}
             >
               {videoLoading ? 'Generating Video...' : 'OpenArt Mode'}
+            </button>
+
+            <button
+              onClick={handleSaveToFile}
+              disabled={!result && !videoResult}
+              style={{
+                ...secondaryActionButtonStyle,
+                opacity: !result && !videoResult ? 0.6 : 1,
+                cursor: !result && !videoResult ? 'default' : 'pointer',
+                minWidth: '180px',
+              }}
+            >
+              Save Results to TXT
             </button>
           </div>
         </div>
