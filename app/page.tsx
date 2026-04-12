@@ -566,26 +566,42 @@ export default function Home() {
                 )}
 
                 {result.lyrics_template && (
-                  <div style={outputCardStyle}>
-                    <div style={outputTitleStyle}>Lyrics Template</div>
-                    <pre
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        margin: 0,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {result.lyrics_template}
-                    </pre>
-                  </div>
-                )}
+  <div style={outputCardStyle}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <div style={outputTitleStyle}>Lyrics Template</div>
+      <button
+        onClick={() => copyToClipboard(result.lyrics_template || '')}
+        style={copyButtonStyle}
+      >
+        Copy
+      </button>
+    </div>
+    <pre
+      style={{
+        whiteSpace: 'pre-wrap',
+        margin: 0,
+        fontFamily: 'inherit',
+      }}
+    >
+      {result.lyrics_template}
+    </pre>
+  </div>
+)}
 
                 {result.lyrics_brief && (
-                  <div style={outputCardStyle}>
-                    <div style={outputTitleStyle}>Lyrics Brief</div>
-                    <div>{result.lyrics_brief}</div>
-                  </div>
-                )}
+  <div style={outputCardStyle}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <div style={outputTitleStyle}>Lyrics Brief</div>
+      <button
+        onClick={() => copyToClipboard(result.lyrics_brief || '')}
+        style={copyButtonStyle}
+      >
+        Copy
+      </button>
+    </div>
+    <div>{result.lyrics_brief}</div>
+  </div>
+)}
               </div>
             )
           ) : (
