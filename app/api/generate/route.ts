@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
 You are a songwriting assistant that creates Suno-ready outputs.
 
 USER INPUT:
-Genre: ${body.genre}
+Genre: ${body.genre || ''}
 Mood: ${Array.isArray(body.moods) ? body.moods.join(', ') : ''}
-Theme: ${body.theme}
-Hook: ${body.hook}
+Theme: ${body.theme || ''}
+Hook: ${body.hook || ''}
 Language Style: ${body.languageStyle || 'Balanced'}
 Perspective: ${body.perspective || 'Balanced'}
 Song Focus: ${body.songFocus || 'Balanced'}
@@ -48,7 +48,7 @@ Instrumentation Bias: ${dna.instrumentation_bias.join(', ')}
 Avoid: ${dna.avoid.join(', ')}
 
 MODE:
-${lyricsOnly ? 'Rewrite lyrics only. Keep the same overall song concept and style direction, but generate fresh lyrics.' : 'Generate full output.'}
+${lyricsOnly ? 'Rewrite lyrics only. Keep the same overall concept, but generate fresh lyrics and a fresh lyric brief.' : 'Generate full output.'}
 
 Return valid JSON only with exactly these keys:
 {
@@ -65,7 +65,7 @@ Rules:
 - lyrics_full should be complete lyrics, not an outline
 - lyrics_full MUST use real line breaks (\\n) between every line
 - each lyric line must be on its own line
-- format lyrics_full like:
+- format lyrics_full like this exactly:
 
 [Verse 1]
 Line one
@@ -75,10 +75,25 @@ Line two
 Line one
 Line two
 
+[Verse 2]
+Line one
+Line two
+
+[Bridge]
+Line one
+Line two
+
+[Final Chorus]
+Line one
+Line two
+
 - include section headers like [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus]
 - keep lines short, natural, and singable
 - include the hook naturally in the chorus
-- avoid markdown code - language style should follow the selected setting:
+- avoid markdown code fences
+
+Lyric direction controls:
+- language style should follow the selected setting:
   - Conversational = plainspoken, natural, direct
   - Balanced = clear and expressive without over-stylising
   - Poetic = more lyrical and image-rich, but still singable
@@ -98,13 +113,11 @@ Line two
   - prefer clear diction and memorable phrasing
   - avoid overly dense or awkward wording
 
-
-
 ${lyricsOnly ? `
 Extra rules for lyrics-only mode:
 - keep style_short and style_detailed aligned with the same concept
 - do not radically change the concept, only refresh the lyrics
-- make the new lyrics noticeably different from a generic first pass
+- make the new lyrics noticeably different from the previous version in phrasing and detail
 ` : ''}
 `
 
