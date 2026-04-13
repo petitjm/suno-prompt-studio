@@ -1,48 +1,15 @@
-// app/auth/confirm/page.tsx
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { Suspense } from 'react'
+import ConfirmClient from './ConfirmClient'
 
 export default function AuthConfirmPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const supabase = createClient()
+  return (
+    <Suspense fallback={<ConfirmFallback />}>
+      <ConfirmClient />
+    </Suspense>
+  )
+}
 
-  const [message, setMessage] = useState('Signing you in...')
-
-  useEffect(() => {
-    const confirm = async () => {
-      try {
-        const token_hash = searchParams.get('token_hash')
-        const type = searchParams.get('type')
-
-        if (!token_hash || !type) {
-          setMessage('Missing login token. Please request a new magic link.')
-          return
-        }
-
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash,
-          type: type as 'email',
-        })
-
-        if (error) {
-          setMessage(error.message || 'Login failed. Please request a new magic link.')
-          return
-        }
-
-        router.replace('/')
-      } catch (err) {
-        console.error(err)
-        setMessage('Something went wrong while signing you in.')
-      }
-    }
-
-    confirm()
-  }, [router, searchParams, supabase])
-
+function ConfirmFallback() {
   return (
     <main
       style={{
@@ -67,7 +34,7 @@ export default function AuthConfirmPage() {
         }}
       >
         <h1 style={{ fontSize: '24px', marginBottom: '12px' }}>Signing you in</h1>
-        <p style={{ color: '#d4d4d8', margin: 0 }}>{message}</p>
+        <p style={{ color: '#d4d4d8', margin: 0 }}>Please wait...</p>
       </div>
     </main>
   )
