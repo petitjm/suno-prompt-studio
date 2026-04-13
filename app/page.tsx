@@ -1,6 +1,5 @@
 'use client'
 import { CSSProperties, Suspense, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type ResultType = {
@@ -131,8 +130,6 @@ function MagicLinkHandler({
   supabase: ReturnType<typeof createClient>
   onError: (message: string) => void
 }) {
-  const router = useRouter()
-
   useEffect(() => {
     const run = async () => {
       const params = new URLSearchParams(window.location.search)
@@ -142,6 +139,8 @@ function MagicLinkHandler({
       if (!token_hash || !type) return
 
       try {
+        onError('Completing sign-in...')
+
         const { error } = await supabase.auth.verifyOtp({
           token_hash,
           type: type as 'email',
@@ -153,22 +152,21 @@ function MagicLinkHandler({
           return
         }
 
-        router.replace('/')
+        window.location.replace(window.location.origin)
       } catch (err) {
         console.error('Magic link confirmation failed:', err)
         onError('Magic link confirmation failed.')
       }
     }
 
-    run()
-  }, [router, supabase, onError])
+    void run()
+  }, [supabase, onError])
 
   return null
 }
 
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
-  const router = useRouter()
 
   const [user, setUser] = useState<UserInfo | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -214,7 +212,7 @@ export default function Home() {
       setAuthLoading(false)
     }
 
-    loadAuth()
+    void loadAuth()
 
     const {
       data: { subscription },
@@ -328,7 +326,7 @@ export default function Home() {
     setSavedSessions([])
     setUsage(emptyUsage)
     setAuthMessage('')
-    router.replace('/')
+    window.location.replace(window.location.origin)
   }
 
   const toggleMood = (mood: string) => {
