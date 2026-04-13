@@ -1,6 +1,6 @@
 'use client'
-import { CSSProperties, useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { CSSProperties, Suspense, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type ResultType = {
@@ -124,10 +124,51 @@ const emptyUsage: UsageStats = {
   save_count: 0,
 }
 
+function MagicLinkHandler({
+  supabase,
+  onError,
+}: {
+  supabase: ReturnType<typeof createClient>
+  onError: (message: string) => void
+}) {
+  const router = useRouter()
+
+  useEffect(() => {
+    const run = async () => {
+      const params = new URLSearchParams(window.location.search)
+      const token_hash = params.get('token_hash')
+      const type = params.get('type')
+
+      if (!token_hash || !type) return
+
+      try {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: type as 'email',
+        })
+
+        if (error) {
+          console.error('Magic link confirmation failed:', error.message)
+          onError(error.message || 'Magic link confirmation failed.')
+          return
+        }
+
+        router.replace('/')
+      } catch (err) {
+        console.error('Magic link confirmation failed:', err)
+        onError('Magic link confirmation failed.')
+      }
+    }
+
+    run()
+  }, [router, supabase, onError])
+
+  return null
+}
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [user, setUser] = useState<UserInfo | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -194,38 +235,9 @@ export default function Home() {
   }, [supabase])
 
   useEffect(() => {
-    const token_hash = searchParams.get('token_hash')
-    const type = searchParams.get('type')
-
-    if (!token_hash || !type) return
-
-    const confirmMagicLink = async () => {
-      try {
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash,
-          type: type as 'email',
-        })
-
-        if (error) {
-          console.error('Magic link confirmation failed:', error.message)
-          setAuthMessage(error.message || 'Magic link confirmation failed.')
-          return
-        }
-
-        router.replace('/')
-      } catch (err) {
-        console.error('Magic link confirmation failed:', err)
-        setAuthMessage('Magic link confirmation failed.')
-      }
-    }
-
-    confirmMagicLink()
-  }, [router, searchParams, supabase])
-
-  useEffect(() => {
     if (!user) return
-    loadSessions()
-    loadUsage()
+    void loadSessions()
+    void loadUsage()
   }, [user])
 
   const loadSessions = async () => {
@@ -290,9 +302,7 @@ export default function Home() {
       }
 
       const redirectTo =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/`
-          : undefined
+        typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -317,6 +327,8 @@ export default function Home() {
     setVideoResult(null)
     setSavedSessions([])
     setUsage(emptyUsage)
+    setAuthMessage('')
+    router.replace('/')
   }
 
   const toggleMood = (mood: string) => {
@@ -534,6 +546,7 @@ export default function Home() {
 
       const data = await requestGeneration(false)
       setResult(data)
+
       if (user) await trackUsage('generate')
     } catch (err: any) {
       console.error('Request failed:', err)
@@ -578,6 +591,7 @@ export default function Home() {
 
       const rebuilt = await rebuildVideoFromSongResult(result)
       setVideoResult(rebuilt)
+
       if (user) await trackUsage('video')
     } catch (err: any) {
       console.error('Video generation failed:', err)
@@ -1104,6 +1118,13 @@ export default function Home() {
 
   return (
     <div style={pageStyle}>
+      <Suspense fallback={null}>
+        <MagicLinkHandler
+          supabase={supabase}
+          onError={(message) => setAuthMessage(message)}
+        />
+      </Suspense>
+
       <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
       <p style={subHeaderStyle}>
         Build Suno-ready style prompts, full lyrics, OpenArt-ready video prompts, and private cloud-synced sessions.
