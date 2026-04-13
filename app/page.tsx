@@ -1,5 +1,6 @@
 'use client'
 import { CSSProperties, useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type ResultType = {
@@ -125,6 +126,8 @@ const emptyUsage: UsageStats = {
 
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
+    const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [user, setUser] = useState<UserInfo | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -152,6 +155,35 @@ export default function Home() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
   const [usage, setUsage] = useState<UsageStats>(emptyUsage)
+
+    useEffect(() => {
+    const token_hash = searchParams.get('token_hash')
+    const type = searchParams.get('type')
+
+    if (!token_hash || !type) return
+
+    const confirmMagicLink = async () => {
+      try {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: type as 'email',
+        })
+
+        if (error) {
+          console.error('Magic link confirmation failed:', error.message)
+          setAuthMessage(error.message || 'Magic link confirmation failed.')
+          return
+        }
+
+        router.replace('/')
+      } catch (err) {
+        console.error('Magic link confirmation failed:', err)
+        setAuthMessage('Magic link confirmation failed.')
+      }
+    }
+
+    confirmMagicLink()
+  }, [router, searchParams, supabase])
 
   useEffect(() => {
     const loadAuth = async () => {
@@ -257,10 +289,10 @@ export default function Home() {
         return
       }
 
-      const redirectTo =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/callback`
-          : undefined
+          const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/`
+        : undefined
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
