@@ -626,6 +626,16 @@ export default function Home() {
     }
   }
 
+    const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text || '')
+      alert('Copied!')
+    } catch (err) {
+      console.error('Copy failed', err)
+    }
+  }
+
+
   const buildExportText = () => {
     const lines: string[] = []
 
