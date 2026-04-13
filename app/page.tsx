@@ -1,5 +1,5 @@
 'use client'
-import { CSSProperties, Suspense, useEffect, useMemo, useState } from 'react'
+import { CSSProperties, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type ResultType = {
@@ -121,48 +121,6 @@ const emptyUsage: UsageStats = {
   rewrite_count: 0,
   video_count: 0,
   save_count: 0,
-}
-
-function MagicLinkHandler({
-  supabase,
-  onError,
-}: {
-  supabase: ReturnType<typeof createClient>
-  onError: (message: string) => void
-}) {
-  useEffect(() => {
-    const run = async () => {
-      const params = new URLSearchParams(window.location.search)
-      const token_hash = params.get('token_hash')
-      const type = params.get('type')
-
-      if (!token_hash || !type) return
-
-      try {
-        onError('Completing sign-in...')
-
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash,
-          type: type as 'email',
-        })
-
-        if (error) {
-          console.error('Magic link confirmation failed:', error.message)
-          onError(error.message || 'Magic link confirmation failed.')
-          return
-        }
-
-        window.location.replace(window.location.origin)
-      } catch (err) {
-        console.error('Magic link confirmation failed:', err)
-        onError('Magic link confirmation failed.')
-      }
-    }
-
-    void run()
-  }, [supabase, onError])
-
-  return null
 }
 
 export default function Home() {
@@ -300,7 +258,9 @@ export default function Home() {
       }
 
       const redirectTo =
-        typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/confirm`
+          : undefined
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -1116,13 +1076,6 @@ export default function Home() {
 
   return (
     <div style={pageStyle}>
-      <Suspense fallback={null}>
-        <MagicLinkHandler
-          supabase={supabase}
-          onError={(message) => setAuthMessage(message)}
-        />
-      </Suspense>
-
       <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
       <p style={subHeaderStyle}>
         Build Suno-ready style prompts, full lyrics, OpenArt-ready video prompts, and private cloud-synced sessions.
