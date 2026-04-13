@@ -1,5 +1,5 @@
 'use client'
-import { CSSProperties, useState } from 'react'
+import { CSSProperties, useEffect, useState } from 'react'
 
 type ResultType = {
   dna_id?: string
@@ -41,6 +41,30 @@ type VideoResponse = VideoVersion & {
   error?: string
 }
 
+type FormState = {
+  genre: string
+  moods: string[]
+  theme: string
+  hook: string
+  dnaId: string
+  languageStyle: string
+  perspective: string
+  songFocus: string
+  liveFriendly: boolean
+  multiVersion: boolean
+}
+
+type SavedSession = {
+  id: string
+  title: string
+  createdAt: string
+  form: FormState
+  result: GenerateResponse | null
+  videoResult: VideoResponse | null
+}
+
+const STORAGE_KEY = 'suno-prompt-studio-sessions'
+
 const dnaOptions = [
   { id: 'mpj-master', label: 'MPJ Master' },
   { id: 'commercial-hit', label: 'Commercial Hit' },
@@ -67,19 +91,21 @@ const moodOptions = [
   'Warm',
 ]
 
+const defaultForm: FormState = {
+  genre: '',
+  moods: [],
+  theme: '',
+  hook: '',
+  dnaId: 'mpj-master',
+  languageStyle: 'Balanced',
+  perspective: 'Balanced',
+  songFocus: 'Balanced',
+  liveFriendly: true,
+  multiVersion: false,
+}
+
 export default function Home() {
-  const [form, setForm] = useState({
-    genre: '',
-    moods: [] as string[],
-    theme: '',
-    hook: '',
-    dnaId: 'mpj-master',
-    languageStyle: 'Balanced',
-    perspective: 'Balanced',
-    songFocus: 'Balanced',
-    liveFriendly: true,
-    multiVersion: false,
-  })
+  const [form, setForm] = useState<FormState>(defaultForm)
 
   const [result, setResult] = useState<GenerateResponse | null>(null)
   const [videoResult, setVideoResult] = useState<VideoResponse | null>(null)
@@ -94,6 +120,25 @@ export default function Home() {
 
   const [hookIdeas, setHookIdeas] = useState<string[]>([])
   const [hookLoading, setHookLoading] = useState(false)
+
+  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([])
+  const [sessionTitle, setSessionTitle] = useState('')
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as SavedSession[]
+      setSavedSessions(Array.isArray(parsed) ? parsed : [])
+    } catch (err) {
+      console.error('Failed to load saved sessions', err)
+    }
+  }, [])
+
+  const persistSessions = (sessions: SavedSession[]) => {
+    setSavedSessions(sessions)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions))
+  }
 
   const toggleMood = (mood: string) => {
     setForm((prev) => ({
@@ -502,6 +547,42 @@ export default function Home() {
     URL.revokeObjectURL(url)
   }
 
+  const handleSaveSession = () => {
+    const title =
+      sessionTitle.trim() ||
+      form.theme.trim() ||
+      form.hook.trim() ||
+      `Session ${new Date().toLocaleString()}`
+
+    const newSession: SavedSession = {
+      id: crypto.randomUUID(),
+      title,
+      createdAt: new Date().toISOString(),
+      form,
+      result,
+      videoResult,
+    }
+
+    const updated = [newSession, ...savedSessions]
+    persistSessions(updated)
+    setSessionTitle('')
+    alert('Session saved')
+  }
+
+  const handleLoadSession = (session: SavedSession) => {
+    setForm(session.form)
+    setResult(session.result)
+    setVideoResult(session.videoResult)
+    setThemeIdeas([])
+    setRefinedTheme('')
+    setHookIdeas([])
+  }
+
+  const handleDeleteSession = (id: string) => {
+    const updated = savedSessions.filter((session) => session.id !== id)
+    persistSessions(updated)
+  }
+
   const pageStyle: CSSProperties = {
     minHeight: '100vh',
     backgroundColor: '#18181b',
@@ -670,6 +751,13 @@ export default function Home() {
     backgroundColor: '#450a0a66',
     borderRadius: '14px',
     padding: '16px',
+  }
+
+  const sessionCardStyle: CSSProperties = {
+    backgroundColor: '#2f2f35',
+    borderRadius: '12px',
+    padding: '12px',
+    marginBottom: '10px',
   }
 
   const responsiveStyle =
@@ -1081,6 +1169,54 @@ export default function Home() {
             <div style={helperStyle}>
               Multi-Version generates MPJ Master, Commercial Hit, and Raw Folk side by side.
             </div>
+          </div>
+
+          <div style={sectionStyle}>
+            <label style={labelStyle}>Saved Sessions</label>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <input
+                placeholder="Optional session title"
+                style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
+                value={sessionTitle}
+                onChange={(e) => setSessionTitle(e.target.value)}
+              />
+              <button
+                onClick={handleSaveSession}
+                style={{ ...secondaryActionButtonStyle, minWidth: '160px' }}
+              >
+                Save Session
+              </button>
+            </div>
+
+            {savedSessions.length > 0 ? (
+              <div>
+                {savedSessions.map((session) => (
+                  <div key={session.id} style={sessionCardStyle}>
+                    <div style={{ fontWeight: 700, marginBottom: '6px' }}>{session.title}</div>
+                    <div style={{ ...helperStyle, marginTop: 0, marginBottom: '10px' }}>
+                      {new Date(session.createdAt).toLocaleString()}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => handleLoadSession(session)}
+                        style={secondaryActionButtonStyle}
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSession(session.id)}
+                        style={secondaryActionButtonStyle}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={helperStyle}>No saved sessions yet.</div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
