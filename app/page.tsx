@@ -1,5 +1,6 @@
 'use client'
-import { CSSProperties, useEffect, useState } from 'react'
+import { CSSProperties, useEffect, useMemo, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 type ResultType = {
   dna_id?: string
@@ -56,14 +57,25 @@ type FormState = {
 
 type SavedSession = {
   id: string
+  user_id?: string
   title: string
-  createdAt: string
+  created_at?: string
   form: FormState
   result: GenerateResponse | null
-  videoResult: VideoResponse | null
+  video_result: VideoResponse | null
 }
 
-const STORAGE_KEY = 'suno-prompt-studio-sessions'
+type UsageStats = {
+  generate_count: number
+  rewrite_count: number
+  video_count: number
+  save_count: number
+}
+
+type UserInfo = {
+  id: string
+  email: string | null
+}
 
 const dnaOptions = [
   { id: 'mpj-master', label: 'MPJ Master' },
@@ -104,7 +116,21 @@ const defaultForm: FormState = {
   multiVersion: false,
 }
 
+const emptyUsage: UsageStats = {
+  generate_count: 0,
+  rewrite_count: 0,
+  video_count: 0,
+  save_count: 0,
+}
+
 export default function Home() {
+  const supabase = useMemo(() => createClient(), [])
+
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [emailInput, setEmailInput] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
+
   const [form, setForm] = useState<FormState>(defaultForm)
 
   const [result, setResult] = useState<GenerateResponse | null>(null)
@@ -123,21 +149,142 @@ export default function Home() {
 
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([])
   const [sessionTitle, setSessionTitle] = useState('')
+  const [sessionsLoading, setSessionsLoading] = useState(false)
+
+  const [usage, setUsage] = useState<UsageStats>(emptyUsage)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as SavedSession[]
-      setSavedSessions(Array.isArray(parsed) ? parsed : [])
-    } catch (err) {
-      console.error('Failed to load saved sessions', err)
-    }
-  }, [])
+    const loadAuth = async () => {
+      setAuthLoading(true)
+      const { data, error } = await supabase.auth.getUser()
 
-  const persistSessions = (sessions: SavedSession[]) => {
-    setSavedSessions(sessions)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions))
+      if (!error && data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email ?? null,
+        })
+      } else {
+        setUser(null)
+      }
+
+      setAuthLoading(false)
+    }
+
+    loadAuth()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? null,
+        })
+      } else {
+        setUser(null)
+        setSavedSessions([])
+        setUsage(emptyUsage)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
+
+  useEffect(() => {
+    if (!user) return
+    loadSessions()
+    loadUsage()
+  }, [user])
+
+  const loadSessions = async () => {
+    try {
+      setSessionsLoading(true)
+      const res = await fetch('/api/sessions')
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load sessions')
+      }
+
+      setSavedSessions(Array.isArray(data.sessions) ? data.sessions : [])
+    } catch (err) {
+      console.error('Failed to load sessions', err)
+    } finally {
+      setSessionsLoading(false)
+    }
+  }
+
+  const loadUsage = async () => {
+    try {
+      const res = await fetch('/api/usage')
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load usage')
+      }
+
+      setUsage({
+        generate_count: data.generate_count ?? 0,
+        rewrite_count: data.rewrite_count ?? 0,
+        video_count: data.video_count ?? 0,
+        save_count: data.save_count ?? 0,
+      })
+    } catch (err) {
+      console.error('Failed to load usage', err)
+    }
+  }
+
+  const trackUsage = async (eventType: 'generate' | 'rewrite' | 'video' | 'save') => {
+    try {
+      await fetch('/api/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType }),
+      })
+      await loadUsage()
+    } catch (err) {
+      console.error('Failed to track usage', err)
+    }
+  }
+
+  const signInWithMagicLink = async () => {
+    try {
+      setAuthMessage('')
+
+      const email = emailInput.trim()
+      if (!email) {
+        setAuthMessage('Enter your email first.')
+        return
+      }
+
+      const redirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback`
+          : undefined
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirectTo },
+      })
+
+      if (error) {
+        setAuthMessage(error.message)
+        return
+      }
+
+      setAuthMessage('Magic link sent. Check your email.')
+    } catch (err) {
+      console.error(err)
+      setAuthMessage('Sign-in failed.')
+    }
+  }
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setResult(null)
+    setVideoResult(null)
+    setSavedSessions([])
+    setUsage(emptyUsage)
   }
 
   const toggleMood = (mood: string) => {
@@ -355,6 +502,7 @@ export default function Home() {
 
       const data = await requestGeneration(false)
       setResult(data)
+      if (user) await trackUsage('generate')
     } catch (err: any) {
       console.error('Request failed:', err)
       setResult({ error: err.message || 'Request failed' })
@@ -374,6 +522,8 @@ export default function Home() {
         const refreshedVideo = await rebuildVideoFromSongResult(data)
         setVideoResult(refreshedVideo)
       }
+
+      if (user) await trackUsage('rewrite')
     } catch (err: any) {
       console.error('Lyrics rewrite failed:', err)
       setResult((prev) => ({
@@ -396,6 +546,7 @@ export default function Home() {
 
       const rebuilt = await rebuildVideoFromSongResult(result)
       setVideoResult(rebuilt)
+      if (user) await trackUsage('video')
     } catch (err: any) {
       console.error('Video generation failed:', err)
       setVideoResult({ error: err.message || 'Video generation failed' })
@@ -404,12 +555,74 @@ export default function Home() {
     }
   }
 
-  const copyToClipboard = async (text: string) => {
+  const handleSaveSession = async () => {
     try {
-      await navigator.clipboard.writeText(text || '')
-      alert('Copied!')
+      if (!user) {
+        alert('Sign in first to save private sessions.')
+        return
+      }
+
+      const title =
+        sessionTitle.trim() ||
+        form.theme.trim() ||
+        form.hook.trim() ||
+        `Session ${new Date().toLocaleString()}`
+
+      const newSession = {
+        id: crypto.randomUUID(),
+        title,
+        form,
+        result,
+        videoResult,
+      }
+
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSession),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save session')
+      }
+
+      setSavedSessions((prev) => [data, ...prev])
+      setSessionTitle('')
+      await trackUsage('save')
+      alert('Session saved to cloud')
     } catch (err) {
-      console.error('Copy failed', err)
+      console.error('Failed to save session', err)
+      alert('Failed to save session')
+    }
+  }
+
+  const handleLoadSession = (session: SavedSession) => {
+    setForm(session.form)
+    setResult(session.result)
+    setVideoResult(session.video_result)
+    setThemeIdeas([])
+    setRefinedTheme('')
+    setHookIdeas([])
+  }
+
+  const handleDeleteSession = async (id: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'DELETE',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete session')
+      }
+
+      setSavedSessions((prev) => prev.filter((session) => session.id !== id))
+    } catch (err) {
+      console.error('Failed to delete session', err)
+      alert('Failed to delete session')
     }
   }
 
@@ -545,42 +758,6 @@ export default function Home() {
     document.body.removeChild(a)
 
     URL.revokeObjectURL(url)
-  }
-
-  const handleSaveSession = () => {
-    const title =
-      sessionTitle.trim() ||
-      form.theme.trim() ||
-      form.hook.trim() ||
-      `Session ${new Date().toLocaleString()}`
-
-    const newSession: SavedSession = {
-      id: crypto.randomUUID(),
-      title,
-      createdAt: new Date().toISOString(),
-      form,
-      result,
-      videoResult,
-    }
-
-    const updated = [newSession, ...savedSessions]
-    persistSessions(updated)
-    setSessionTitle('')
-    alert('Session saved')
-  }
-
-  const handleLoadSession = (session: SavedSession) => {
-    setForm(session.form)
-    setResult(session.result)
-    setVideoResult(session.videoResult)
-    setThemeIdeas([])
-    setRefinedTheme('')
-    setHookIdeas([])
-  }
-
-  const handleDeleteSession = (id: string) => {
-    const updated = savedSessions.filter((session) => session.id !== id)
-    persistSessions(updated)
   }
 
   const pageStyle: CSSProperties = {
@@ -888,11 +1065,54 @@ export default function Home() {
     <div style={pageStyle}>
       <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
       <p style={subHeaderStyle}>
-        Build Suno-ready style prompts, full lyrics, and OpenArt-ready video prompts using your creative DNA.
+        Build Suno-ready style prompts, full lyrics, OpenArt-ready video prompts, and private cloud-synced sessions.
       </p>
 
       <div style={{ ...layoutStyle, ...responsiveStyle }}>
         <div style={panelStyle}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
+            Account & Usage
+          </h2>
+
+          {authLoading ? (
+            <div style={helperStyle}>Checking sign-in status...</div>
+          ) : user ? (
+            <div style={sectionStyle}>
+              <div style={{ marginBottom: '8px' }}>
+                Signed in as <strong>{user.email || 'User'}</strong>
+              </div>
+              <button onClick={signOut} style={secondaryActionButtonStyle}>
+                Sign Out
+              </button>
+
+              <div style={{ marginTop: '16px' }}>
+                <div style={labelStyle}>Usage Tracking</div>
+                <div style={sessionCardStyle}>Generate count: {usage.generate_count}</div>
+                <div style={sessionCardStyle}>Rewrite count: {usage.rewrite_count}</div>
+                <div style={sessionCardStyle}>OpenArt count: {usage.video_count}</div>
+                <div style={sessionCardStyle}>Save count: {usage.save_count}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={sectionStyle}>
+              <div style={helperStyle}>
+                Sign in with a magic link to unlock private cloud-synced sessions.
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                <input
+                  placeholder="Your email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
+                />
+                <button onClick={signInWithMagicLink} style={actionButtonStyle}>
+                  Send Magic Link
+                </button>
+              </div>
+              {authMessage && <div style={helperStyle}>{authMessage}</div>}
+            </div>
+          )}
+
           <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
             Song Idea
           </h2>
@@ -1172,7 +1392,7 @@ export default function Home() {
           </div>
 
           <div style={sectionStyle}>
-            <label style={labelStyle}>Saved Sessions</label>
+            <label style={labelStyle}>Private Cloud Sessions</label>
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
               <input
@@ -1189,13 +1409,17 @@ export default function Home() {
               </button>
             </div>
 
-            {savedSessions.length > 0 ? (
+            {!user ? (
+              <div style={helperStyle}>Sign in to use private saved sessions.</div>
+            ) : sessionsLoading ? (
+              <div style={helperStyle}>Loading sessions...</div>
+            ) : savedSessions.length > 0 ? (
               <div>
                 {savedSessions.map((session) => (
                   <div key={session.id} style={sessionCardStyle}>
                     <div style={{ fontWeight: 700, marginBottom: '6px' }}>{session.title}</div>
                     <div style={{ ...helperStyle, marginTop: 0, marginBottom: '10px' }}>
-                      {new Date(session.createdAt).toLocaleString()}
+                      {session.created_at ? new Date(session.created_at).toLocaleString() : ''}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button
