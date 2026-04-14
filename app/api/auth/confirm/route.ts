@@ -5,18 +5,14 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  const origin = new URL(request.url).origin
+  const origin = request.nextUrl.origin
 
   try {
-    const { searchParams } = new URL(request.url)
-
-    const token_hash = searchParams.get('token_hash')
-    const type = searchParams.get('type') as EmailOtpType | null
+    const token_hash = request.nextUrl.searchParams.get('token_hash')
+    const type = request.nextUrl.searchParams.get('type') as EmailOtpType | null
 
     if (!token_hash || !type) {
-      return NextResponse.redirect(
-        `${origin}/?auth_debug=missing_params`
-      )
+      return NextResponse.redirect(`${origin}/?auth_debug=missing_params`)
     }
 
     const supabase = await createClient()
@@ -32,9 +28,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.redirect(
-      `${origin}/?auth_debug=success`
-    )
+    return NextResponse.redirect(`${origin}/?auth_debug=success`)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown_error'
 
