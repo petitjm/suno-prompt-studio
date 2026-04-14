@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams, origin } = new URL(request.url)
+    const { searchParams } = new URL(request.url)
 
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
           ok: false,
           stage: 'verifyOtp',
           message: error.message,
-          code: error.code ?? null,
-          status: error.status ?? null,
+          code: (error as any).code ?? null,
+          status: (error as any).status ?? null,
         }),
         {
           status: 400,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.redirect(new URL('/?auth_debug=success', origin))
+    return NextResponse.redirect(new URL('/?auth_debug=success', request.url))
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown_error'
 
