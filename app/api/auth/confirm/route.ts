@@ -12,33 +12,58 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as EmailOtpType | null
 
     if (!token_hash || !type) {
-      return NextResponse.redirect(new URL('/?auth_debug=missing_params', origin))
+      return new NextResponse(
+        JSON.stringify({
+          ok: false,
+          stage: 'params',
+          message: 'Missing token_hash or type',
+          token_hash,
+          type,
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
     }
 
     const supabase = await createClient()
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
     })
 
     if (error) {
-      return NextResponse.redirect(
-        new URL(
-          `/?auth_debug=verify_failed&message=${encodeURIComponent(error.message)}`,
-          origin
-        )
+      return new NextResponse(
+        JSON.stringify({
+          ok: false,
+          stage: 'verifyOtp',
+          message: error.message,
+          code: error.code ?? null,
+          status: error.status ?? null,
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
       )
     }
 
     return NextResponse.redirect(new URL('/?auth_debug=success', origin))
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown_error'
-    return NextResponse.redirect(
-      new URL(
-        `/?auth_debug=route_exception&message=${encodeURIComponent(message)}`,
-        new URL(request.url).origin
-      )
+
+    return new NextResponse(
+      JSON.stringify({
+        ok: false,
+        stage: 'exception',
+        message,
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
     )
   }
 }
