@@ -259,7 +259,7 @@ export default function Home() {
 
       const redirectTo =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/confirm`
+          ? `${window.location.origin}/api/auth/confirm`
           : undefined
 
       const { error } = await supabase.auth.signInWithOtp({
