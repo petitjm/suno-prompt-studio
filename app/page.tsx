@@ -1,5 +1,5 @@
 'use client'
-import { CSSProperties, useEffect, useMemo, useState } from 'react'
+import React, { CSSProperties, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type ResultType = {
@@ -159,6 +159,14 @@ export default function Home() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('created_at')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [columnWidths, setColumnWidths] = useState({
+    title: 220,
+    genre: 140,
+    theme: 260,
+    hook: 220,
+    created_at: 190,
+    actions: 150,
+  })
 
   const [usage, setUsage] = useState<UsageStats>(emptyUsage)
 
@@ -292,6 +300,34 @@ export default function Home() {
   const sortIndicator = (key: SortKey) => {
     if (sortKey !== key) return ' ↕'
     return sortDirection === 'asc' ? ' ↑' : ' ↓'
+  }
+
+  const startColumnResize = (
+    key: keyof typeof columnWidths,
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    event.preventDefault()
+
+    const startX = event.clientX
+    const startWidth = columnWidths[key]
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX
+      const nextWidth = Math.max(100, startWidth + delta)
+
+      setColumnWidths((prev) => ({
+        ...prev,
+        [key]: nextWidth,
+      }))
+    }
+
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
   }
 
   const loadSessions = async () => {
@@ -1082,12 +1118,14 @@ export default function Home() {
     overflowX: 'auto',
     border: '1px solid #3f3f46',
     borderRadius: '12px',
+    marginBottom: '24px',
   }
 
   const tableStyle: CSSProperties = {
     width: '100%',
     borderCollapse: 'collapse',
     backgroundColor: '#2f2f35',
+    tableLayout: 'fixed',
   }
 
   const thStyle: CSSProperties = {
@@ -1099,12 +1137,28 @@ export default function Home() {
     cursor: 'pointer',
     userSelect: 'none',
     whiteSpace: 'nowrap',
+    position: 'relative',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   }
 
   const tdStyle: CSSProperties = {
     padding: '12px',
     borderBottom: '1px solid #3f3f46',
     verticalAlign: 'top',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  }
+
+  const resizeHandleStyle: CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '8px',
+    height: '100%',
+    cursor: 'col-resize',
+    userSelect: 'none',
   }
 
   const responsiveStyle =
@@ -1237,6 +1291,171 @@ export default function Home() {
       <p style={subHeaderStyle}>
         Build Suno-ready style prompts, full lyrics, OpenArt-ready video prompts, and private cloud-synced sessions.
       </p>
+
+      <div style={sectionStyle}>
+        <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
+          Private Cloud Sessions
+        </h2>
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <input
+            placeholder="Optional session title"
+            style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
+            value={sessionTitle}
+            onChange={(e) => setSessionTitle(e.target.value)}
+          />
+          <button
+            onClick={handleSaveSession}
+            style={{ ...secondaryActionButtonStyle, minWidth: '160px' }}
+          >
+            Save Session
+          </button>
+        </div>
+
+        {!user ? (
+          <div style={helperStyle}>Sign in to use private saved sessions.</div>
+        ) : sessionsLoading ? (
+          <div style={helperStyle}>Loading sessions...</div>
+        ) : (
+          <>
+            <input
+              placeholder="Search saved sessions..."
+              style={{ ...inputStyle, marginBottom: '12px' }}
+              value={sessionSearch}
+              onChange={(e) => setSessionSearch(e.target.value)}
+            />
+
+            {sortedSessions.length > 0 ? (
+              <div style={tableWrapStyle}>
+                <table style={tableStyle}>
+                  <colgroup>
+                    <col style={{ width: columnWidths.title }} />
+                    <col style={{ width: columnWidths.genre }} />
+                    <col style={{ width: columnWidths.theme }} />
+                    <col style={{ width: columnWidths.hook }} />
+                    <col style={{ width: columnWidths.created_at }} />
+                    <col style={{ width: columnWidths.actions }} />
+                  </colgroup>
+
+                  <thead>
+                    <tr>
+                      <th style={thStyle} onClick={() => toggleSort('title')}>
+                        <span>Title{sortIndicator('title')}</span>
+                        <div
+                          style={resizeHandleStyle}
+                          onMouseDown={(e) => startColumnResize('title', e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </th>
+
+                      <th style={thStyle} onClick={() => toggleSort('genre')}>
+                        <span>Genre{sortIndicator('genre')}</span>
+                        <div
+                          style={resizeHandleStyle}
+                          onMouseDown={(e) => startColumnResize('genre', e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </th>
+
+                      <th style={thStyle} onClick={() => toggleSort('theme')}>
+                        <span>Theme{sortIndicator('theme')}</span>
+                        <div
+                          style={resizeHandleStyle}
+                          onMouseDown={(e) => startColumnResize('theme', e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </th>
+
+                      <th style={{ ...thStyle, cursor: 'default' }}>
+                        <span>Hook</span>
+                        <div
+                          style={resizeHandleStyle}
+                          onMouseDown={(e) => startColumnResize('hook', e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </th>
+
+                      <th style={thStyle} onClick={() => toggleSort('created_at')}>
+                        <span>Created{sortIndicator('created_at')}</span>
+                        <div
+                          style={resizeHandleStyle}
+                          onMouseDown={(e) => startColumnResize('created_at', e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </th>
+
+                      <th
+                        style={{
+                          ...thStyle,
+                          cursor: 'default',
+                        }}
+                      >
+                        <span>Actions</span>
+                        <div
+                          style={resizeHandleStyle}
+                          onMouseDown={(e) => startColumnResize('actions', e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {sortedSessions.map((session) => (
+                      <tr key={session.id}>
+                        <td style={tdStyle} title={session.title}>
+                          {session.title}
+                        </td>
+
+                        <td style={tdStyle} title={session.form?.genre || ''}>
+                          {session.form?.genre || '—'}
+                        </td>
+
+                        <td style={tdStyle} title={session.form?.theme || ''}>
+                          {session.form?.theme || '—'}
+                        </td>
+
+                        <td style={tdStyle} title={session.form?.hook || ''}>
+                          {session.form?.hook || '—'}
+                        </td>
+
+                        <td style={tdStyle} title={session.created_at || ''}>
+                          {session.created_at
+                            ? new Date(session.created_at).toLocaleString()
+                            : '—'}
+                        </td>
+
+                        <td style={tdStyle}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap' }}>
+                            <button
+                              onClick={() => handleLoadSession(session)}
+                              style={secondaryActionButtonStyle}
+                            >
+                              Load
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSession(session.id)}
+                              style={secondaryActionButtonStyle}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={helperStyle}>
+                {savedSessions.length > 0
+                  ? 'No sessions match your search.'
+                  : 'No saved sessions yet.'}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       <div style={{ ...layoutStyle, ...responsiveStyle }}>
         <div style={panelStyle}>
@@ -1589,125 +1808,6 @@ export default function Home() {
             <div style={helperStyle}>
               Multi-Version generates MPJ Master, Commercial Hit, and Raw Folk side by side.
             </div>
-          </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Private Cloud Sessions</label>
-
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-              <input
-                placeholder="Optional session title"
-                style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
-                value={sessionTitle}
-                onChange={(e) => setSessionTitle(e.target.value)}
-              />
-              <button
-                onClick={handleSaveSession}
-                style={{ ...secondaryActionButtonStyle, minWidth: '160px' }}
-              >
-                Save Session
-              </button>
-            </div>
-
-            {!user ? (
-              <div style={helperStyle}>Sign in to use private saved sessions.</div>
-            ) : sessionsLoading ? (
-              <div style={helperStyle}>Loading sessions...</div>
-            ) : (
-              <>
-                <input
-                  placeholder="Search saved sessions..."
-                  style={{ ...inputStyle, marginBottom: '12px' }}
-                  value={sessionSearch}
-                  onChange={(e) => setSessionSearch(e.target.value)}
-                />
-
-                {sortedSessions.length > 0 ? (
-                  <div style={tableWrapStyle}>
-                    <table style={tableStyle}>
-                      <thead>
-                        <tr>
-                          <th style={thStyle} onClick={() => toggleSort('title')}>
-                            Title{sortIndicator('title')}
-                          </th>
-                          <th style={thStyle} onClick={() => toggleSort('genre')}>
-                            Genre{sortIndicator('genre')}
-                          </th>
-                          <th style={thStyle} onClick={() => toggleSort('theme')}>
-                            Theme{sortIndicator('theme')}
-                          </th>
-                          <th style={thStyle} onClick={() => toggleSort('created_at')}>
-                            Created{sortIndicator('created_at')}
-                          </th>
-                          <th
-                            style={{
-                              ...thStyle,
-                              cursor: 'default',
-                            }}
-                          >
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedSessions.map((session) => (
-                          <tr key={session.id}>
-                            <td style={tdStyle}>
-                              <div style={{ fontWeight: 700 }}>{session.title}</div>
-                              {session.form?.hook ? (
-                                <div style={{ color: '#a1a1aa', fontSize: '13px', marginTop: '4px' }}>
-                                  Hook: {session.form.hook}
-                                </div>
-                              ) : null}
-                            </td>
-                            <td style={tdStyle}>{session.form?.genre || '—'}</td>
-                            <td style={{ ...tdStyle, maxWidth: '260px' }}>
-                              <div
-                                style={{
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
-                                title={session.form?.theme || ''}
-                              >
-                                {session.form?.theme || '—'}
-                              </div>
-                            </td>
-                            <td style={tdStyle}>
-                              {session.created_at
-                                ? new Date(session.created_at).toLocaleString()
-                                : '—'}
-                            </td>
-                            <td style={tdStyle}>
-                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                <button
-                                  onClick={() => handleLoadSession(session)}
-                                  style={secondaryActionButtonStyle}
-                                >
-                                  Load
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteSession(session.id)}
-                                  style={secondaryActionButtonStyle}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div style={helperStyle}>
-                    {savedSessions.length > 0
-                      ? 'No sessions match your search.'
-                      : 'No saved sessions yet.'}
-                  </div>
-                )}
-              </>
-            )}
           </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
