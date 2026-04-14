@@ -154,20 +154,33 @@ export default function Home() {
   const [usage, setUsage] = useState<UsageStats>(emptyUsage)
 
   useEffect(() => {
+    let mounted = true
+
     const loadAuth = async () => {
-      setAuthLoading(true)
-      const { data, error } = await supabase.auth.getUser()
+      try {
+        setAuthLoading(true)
 
-      if (!error && data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email ?? null,
-        })
-      } else {
-        setUser(null)
+        const { data, error } = await supabase.auth.getSession()
+
+        if (!mounted) return
+
+        if (error) {
+          console.error('getSession error:', error)
+          setUser(null)
+        } else if (data.session?.user) {
+          setUser({
+            id: data.session.user.id,
+            email: data.session.user.email ?? null,
+          })
+        } else {
+          setUser(null)
+        }
+      } catch (err) {
+        console.error('loadAuth failed:', err)
+        if (mounted) setUser(null)
+      } finally {
+        if (mounted) setAuthLoading(false)
       }
-
-      setAuthLoading(false)
     }
 
     void loadAuth()
@@ -185,10 +198,23 @@ export default function Home() {
         setSavedSessions([])
         setUsage(emptyUsage)
       }
+
+      setAuthLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [supabase])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthLoading(false)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (!user) return
