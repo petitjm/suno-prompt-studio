@@ -129,7 +129,10 @@ export default function Home() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [emailInput, setEmailInput] = useState('')
+  const [otpInput, setOtpInput] = useState('')
   const [authMessage, setAuthMessage] = useState('')
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
 
   const [form, setForm] = useState<FormState>(defaultForm)
 
@@ -273,8 +276,9 @@ export default function Home() {
     }
   }
 
-  const signInWithMagicLink = async () => {
+  const sendCode = async () => {
     try {
+      setSendingCode(true)
       setAuthMessage('')
 
       const email = emailInput.trim()
@@ -283,14 +287,8 @@ export default function Home() {
         return
       }
 
-      const redirectTo =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/api/auth/confirm`
-          : undefined
-
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: redirectTo },
       })
 
       if (error) {
@@ -298,10 +296,51 @@ export default function Home() {
         return
       }
 
-      setAuthMessage('Magic link sent. Check your email.')
+      setAuthMessage('Code sent. Check your email.')
     } catch (err) {
       console.error(err)
-      setAuthMessage('Sign-in failed.')
+      setAuthMessage('Failed to send code.')
+    } finally {
+      setSendingCode(false)
+    }
+  }
+
+  const verifyCode = async () => {
+    try {
+      setVerifyingCode(true)
+      setAuthMessage('')
+
+      const email = emailInput.trim()
+      const token = otpInput.trim()
+
+      if (!email) {
+        setAuthMessage('Enter your email first.')
+        return
+      }
+
+      if (!token) {
+        setAuthMessage('Enter the code from your email.')
+        return
+      }
+
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
+      })
+
+      if (error) {
+        setAuthMessage(error.message)
+        return
+      }
+
+      setAuthMessage('Signed in successfully.')
+      setOtpInput('')
+    } catch (err) {
+      console.error(err)
+      setAuthMessage('Failed to verify code.')
+    } finally {
+      setVerifyingCode(false)
     }
   }
 
@@ -312,6 +351,7 @@ export default function Home() {
     setSavedSessions([])
     setUsage(emptyUsage)
     setAuthMessage('')
+    setOtpInput('')
     window.location.replace(window.location.origin)
   }
 
@@ -1135,8 +1175,9 @@ export default function Home() {
           ) : (
             <div style={sectionStyle}>
               <div style={helperStyle}>
-                Sign in with a magic link to unlock private cloud-synced sessions.
+                Sign in with an email code to unlock private cloud-synced sessions.
               </div>
+
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                 <input
                   placeholder="Your email"
@@ -1144,10 +1185,39 @@ export default function Home() {
                   onChange={(e) => setEmailInput(e.target.value)}
                   style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
                 />
-                <button onClick={signInWithMagicLink} style={actionButtonStyle}>
-                  Send Magic Link
+                <button
+                  onClick={sendCode}
+                  disabled={sendingCode}
+                  style={{
+                    ...actionButtonStyle,
+                    opacity: sendingCode ? 0.6 : 1,
+                    cursor: sendingCode ? 'default' : 'pointer',
+                  }}
+                >
+                  {sendingCode ? 'Sending...' : 'Send Code'}
                 </button>
               </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                <input
+                  placeholder="Enter 6-digit code"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
+                />
+                <button
+                  onClick={verifyCode}
+                  disabled={verifyingCode}
+                  style={{
+                    ...secondaryActionButtonStyle,
+                    opacity: verifyingCode ? 0.6 : 1,
+                    cursor: verifyingCode ? 'default' : 'pointer',
+                  }}
+                >
+                  {verifyingCode ? 'Verifying...' : 'Verify Code'}
+                </button>
+              </div>
+
               {authMessage && <div style={helperStyle}>{authMessage}</div>}
             </div>
           )}
