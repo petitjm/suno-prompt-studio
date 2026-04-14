@@ -152,6 +152,7 @@ export default function Home() {
 
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([])
   const [sessionTitle, setSessionTitle] = useState('')
+  const [sessionSearch, setSessionSearch] = useState('')
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
   const [usage, setUsage] = useState<UsageStats>(emptyUsage)
@@ -224,6 +225,23 @@ export default function Home() {
     void loadSessions()
     void loadUsage()
   }, [user])
+
+  const filteredSessions = savedSessions.filter((session) => {
+    const search = sessionSearch.trim().toLowerCase()
+    if (!search) return true
+
+    const title = session.title?.toLowerCase() || ''
+    const theme = session.form?.theme?.toLowerCase() || ''
+    const hook = session.form?.hook?.toLowerCase() || ''
+    const genre = session.form?.genre?.toLowerCase() || ''
+
+    return (
+      title.includes(search) ||
+      theme.includes(search) ||
+      hook.includes(search) ||
+      genre.includes(search)
+    )
+  })
 
   const loadSessions = async () => {
     try {
@@ -1009,11 +1027,30 @@ export default function Home() {
     padding: '16px',
   }
 
-  const sessionCardStyle: CSSProperties = {
-    backgroundColor: '#2f2f35',
+  const tableWrapStyle: CSSProperties = {
+    overflowX: 'auto',
+    border: '1px solid #3f3f46',
     borderRadius: '12px',
+  }
+
+  const tableStyle: CSSProperties = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    backgroundColor: '#2f2f35',
+  }
+
+  const thStyle: CSSProperties = {
+    textAlign: 'left',
     padding: '12px',
-    marginBottom: '10px',
+    fontSize: '14px',
+    borderBottom: '1px solid #52525b',
+    backgroundColor: '#3f3f46',
+  }
+
+  const tdStyle: CSSProperties = {
+    padding: '12px',
+    borderBottom: '1px solid #3f3f46',
+    verticalAlign: 'top',
   }
 
   const responsiveStyle =
@@ -1166,10 +1203,10 @@ export default function Home() {
 
               <div style={{ marginTop: '16px' }}>
                 <div style={labelStyle}>Usage Tracking</div>
-                <div style={sessionCardStyle}>Generate count: {usage.generate_count}</div>
-                <div style={sessionCardStyle}>Rewrite count: {usage.rewrite_count}</div>
-                <div style={sessionCardStyle}>OpenArt count: {usage.video_count}</div>
-                <div style={sessionCardStyle}>Save count: {usage.save_count}</div>
+                <div style={tdStyle}>Generate count: {usage.generate_count}</div>
+                <div style={tdStyle}>Rewrite count: {usage.rewrite_count}</div>
+                <div style={tdStyle}>OpenArt count: {usage.video_count}</div>
+                <div style={tdStyle}>Save count: {usage.save_count}</div>
               </div>
             </div>
           ) : (
@@ -1522,33 +1559,85 @@ export default function Home() {
               <div style={helperStyle}>Sign in to use private saved sessions.</div>
             ) : sessionsLoading ? (
               <div style={helperStyle}>Loading sessions...</div>
-            ) : savedSessions.length > 0 ? (
-              <div>
-                {savedSessions.map((session) => (
-                  <div key={session.id} style={sessionCardStyle}>
-                    <div style={{ fontWeight: 700, marginBottom: '6px' }}>{session.title}</div>
-                    <div style={{ ...helperStyle, marginTop: 0, marginBottom: '10px' }}>
-                      {session.created_at ? new Date(session.created_at).toLocaleString() : ''}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => handleLoadSession(session)}
-                        style={secondaryActionButtonStyle}
-                      >
-                        Load
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSession(session.id)}
-                        style={secondaryActionButtonStyle}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             ) : (
-              <div style={helperStyle}>No saved sessions yet.</div>
+              <>
+                <input
+                  placeholder="Search saved sessions..."
+                  style={{ ...inputStyle, marginBottom: '12px' }}
+                  value={sessionSearch}
+                  onChange={(e) => setSessionSearch(e.target.value)}
+                />
+
+                {filteredSessions.length > 0 ? (
+                  <div style={tableWrapStyle}>
+                    <table style={tableStyle}>
+                      <thead>
+                        <tr>
+                          <th style={thStyle}>Title</th>
+                          <th style={thStyle}>Genre</th>
+                          <th style={thStyle}>Theme</th>
+                          <th style={thStyle}>Created</th>
+                          <th style={thStyle}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSessions.map((session) => (
+                          <tr key={session.id}>
+                            <td style={tdStyle}>
+                              <div style={{ fontWeight: 700 }}>{session.title}</div>
+                              {session.form?.hook ? (
+                                <div style={{ color: '#a1a1aa', fontSize: '13px', marginTop: '4px' }}>
+                                  Hook: {session.form.hook}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td style={tdStyle}>{session.form?.genre || '—'}</td>
+                            <td style={{ ...tdStyle, maxWidth: '260px' }}>
+                              <div
+                                style={{
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                                title={session.form?.theme || ''}
+                              >
+                                {session.form?.theme || '—'}
+                              </div>
+                            </td>
+                            <td style={tdStyle}>
+                              {session.created_at
+                                ? new Date(session.created_at).toLocaleString()
+                                : '—'}
+                            </td>
+                            <td style={tdStyle}>
+                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <button
+                                  onClick={() => handleLoadSession(session)}
+                                  style={secondaryActionButtonStyle}
+                                >
+                                  Load
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSession(session.id)}
+                                  style={secondaryActionButtonStyle}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={helperStyle}>
+                    {savedSessions.length > 0
+                      ? 'No sessions match your search.'
+                      : 'No saved sessions yet.'}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
