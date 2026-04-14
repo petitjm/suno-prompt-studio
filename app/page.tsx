@@ -77,6 +77,9 @@ type UserInfo = {
   email: string | null
 }
 
+type SortKey = 'title' | 'genre' | 'theme' | 'created_at'
+type SortDirection = 'asc' | 'desc'
+
 const dnaOptions = [
   { id: 'mpj-master', label: 'MPJ Master' },
   { id: 'commercial-hit', label: 'Commercial Hit' },
@@ -154,6 +157,8 @@ export default function Home() {
   const [sessionTitle, setSessionTitle] = useState('')
   const [sessionSearch, setSessionSearch] = useState('')
   const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [sortKey, setSortKey] = useState<SortKey>('created_at')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   const [usage, setUsage] = useState<UsageStats>(emptyUsage)
 
@@ -242,6 +247,52 @@ export default function Home() {
       genre.includes(search)
     )
   })
+
+  const sortedSessions = [...filteredSessions].sort((a, b) => {
+    const getValue = (session: SavedSession) => {
+      switch (sortKey) {
+        case 'title':
+          return session.title || ''
+        case 'genre':
+          return session.form?.genre || ''
+        case 'theme':
+          return session.form?.theme || ''
+        case 'created_at':
+          return session.created_at || ''
+        default:
+          return ''
+      }
+    }
+
+    const aValue = getValue(a)
+    const bValue = getValue(b)
+
+    if (sortKey === 'created_at') {
+      const aTime = aValue ? new Date(aValue).getTime() : 0
+      const bTime = bValue ? new Date(bValue).getTime() : 0
+      return sortDirection === 'asc' ? aTime - bTime : bTime - aTime
+    }
+
+    const comparison = String(aValue).localeCompare(String(bValue), undefined, {
+      sensitivity: 'base',
+    })
+
+    return sortDirection === 'asc' ? comparison : -comparison
+  })
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDirection(key === 'created_at' ? 'desc' : 'asc')
+    }
+  }
+
+  const sortIndicator = (key: SortKey) => {
+    if (sortKey !== key) return ' ↕'
+    return sortDirection === 'asc' ? ' ↑' : ' ↓'
+  }
 
   const loadSessions = async () => {
     try {
@@ -1045,6 +1096,9 @@ export default function Home() {
     fontSize: '14px',
     borderBottom: '1px solid #52525b',
     backgroundColor: '#3f3f46',
+    cursor: 'pointer',
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
   }
 
   const tdStyle: CSSProperties = {
@@ -1568,20 +1622,35 @@ export default function Home() {
                   onChange={(e) => setSessionSearch(e.target.value)}
                 />
 
-                {filteredSessions.length > 0 ? (
+                {sortedSessions.length > 0 ? (
                   <div style={tableWrapStyle}>
                     <table style={tableStyle}>
                       <thead>
                         <tr>
-                          <th style={thStyle}>Title</th>
-                          <th style={thStyle}>Genre</th>
-                          <th style={thStyle}>Theme</th>
-                          <th style={thStyle}>Created</th>
-                          <th style={thStyle}>Actions</th>
+                          <th style={thStyle} onClick={() => toggleSort('title')}>
+                            Title{sortIndicator('title')}
+                          </th>
+                          <th style={thStyle} onClick={() => toggleSort('genre')}>
+                            Genre{sortIndicator('genre')}
+                          </th>
+                          <th style={thStyle} onClick={() => toggleSort('theme')}>
+                            Theme{sortIndicator('theme')}
+                          </th>
+                          <th style={thStyle} onClick={() => toggleSort('created_at')}>
+                            Created{sortIndicator('created_at')}
+                          </th>
+                          <th
+                            style={{
+                              ...thStyle,
+                              cursor: 'default',
+                            }}
+                          >
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredSessions.map((session) => (
+                        {sortedSessions.map((session) => (
                           <tr key={session.id}>
                             <td style={tdStyle}>
                               <div style={{ fontWeight: 700 }}>{session.title}</div>
