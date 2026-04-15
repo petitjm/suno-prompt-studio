@@ -52,6 +52,16 @@ type ChordVersionRecord = {
   created_at?: string
 }
 
+type RewriteMode =
+  | 'strengthen_chorus'
+  | 'more_conversational'
+  | 'more_poetic'
+  | 'more_universal'
+  | 'more_personal'
+  | 'simplify_lyrics'
+  | 'improve_opening_line'
+  | 'tighten_live'
+
 const defaultForm: FormState = {
   genre: '',
   moods: [],
@@ -86,6 +96,17 @@ const moodOptions = [
   'Warm',
 ]
 
+const rewriteButtons: Array<{ mode: RewriteMode; label: string }> = [
+  { mode: 'strengthen_chorus', label: 'Strengthen Chorus' },
+  { mode: 'more_conversational', label: 'More Conversational' },
+  { mode: 'more_poetic', label: 'More Poetic' },
+  { mode: 'more_universal', label: 'More Universal' },
+  { mode: 'more_personal', label: 'More Personal' },
+  { mode: 'simplify_lyrics', label: 'Simplify Lyrics' },
+  { mode: 'improve_opening_line', label: 'Improve Opening Line' },
+  { mode: 'tighten_live', label: 'Tighten for Live' },
+]
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -110,6 +131,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false)
   const [chordLoading, setChordLoading] = useState(false)
+  const [rewriteLoading, setRewriteLoading] = useState<RewriteMode | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -435,6 +457,50 @@ export default function Home() {
     }
   }
 
+  const handleRewrite = async (mode: RewriteMode, label: string) => {
+    try {
+      if (!result?.lyrics_full) {
+        setResult({ error: 'Generate or load lyrics before rewriting.' })
+        return
+      }
+
+      setRewriteLoading(mode)
+
+      const res = await fetch('/api/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          versionTitle: label,
+          currentLyrics: result.lyrics_full,
+          genre: form.genre,
+          moods: form.moods,
+          theme: form.theme,
+          hook: form.hook,
+          dnaId: form.dnaId,
+          project_id: activeProject?.id || null,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Rewrite failed')
+      }
+
+      setResult(data)
+
+      if (activeProject) {
+        await loadProjectData(activeProject.id)
+      }
+    } catch (err: any) {
+      console.error(err)
+      setResult({ error: err.message || 'Rewrite failed' })
+    } finally {
+      setRewriteLoading(null)
+    }
+  }
+
   const loadSongVersion = (version: SongVersionRecord) => {
     if (version.form) {
       setForm({
@@ -743,6 +809,23 @@ export default function Home() {
               >
                 {chordLoading ? 'Generating Chords...' : 'Generate Chords'}
               </button>
+            </div>
+
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+              <h3 style={{ marginTop: 0 }}>Rewrite Lab</h3>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {rewriteButtons.map((button) => (
+                  <button
+                    key={button.mode}
+                    onClick={() => handleRewrite(button.mode, button.label)}
+                    disabled={rewriteLoading !== null}
+                    style={secondaryButtonStyle}
+                  >
+                    {rewriteLoading === button.mode ? 'Rewriting...' : button.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
