@@ -7,23 +7,25 @@ const openai = new OpenAI({
 })
 
 async function getArtistDNAString() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-  if (!user) return ''
+    if (userError || !user) return ''
 
-  const { data } = await supabase
-    .from('artist_dna_profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle()
+    const { data, error } = await supabase
+      .from('artist_dna_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
 
-  if (!data) return ''
+    if (error || !data) return ''
 
-  return `
+    return `
 Artist DNA Profile:
 - Artist Name: ${data.artist_name || ''}
 - Vocal Range: ${data.vocal_range || ''}
@@ -38,6 +40,10 @@ Artist DNA Profile:
 
 Use this DNA as a strong stylistic guide. Do not mention it explicitly in the output.
 `
+  } catch (err) {
+    console.error('Artist DNA lookup failed in chords route:', err)
+    return ''
+  }
 }
 
 export async function POST(req: Request) {
@@ -50,10 +56,10 @@ You are a professional songwriter and acoustic arranger.
 
 Create chord progressions for this song idea:
 
-Genre: ${body.genre}
+Genre: ${body.genre || ''}
 Mood: ${Array.isArray(body.moods) ? body.moods.join(', ') : ''}
-Theme: ${body.theme}
-Hook: ${body.hook}
+Theme: ${body.theme || ''}
+Hook: ${body.hook || ''}
 
 ${artistDNA}
 
@@ -104,8 +110,9 @@ Requirements:
 
     return NextResponse.json(chordData)
   } catch (err: any) {
+    console.error('Chords route failure:', err)
     return NextResponse.json(
-      { error: err.message || 'Chord generation failed' },
+      { error: err?.message || 'Chord generation failed' },
       { status: 500 }
     )
   }
