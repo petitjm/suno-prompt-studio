@@ -261,6 +261,28 @@ export default function Home() {
     }
   }, [activeProject?.id])
 
+  const hasSavedArtistDNA = Boolean(
+    artistDNA.artist_name ||
+      artistDNA.vocal_range ||
+      artistDNA.core_genres ||
+      artistDNA.lyrical_style ||
+      artistDNA.emotional_tone ||
+      artistDNA.writing_strengths ||
+      artistDNA.avoid_list ||
+      artistDNA.visual_style ||
+      artistDNA.performance_style ||
+      artistDNA.dna_summary
+  )
+
+  const appliedDNALines = [
+    artistDNA.artist_name ? `Artist: ${artistDNA.artist_name}` : '',
+    artistDNA.vocal_range ? `Voice: ${artistDNA.vocal_range}` : '',
+    artistDNA.core_genres ? `Genres: ${artistDNA.core_genres}` : '',
+    artistDNA.lyrical_style ? `Lyrics: ${artistDNA.lyrical_style}` : '',
+    artistDNA.emotional_tone ? `Tone: ${artistDNA.emotional_tone}` : '',
+    artistDNA.performance_style ? `Performance: ${artistDNA.performance_style}` : '',
+  ].filter(Boolean)
+
   const loadArtistDNA = async () => {
     try {
       setArtistDNALoading(true)
@@ -317,17 +339,9 @@ export default function Home() {
         return
       }
 
-      setDnaAnalyzerWorking('Analyzing artist DNA...')
-    } catch (err) {
-      console.error(err)
-    }
-  }
+      setDNAAnalyzerMessage('Analyzing artist DNA...')
+      setDNAAnalyzing(true)
 
-  const setDnaAnalyzerWorking = async (message: string) => {
-    setDNAAnalyzerMessage(message)
-    setDNAAnalyzing(true)
-
-    try {
       const res = await fetch('/api/artist-dna-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -897,6 +911,58 @@ export default function Home() {
       <div style={mainStyle}>
         <h1 style={{ marginTop: 0 }}>Suno Prompt Studio</h1>
 
+        {hasSavedArtistDNA && (
+          <div
+            style={{
+              ...panelStyle,
+              marginBottom: 24,
+              border: '1px solid #2563eb',
+              background: '#1d2a44',
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+              Applied Artist DNA
+            </div>
+            <div style={{ color: '#dbeafe', marginBottom: 10 }}>
+              Your saved Artist DNA is currently shaping song generation, rewrites, chord generation, and chord rewrites.
+            </div>
+
+            {artistDNA.dna_summary && (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: 12,
+                  borderRadius: 12,
+                  background: '#162338',
+                  border: '1px solid #3b82f6',
+                }}
+              >
+                {artistDNA.dna_summary}
+              </div>
+            )}
+
+            {appliedDNALines.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {appliedDNALines.map((line) => (
+                  <div
+                    key={line}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 999,
+                      background: '#162338',
+                      border: '1px solid #3b82f6',
+                      color: '#dbeafe',
+                      fontSize: 14,
+                    }}
+                  >
+                    {line}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {!user ? (
           <div style={{ ...panelStyle, marginBottom: 24 }}>
             <h2 style={{ marginTop: 0 }}>Sign in</h2>
@@ -935,6 +1001,10 @@ export default function Home() {
             <div style={{ marginBottom: 8 }}>
               Active project: <strong>{activeProject ? activeProject.title : 'None selected'}</strong>
             </div>
+            <div style={{ marginBottom: 8 }}>
+              Artist DNA status:{' '}
+              <strong>{hasSavedArtistDNA ? 'Applied to outputs' : 'No saved DNA yet'}</strong>
+            </div>
             {versionsLoading && (
               <div style={{ color: '#a1a1aa', marginBottom: 12 }}>Loading project history...</div>
             )}
@@ -954,6 +1024,23 @@ export default function Home() {
         >
           <div style={panelStyle}>
             <h2 style={{ marginTop: 0 }}>Song Builder</h2>
+
+            {hasSavedArtistDNA && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: 10,
+                  borderRadius: 12,
+                  background: '#1f1f23',
+                  border: '1px solid #3f3f46',
+                  color: '#d4d4d8',
+                  fontSize: 14,
+                }}
+              >
+                Using saved Artist DNA
+                {artistDNA.artist_name ? ` for ${artistDNA.artist_name}` : ''}.
+              </div>
+            )}
 
             <div style={{ marginBottom: 18 }}>
               <label style={sectionTitleStyle}>Creative DNA</label>
