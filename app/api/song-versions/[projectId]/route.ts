@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-type RouteContext = {
-  params: Promise<{
-    projectId: string
-  }>
-}
-
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ projectId: string }> }
+) {
   try {
-    const { projectId } = await context.params
+    const { projectId } = await params
     const supabase = await createClient()
 
     const {
