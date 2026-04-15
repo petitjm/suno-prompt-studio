@@ -36,6 +36,22 @@ type ChordResponse = {
   error?: string
 }
 
+type SongVersionRecord = {
+  id: string
+  project_id: string
+  title?: string
+  form?: FormState
+  result?: GenerateResponse
+  created_at?: string
+}
+
+type ChordVersionRecord = {
+  id: string
+  project_id: string
+  chord_data?: ChordResponse
+  created_at?: string
+}
+
 const defaultForm: FormState = {
   genre: '',
   moods: [],
@@ -88,6 +104,10 @@ export default function Home() {
   const [result, setResult] = useState<GenerateResponse | null>(null)
   const [chords, setChords] = useState<ChordResponse | null>(null)
 
+  const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
+  const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
+  const [versionsLoading, setVersionsLoading] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [chordLoading, setChordLoading] = useState(false)
 
@@ -129,8 +149,22 @@ export default function Home() {
       setProjects([])
       setActiveProject(null)
       setProjectMessage('')
+      setSongVersions([])
+      setChordVersions([])
+      setResult(null)
+      setChords(null)
+      setForm(defaultForm)
     }
   }, [user])
+
+  useEffect(() => {
+    if (activeProject?.id) {
+      void loadProjectData(activeProject.id)
+    } else {
+      setSongVersions([])
+      setChordVersions([])
+    }
+  }, [activeProject?.id])
 
   const loadProjects = async () => {
     try {
@@ -159,6 +193,68 @@ export default function Home() {
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to load projects')
+    }
+  }
+
+  const loadProjectData = async (projectId: string) => {
+    try {
+      setVersionsLoading(true)
+      setProjectMessage('Loading project data...')
+
+      const [songRes, chordRes] = await Promise.all([
+        fetch(`/api/song-versions/${projectId}`),
+        fetch(`/api/chord-versions/${projectId}`),
+      ])
+
+      const songData = await songRes.json()
+      const chordData = await chordRes.json()
+
+      if (!songRes.ok) {
+        throw new Error(songData.error || 'Failed to load song versions')
+      }
+
+      if (!chordRes.ok) {
+        throw new Error(chordData.error || 'Failed to load chord versions')
+      }
+
+      const nextSongVersions: SongVersionRecord[] = Array.isArray(songData.versions)
+        ? songData.versions
+        : []
+      const nextChordVersions: ChordVersionRecord[] = Array.isArray(chordData.versions)
+        ? chordData.versions
+        : []
+
+      setSongVersions(nextSongVersions)
+      setChordVersions(nextChordVersions)
+
+      if (songData.latest?.result) {
+        setResult(songData.latest.result)
+      } else {
+        setResult(null)
+      }
+
+      if (songData.latest?.form) {
+        setForm({
+          genre: songData.latest.form.genre || '',
+          moods: Array.isArray(songData.latest.form.moods) ? songData.latest.form.moods : [],
+          theme: songData.latest.form.theme || '',
+          hook: songData.latest.form.hook || '',
+          dnaId: songData.latest.form.dnaId || 'mpj-master',
+        })
+      }
+
+      if (chordData.latest?.chord_data) {
+        setChords(chordData.latest.chord_data)
+      } else {
+        setChords(null)
+      }
+
+      setProjectMessage('')
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to load project data')
+    } finally {
+      setVersionsLoading(false)
     }
   }
 
@@ -246,6 +342,9 @@ export default function Home() {
     setChords(null)
     setAuthMessage('')
     setProjectMessage('')
+    setSongVersions([])
+    setChordVersions([])
+    setForm(defaultForm)
   }
 
   const toggleMood = (mood: string) => {
@@ -291,6 +390,8 @@ export default function Home() {
         if (!saveRes.ok) {
           const saveData = await saveRes.json().catch(() => ({}))
           console.error('Failed to save song version', saveData)
+        } else {
+          await loadProjectData(activeProject.id)
         }
       }
     } catch (err: any) {
@@ -322,12 +423,34 @@ export default function Home() {
       }
 
       setChords(data)
+
+      if (activeProject) {
+        await loadProjectData(activeProject.id)
+      }
     } catch (err: any) {
       console.error(err)
       setChords({ error: err.message || 'Chord generation failed' })
     } finally {
       setChordLoading(false)
     }
+  }
+
+  const loadSongVersion = (version: SongVersionRecord) => {
+    if (version.form) {
+      setForm({
+        genre: version.form.genre || '',
+        moods: Array.isArray(version.form.moods) ? version.form.moods : [],
+        theme: version.form.theme || '',
+        hook: version.form.hook || '',
+        dnaId: version.form.dnaId || 'mpj-master',
+      })
+    }
+
+    setResult(version.result || null)
+  }
+
+  const loadChordVersion = (version: ChordVersionRecord) => {
+    setChords(version.chord_data || null)
   }
 
   const pageStyle: CSSProperties = {
@@ -404,6 +527,17 @@ export default function Home() {
     display: 'block',
     marginBottom: 8,
     fontWeight: 700,
+  }
+
+  const historyItemStyle: CSSProperties = {
+    width: '100%',
+    padding: '8px 10px',
+    textAlign: 'left',
+    borderRadius: 10,
+    border: '1px solid #3f3f46',
+    background: '#1f1f23',
+    color: 'white',
+    cursor: 'pointer',
   }
 
   return (
@@ -507,9 +641,12 @@ export default function Home() {
             <div style={{ marginBottom: 8 }}>
               Logged in as <strong>{user.email}</strong>
             </div>
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 8 }}>
               Active project: <strong>{activeProject ? activeProject.title : 'None selected'}</strong>
             </div>
+            {versionsLoading && (
+              <div style={{ color: '#a1a1aa', marginBottom: 12 }}>Loading project history...</div>
+            )}
             <button onClick={signOut} style={secondaryButtonStyle}>
               Sign out
             </button>
@@ -594,7 +731,7 @@ export default function Home() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
               <button onClick={handleGenerate} disabled={loading} style={primaryButtonStyle}>
                 {loading ? 'Generating...' : 'Generate Song'}
               </button>
@@ -606,6 +743,33 @@ export default function Home() {
               >
                 {chordLoading ? 'Generating Chords...' : 'Generate Chords'}
               </button>
+            </div>
+
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+              <h3 style={{ marginTop: 0 }}>Song Version History</h3>
+
+              {songVersions.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {songVersions.map((version) => (
+                    <button
+                      key={version.id}
+                      onClick={() => loadSongVersion(version)}
+                      style={historyItemStyle}
+                    >
+                      <div style={{ fontWeight: 700 }}>
+                        {version.title || 'Untitled Version'}
+                      </div>
+                      {version.created_at && (
+                        <div style={{ fontSize: 12, opacity: 0.75 }}>
+                          {new Date(version.created_at).toLocaleString()}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: '#a1a1aa' }}>No saved song versions yet.</div>
+              )}
             </div>
           </div>
 
@@ -664,7 +828,7 @@ export default function Home() {
 
               {chords ? (
                 chords.error ? (
-                  <div style={{ color: '#f87171' }}>{chords.error}</div>
+                  <div style={{ color: '#f87171', marginBottom: 20 }}>{chords.error}</div>
                 ) : (
                   <>
                     <div style={{ marginBottom: 10 }}>
@@ -690,13 +854,42 @@ export default function Home() {
                     </div>
 
                     {chords.notes && (
-                      <div style={{ color: '#d4d4d8', fontStyle: 'italic' }}>{chords.notes}</div>
+                      <div style={{ color: '#d4d4d8', fontStyle: 'italic', marginBottom: 20 }}>
+                        {chords.notes}
+                      </div>
                     )}
                   </>
                 )
               ) : (
-                <div style={{ color: '#a1a1aa' }}>No chord output yet</div>
+                <div style={{ color: '#a1a1aa', marginBottom: 20 }}>No chord output yet</div>
               )}
+
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+                <h3 style={{ marginTop: 0 }}>Chord History</h3>
+
+                {chordVersions.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {chordVersions.map((version) => (
+                      <button
+                        key={version.id}
+                        onClick={() => loadChordVersion(version)}
+                        style={historyItemStyle}
+                      >
+                        <div style={{ fontWeight: 700 }}>
+                          {version.chord_data?.key || 'Chord Set'}
+                        </div>
+                        {version.created_at && (
+                          <div style={{ fontSize: 12, opacity: 0.75 }}>
+                            {new Date(version.created_at).toLocaleString()}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: '#a1a1aa' }}>No saved chord versions yet.</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
