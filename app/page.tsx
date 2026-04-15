@@ -52,6 +52,19 @@ type ChordVersionRecord = {
   created_at?: string
 }
 
+type ArtistDNAProfile = {
+  id?: string
+  artist_name: string
+  vocal_range: string
+  core_genres: string
+  lyrical_style: string
+  emotional_tone: string
+  writing_strengths: string
+  avoid_list: string
+  visual_style: string
+  performance_style: string
+}
+
 type RewriteMode =
   | 'strengthen_chorus'
   | 'more_conversational'
@@ -76,6 +89,18 @@ const defaultForm: FormState = {
   theme: '',
   hook: '',
   dnaId: 'mpj-master',
+}
+
+const defaultArtistDNA: ArtistDNAProfile = {
+  artist_name: '',
+  vocal_range: '',
+  core_genres: '',
+  lyrical_style: '',
+  emotional_tone: '',
+  writing_strengths: '',
+  avoid_list: '',
+  visual_style: '',
+  performance_style: '',
 }
 
 const dnaOptions = [
@@ -151,6 +176,11 @@ export default function Home() {
   const [rewriteLoading, setRewriteLoading] = useState<RewriteMode | null>(null)
   const [chordRewriteLoading, setChordRewriteLoading] = useState<ChordRewriteMode | null>(null)
 
+  const [artistDNA, setArtistDNA] = useState<ArtistDNAProfile>(defaultArtistDNA)
+  const [artistDNALoading, setArtistDNALoading] = useState(false)
+  const [artistDNASaving, setArtistDNASaving] = useState(false)
+  const [artistDNAMessage, setArtistDNAMessage] = useState('')
+
   useEffect(() => {
     let mounted = true
 
@@ -185,6 +215,7 @@ export default function Home() {
   useEffect(() => {
     if (user) {
       void loadProjects()
+      void loadArtistDNA()
     } else {
       setProjects([])
       setActiveProject(null)
@@ -194,6 +225,8 @@ export default function Home() {
       setResult(null)
       setChords(null)
       setForm(defaultForm)
+      setArtistDNA(defaultArtistDNA)
+      setArtistDNAMessage('')
     }
   }, [user])
 
@@ -205,6 +238,55 @@ export default function Home() {
       setChordVersions([])
     }
   }, [activeProject?.id])
+
+  const loadArtistDNA = async () => {
+    try {
+      setArtistDNALoading(true)
+      setArtistDNAMessage('Loading artist DNA...')
+
+      const res = await fetch('/api/artist-dna')
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load artist DNA')
+      }
+
+      setArtistDNA(data.profile || defaultArtistDNA)
+      setArtistDNAMessage('')
+    } catch (err: any) {
+      console.error(err)
+      setArtistDNAMessage(err.message || 'Failed to load artist DNA')
+    } finally {
+      setArtistDNALoading(false)
+    }
+  }
+
+  const saveArtistDNA = async () => {
+    try {
+      setArtistDNASaving(true)
+      setArtistDNAMessage('Saving artist DNA...')
+
+      const res = await fetch('/api/artist-dna', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(artistDNA),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save artist DNA')
+      }
+
+      setArtistDNA(data.profile || artistDNA)
+      setArtistDNAMessage('Artist DNA saved')
+    } catch (err: any) {
+      console.error(err)
+      setArtistDNAMessage(err.message || 'Failed to save artist DNA')
+    } finally {
+      setArtistDNASaving(false)
+    }
+  }
 
   const loadProjects = async () => {
     try {
@@ -385,6 +467,8 @@ export default function Home() {
     setSongVersions([])
     setChordVersions([])
     setForm(defaultForm)
+    setArtistDNA(defaultArtistDNA)
+    setArtistDNAMessage('')
   }
 
   const toggleMood = (mood: string) => {
@@ -611,7 +695,7 @@ export default function Home() {
 
   const textareaStyle: CSSProperties = {
     ...inputStyle,
-    minHeight: 100,
+    minHeight: 90,
     resize: 'vertical',
   }
 
@@ -664,6 +748,13 @@ export default function Home() {
     background: '#1f1f23',
     color: 'white',
     cursor: 'pointer',
+  }
+
+  const updateArtistDNA = (key: keyof ArtistDNAProfile, value: string) => {
+    setArtistDNA((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
   }
 
   return (
@@ -784,6 +875,7 @@ export default function Home() {
             display: 'grid',
             gridTemplateColumns: 'minmax(340px, 1fr) minmax(340px, 1fr)',
             gap: 24,
+            marginBottom: 24,
           }}
         >
           <div style={panelStyle}>
@@ -1051,6 +1143,115 @@ export default function Home() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        <div style={panelStyle}>
+          <h2 style={{ marginTop: 0 }}>Artist DNA Profiler</h2>
+
+          {(artistDNALoading || artistDNAMessage) && (
+            <div style={{ color: '#a1a1aa', marginBottom: 12 }}>
+              {artistDNALoading ? 'Loading artist DNA...' : artistDNAMessage}
+            </div>
+          )}
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(280px, 1fr))',
+              gap: 16,
+            }}
+          >
+            <div>
+              <label style={sectionTitleStyle}>Artist Name</label>
+              <input
+                value={artistDNA.artist_name}
+                onChange={(e) => updateArtistDNA('artist_name', e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Vocal Range</label>
+              <input
+                value={artistDNA.vocal_range}
+                onChange={(e) => updateArtistDNA('vocal_range', e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Core Genres</label>
+              <textarea
+                value={artistDNA.core_genres}
+                onChange={(e) => updateArtistDNA('core_genres', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Lyrical Style</label>
+              <textarea
+                value={artistDNA.lyrical_style}
+                onChange={(e) => updateArtistDNA('lyrical_style', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Emotional Tone</label>
+              <textarea
+                value={artistDNA.emotional_tone}
+                onChange={(e) => updateArtistDNA('emotional_tone', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Writing Strengths</label>
+              <textarea
+                value={artistDNA.writing_strengths}
+                onChange={(e) => updateArtistDNA('writing_strengths', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Words / Themes to Avoid</label>
+              <textarea
+                value={artistDNA.avoid_list}
+                onChange={(e) => updateArtistDNA('avoid_list', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+
+            <div>
+              <label style={sectionTitleStyle}>Visual Style</label>
+              <textarea
+                value={artistDNA.visual_style}
+                onChange={(e) => updateArtistDNA('visual_style', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={sectionTitleStyle}>Performance Style</label>
+              <textarea
+                value={artistDNA.performance_style}
+                onChange={(e) => updateArtistDNA('performance_style', e.target.value)}
+                style={textareaStyle}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <button
+              onClick={saveArtistDNA}
+              disabled={artistDNASaving}
+              style={primaryButtonStyle}
+            >
+              {artistDNASaving ? 'Saving...' : 'Save Artist DNA'}
+            </button>
           </div>
         </div>
       </div>
