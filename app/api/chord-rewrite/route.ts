@@ -21,6 +21,40 @@ const CHORD_REWRITE_INSTRUCTIONS: Record<string, string> = {
     'Rewrite the progression into a more capo-friendly acoustic guitar version with practical chord shapes.',
 }
 
+async function getArtistDNAString() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return ''
+
+  const { data } = await supabase
+    .from('artist_dna_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!data) return ''
+
+  return `
+Artist DNA Profile:
+- Artist Name: ${data.artist_name || ''}
+- Vocal Range: ${data.vocal_range || ''}
+- Core Genres: ${data.core_genres || ''}
+- Lyrical Style: ${data.lyrical_style || ''}
+- Emotional Tone: ${data.emotional_tone || ''}
+- Writing Strengths: ${data.writing_strengths || ''}
+- Avoid List: ${data.avoid_list || ''}
+- Visual Style: ${data.visual_style || ''}
+- Performance Style: ${data.performance_style || ''}
+- DNA Summary: ${data.dna_summary || ''}
+
+Use this DNA as a strong stylistic guide. Do not mention it explicitly in the output.
+`
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -37,6 +71,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Current chords are required' }, { status: 400 })
     }
 
+    const artistDNA = await getArtistDNAString()
+
     const prompt = `
 You are an expert songwriter, arranger, and acoustic guitar music director.
 
@@ -50,6 +86,8 @@ Genre: ${body.genre || ''}
 Moods: ${Array.isArray(body.moods) ? body.moods.join(', ') : ''}
 Theme: ${body.theme || ''}
 Hook: ${body.hook || ''}
+
+${artistDNA}
 
 Current chords:
 Key: ${currentChords.key || ''}
@@ -72,6 +110,7 @@ Return ONLY valid JSON in this exact shape:
 Requirements:
 - Keep it playable for acoustic guitar.
 - Keep it musically coherent with the song idea.
+- Use the artist DNA where helpful, especially for vocal range, style, harmonic colour, and live suitability.
 - Do not include markdown fences.
 - Do not include commentary outside JSON.
 `
