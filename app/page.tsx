@@ -142,12 +142,14 @@ export default function Home() {
         throw new Error(data.error || 'Failed to load projects')
       }
 
-      const nextProjects = Array.isArray(data.projects) ? data.projects : []
+      const nextProjects: Project[] = Array.isArray(data.projects) ? data.projects : []
       setProjects(nextProjects)
 
       if (nextProjects.length > 0) {
-        setActiveProject((prev) =>
-          prev ? nextProjects.find((p) => p.id === prev.id) || nextProjects[0] : nextProjects[0]
+        setActiveProject((prev: Project | null) =>
+          prev
+            ? nextProjects.find((p: Project) => p.id === prev.id) || nextProjects[0]
+            : nextProjects[0]
         )
       } else {
         setActiveProject(null)
