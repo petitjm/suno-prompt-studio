@@ -62,6 +62,14 @@ type RewriteMode =
   | 'improve_opening_line'
   | 'tighten_live'
 
+type ChordRewriteMode =
+  | 'lift_chorus'
+  | 'simpler_live'
+  | 'richer_chords'
+  | 'better_bridge'
+  | 'baritone_key'
+  | 'capo_friendly'
+
 const defaultForm: FormState = {
   genre: '',
   moods: [],
@@ -107,6 +115,15 @@ const rewriteButtons: Array<{ mode: RewriteMode; label: string }> = [
   { mode: 'tighten_live', label: 'Tighten for Live' },
 ]
 
+const chordRewriteButtons: Array<{ mode: ChordRewriteMode; label: string }> = [
+  { mode: 'lift_chorus', label: 'Make Chorus Lift Harder' },
+  { mode: 'simpler_live', label: 'Simpler Live Version' },
+  { mode: 'richer_chords', label: 'Richer Colour Chords' },
+  { mode: 'better_bridge', label: 'Better Bridge Contrast' },
+  { mode: 'baritone_key', label: 'Baritone-Friendly Key' },
+  { mode: 'capo_friendly', label: 'Capo-Friendly Version' },
+]
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -132,6 +149,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [chordLoading, setChordLoading] = useState(false)
   const [rewriteLoading, setRewriteLoading] = useState<RewriteMode | null>(null)
+  const [chordRewriteLoading, setChordRewriteLoading] = useState<ChordRewriteMode | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -498,6 +516,48 @@ export default function Home() {
       setResult({ error: err.message || 'Rewrite failed' })
     } finally {
       setRewriteLoading(null)
+    }
+  }
+
+  const handleChordRewrite = async (mode: ChordRewriteMode) => {
+    try {
+      if (!chords || chords.error) {
+        setChords({ error: 'Generate or load chords before using Chord Lab.' })
+        return
+      }
+
+      setChordRewriteLoading(mode)
+
+      const res = await fetch('/api/chord-rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          project_id: activeProject?.id || null,
+          genre: form.genre,
+          moods: form.moods,
+          theme: form.theme,
+          hook: form.hook,
+          currentChords: chords,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Chord rewrite failed')
+      }
+
+      setChords(data)
+
+      if (activeProject) {
+        await loadProjectData(activeProject.id)
+      }
+    } catch (err: any) {
+      console.error(err)
+      setChords({ error: err.message || 'Chord rewrite failed' })
+    } finally {
+      setChordRewriteLoading(null)
     }
   }
 
@@ -946,6 +1006,23 @@ export default function Home() {
               ) : (
                 <div style={{ color: '#a1a1aa', marginBottom: 20 }}>No chord output yet</div>
               )}
+
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+                <h3 style={{ marginTop: 0 }}>Chord Lab v2</h3>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                  {chordRewriteButtons.map((button) => (
+                    <button
+                      key={button.mode}
+                      onClick={() => handleChordRewrite(button.mode)}
+                      disabled={chordRewriteLoading !== null}
+                      style={secondaryButtonStyle}
+                    >
+                      {chordRewriteLoading === button.mode ? 'Reworking...' : button.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
                 <h3 style={{ marginTop: 0 }}>Chord History</h3>
