@@ -63,6 +63,14 @@ type ArtistDNAProfile = {
   avoid_list: string
   visual_style: string
   performance_style: string
+  dna_summary?: string
+}
+
+type DNAAnalysisInput = {
+  lyrics_samples: string
+  chord_examples: string
+  artist_references: string
+  self_description: string
 }
 
 type RewriteMode =
@@ -101,6 +109,14 @@ const defaultArtistDNA: ArtistDNAProfile = {
   avoid_list: '',
   visual_style: '',
   performance_style: '',
+  dna_summary: '',
+}
+
+const defaultDNAAnalysisInput: DNAAnalysisInput = {
+  lyrics_samples: '',
+  chord_examples: '',
+  artist_references: '',
+  self_description: '',
 }
 
 const dnaOptions = [
@@ -181,6 +197,10 @@ export default function Home() {
   const [artistDNASaving, setArtistDNASaving] = useState(false)
   const [artistDNAMessage, setArtistDNAMessage] = useState('')
 
+  const [dnaAnalysisInput, setDNAAnalysisInput] = useState<DNAAnalysisInput>(defaultDNAAnalysisInput)
+  const [dnaAnalyzing, setDNAAnalyzing] = useState(false)
+  const [dnaAnalyzerMessage, setDNAAnalyzerMessage] = useState('')
+
   useEffect(() => {
     let mounted = true
 
@@ -227,6 +247,8 @@ export default function Home() {
       setForm(defaultForm)
       setArtistDNA(defaultArtistDNA)
       setArtistDNAMessage('')
+      setDNAAnalysisInput(defaultDNAAnalysisInput)
+      setDNAAnalyzerMessage('')
     }
   }, [user])
 
@@ -285,6 +307,49 @@ export default function Home() {
       setArtistDNAMessage(err.message || 'Failed to save artist DNA')
     } finally {
       setArtistDNASaving(false)
+    }
+  }
+
+  const analyzeArtistDNA = async () => {
+    try {
+      if (!dnaAnalysisInput.lyrics_samples.trim()) {
+        setDNAAnalyzerMessage('Paste some lyrics samples first.')
+        return
+      }
+
+      setDnaAnalyzerWorking('Analyzing artist DNA...')
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const setDnaAnalyzerWorking = async (message: string) => {
+    setDNAAnalyzerMessage(message)
+    setDNAAnalyzing(true)
+
+    try {
+      const res = await fetch('/api/artist-dna-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dnaAnalysisInput),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Artist DNA analysis failed')
+      }
+
+      setArtistDNA((prev) => ({
+        ...prev,
+        ...data.profile,
+      }))
+      setDNAAnalyzerMessage('Artist DNA analysis complete. Review and save it below.')
+    } catch (err: any) {
+      console.error(err)
+      setDNAAnalyzerMessage(err.message || 'Artist DNA analysis failed')
+    } finally {
+      setDNAAnalyzing(false)
     }
   }
 
@@ -469,6 +534,8 @@ export default function Home() {
     setForm(defaultForm)
     setArtistDNA(defaultArtistDNA)
     setArtistDNAMessage('')
+    setDNAAnalysisInput(defaultDNAAnalysisInput)
+    setDNAAnalyzerMessage('')
   }
 
   const toggleMood = (mood: string) => {
@@ -752,6 +819,13 @@ export default function Home() {
 
   const updateArtistDNA = (key: keyof ArtistDNAProfile, value: string) => {
     setArtistDNA((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }
+
+  const updateDNAAnalysisInput = (key: keyof DNAAnalysisInput, value: string) => {
+    setDNAAnalysisInput((prev) => ({
       ...prev,
       [key]: value,
     }))
@@ -1146,112 +1220,191 @@ export default function Home() {
           </div>
         </div>
 
-        <div style={panelStyle}>
-          <h2 style={{ marginTop: 0 }}>Artist DNA Profiler</h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(340px, 1fr) minmax(340px, 1fr)',
+            gap: 24,
+          }}
+        >
+          <div style={panelStyle}>
+            <h2 style={{ marginTop: 0 }}>Artist DNA Analyzer</h2>
 
-          {(artistDNALoading || artistDNAMessage) && (
-            <div style={{ color: '#a1a1aa', marginBottom: 12 }}>
-              {artistDNALoading ? 'Loading artist DNA...' : artistDNAMessage}
-            </div>
-          )}
+            {dnaAnalyzerMessage && (
+              <div style={{ color: '#a1a1aa', marginBottom: 12 }}>{dnaAnalyzerMessage}</div>
+            )}
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, minmax(280px, 1fr))',
-              gap: 16,
-            }}
-          >
-            <div>
-              <label style={sectionTitleStyle}>Artist Name</label>
-              <input
-                value={artistDNA.artist_name}
-                onChange={(e) => updateArtistDNA('artist_name', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label style={sectionTitleStyle}>Vocal Range</label>
-              <input
-                value={artistDNA.vocal_range}
-                onChange={(e) => updateArtistDNA('vocal_range', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label style={sectionTitleStyle}>Core Genres</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={sectionTitleStyle}>Lyrics Samples</label>
               <textarea
-                value={artistDNA.core_genres}
-                onChange={(e) => updateArtistDNA('core_genres', e.target.value)}
-                style={textareaStyle}
+                value={dnaAnalysisInput.lyrics_samples}
+                onChange={(e) => updateDNAAnalysisInput('lyrics_samples', e.target.value)}
+                style={{ ...textareaStyle, minHeight: 180 }}
+                placeholder="Paste several lyrics samples here..."
               />
             </div>
 
-            <div>
-              <label style={sectionTitleStyle}>Lyrical Style</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={sectionTitleStyle}>Chord Examples</label>
               <textarea
-                value={artistDNA.lyrical_style}
-                onChange={(e) => updateArtistDNA('lyrical_style', e.target.value)}
+                value={dnaAnalysisInput.chord_examples}
+                onChange={(e) => updateDNAAnalysisInput('chord_examples', e.target.value)}
                 style={textareaStyle}
+                placeholder="Optional chord examples..."
               />
             </div>
 
-            <div>
-              <label style={sectionTitleStyle}>Emotional Tone</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={sectionTitleStyle}>Artist References</label>
               <textarea
-                value={artistDNA.emotional_tone}
-                onChange={(e) => updateArtistDNA('emotional_tone', e.target.value)}
+                value={dnaAnalysisInput.artist_references}
+                onChange={(e) => updateDNAAnalysisInput('artist_references', e.target.value)}
                 style={textareaStyle}
+                placeholder="Optional artist references..."
               />
             </div>
 
-            <div>
-              <label style={sectionTitleStyle}>Writing Strengths</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={sectionTitleStyle}>Self Description</label>
               <textarea
-                value={artistDNA.writing_strengths}
-                onChange={(e) => updateArtistDNA('writing_strengths', e.target.value)}
+                value={dnaAnalysisInput.self_description}
+                onChange={(e) => updateDNAAnalysisInput('self_description', e.target.value)}
                 style={textareaStyle}
+                placeholder="Optional description of your voice, style, strengths, aims..."
               />
             </div>
 
-            <div>
-              <label style={sectionTitleStyle}>Words / Themes to Avoid</label>
-              <textarea
-                value={artistDNA.avoid_list}
-                onChange={(e) => updateArtistDNA('avoid_list', e.target.value)}
-                style={textareaStyle}
-              />
-            </div>
-
-            <div>
-              <label style={sectionTitleStyle}>Visual Style</label>
-              <textarea
-                value={artistDNA.visual_style}
-                onChange={(e) => updateArtistDNA('visual_style', e.target.value)}
-                style={textareaStyle}
-              />
-            </div>
-
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={sectionTitleStyle}>Performance Style</label>
-              <textarea
-                value={artistDNA.performance_style}
-                onChange={(e) => updateArtistDNA('performance_style', e.target.value)}
-                style={textareaStyle}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginTop: 20 }}>
             <button
-              onClick={saveArtistDNA}
-              disabled={artistDNASaving}
+              onClick={analyzeArtistDNA}
+              disabled={dnaAnalyzing}
               style={primaryButtonStyle}
             >
-              {artistDNASaving ? 'Saving...' : 'Save Artist DNA'}
+              {dnaAnalyzing ? 'Analyzing...' : 'Analyze My Style'}
             </button>
+          </div>
+
+          <div style={panelStyle}>
+            <h2 style={{ marginTop: 0 }}>Artist DNA Profiler</h2>
+
+            {(artistDNALoading || artistDNAMessage) && (
+              <div style={{ color: '#a1a1aa', marginBottom: 12 }}>
+                {artistDNALoading ? 'Loading artist DNA...' : artistDNAMessage}
+              </div>
+            )}
+
+            {artistDNA.dna_summary && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  borderRadius: 12,
+                  background: '#1f1f23',
+                  border: '1px solid #3f3f46',
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>DNA Summary</div>
+                <div>{artistDNA.dna_summary}</div>
+              </div>
+            )}
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(220px, 1fr))',
+                gap: 16,
+              }}
+            >
+              <div>
+                <label style={sectionTitleStyle}>Artist Name</label>
+                <input
+                  value={artistDNA.artist_name}
+                  onChange={(e) => updateArtistDNA('artist_name', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Vocal Range</label>
+                <input
+                  value={artistDNA.vocal_range}
+                  onChange={(e) => updateArtistDNA('vocal_range', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Core Genres</label>
+                <textarea
+                  value={artistDNA.core_genres}
+                  onChange={(e) => updateArtistDNA('core_genres', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Lyrical Style</label>
+                <textarea
+                  value={artistDNA.lyrical_style}
+                  onChange={(e) => updateArtistDNA('lyrical_style', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Emotional Tone</label>
+                <textarea
+                  value={artistDNA.emotional_tone}
+                  onChange={(e) => updateArtistDNA('emotional_tone', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Writing Strengths</label>
+                <textarea
+                  value={artistDNA.writing_strengths}
+                  onChange={(e) => updateArtistDNA('writing_strengths', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Words / Themes to Avoid</label>
+                <textarea
+                  value={artistDNA.avoid_list}
+                  onChange={(e) => updateArtistDNA('avoid_list', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+
+              <div>
+                <label style={sectionTitleStyle}>Visual Style</label>
+                <textarea
+                  value={artistDNA.visual_style}
+                  onChange={(e) => updateArtistDNA('visual_style', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={sectionTitleStyle}>Performance Style</label>
+                <textarea
+                  value={artistDNA.performance_style}
+                  onChange={(e) => updateArtistDNA('performance_style', e.target.value)}
+                  style={textareaStyle}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <button
+                onClick={saveArtistDNA}
+                disabled={artistDNASaving}
+                style={primaryButtonStyle}
+              >
+                {artistDNASaving ? 'Saving...' : 'Save Artist DNA'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
