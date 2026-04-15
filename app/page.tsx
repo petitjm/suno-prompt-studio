@@ -80,6 +80,30 @@ type UserInfo = {
 type SortKey = 'title' | 'genre' | 'theme' | 'created_at'
 type SortDirection = 'asc' | 'desc'
 
+type ColumnWidths = {
+  title: number
+  genre: number
+  theme: number
+  hook: number
+  created_at: number
+  actions: number
+}
+
+const STORAGE_KEYS = {
+  columnWidths: 'suno_prompt_studio_session_table_widths',
+  sortKey: 'suno_prompt_studio_session_table_sort_key',
+  sortDirection: 'suno_prompt_studio_session_table_sort_direction',
+}
+
+const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
+  title: 220,
+  genre: 140,
+  theme: 260,
+  hook: 220,
+  created_at: 190,
+  actions: 150,
+}
+
 const dnaOptions = [
   { id: 'mpj-master', label: 'MPJ Master' },
   { id: 'commercial-hit', label: 'Commercial Hit' },
@@ -159,14 +183,7 @@ export default function Home() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('created_at')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
-  const [columnWidths, setColumnWidths] = useState({
-    title: 220,
-    genre: 140,
-    theme: 260,
-    hook: 220,
-    created_at: 190,
-    actions: 150,
-  })
+  const [columnWidths, setColumnWidths] = useState<ColumnWidths>(DEFAULT_COLUMN_WIDTHS)
 
   const [usage, setUsage] = useState<UsageStats>(emptyUsage)
 
@@ -239,6 +256,54 @@ export default function Home() {
     void loadUsage()
   }, [user])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    try {
+      const storedWidths = window.localStorage.getItem(STORAGE_KEYS.columnWidths)
+      const storedSortKey = window.localStorage.getItem(STORAGE_KEYS.sortKey)
+      const storedSortDirection = window.localStorage.getItem(STORAGE_KEYS.sortDirection)
+
+      if (storedWidths) {
+        const parsed = JSON.parse(storedWidths) as Partial<ColumnWidths>
+        setColumnWidths({
+          ...DEFAULT_COLUMN_WIDTHS,
+          ...parsed,
+        })
+      }
+
+      if (
+        storedSortKey === 'title' ||
+        storedSortKey === 'genre' ||
+        storedSortKey === 'theme' ||
+        storedSortKey === 'created_at'
+      ) {
+        setSortKey(storedSortKey)
+      }
+
+      if (storedSortDirection === 'asc' || storedSortDirection === 'desc') {
+        setSortDirection(storedSortDirection)
+      }
+    } catch (err) {
+      console.error('Failed to restore table preferences', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(STORAGE_KEYS.columnWidths, JSON.stringify(columnWidths))
+  }, [columnWidths])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(STORAGE_KEYS.sortKey, sortKey)
+  }, [sortKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(STORAGE_KEYS.sortDirection, sortDirection)
+  }, [sortDirection])
+
   const filteredSessions = savedSessions.filter((session) => {
     const search = sessionSearch.trim().toLowerCase()
     if (!search) return true
@@ -303,7 +368,7 @@ export default function Home() {
   }
 
   const startColumnResize = (
-    key: keyof typeof columnWidths,
+    key: keyof ColumnWidths,
     event: React.MouseEvent<HTMLDivElement>
   ) => {
     event.preventDefault()
