@@ -1,6 +1,6 @@
 'use client'
 
-import React, { CSSProperties, useEffect, useMemo, useState } from 'react'
+import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type Project = {
@@ -167,6 +167,7 @@ const chordRewriteButtons: Array<{ mode: ChordRewriteMode; label: string }> = [
 
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
+  const latestProjectLoadRef = useRef(0)
 
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -254,10 +255,18 @@ export default function Home() {
 
   useEffect(() => {
     if (activeProject?.id) {
+      setResult(null)
+      setChords(null)
+      setSongVersions([])
+      setChordVersions([])
+      setForm(defaultForm)
       void loadProjectData(activeProject.id)
     } else {
       setSongVersions([])
       setChordVersions([])
+      setResult(null)
+      setChords(null)
+      setForm(defaultForm)
     }
   }, [activeProject?.id])
 
@@ -398,6 +407,9 @@ export default function Home() {
   }
 
   const loadProjectData = async (projectId: string) => {
+    const token = Date.now()
+    latestProjectLoadRef.current = token
+
     try {
       setVersionsLoading(true)
       setProjectMessage('Loading project data...')
@@ -409,6 +421,10 @@ export default function Home() {
 
       const songData = await songRes.json()
       const chordData = await chordRes.json()
+
+      if (latestProjectLoadRef.current !== token) {
+        return
+      }
 
       if (!songRes.ok) {
         throw new Error(songData.error || 'Failed to load song versions')
@@ -430,6 +446,8 @@ export default function Home() {
 
       if (songData.latest?.result) {
         setResult(songData.latest.result)
+      } else {
+        setResult(null)
       }
 
       if (songData.latest?.form) {
@@ -440,18 +458,33 @@ export default function Home() {
           hook: songData.latest.form.hook || '',
           dnaId: songData.latest.form.dnaId || 'mpj-master',
         })
+      } else {
+        setForm(defaultForm)
       }
 
       if (chordData.latest?.chord_data) {
         setChords(chordData.latest.chord_data)
+      } else {
+        setChords(null)
       }
 
       setProjectMessage('')
     } catch (err: any) {
+      if (latestProjectLoadRef.current !== token) {
+        return
+      }
+
       console.error(err)
       setProjectMessage(err.message || 'Failed to load project data')
+      setResult(null)
+      setChords(null)
+      setSongVersions([])
+      setChordVersions([])
+      setForm(defaultForm)
     } finally {
-      setVersionsLoading(false)
+      if (latestProjectLoadRef.current === token) {
+        setVersionsLoading(false)
+      }
     }
   }
 
@@ -478,6 +511,11 @@ export default function Home() {
       }
 
       setProjects((prev) => [data, ...prev])
+      setResult(null)
+      setChords(null)
+      setSongVersions([])
+      setChordVersions([])
+      setForm(defaultForm)
       setActiveProject(data)
       setNewProjectName('')
       setProjectMessage('Project created')
