@@ -31,11 +31,7 @@ Return JSON:
 Make it playable for acoustic guitar.
 `
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-5',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    })
+
 
     const text = completion.choices[0].message.content || '{}'
     const chordData = JSON.parse(text)
