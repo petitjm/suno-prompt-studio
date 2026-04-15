@@ -1,45 +1,11 @@
 'use client'
-import React, { CSSProperties, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-type ResultType = {
-  dna_id?: string
-  dna_name?: string
-  style_short?: string
-  style_detailed?: string
-  lyrics_brief?: string
-  lyrics_full?: string
-  lyrics_template?: string
-  error?: string
-}
-
-type GenerateResponse = ResultType & {
-  versions?: ResultType[]
-}
-
-type ThemeIdeasResponse = {
-  refined_theme?: string
-  related_themes?: string[]
-  error?: string
-}
-
-type HookIdeasResponse = {
-  hooks?: string[]
-  error?: string
-}
-
-type VideoVersion = {
-  dna_id?: string
-  dna_name?: string
-  global_style?: string
-  character_prompt?: string
-  video_concept?: string
-  scene_prompts?: { section: string; prompt: string }[]
-}
-
-type VideoResponse = VideoVersion & {
-  versions?: VideoVersion[]
-  error?: string
+type Project = {
+  id: string
+  title: string
+  created_at?: string
 }
 
 type FormState = {
@@ -48,87 +14,7 @@ type FormState = {
   theme: string
   hook: string
   dnaId: string
-  languageStyle: string
-  perspective: string
-  songFocus: string
-  liveFriendly: boolean
-  multiVersion: boolean
 }
-
-type SavedSession = {
-  id: string
-  user_id?: string
-  title: string
-  created_at?: string
-  form: FormState
-  result: GenerateResponse | null
-  video_result: VideoResponse | null
-}
-
-type UsageStats = {
-  generate_count: number
-  rewrite_count: number
-  video_count: number
-  save_count: number
-}
-
-type UserInfo = {
-  id: string
-  email: string | null
-}
-
-type SortKey = 'title' | 'genre' | 'theme' | 'created_at'
-type SortDirection = 'asc' | 'desc'
-
-type ColumnWidths = {
-  title: number
-  genre: number
-  theme: number
-  hook: number
-  created_at: number
-  actions: number
-}
-
-const STORAGE_KEYS = {
-  columnWidths: 'suno_prompt_studio_session_table_widths',
-  sortKey: 'suno_prompt_studio_session_table_sort_key',
-  sortDirection: 'suno_prompt_studio_session_table_sort_direction',
-}
-
-const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
-  title: 220,
-  genre: 140,
-  theme: 260,
-  hook: 220,
-  created_at: 190,
-  actions: 150,
-}
-
-const dnaOptions = [
-  { id: 'mpj-master', label: 'MPJ Master' },
-  { id: 'commercial-hit', label: 'Commercial Hit' },
-  { id: 'raw-folk', label: 'Raw Folk' },
-]
-
-const genreOptions = [
-  'Modern Country',
-  'Acoustic Folk',
-  'Folk Rock',
-  'Indie Pop',
-  'Bedroom Pop',
-  'Blues Ballad',
-  'Cinematic Americana',
-  'Festival Anthem',
-]
-
-const moodOptions = [
-  'Reflective',
-  'Hopeful',
-  'Melancholic',
-  'Heartfelt',
-  'Gritty',
-  'Warm',
-]
 
 const defaultForm: FormState = {
   genre: '',
@@ -136,1886 +22,216 @@ const defaultForm: FormState = {
   theme: '',
   hook: '',
   dnaId: 'mpj-master',
-  languageStyle: 'Balanced',
-  perspective: 'Balanced',
-  songFocus: 'Balanced',
-  liveFriendly: true,
-  multiVersion: false,
-}
-
-const emptyUsage: UsageStats = {
-  generate_count: 0,
-  rewrite_count: 0,
-  video_count: 0,
-  save_count: 0,
 }
 
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
 
-  const [user, setUser] = useState<UserInfo | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [emailInput, setEmailInput] = useState('')
-  const [otpInput, setOtpInput] = useState('')
-  const [authMessage, setAuthMessage] = useState('')
-  const [sendingCode, setSendingCode] = useState(false)
-  const [verifyingCode, setVerifyingCode] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [message, setMessage] = useState('')
+
+  const [projects, setProjects] = useState<Project[]>([])
+  const [activeProject, setActiveProject] = useState<Project | null>(null)
+  const [newProjectName, setNewProjectName] = useState('')
 
   const [form, setForm] = useState<FormState>(defaultForm)
-
-  const [result, setResult] = useState<GenerateResponse | null>(null)
-  const [videoResult, setVideoResult] = useState<VideoResponse | null>(null)
-
+  const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [rewritingLyrics, setRewritingLyrics] = useState(false)
-  const [videoLoading, setVideoLoading] = useState(false)
 
-  const [themeIdeas, setThemeIdeas] = useState<string[]>([])
-  const [refinedTheme, setRefinedTheme] = useState('')
-  const [themeLoading, setThemeLoading] = useState(false)
-
-  const [hookIdeas, setHookIdeas] = useState<string[]>([])
-  const [hookLoading, setHookLoading] = useState(false)
-
-  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([])
-  const [sessionTitle, setSessionTitle] = useState('')
-  const [sessionSearch, setSessionSearch] = useState('')
-  const [sessionsLoading, setSessionsLoading] = useState(false)
-  const [sortKey, setSortKey] = useState<SortKey>('created_at')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
-  const [columnWidths, setColumnWidths] = useState<ColumnWidths>(DEFAULT_COLUMN_WIDTHS)
-
-  const [usage, setUsage] = useState<UsageStats>(emptyUsage)
+  // ---------------- AUTH ----------------
 
   useEffect(() => {
-    let mounted = true
-
-    const loadAuth = async () => {
-      try {
-        setAuthLoading(true)
-
-        const { data, error } = await supabase.auth.getSession()
-
-        if (!mounted) return
-
-        if (error) {
-          console.error('getSession error:', error)
-          setUser(null)
-        } else if (data.session?.user) {
-          setUser({
-            id: data.session.user.id,
-            email: data.session.user.email ?? null,
-          })
-        } else {
-          setUser(null)
-        }
-      } catch (err) {
-        console.error('loadAuth failed:', err)
-        if (mounted) setUser(null)
-      } finally {
-        if (mounted) setAuthLoading(false)
-      }
+    const load = async () => {
+      const { data } = await supabase.auth.getSession()
+      setUser(data.session?.user ?? null)
     }
+    load()
 
-    void loadAuth()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? null,
-        })
-      } else {
-        setUser(null)
-        setSavedSessions([])
-        setUsage(emptyUsage)
-      }
-
-      setAuthLoading(false)
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null)
     })
 
     return () => {
-      mounted = false
-      subscription.unsubscribe()
+      listener.subscription.unsubscribe()
     }
   }, [supabase])
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAuthLoading(false)
-    }, 3000)
+  // ---------------- PROJECTS ----------------
 
-    return () => clearTimeout(timer)
-  }, [])
+  const loadProjects = async () => {
+    const res = await fetch('/api/projects')
+    const data = await res.json()
+    setProjects(data.projects || [])
+  }
 
   useEffect(() => {
-    if (!user) return
-    void loadSessions()
-    void loadUsage()
+    if (user) loadProjects()
   }, [user])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
+  const createProject = async () => {
+    if (!newProjectName.trim()) return
 
-    try {
-      const storedWidths = window.localStorage.getItem(STORAGE_KEYS.columnWidths)
-      const storedSortKey = window.localStorage.getItem(STORAGE_KEYS.sortKey)
-      const storedSortDirection = window.localStorage.getItem(STORAGE_KEYS.sortDirection)
-
-      if (storedWidths) {
-        const parsed = JSON.parse(storedWidths) as Partial<ColumnWidths>
-        setColumnWidths({
-          ...DEFAULT_COLUMN_WIDTHS,
-          ...parsed,
-        })
-      }
-
-      if (
-        storedSortKey === 'title' ||
-        storedSortKey === 'genre' ||
-        storedSortKey === 'theme' ||
-        storedSortKey === 'created_at'
-      ) {
-        setSortKey(storedSortKey)
-      }
-
-      if (storedSortDirection === 'asc' || storedSortDirection === 'desc') {
-        setSortDirection(storedSortDirection)
-      }
-    } catch (err) {
-      console.error('Failed to restore table preferences', err)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEYS.columnWidths, JSON.stringify(columnWidths))
-  }, [columnWidths])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEYS.sortKey, sortKey)
-  }, [sortKey])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEYS.sortDirection, sortDirection)
-  }, [sortDirection])
-
-  const filteredSessions = savedSessions.filter((session) => {
-    const search = sessionSearch.trim().toLowerCase()
-    if (!search) return true
-
-    const title = session.title?.toLowerCase() || ''
-    const theme = session.form?.theme?.toLowerCase() || ''
-    const hook = session.form?.hook?.toLowerCase() || ''
-    const genre = session.form?.genre?.toLowerCase() || ''
-
-    return (
-      title.includes(search) ||
-      theme.includes(search) ||
-      hook.includes(search) ||
-      genre.includes(search)
-    )
-  })
-
-  const sortedSessions = [...filteredSessions].sort((a, b) => {
-    const getValue = (session: SavedSession) => {
-      switch (sortKey) {
-        case 'title':
-          return session.title || ''
-        case 'genre':
-          return session.form?.genre || ''
-        case 'theme':
-          return session.form?.theme || ''
-        case 'created_at':
-          return session.created_at || ''
-        default:
-          return ''
-      }
-    }
-
-    const aValue = getValue(a)
-    const bValue = getValue(b)
-
-    if (sortKey === 'created_at') {
-      const aTime = aValue ? new Date(aValue).getTime() : 0
-      const bTime = bValue ? new Date(bValue).getTime() : 0
-      return sortDirection === 'asc' ? aTime - bTime : bTime - aTime
-    }
-
-    const comparison = String(aValue).localeCompare(String(bValue), undefined, {
-      sensitivity: 'base',
+    const res = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newProjectName }),
     })
 
-    return sortDirection === 'asc' ? comparison : -comparison
-  })
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDirection(key === 'created_at' ? 'desc' : 'asc')
-    }
+    const data = await res.json()
+    setProjects((prev) => [data, ...prev])
+    setActiveProject(data)
+    setNewProjectName('')
   }
 
-  const sortIndicator = (key: SortKey) => {
-    if (sortKey !== key) return ' ↕'
-    return sortDirection === 'asc' ? ' ↑' : ' ↓'
-  }
-
-  const startColumnResize = (
-    key: keyof ColumnWidths,
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    event.preventDefault()
-
-    const startX = event.clientX
-    const startWidth = columnWidths[key]
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const delta = moveEvent.clientX - startX
-      const nextWidth = Math.max(100, startWidth + delta)
-
-      setColumnWidths((prev) => ({
-        ...prev,
-        [key]: nextWidth,
-      }))
-    }
-
-    const onMouseUp = () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
-
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-  }
-
-  const loadSessions = async () => {
-    try {
-      setSessionsLoading(true)
-      const res = await fetch('/api/sessions')
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load sessions')
-      }
-
-      setSavedSessions(Array.isArray(data.sessions) ? data.sessions : [])
-    } catch (err) {
-      console.error('Failed to load sessions', err)
-    } finally {
-      setSessionsLoading(false)
-    }
-  }
-
-  const loadUsage = async () => {
-    try {
-      const res = await fetch('/api/usage')
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load usage')
-      }
-
-      setUsage({
-        generate_count: data.generate_count ?? 0,
-        rewrite_count: data.rewrite_count ?? 0,
-        video_count: data.video_count ?? 0,
-        save_count: data.save_count ?? 0,
-      })
-    } catch (err) {
-      console.error('Failed to load usage', err)
-    }
-  }
-
-  const trackUsage = async (eventType: 'generate' | 'rewrite' | 'video' | 'save') => {
-    try {
-      await fetch('/api/usage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType }),
-      })
-      await loadUsage()
-    } catch (err) {
-      console.error('Failed to track usage', err)
-    }
-  }
+  // ---------------- AUTH ACTIONS ----------------
 
   const sendCode = async () => {
-    try {
-      setSendingCode(true)
-      setAuthMessage('')
-
-      const email = emailInput.trim()
-      if (!email) {
-        setAuthMessage('Enter your email first.')
-        return
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-      })
-
-      if (error) {
-        setAuthMessage(error.message)
-        return
-      }
-
-      setAuthMessage('Code sent. Check your email.')
-    } catch (err) {
-      console.error(err)
-      setAuthMessage('Failed to send code.')
-    } finally {
-      setSendingCode(false)
-    }
+    const { error } = await supabase.auth.signInWithOtp({ email })
+    setMessage(error ? error.message : 'Code sent')
   }
 
   const verifyCode = async () => {
-    try {
-      setVerifyingCode(true)
-      setAuthMessage('')
-
-      const email = emailInput.trim()
-      const token = otpInput.trim()
-
-      if (!email) {
-        setAuthMessage('Enter your email first.')
-        return
-      }
-
-      if (!token) {
-        setAuthMessage('Enter the code from your email.')
-        return
-      }
-
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
-      })
-
-      if (error) {
-        setAuthMessage(error.message)
-        return
-      }
-
-      setAuthMessage('Signed in successfully.')
-      setOtpInput('')
-    } catch (err) {
-      console.error(err)
-      setAuthMessage('Failed to verify code.')
-    } finally {
-      setVerifyingCode(false)
-    }
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    })
+    setMessage(error ? error.message : 'Signed in')
   }
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    setResult(null)
-    setVideoResult(null)
-    setSavedSessions([])
-    setUsage(emptyUsage)
-    setAuthMessage('')
-    setOtpInput('')
-    window.location.replace(window.location.origin)
+    setUser(null)
+    setProjects([])
+    setActiveProject(null)
   }
 
-  const toggleMood = (mood: string) => {
-    setForm((prev) => ({
-      ...prev,
-      moods: prev.moods.includes(mood)
-        ? prev.moods.filter((m) => m !== mood)
-        : [...prev.moods, mood],
-    }))
-  }
-
-  const handleSuggestThemes = async () => {
-    try {
-      if (!form.theme.trim()) {
-        setThemeIdeas([])
-        setRefinedTheme('')
-        return
-      }
-
-      setThemeLoading(true)
-      setThemeIdeas([])
-      setRefinedTheme('')
-
-      const res = await fetch('/api/theme-ideas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theme: form.theme,
-          genre: form.genre,
-          moods: form.moods,
-          dnaId: form.dnaId,
-        }),
-      })
-
-      const text = await res.text()
-      let data: ThemeIdeasResponse
-
-      try {
-        data = JSON.parse(text)
-      } catch {
-        setThemeIdeas([])
-        setRefinedTheme('')
-        return
-      }
-
-      if (!res.ok) {
-        setThemeIdeas([])
-        setRefinedTheme(data.error || '')
-        return
-      }
-
-      setRefinedTheme(data.refined_theme || '')
-      setThemeIdeas(data.related_themes || [])
-    } catch (err) {
-      console.error('Theme suggestion failed:', err)
-      setThemeIdeas([])
-      setRefinedTheme('')
-    } finally {
-      setThemeLoading(false)
-    }
-  }
-
-  const handleSuggestHooks = async () => {
-    try {
-      if (!form.theme.trim()) {
-        setHookIdeas([])
-        return
-      }
-
-      setHookLoading(true)
-      setHookIdeas([])
-
-      const res = await fetch('/api/hook-ideas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theme: form.theme,
-          genre: form.genre,
-          moods: form.moods,
-          dnaId: form.dnaId,
-        }),
-      })
-
-      const text = await res.text()
-      let data: HookIdeasResponse
-
-      try {
-        data = JSON.parse(text)
-      } catch {
-        setHookIdeas([])
-        return
-      }
-
-      if (!res.ok) {
-        setHookIdeas([])
-        return
-      }
-
-      setHookIdeas(data.hooks || [])
-    } catch (err) {
-      console.error('Hook suggestion failed:', err)
-      setHookIdeas([])
-    } finally {
-      setHookLoading(false)
-    }
-  }
-
-  const requestGeneration = async (lyricsOnly: boolean) => {
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        genre: form.genre,
-        moods: form.moods,
-        theme: form.theme,
-        hook: form.hook,
-        dnaId: form.dnaId,
-        lyricsOnly,
-        languageStyle: form.languageStyle,
-        perspective: form.perspective,
-        songFocus: form.songFocus,
-        liveFriendly: form.liveFriendly,
-        multiVersion: form.multiVersion,
-      }),
-    })
-
-    const text = await res.text()
-    let data: GenerateResponse
-
-    try {
-      data = JSON.parse(text)
-    } catch {
-      throw new Error('API route not found or returned HTML instead of JSON')
-    }
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Something went wrong')
-    }
-
-    return data
-  }
-
-  const requestVideoForDNA = async ({
-    dnaId,
-    lyrics,
-    dnaName,
-  }: {
-    dnaId: string
-    lyrics: string
-    dnaName?: string
-  }): Promise<VideoVersion> => {
-    const res = await fetch('/api/video', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        genre: form.genre,
-        moods: form.moods,
-        theme: form.theme,
-        hook: form.hook,
-        dnaId,
-        lyrics,
-        multiVersion: false,
-      }),
-    })
-
-    const text = await res.text()
-    let data: VideoResponse
-
-    try {
-      data = JSON.parse(text)
-    } catch {
-      throw new Error('Video route not found or returned HTML instead of JSON')
-    }
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to generate video prompts')
-    }
-
-    return {
-      dna_id: dnaId,
-      dna_name: dnaName,
-      global_style: data.global_style,
-      character_prompt: data.character_prompt,
-      video_concept: data.video_concept,
-      scene_prompts: data.scene_prompts,
-    }
-  }
-
-  const rebuildVideoFromSongResult = async (songResult: GenerateResponse) => {
-    if (songResult.versions && songResult.versions.length > 0) {
-      const versions = await Promise.all(
-        songResult.versions.map((version) =>
-          requestVideoForDNA({
-            dnaId: version.dna_id || 'mpj-master',
-            dnaName: version.dna_name,
-            lyrics: version.lyrics_full || '',
-          })
-        )
-      )
-      return { versions } as VideoResponse
-    }
-
-    return requestVideoForDNA({
-      dnaId: songResult.dna_id || form.dnaId,
-      dnaName: songResult.dna_name,
-      lyrics: songResult.lyrics_full || '',
-    })
-  }
+  // ---------------- GENERATE ----------------
 
   const handleGenerate = async () => {
     try {
       setLoading(true)
-      setResult(null)
-      setVideoResult(null)
 
-      const data = await requestGeneration(false)
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      const data = await res.json()
       setResult(data)
 
-      if (user) await trackUsage('generate')
-    } catch (err: any) {
-      console.error('Request failed:', err)
-      setResult({ error: err.message || 'Request failed' })
+      // 🔥 SAVE TO PROJECT
+      if (activeProject) {
+        await fetch('/api/song-versions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: activeProject.id,
+            title: form.theme || form.hook,
+            form,
+            result: data,
+          }),
+        })
+      }
+    } catch (err) {
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleRewriteLyrics = async () => {
-    try {
-      setRewritingLyrics(true)
-
-      const data = await requestGeneration(true)
-      setResult(data)
-
-      if (videoResult) {
-        const refreshedVideo = await rebuildVideoFromSongResult(data)
-        setVideoResult(refreshedVideo)
-      }
-
-      if (user) await trackUsage('rewrite')
-    } catch (err: any) {
-      console.error('Lyrics rewrite failed:', err)
-      setResult((prev) => ({
-        ...prev,
-        error: err.message || 'Lyrics rewrite failed',
-      }))
-    } finally {
-      setRewritingLyrics(false)
-    }
-  }
-
-  const handleGenerateVideo = async () => {
-    try {
-      setVideoLoading(true)
-      setVideoResult(null)
-
-      if (!result) {
-        throw new Error('Generate a song first before creating OpenArt prompts')
-      }
-
-      const rebuilt = await rebuildVideoFromSongResult(result)
-      setVideoResult(rebuilt)
-
-      if (user) await trackUsage('video')
-    } catch (err: any) {
-      console.error('Video generation failed:', err)
-      setVideoResult({ error: err.message || 'Video generation failed' })
-    } finally {
-      setVideoLoading(false)
-    }
-  }
-
-  const handleSaveSession = async () => {
-    try {
-      if (!user) {
-        alert('Sign in first to save private sessions.')
-        return
-      }
-
-      const title =
-        sessionTitle.trim() ||
-        form.theme.trim() ||
-        form.hook.trim() ||
-        `Session ${new Date().toLocaleString()}`
-
-      const newSession = {
-        id: crypto.randomUUID(),
-        title,
-        form,
-        result,
-        videoResult,
-      }
-
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSession),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to save session')
-      }
-
-      setSavedSessions((prev) => [data, ...prev])
-      setSessionTitle('')
-      await trackUsage('save')
-      alert('Session saved to cloud')
-    } catch (err) {
-      console.error('Failed to save session', err)
-      alert('Failed to save session')
-    }
-  }
-
-  const handleLoadSession = (session: SavedSession) => {
-    setForm(session.form)
-    setResult(session.result)
-    setVideoResult(session.video_result)
-    setThemeIdeas([])
-    setRefinedTheme('')
-    setHookIdeas([])
-  }
-
-  const handleDeleteSession = async (id: string) => {
-    try {
-      const res = await fetch(`/api/sessions/${id}`, {
-        method: 'DELETE',
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete session')
-      }
-
-      setSavedSessions((prev) => prev.filter((session) => session.id !== id))
-    } catch (err) {
-      console.error('Failed to delete session', err)
-      alert('Failed to delete session')
-    }
-  }
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text || '')
-      alert('Copied!')
-    } catch (err) {
-      console.error('Copy failed', err)
-    }
-  }
-
-  const buildExportText = () => {
-    const lines: string[] = []
-
-    lines.push('SUNO PROMPT STUDIO EXPORT')
-    lines.push('========================')
-    lines.push('')
-
-    lines.push('INPUTS')
-    lines.push('------')
-    lines.push(`DNA: ${form.dnaId}`)
-    lines.push(`Genre: ${form.genre}`)
-    lines.push(`Moods: ${form.moods.join(', ')}`)
-    lines.push(`Theme: ${form.theme}`)
-    lines.push(`Hook: ${form.hook}`)
-    lines.push('')
-
-    lines.push('LYRIC DIRECTION CONTROLS')
-    lines.push('------------------------')
-    lines.push(`Language Style: ${form.languageStyle}`)
-    lines.push(`Perspective: ${form.perspective}`)
-    lines.push(`Song Focus: ${form.songFocus}`)
-    lines.push(`Live-Friendly: ${form.liveFriendly ? 'On' : 'Off'}`)
-    lines.push(`Generation Mode: ${form.multiVersion ? 'Multi-Version' : 'Single Version'}`)
-    lines.push('')
-
-    if (result) {
-      lines.push('SONG OUTPUT')
-      lines.push('-----------')
-      lines.push('')
-
-      if (result.versions && result.versions.length > 0) {
-        result.versions.forEach((version, index) => {
-          lines.push(`VERSION ${index + 1}: ${version.dna_name || version.dna_id || 'Unknown'}`)
-          lines.push('----------------------------------------')
-          lines.push(`Style (Short): ${version.style_short || ''}`)
-          lines.push('')
-          lines.push('Style (Detailed):')
-          lines.push(version.style_detailed || '')
-          lines.push('')
-          lines.push('Lyrics Brief:')
-          lines.push(version.lyrics_brief || '')
-          lines.push('')
-          lines.push('Full Lyrics:')
-          lines.push(version.lyrics_full || '')
-          lines.push('')
-        })
-      } else {
-        lines.push(`Style (Short): ${result.style_short || ''}`)
-        lines.push('')
-        lines.push('Style (Detailed):')
-        lines.push(result.style_detailed || '')
-        lines.push('')
-        lines.push('Lyrics Brief:')
-        lines.push(result.lyrics_brief || '')
-        lines.push('')
-        lines.push('Full Lyrics:')
-        lines.push(result.lyrics_full || '')
-        lines.push('')
-      }
-    }
-
-    if (videoResult) {
-      lines.push('OPENART OUTPUT')
-      lines.push('--------------')
-      lines.push('')
-
-      if (videoResult.versions && videoResult.versions.length > 0) {
-        videoResult.versions.forEach((video, index) => {
-          lines.push(`VIDEO VERSION ${index + 1}: ${video.dna_name || video.dna_id || 'Unknown'}`)
-          lines.push('----------------------------------------')
-          lines.push('Global Style:')
-          lines.push(video.global_style || '')
-          lines.push('')
-          lines.push('Character Prompt:')
-          lines.push(video.character_prompt || '')
-          lines.push('')
-          lines.push('Video Concept:')
-          lines.push(video.video_concept || '')
-          lines.push('')
-
-          if (video.scene_prompts?.length) {
-            lines.push('Scene Prompts:')
-            video.scene_prompts.forEach((scene) => {
-              lines.push(`[${scene.section}]`)
-              lines.push(scene.prompt || '')
-              lines.push('')
-            })
-          }
-        })
-      } else {
-        lines.push('Global Style:')
-        lines.push(videoResult.global_style || '')
-        lines.push('')
-        lines.push('Character Prompt:')
-        lines.push(videoResult.character_prompt || '')
-        lines.push('')
-        lines.push('Video Concept:')
-        lines.push(videoResult.video_concept || '')
-        lines.push('')
-
-        if (videoResult.scene_prompts?.length) {
-          lines.push('Scene Prompts:')
-          videoResult.scene_prompts.forEach((scene) => {
-            lines.push(`[${scene.section}]`)
-            lines.push(scene.prompt || '')
-            lines.push('')
-          })
-        }
-      }
-    }
-
-    return lines.join('\n')
-  }
-
-  const handleSaveToFile = () => {
-    const text = buildExportText()
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    const safeTheme = (form.theme || 'song-idea')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-
-    a.href = url
-    a.download = `suno-prompt-studio-${safeTheme}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-
-    URL.revokeObjectURL(url)
-  }
-
-  const pageStyle: CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: '#18181b',
-    color: 'white',
-    padding: '24px',
-    fontFamily: 'Arial, sans-serif',
-  }
-
-  const headerStyle: CSSProperties = {
-    fontSize: '32px',
-    fontWeight: 'bold',
-    marginBottom: '8px',
-  }
-
-  const subHeaderStyle: CSSProperties = {
-    color: '#a1a1aa',
-    marginBottom: '24px',
-  }
-
-  const layoutStyle: CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '24px',
-    alignItems: 'start',
-  }
-
-  const panelStyle: CSSProperties = {
-    backgroundColor: '#27272a',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
-  }
-
-  const sectionStyle: CSSProperties = {
-    marginBottom: '24px',
-  }
-
-  const labelStyle: CSSProperties = {
-    display: 'block',
-    marginBottom: '10px',
-    fontWeight: 600,
-  }
-
-  const inputStyle: CSSProperties = {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '12px',
-    border: '1px solid #52525b',
-    backgroundColor: '#3f3f46',
-    color: 'white',
-    boxSizing: 'border-box',
-    outline: 'none',
-  }
-
-  const textAreaStyle: CSSProperties = {
-    ...inputStyle,
-    minHeight: '96px',
-    resize: 'vertical',
-  }
-
-  const helperStyle: CSSProperties = {
-    color: '#a1a1aa',
-    fontSize: '14px',
-    marginTop: '6px',
-  }
-
-  const rowWrapStyle: CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-  }
-
-  const buttonStyle = (selected: boolean): CSSProperties => ({
-    padding: '8px 12px',
-    borderRadius: '9999px',
-    border: '1px solid',
-    borderColor: selected ? '#2563eb' : '#52525b',
-    backgroundColor: selected ? '#2563eb' : '#3f3f46',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    lineHeight: 1.2,
-    display: 'inline-block',
-  })
-
-  const dnaButtonStyle = (selected: boolean): CSSProperties => ({
-    padding: '12px 14px',
-    borderRadius: '14px',
-    border: '1px solid',
-    borderColor: selected ? '#2563eb' : '#52525b',
-    backgroundColor: selected ? '#2563eb' : '#3f3f46',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 600,
-    textAlign: 'center',
-    flex: 1,
-    minWidth: '120px',
-  })
-
-  const actionButtonStyle: CSSProperties = {
-    padding: '10px 14px',
-    borderRadius: '12px',
-    border: '1px solid #2563eb',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 600,
-  }
-
-  const secondaryActionButtonStyle: CSSProperties = {
-    padding: '10px 14px',
-    borderRadius: '12px',
-    border: '1px solid #52525b',
-    backgroundColor: '#3f3f46',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 600,
-  }
-
-  const generateButtonStyle: CSSProperties = {
-    width: '100%',
-    padding: '14px 16px',
-    borderRadius: '14px',
-    border: 'none',
-    backgroundColor: loading ? '#1d4ed8aa' : '#2563eb',
-    color: 'white',
-    cursor: loading ? 'default' : 'pointer',
-    fontSize: '16px',
-    fontWeight: 600,
-  }
-
-  const outputCardStyle: CSSProperties = {
-    backgroundColor: '#3f3f4699',
-    borderRadius: '14px',
-    padding: '16px',
-    marginBottom: '16px',
-  }
-
-  const outputTitleStyle: CSSProperties = {
-    fontWeight: 700,
-    marginBottom: '8px',
-  }
-
-  const copyButtonStyle: CSSProperties = {
-    padding: '4px 10px',
-    borderRadius: '8px',
-    border: '1px solid #52525b',
-    backgroundColor: '#3f3f46',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '12px',
-  }
-
-  const emptyStateStyle: CSSProperties = {
-    backgroundColor: '#3f3f4666',
-    borderRadius: '14px',
-    padding: '16px',
-    color: '#d4d4d8',
-  }
-
-  const errorStyle: CSSProperties = {
-    border: '1px solid #ef4444',
-    backgroundColor: '#450a0a66',
-    borderRadius: '14px',
-    padding: '16px',
-  }
-
-  const tableOuterStyle: CSSProperties = {
-    border: '1px solid #3f3f46',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    marginBottom: '24px',
-  }
-
-  const tableHeaderWrapStyle: CSSProperties = {
-    overflowX: 'auto',
-    overflowY: 'hidden',
-    borderBottom: '1px solid #52525b',
-  }
-
-  const tableBodyWrapStyle: CSSProperties = {
-    overflowX: 'auto',
-    overflowY: 'auto',
-    maxHeight: '420px',
-  }
-
-  const tableStyle: CSSProperties = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: '#2f2f35',
-    tableLayout: 'fixed',
-  }
-
-  const thStyle: CSSProperties = {
-    textAlign: 'left',
-    padding: '8px 10px',
-    fontSize: '14px',
-    borderBottom: '1px solid #52525b',
-    backgroundColor: '#3f3f46',
-    cursor: 'pointer',
-    userSelect: 'none',
-    whiteSpace: 'nowrap',
-    position: 'relative',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    lineHeight: 1.2,
-  }
-
-  const tdStyle: CSSProperties = {
-    padding: '8px 10px',
-    borderBottom: '1px solid #3f3f46',
-    verticalAlign: 'middle',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    lineHeight: 1.2,
-  }
-
-  const resizeHandleStyle: CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: '8px',
-    height: '100%',
-    cursor: 'col-resize',
-    userSelect: 'none',
-  }
-
-  const responsiveStyle =
-    typeof window !== 'undefined' && window.innerWidth < 980
-      ? { gridTemplateColumns: '1fr' }
-      : {}
-
-  const renderSingleVersion = (data: ResultType) => (
-    <div>
-      <div style={outputCardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div style={outputTitleStyle}>Style (Short)</div>
-          <button
-            onClick={() => copyToClipboard(data.style_short || '')}
-            style={copyButtonStyle}
-          >
-            Copy
-          </button>
-        </div>
-        <div>{data.style_short}</div>
-      </div>
-
-      <div style={outputCardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div style={outputTitleStyle}>Style (Detailed)</div>
-          <button
-            onClick={() => copyToClipboard(data.style_detailed || '')}
-            style={copyButtonStyle}
-          >
-            Copy
-          </button>
-        </div>
-        <div>{data.style_detailed}</div>
-      </div>
-
-      {data.lyrics_full && (
-        <div style={outputCardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={outputTitleStyle}>Full Lyrics</div>
-            <button
-              onClick={() => copyToClipboard(data.lyrics_full || '')}
-              style={copyButtonStyle}
-            >
-              Copy
-            </button>
-          </div>
-          <pre
-            style={{
-              whiteSpace: 'pre-wrap',
-              margin: 0,
-              fontFamily: 'inherit',
-              lineHeight: '1.6',
-            }}
-          >
-            {data.lyrics_full}
-          </pre>
-        </div>
-      )}
-
-      {data.lyrics_brief && (
-        <div style={outputCardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={outputTitleStyle}>Lyrics Brief</div>
-            <button
-              onClick={() => copyToClipboard(data.lyrics_brief || '')}
-              style={copyButtonStyle}
-            >
-              Copy
-            </button>
-          </div>
-          <div>{data.lyrics_brief}</div>
-        </div>
-      )}
-    </div>
-  )
-
-  const renderVideoVersion = (video: VideoVersion) => (
-    <div>
-      <div style={outputCardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div style={outputTitleStyle}>Global Style</div>
-          <button
-            onClick={() => copyToClipboard(video.global_style || '')}
-            style={copyButtonStyle}
-          >
-            Copy
-          </button>
-        </div>
-        <div>{video.global_style}</div>
-      </div>
-
-      <div style={outputCardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div style={outputTitleStyle}>Character Prompt</div>
-          <button
-            onClick={() => copyToClipboard(video.character_prompt || '')}
-            style={copyButtonStyle}
-          >
-            Copy
-          </button>
-        </div>
-        <div>{video.character_prompt}</div>
-      </div>
-
-      <div style={outputCardStyle}>
-        <div style={outputTitleStyle}>Video Concept</div>
-        <div>{video.video_concept}</div>
-      </div>
-
-      {video.scene_prompts?.map((scene, index) => (
-        <div key={`${scene.section}-${index}`} style={outputCardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={outputTitleStyle}>{scene.section}</div>
-            <button
-              onClick={() => copyToClipboard(scene.prompt || '')}
-              style={copyButtonStyle}
-            >
-              Copy
-            </button>
-          </div>
-          <div>{scene.prompt}</div>
-        </div>
-      ))}
-    </div>
-  )
+  // ---------------- UI ----------------
 
   return (
-    <div style={pageStyle}>
-      <h1 style={headerStyle}>🎸 Suno Prompt Studio</h1>
-      <p style={subHeaderStyle}>
-        Build Suno-ready style prompts, full lyrics, OpenArt-ready video prompts, and private cloud-synced sessions.
-      </p>
+    <div style={{ display: 'flex', height: '100vh', background: '#18181b', color: 'white' }}>
+      
+      {/* SIDEBAR */}
+      <div style={{ width: 260, borderRight: '1px solid #333', padding: 16 }}>
+        <h3>Projects</h3>
 
-      <div style={sectionStyle}>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
-          Private Cloud Sessions
-        </h2>
-
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <input
-            placeholder="Optional session title"
-            style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
-            value={sessionTitle}
-            onChange={(e) => setSessionTitle(e.target.value)}
-          />
-          <button
-            onClick={handleSaveSession}
-            style={{ ...secondaryActionButtonStyle, minWidth: '160px' }}
-          >
-            Save Session
-          </button>
-        </div>
-
-        {!user ? (
-          <div style={helperStyle}>Sign in to use private saved sessions.</div>
-        ) : sessionsLoading ? (
-          <div style={helperStyle}>Loading sessions...</div>
-        ) : (
+        {user && (
           <>
-            <input
-              placeholder="Search saved sessions..."
-              style={{ ...inputStyle, marginBottom: '12px' }}
-              value={sessionSearch}
-              onChange={(e) => setSessionSearch(e.target.value)}
-            />
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              <input
+                placeholder="New project"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button onClick={createProject}>+</button>
+            </div>
 
-            {sortedSessions.length > 0 ? (
-              <div style={tableOuterStyle}>
-                <div style={tableHeaderWrapStyle}>
-                  <table style={tableStyle}>
-                    <colgroup>
-                      <col style={{ width: columnWidths.title }} />
-                      <col style={{ width: columnWidths.genre }} />
-                      <col style={{ width: columnWidths.theme }} />
-                      <col style={{ width: columnWidths.hook }} />
-                      <col style={{ width: columnWidths.created_at }} />
-                      <col style={{ width: columnWidths.actions }} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th style={thStyle} onClick={() => toggleSort('title')}>
-                          <span>Title{sortIndicator('title')}</span>
-                          <div
-                            style={resizeHandleStyle}
-                            onMouseDown={(e) => startColumnResize('title', e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </th>
-
-                        <th style={thStyle} onClick={() => toggleSort('genre')}>
-                          <span>Genre{sortIndicator('genre')}</span>
-                          <div
-                            style={resizeHandleStyle}
-                            onMouseDown={(e) => startColumnResize('genre', e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </th>
-
-                        <th style={thStyle} onClick={() => toggleSort('theme')}>
-                          <span>Theme{sortIndicator('theme')}</span>
-                          <div
-                            style={resizeHandleStyle}
-                            onMouseDown={(e) => startColumnResize('theme', e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </th>
-
-                        <th style={{ ...thStyle, cursor: 'default' }}>
-                          <span>Hook</span>
-                          <div
-                            style={resizeHandleStyle}
-                            onMouseDown={(e) => startColumnResize('hook', e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </th>
-
-                        <th style={thStyle} onClick={() => toggleSort('created_at')}>
-                          <span>Created{sortIndicator('created_at')}</span>
-                          <div
-                            style={resizeHandleStyle}
-                            onMouseDown={(e) => startColumnResize('created_at', e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </th>
-
-                        <th
-                          style={{
-                            ...thStyle,
-                            cursor: 'default',
-                          }}
-                        >
-                          <span>Actions</span>
-                          <div
-                            style={resizeHandleStyle}
-                            onMouseDown={(e) => startColumnResize('actions', e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </th>
-                      </tr>
-                    </thead>
-                  </table>
-                </div>
-
-                <div style={tableBodyWrapStyle}>
-                  <table style={tableStyle}>
-                    <colgroup>
-                      <col style={{ width: columnWidths.title }} />
-                      <col style={{ width: columnWidths.genre }} />
-                      <col style={{ width: columnWidths.theme }} />
-                      <col style={{ width: columnWidths.hook }} />
-                      <col style={{ width: columnWidths.created_at }} />
-                      <col style={{ width: columnWidths.actions }} />
-                    </colgroup>
-                    <tbody>
-                      {sortedSessions.map((session) => (
-                        <tr key={session.id}>
-                          <td style={tdStyle} title={session.title}>
-                            {session.title}
-                          </td>
-
-                          <td style={tdStyle} title={session.form?.genre || ''}>
-                            {session.form?.genre || '—'}
-                          </td>
-
-                          <td style={tdStyle} title={session.form?.theme || ''}>
-                            {session.form?.theme || '—'}
-                          </td>
-
-                          <td style={tdStyle} title={session.form?.hook || ''}>
-                            {session.form?.hook || '—'}
-                          </td>
-
-                          <td style={tdStyle} title={session.created_at || ''}>
-                            {session.created_at
-                              ? new Date(session.created_at).toLocaleString()
-                              : '—'}
-                          </td>
-
-                          <td style={tdStyle}>
-                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
-                              <button
-                                onClick={() => handleLoadSession(session)}
-                                style={secondaryActionButtonStyle}
-                              >
-                                Load
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSession(session.id)}
-                                style={secondaryActionButtonStyle}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            {projects.map((p) => (
+              <div
+                key={p.id}
+                onClick={() => setActiveProject(p)}
+                style={{
+                  padding: 8,
+                  marginBottom: 6,
+                  cursor: 'pointer',
+                  background: activeProject?.id === p.id ? '#2563eb' : '#27272a',
+                  borderRadius: 6,
+                }}
+              >
+                {p.title}
               </div>
-            ) : (
-              <div style={helperStyle}>
-                {savedSessions.length > 0
-                  ? 'No sessions match your search.'
-                  : 'No saved sessions yet.'}
-              </div>
-            )}
+            ))}
           </>
         )}
       </div>
 
-      <div style={{ ...layoutStyle, ...responsiveStyle }}>
-        <div style={panelStyle}>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
-            Account & Usage
-          </h2>
+      {/* MAIN */}
+      <div style={{ flex: 1, padding: 24 }}>
+        <h1>Suno Prompt Studio</h1>
 
-          {authLoading ? (
-            <div style={helperStyle}>Checking sign-in status...</div>
-          ) : user ? (
-            <div style={sectionStyle}>
-              <div style={{ marginBottom: '8px' }}>
-                Signed in as <strong>{user.email || 'User'}</strong>
-              </div>
-              <button onClick={signOut} style={secondaryActionButtonStyle}>
-                Sign Out
-              </button>
-
-              <div style={{ marginTop: '16px' }}>
-                <div style={labelStyle}>Usage Tracking</div>
-                <div style={tdStyle}>Generate count: {usage.generate_count}</div>
-                <div style={tdStyle}>Rewrite count: {usage.rewrite_count}</div>
-                <div style={tdStyle}>OpenArt count: {usage.video_count}</div>
-                <div style={tdStyle}>Save count: {usage.save_count}</div>
-              </div>
-            </div>
-          ) : (
-            <div style={sectionStyle}>
-              <div style={helperStyle}>
-                Sign in with an email code to unlock private cloud-synced sessions.
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                <input
-                  placeholder="Your email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
-                />
-                <button
-                  onClick={sendCode}
-                  disabled={sendingCode}
-                  style={{
-                    ...actionButtonStyle,
-                    opacity: sendingCode ? 0.6 : 1,
-                    cursor: sendingCode ? 'default' : 'pointer',
-                  }}
-                >
-                  {sendingCode ? 'Sending...' : 'Send Code'}
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                <input
-                  placeholder="Enter 6-digit code"
-                  value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value)}
-                  style={{ ...inputStyle, flex: 1, minWidth: '220px' }}
-                />
-                <button
-                  onClick={verifyCode}
-                  disabled={verifyingCode}
-                  style={{
-                    ...secondaryActionButtonStyle,
-                    opacity: verifyingCode ? 0.6 : 1,
-                    cursor: verifyingCode ? 'default' : 'pointer',
-                  }}
-                >
-                  {verifyingCode ? 'Verifying...' : 'Verify Code'}
-                </button>
-              </div>
-
-              {authMessage && <div style={helperStyle}>{authMessage}</div>}
-            </div>
-          )}
-
-          <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
-            Song Idea
-          </h2>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Creative DNA</label>
-            <div style={rowWrapStyle}>
-              {dnaOptions.map((dna) => {
-                const selected = form.dnaId === dna.id
-                return (
-                  <button
-                    key={dna.id}
-                    type="button"
-                    onClick={() => setForm({ ...form, dnaId: dna.id })}
-                    style={dnaButtonStyle(selected)}
-                  >
-                    {dna.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Genre</label>
-            <div style={rowWrapStyle}>
-              {genreOptions.map((genre) => {
-                const selected = form.genre === genre
-                return (
-                  <button
-                    key={genre}
-                    type="button"
-                    onClick={() => setForm({ ...form, genre })}
-                    style={buttonStyle(selected)}
-                  >
-                    {genre}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Mood</label>
-            <div style={rowWrapStyle}>
-              {moodOptions.map((mood) => {
-                const selected = form.moods.includes(mood)
-                return (
-                  <button
-                    key={mood}
-                    type="button"
-                    onClick={() => toggleMood(mood)}
-                    style={buttonStyle(selected)}
-                  >
-                    {mood}
-                  </button>
-                )
-              })}
-            </div>
-            <div style={helperStyle}>You can choose more than one mood.</div>
-          </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Theme Idea</label>
-            <textarea
-              placeholder="What is this song really about?"
-              style={textAreaStyle}
-              value={form.theme}
-              onChange={(e) => setForm({ ...form, theme: e.target.value })}
-            />
-            <div style={helperStyle}>
-              Start with a rough idea. The app can suggest alternative angles.
-            </div>
-
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={handleSuggestThemes}
-                disabled={themeLoading || !form.theme.trim()}
-                style={{
-                  ...actionButtonStyle,
-                  opacity: themeLoading || !form.theme.trim() ? 0.6 : 1,
-                  cursor: themeLoading || !form.theme.trim() ? 'default' : 'pointer',
-                }}
-              >
-                {themeLoading ? 'Suggesting...' : 'Suggest Related Ideas'}
-              </button>
-            </div>
-
-            {refinedTheme && (
-              <div style={{ ...outputCardStyle, marginTop: '16px', marginBottom: '12px' }}>
-                <div style={outputTitleStyle}>Refined Theme</div>
-                <div>{refinedTheme}</div>
-              </div>
-            )}
-
-            {themeIdeas.length > 0 && (
-              <div style={{ marginTop: '12px' }}>
-                <div style={{ ...labelStyle, marginBottom: '8px' }}>Related Ideas</div>
-                <div style={rowWrapStyle}>
-                  {themeIdeas.map((idea) => (
-                    <button
-                      key={idea}
-                      type="button"
-                      onClick={() => setForm({ ...form, theme: idea })}
-                      style={buttonStyle(form.theme === idea)}
-                    >
-                      {idea}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Hook</label>
-            <div style={helperStyle}>
-              Generate hook ideas from your theme, or type your own.
-            </div>
-
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={handleSuggestHooks}
-                disabled={hookLoading || !form.theme.trim()}
-                style={{
-                  ...actionButtonStyle,
-                  opacity: hookLoading || !form.theme.trim() ? 0.6 : 1,
-                  cursor: hookLoading || !form.theme.trim() ? 'default' : 'pointer',
-                }}
-              >
-                {hookLoading ? 'Generating...' : 'Suggest Hooks'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSuggestHooks}
-                disabled={hookLoading || !form.theme.trim()}
-                style={{
-                  ...secondaryActionButtonStyle,
-                  opacity: hookLoading || !form.theme.trim() ? 0.6 : 1,
-                  cursor: hookLoading || !form.theme.trim() ? 'default' : 'pointer',
-                }}
-              >
-                Regenerate Hooks
-              </button>
-            </div>
-
-            {hookIdeas.length > 0 && (
-              <div style={{ ...rowWrapStyle, marginTop: '12px', marginBottom: '12px' }}>
-                {hookIdeas.map((suggestion) => {
-                  const selected = form.hook === suggestion
-                  return (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => setForm({ ...form, hook: suggestion })}
-                      style={buttonStyle(selected)}
-                    >
-                      {suggestion}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            <input
-              placeholder="Custom hook phrase"
-              style={inputStyle}
-              value={form.hook}
-              onChange={(e) => setForm({ ...form, hook: e.target.value })}
-            />
-          </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Lyric Direction Controls</label>
-
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
-                Style of language
-              </div>
-              <div style={rowWrapStyle}>
-                {['Conversational', 'Balanced', 'Poetic'].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setForm({ ...form, languageStyle: option })}
-                    style={buttonStyle(form.languageStyle === option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
-                Perspective
-              </div>
-              <div style={rowWrapStyle}>
-                {['Personal', 'Balanced', 'Universal'].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setForm({ ...form, perspective: option })}
-                    style={buttonStyle(form.perspective === option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
-                Song focus
-              </div>
-              <div style={rowWrapStyle}>
-                {['Story', 'Balanced', 'Hook-driven'].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setForm({ ...form, songFocus: option })}
-                    style={buttonStyle(form.songFocus === option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* AUTH */}
+        {!user ? (
+          <div style={{ marginBottom: 20 }}>
+            <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <button onClick={sendCode}>Send Code</button>
 
             <div>
-              <div style={{ ...helperStyle, marginBottom: '8px', marginTop: 0 }}>
-                Live-friendly phrasing
-              </div>
-              <div style={rowWrapStyle}>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, liveFriendly: true })}
-                  style={buttonStyle(form.liveFriendly === true)}
-                >
-                  On
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, liveFriendly: false })}
-                  style={buttonStyle(form.liveFriendly === false)}
-                >
-                  Off
-                </button>
-              </div>
+              <input placeholder="Code" value={code} onChange={(e) => setCode(e.target.value)} />
+              <button onClick={verifyCode}>Verify</button>
             </div>
+
+            <div>{message}</div>
           </div>
-
-          <div style={sectionStyle}>
-            <label style={labelStyle}>Generation Mode</label>
-            <div style={rowWrapStyle}>
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, multiVersion: false })}
-                style={buttonStyle(form.multiVersion === false)}
-              >
-                Single Version
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, multiVersion: true })}
-                style={buttonStyle(form.multiVersion === true)}
-              >
-                Multi-Version
-              </button>
-            </div>
-            <div style={helperStyle}>
-              Multi-Version generates MPJ Master, Commercial Hit, and Raw Folk side by side.
-            </div>
+        ) : (
+          <div style={{ marginBottom: 20 }}>
+            Logged in as {user.email}
+            <button onClick={signOut}>Sign out</button>
           </div>
+        )}
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              style={{
-                ...generateButtonStyle,
-                width: 'auto',
-                flex: 1,
-                minWidth: '180px',
-              }}
-            >
-              {loading ? 'Generating...' : 'Generate Song'}
-            </button>
+        {/* FORM */}
+        <div style={{ marginBottom: 20 }}>
+          <input
+            placeholder="Theme"
+            value={form.theme}
+            onChange={(e) => setForm({ ...form, theme: e.target.value })}
+          />
 
-            <button
-              onClick={handleRewriteLyrics}
-              disabled={rewritingLyrics || !result}
-              style={{
-                ...actionButtonStyle,
-                opacity: rewritingLyrics || !result ? 0.6 : 1,
-                cursor: rewritingLyrics || !result ? 'default' : 'pointer',
-                minWidth: '180px',
-              }}
-            >
-              {rewritingLyrics ? 'Rewriting...' : 'Rewrite Lyrics Only'}
-            </button>
+          <input
+            placeholder="Hook"
+            value={form.hook}
+            onChange={(e) => setForm({ ...form, hook: e.target.value })}
+          />
 
-            <button
-              onClick={handleGenerateVideo}
-              disabled={videoLoading || !result}
-              style={{
-                ...secondaryActionButtonStyle,
-                opacity: videoLoading || !result ? 0.6 : 1,
-                cursor: videoLoading || !result ? 'default' : 'pointer',
-                minWidth: '180px',
-              }}
-            >
-              {videoLoading ? 'Generating Video...' : 'OpenArt Mode'}
-            </button>
-
-            <button
-              onClick={handleSaveToFile}
-              disabled={!result && !videoResult}
-              style={{
-                ...secondaryActionButtonStyle,
-                opacity: !result && !videoResult ? 0.6 : 1,
-                cursor: !result && !videoResult ? 'default' : 'pointer',
-                minWidth: '180px',
-              }}
-            >
-              Save Results to TXT
-            </button>
-          </div>
+          <button onClick={handleGenerate} disabled={loading}>
+            {loading ? 'Generating...' : 'Generate Song'}
+          </button>
         </div>
 
-        <div style={panelStyle}>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
-            Output
-          </h2>
-
-          {result ? (
-            result.error ? (
-              <div style={errorStyle}>
-                <div style={{ fontWeight: 700, color: '#f87171', marginBottom: '8px' }}>
-                  Error
-                </div>
-                <div>{result.error}</div>
-              </div>
-            ) : result.versions && result.versions.length > 0 ? (
-              <div>
-                {result.versions.map((version) => (
-                  <div key={version.dna_id} style={{ ...outputCardStyle, backgroundColor: '#2f2f35' }}>
-                    <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
-                      {version.dna_name}
-                    </div>
-                    {renderSingleVersion(version)}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              renderSingleVersion(result)
-            )
-          ) : (
-            <div style={emptyStateStyle}>No output yet</div>
-          )}
-
-          {videoResult && (
-            <div style={{ marginTop: '24px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>
-                OpenArt Output
-              </h2>
-
-              {videoResult.error ? (
-                <div style={errorStyle}>{videoResult.error}</div>
-              ) : videoResult.versions && videoResult.versions.length > 0 ? (
-                <div>
-                  {videoResult.versions.map((video) => (
-                    <div
-                      key={video.dna_id}
-                      style={{ ...outputCardStyle, backgroundColor: '#2f2f35' }}
-                    >
-                      <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
-                        {video.dna_name}
-                      </div>
-                      {renderVideoVersion(video)}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                renderVideoVersion(videoResult)
-              )}
-            </div>
-          )}
-        </div>
+        {/* RESULT */}
+        {result && (
+          <div style={{ background: '#27272a', padding: 16 }}>
+            <pre>{JSON.stringify(result, null, 2)}</pre>
+          </div>
+        )}
       </div>
     </div>
   )
