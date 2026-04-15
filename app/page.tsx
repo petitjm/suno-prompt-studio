@@ -644,7 +644,9 @@ export default function Home() {
   const handleGenerateChords = async () => {
     try {
       setChordLoading(true)
+
       const currentSongResult = result
+      const currentForm = form
 
       const res = await fetch('/api/chords', {
         method: 'POST',
@@ -663,13 +665,14 @@ export default function Home() {
 
       setChords(data)
 
-      if (currentSongResult) {
-        setResult(currentSongResult)
-      }
-
       if (activeProject) {
         await loadProjectData(activeProject.id)
       }
+
+      if (currentSongResult) {
+        setResult(currentSongResult)
+      }
+      setForm(currentForm)
     } catch (err: any) {
       console.error(err)
       setChords({ error: err.message || 'Chord generation failed' })
