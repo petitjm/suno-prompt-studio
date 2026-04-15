@@ -430,8 +430,6 @@ export default function Home() {
 
       if (songData.latest?.result) {
         setResult(songData.latest.result)
-      } else {
-        setResult(null)
       }
 
       if (songData.latest?.form) {
@@ -446,8 +444,6 @@ export default function Home() {
 
       if (chordData.latest?.chord_data) {
         setChords(chordData.latest.chord_data)
-      } else {
-        setChords(null)
       }
 
       setProjectMessage('')
@@ -610,7 +606,7 @@ export default function Home() {
   const handleGenerateChords = async () => {
     try {
       setChordLoading(true)
-      setChords(null)
+      const currentSongResult = result
 
       const res = await fetch('/api/chords', {
         method: 'POST',
@@ -628,6 +624,10 @@ export default function Home() {
       }
 
       setChords(data)
+
+      if (currentSongResult) {
+        setResult(currentSongResult)
+      }
 
       if (activeProject) {
         await loadProjectData(activeProject.id)
