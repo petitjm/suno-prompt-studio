@@ -1179,11 +1179,23 @@ export default function Home() {
     padding: '16px',
   }
 
-  const tableWrapStyle: CSSProperties = {
-    overflowX: 'auto',
+  const tableOuterStyle: CSSProperties = {
     border: '1px solid #3f3f46',
     borderRadius: '12px',
+    overflow: 'hidden',
     marginBottom: '24px',
+  }
+
+  const tableHeaderWrapStyle: CSSProperties = {
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    borderBottom: '1px solid #52525b',
+  }
+
+  const tableBodyWrapStyle: CSSProperties = {
+    overflowX: 'auto',
+    overflowY: 'auto',
+    maxHeight: '420px',
   }
 
   const tableStyle: CSSProperties = {
@@ -1195,7 +1207,7 @@ export default function Home() {
 
   const thStyle: CSSProperties = {
     textAlign: 'left',
-    padding: '12px',
+    padding: '8px 10px',
     fontSize: '14px',
     borderBottom: '1px solid #52525b',
     backgroundColor: '#3f3f46',
@@ -1205,15 +1217,17 @@ export default function Home() {
     position: 'relative',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    lineHeight: 1.2,
   }
 
   const tdStyle: CSSProperties = {
-    padding: '12px',
+    padding: '8px 10px',
     borderBottom: '1px solid #3f3f46',
-    verticalAlign: 'top',
+    verticalAlign: 'middle',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    lineHeight: 1.2,
   }
 
   const resizeHandleStyle: CSSProperties = {
@@ -1391,125 +1405,138 @@ export default function Home() {
             />
 
             {sortedSessions.length > 0 ? (
-              <div style={tableWrapStyle}>
-                <table style={tableStyle}>
-                  <colgroup>
-                    <col style={{ width: columnWidths.title }} />
-                    <col style={{ width: columnWidths.genre }} />
-                    <col style={{ width: columnWidths.theme }} />
-                    <col style={{ width: columnWidths.hook }} />
-                    <col style={{ width: columnWidths.created_at }} />
-                    <col style={{ width: columnWidths.actions }} />
-                  </colgroup>
+              <div style={tableOuterStyle}>
+                <div style={tableHeaderWrapStyle}>
+                  <table style={tableStyle}>
+                    <colgroup>
+                      <col style={{ width: columnWidths.title }} />
+                      <col style={{ width: columnWidths.genre }} />
+                      <col style={{ width: columnWidths.theme }} />
+                      <col style={{ width: columnWidths.hook }} />
+                      <col style={{ width: columnWidths.created_at }} />
+                      <col style={{ width: columnWidths.actions }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th style={thStyle} onClick={() => toggleSort('title')}>
+                          <span>Title{sortIndicator('title')}</span>
+                          <div
+                            style={resizeHandleStyle}
+                            onMouseDown={(e) => startColumnResize('title', e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </th>
 
-                  <thead>
-                    <tr>
-                      <th style={thStyle} onClick={() => toggleSort('title')}>
-                        <span>Title{sortIndicator('title')}</span>
-                        <div
-                          style={resizeHandleStyle}
-                          onMouseDown={(e) => startColumnResize('title', e)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </th>
+                        <th style={thStyle} onClick={() => toggleSort('genre')}>
+                          <span>Genre{sortIndicator('genre')}</span>
+                          <div
+                            style={resizeHandleStyle}
+                            onMouseDown={(e) => startColumnResize('genre', e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </th>
 
-                      <th style={thStyle} onClick={() => toggleSort('genre')}>
-                        <span>Genre{sortIndicator('genre')}</span>
-                        <div
-                          style={resizeHandleStyle}
-                          onMouseDown={(e) => startColumnResize('genre', e)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </th>
+                        <th style={thStyle} onClick={() => toggleSort('theme')}>
+                          <span>Theme{sortIndicator('theme')}</span>
+                          <div
+                            style={resizeHandleStyle}
+                            onMouseDown={(e) => startColumnResize('theme', e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </th>
 
-                      <th style={thStyle} onClick={() => toggleSort('theme')}>
-                        <span>Theme{sortIndicator('theme')}</span>
-                        <div
-                          style={resizeHandleStyle}
-                          onMouseDown={(e) => startColumnResize('theme', e)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </th>
+                        <th style={{ ...thStyle, cursor: 'default' }}>
+                          <span>Hook</span>
+                          <div
+                            style={resizeHandleStyle}
+                            onMouseDown={(e) => startColumnResize('hook', e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </th>
 
-                      <th style={{ ...thStyle, cursor: 'default' }}>
-                        <span>Hook</span>
-                        <div
-                          style={resizeHandleStyle}
-                          onMouseDown={(e) => startColumnResize('hook', e)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </th>
+                        <th style={thStyle} onClick={() => toggleSort('created_at')}>
+                          <span>Created{sortIndicator('created_at')}</span>
+                          <div
+                            style={resizeHandleStyle}
+                            onMouseDown={(e) => startColumnResize('created_at', e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </th>
 
-                      <th style={thStyle} onClick={() => toggleSort('created_at')}>
-                        <span>Created{sortIndicator('created_at')}</span>
-                        <div
-                          style={resizeHandleStyle}
-                          onMouseDown={(e) => startColumnResize('created_at', e)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </th>
-
-                      <th
-                        style={{
-                          ...thStyle,
-                          cursor: 'default',
-                        }}
-                      >
-                        <span>Actions</span>
-                        <div
-                          style={resizeHandleStyle}
-                          onMouseDown={(e) => startColumnResize('actions', e)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {sortedSessions.map((session) => (
-                      <tr key={session.id}>
-                        <td style={tdStyle} title={session.title}>
-                          {session.title}
-                        </td>
-
-                        <td style={tdStyle} title={session.form?.genre || ''}>
-                          {session.form?.genre || '—'}
-                        </td>
-
-                        <td style={tdStyle} title={session.form?.theme || ''}>
-                          {session.form?.theme || '—'}
-                        </td>
-
-                        <td style={tdStyle} title={session.form?.hook || ''}>
-                          {session.form?.hook || '—'}
-                        </td>
-
-                        <td style={tdStyle} title={session.created_at || ''}>
-                          {session.created_at
-                            ? new Date(session.created_at).toLocaleString()
-                            : '—'}
-                        </td>
-
-                        <td style={tdStyle}>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap' }}>
-                            <button
-                              onClick={() => handleLoadSession(session)}
-                              style={secondaryActionButtonStyle}
-                            >
-                              Load
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSession(session.id)}
-                              style={secondaryActionButtonStyle}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
+                        <th
+                          style={{
+                            ...thStyle,
+                            cursor: 'default',
+                          }}
+                        >
+                          <span>Actions</span>
+                          <div
+                            style={resizeHandleStyle}
+                            onMouseDown={(e) => startColumnResize('actions', e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                  </table>
+                </div>
+
+                <div style={tableBodyWrapStyle}>
+                  <table style={tableStyle}>
+                    <colgroup>
+                      <col style={{ width: columnWidths.title }} />
+                      <col style={{ width: columnWidths.genre }} />
+                      <col style={{ width: columnWidths.theme }} />
+                      <col style={{ width: columnWidths.hook }} />
+                      <col style={{ width: columnWidths.created_at }} />
+                      <col style={{ width: columnWidths.actions }} />
+                    </colgroup>
+                    <tbody>
+                      {sortedSessions.map((session) => (
+                        <tr key={session.id}>
+                          <td style={tdStyle} title={session.title}>
+                            {session.title}
+                          </td>
+
+                          <td style={tdStyle} title={session.form?.genre || ''}>
+                            {session.form?.genre || '—'}
+                          </td>
+
+                          <td style={tdStyle} title={session.form?.theme || ''}>
+                            {session.form?.theme || '—'}
+                          </td>
+
+                          <td style={tdStyle} title={session.form?.hook || ''}>
+                            {session.form?.hook || '—'}
+                          </td>
+
+                          <td style={tdStyle} title={session.created_at || ''}>
+                            {session.created_at
+                              ? new Date(session.created_at).toLocaleString()
+                              : '—'}
+                          </td>
+
+                          <td style={tdStyle}>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                              <button
+                                onClick={() => handleLoadSession(session)}
+                                style={secondaryActionButtonStyle}
+                              >
+                                Load
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSession(session.id)}
+                                style={secondaryActionButtonStyle}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
               <div style={helperStyle}>
