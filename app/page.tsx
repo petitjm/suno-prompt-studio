@@ -181,9 +181,7 @@ function formatUkDateTime(value?: string) {
 
   let normalized = value.trim()
   const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(normalized)
-  if (!hasTimezone) {
-    normalized = `${normalized}Z`
-  }
+  if (!hasTimezone) normalized = `${normalized}Z`
 
   return new Date(normalized).toLocaleString('en-GB', {
     timeZone: 'Europe/London',
@@ -219,6 +217,9 @@ export default function Home() {
   const [chordLoading, setChordLoading] = useState(false)
   const [rewriteLoading, setRewriteLoading] = useState<RewriteMode | null>(null)
   const [chordRewriteLoading, setChordRewriteLoading] = useState<ChordRewriteMode | null>(null)
+
+  const [manualSongSaveLoading, setManualSongSaveLoading] = useState(false)
+  const [manualChordSaveLoading, setManualChordSaveLoading] = useState(false)
 
   const [artistDNA, setArtistDNA] = useState<ArtistDNAProfile>(defaultArtistDNA)
   const [artistDNALoading, setArtistDNALoading] = useState(false)
@@ -361,9 +362,7 @@ export default function Home() {
       const res = await fetch('/api/artist-dna')
       const data = await readJsonSafe(res)
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load artist DNA')
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to load artist DNA')
 
       setArtistDNA(data.profile || defaultArtistDNA)
       setArtistDNAMessage('')
@@ -388,9 +387,7 @@ export default function Home() {
 
       const data = await readJsonSafe(res)
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to save artist DNA')
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to save artist DNA')
 
       setArtistDNA(data.profile || artistDNA)
       setArtistDNAMessage('Artist DNA saved')
@@ -420,14 +417,9 @@ export default function Home() {
 
       const data = await readJsonSafe(res)
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Artist DNA analysis failed')
-      }
+      if (!res.ok) throw new Error(data.error || 'Artist DNA analysis failed')
 
-      setArtistDNA((prev) => ({
-        ...prev,
-        ...data.profile,
-      }))
+      setArtistDNA((prev) => ({ ...prev, ...data.profile }))
       setDNAAnalyzerMessage('Artist DNA analysis complete. Review and save it below.')
     } catch (err: any) {
       console.error(err)
@@ -453,33 +445,18 @@ export default function Home() {
       const songData = await readJsonSafe(songRes)
       const chordData = await readJsonSafe(chordRes)
 
-      if (latestProjectLoadRef.current !== token) {
-        return
-      }
+      if (latestProjectLoadRef.current !== token) return
 
-      if (!songRes.ok) {
-        throw new Error(songData.error || 'Failed to load song versions')
-      }
+      if (!songRes.ok) throw new Error(songData.error || 'Failed to load song versions')
+      if (!chordRes.ok) throw new Error(chordData.error || 'Failed to load chord versions')
 
-      if (!chordRes.ok) {
-        throw new Error(chordData.error || 'Failed to load chord versions')
-      }
-
-      const nextSongVersions: SongVersionRecord[] = Array.isArray(songData.versions)
-        ? songData.versions
-        : []
-      const nextChordVersions: ChordVersionRecord[] = Array.isArray(chordData.versions)
-        ? chordData.versions
-        : []
+      const nextSongVersions: SongVersionRecord[] = Array.isArray(songData.versions) ? songData.versions : []
+      const nextChordVersions: ChordVersionRecord[] = Array.isArray(chordData.versions) ? chordData.versions : []
 
       setSongVersions(nextSongVersions)
       setChordVersions(nextChordVersions)
 
-      if (songData.latest?.result) {
-        setResult(songData.latest.result)
-      } else {
-        setResult(null)
-      }
+      setResult(songData.latest?.result || null)
 
       if (songData.latest?.form) {
         setForm({
@@ -493,18 +470,10 @@ export default function Home() {
         setForm(defaultForm)
       }
 
-      if (chordData.latest?.chord_data) {
-        setChords(chordData.latest.chord_data)
-      } else {
-        setChords(null)
-      }
-
+      setChords(chordData.latest?.chord_data || null)
       setProjectMessage('')
     } catch (err: any) {
-      if (latestProjectLoadRef.current !== token) {
-        return
-      }
-
+      if (latestProjectLoadRef.current !== token) return
       console.error(err)
       setProjectMessage(err.message || 'Failed to load project data')
       setResult(null)
@@ -513,9 +482,7 @@ export default function Home() {
       setChordVersions([])
       setForm(defaultForm)
     } finally {
-      if (latestProjectLoadRef.current === token) {
-        setVersionsLoading(false)
-      }
+      if (latestProjectLoadRef.current === token) setVersionsLoading(false)
     }
   }
 
@@ -528,7 +495,6 @@ export default function Home() {
 
     try {
       setProjectMessage('Creating project...')
-
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -536,10 +502,7 @@ export default function Home() {
       })
 
       const data = await readJsonSafe(res)
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create project')
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to create project')
 
       await loadProjects(data.id)
       setResult(null)
@@ -563,7 +526,6 @@ export default function Home() {
         setAuthMessage('Enter your email first.')
         return
       }
-
       const { error } = await supabase.auth.signInWithOtp({ email })
       setAuthMessage(error ? error.message : 'Code sent. Check your email.')
     } catch (err) {
@@ -575,7 +537,6 @@ export default function Home() {
   const verifyCode = async () => {
     try {
       setAuthMessage('')
-
       const email = emailInput.trim()
       const token = otpInput.trim()
 
@@ -638,10 +599,7 @@ export default function Home() {
       })
 
       const data = await readJsonSafe(res)
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Generation failed')
-      }
+      if (!res.ok) throw new Error(data.error || 'Generation failed')
 
       setResult(data)
 
@@ -658,10 +616,7 @@ export default function Home() {
         })
 
         const saveData = await readJsonSafe(saveRes)
-
-        if (!saveRes.ok) {
-          throw new Error(saveData.error || 'Song generated but failed to save')
-        }
+        if (!saveRes.ok) throw new Error(saveData.error || 'Song generated but failed to save')
 
         await loadProjects(activeProject.id)
         await loadProjectData(activeProject.id)
@@ -694,10 +649,7 @@ export default function Home() {
       })
 
       const data = await readJsonSafe(res)
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Chord generation failed')
-      }
+      if (!res.ok) throw new Error(data.error || 'Chord generation failed')
 
       setChords(data)
 
@@ -707,9 +659,7 @@ export default function Home() {
         setProjectMessage(`Chords saved to project: ${activeProject.title}`)
       }
 
-      if (currentSongResult) {
-        setResult(currentSongResult)
-      }
+      if (currentSongResult) setResult(currentSongResult)
       setForm(currentForm)
     } catch (err: any) {
       console.error(err)
@@ -731,6 +681,7 @@ export default function Home() {
         return
       }
 
+      setManualSongSaveLoading(true)
       const title = manualVersionName.trim() || 'Manual Song Snapshot'
 
       const saveRes = await fetch('/api/song-versions', {
@@ -745,10 +696,7 @@ export default function Home() {
       })
 
       const saveData = await readJsonSafe(saveRes)
-
-      if (!saveRes.ok) {
-        throw new Error(saveData.error || 'Failed to save song snapshot')
-      }
+      if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save song snapshot')
 
       await loadProjects(activeProject.id)
       await loadProjectData(activeProject.id)
@@ -756,6 +704,8 @@ export default function Home() {
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to save song snapshot')
+    } finally {
+      setManualSongSaveLoading(false)
     }
   }
 
@@ -771,6 +721,7 @@ export default function Home() {
         return
       }
 
+      setManualChordSaveLoading(true)
       const title = manualVersionName.trim() || 'Manual Chord Snapshot'
 
       const saveRes = await fetch('/api/chord-versions', {
@@ -784,10 +735,7 @@ export default function Home() {
       })
 
       const saveData = await readJsonSafe(saveRes)
-
-      if (!saveRes.ok) {
-        throw new Error(saveData.error || 'Failed to save chord snapshot')
-      }
+      if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save chord snapshot')
 
       await loadProjects(activeProject.id)
       await loadProjectData(activeProject.id)
@@ -795,6 +743,8 @@ export default function Home() {
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to save chord snapshot')
+    } finally {
+      setManualChordSaveLoading(false)
     }
   }
 
@@ -824,10 +774,7 @@ export default function Home() {
       })
 
       const data = await readJsonSafe(res)
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Rewrite failed')
-      }
+      if (!res.ok) throw new Error(data.error || 'Rewrite failed')
 
       setResult(data)
 
@@ -867,10 +814,7 @@ export default function Home() {
       })
 
       const data = await readJsonSafe(res)
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Chord rewrite failed')
-      }
+      if (!res.ok) throw new Error(data.error || 'Chord rewrite failed')
 
       setChords(data)
 
@@ -896,7 +840,6 @@ export default function Home() {
         dnaId: version.form.dnaId || 'mpj-master',
       })
     }
-
     setResult(version.result || null)
   }
 
@@ -1293,11 +1236,20 @@ export default function Home() {
                 style={inputStyle}
               />
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                <button onClick={handleManualSaveSong} style={primaryButtonStyle}>
-                  Save Song As Version
+                <button
+                  onClick={handleManualSaveSong}
+                  disabled={manualSongSaveLoading}
+                  style={primaryButtonStyle}
+                >
+                  {manualSongSaveLoading ? 'Saving Song...' : 'Save Song As Version'}
                 </button>
-                <button onClick={handleManualSaveChords} style={secondaryButtonStyle}>
-                  Save Chords As Version
+
+                <button
+                  onClick={handleManualSaveChords}
+                  disabled={manualChordSaveLoading}
+                  style={primaryButtonStyle}
+                >
+                  {manualChordSaveLoading ? 'Saving Chords...' : 'Save Chords As Version'}
                 </button>
               </div>
             </div>
