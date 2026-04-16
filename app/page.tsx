@@ -177,7 +177,17 @@ async function readJsonSafe(res: Response) {
 
 function formatUkDateTime(value?: string) {
   if (!value) return ''
-  return new Date(value).toLocaleString('en-GB', {
+
+  let normalized = value.trim()
+
+  // If the timestamp has no timezone marker, treat it as UTC.
+  // Example: 2026-04-16T10:00:00  ->  2026-04-16T10:00:00Z
+  const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(normalized)
+  if (!hasTimezone) {
+    normalized = `${normalized}Z`
+  }
+
+  return new Date(normalized).toLocaleString('en-GB', {
     timeZone: 'Europe/London',
     dateStyle: 'medium',
     timeStyle: 'short',
