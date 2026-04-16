@@ -49,6 +49,7 @@ type SongVersionRecord = {
 type ChordVersionRecord = {
   id: string
   project_id: string
+  title?: string
   chord_data?: ChordResponse
   created_at?: string
 }
@@ -179,9 +180,6 @@ function formatUkDateTime(value?: string) {
   if (!value) return ''
 
   let normalized = value.trim()
-
-  // If the timestamp has no timezone marker, treat it as UTC.
-  // Example: 2026-04-16T10:00:00  ->  2026-04-16T10:00:00Z
   const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(normalized)
   if (!hasTimezone) {
     normalized = `${normalized}Z`
@@ -230,6 +228,8 @@ export default function Home() {
   const [dnaAnalysisInput, setDNAAnalysisInput] = useState<DNAAnalysisInput>(defaultDNAAnalysisInput)
   const [dnaAnalyzing, setDNAAnalyzing] = useState(false)
   const [dnaAnalyzerMessage, setDNAAnalyzerMessage] = useState('')
+
+  const [manualVersionName, setManualVersionName] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -310,6 +310,7 @@ export default function Home() {
       setArtistDNAMessage('')
       setDNAAnalysisInput(defaultDNAAnalysisInput)
       setDNAAnalyzerMessage('')
+      setManualVersionName('')
     }
   }, [user])
 
@@ -613,6 +614,7 @@ export default function Home() {
     setArtistDNAMessage('')
     setDNAAnalysisInput(defaultDNAAnalysisInput)
     setDNAAnalyzerMessage('')
+    setManualVersionName('')
   }
 
   const toggleMood = (mood: string) => {
@@ -714,6 +716,85 @@ export default function Home() {
       setChords({ error: err.message || 'Chord generation failed' })
     } finally {
       setChordLoading(false)
+    }
+  }
+
+  const handleManualSaveSong = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      if (!result || result.error || !result.lyrics_full) {
+        setProjectMessage('There is no current song output to save.')
+        return
+      }
+
+      const title = manualVersionName.trim() || 'Manual Song Snapshot'
+
+      const saveRes = await fetch('/api/song-versions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title,
+          form,
+          result,
+        }),
+      })
+
+      const saveData = await readJsonSafe(saveRes)
+
+      if (!saveRes.ok) {
+        throw new Error(saveData.error || 'Failed to save song snapshot')
+      }
+
+      await loadProjects(activeProject.id)
+      await loadProjectData(activeProject.id)
+      setProjectMessage(`Saved song as: ${title}`)
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to save song snapshot')
+    }
+  }
+
+  const handleManualSaveChords = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      if (!chords || chords.error) {
+        setProjectMessage('There is no current chord output to save.')
+        return
+      }
+
+      const title = manualVersionName.trim() || 'Manual Chord Snapshot'
+
+      const saveRes = await fetch('/api/chord-versions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title,
+          chord_data: chords,
+        }),
+      })
+
+      const saveData = await readJsonSafe(saveRes)
+
+      if (!saveRes.ok) {
+        throw new Error(saveData.error || 'Failed to save chord snapshot')
+      }
+
+      await loadProjects(activeProject.id)
+      await loadProjectData(activeProject.id)
+      setProjectMessage(`Saved chords as: ${title}`)
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to save chord snapshot')
     }
   }
 
@@ -1189,7 +1270,7 @@ export default function Home() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
               <button onClick={handleGenerate} disabled={loading} style={primaryButtonStyle}>
                 {loading ? 'Generating...' : 'Generate Song'}
               </button>
@@ -1201,6 +1282,24 @@ export default function Home() {
               >
                 {chordLoading ? 'Generating Chords...' : 'Generate Chords'}
               </button>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={sectionTitleStyle}>Version Name</label>
+              <input
+                placeholder="e.g. Acoustic rewrite v2"
+                value={manualVersionName}
+                onChange={(e) => setManualVersionName(e.target.value)}
+                style={inputStyle}
+              />
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                <button onClick={handleManualSaveSong} style={primaryButtonStyle}>
+                  Save Song As Version
+                </button>
+                <button onClick={handleManualSaveChords} style={secondaryButtonStyle}>
+                  Save Chords As Version
+                </button>
+              </div>
             </div>
 
             <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
@@ -1368,7 +1467,7 @@ export default function Home() {
                         style={historyItemStyle}
                       >
                         <div style={{ fontWeight: 700 }}>
-                          {version.chord_data?.key || 'Chord Set'}
+                          {version.title || version.chord_data?.key || 'Chord Set'}
                         </div>
                         {version.created_at && (
                           <div style={{ fontSize: 12, opacity: 0.75 }}>

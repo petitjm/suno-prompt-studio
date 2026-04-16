@@ -36,6 +36,7 @@ export async function GET(
       .order('created_at', { ascending: false })
 
     if (error) {
+      console.error('chord_versions fetch error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -44,8 +45,9 @@ export async function GET(
       latest: data?.[0] || null,
     })
   } catch (err: any) {
+    console.error('chord_versions GET route failure:', err)
     return NextResponse.json(
-      { error: err.message || 'Failed to load chord versions' },
+      { error: err?.message || 'Failed to load chord versions' },
       { status: 500 }
     )
   }
