@@ -18,6 +18,7 @@ export async function GET() {
       .from('projects')
       .select('*')
       .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
       .insert({
         title,
         user_id: user.id,
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single()

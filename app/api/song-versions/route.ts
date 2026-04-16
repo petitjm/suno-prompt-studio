@@ -48,6 +48,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    const { error: projectUpdateError } = await supabase
+      .from('projects')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', body.project_id)
+      .eq('user_id', user.id)
+
+    if (projectUpdateError) {
+      console.error('projects updated_at bump failed after song save:', projectUpdateError)
+    }
+
     return NextResponse.json({ version: data })
   } catch (err: any) {
     console.error('song_versions POST route failure:', err)

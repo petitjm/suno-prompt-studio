@@ -102,10 +102,26 @@ Requirements:
     if (body.project_id) {
       const supabase = await createClient()
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       await supabase.from('chord_versions').insert({
         project_id: body.project_id,
         chord_data: chordData,
       })
+
+      if (user) {
+        const { error: projectUpdateError } = await supabase
+          .from('projects')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', body.project_id)
+          .eq('user_id', user.id)
+
+        if (projectUpdateError) {
+          console.error('projects updated_at bump failed after chord save:', projectUpdateError)
+        }
+      }
     }
 
     return NextResponse.json(chordData)

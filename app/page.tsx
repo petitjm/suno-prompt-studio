@@ -7,6 +7,7 @@ type Project = {
   id: string
   title: string
   created_at?: string
+  updated_at?: string
 }
 
 type FormState = {
@@ -946,9 +947,9 @@ export default function Home() {
                   }}
                 >
                   <div style={{ fontWeight: 700 }}>{p.title}</div>
-                  {p.created_at ? (
+                  {(p.updated_at || p.created_at) ? (
                     <div style={{ fontSize: 12, opacity: 0.75 }}>
-                      {new Date(p.created_at).toLocaleString()}
+                      Last updated: {new Date((p.updated_at || p.created_at) as string).toLocaleString()}
                     </div>
                   ) : null}
                 </button>
