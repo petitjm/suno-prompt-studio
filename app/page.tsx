@@ -165,6 +165,15 @@ const chordRewriteButtons: Array<{ mode: ChordRewriteMode; label: string }> = [
   { mode: 'capo_friendly', label: 'Capo-Friendly Version' },
 ]
 
+async function readJsonSafe(res: Response) {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(`Non-JSON response from ${res.url}: ${text.slice(0, 200)}`)
+  }
+}
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
   const latestProjectLoadRef = useRef(0)
@@ -298,7 +307,7 @@ export default function Home() {
       setArtistDNAMessage('Loading artist DNA...')
 
       const res = await fetch('/api/artist-dna')
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to load artist DNA')
@@ -325,7 +334,7 @@ export default function Home() {
         body: JSON.stringify(artistDNA),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to save artist DNA')
@@ -357,7 +366,7 @@ export default function Home() {
         body: JSON.stringify(dnaAnalysisInput),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Artist DNA analysis failed')
@@ -380,7 +389,7 @@ export default function Home() {
     try {
       setProjectMessage('Loading projects...')
       const res = await fetch('/api/projects')
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to load projects')
@@ -419,8 +428,8 @@ export default function Home() {
         fetch(`/api/chord-versions/${projectId}`),
       ])
 
-      const songData = await songRes.json()
-      const chordData = await chordRes.json()
+      const songData = await readJsonSafe(songRes)
+      const chordData = await readJsonSafe(chordRes)
 
       if (latestProjectLoadRef.current !== token) {
         return
@@ -504,7 +513,7 @@ export default function Home() {
         body: JSON.stringify({ title }),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to create project')
@@ -606,7 +615,7 @@ export default function Home() {
         body: JSON.stringify(form),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Generation failed')
@@ -626,7 +635,7 @@ export default function Home() {
           }),
         })
 
-        const saveData = await saveRes.json()
+        const saveData = await readJsonSafe(saveRes)
 
         if (!saveRes.ok) {
           throw new Error(saveData.error || 'Song generated but failed to save')
@@ -661,7 +670,7 @@ export default function Home() {
         }),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Chord generation failed')
@@ -710,7 +719,7 @@ export default function Home() {
         }),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Rewrite failed')
@@ -752,7 +761,7 @@ export default function Home() {
         }),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
 
       if (!res.ok) {
         throw new Error(data.error || 'Chord rewrite failed')
