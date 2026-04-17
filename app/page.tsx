@@ -845,6 +845,59 @@ export default function Home() {
     setChords(version.chord_data || null)
   }
 
+  const projectTableWrapStyle: CSSProperties = {
+  border: '1px solid #3f3f46',
+  borderRadius: 12,
+  overflow: 'hidden',
+  background: '#1f1f23',
+}
+
+const projectTableScrollStyle: CSSProperties = {
+  maxHeight: 'calc(100vh - 220px)',
+  overflowY: 'auto',
+  overflowX: 'auto',
+}
+
+const projectTableStyle: CSSProperties = {
+  width: '100%',
+  borderCollapse: 'collapse',
+  tableLayout: 'fixed',
+}
+
+const projectThStyle: CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  background: '#27272a',
+  color: 'white',
+  textAlign: 'left',
+  padding: '10px 12px',
+  fontSize: 13,
+  borderBottom: '1px solid #3f3f46',
+  whiteSpace: 'nowrap',
+  zIndex: 1,
+}
+
+const projectTdStyle: CSSProperties = {
+  padding: '10px 12px',
+  fontSize: 13,
+  borderBottom: '1px solid #2f2f35',
+  verticalAlign: 'top',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}
+
+const projectRowButtonStyle: CSSProperties = {
+  width: '100%',
+  textAlign: 'left',
+  background: 'transparent',
+  color: 'white',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  font: 'inherit',
+}
+
   const pageStyle: CSSProperties = {
     display: 'flex',
     minHeight: '100vh',
@@ -1024,34 +1077,53 @@ export default function Home() {
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {projects.map((p) => (
+            <div style={projectTableWrapStyle}>
+  <div style={projectTableScrollStyle}>
+    <table style={projectTableStyle}>
+      <thead>
+        <tr>
+          <th style={{ ...projectThStyle, width: '55%' }}>Project</th>
+          <th style={{ ...projectThStyle, width: '45%' }}>Last updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {projects.length > 0 ? (
+          projects.map((p) => (
+            <tr
+              key={p.id}
+              style={{
+                background: activeProject?.id === p.id ? '#2563eb33' : 'transparent',
+              }}
+            >
+              <td style={projectTdStyle}>
                 <button
-                  key={p.id}
                   onClick={() => setActiveProject(p)}
-                  style={{
-                    padding: '10px 12px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    background: activeProject?.id === p.id ? '#2563eb' : '#27272a',
-                    color: 'white',
-                    border: '1px solid #3f3f46',
-                    borderRadius: 10,
-                  }}
+                  style={projectRowButtonStyle}
                 >
-                  <div style={{ fontWeight: 700 }}>{p.title}</div>
-                  {(p.updated_at || p.created_at) ? (
-                    <div style={{ fontSize: 12, opacity: 0.75 }}>
-                      Last updated: {formatUkDateTime((p.updated_at || p.created_at) as string)}
-                    </div>
-                  ) : null}
+                  {p.title}
                 </button>
-              ))}
-
-              {projects.length === 0 && !projectMessage && (
-                <div style={{ color: '#a1a1aa', fontSize: 14 }}>No projects yet.</div>
-              )}
-            </div>
+              </td>
+              <td style={projectTdStyle}>
+                <button
+                  onClick={() => setActiveProject(p)}
+                  style={projectRowButtonStyle}
+                >
+                  {formatUkDateTime((p.updated_at || p.created_at) as string)}
+                </button>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan={2} style={{ ...projectTdStyle, color: '#a1a1aa' }}>
+              No projects yet.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
           </>
         )}
       </div>
