@@ -923,15 +923,62 @@ export default function Home() {
     fontWeight: 700,
   }
 
-  const historyItemStyle: CSSProperties = {
-    width: '100%',
-    padding: '8px 10px',
-    textAlign: 'left',
-    borderRadius: 10,
+  const tableWrapStyle: CSSProperties = {
     border: '1px solid #3f3f46',
+    borderRadius: 12,
+    overflow: 'hidden',
     background: '#1f1f23',
+  }
+
+  const tableScrollStyle: CSSProperties = {
+    maxHeight: 320,
+    overflowY: 'auto',
+    overflowX: 'auto',
+  }
+
+  const tableStyle: CSSProperties = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    tableLayout: 'fixed',
+  }
+
+  const thStyle: CSSProperties = {
+    position: 'sticky',
+    top: 0,
+    background: '#27272a',
     color: 'white',
+    textAlign: 'left',
+    padding: '10px 12px',
+    fontSize: 13,
+    borderBottom: '1px solid #3f3f46',
+    whiteSpace: 'nowrap',
+    zIndex: 1,
+  }
+
+  const tdStyle: CSSProperties = {
+    padding: '10px 12px',
+    fontSize: 13,
+    borderBottom: '1px solid #2f2f35',
+    verticalAlign: 'top',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  }
+
+  const rowButtonStyle: CSSProperties = {
+    width: '100%',
+    textAlign: 'left',
+    background: 'transparent',
+    color: 'white',
+    border: 'none',
+    padding: 0,
     cursor: 'pointer',
+    font: 'inherit',
+  }
+
+  const emptyHistoryStyle: CSSProperties = {
+    color: '#a1a1aa',
+    padding: '12px',
   }
 
   const updateArtistDNA = (key: keyof ArtistDNAProfile, value: string) => {
@@ -1275,26 +1322,40 @@ export default function Home() {
               <h3 style={{ marginTop: 0 }}>Song Version History</h3>
 
               {songVersions.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {songVersions.map((version) => (
-                    <button
-                      key={version.id}
-                      onClick={() => loadSongVersion(version)}
-                      style={historyItemStyle}
-                    >
-                      <div style={{ fontWeight: 700 }}>
-                        {version.title || 'Untitled Version'}
-                      </div>
-                      {version.created_at && (
-                        <div style={{ fontSize: 12, opacity: 0.75 }}>
-                          {formatUkDateTime(version.created_at)}
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                <div style={tableWrapStyle}>
+                  <div style={tableScrollStyle}>
+                    <table style={tableStyle}>
+                      <thead>
+                        <tr>
+                          <th style={{ ...thStyle, width: '55%' }}>Title</th>
+                          <th style={{ ...thStyle, width: '45%' }}>Saved</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {songVersions.map((version) => (
+                          <tr key={version.id}>
+                            <td style={tdStyle}>
+                              <button onClick={() => loadSongVersion(version)} style={rowButtonStyle}>
+                                {version.title ||
+                                  version.result?.lyrics_brief ||
+                                  version.form?.hook ||
+                                  version.form?.theme ||
+                                  'Untitled Version'}
+                              </button>
+                            </td>
+                            <td style={tdStyle}>
+                              <button onClick={() => loadSongVersion(version)} style={rowButtonStyle}>
+                                {formatUkDateTime(version.created_at)}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
-                <div style={{ color: '#a1a1aa' }}>No saved song versions yet.</div>
+                <div style={emptyHistoryStyle}>No saved song versions yet.</div>
               )}
             </div>
           </div>
@@ -1411,26 +1472,42 @@ export default function Home() {
                 <h3 style={{ marginTop: 0 }}>Chord History</h3>
 
                 {chordVersions.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {chordVersions.map((version) => (
-                      <button
-                        key={version.id}
-                        onClick={() => loadChordVersion(version)}
-                        style={historyItemStyle}
-                      >
-                        <div style={{ fontWeight: 700 }}>
-                          {version.title || version.chord_data?.key || 'Chord Set'}
-                        </div>
-                        {version.created_at && (
-                          <div style={{ fontSize: 12, opacity: 0.75 }}>
-                            {formatUkDateTime(version.created_at)}
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                  <div style={tableWrapStyle}>
+                    <div style={tableScrollStyle}>
+                      <table style={tableStyle}>
+                        <thead>
+                          <tr>
+                            <th style={{ ...thStyle, width: '40%' }}>Title</th>
+                            <th style={{ ...thStyle, width: '20%' }}>Key</th>
+                            <th style={{ ...thStyle, width: '40%' }}>Saved</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {chordVersions.map((version) => (
+                            <tr key={version.id}>
+                              <td style={tdStyle}>
+                                <button onClick={() => loadChordVersion(version)} style={rowButtonStyle}>
+                                  {version.title || 'Chord Snapshot'}
+                                </button>
+                              </td>
+                              <td style={tdStyle}>
+                                <button onClick={() => loadChordVersion(version)} style={rowButtonStyle}>
+                                  {version.chord_data?.key || '—'}
+                                </button>
+                              </td>
+                              <td style={tdStyle}>
+                                <button onClick={() => loadChordVersion(version)} style={rowButtonStyle}>
+                                  {formatUkDateTime(version.created_at)}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 ) : (
-                  <div style={{ color: '#a1a1aa' }}>No saved chord versions yet.</div>
+                  <div style={emptyHistoryStyle}>No saved chord versions yet.</div>
                 )}
               </div>
             </div>
