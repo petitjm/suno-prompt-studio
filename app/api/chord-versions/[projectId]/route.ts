@@ -31,7 +31,7 @@ export async function GET(
 
     const { data, error } = await supabase
       .from('chord_versions')
-      .select('*')
+      .select('id, project_id, title, chord_data, created_at')
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
 
