@@ -181,6 +181,7 @@ async function readJsonSafe(res: Response) {
 
 function formatUkDateTime(value?: string) {
   if (!value) return ''
+
   let normalized = value.trim()
   const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(normalized)
   if (!hasTimezone) normalized = `${normalized}Z`
@@ -241,6 +242,7 @@ export default function Home() {
   const [manualSongSaveLoading, setManualSongSaveLoading] = useState(false)
   const [manualChordSaveLoading, setManualChordSaveLoading] = useState(false)
   const [duplicateProjectLoading, setDuplicateProjectLoading] = useState(false)
+  const [renameProjectLoading, setRenameProjectLoading] = useState(false)
   const [deleteProjectLoading, setDeleteProjectLoading] = useState(false)
 
   const [artistDNA, setArtistDNA] = useState<ArtistDNAProfile>(defaultArtistDNA)
@@ -578,6 +580,48 @@ export default function Home() {
     }
   }
 
+  const renameProject = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      const nextTitle = window.prompt('Enter a new project name:', activeProject.title)
+      if (nextTitle === null) return
+
+      const trimmed = nextTitle.trim()
+      if (!trimmed) {
+        setProjectMessage('Project name cannot be empty.')
+        return
+      }
+
+      if (trimmed === activeProject.title) {
+        setProjectMessage('Project name unchanged.')
+        return
+      }
+
+      setRenameProjectLoading(true)
+
+      const res = await fetch(`/api/projects/${activeProject.id}/rename`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmed }),
+      })
+
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to rename project')
+
+      await loadProjects(activeProject.id)
+      setProjectMessage(`Renamed project to: ${trimmed}`)
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to rename project')
+    } finally {
+      setRenameProjectLoading(false)
+    }
+  }
+
   const duplicateProject = async () => {
     try {
       if (!activeProject) {
@@ -614,7 +658,9 @@ export default function Home() {
       if (!ok) return
 
       setDeleteProjectLoading(true)
+      const currentTitle = activeProject.title
       const projectId = activeProject.id
+
       const res = await fetch(`/api/projects/${projectId}`, {
         method: 'DELETE',
       })
@@ -623,7 +669,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || 'Failed to delete project')
 
       await loadProjects()
-      setProjectMessage(`Deleted project: ${activeProject.title}`)
+      setProjectMessage(`Deleted project: ${currentTitle}`)
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to delete project')
@@ -705,6 +751,7 @@ export default function Home() {
 
   const saveSongVersion = async (title: string, payloadResult: GenerateResponse, payloadForm: FormState) => {
     if (!activeProject) return
+
     const saveRes = await fetch('/api/song-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -718,12 +765,14 @@ export default function Home() {
 
     const saveData = await readJsonSafe(saveRes)
     if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save song version')
+
     await loadProjects(activeProject.id)
     await loadProjectData(activeProject.id)
   }
 
   const saveChordVersion = async (title: string, payloadChords: ChordResponse) => {
     if (!activeProject) return
+
     const saveRes = await fetch('/api/chord-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -736,6 +785,7 @@ export default function Home() {
 
     const saveData = await readJsonSafe(saveRes)
     if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save chord version')
+
     await loadProjects(activeProject.id)
     await loadProjectData(activeProject.id)
   }
@@ -1178,7 +1228,7 @@ export default function Home() {
   }
 
   const projectTableScrollStyle: CSSProperties = {
-    maxHeight: 'calc(100vh - 330px)',
+    maxHeight: 'calc(100vh - 360px)',
     overflowY: 'auto',
     overflowX: 'auto',
   }
@@ -1278,6 +1328,13 @@ export default function Home() {
             </div>
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              <button
+                onClick={renameProject}
+                disabled={renameProjectLoading || !activeProject}
+                style={secondaryButtonStyle}
+              >
+                {renameProjectLoading ? 'Renaming...' : 'Rename'}
+              </button>
               <button
                 onClick={duplicateProject}
                 disabled={duplicateProjectLoading || !activeProject}
