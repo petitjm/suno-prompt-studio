@@ -93,6 +93,9 @@ type ChordRewriteMode =
   | 'baritone_key'
   | 'capo_friendly'
 
+type ProjectSortKey = 'updated_at' | 'title'
+type SortDirection = 'asc' | 'desc'
+
 const defaultForm: FormState = {
   genre: '',
   moods: [],
@@ -178,7 +181,6 @@ async function readJsonSafe(res: Response) {
 
 function formatUkDateTime(value?: string) {
   if (!value) return ''
-
   let normalized = value.trim()
   const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(normalized)
   if (!hasTimezone) normalized = `${normalized}Z`
@@ -188,6 +190,16 @@ function formatUkDateTime(value?: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   })
+}
+
+function downloadTextFile(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export default function Home() {
@@ -205,6 +217,11 @@ export default function Home() {
   const [newProjectName, setNewProjectName] = useState('')
   const [projectMessage, setProjectMessage] = useState('')
 
+  const [projectSortKey, setProjectSortKey] = useState<ProjectSortKey>('updated_at')
+  const [projectSortDirection, setProjectSortDirection] = useState<SortDirection>('desc')
+
+  const [autoSave, setAutoSave] = useState(true)
+
   const [form, setForm] = useState<FormState>(defaultForm)
   const [result, setResult] = useState<GenerateResponse | null>(null)
   const [chords, setChords] = useState<ChordResponse | null>(null)
@@ -213,6 +230,9 @@ export default function Home() {
   const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
   const [versionsLoading, setVersionsLoading] = useState(false)
 
+  const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
+  const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
+
   const [loading, setLoading] = useState(false)
   const [chordLoading, setChordLoading] = useState(false)
   const [rewriteLoading, setRewriteLoading] = useState<RewriteMode | null>(null)
@@ -220,6 +240,8 @@ export default function Home() {
 
   const [manualSongSaveLoading, setManualSongSaveLoading] = useState(false)
   const [manualChordSaveLoading, setManualChordSaveLoading] = useState(false)
+  const [duplicateProjectLoading, setDuplicateProjectLoading] = useState(false)
+  const [deleteProjectLoading, setDeleteProjectLoading] = useState(false)
 
   const [artistDNA, setArtistDNA] = useState<ArtistDNAProfile>(defaultArtistDNA)
   const [artistDNALoading, setArtistDNALoading] = useState(false)
@@ -262,6 +284,35 @@ export default function Home() {
       subscription.unsubscribe()
     }
   }, [supabase])
+
+  const sortedProjects = useMemo(() => {
+    const next = [...projects]
+    next.sort((a, b) => {
+      if (projectSortKey === 'title') {
+        const av = (a.title || '').toLowerCase()
+        const bv = (b.title || '').toLowerCase()
+        if (av < bv) return projectSortDirection === 'asc' ? -1 : 1
+        if (av > bv) return projectSortDirection === 'asc' ? 1 : -1
+        return 0
+      }
+
+      const av = a.updated_at || a.created_at || ''
+      const bv = b.updated_at || b.created_at || ''
+      if (av < bv) return projectSortDirection === 'asc' ? -1 : 1
+      if (av > bv) return projectSortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+    return next
+  }, [projects, projectSortKey, projectSortDirection])
+
+  const toggleProjectSort = (key: ProjectSortKey) => {
+    if (projectSortKey === key) {
+      setProjectSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setProjectSortKey(key)
+      setProjectSortDirection(key === 'title' ? 'asc' : 'desc')
+    }
+  }
 
   const loadProjects = async (preferredProjectId?: string) => {
     try {
@@ -310,6 +361,8 @@ export default function Home() {
       setDNAAnalysisInput(defaultDNAAnalysisInput)
       setDNAAnalyzerMessage('')
       setManualVersionName('')
+      setActiveSongVersionId(null)
+      setActiveChordVersionId(null)
     }
   }, [user])
 
@@ -320,6 +373,8 @@ export default function Home() {
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
+      setActiveSongVersionId(null)
+      setActiveChordVersionId(null)
       void loadProjectData(activeProject.id)
     } else {
       setSongVersions([])
@@ -327,6 +382,8 @@ export default function Home() {
       setResult(null)
       setChords(null)
       setForm(defaultForm)
+      setActiveSongVersionId(null)
+      setActiveChordVersionId(null)
     }
   }, [activeProject?.id])
 
@@ -455,6 +512,10 @@ export default function Home() {
       setChordVersions(nextChordVersions)
 
       setResult(songData.latest?.result || null)
+      setChords(chordData.latest?.chord_data || null)
+
+      setActiveSongVersionId(songData.latest?.id || null)
+      setActiveChordVersionId(chordData.latest?.id || null)
 
       if (songData.latest?.form) {
         setForm({
@@ -468,7 +529,6 @@ export default function Home() {
         setForm(defaultForm)
       }
 
-      setChords(chordData.latest?.chord_data || null)
       setProjectMessage('')
     } catch (err: any) {
       if (latestProjectLoadRef.current !== token) return
@@ -479,6 +539,8 @@ export default function Home() {
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
+      setActiveSongVersionId(null)
+      setActiveChordVersionId(null)
     } finally {
       if (latestProjectLoadRef.current === token) setVersionsLoading(false)
     }
@@ -513,6 +575,60 @@ export default function Home() {
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to create project')
+    }
+  }
+
+  const duplicateProject = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      setDuplicateProjectLoading(true)
+      const res = await fetch(`/api/projects/${activeProject.id}/duplicate`, {
+        method: 'POST',
+      })
+
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to duplicate project')
+
+      await loadProjects(data.project?.id)
+      setProjectMessage(`Duplicated project: ${data.project?.title || 'Copy created'}`)
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to duplicate project')
+    } finally {
+      setDuplicateProjectLoading(false)
+    }
+  }
+
+  const deleteProject = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      const ok = window.confirm(`Delete project "${activeProject.title}" and all its saved versions?`)
+      if (!ok) return
+
+      setDeleteProjectLoading(true)
+      const projectId = activeProject.id
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to delete project')
+
+      await loadProjects()
+      setProjectMessage(`Deleted project: ${activeProject.title}`)
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to delete project')
+    } finally {
+      setDeleteProjectLoading(false)
     }
   }
 
@@ -574,6 +690,8 @@ export default function Home() {
     setDNAAnalysisInput(defaultDNAAnalysisInput)
     setDNAAnalyzerMessage('')
     setManualVersionName('')
+    setActiveSongVersionId(null)
+    setActiveChordVersionId(null)
   }
 
   const toggleMood = (mood: string) => {
@@ -583,6 +701,43 @@ export default function Home() {
         ? prev.moods.filter((m) => m !== mood)
         : [...prev.moods, mood],
     }))
+  }
+
+  const saveSongVersion = async (title: string, payloadResult: GenerateResponse, payloadForm: FormState) => {
+    if (!activeProject) return
+    const saveRes = await fetch('/api/song-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        title,
+        form: payloadForm,
+        result: payloadResult,
+      }),
+    })
+
+    const saveData = await readJsonSafe(saveRes)
+    if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save song version')
+    await loadProjects(activeProject.id)
+    await loadProjectData(activeProject.id)
+  }
+
+  const saveChordVersion = async (title: string, payloadChords: ChordResponse) => {
+    if (!activeProject) return
+    const saveRes = await fetch('/api/chord-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        title,
+        chord_data: payloadChords,
+      }),
+    })
+
+    const saveData = await readJsonSafe(saveRes)
+    if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save chord version')
+    await loadProjects(activeProject.id)
+    await loadProjectData(activeProject.id)
   }
 
   const handleGenerate = async () => {
@@ -601,24 +756,11 @@ export default function Home() {
 
       setResult(data)
 
-      if (activeProject) {
-        const saveRes = await fetch('/api/song-versions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            project_id: activeProject.id,
-            title: form.theme || form.hook || 'Untitled Version',
-            form,
-            result: data,
-          }),
-        })
-
-        const saveData = await readJsonSafe(saveRes)
-        if (!saveRes.ok) throw new Error(saveData.error || 'Song generated but failed to save')
-
-        await loadProjects(activeProject.id)
-        await loadProjectData(activeProject.id)
+      if (activeProject && autoSave) {
+        await saveSongVersion(form.theme || form.hook || 'Untitled Version', data, form)
         setProjectMessage(`Song saved to project: ${activeProject.title}`)
+      } else if (activeProject) {
+        setProjectMessage('Song generated. Auto-save is off.')
       } else {
         setProjectMessage('Song generated, but no active project is selected.')
       }
@@ -651,10 +793,12 @@ export default function Home() {
 
       setChords(data)
 
-      if (activeProject) {
+      if (activeProject && autoSave) {
         await loadProjects(activeProject.id)
         await loadProjectData(activeProject.id)
         setProjectMessage(`Chords saved to project: ${activeProject.title}`)
+      } else if (activeProject) {
+        setProjectMessage('Chords generated. Auto-save is off.')
       }
 
       if (currentSongResult) setResult(currentSongResult)
@@ -681,23 +825,7 @@ export default function Home() {
 
       setManualSongSaveLoading(true)
       const title = manualVersionName.trim() || 'Manual Song Snapshot'
-
-      const saveRes = await fetch('/api/song-versions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProject.id,
-          title,
-          form,
-          result,
-        }),
-      })
-
-      const saveData = await readJsonSafe(saveRes)
-      if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save song snapshot')
-
-      await loadProjects(activeProject.id)
-      await loadProjectData(activeProject.id)
+      await saveSongVersion(title, result, form)
       setProjectMessage(`Saved song as: ${title}`)
     } catch (err: any) {
       console.error(err)
@@ -721,22 +849,7 @@ export default function Home() {
 
       setManualChordSaveLoading(true)
       const title = manualVersionName.trim() || 'Manual Chord Snapshot'
-
-      const saveRes = await fetch('/api/chord-versions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProject.id,
-          title,
-          chord_data: chords,
-        }),
-      })
-
-      const saveData = await readJsonSafe(saveRes)
-      if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save chord snapshot')
-
-      await loadProjects(activeProject.id)
-      await loadProjectData(activeProject.id)
+      await saveChordVersion(title, chords)
       setProjectMessage(`Saved chords as: ${title}`)
     } catch (err: any) {
       console.error(err)
@@ -776,9 +889,11 @@ export default function Home() {
 
       setResult(data)
 
-      if (activeProject) {
+      if (activeProject && autoSave) {
         await loadProjects(activeProject.id)
         await loadProjectData(activeProject.id)
+      } else if (activeProject) {
+        setProjectMessage('Rewrite generated. Auto-save is off.')
       }
     } catch (err: any) {
       console.error(err)
@@ -816,15 +931,57 @@ export default function Home() {
 
       setChords(data)
 
-      if (activeProject) {
+      if (activeProject && autoSave) {
         await loadProjects(activeProject.id)
         await loadProjectData(activeProject.id)
+      } else if (activeProject) {
+        setProjectMessage('Chord rewrite generated. Auto-save is off.')
       }
     } catch (err: any) {
       console.error(err)
       setChords({ error: err.message || 'Chord rewrite failed' })
     } finally {
       setChordRewriteLoading(null)
+    }
+  }
+
+  const deleteSongVersion = async (versionId: string) => {
+    try {
+      const ok = window.confirm('Delete this song version?')
+      if (!ok) return
+
+      const res = await fetch(`/api/song-version/${versionId}`, { method: 'DELETE' })
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to delete song version')
+
+      if (activeProject) {
+        await loadProjects(activeProject.id)
+        await loadProjectData(activeProject.id)
+      }
+      setProjectMessage('Song version deleted.')
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to delete song version')
+    }
+  }
+
+  const deleteChordVersion = async (versionId: string) => {
+    try {
+      const ok = window.confirm('Delete this chord version?')
+      if (!ok) return
+
+      const res = await fetch(`/api/chord-version/${versionId}`, { method: 'DELETE' })
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to delete chord version')
+
+      if (activeProject) {
+        await loadProjects(activeProject.id)
+        await loadProjectData(activeProject.id)
+      }
+      setProjectMessage('Chord version deleted.')
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to delete chord version')
     }
   }
 
@@ -839,64 +996,88 @@ export default function Home() {
       })
     }
     setResult(version.result || null)
+    setActiveSongVersionId(version.id)
   }
 
   const loadChordVersion = (version: ChordVersionRecord) => {
     setChords(version.chord_data || null)
+    setActiveChordVersionId(version.id)
   }
 
-  const projectTableWrapStyle: CSSProperties = {
-  border: '1px solid #3f3f46',
-  borderRadius: 12,
-  overflow: 'hidden',
-  background: '#1f1f23',
-}
+  const exportSongTxt = () => {
+    if (!result?.lyrics_full) {
+      setProjectMessage('No song output to export.')
+      return
+    }
 
-const projectTableScrollStyle: CSSProperties = {
-  maxHeight: 'calc(100vh - 220px)',
-  overflowY: 'auto',
-  overflowX: 'auto',
-}
+    const title = activeProject?.title || 'song'
+    const content = [
+      `Project: ${title}`,
+      form.genre ? `Genre: ${form.genre}` : '',
+      form.moods.length ? `Moods: ${form.moods.join(', ')}` : '',
+      form.theme ? `Theme: ${form.theme}` : '',
+      form.hook ? `Hook: ${form.hook}` : '',
+      '',
+      result.style_short ? `Style (Short): ${result.style_short}` : '',
+      result.style_detailed ? `Style (Detailed): ${result.style_detailed}` : '',
+      result.lyrics_brief ? `Lyrics Brief: ${result.lyrics_brief}` : '',
+      '',
+      'Full Lyrics:',
+      result.lyrics_full,
+    ]
+      .filter(Boolean)
+      .join('\n')
 
-const projectTableStyle: CSSProperties = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  tableLayout: 'fixed',
-}
+    downloadTextFile(`${title.replace(/\s+/g, '_')}_song.txt`, content)
+  }
 
-const projectThStyle: CSSProperties = {
-  position: 'sticky',
-  top: 0,
-  background: '#27272a',
-  color: 'white',
-  textAlign: 'left',
-  padding: '10px 12px',
-  fontSize: 13,
-  borderBottom: '1px solid #3f3f46',
-  whiteSpace: 'nowrap',
-  zIndex: 1,
-}
+  const exportChordsTxt = () => {
+    if (!chords || chords.error) {
+      setProjectMessage('No chord output to export.')
+      return
+    }
 
-const projectTdStyle: CSSProperties = {
-  padding: '10px 12px',
-  fontSize: 13,
-  borderBottom: '1px solid #2f2f35',
-  verticalAlign: 'top',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-}
+    const title = activeProject?.title || 'song'
+    const content = [
+      `Project: ${title}`,
+      chords.key ? `Key: ${chords.key}` : '',
+      chords.capo ? `Capo: ${chords.capo}` : '',
+      '',
+      `Verse: ${chords.verse || ''}`,
+      `Chorus: ${chords.chorus || ''}`,
+      `Bridge: ${chords.bridge || ''}`,
+      '',
+      chords.notes ? `Notes: ${chords.notes}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n')
 
-const projectRowButtonStyle: CSSProperties = {
-  width: '100%',
-  textAlign: 'left',
-  background: 'transparent',
-  color: 'white',
-  border: 'none',
-  padding: 0,
-  cursor: 'pointer',
-  font: 'inherit',
-}
+    downloadTextFile(`${title.replace(/\s+/g, '_')}_chords.txt`, content)
+  }
+
+  const exportCombinedTxt = () => {
+    const title = activeProject?.title || 'song'
+    const content = [
+      `Project: ${title}`,
+      '',
+      '=== SONG ===',
+      result?.lyrics_full || 'No song output',
+      '',
+      '=== CHORDS ===',
+      chords && !chords.error
+        ? [
+            `Key: ${chords.key || ''}`,
+            `Capo: ${chords.capo || ''}`,
+            `Verse: ${chords.verse || ''}`,
+            `Chorus: ${chords.chorus || ''}`,
+            `Bridge: ${chords.bridge || ''}`,
+            `Notes: ${chords.notes || ''}`,
+          ].join('\n')
+        : 'No chord output',
+    ].join('\n')
+
+    downloadTextFile(`${title.replace(/\s+/g, '_')}_combined.txt`, content)
+  }
 
   const pageStyle: CSSProperties = {
     display: 'flex',
@@ -907,7 +1088,7 @@ const projectRowButtonStyle: CSSProperties = {
   }
 
   const sidebarStyle: CSSProperties = {
-    width: 280,
+    width: 360,
     borderRight: '1px solid #333',
     padding: 16,
     background: '#111113',
@@ -952,6 +1133,15 @@ const projectRowButtonStyle: CSSProperties = {
     cursor: 'pointer',
   }
 
+  const dangerButtonStyle: CSSProperties = {
+    padding: '12px 16px',
+    borderRadius: 12,
+    border: '1px solid #b91c1c',
+    background: '#7f1d1d',
+    color: 'white',
+    cursor: 'pointer',
+  }
+
   const chipStyle = (selected: boolean): CSSProperties => ({
     padding: '8px 12px',
     borderRadius: 999,
@@ -987,6 +1177,12 @@ const projectRowButtonStyle: CSSProperties = {
     overflowX: 'auto',
   }
 
+  const projectTableScrollStyle: CSSProperties = {
+    maxHeight: 'calc(100vh - 330px)',
+    overflowY: 'auto',
+    overflowX: 'auto',
+  }
+
   const tableStyle: CSSProperties = {
     width: '100%',
     borderCollapse: 'collapse',
@@ -1004,6 +1200,7 @@ const projectRowButtonStyle: CSSProperties = {
     borderBottom: '1px solid #3f3f46',
     whiteSpace: 'nowrap',
     zIndex: 1,
+    cursor: 'pointer',
   }
 
   const tdStyle: CSSProperties = {
@@ -1025,6 +1222,15 @@ const projectRowButtonStyle: CSSProperties = {
     padding: 0,
     cursor: 'pointer',
     font: 'inherit',
+  }
+
+  const actionIconButtonStyle: CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    color: '#fca5a5',
+    cursor: 'pointer',
+    fontSize: 14,
+    padding: 0,
   }
 
   const emptyHistoryStyle: CSSProperties = {
@@ -1071,59 +1277,80 @@ const projectRowButtonStyle: CSSProperties = {
               </button>
             </div>
 
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              <button
+                onClick={duplicateProject}
+                disabled={duplicateProjectLoading || !activeProject}
+                style={secondaryButtonStyle}
+              >
+                {duplicateProjectLoading ? 'Duplicating...' : 'Duplicate'}
+              </button>
+              <button
+                onClick={deleteProject}
+                disabled={deleteProjectLoading || !activeProject}
+                style={dangerButtonStyle}
+              >
+                {deleteProjectLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+
             {projectMessage && (
               <div style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 10 }}>
                 {projectMessage}
               </div>
             )}
 
-            <div style={projectTableWrapStyle}>
-  <div style={projectTableScrollStyle}>
-    <table style={projectTableStyle}>
-      <thead>
-        <tr>
-          <th style={{ ...projectThStyle, width: '55%' }}>Project</th>
-          <th style={{ ...projectThStyle, width: '45%' }}>Last updated</th>
-        </tr>
-      </thead>
-      <tbody>
-        {projects.length > 0 ? (
-          projects.map((p) => (
-            <tr
-              key={p.id}
-              style={{
-                background: activeProject?.id === p.id ? '#2563eb33' : 'transparent',
-              }}
-            >
-              <td style={projectTdStyle}>
-                <button
-                  onClick={() => setActiveProject(p)}
-                  style={projectRowButtonStyle}
-                >
-                  {p.title}
-                </button>
-              </td>
-              <td style={projectTdStyle}>
-                <button
-                  onClick={() => setActiveProject(p)}
-                  style={projectRowButtonStyle}
-                >
-                  {formatUkDateTime((p.updated_at || p.created_at) as string)}
-                </button>
-              </td>
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={2} style={{ ...projectTdStyle, color: '#a1a1aa' }}>
-              No projects yet.
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+            <div style={tableWrapStyle}>
+              <div style={projectTableScrollStyle}>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th
+                        style={{ ...thStyle, width: '55%' }}
+                        onClick={() => toggleProjectSort('title')}
+                      >
+                        Project {projectSortKey === 'title' ? (projectSortDirection === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th
+                        style={{ ...thStyle, width: '45%' }}
+                        onClick={() => toggleProjectSort('updated_at')}
+                      >
+                        Last updated {projectSortKey === 'updated_at' ? (projectSortDirection === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedProjects.length > 0 ? (
+                      sortedProjects.map((p) => (
+                        <tr
+                          key={p.id}
+                          style={{
+                            background: activeProject?.id === p.id ? '#2563eb33' : 'transparent',
+                          }}
+                        >
+                          <td style={tdStyle}>
+                            <button onClick={() => setActiveProject(p)} style={rowButtonStyle}>
+                              {p.title}
+                            </button>
+                          </td>
+                          <td style={tdStyle}>
+                            <button onClick={() => setActiveProject(p)} style={rowButtonStyle}>
+                              {formatUkDateTime((p.updated_at || p.created_at) as string)}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={2} style={emptyHistoryStyle}>
+                          No projects yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -1224,6 +1451,18 @@ const projectRowButtonStyle: CSSProperties = {
             <div style={{ marginBottom: 8 }}>
               Artist DNA status:{' '}
               <strong>{hasSavedArtistDNA ? 'Applied to outputs' : 'No saved DNA yet'}</strong>
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              Auto-save:{' '}
+              <label style={{ cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={autoSave}
+                  onChange={(e) => setAutoSave(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                {autoSave ? 'On' : 'Off'}
+              </label>
             </div>
             {versionsLoading && (
               <div style={{ color: '#a1a1aa', marginBottom: 12 }}>Loading project history...</div>
@@ -1371,6 +1610,21 @@ const projectRowButtonStyle: CSSProperties = {
               </div>
             </div>
 
+            <div style={{ marginBottom: 24 }}>
+              <label style={sectionTitleStyle}>Export</label>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button onClick={exportSongTxt} style={secondaryButtonStyle}>
+                  Export Song TXT
+                </button>
+                <button onClick={exportChordsTxt} style={secondaryButtonStyle}>
+                  Export Chords TXT
+                </button>
+                <button onClick={exportCombinedTxt} style={secondaryButtonStyle}>
+                  Export Combined TXT
+                </button>
+              </div>
+            </div>
+
             <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
               <h3 style={{ marginTop: 0 }}>Rewrite Lab</h3>
 
@@ -1396,14 +1650,20 @@ const projectRowButtonStyle: CSSProperties = {
                   <table style={tableStyle}>
                     <thead>
                       <tr>
-                        <th style={{ ...thStyle, width: '55%' }}>Title</th>
-                        <th style={{ ...thStyle, width: '45%' }}>Saved</th>
+                        <th style={{ ...thStyle, width: '48%', cursor: 'default' }}>Title</th>
+                        <th style={{ ...thStyle, width: '36%', cursor: 'default' }}>Saved</th>
+                        <th style={{ ...thStyle, width: '16%', cursor: 'default' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {songVersions.length > 0 ? (
                         songVersions.map((version) => (
-                          <tr key={version.id}>
+                          <tr
+                            key={version.id}
+                            style={{
+                              background: activeSongVersionId === version.id ? '#2563eb33' : 'transparent',
+                            }}
+                          >
                             <td style={tdStyle}>
                               <button onClick={() => loadSongVersion(version)} style={rowButtonStyle}>
                                 {version.title ||
@@ -1418,11 +1678,16 @@ const projectRowButtonStyle: CSSProperties = {
                                 {formatUkDateTime(version.created_at)}
                               </button>
                             </td>
+                            <td style={tdStyle}>
+                              <button onClick={() => deleteSongVersion(version.id)} style={actionIconButtonStyle}>
+                                Delete
+                              </button>
+                            </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={2} style={emptyHistoryStyle}>
+                          <td colSpan={3} style={emptyHistoryStyle}>
                             No saved song versions yet.
                           </td>
                         </tr>
@@ -1550,15 +1815,21 @@ const projectRowButtonStyle: CSSProperties = {
                     <table style={tableStyle}>
                       <thead>
                         <tr>
-                          <th style={{ ...thStyle, width: '40%' }}>Title</th>
-                          <th style={{ ...thStyle, width: '20%' }}>Key</th>
-                          <th style={{ ...thStyle, width: '40%' }}>Saved</th>
+                          <th style={{ ...thStyle, width: '34%', cursor: 'default' }}>Title</th>
+                          <th style={{ ...thStyle, width: '16%', cursor: 'default' }}>Key</th>
+                          <th style={{ ...thStyle, width: '34%', cursor: 'default' }}>Saved</th>
+                          <th style={{ ...thStyle, width: '16%', cursor: 'default' }}>Action</th>
                         </tr>
                       </thead>
                       <tbody>
                         {chordVersions.length > 0 ? (
                           chordVersions.map((version) => (
-                            <tr key={version.id}>
+                            <tr
+                              key={version.id}
+                              style={{
+                                background: activeChordVersionId === version.id ? '#2563eb33' : 'transparent',
+                              }}
+                            >
                               <td style={tdStyle}>
                                 <button onClick={() => loadChordVersion(version)} style={rowButtonStyle}>
                                   {version.title || 'Chord Snapshot'}
@@ -1574,11 +1845,16 @@ const projectRowButtonStyle: CSSProperties = {
                                   {formatUkDateTime(version.created_at)}
                                 </button>
                               </td>
+                              <td style={tdStyle}>
+                                <button onClick={() => deleteChordVersion(version.id)} style={actionIconButtonStyle}>
+                                  Delete
+                                </button>
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={3} style={emptyHistoryStyle}>
+                            <td colSpan={4} style={emptyHistoryStyle}>
                               No saved chord versions yet.
                             </td>
                           </tr>
