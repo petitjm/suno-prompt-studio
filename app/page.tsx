@@ -269,9 +269,7 @@ export default function Home() {
       const res = await fetch('/api/projects')
       const data = await readJsonSafe(res)
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load projects')
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to load projects')
 
       const nextProjects: Project[] = Array.isArray(data.projects) ? data.projects : []
       setProjects(nextProjects)
@@ -1321,18 +1319,18 @@ export default function Home() {
             <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
               <h3 style={{ marginTop: 0 }}>Song Version History</h3>
 
-              {songVersions.length > 0 ? (
-                <div style={tableWrapStyle}>
-                  <div style={tableScrollStyle}>
-                    <table style={tableStyle}>
-                      <thead>
-                        <tr>
-                          <th style={{ ...thStyle, width: '55%' }}>Title</th>
-                          <th style={{ ...thStyle, width: '45%' }}>Saved</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {songVersions.map((version) => (
+              <div style={tableWrapStyle}>
+                <div style={tableScrollStyle}>
+                  <table style={tableStyle}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...thStyle, width: '55%' }}>Title</th>
+                        <th style={{ ...thStyle, width: '45%' }}>Saved</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {songVersions.length > 0 ? (
+                        songVersions.map((version) => (
                           <tr key={version.id}>
                             <td style={tdStyle}>
                               <button onClick={() => loadSongVersion(version)} style={rowButtonStyle}>
@@ -1349,14 +1347,18 @@ export default function Home() {
                               </button>
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={2} style={emptyHistoryStyle}>
+                            No saved song versions yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              ) : (
-                <div style={emptyHistoryStyle}>No saved song versions yet.</div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -1471,19 +1473,19 @@ export default function Home() {
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
                 <h3 style={{ marginTop: 0 }}>Chord History</h3>
 
-                {chordVersions.length > 0 ? (
-                  <div style={tableWrapStyle}>
-                    <div style={tableScrollStyle}>
-                      <table style={tableStyle}>
-                        <thead>
-                          <tr>
-                            <th style={{ ...thStyle, width: '40%' }}>Title</th>
-                            <th style={{ ...thStyle, width: '20%' }}>Key</th>
-                            <th style={{ ...thStyle, width: '40%' }}>Saved</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {chordVersions.map((version) => (
+                <div style={tableWrapStyle}>
+                  <div style={tableScrollStyle}>
+                    <table style={tableStyle}>
+                      <thead>
+                        <tr>
+                          <th style={{ ...thStyle, width: '40%' }}>Title</th>
+                          <th style={{ ...thStyle, width: '20%' }}>Key</th>
+                          <th style={{ ...thStyle, width: '40%' }}>Saved</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {chordVersions.length > 0 ? (
+                          chordVersions.map((version) => (
                             <tr key={version.id}>
                               <td style={tdStyle}>
                                 <button onClick={() => loadChordVersion(version)} style={rowButtonStyle}>
@@ -1501,14 +1503,18 @@ export default function Home() {
                                 </button>
                               </td>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={3} style={emptyHistoryStyle}>
+                              No saved chord versions yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                ) : (
-                  <div style={emptyHistoryStyle}>No saved chord versions yet.</div>
-                )}
+                </div>
               </div>
             </div>
           </div>
