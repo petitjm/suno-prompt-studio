@@ -927,26 +927,34 @@ export default function Home() {
 
   const handleImportLyrics = async () => {
     try {
-      if (!activeProject) {
-        setProjectMessage('Select a project first.')
-        return
-      }
-
       const lyrics = importLyricsText.trim()
       if (!lyrics) {
         setProjectMessage('Paste lyrics first.')
         return
       }
 
+      const projectTitle = importLyricsTitle.trim() || 'Imported Lyrics'
+
       setImportLyricsLoading(true)
       setSongSheet('')
 
-      const res = await fetch('/api/import-lyrics', {
+      const createRes = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: projectTitle }),
+      })
+
+      const createData = await readJsonSafe(createRes)
+      if (!createRes.ok) throw new Error(createData.error || 'Failed to create project for imported lyrics')
+
+      const projectId = createData.id
+
+      const importRes = await fetch('/api/import-lyrics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_id: activeProject.id,
-          title: importLyricsTitle.trim() || 'Imported Lyrics',
+          project_id: projectId,
+          title: projectTitle,
           lyrics,
           genre: form.genre,
           moods: form.moods,
@@ -956,15 +964,17 @@ export default function Home() {
         }),
       })
 
-      const data = await readJsonSafe(res)
-      if (!res.ok) throw new Error(data.error || 'Failed to import lyrics')
+      const importData = await readJsonSafe(importRes)
+      if (!importRes.ok) throw new Error(importData.error || 'Failed to import lyrics')
 
-      await loadProjects(activeProject.id)
-      await loadProjectData(activeProject.id)
-      setProjectMessage('Lyrics imported successfully.')
+      await loadProjects(projectId)
+      await loadProjectData(projectId)
+
+      setImportLyricsText('')
+      setProjectMessage(`Created new project from lyrics: ${projectTitle}`)
     } catch (err: any) {
       console.error(err)
-      setProjectMessage(err.message || 'Failed to import lyrics')
+      setProjectMessage(err.message || 'Failed to create project from lyrics')
     } finally {
       setImportLyricsLoading(false)
     }
@@ -1819,10 +1829,10 @@ export default function Home() {
             </div>
 
             <div style={{ marginBottom: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
-              <h3 style={{ marginTop: 0 }}>Import Lyrics</h3>
+              <h3 style={{ marginTop: 0 }}>Start New Project from Lyrics</h3>
 
               <div style={{ marginBottom: 12 }}>
-                <label style={sectionTitleStyle}>Imported Version Title</label>
+                <label style={sectionTitleStyle}>New Project Title</label>
                 <input
                   value={importLyricsTitle}
                   onChange={(e) => setImportLyricsTitle(e.target.value)}
@@ -1846,7 +1856,7 @@ export default function Home() {
                 disabled={importLyricsLoading}
                 style={secondaryButtonStyle}
               >
-                {importLyricsLoading ? 'Importing...' : 'Import Lyrics'}
+                {importLyricsLoading ? 'Creating Project...' : 'Create Project from Lyrics'}
               </button>
             </div>
 
