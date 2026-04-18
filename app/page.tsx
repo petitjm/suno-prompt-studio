@@ -658,8 +658,8 @@ export default function Home() {
       if (!ok) return
 
       setDeleteProjectLoading(true)
-      const currentTitle = activeProject.title
       const projectId = activeProject.id
+      const projectTitle = activeProject.title
 
       const res = await fetch(`/api/projects/${projectId}`, {
         method: 'DELETE',
@@ -669,7 +669,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || 'Failed to delete project')
 
       await loadProjects()
-      setProjectMessage(`Deleted project: ${currentTitle}`)
+      setProjectMessage(`Deleted project: ${projectTitle}`)
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to delete project')
@@ -751,7 +751,6 @@ export default function Home() {
 
   const saveSongVersion = async (title: string, payloadResult: GenerateResponse, payloadForm: FormState) => {
     if (!activeProject) return
-
     const saveRes = await fetch('/api/song-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -765,14 +764,12 @@ export default function Home() {
 
     const saveData = await readJsonSafe(saveRes)
     if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save song version')
-
     await loadProjects(activeProject.id)
     await loadProjectData(activeProject.id)
   }
 
   const saveChordVersion = async (title: string, payloadChords: ChordResponse) => {
     if (!activeProject) return
-
     const saveRes = await fetch('/api/chord-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -785,7 +782,6 @@ export default function Home() {
 
     const saveData = await readJsonSafe(saveRes)
     if (!saveRes.ok) throw new Error(saveData.error || 'Failed to save chord version')
-
     await loadProjects(activeProject.id)
     await loadProjectData(activeProject.id)
   }
@@ -1231,10 +1227,18 @@ export default function Home() {
     maxHeight: 'calc(100vh - 360px)',
     overflowY: 'auto',
     overflowX: 'auto',
+    whiteSpace: 'nowrap',
   }
 
   const tableStyle: CSSProperties = {
     width: '100%',
+    borderCollapse: 'collapse',
+    tableLayout: 'fixed',
+  }
+
+  const projectTableStyle: CSSProperties = {
+    width: '100%',
+    minWidth: 560,
     borderCollapse: 'collapse',
     tableLayout: 'fixed',
   }
@@ -1263,6 +1267,43 @@ export default function Home() {
     textOverflow: 'ellipsis',
   }
 
+  const projectThStyle: CSSProperties = {
+    position: 'sticky',
+    top: 0,
+    background: '#27272a',
+    color: 'white',
+    textAlign: 'left',
+    padding: '10px 12px',
+    fontSize: 13,
+    borderBottom: '1px solid #3f3f46',
+    whiteSpace: 'nowrap',
+    zIndex: 3,
+    cursor: 'pointer',
+  }
+
+  const projectTdStyle: CSSProperties = {
+    padding: '10px 12px',
+    fontSize: 13,
+    borderBottom: '1px solid #2f2f35',
+    verticalAlign: 'top',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  }
+
+  const frozenProjectColumnStyle: CSSProperties = {
+    position: 'sticky',
+    left: 0,
+    background: '#1f1f23',
+    zIndex: 2,
+  }
+
+  const frozenProjectHeaderStyle: CSSProperties = {
+    position: 'sticky',
+    left: 0,
+    zIndex: 4,
+  }
+
   const rowButtonStyle: CSSProperties = {
     width: '100%',
     textAlign: 'left',
@@ -1272,6 +1313,20 @@ export default function Home() {
     padding: 0,
     cursor: 'pointer',
     font: 'inherit',
+  }
+
+  const projectRowButtonStyle: CSSProperties = {
+    width: '100%',
+    textAlign: 'left',
+    background: 'transparent',
+    color: 'white',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    font: 'inherit',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   }
 
   const actionIconButtonStyle: CSSProperties = {
@@ -1359,17 +1414,17 @@ export default function Home() {
 
             <div style={tableWrapStyle}>
               <div style={projectTableScrollStyle}>
-                <table style={tableStyle}>
+                <table style={projectTableStyle}>
                   <thead>
                     <tr>
                       <th
-                        style={{ ...thStyle, width: '55%' }}
+                        style={{ ...projectThStyle, ...frozenProjectHeaderStyle, width: 300 }}
                         onClick={() => toggleProjectSort('title')}
                       >
                         Project {projectSortKey === 'title' ? (projectSortDirection === 'asc' ? '▲' : '▼') : ''}
                       </th>
                       <th
-                        style={{ ...thStyle, width: '45%' }}
+                        style={{ ...projectThStyle, width: 260 }}
                         onClick={() => toggleProjectSort('updated_at')}
                       >
                         Last updated {projectSortKey === 'updated_at' ? (projectSortDirection === 'asc' ? '▲' : '▼') : ''}
@@ -1378,25 +1433,46 @@ export default function Home() {
                   </thead>
                   <tbody>
                     {sortedProjects.length > 0 ? (
-                      sortedProjects.map((p) => (
-                        <tr
-                          key={p.id}
-                          style={{
-                            background: activeProject?.id === p.id ? '#2563eb33' : 'transparent',
-                          }}
-                        >
-                          <td style={tdStyle}>
-                            <button onClick={() => setActiveProject(p)} style={rowButtonStyle}>
-                              {p.title}
-                            </button>
-                          </td>
-                          <td style={tdStyle}>
-                            <button onClick={() => setActiveProject(p)} style={rowButtonStyle}>
-                              {formatUkDateTime((p.updated_at || p.created_at) as string)}
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      sortedProjects.map((p) => {
+                        const isActive = activeProject?.id === p.id
+
+                        return (
+                          <tr
+                            key={p.id}
+                            style={{
+                              background: isActive ? '#2563eb33' : 'transparent',
+                            }}
+                          >
+                            <td
+                              style={{
+                                ...projectTdStyle,
+                                ...frozenProjectColumnStyle,
+                                background: isActive ? '#1d4ed833' : '#1f1f23',
+                                width: 300,
+                              }}
+                              title={p.title}
+                            >
+                              <button
+                                onClick={() => setActiveProject(p)}
+                                style={projectRowButtonStyle}
+                                title={p.title}
+                              >
+                                {p.title}
+                              </button>
+                            </td>
+
+                            <td style={{ ...projectTdStyle, width: 260 }}>
+                              <button
+                                onClick={() => setActiveProject(p)}
+                                style={projectRowButtonStyle}
+                                title={formatUkDateTime((p.updated_at || p.created_at) as string)}
+                              >
+                                {formatUkDateTime((p.updated_at || p.created_at) as string)}
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })
                     ) : (
                       <tr>
                         <td colSpan={2} style={emptyHistoryStyle}>
