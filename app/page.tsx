@@ -227,6 +227,7 @@ export default function Home() {
   const [result, setResult] = useState<GenerateResponse | null>(null)
   const [chords, setChords] = useState<ChordResponse | null>(null)
   const [songSheet, setSongSheet] = useState('')
+  const [editableLyrics, setEditableLyrics] = useState('')
 
   const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
   const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
@@ -247,6 +248,7 @@ export default function Home() {
   const [renameProjectLoading, setRenameProjectLoading] = useState(false)
   const [deleteProjectLoading, setDeleteProjectLoading] = useState(false)
   const [importLyricsLoading, setImportLyricsLoading] = useState(false)
+  const [saveEditedLyricsLoading, setSaveEditedLyricsLoading] = useState(false)
 
   const [artistDNA, setArtistDNA] = useState<ArtistDNAProfile>(defaultArtistDNA)
   const [artistDNALoading, setArtistDNALoading] = useState(false)
@@ -259,7 +261,6 @@ export default function Home() {
 
   const [manualVersionName, setManualVersionName] = useState('')
   const [importLyricsTitle, setImportLyricsTitle] = useState('Imported Lyrics')
-  const [importLyricsText, setImportLyricsText] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -363,6 +364,7 @@ export default function Home() {
       setResult(null)
       setChords(null)
       setSongSheet('')
+      setEditableLyrics('')
       setForm(defaultForm)
       setArtistDNA(defaultArtistDNA)
       setArtistDNAMessage('')
@@ -370,7 +372,6 @@ export default function Home() {
       setDNAAnalyzerMessage('')
       setManualVersionName('')
       setImportLyricsTitle('Imported Lyrics')
-      setImportLyricsText('')
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
     }
@@ -381,12 +382,12 @@ export default function Home() {
       setResult(null)
       setChords(null)
       setSongSheet('')
+      setEditableLyrics('')
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
-      setImportLyricsText('')
       void loadProjectData(activeProject.id)
     } else {
       setSongVersions([])
@@ -394,12 +395,16 @@ export default function Home() {
       setResult(null)
       setChords(null)
       setSongSheet('')
+      setEditableLyrics('')
       setForm(defaultForm)
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
-      setImportLyricsText('')
     }
   }, [activeProject?.id])
+
+  useEffect(() => {
+    setEditableLyrics(result?.lyrics_full || '')
+  }, [result?.lyrics_full])
 
   const hasSavedArtistDNA = Boolean(
     artistDNA.artist_name ||
@@ -525,7 +530,9 @@ export default function Home() {
       setSongVersions(nextSongVersions)
       setChordVersions(nextChordVersions)
 
-      setResult(songData.latest?.result || null)
+      const nextResult = songData.latest?.result || null
+      setResult(nextResult)
+      setEditableLyrics(nextResult?.lyrics_full || '')
       setChords(chordData.latest?.chord_data || null)
       setSongSheet('')
 
@@ -550,6 +557,7 @@ export default function Home() {
       console.error(err)
       setProjectMessage(err.message || 'Failed to load project data')
       setResult(null)
+      setEditableLyrics('')
       setChords(null)
       setSongSheet('')
       setSongVersions([])
@@ -582,6 +590,7 @@ export default function Home() {
 
       await loadProjects(data.id)
       setResult(null)
+      setEditableLyrics('')
       setChords(null)
       setSongSheet('')
       setSongVersions([])
@@ -740,6 +749,7 @@ export default function Home() {
     setProjects([])
     setActiveProject(null)
     setResult(null)
+    setEditableLyrics('')
     setChords(null)
     setSongSheet('')
     setAuthMessage('')
@@ -753,7 +763,6 @@ export default function Home() {
     setDNAAnalyzerMessage('')
     setManualVersionName('')
     setImportLyricsTitle('Imported Lyrics')
-    setImportLyricsText('')
     setActiveSongVersionId(null)
     setActiveChordVersionId(null)
   }
@@ -808,6 +817,7 @@ export default function Home() {
     try {
       setLoading(true)
       setResult(null)
+      setEditableLyrics('')
       setSongSheet('')
 
       const res = await fetch('/api/generate', {
@@ -820,6 +830,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || 'Generation failed')
 
       setResult(data)
+      setEditableLyrics(data.lyrics_full || '')
 
       if (activeProject && autoSave) {
         await saveSongVersion(form.theme || form.hook || 'Untitled Version', data, form)
@@ -843,6 +854,7 @@ export default function Home() {
       setSongSheet('')
 
       const currentSongResult = result
+      const currentEditableLyrics = editableLyrics
       const currentForm = form
 
       const res = await fetch('/api/chords', {
@@ -868,6 +880,7 @@ export default function Home() {
       }
 
       if (currentSongResult) setResult(currentSongResult)
+      setEditableLyrics(currentEditableLyrics)
       setForm(currentForm)
     } catch (err: any) {
       console.error(err)
@@ -884,14 +897,23 @@ export default function Home() {
         return
       }
 
-      if (!result || result.error || !result.lyrics_full) {
+      if (!result || result.error || !editableLyrics.trim()) {
         setProjectMessage('There is no current song output to save.')
         return
       }
 
       setManualSongSaveLoading(true)
       const title = manualVersionName.trim() || 'Manual Song Snapshot'
-      await saveSongVersion(title, result, form)
+
+      await saveSongVersion(
+        title,
+        {
+          ...result,
+          lyrics_full: editableLyrics,
+        },
+        form
+      )
+
       setProjectMessage(`Saved song as: ${title}`)
     } catch (err: any) {
       console.error(err)
@@ -925,9 +947,71 @@ export default function Home() {
     }
   }
 
+  const handleSaveEditedLyrics = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      const lyrics = editableLyrics.trim()
+      if (!lyrics) {
+        setProjectMessage('No lyrics to save.')
+        return
+      }
+
+      setSaveEditedLyricsLoading(true)
+      setSongSheet('')
+
+      const title = manualVersionName.trim() || 'Edited Lyrics'
+
+      const res = await fetch('/api/song-versions/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title,
+          lyrics,
+          genre: form.genre,
+          moods: form.moods,
+          theme: form.theme,
+          hook: form.hook,
+          dnaId: form.dnaId,
+          style_short: result?.style_short || '',
+          style_detailed: result?.style_detailed || '',
+          lyrics_brief: result?.lyrics_brief || '',
+        }),
+      })
+
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to save edited lyrics')
+
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              lyrics_full: lyrics,
+            }
+          : {
+              lyrics_full: lyrics,
+            }
+      )
+
+      await loadProjects(activeProject.id)
+      await loadProjectData(activeProject.id)
+
+      setProjectMessage(`Saved edited lyrics as: ${title}`)
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to save edited lyrics')
+    } finally {
+      setSaveEditedLyricsLoading(false)
+    }
+  }
+
   const handleImportLyrics = async () => {
     try {
-      const lyrics = importLyricsText.trim()
+      const lyrics = editableLyrics.trim()
       if (!lyrics) {
         setProjectMessage('Paste lyrics first.')
         return
@@ -970,7 +1054,6 @@ export default function Home() {
       await loadProjects(projectId)
       await loadProjectData(projectId)
 
-      setImportLyricsText('')
       setProjectMessage(`Created new project from lyrics: ${projectTitle}`)
     } catch (err: any) {
       console.error(err)
@@ -982,7 +1065,7 @@ export default function Home() {
 
   const handleCreateSongSheet = async () => {
     try {
-      const lyrics = result?.lyrics_full?.trim()
+      const lyrics = editableLyrics.trim()
       if (!lyrics) {
         setProjectMessage('No lyrics available to build a song sheet.')
         return
@@ -1019,7 +1102,7 @@ export default function Home() {
 
   const handleRewrite = async (mode: RewriteMode, label: string) => {
     try {
-      if (!result?.lyrics_full) {
+      if (!editableLyrics.trim()) {
         setResult({ error: 'Generate or load lyrics before rewriting.' })
         return
       }
@@ -1033,7 +1116,7 @@ export default function Home() {
         body: JSON.stringify({
           mode,
           versionTitle: label,
-          currentLyrics: result.lyrics_full,
+          currentLyrics: editableLyrics,
           genre: form.genre,
           moods: form.moods,
           theme: form.theme,
@@ -1047,6 +1130,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || 'Rewrite failed')
 
       setResult(data)
+      setEditableLyrics(data.lyrics_full || '')
 
       if (activeProject && autoSave) {
         await loadProjects(activeProject.id)
@@ -1156,6 +1240,7 @@ export default function Home() {
       })
     }
     setResult(version.result || null)
+    setEditableLyrics(version.result?.lyrics_full || '')
     setSongSheet('')
     setActiveSongVersionId(version.id)
   }
@@ -1167,7 +1252,7 @@ export default function Home() {
   }
 
   const exportSongTxt = () => {
-    if (!result?.lyrics_full) {
+    if (!editableLyrics.trim()) {
       setProjectMessage('No song output to export.')
       return
     }
@@ -1180,12 +1265,12 @@ export default function Home() {
       form.theme ? `Theme: ${form.theme}` : '',
       form.hook ? `Hook: ${form.hook}` : '',
       '',
-      result.style_short ? `Style (Short): ${result.style_short}` : '',
-      result.style_detailed ? `Style (Detailed): ${result.style_detailed}` : '',
-      result.lyrics_brief ? `Lyrics Brief: ${result.lyrics_brief}` : '',
+      result?.style_short ? `Style (Short): ${result.style_short}` : '',
+      result?.style_detailed ? `Style (Detailed): ${result.style_detailed}` : '',
+      result?.lyrics_brief ? `Lyrics Brief: ${result.lyrics_brief}` : '',
       '',
       'Full Lyrics:',
-      result.lyrics_full,
+      editableLyrics,
     ]
       .filter(Boolean)
       .join('\n')
@@ -1223,7 +1308,7 @@ export default function Home() {
       `Project: ${title}`,
       '',
       '=== SONG ===',
-      result?.lyrics_full || 'No song output',
+      editableLyrics || 'No song output',
       '',
       '=== CHORDS ===',
       chords && !chords.error
@@ -1844,8 +1929,8 @@ export default function Home() {
               <div style={{ marginBottom: 12 }}>
                 <label style={sectionTitleStyle}>Paste Lyrics</label>
                 <textarea
-                  value={importLyricsText}
-                  onChange={(e) => setImportLyricsText(e.target.value)}
+                  value={editableLyrics}
+                  onChange={(e) => setEditableLyrics(e.target.value)}
                   style={{ ...textareaStyle, minHeight: 180 }}
                   placeholder="Paste your lyrics here..."
                 />
@@ -2030,27 +2115,52 @@ export default function Home() {
                       <div>{result.lyrics_brief}</div>
                     </div>
                   )}
-
-                  {result.lyrics_full && (
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontWeight: 700, marginBottom: 6 }}>Full Lyrics</div>
-                      <pre
-                        style={{
-                          whiteSpace: 'pre-wrap',
-                          margin: 0,
-                          fontFamily: 'inherit',
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {result.lyrics_full}
-                      </pre>
-                    </div>
-                  )}
                 </>
               )
             ) : (
               <div style={{ color: '#a1a1aa', marginBottom: 20 }}>No song output yet</div>
             )}
+
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+              <h2 style={{ marginTop: 0 }}>Lyrics Editor</h2>
+
+              <textarea
+                value={editableLyrics}
+                onChange={(e) => setEditableLyrics(e.target.value)}
+                style={{ ...textareaStyle, minHeight: 260 }}
+                placeholder="Lyrics will appear here..."
+              />
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+                <button
+                  onClick={() => {
+                    setResult((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            lyrics_full: editableLyrics,
+                          }
+                        : {
+                            lyrics_full: editableLyrics,
+                          }
+                    )
+                    setSongSheet('')
+                    setProjectMessage('Lyrics updated in working view.')
+                  }}
+                  style={secondaryButtonStyle}
+                >
+                  Apply Edits
+                </button>
+
+                <button
+                  onClick={handleSaveEditedLyrics}
+                  disabled={saveEditedLyricsLoading}
+                  style={primaryButtonStyle}
+                >
+                  {saveEditedLyricsLoading ? 'Saving Edited Lyrics...' : 'Save Edited Version'}
+                </button>
+              </div>
+            </div>
 
             <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
               <h2 style={{ marginTop: 0 }}>Chord Engine</h2>

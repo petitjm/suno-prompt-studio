@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server'
 
+function isMetadataLine(line: string) {
+  const trimmed = line.trim()
+
+  if (!trimmed) return false
+
+  return /^(bpm|tempo|key|capo|style|genre|mood|time signature|meter)\s*:/i.test(trimmed)
+}
+
 function splitSections(text: string) {
   return text
     .split(/\n\s*\n/)
@@ -25,23 +33,23 @@ function getChordPool(chordData: any) {
     .filter(Boolean)
 }
 
-function buildChordLine(words: string[], chord: string) {
-  if (words.length === 0) return chord
-  const spacing = Math.max(1, Math.floor(words.join(' ').length / 3))
-  return chord.padEnd(spacing, ' ')
-}
-
 function createSongSheet(lyrics: string, chordData: any) {
-  const sections = splitSections(lyrics)
+  const rawSections = splitSections(lyrics)
   const chordPool = getChordPool(chordData)
 
-  if (!sections.length) return ''
+  if (!rawSections.length) return ''
 
   let chordIndex = 0
   const out: string[] = []
 
-  for (const section of sections) {
-    const lines = section.split('\n').map((l) => l.trim()).filter(Boolean)
+  for (const section of rawSections) {
+    const lines = section
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .filter((line) => !isMetadataLine(line))
+
+    if (!lines.length) continue
 
     for (const line of lines) {
       const words = line.split(/\s+/).filter(Boolean)
