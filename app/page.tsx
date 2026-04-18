@@ -226,6 +226,7 @@ export default function Home() {
   const [form, setForm] = useState<FormState>(defaultForm)
   const [result, setResult] = useState<GenerateResponse | null>(null)
   const [chords, setChords] = useState<ChordResponse | null>(null)
+  const [songSheet, setSongSheet] = useState('')
 
   const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
   const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
@@ -236,6 +237,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false)
   const [chordLoading, setChordLoading] = useState(false)
+  const [songSheetLoading, setSongSheetLoading] = useState(false)
   const [rewriteLoading, setRewriteLoading] = useState<RewriteMode | null>(null)
   const [chordRewriteLoading, setChordRewriteLoading] = useState<ChordRewriteMode | null>(null)
 
@@ -244,6 +246,7 @@ export default function Home() {
   const [duplicateProjectLoading, setDuplicateProjectLoading] = useState(false)
   const [renameProjectLoading, setRenameProjectLoading] = useState(false)
   const [deleteProjectLoading, setDeleteProjectLoading] = useState(false)
+  const [importLyricsLoading, setImportLyricsLoading] = useState(false)
 
   const [artistDNA, setArtistDNA] = useState<ArtistDNAProfile>(defaultArtistDNA)
   const [artistDNALoading, setArtistDNALoading] = useState(false)
@@ -255,6 +258,8 @@ export default function Home() {
   const [dnaAnalyzerMessage, setDNAAnalyzerMessage] = useState('')
 
   const [manualVersionName, setManualVersionName] = useState('')
+  const [importLyricsTitle, setImportLyricsTitle] = useState('Imported Lyrics')
+  const [importLyricsText, setImportLyricsText] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -357,12 +362,15 @@ export default function Home() {
       setChordVersions([])
       setResult(null)
       setChords(null)
+      setSongSheet('')
       setForm(defaultForm)
       setArtistDNA(defaultArtistDNA)
       setArtistDNAMessage('')
       setDNAAnalysisInput(defaultDNAAnalysisInput)
       setDNAAnalyzerMessage('')
       setManualVersionName('')
+      setImportLyricsTitle('Imported Lyrics')
+      setImportLyricsText('')
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
     }
@@ -372,20 +380,24 @@ export default function Home() {
     if (activeProject?.id) {
       setResult(null)
       setChords(null)
+      setSongSheet('')
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
+      setImportLyricsText('')
       void loadProjectData(activeProject.id)
     } else {
       setSongVersions([])
       setChordVersions([])
       setResult(null)
       setChords(null)
+      setSongSheet('')
       setForm(defaultForm)
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
+      setImportLyricsText('')
     }
   }, [activeProject?.id])
 
@@ -515,6 +527,7 @@ export default function Home() {
 
       setResult(songData.latest?.result || null)
       setChords(chordData.latest?.chord_data || null)
+      setSongSheet('')
 
       setActiveSongVersionId(songData.latest?.id || null)
       setActiveChordVersionId(chordData.latest?.id || null)
@@ -538,6 +551,7 @@ export default function Home() {
       setProjectMessage(err.message || 'Failed to load project data')
       setResult(null)
       setChords(null)
+      setSongSheet('')
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
@@ -569,6 +583,7 @@ export default function Home() {
       await loadProjects(data.id)
       setResult(null)
       setChords(null)
+      setSongSheet('')
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
@@ -726,6 +741,7 @@ export default function Home() {
     setActiveProject(null)
     setResult(null)
     setChords(null)
+    setSongSheet('')
     setAuthMessage('')
     setProjectMessage('')
     setSongVersions([])
@@ -736,6 +752,8 @@ export default function Home() {
     setDNAAnalysisInput(defaultDNAAnalysisInput)
     setDNAAnalyzerMessage('')
     setManualVersionName('')
+    setImportLyricsTitle('Imported Lyrics')
+    setImportLyricsText('')
     setActiveSongVersionId(null)
     setActiveChordVersionId(null)
   }
@@ -790,6 +808,7 @@ export default function Home() {
     try {
       setLoading(true)
       setResult(null)
+      setSongSheet('')
 
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -821,6 +840,7 @@ export default function Home() {
   const handleGenerateChords = async () => {
     try {
       setChordLoading(true)
+      setSongSheet('')
 
       const currentSongResult = result
       const currentForm = form
@@ -905,6 +925,88 @@ export default function Home() {
     }
   }
 
+  const handleImportLyrics = async () => {
+    try {
+      if (!activeProject) {
+        setProjectMessage('Select a project first.')
+        return
+      }
+
+      const lyrics = importLyricsText.trim()
+      if (!lyrics) {
+        setProjectMessage('Paste lyrics first.')
+        return
+      }
+
+      setImportLyricsLoading(true)
+      setSongSheet('')
+
+      const res = await fetch('/api/import-lyrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title: importLyricsTitle.trim() || 'Imported Lyrics',
+          lyrics,
+          genre: form.genre,
+          moods: form.moods,
+          theme: form.theme,
+          hook: form.hook,
+          dnaId: form.dnaId,
+        }),
+      })
+
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to import lyrics')
+
+      await loadProjects(activeProject.id)
+      await loadProjectData(activeProject.id)
+      setProjectMessage('Lyrics imported successfully.')
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to import lyrics')
+    } finally {
+      setImportLyricsLoading(false)
+    }
+  }
+
+  const handleCreateSongSheet = async () => {
+    try {
+      const lyrics = result?.lyrics_full?.trim()
+      if (!lyrics) {
+        setProjectMessage('No lyrics available to build a song sheet.')
+        return
+      }
+
+      if (!chords || chords.error) {
+        setProjectMessage('Generate or load chords first.')
+        return
+      }
+
+      setSongSheetLoading(true)
+
+      const res = await fetch('/api/song-sheet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lyrics,
+          chord_data: chords,
+        }),
+      })
+
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(data.error || 'Failed to create song sheet')
+
+      setSongSheet(data.song_sheet || '')
+      setProjectMessage('Song sheet created.')
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to create song sheet')
+    } finally {
+      setSongSheetLoading(false)
+    }
+  }
+
   const handleRewrite = async (mode: RewriteMode, label: string) => {
     try {
       if (!result?.lyrics_full) {
@@ -913,6 +1015,7 @@ export default function Home() {
       }
 
       setRewriteLoading(mode)
+      setSongSheet('')
 
       const res = await fetch('/api/rewrite', {
         method: 'POST',
@@ -957,6 +1060,7 @@ export default function Home() {
       }
 
       setChordRewriteLoading(mode)
+      setSongSheet('')
 
       const res = await fetch('/api/chord-rewrite', {
         method: 'POST',
@@ -1042,11 +1146,13 @@ export default function Home() {
       })
     }
     setResult(version.result || null)
+    setSongSheet('')
     setActiveSongVersionId(version.id)
   }
 
   const loadChordVersion = (version: ChordVersionRecord) => {
     setChords(version.chord_data || null)
+    setSongSheet('')
     setActiveChordVersionId(version.id)
   }
 
@@ -1123,6 +1229,16 @@ export default function Home() {
     ].join('\n')
 
     downloadTextFile(`${title.replace(/\s+/g, '_')}_combined.txt`, content)
+  }
+
+  const exportSongSheetTxt = () => {
+    if (!songSheet.trim()) {
+      setProjectMessage('No song sheet to export.')
+      return
+    }
+
+    const title = activeProject?.title || 'song'
+    downloadTextFile(`${title.replace(/\s+/g, '_')}_song_sheet.txt`, songSheet)
   }
 
   const pageStyle: CSSProperties = {
@@ -1609,7 +1725,7 @@ export default function Home() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(340px, 1fr) minmax(340px, 1fr)',
+            gridTemplateColumns: 'minmax(360px, 1fr) minmax(360px, 1fr)',
             gap: 24,
             marginBottom: 24,
           }}
@@ -1702,6 +1818,38 @@ export default function Home() {
               />
             </div>
 
+            <div style={{ marginBottom: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+              <h3 style={{ marginTop: 0 }}>Import Lyrics</h3>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={sectionTitleStyle}>Imported Version Title</label>
+                <input
+                  value={importLyricsTitle}
+                  onChange={(e) => setImportLyricsTitle(e.target.value)}
+                  style={inputStyle}
+                  placeholder="Imported Lyrics"
+                />
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={sectionTitleStyle}>Paste Lyrics</label>
+                <textarea
+                  value={importLyricsText}
+                  onChange={(e) => setImportLyricsText(e.target.value)}
+                  style={{ ...textareaStyle, minHeight: 180 }}
+                  placeholder="Paste your lyrics here..."
+                />
+              </div>
+
+              <button
+                onClick={handleImportLyrics}
+                disabled={importLyricsLoading}
+                style={secondaryButtonStyle}
+              >
+                {importLyricsLoading ? 'Importing...' : 'Import Lyrics'}
+              </button>
+            </div>
+
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
               <button onClick={handleGenerate} disabled={loading} style={primaryButtonStyle}>
                 {loading ? 'Generating...' : 'Generate Song'}
@@ -1739,6 +1887,18 @@ export default function Home() {
                   style={primaryButtonStyle}
                 >
                   {manualChordSaveLoading ? 'Saving Chords...' : 'Save Chords As Version'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={sectionTitleStyle}>Song Sheet</label>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button onClick={handleCreateSongSheet} disabled={songSheetLoading} style={secondaryButtonStyle}>
+                  {songSheetLoading ? 'Building...' : 'Create Song Sheet'}
+                </button>
+                <button onClick={exportSongSheetTxt} style={secondaryButtonStyle}>
+                  Export Song Sheet TXT
                 </button>
               </div>
             </div>
@@ -1922,6 +2082,29 @@ export default function Home() {
               ) : (
                 <div style={{ color: '#a1a1aa', marginBottom: 20 }}>No chord output yet</div>
               )}
+
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
+                <h2 style={{ marginTop: 0 }}>Song Sheet</h2>
+
+                {songSheet ? (
+                  <pre
+                    style={{
+                      whiteSpace: 'pre-wrap',
+                      margin: 0,
+                      fontFamily: 'Courier New, monospace',
+                      lineHeight: 1.7,
+                      background: '#18181b',
+                      padding: 16,
+                      borderRadius: 12,
+                      border: '1px solid #3f3f46',
+                    }}
+                  >
+                    {songSheet}
+                  </pre>
+                ) : (
+                  <div style={{ color: '#a1a1aa' }}>No song sheet yet</div>
+                )}
+              </div>
 
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
                 <h3 style={{ marginTop: 0 }}>Chord Lab v2</h3>
