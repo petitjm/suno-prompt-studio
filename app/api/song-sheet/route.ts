@@ -5,7 +5,40 @@ function isMetadataLine(line: string) {
 
   if (!trimmed) return false
 
-  return /^(bpm|tempo|key|capo|style|genre|mood|time signature|meter)\s*:/i.test(trimmed)
+  // Label-style metadata
+  if (/^(bpm|tempo|key|capo|style|genre|mood|time signature|meter)\s*:/i.test(trimmed)) {
+    return true
+  }
+
+  // Standalone time signatures like 4/4, 3/4, 6/8, 12/8
+  if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) {
+    return true
+  }
+
+  // Combined time-signature + BPM line like: 4/4          ~78 BPM
+  if (/^\d{1,2}\/\d{1,2}\s+(~\s*)?\d{2,3}\s*bpm$/i.test(trimmed)) {
+    return true
+  }
+
+  // Standalone BPM lines like:
+  // 78 BPM
+  // ~78 BPM
+  // approx 78 BPM
+  // approximately 78 BPM
+  if (/^(~\s*)?\d{2,3}\s*bpm$/i.test(trimmed)) {
+    return true
+  }
+
+  if (/^(approx\.?|approximately)\s+\d{2,3}\s*bpm$/i.test(trimmed)) {
+    return true
+  }
+
+  return false
+}
+
+function isSectionHeader(line: string) {
+  const trimmed = line.trim()
+  return /^\[(verse|chorus|bridge|pre-chorus|pre chorus|intro|outro|hook|refrain|tag)(\s*\d+)?\]$/i.test(trimmed)
 }
 
 function splitSections(text: string) {
@@ -43,19 +76,36 @@ function createSongSheet(lyrics: string, chordData: any) {
   const out: string[] = []
 
   for (const section of rawSections) {
-    const lines = section
+    const rawLines = section
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
-      .filter((line) => !isMetadataLine(line))
 
+    if (!rawLines.length) continue
+
+    const lines = rawLines.filter((line) => !isMetadataLine(line))
     if (!lines.length) continue
 
-    for (const line of lines) {
+    let startIndex = 0
+
+    if (isSectionHeader(lines[0])) {
+      out.push(lines[0])
+      out.push('')
+      startIndex = 1
+    }
+
+    const lyricLines = lines.slice(startIndex).filter(Boolean)
+    if (!lyricLines.length) {
+      out.push('')
+      continue
+    }
+
+    for (const line of lyricLines) {
       const words = line.split(/\s+/).filter(Boolean)
 
       if (words.length <= 2 || chordPool.length === 0) {
         out.push(line)
+        out.push('')
         continue
       }
 
@@ -72,9 +122,8 @@ function createSongSheet(lyrics: string, chordData: any) {
 
       out.push(chordLine)
       out.push(`${firstHalf} ${secondHalf}`.trim())
+      out.push('')
     }
-
-    out.push('')
   }
 
   return out.join('\n').trim()
