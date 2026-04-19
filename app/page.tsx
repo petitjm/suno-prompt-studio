@@ -96,6 +96,12 @@ type ChordRewriteMode =
 type ProjectSortKey = 'updated_at' | 'title'
 type SortDirection = 'asc' | 'desc'
 
+type PerformanceSection = {
+  id: string
+  label: string
+  content: string
+}
+
 const defaultForm: FormState = {
   genre: '',
   moods: [],
@@ -235,17 +241,6 @@ function transposeRoot(root: string, semitones: number) {
   return displayRoot(CHROMATIC_SHARPS[next])
 }
 
-function transposeChordSymbol(chord: string, semitones: number) {
-  return chord.replace(/\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g, (match, root, quality = '', bass) => {
-    const nextRoot = transposeRoot(root, semitones)
-    if (bass) {
-      const nextBass = transposeRoot(bass, semitones)
-      return `${nextRoot}${quality}/${nextBass}`
-    }
-    return `${nextRoot}${quality}`
-  })
-}
-
 function transposeTextPreservingLayout(text: string, semitones: number) {
   if (!text.trim() || semitones === 0) return text
 
@@ -253,7 +248,7 @@ function transposeTextPreservingLayout(text: string, semitones: number) {
     .split('\n')
     .map((line) => {
       if (!line.trim()) return line
-      return line.replace(/\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g, (match, root, quality = '', bass) => {
+      return line.replace(/\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g, (_match, root, quality = '', bass) => {
         const nextRoot = transposeRoot(root, semitones)
         if (bass) {
           const nextBass = transposeRoot(bass, semitones)
@@ -279,11 +274,58 @@ function removeChordLinesFromSheet(sheet: string) {
     .join('\n')
 }
 
+function parsePerformanceSections(sheet: string): PerformanceSection[] {
+  const lines = sheet.split('\n')
+  const sections: PerformanceSection[] = []
+
+  let currentLabel = 'Song'
+  let currentContent: string[] = []
+
+  const pushSection = () => {
+    const content = currentContent.join('\n').trim()
+    if (!content) return
+
+    sections.push({
+      id: `section-${sections.length}`,
+      label: currentLabel,
+      content,
+    })
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    const isHeader = /^\[(.+?)\]$/.test(trimmed)
+
+    if (isHeader) {
+      pushSection()
+      currentLabel = trimmed.replace(/^\[(.+)\]$/, '$1')
+      currentContent = [trimmed]
+    } else {
+      currentContent.push(line)
+    }
+  }
+
+  pushSection()
+
+  if (sections.length === 0 && sheet.trim()) {
+    return [
+      {
+        id: 'section-0',
+        label: 'Song',
+        content: sheet.trim(),
+      },
+    ]
+  }
+
+  return sections
+}
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
   const latestProjectLoadRef = useRef(0)
   const performanceScrollRef = useRef<HTMLDivElement | null>(null)
   const performanceIntervalRef = useRef<number | null>(null)
+  const performanceSectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -442,9 +484,13 @@ export default function Home() {
     return base
   }, [performanceShowChords, transposedSongSheet])
 
+  const performanceSections = useMemo(() => {
+    return parsePerformanceSections(performanceSheet)
+  }, [performanceSheet])
+
   const transposedKey = useMemo(() => {
     if (!chords?.key) return ''
-    return transposeChordSymbol(chords.key, transposeAmount)
+    return transposeTextPreservingLayout(chords.key, transposeAmount)
   }, [chords?.key, transposeAmount])
 
   const transposedCapoHint = useMemo(() => {
@@ -477,6 +523,18 @@ export default function Home() {
     if (performanceScrollRef.current) {
       performanceScrollRef.current.scrollTop = 0
     }
+  }
+
+  const jumpToPerformanceSection = (sectionId: string) => {
+    const container = performanceScrollRef.current
+    const target = performanceSectionRefs.current[sectionId]
+
+    if (!container || !target) return
+
+    container.scrollTo({
+      top: target.offsetTop - 12,
+      behavior: 'smooth',
+    })
   }
 
   const loadProjects = async (preferredProjectId?: string) => {
@@ -1743,10 +1801,6 @@ export default function Home() {
   }
 
   const performanceSheetStyle: CSSProperties = {
-    whiteSpace: 'pre-wrap',
-    margin: 0,
-    fontFamily: 'Courier New, monospace',
-    lineHeight: 1.8,
     background: '#0f0f12',
     padding: 20,
     borderRadius: 16,
@@ -2615,32 +2669,70 @@ export default function Home() {
           </div>
 
           {performanceMode ? (
-            <div
-              ref={performanceScrollRef}
-              style={{
-                maxHeight: 620,
-                overflowY: 'auto',
-                borderRadius: 16,
-                border: '1px solid #3f3f46',
-                background: '#0b0b0d',
-                padding: 8,
-              }}
-            >
-              {performanceSheet.trim() ? (
-                <pre
-                  style={{
-                    ...performanceSheetStyle,
-                    fontSize: performanceFontSize,
-                  }}
-                >
-                  {performanceSheet}
-                </pre>
-              ) : (
-                <div style={{ color: '#a1a1aa', padding: 20 }}>
-                  Create a song sheet first to use Performance Mode.
+            <>
+              {performanceSections.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                  {performanceSections.map((section) => (
+                    <button
+                      key={section.id}
+                      onClick={() => jumpToPerformanceSection(section.id)}
+                      style={secondaryButtonStyle}
+                    >
+                      {section.label}
+                    </button>
+                  ))}
                 </div>
               )}
-            </div>
+
+              <div
+                ref={performanceScrollRef}
+                style={{
+                  maxHeight: 620,
+                  overflowY: 'auto',
+                  borderRadius: 16,
+                  border: '1px solid #3f3f46',
+                  background: '#0b0b0d',
+                  padding: 8,
+                }}
+              >
+                {performanceSheet.trim() ? (
+                  <div
+                    style={{
+                      ...performanceSheetStyle,
+                      fontSize: performanceFontSize,
+                    }}
+                  >
+                    {performanceSections.map((section) => (
+                      <div
+                        key={section.id}
+                        ref={(el) => {
+                          performanceSectionRefs.current[section.id] = el
+                        }}
+                        style={{ marginBottom: 28 }}
+                      >
+                        <pre
+                          style={{
+                            margin: 0,
+                            whiteSpace: 'pre-wrap',
+                            fontFamily: 'Courier New, monospace',
+                            fontSize: performanceFontSize,
+                            lineHeight: 1.8,
+                            background: 'transparent',
+                            color: 'white',
+                          }}
+                        >
+                          {section.content}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: '#a1a1aa', padding: 20 }}>
+                    Create a song sheet first to use Performance Mode.
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div style={{ color: '#a1a1aa' }}>
               Performance Mode is hidden.
