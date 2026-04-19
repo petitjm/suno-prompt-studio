@@ -525,17 +525,23 @@ export default function Home() {
     }
   }
 
-  const jumpToPerformanceSection = (sectionId: string) => {
-    const container = performanceScrollRef.current
-    const target = performanceSectionRefs.current[sectionId]
+ const jumpToPerformanceSection = (sectionId: string) => {
+  const container = performanceScrollRef.current
+  const target = performanceSectionRefs.current[sectionId]
 
-    if (!container || !target) return
+  if (!container || !target) return
 
-    container.scrollTo({
-      top: target.offsetTop - 12,
-      behavior: 'smooth',
-    })
-  }
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+
+  const top =
+    container.scrollTop + (targetRect.top - containerRect.top) - 12
+
+  container.scrollTo({
+    top,
+    behavior: 'smooth',
+  })
+}
 
   const loadProjects = async (preferredProjectId?: string) => {
     try {
