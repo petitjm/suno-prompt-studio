@@ -5,26 +5,18 @@ function isMetadataLine(line: string) {
 
   if (!trimmed) return false
 
-  // Label-style metadata
   if (/^(bpm|tempo|key|capo|style|genre|mood|time signature|meter)\s*:/i.test(trimmed)) {
     return true
   }
 
-  // Standalone time signatures like 4/4, 3/4, 6/8, 12/8
   if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) {
     return true
   }
 
-  // Combined time-signature + BPM line like: 4/4          ~78 BPM
   if (/^\d{1,2}\/\d{1,2}\s+(~\s*)?\d{2,3}\s*bpm$/i.test(trimmed)) {
     return true
   }
 
-  // Standalone BPM lines like:
-  // 78 BPM
-  // ~78 BPM
-  // approx 78 BPM
-  // approximately 78 BPM
   if (/^(~\s*)?\d{2,3}\s*bpm$/i.test(trimmed)) {
     return true
   }
@@ -48,22 +40,79 @@ function splitSections(text: string) {
     .filter(Boolean)
 }
 
+function looksLikeChord(token: string) {
+  const trimmed = token.trim()
+
+  if (!trimmed) return false
+
+  // reject obvious prose
+  if (/\s{2,}/.test(trimmed)) return false
+  if (/^(verse|chorus|bridge|intro|outro|pre-chorus|pre chorus|alt|turnaround|groove)$/i.test(trimmed)) {
+    return false
+  }
+
+  // remove dash variants for slash-type movement like A7sus4–A7 later via split
+  const chordPattern =
+    /^[A-G](#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G](#|b)?)?$/
+
+  return chordPattern.test(trimmed)
+}
+
+function normalizeChordToken(token: string) {
+  return token
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function extractChordTokens(input: string) {
+  const normalized = input
+    .replace(/[||]/g, '|')
+    .replace(/[–—]/g, '-')
+    .replace(/\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const roughParts = normalized
+    .split('|')
+    .flatMap((part) => part.split(','))
+    .flatMap((part) => part.split(/\s+-\s+/))
+    .map(normalizeChordToken)
+    .filter(Boolean)
+
+  const chordTokens: string[] = []
+
+  for (const part of roughParts) {
+    // split phrases into words if needed, then keep only valid chord-like chunks
+    const subparts = part.split(/\s+/).map(normalizeChordToken).filter(Boolean)
+
+    if (looksLikeChord(part)) {
+      chordTokens.push(part)
+      continue
+    }
+
+    for (const sub of subparts) {
+      if (looksLikeChord(sub)) {
+        chordTokens.push(sub)
+      }
+    }
+  }
+
+  return chordTokens
+}
+
 function getChordPool(chordData: any) {
   const combined = [
     chordData?.verse || '',
     chordData?.chorus || '',
     chordData?.bridge || '',
   ]
-    .join(' | ')
-    .replace(/\s+/g, ' ')
+    .join(' ')
     .trim()
 
   if (!combined) return []
 
-  return combined
-    .split(/[|,]/)
-    .map((x) => x.trim())
-    .filter(Boolean)
+  return extractChordTokens(combined)
 }
 
 function createSongSheet(lyrics: string, chordData: any) {
