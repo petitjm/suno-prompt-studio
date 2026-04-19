@@ -28,9 +28,20 @@ function isMetadataLine(line: string) {
   return false
 }
 
-function isSectionHeader(line: string) {
+function getSectionType(line: string): 'verse' | 'chorus' | 'bridge' | 'other' | null {
   const trimmed = line.trim()
-  return /^\[(verse|chorus|bridge|pre-chorus|pre chorus|intro|outro|hook|refrain|tag)(\s*\d+)?\]$/i.test(trimmed)
+
+  if (/^\[verse(\s*\d+)?\]$/i.test(trimmed)) return 'verse'
+  if (/^\[chorus(\s*\d+)?\]$/i.test(trimmed)) return 'chorus'
+  if (/^\[bridge(\s*\d+)?\]$/i.test(trimmed)) return 'bridge'
+
+  if (
+    /^\[(pre-chorus|pre chorus|intro|outro|hook|refrain|tag)(\s*\d+)?\]$/i.test(trimmed)
+  ) {
+    return 'other'
+  }
+
+  return null
 }
 
 function splitSections(text: string) {
@@ -40,34 +51,27 @@ function splitSections(text: string) {
     .filter(Boolean)
 }
 
+function normalizeChordToken(token: string) {
+  return token.replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim()
+}
+
 function looksLikeChord(token: string) {
   const trimmed = token.trim()
-
   if (!trimmed) return false
 
-  // reject obvious prose
-  if (/\s{2,}/.test(trimmed)) return false
   if (/^(verse|chorus|bridge|intro|outro|pre-chorus|pre chorus|alt|turnaround|groove)$/i.test(trimmed)) {
     return false
   }
 
-  // remove dash variants for slash-type movement like A7sus4–A7 later via split
   const chordPattern =
     /^[A-G](#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G](#|b)?)?$/
 
   return chordPattern.test(trimmed)
 }
 
-function normalizeChordToken(token: string) {
-  return token
-    .replace(/[–—]/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
 function extractChordTokens(input: string) {
   const normalized = input
-    .replace(/[||]/g, '|')
+    .replace(/\|\|/g, '|')
     .replace(/[–—]/g, '-')
     .replace(/\n/g, ' ')
     .replace(/\s+/g, ' ')
@@ -83,14 +87,12 @@ function extractChordTokens(input: string) {
   const chordTokens: string[] = []
 
   for (const part of roughParts) {
-    // split phrases into words if needed, then keep only valid chord-like chunks
-    const subparts = part.split(/\s+/).map(normalizeChordToken).filter(Boolean)
-
     if (looksLikeChord(part)) {
       chordTokens.push(part)
       continue
     }
 
+    const subparts = part.split(/\s+/).map(normalizeChordToken).filter(Boolean)
     for (const sub of subparts) {
       if (looksLikeChord(sub)) {
         chordTokens.push(sub)
@@ -101,28 +103,37 @@ function extractChordTokens(input: string) {
   return chordTokens
 }
 
-function getChordPool(chordData: any) {
-  const combined = [
-    chordData?.verse || '',
-    chordData?.chorus || '',
-    chordData?.bridge || '',
-  ]
-    .join(' ')
-    .trim()
+function getChordPools(chordData: any) {
+  return {
+    verse: extractChordTokens(String(chordData?.verse || '')),
+    chorus: extractChordTokens(String(chordData?.chorus || '')),
+    bridge: extractChordTokens(String(chordData?.bridge || '')),
+  }
+}
 
-  if (!combined) return []
+function choosePool(
+  sectionType: 'verse' | 'chorus' | 'bridge' | 'other' | null,
+  pools: { verse: string[]; chorus: string[]; bridge: string[] }
+) {
+  if (sectionType === 'verse' && pools.verse.length) return pools.verse
+  if (sectionType === 'chorus' && pools.chorus.length) return pools.chorus
+  if (sectionType === 'bridge' && pools.bridge.length) return pools.bridge
 
-  return extractChordTokens(combined)
+  if (pools.verse.length) return pools.verse
+  if (pools.chorus.length) return pools.chorus
+  if (pools.bridge.length) return pools.bridge
+
+  return []
 }
 
 function createSongSheet(lyrics: string, chordData: any) {
   const rawSections = splitSections(lyrics)
-  const chordPool = getChordPool(chordData)
+  const pools = getChordPools(chordData)
 
   if (!rawSections.length) return ''
 
-  let chordIndex = 0
   const out: string[] = []
+  let fallbackIndex = 0
 
   for (const section of rawSections) {
     const rawLines = section
@@ -135,9 +146,10 @@ function createSongSheet(lyrics: string, chordData: any) {
     const lines = rawLines.filter((line) => !isMetadataLine(line))
     if (!lines.length) continue
 
+    const sectionType = getSectionType(lines[0])
     let startIndex = 0
 
-    if (isSectionHeader(lines[0])) {
+    if (sectionType) {
       out.push(lines[0])
       out.push('')
       startIndex = 1
@@ -149,18 +161,21 @@ function createSongSheet(lyrics: string, chordData: any) {
       continue
     }
 
+    const pool = choosePool(sectionType, pools)
+    let sectionIndex = 0
+
     for (const line of lyricLines) {
       const words = line.split(/\s+/).filter(Boolean)
 
-      if (words.length <= 2 || chordPool.length === 0) {
+      if (words.length <= 2 || pool.length === 0) {
         out.push(line)
         out.push('')
         continue
       }
 
-      const chordA = chordPool[chordIndex % chordPool.length]
-      const chordB = chordPool[(chordIndex + 1) % chordPool.length]
-      chordIndex += 2
+      const chordA = pool[(sectionIndex + fallbackIndex) % pool.length]
+      const chordB = pool[(sectionIndex + fallbackIndex + 1) % pool.length]
+      sectionIndex += 2
 
       const midpoint = Math.max(1, Math.floor(words.length / 2))
       const firstHalf = words.slice(0, midpoint).join(' ')
@@ -173,6 +188,8 @@ function createSongSheet(lyrics: string, chordData: any) {
       out.push(`${firstHalf} ${secondHalf}`.trim())
       out.push('')
     }
+
+    fallbackIndex += 2
   }
 
   return out.join('\n').trim()
