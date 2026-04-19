@@ -170,6 +170,22 @@ const chordRewriteButtons: Array<{ mode: ChordRewriteMode; label: string }> = [
   { mode: 'capo_friendly', label: 'Capo-Friendly Version' },
 ]
 
+const CHROMATIC_SHARPS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const FLAT_TO_SHARP: Record<string, string> = {
+  Db: 'C#',
+  Eb: 'D#',
+  Gb: 'F#',
+  Ab: 'G#',
+  Bb: 'A#',
+}
+const SHARP_TO_FLAT_DISPLAY: Record<string, string> = {
+  'A#': 'Bb',
+  'C#': 'Db',
+  'D#': 'Eb',
+  'F#': 'Gb',
+  'G#': 'Ab',
+}
+
 async function readJsonSafe(res: Response) {
   const text = await res.text()
   try {
@@ -203,9 +219,71 @@ function downloadTextFile(filename: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
+function normalizeRoot(root: string) {
+  return FLAT_TO_SHARP[root] || root
+}
+
+function displayRoot(root: string) {
+  return SHARP_TO_FLAT_DISPLAY[root] || root
+}
+
+function transposeRoot(root: string, semitones: number) {
+  const normalized = normalizeRoot(root)
+  const index = CHROMATIC_SHARPS.indexOf(normalized)
+  if (index === -1) return root
+  const next = (index + semitones + 1200) % 12
+  return displayRoot(CHROMATIC_SHARPS[next])
+}
+
+function transposeChordSymbol(chord: string, semitones: number) {
+  return chord.replace(/\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g, (match, root, quality = '', bass) => {
+    const nextRoot = transposeRoot(root, semitones)
+    if (bass) {
+      const nextBass = transposeRoot(bass, semitones)
+      return `${nextRoot}${quality}/${nextBass}`
+    }
+    return `${nextRoot}${quality}`
+  })
+}
+
+function transposeTextPreservingLayout(text: string, semitones: number) {
+  if (!text.trim() || semitones === 0) return text
+
+  return text
+    .split('\n')
+    .map((line) => {
+      if (!line.trim()) return line
+      return line.replace(/\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g, (match, root, quality = '', bass) => {
+        const nextRoot = transposeRoot(root, semitones)
+        if (bass) {
+          const nextBass = transposeRoot(bass, semitones)
+          return `${nextRoot}${quality}/${nextBass}`
+        }
+        return `${nextRoot}${quality}`
+      })
+    })
+    .join('\n')
+}
+
+function removeChordLinesFromSheet(sheet: string) {
+  const chordLikeLine = /^(\s*[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G](?:#|b)?)?[\s-]*)+$/
+
+  return sheet
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim()
+      if (!trimmed) return true
+      if (/^\[.*\]$/.test(trimmed)) return true
+      return !chordLikeLine.test(trimmed)
+    })
+    .join('\n')
+}
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
   const latestProjectLoadRef = useRef(0)
+  const performanceScrollRef = useRef<HTMLDivElement | null>(null)
+  const performanceIntervalRef = useRef<number | null>(null)
 
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -262,6 +340,13 @@ export default function Home() {
   const [manualVersionName, setManualVersionName] = useState('')
   const [importLyricsTitle, setImportLyricsTitle] = useState('Imported Lyrics')
 
+  const [transposeAmount, setTransposeAmount] = useState(0)
+  const [performanceMode, setPerformanceMode] = useState(false)
+  const [performanceShowChords, setPerformanceShowChords] = useState(true)
+  const [performanceScrollSpeed, setPerformanceScrollSpeed] = useState(2)
+  const [performanceIsScrolling, setPerformanceIsScrolling] = useState(false)
+  const [performanceFontSize, setPerformanceFontSize] = useState(28)
+
   useEffect(() => {
     let mounted = true
 
@@ -293,6 +378,41 @@ export default function Home() {
     }
   }, [supabase])
 
+  useEffect(() => {
+    return () => {
+      if (performanceIntervalRef.current) {
+        window.clearInterval(performanceIntervalRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!performanceIsScrolling) {
+      if (performanceIntervalRef.current) {
+        window.clearInterval(performanceIntervalRef.current)
+        performanceIntervalRef.current = null
+      }
+      return
+    }
+
+    if (performanceIntervalRef.current) {
+      window.clearInterval(performanceIntervalRef.current)
+    }
+
+    performanceIntervalRef.current = window.setInterval(() => {
+      const el = performanceScrollRef.current
+      if (!el) return
+      el.scrollTop += performanceScrollSpeed
+    }, 60)
+
+    return () => {
+      if (performanceIntervalRef.current) {
+        window.clearInterval(performanceIntervalRef.current)
+        performanceIntervalRef.current = null
+      }
+    }
+  }, [performanceIsScrolling, performanceScrollSpeed])
+
   const sortedProjects = useMemo(() => {
     const next = [...projects]
     next.sort((a, b) => {
@@ -313,12 +433,49 @@ export default function Home() {
     return next
   }, [projects, projectSortKey, projectSortDirection])
 
+  const transposedSongSheet = useMemo(() => {
+    return transposeTextPreservingLayout(songSheet, transposeAmount)
+  }, [songSheet, transposeAmount])
+
+  const performanceSheet = useMemo(() => {
+    const base = performanceShowChords ? transposedSongSheet : removeChordLinesFromSheet(transposedSongSheet)
+    return base
+  }, [performanceShowChords, transposedSongSheet])
+
+  const transposedKey = useMemo(() => {
+    if (!chords?.key) return ''
+    return transposeChordSymbol(chords.key, transposeAmount)
+  }, [chords?.key, transposeAmount])
+
+  const transposedCapoHint = useMemo(() => {
+    if (transposeAmount === 0) return chords?.capo || ''
+    if (chords?.capo && /^\d+$/.test(chords.capo)) {
+      return chords.capo
+    }
+    return ''
+  }, [chords?.capo, transposeAmount])
+
   const toggleProjectSort = (key: ProjectSortKey) => {
     if (projectSortKey === key) {
       setProjectSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
     } else {
       setProjectSortKey(key)
       setProjectSortDirection(key === 'title' ? 'asc' : 'desc')
+    }
+  }
+
+  const stopPerformanceScroll = () => {
+    setPerformanceIsScrolling(false)
+    if (performanceIntervalRef.current) {
+      window.clearInterval(performanceIntervalRef.current)
+      performanceIntervalRef.current = null
+    }
+  }
+
+  const resetPerformanceScroll = () => {
+    stopPerformanceScroll()
+    if (performanceScrollRef.current) {
+      performanceScrollRef.current.scrollTop = 0
     }
   }
 
@@ -383,6 +540,8 @@ export default function Home() {
       setChords(null)
       setSongSheet('')
       setEditableLyrics('')
+      setTransposeAmount(0)
+      resetPerformanceScroll()
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
@@ -396,6 +555,8 @@ export default function Home() {
       setChords(null)
       setSongSheet('')
       setEditableLyrics('')
+      setTransposeAmount(0)
+      resetPerformanceScroll()
       setForm(defaultForm)
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
@@ -593,6 +754,7 @@ export default function Home() {
       setEditableLyrics('')
       setChords(null)
       setSongSheet('')
+      setTransposeAmount(0)
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
@@ -765,6 +927,8 @@ export default function Home() {
     setImportLyricsTitle('Imported Lyrics')
     setActiveSongVersionId(null)
     setActiveChordVersionId(null)
+    setTransposeAmount(0)
+    resetPerformanceScroll()
   }
 
   const toggleMood = (mood: string) => {
@@ -819,6 +983,8 @@ export default function Home() {
       setResult(null)
       setEditableLyrics('')
       setSongSheet('')
+      setTransposeAmount(0)
+      resetPerformanceScroll()
 
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -852,6 +1018,8 @@ export default function Home() {
     try {
       setChordLoading(true)
       setSongSheet('')
+      setTransposeAmount(0)
+      resetPerformanceScroll()
 
       const currentSongResult = result
       const currentEditableLyrics = editableLyrics
@@ -962,6 +1130,7 @@ export default function Home() {
 
       setSaveEditedLyricsLoading(true)
       setSongSheet('')
+      resetPerformanceScroll()
 
       const title = manualVersionName.trim() || 'Edited Lyrics'
 
@@ -1021,6 +1190,8 @@ export default function Home() {
 
       setImportLyricsLoading(true)
       setSongSheet('')
+      setTransposeAmount(0)
+      resetPerformanceScroll()
 
       const createRes = await fetch('/api/projects', {
         method: 'POST',
@@ -1077,6 +1248,7 @@ export default function Home() {
       }
 
       setSongSheetLoading(true)
+      resetPerformanceScroll()
 
       const res = await fetch('/api/song-sheet', {
         method: 'POST',
@@ -1091,6 +1263,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || 'Failed to create song sheet')
 
       setSongSheet(data.song_sheet || '')
+      setTransposeAmount(0)
       setProjectMessage('Song sheet created.')
     } catch (err: any) {
       console.error(err)
@@ -1109,6 +1282,7 @@ export default function Home() {
 
       setRewriteLoading(mode)
       setSongSheet('')
+      resetPerformanceScroll()
 
       const res = await fetch('/api/rewrite', {
         method: 'POST',
@@ -1155,6 +1329,7 @@ export default function Home() {
 
       setChordRewriteLoading(mode)
       setSongSheet('')
+      resetPerformanceScroll()
 
       const res = await fetch('/api/chord-rewrite', {
         method: 'POST',
@@ -1242,12 +1417,16 @@ export default function Home() {
     setResult(version.result || null)
     setEditableLyrics(version.result?.lyrics_full || '')
     setSongSheet('')
+    setTransposeAmount(0)
+    resetPerformanceScroll()
     setActiveSongVersionId(version.id)
   }
 
   const loadChordVersion = (version: ChordVersionRecord) => {
     setChords(version.chord_data || null)
     setSongSheet('')
+    setTransposeAmount(0)
+    resetPerformanceScroll()
     setActiveChordVersionId(version.id)
   }
 
@@ -1285,16 +1464,25 @@ export default function Home() {
     }
 
     const title = activeProject?.title || 'song'
+    const transposedChords = {
+      key: transposedKey || chords.key || '',
+      capo: transposedCapoHint || chords.capo || '',
+      verse: transposeTextPreservingLayout(chords.verse || '', transposeAmount),
+      chorus: transposeTextPreservingLayout(chords.chorus || '', transposeAmount),
+      bridge: transposeTextPreservingLayout(chords.bridge || '', transposeAmount),
+      notes: chords.notes || '',
+    }
+
     const content = [
       `Project: ${title}`,
-      chords.key ? `Key: ${chords.key}` : '',
-      chords.capo ? `Capo: ${chords.capo}` : '',
+      transposedChords.key ? `Key: ${transposedChords.key}` : '',
+      transposedChords.capo ? `Capo: ${transposedChords.capo}` : '',
       '',
-      `Verse: ${chords.verse || ''}`,
-      `Chorus: ${chords.chorus || ''}`,
-      `Bridge: ${chords.bridge || ''}`,
+      `Verse: ${transposedChords.verse || ''}`,
+      `Chorus: ${transposedChords.chorus || ''}`,
+      `Bridge: ${transposedChords.bridge || ''}`,
       '',
-      chords.notes ? `Notes: ${chords.notes}` : '',
+      transposedChords.notes ? `Notes: ${transposedChords.notes}` : '',
     ]
       .filter(Boolean)
       .join('\n')
@@ -1313,11 +1501,11 @@ export default function Home() {
       '=== CHORDS ===',
       chords && !chords.error
         ? [
-            `Key: ${chords.key || ''}`,
-            `Capo: ${chords.capo || ''}`,
-            `Verse: ${chords.verse || ''}`,
-            `Chorus: ${chords.chorus || ''}`,
-            `Bridge: ${chords.bridge || ''}`,
+            `Key: ${transposedKey || chords.key || ''}`,
+            `Capo: ${transposedCapoHint || chords.capo || ''}`,
+            `Verse: ${transposeTextPreservingLayout(chords.verse || '', transposeAmount)}`,
+            `Chorus: ${transposeTextPreservingLayout(chords.chorus || '', transposeAmount)}`,
+            `Bridge: ${transposeTextPreservingLayout(chords.bridge || '', transposeAmount)}`,
             `Notes: ${chords.notes || ''}`,
           ].join('\n')
         : 'No chord output',
@@ -1327,13 +1515,13 @@ export default function Home() {
   }
 
   const exportSongSheetTxt = () => {
-    if (!songSheet.trim()) {
+    if (!transposedSongSheet.trim()) {
       setProjectMessage('No song sheet to export.')
       return
     }
 
     const title = activeProject?.title || 'song'
-    downloadTextFile(`${title.replace(/\s+/g, '_')}_song_sheet.txt`, songSheet)
+    downloadTextFile(`${title.replace(/\s+/g, '_')}_song_sheet.txt`, transposedSongSheet)
   }
 
   const pageStyle: CSSProperties = {
@@ -1552,6 +1740,18 @@ export default function Home() {
   const emptyHistoryStyle: CSSProperties = {
     color: '#a1a1aa',
     padding: '12px',
+  }
+
+  const performanceSheetStyle: CSSProperties = {
+    whiteSpace: 'pre-wrap',
+    margin: 0,
+    fontFamily: 'Courier New, monospace',
+    lineHeight: 1.8,
+    background: '#0f0f12',
+    padding: 20,
+    borderRadius: 16,
+    border: '1px solid #3f3f46',
+    minHeight: 360,
   }
 
   const updateArtistDNA = (key: keyof ArtistDNAProfile, value: string) => {
@@ -2145,6 +2345,7 @@ export default function Home() {
                           }
                     )
                     setSongSheet('')
+                    resetPerformanceScroll()
                     setProjectMessage('Lyrics updated in working view.')
                   }}
                   style={secondaryButtonStyle}
@@ -2171,25 +2372,25 @@ export default function Home() {
                 ) : (
                   <>
                     <div style={{ marginBottom: 10 }}>
-                      <strong>Key:</strong> {chords.key || '—'}
+                      <strong>Key:</strong> {transposedKey || chords.key || '—'}
                     </div>
                     <div style={{ marginBottom: 16 }}>
-                      <strong>Capo:</strong> {chords.capo || '—'}
+                      <strong>Capo:</strong> {transposedCapoHint || chords.capo || '—'}
                     </div>
 
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ fontWeight: 700, marginBottom: 6 }}>Verse</div>
-                      <div>{chords.verse || '—'}</div>
+                      <div>{transposeTextPreservingLayout(chords.verse || '—', transposeAmount)}</div>
                     </div>
 
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ fontWeight: 700, marginBottom: 6 }}>Chorus</div>
-                      <div>{chords.chorus || '—'}</div>
+                      <div>{transposeTextPreservingLayout(chords.chorus || '—', transposeAmount)}</div>
                     </div>
 
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ fontWeight: 700, marginBottom: 6 }}>Bridge</div>
-                      <div>{chords.bridge || '—'}</div>
+                      <div>{transposeTextPreservingLayout(chords.bridge || '—', transposeAmount)}</div>
                     </div>
 
                     {chords.notes && (
@@ -2206,7 +2407,7 @@ export default function Home() {
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #3f3f46' }}>
                 <h2 style={{ marginTop: 0 }}>Song Sheet</h2>
 
-                {songSheet ? (
+                {transposedSongSheet ? (
                   <pre
                     style={{
                       whiteSpace: 'pre-wrap',
@@ -2219,7 +2420,7 @@ export default function Home() {
                       border: '1px solid #3f3f46',
                     }}
                   >
-                    {songSheet}
+                    {transposedSongSheet}
                   </pre>
                 ) : (
                   <div style={{ color: '#a1a1aa' }}>No song sheet yet</div>
@@ -2302,6 +2503,149 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div style={{ ...panelStyle, marginBottom: 24 }}>
+          <h2 style={{ marginTop: 0 }}>Performance Mode</h2>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+            <button
+              onClick={() => setPerformanceMode((prev) => !prev)}
+              style={primaryButtonStyle}
+            >
+              {performanceMode ? 'Hide Performance Mode' : 'Show Performance Mode'}
+            </button>
+
+            <button
+              onClick={() => setTransposeAmount((prev) => prev - 1)}
+              style={secondaryButtonStyle}
+            >
+              Transpose -1
+            </button>
+
+            <button
+              onClick={() => setTransposeAmount(0)}
+              style={secondaryButtonStyle}
+            >
+              Reset Transpose
+            </button>
+
+            <button
+              onClick={() => setTransposeAmount((prev) => prev + 1)}
+              style={secondaryButtonStyle}
+            >
+              Transpose +1
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div>
+              <strong>Transpose:</strong> {transposeAmount > 0 ? `+${transposeAmount}` : transposeAmount}
+            </div>
+            <div>
+              <strong>Display Key:</strong> {transposedKey || chords?.key || '—'}
+            </div>
+            <div>
+              <strong>Capo:</strong> {transposedCapoHint || chords?.capo || '—'}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+            <label style={{ cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={performanceShowChords}
+                onChange={(e) => setPerformanceShowChords(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              Show chords
+            </label>
+
+            <label style={{ cursor: 'pointer' }}>
+              Font size
+              <input
+                type="range"
+                min={20}
+                max={44}
+                value={performanceFontSize}
+                onChange={(e) => setPerformanceFontSize(Number(e.target.value))}
+                style={{ marginLeft: 10 }}
+              />
+              <span style={{ marginLeft: 8 }}>{performanceFontSize}px</span>
+            </label>
+
+            <label style={{ cursor: 'pointer' }}>
+              Scroll speed
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={performanceScrollSpeed}
+                onChange={(e) => setPerformanceScrollSpeed(Number(e.target.value))}
+                style={{ marginLeft: 10 }}
+              />
+              <span style={{ marginLeft: 8 }}>{performanceScrollSpeed}</span>
+            </label>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+            <button
+              onClick={() => setPerformanceIsScrolling(true)}
+              style={secondaryButtonStyle}
+              disabled={!performanceMode || !performanceSheet.trim()}
+            >
+              Start Scroll
+            </button>
+
+            <button
+              onClick={stopPerformanceScroll}
+              style={secondaryButtonStyle}
+              disabled={!performanceMode}
+            >
+              Pause Scroll
+            </button>
+
+            <button
+              onClick={resetPerformanceScroll}
+              style={secondaryButtonStyle}
+              disabled={!performanceMode}
+            >
+              Reset Scroll
+            </button>
+          </div>
+
+          {performanceMode ? (
+            <div
+              ref={performanceScrollRef}
+              style={{
+                maxHeight: 620,
+                overflowY: 'auto',
+                borderRadius: 16,
+                border: '1px solid #3f3f46',
+                background: '#0b0b0d',
+                padding: 8,
+              }}
+            >
+              {performanceSheet.trim() ? (
+                <pre
+                  style={{
+                    ...performanceSheetStyle,
+                    fontSize: performanceFontSize,
+                  }}
+                >
+                  {performanceSheet}
+                </pre>
+              ) : (
+                <div style={{ color: '#a1a1aa', padding: 20 }}>
+                  Create a song sheet first to use Performance Mode.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ color: '#a1a1aa' }}>
+              Performance Mode is hidden.
+            </div>
+          )}
         </div>
 
         <div
