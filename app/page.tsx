@@ -734,51 +734,50 @@ useEffect(() => {
   }
 
   const ensurePreviewInstruments = () => {
-    previewChordInstrumentRef.current?.dispose()
+  previewChordInstrumentRef.current?.dispose()
 
-    previewChordInstrumentRef.current = new Tone.PolySynth(
-      previewInstrument === 'piano' ? Tone.Synth : Tone.AMSynth,
-      previewInstrument === 'piano'
-        ? {
-            oscillator: { type: 'triangle' },
-            envelope: { attack: 0.01, decay: 0.2, sustain: 0.35, release: 1.0 },
-            volume: -8,
-          }
-        : {
-            harmonicity: 1.6,
-            envelope: { attack: 0.005, decay: 0.18, sustain: 0.2, release: 0.8 },
-            modulation: { type: 'sine' },
-            modulationEnvelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.35 },
-            volume: -9,
-          }
-    ).toDestination()
-
-    previewChordInstrumentRef.current.maxPolyphony = 12
-
-    if (!previewBassSynthRef.current) {
-      previewBassSynthRef.current = new Tone.MonoSynth({
-        oscillator: { type: 'sine' },
-        filter: { Q: 1, type: 'lowpass', rolloff: -24 },
-        envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.5 },
-        filterEnvelope: {
-          attack: 0.01,
-          decay: 0.2,
-          sustain: 0.2,
-          release: 0.8,
-          baseFrequency: 90,
-          octaves: 2.5,
-        },
-      }).toDestination()
-    }
-
-    if (!previewClickSynthRef.current) {
-      previewClickSynthRef.current = new Tone.MembraneSynth({
-        pitchDecay: 0.008,
-        octaves: 2,
-        envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
-      }).toDestination()
-    }
+  if (previewInstrument === 'piano') {
+    previewChordInstrumentRef.current = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.01, decay: 0.2, sustain: 0.35, release: 1.0 },
+      volume: -8,
+      maxPolyphony: 12,
+    }).toDestination()
+  } else {
+    previewChordInstrumentRef.current = new Tone.PolySynth(Tone.AMSynth, {
+      harmonicity: 1.6,
+      envelope: { attack: 0.005, decay: 0.18, sustain: 0.2, release: 0.8 },
+      modulation: { type: 'sine' },
+      modulationEnvelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.35 },
+      volume: -9,
+      maxPolyphony: 12,
+    }).toDestination()
   }
+
+  if (!previewBassSynthRef.current) {
+    previewBassSynthRef.current = new Tone.MonoSynth({
+      oscillator: { type: 'sine' },
+      filter: { Q: 1, type: 'lowpass', rolloff: -24 },
+      envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.5 },
+      filterEnvelope: {
+        attack: 0.01,
+        decay: 0.2,
+        sustain: 0.2,
+        release: 0.8,
+        baseFrequency: 90,
+        octaves: 2.5,
+      },
+    }).toDestination()
+  }
+
+  if (!previewClickSynthRef.current) {
+    previewClickSynthRef.current = new Tone.MembraneSynth({
+      pitchDecay: 0.008,
+      octaves: 2,
+      envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
+    }).toDestination()
+  }
+}
 
   const stopPreviewPlayback = () => {
     clearPreviewSchedules()
