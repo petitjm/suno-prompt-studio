@@ -233,6 +233,7 @@ export default function Home() {
   const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
   const [followPlayback, setFollowPlayback] = useState(true)
+  const [currentPreviewBarIndex, setCurrentPreviewBarIndex] = useState(0)
 
   useEffect(() => {
     let mounted = true
@@ -280,6 +281,7 @@ export default function Home() {
       lastFollowedSectionIdRef,
       setPreviewPlaying,
     })
+    setCurrentPreviewBarIndex(0)
   }
 
   useEffect(() => {
@@ -541,6 +543,11 @@ export default function Home() {
         const bassNote = chordSymbolToBassNote(bar.chord, 2)
         const barMeta = previewBarMeta[index]
 
+        const barPositionId = transport.schedule(() => {
+          setCurrentPreviewBarIndex(index)
+        }, `${index}m`)
+        previewEventIdsRef.current.push(barPositionId)
+
         if (barMeta) {
           schedulePlaybackFollowForBar({
             transport,
@@ -550,7 +557,7 @@ export default function Home() {
             performanceMode,
             lastFollowedSectionIdRef,
             setActivePerformanceSectionId,
-            jumpToPerformanceSection,
+            jumpToPerformanceSection: () => {},
             previewEventIdsRef,
           })
         }
@@ -616,6 +623,7 @@ export default function Home() {
 
       if (!previewLoop) {
         const endId = transport.schedule(() => {
+          setCurrentPreviewBarIndex(Math.max(0, previewBars.length - 1))
           setPreviewPlaying(false)
           transport.stop()
           transport.position = 0
@@ -625,6 +633,7 @@ export default function Home() {
         previewEventIdsRef.current.push(endId)
       }
 
+      setCurrentPreviewBarIndex(safeStartBarIndex)
       transport.position = `${safeStartBarIndex}m`
       transport.start('+0.05')
       setPreviewPlaying(true)
@@ -726,6 +735,34 @@ export default function Home() {
   }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
 
   useEffect(() => {
+    if (!performanceMode || !followPlayback || !previewPlaying) return
+
+    const container = performanceScrollRef.current
+    if (!container) return
+    if (!performanceSheet.trim()) return
+    if (previewBars.length === 0) return
+
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    if (maxScrollTop === 0) return
+
+    const denominator = Math.max(1, previewBars.length - 1)
+    const progress = currentPreviewBarIndex / denominator
+    const targetTop = maxScrollTop * progress
+
+    container.scrollTo({
+      top: targetTop,
+      behavior: 'smooth',
+    })
+  }, [
+    currentPreviewBarIndex,
+    performanceMode,
+    followPlayback,
+    previewPlaying,
+    performanceSheet,
+    previewBars.length,
+  ])
+
+  useEffect(() => {
     if (previewPlaying) {
       stopPreviewPlayback()
     }
@@ -792,6 +829,7 @@ export default function Home() {
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
       setActivePerformanceSectionId(null)
+      setCurrentPreviewBarIndex(0)
     }
   }, [user])
 
@@ -802,6 +840,7 @@ export default function Home() {
       setSongSheet('')
       setEditableLyrics('')
       setTransposeAmount(0)
+      setCurrentPreviewBarIndex(0)
       resetPerformanceScroll()
       setSongVersions([])
       setChordVersions([])
@@ -817,6 +856,7 @@ export default function Home() {
       setSongSheet('')
       setEditableLyrics('')
       setTransposeAmount(0)
+      setCurrentPreviewBarIndex(0)
       resetPerformanceScroll()
       setForm(defaultForm)
       setActiveSongVersionId(null)
@@ -1016,6 +1056,7 @@ export default function Home() {
       setChords(null)
       setSongSheet('')
       setTransposeAmount(0)
+      setCurrentPreviewBarIndex(0)
       setSongVersions([])
       setChordVersions([])
       setForm(defaultForm)
@@ -1190,6 +1231,7 @@ export default function Home() {
     setActiveChordVersionId(null)
     setTransposeAmount(0)
     setActivePerformanceSectionId(null)
+    setCurrentPreviewBarIndex(0)
     stopPreviewPlayback()
     resetPerformanceScroll()
   }
@@ -1245,6 +1287,7 @@ export default function Home() {
       setEditableLyrics('')
       setSongSheet('')
       setTransposeAmount(0)
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1281,6 +1324,7 @@ export default function Home() {
       setChordLoading(true)
       setSongSheet('')
       setTransposeAmount(0)
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1393,6 +1437,7 @@ export default function Home() {
 
       setSaveEditedLyricsLoading(true)
       setSongSheet('')
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1455,6 +1500,7 @@ export default function Home() {
       setImportLyricsLoading(true)
       setSongSheet('')
       setTransposeAmount(0)
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1513,6 +1559,7 @@ export default function Home() {
       }
 
       setSongSheetLoading(true)
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1548,6 +1595,7 @@ export default function Home() {
 
       setRewriteLoading(mode)
       setSongSheet('')
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1596,6 +1644,7 @@ export default function Home() {
 
       setChordRewriteLoading(mode)
       setSongSheet('')
+      setCurrentPreviewBarIndex(0)
       stopPreviewPlayback()
       resetPerformanceScroll()
 
@@ -1686,6 +1735,7 @@ export default function Home() {
     setEditableLyrics(version.result?.lyrics_full || '')
     setSongSheet('')
     setTransposeAmount(0)
+    setCurrentPreviewBarIndex(0)
     stopPreviewPlayback()
     resetPerformanceScroll()
     setActiveSongVersionId(version.id)
@@ -1695,6 +1745,7 @@ export default function Home() {
     setChords(version.chord_data || null)
     setSongSheet('')
     setTransposeAmount(0)
+    setCurrentPreviewBarIndex(0)
     stopPreviewPlayback()
     resetPerformanceScroll()
     setActiveChordVersionId(version.id)
@@ -2576,6 +2627,7 @@ export default function Home() {
                           }
                     )
                     setSongSheet('')
+                    setCurrentPreviewBarIndex(0)
                     stopPreviewPlayback()
                     resetPerformanceScroll()
                     setProjectMessage('Lyrics updated in working view.')
@@ -2768,6 +2820,11 @@ export default function Home() {
                 {activePerformanceSectionIndex >= 0
                   ? performanceSections[activePerformanceSectionIndex]?.label
                   : performanceSections[0]?.label}
+              </div>
+            )}
+            {previewPlaying && (
+              <div>
+                <strong>Current bar:</strong> {currentPreviewBarIndex + 1} / {Math.max(1, previewBars.length)}
               </div>
             )}
           </div>
