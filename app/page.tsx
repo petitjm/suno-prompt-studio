@@ -479,17 +479,31 @@ export default function Home() {
     setActivePerformanceSectionId(sectionId)
   }
 
-  const jumpToNextPerformanceSection = () => {
-    if (!nextPerformanceSection) return
-    jumpToPerformanceSection(nextPerformanceSection.id)
+  const findFirstPreviewBarIndexForSection = (sectionId: string) => {
+    const exact = previewBarMeta.find((bar) => bar.sectionId === sectionId)
+    if (exact) return exact.barIndex
+
+    const section = performanceSections.find((item) => item.id === sectionId)
+    if (!section) return -1
+
+    const normalized = section.label.trim().toLowerCase()
+
+    const loose = previewBarMeta.find((bar) => {
+      const barLabel = bar.label.trim().toLowerCase()
+      return normalized === barLabel || normalized.includes(barLabel) || barLabel.includes(normalized)
+    })
+
+    return loose ? loose.barIndex : -1
   }
 
-  const startPreviewPlayback = async () => {
+  const startPreviewPlaybackFromBar = async (startBarIndex = 0) => {
     try {
       if (!previewBars.length) {
         setProjectMessage('No previewable chord bars found. Generate or load chords first.')
         return
       }
+
+      const safeStartBarIndex = Math.max(0, Math.min(startBarIndex, previewBars.length - 1))
 
       await Tone.start()
       setPreviewReady(true)
@@ -611,16 +625,21 @@ export default function Home() {
         previewEventIdsRef.current.push(endId)
       }
 
+      transport.position = `${safeStartBarIndex}m`
       transport.start('+0.05')
       setPreviewPlaying(true)
 
-      const firstFollowId = previewBarMeta.find((bar) => bar.sectionId)?.sectionId
-      if (followPlayback && performanceMode && firstFollowId) {
-        lastFollowedSectionIdRef.current = firstFollowId
-        setActivePerformanceSectionId(firstFollowId)
+      const startBarMeta = previewBarMeta[safeStartBarIndex]
+      const startSectionId = startBarMeta?.sectionId || null
+
+      if (followPlayback && performanceMode && startSectionId) {
+        lastFollowedSectionIdRef.current = startSectionId
+        setActivePerformanceSectionId(startSectionId)
         window.requestAnimationFrame(() => {
-          jumpToPerformanceSection(firstFollowId)
+          jumpToPerformanceSection(startSectionId)
         })
+      } else {
+        lastFollowedSectionIdRef.current = null
       }
 
       const sectionLabel =
@@ -642,6 +661,26 @@ export default function Home() {
       console.error(err)
       setProjectMessage(err.message || 'Failed to start preview')
     }
+  }
+
+  const handlePerformanceSectionJump = async (sectionId: string) => {
+    jumpToPerformanceSection(sectionId)
+
+    if (!previewPlaying) return
+
+    const startBarIndex = findFirstPreviewBarIndexForSection(sectionId)
+    if (startBarIndex === -1) return
+
+    await startPreviewPlaybackFromBar(startBarIndex)
+  }
+
+  const jumpToNextPerformanceSection = async () => {
+    if (!nextPerformanceSection) return
+    await handlePerformanceSectionJump(nextPerformanceSection.id)
+  }
+
+  const startPreviewPlayback = async () => {
+    await startPreviewPlaybackFromBar(0)
   }
 
   useEffect(() => {
@@ -2962,7 +3001,7 @@ export default function Home() {
               <SectionJumpButtons
                 performanceSections={performanceSections}
                 activePerformanceSectionId={activePerformanceSectionId}
-                onJumpToSection={jumpToPerformanceSection}
+                onJumpToSection={handlePerformanceSectionJump}
               />
 
               <div
