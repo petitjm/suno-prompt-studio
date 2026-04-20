@@ -1,6 +1,7 @@
 'use client'
 
 import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import * as Tone from 'tone'
 import { createClient } from '@/lib/supabase/client'
 
 type Project = {
@@ -100,6 +101,15 @@ type PerformanceSection = {
   id: string
   label: string
   content: string
+}
+
+type PreviewSectionKey = 'verse' | 'chorus' | 'bridge' | 'full_song'
+type PreviewInstrument = 'guitar' | 'piano'
+type PreviewFeel = 'straight' | 'swing'
+
+type PreviewBar = {
+  label: string
+  chord: string
 }
 
 const defaultForm: FormState = {
@@ -317,12 +327,92 @@ function parsePerformanceSections(sheet: string): PerformanceSection[] {
   return sections
 }
 
+function parseChordSequence(input?: string) {
+  if (!input) return []
+
+  return input
+    .replace(/[–—]/g, '-')
+    .replace(/\n/g, ' ')
+    .split('|')
+    .flatMap((chunk) => chunk.split(/\s{2,}/))
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part) => part.split(/\s+/))
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => /^[A-G](?:#|b)?/.test(token))
+}
+
+function buildPreviewBars(chords: ChordResponse | null, section: PreviewSectionKey): PreviewBar[] {
+  if (!chords) return []
+
+  const verse = parseChordSequence(chords.verse).map((chord) => ({ label: 'Verse', chord }))
+  const chorus = parseChordSequence(chords.chorus).map((chord) => ({ label: 'Chorus', chord }))
+  const bridge = parseChordSequence(chords.bridge).map((chord) => ({ label: 'Bridge', chord }))
+
+  if (section === 'verse') return verse
+  if (section === 'chorus') return chorus
+  if (section === 'bridge') return bridge
+
+  return [...verse, ...chorus, ...bridge]
+}
+
+function rootToMidiNote(root: string, octave: number) {
+  return `${normalizeRoot(root)}${octave}`
+}
+
+function chordSymbolToNotes(symbol: string, octave = 4) {
+  const cleaned = symbol.replace(/[–—]/g, '-').trim()
+  const match = cleaned.match(/^([A-G](?:#|b)?)(.*?)(?:\/([A-G](?:#|b)?))?$/)
+
+  if (!match) return ['C4', 'E4', 'G4']
+
+  const root = normalizeRoot(match[1])
+  const quality = (match[2] || '').toLowerCase()
+  const rootIndex = CHROMATIC_SHARPS.indexOf(root)
+  if (rootIndex === -1) return ['C4', 'E4', 'G4']
+
+  let intervals = [0, 4, 7]
+
+  if (quality.startsWith('m') && !quality.startsWith('maj')) intervals = [0, 3, 7]
+  if (quality.includes('dim')) intervals = [0, 3, 6]
+  if (quality.includes('aug')) intervals = [0, 4, 8]
+  if (quality.includes('sus2')) intervals = [0, 2, 7]
+  else if (quality.includes('sus4') || quality.includes('sus')) intervals = [0, 5, 7]
+
+  if (quality.includes('maj7')) intervals = [...intervals, 11]
+  else if (quality.includes('7')) intervals = [...intervals, 10]
+  else if (quality.includes('6')) intervals = [...intervals, 9]
+
+  if (quality.includes('add9') || quality.includes('9')) intervals = [...intervals, 14]
+
+  const notes = intervals.map((interval) => {
+    const chromaticIndex = (rootIndex + interval) % 12
+    const octaveOffset = Math.floor((rootIndex + interval) / 12)
+    return `${displayRoot(CHROMATIC_SHARPS[chromaticIndex])}${octave + octaveOffset}`
+  })
+
+  return Array.from(new Set(notes))
+}
+
+function chordSymbolToBassNote(symbol: string, octave = 2) {
+  const cleaned = symbol.replace(/[–—]/g, '-').trim()
+  const match = cleaned.match(/^([A-G](?:#|b)?)(.*?)(?:\/([A-G](?:#|b)?))?$/)
+  if (!match) return 'C2'
+  const bass = match[3] || match[1]
+  return rootToMidiNote(bass, octave)
+}
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
   const latestProjectLoadRef = useRef(0)
   const performanceScrollRef = useRef<HTMLDivElement | null>(null)
   const performanceIntervalRef = useRef<number | null>(null)
   const performanceSectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const previewEventIdsRef = useRef<number[]>([])
+  const previewChordInstrumentRef = useRef<Tone.PolySynth | Tone.PluckSynth | null>(null)
+  const previewBassSynthRef = useRef<Tone.MonoSynth | null>(null)
+  const previewClickSynthRef = useRef<Tone.MembraneSynth | null>(null)
 
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -387,6 +477,16 @@ export default function Home() {
   const [performanceFontSize, setPerformanceFontSize] = useState(28)
   const [activePerformanceSectionId, setActivePerformanceSectionId] = useState<string | null>(null)
 
+  const [previewReady, setPreviewReady] = useState(false)
+  const [previewPlaying, setPreviewPlaying] = useState(false)
+  const [previewTempo, setPreviewTempo] = useState(92)
+  const [previewFeel, setPreviewFeel] = useState<PreviewFeel>('straight')
+  const [previewInstrument, setPreviewInstrument] = useState<PreviewInstrument>('guitar')
+  const [previewSection, setPreviewSection] = useState<PreviewSectionKey>('verse')
+  const [previewLoop, setPreviewLoop] = useState(true)
+  const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
+  const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
+
   useEffect(() => {
     let mounted = true
 
@@ -423,6 +523,15 @@ export default function Home() {
       if (performanceIntervalRef.current) {
         window.clearInterval(performanceIntervalRef.current)
       }
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      stopPreviewPlayback()
+      previewChordInstrumentRef.current?.dispose()
+      previewBassSynthRef.current?.dispose()
+      previewClickSynthRef.current?.dispose()
     }
   }, [])
 
@@ -509,6 +618,20 @@ export default function Home() {
     return ''
   }, [chords?.capo, transposeAmount])
 
+  const previewBars = useMemo(() => {
+    const transposedChordData: ChordResponse | null = chords
+      ? {
+          ...chords,
+          key: transposeTextPreservingLayout(chords.key || '', transposeAmount),
+          verse: transposeTextPreservingLayout(chords.verse || '', transposeAmount),
+          chorus: transposeTextPreservingLayout(chords.chorus || '', transposeAmount),
+          bridge: transposeTextPreservingLayout(chords.bridge || '', transposeAmount),
+        }
+      : null
+
+    return buildPreviewBars(transposedChordData, previewSection)
+  }, [chords, previewSection, transposeAmount])
+
   const toggleProjectSort = (key: ProjectSortKey) => {
     if (projectSortKey === key) {
       setProjectSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
@@ -561,8 +684,6 @@ export default function Home() {
       }
     }
 
-    if (!bestId) bestId = performanceSections[0].id
-
     setActivePerformanceSectionId((prev) => (prev === bestId ? prev : bestId))
   }
 
@@ -588,6 +709,185 @@ export default function Home() {
   const jumpToNextPerformanceSection = () => {
     if (!nextPerformanceSection) return
     jumpToPerformanceSection(nextPerformanceSection.id)
+  }
+
+  const clearPreviewSchedules = () => {
+    const transport = Tone.getTransport()
+    previewEventIdsRef.current.forEach((id) => transport.clear(id))
+    previewEventIdsRef.current = []
+  }
+
+  const ensurePreviewInstruments = () => {
+    if (!previewChordInstrumentRef.current) {
+      previewChordInstrumentRef.current =
+        previewInstrument === 'piano'
+          ? new Tone.PolySynth(Tone.Synth, {
+              oscillator: { type: 'triangle' },
+              envelope: { attack: 0.01, decay: 0.15, sustain: 0.3, release: 0.9 },
+            }).toDestination()
+          : new Tone.PluckSynth({
+              attackNoise: 1.2,
+              dampening: 2800,
+              resonance: 0.9,
+            }).toDestination()
+    }
+
+    if (previewChordInstrumentRef.current) {
+      previewChordInstrumentRef.current.dispose()
+      previewChordInstrumentRef.current =
+        previewInstrument === 'piano'
+          ? new Tone.PolySynth(Tone.Synth, {
+              oscillator: { type: 'triangle' },
+              envelope: { attack: 0.01, decay: 0.15, sustain: 0.3, release: 0.9 },
+            }).toDestination()
+          : new Tone.PluckSynth({
+              attackNoise: 1.2,
+              dampening: 2800,
+              resonance: 0.9,
+            }).toDestination()
+    }
+
+    if (!previewBassSynthRef.current) {
+      previewBassSynthRef.current = new Tone.MonoSynth({
+        oscillator: { type: 'sine' },
+        filter: { Q: 1, type: 'lowpass', rolloff: -24 },
+        envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.5 },
+        filterEnvelope: {
+          attack: 0.01,
+          decay: 0.2,
+          sustain: 0.2,
+          release: 0.8,
+          baseFrequency: 90,
+          octaves: 2.5,
+        },
+      }).toDestination()
+    }
+
+    if (!previewClickSynthRef.current) {
+      previewClickSynthRef.current = new Tone.MembraneSynth({
+        pitchDecay: 0.008,
+        octaves: 2,
+        envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
+      }).toDestination()
+    }
+  }
+
+  const stopPreviewPlayback = () => {
+    clearPreviewSchedules()
+    const transport = Tone.getTransport()
+    transport.stop()
+    transport.cancel(0)
+    transport.position = 0
+    setPreviewPlaying(false)
+  }
+
+  const startPreviewPlayback = async () => {
+    try {
+      if (!previewBars.length) {
+        setProjectMessage('No previewable chord bars found. Generate or load chords first.')
+        return
+      }
+
+      await Tone.start()
+      setPreviewReady(true)
+
+      stopPreviewPlayback()
+      ensurePreviewInstruments()
+
+      const transport = Tone.getTransport()
+      transport.bpm.value = previewTempo
+      transport.timeSignature = 4
+      transport.loop = previewLoop
+      transport.loopStart = 0
+      transport.loopEnd = `${previewBars.length}m`
+
+      const swingAmount = previewFeel === 'swing' ? 0.25 : 0
+      transport.swing = swingAmount
+      transport.swingSubdivision = '8n'
+
+      previewBars.forEach((bar, index) => {
+        const chordNotes = chordSymbolToNotes(bar.chord, previewInstrument === 'piano' ? 4 : 4)
+        const bassNote = chordSymbolToBassNote(bar.chord, 2)
+        const barStart = `${index}m`
+
+        if (previewInstrument === 'piano') {
+          const id = transport.schedule((time) => {
+            const synth = previewChordInstrumentRef.current as Tone.PolySynth | null
+            synth?.triggerAttackRelease(chordNotes, '1m', time, 0.5)
+          }, barStart)
+          previewEventIdsRef.current.push(id)
+        } else {
+          const strumOffsets =
+            previewFeel === 'swing'
+              ? ['0:0:0', '0:1:0', '0:2:2', '0:3:0']
+              : ['0:0:0', '0:1:0', '0:2:0', '0:3:0']
+
+          strumOffsets.forEach((offset, strumIndex) => {
+            const id = transport.schedule((time) => {
+              const synth = previewChordInstrumentRef.current as Tone.PluckSynth | null
+              if (!synth) return
+
+              const orderedNotes = [...chordNotes]
+              orderedNotes.forEach((note, noteIndex) => {
+                synth.triggerAttack(
+                  note,
+                  time + noteIndex * 0.012,
+                  strumIndex === 0 ? 0.9 : 0.55
+                )
+              })
+            }, `${index}m + ${offset}`)
+            previewEventIdsRef.current.push(id)
+          })
+        }
+
+        if (previewIncludeBass) {
+          const id = transport.scheduleRepeat(
+            (time) => {
+              const bass = previewBassSynthRef.current
+              bass?.triggerAttackRelease(bassNote, '8n', time, 0.7)
+            },
+            '2n',
+            `${index}m`,
+            '1m'
+          )
+          previewEventIdsRef.current.push(id)
+        }
+
+        if (previewIncludeClick) {
+          const id = transport.scheduleRepeat(
+            (time) => {
+              const click = previewClickSynthRef.current
+              click?.triggerAttackRelease('C2', '32n', time, 0.25)
+            },
+            '4n',
+            `${index}m`,
+            '1m'
+          )
+          previewEventIdsRef.current.push(id)
+        }
+      })
+
+      if (!previewLoop) {
+        const endId = transport.schedule((time) => {
+          void time
+          setPreviewPlaying(false)
+          transport.stop()
+          transport.position = 0
+        }, `${previewBars.length}m`)
+        previewEventIdsRef.current.push(endId)
+      }
+
+      transport.start('+0.05')
+      setPreviewPlaying(true)
+      setProjectMessage(
+        `Preview playing: ${
+          previewSection === 'full_song' ? 'Full Song' : previewSection.charAt(0).toUpperCase() + previewSection.slice(1)
+        }`
+      )
+    } catch (err: any) {
+      console.error(err)
+      setProjectMessage(err.message || 'Failed to start preview')
+    }
   }
 
   useEffect(() => {
@@ -627,6 +927,12 @@ export default function Home() {
       container.removeEventListener('scroll', handleScroll)
     }
   }, [performanceMode, performanceSections, performanceFontSize])
+
+  useEffect(() => {
+    if (previewPlaying) {
+      stopPreviewPlayback()
+    }
+  }, [previewTempo, previewFeel, previewInstrument, previewSection, previewLoop, previewIncludeBass, previewIncludeClick])
 
   const loadProjects = async (preferredProjectId?: string) => {
     try {
@@ -1077,6 +1383,7 @@ export default function Home() {
     setActiveChordVersionId(null)
     setTransposeAmount(0)
     setActivePerformanceSectionId(null)
+    stopPreviewPlayback()
     resetPerformanceScroll()
   }
 
@@ -1131,6 +1438,7 @@ export default function Home() {
       setEditableLyrics('')
       setSongSheet('')
       setTransposeAmount(0)
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const res = await fetch('/api/generate', {
@@ -1166,6 +1474,7 @@ export default function Home() {
       setChordLoading(true)
       setSongSheet('')
       setTransposeAmount(0)
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const currentSongResult = result
@@ -1277,6 +1586,7 @@ export default function Home() {
 
       setSaveEditedLyricsLoading(true)
       setSongSheet('')
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const title = manualVersionName.trim() || 'Edited Lyrics'
@@ -1338,6 +1648,7 @@ export default function Home() {
       setImportLyricsLoading(true)
       setSongSheet('')
       setTransposeAmount(0)
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const createRes = await fetch('/api/projects', {
@@ -1395,6 +1706,7 @@ export default function Home() {
       }
 
       setSongSheetLoading(true)
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const res = await fetch('/api/song-sheet', {
@@ -1429,6 +1741,7 @@ export default function Home() {
 
       setRewriteLoading(mode)
       setSongSheet('')
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const res = await fetch('/api/rewrite', {
@@ -1476,6 +1789,7 @@ export default function Home() {
 
       setChordRewriteLoading(mode)
       setSongSheet('')
+      stopPreviewPlayback()
       resetPerformanceScroll()
 
       const res = await fetch('/api/chord-rewrite', {
@@ -1565,6 +1879,7 @@ export default function Home() {
     setEditableLyrics(version.result?.lyrics_full || '')
     setSongSheet('')
     setTransposeAmount(0)
+    stopPreviewPlayback()
     resetPerformanceScroll()
     setActiveSongVersionId(version.id)
   }
@@ -1573,6 +1888,7 @@ export default function Home() {
     setChords(version.chord_data || null)
     setSongSheet('')
     setTransposeAmount(0)
+    stopPreviewPlayback()
     resetPerformanceScroll()
     setActiveChordVersionId(version.id)
   }
@@ -2461,6 +2777,7 @@ export default function Home() {
                           }
                     )
                     setSongSheet('')
+                    stopPreviewPlayback()
                     resetPerformanceScroll()
                     setProjectMessage('Lyrics updated in working view.')
                   }}
@@ -2722,6 +3039,135 @@ export default function Home() {
             >
               {nextPerformanceSection ? `Next Section: ${nextPerformanceSection.label}` : 'Next Section'}
             </button>
+          </div>
+
+          <div
+            style={{
+              marginBottom: 20,
+              padding: 16,
+              borderRadius: 16,
+              border: '1px solid #3f3f46',
+              background: '#1b1b20',
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: 14 }}>Audio Preview</h3>
+
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+              <label style={{ cursor: 'pointer' }}>
+                Section
+                <select
+                  value={previewSection}
+                  onChange={(e) => setPreviewSection(e.target.value as PreviewSectionKey)}
+                  style={{ ...inputStyle, width: 170, marginLeft: 10, padding: '10px 12px' }}
+                >
+                  <option value="verse">Verse</option>
+                  <option value="chorus">Chorus</option>
+                  <option value="bridge">Bridge</option>
+                  <option value="full_song">Full Song</option>
+                </select>
+              </label>
+
+              <label style={{ cursor: 'pointer' }}>
+                Instrument
+                <select
+                  value={previewInstrument}
+                  onChange={(e) => setPreviewInstrument(e.target.value as PreviewInstrument)}
+                  style={{ ...inputStyle, width: 170, marginLeft: 10, padding: '10px 12px' }}
+                >
+                  <option value="guitar">Guitar</option>
+                  <option value="piano">Piano</option>
+                </select>
+              </label>
+
+              <label style={{ cursor: 'pointer' }}>
+                Feel
+                <select
+                  value={previewFeel}
+                  onChange={(e) => setPreviewFeel(e.target.value as PreviewFeel)}
+                  style={{ ...inputStyle, width: 150, marginLeft: 10, padding: '10px 12px' }}
+                >
+                  <option value="straight">Straight</option>
+                  <option value="swing">Swing</option>
+                </select>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
+              <label style={{ cursor: 'pointer' }}>
+                Tempo
+                <input
+                  type="range"
+                  min={60}
+                  max={150}
+                  value={previewTempo}
+                  onChange={(e) => setPreviewTempo(Number(e.target.value))}
+                  style={{ marginLeft: 10 }}
+                />
+                <span style={{ marginLeft: 8 }}>{previewTempo} BPM</span>
+              </label>
+
+              <label style={{ cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={previewLoop}
+                  onChange={(e) => setPreviewLoop(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Loop
+              </label>
+
+              <label style={{ cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={previewIncludeBass}
+                  onChange={(e) => setPreviewIncludeBass(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Add bass
+              </label>
+
+              <label style={{ cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={previewIncludeClick}
+                  onChange={(e) => setPreviewIncludeClick(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Add click
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+              <button
+                onClick={startPreviewPlayback}
+                disabled={!previewBars.length}
+                style={{
+                  ...primaryButtonStyle,
+                  opacity: previewBars.length ? 1 : 0.55,
+                  cursor: previewBars.length ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {previewPlaying ? 'Restart Preview' : previewReady ? 'Play Preview' : 'Enable Audio + Play'}
+              </button>
+
+              <button
+                onClick={stopPreviewPlayback}
+                disabled={!previewPlaying}
+                style={{
+                  ...secondaryButtonStyle,
+                  opacity: previewPlaying ? 1 : 0.55,
+                  cursor: previewPlaying ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Stop Preview
+              </button>
+            </div>
+
+            <div style={{ color: '#a1a1aa', fontSize: 13 }}>
+              {previewBars.length > 0
+                ? `${previewBars.length} preview bar${previewBars.length === 1 ? '' : 's'} ready`
+                : 'Generate or load chords to enable preview'}
+            </div>
           </div>
 
           {performanceMode ? (
