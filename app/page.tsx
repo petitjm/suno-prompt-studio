@@ -741,7 +741,6 @@ useEffect(() => {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.01, decay: 0.2, sustain: 0.35, release: 1.0 },
       volume: -8,
-      maxPolyphony: 12,
     }).toDestination()
   } else {
     previewChordInstrumentRef.current = new Tone.PolySynth(Tone.AMSynth, {
@@ -750,8 +749,11 @@ useEffect(() => {
       modulation: { type: 'sine' },
       modulationEnvelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.35 },
       volume: -9,
-      maxPolyphony: 12,
     }).toDestination()
+  }
+
+  if (previewChordInstrumentRef.current) {
+    previewChordInstrumentRef.current.maxPolyphony = 12
   }
 
   if (!previewBassSynthRef.current) {
