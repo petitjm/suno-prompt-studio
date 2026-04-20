@@ -1,124 +1,38 @@
+// /app/page.tsx
+
 'use client'
 
 import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import { createClient } from '@/lib/supabase/client'
-
-type Project = {
-  id: string
-  title: string
-  created_at?: string
-  updated_at?: string
-}
-
-type FormState = {
-  genre: string
-  moods: string[]
-  theme: string
-  hook: string
-  dnaId: string
-}
-
-type GenerateResponse = {
-  style_short?: string
-  style_detailed?: string
-  lyrics_brief?: string
-  lyrics_full?: string
-  lyrics_template?: string
-  error?: string
-}
-
-type ChordResponse = {
-  key?: string
-  capo?: string
-  verse?: string
-  chorus?: string
-  bridge?: string
-  notes?: string
-  error?: string
-}
-
-type SongVersionRecord = {
-  id: string
-  project_id: string
-  title?: string
-  form?: FormState
-  result?: GenerateResponse
-  created_at?: string
-}
-
-type ChordVersionRecord = {
-  id: string
-  project_id: string
-  title?: string
-  chord_data?: ChordResponse
-  created_at?: string
-}
-
-type ArtistDNAProfile = {
-  id?: string
-  artist_name: string
-  vocal_range: string
-  core_genres: string
-  lyrical_style: string
-  emotional_tone: string
-  writing_strengths: string
-  avoid_list: string
-  visual_style: string
-  performance_style: string
-  dna_summary?: string
-}
-
-type DNAAnalysisInput = {
-  lyrics_samples: string
-  chord_examples: string
-  artist_references: string
-  self_description: string
-}
-
-type RewriteMode =
-  | 'strengthen_chorus'
-  | 'more_conversational'
-  | 'more_poetic'
-  | 'more_universal'
-  | 'more_personal'
-  | 'simplify_lyrics'
-  | 'improve_opening_line'
-  | 'tighten_live'
-
-type ChordRewriteMode =
-  | 'lift_chorus'
-  | 'simpler_live'
-  | 'richer_chords'
-  | 'better_bridge'
-  | 'baritone_key'
-  | 'capo_friendly'
-
-type ProjectSortKey = 'updated_at' | 'title'
-type SortDirection = 'asc' | 'desc'
-
-type PerformanceSection = {
-  id: string
-  label: string
-  content: string
-}
-
-type PreviewSectionKey = 'verse' | 'chorus' | 'bridge' | 'full_song'
-type PreviewInstrument = 'guitar' | 'piano'
-type PreviewFeel = 'straight' | 'swing'
-type PreviewPattern = 'ballad_strum' | 'country_train' | 'fingerpick' | 'piano_block'
-
-type PreviewBar = {
-  label: string
-  chord: string
-}
-
-type PreviewBarMeta = {
-  barIndex: number
-  label: string
-  chord: string
-  sectionId: string | null
-}
+import SongSheet from '@/components/SongSheet'
+import SectionJumpButtons from '@/components/SectionJumpButtons'
+import {
+  buildPreviewBars,
+  findMatchingSectionId,
+  parsePerformanceSections,
+  removeChordLinesFromSheet,
+  transposeTextPreservingLayout,
+} from '@/lib/parseSong'
+import {
+  ArtistDNAProfile,
+  ChordResponse,
+  ChordRewriteMode,
+  ChordVersionRecord,
+  DNAAnalysisInput,
+  FormState,
+  GenerateResponse,
+  PreviewBarMeta,
+  PreviewFeel,
+  PreviewInstrument,
+  PreviewPattern,
+  PreviewSectionKey,
+  Project,
+  ProjectSortKey,
+  RewriteMode,
+  SongVersionRecord,
+  SortDirection,
+} from '@/types/song'
 
 const defaultForm: FormState = {
   genre: '',
@@ -244,127 +158,6 @@ function displayRoot(root: string) {
   return SHARP_TO_FLAT_DISPLAY[root] || root
 }
 
-function transposeRoot(root: string, semitones: number) {
-  const normalized = normalizeRoot(root)
-  const index = CHROMATIC_SHARPS.indexOf(normalized)
-  if (index === -1) return root
-  const next = (index + semitones + 1200) % 12
-  return displayRoot(CHROMATIC_SHARPS[next])
-}
-
-function transposeTextPreservingLayout(text: string, semitones: number) {
-  if (!text.trim() || semitones === 0) return text
-
-  return text
-    .split('\n')
-    .map((line) => {
-      if (!line.trim()) return line
-      return line.replace(
-        /\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g,
-        (_match, root, quality = '', bass) => {
-          const nextRoot = transposeRoot(root, semitones)
-          if (bass) {
-            const nextBass = transposeRoot(bass, semitones)
-            return `${nextRoot}${quality}/${nextBass}`
-          }
-          return `${nextRoot}${quality}`
-        }
-      )
-    })
-    .join('\n')
-}
-
-function removeChordLinesFromSheet(sheet: string) {
-  const chordLikeLine =
-    /^(\s*[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G](?:#|b)?)?[\s-]*)+$/
-
-  return sheet
-    .split('\n')
-    .filter((line) => {
-      const trimmed = line.trim()
-      if (!trimmed) return true
-      if (/^\[.*\]$/.test(trimmed)) return true
-      return !chordLikeLine.test(trimmed)
-    })
-    .join('\n')
-}
-
-function parsePerformanceSections(sheet: string): PerformanceSection[] {
-  const lines = sheet.split('\n')
-  const sections: PerformanceSection[] = []
-
-  let currentLabel = 'Song'
-  let currentContent: string[] = []
-
-  const pushSection = () => {
-    const content = currentContent.join('\n').trim()
-    if (!content) return
-
-    sections.push({
-      id: `section-${sections.length}`,
-      label: currentLabel,
-      content,
-    })
-  }
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    const isHeader = /^\[(.+?)\]$/.test(trimmed)
-
-    if (isHeader) {
-      pushSection()
-      currentLabel = trimmed.replace(/^\[(.+)\]$/, '$1')
-      currentContent = [trimmed]
-    } else {
-      currentContent.push(line)
-    }
-  }
-
-  pushSection()
-
-  if (sections.length === 0 && sheet.trim()) {
-    return [
-      {
-        id: 'section-0',
-        label: 'Song',
-        content: sheet.trim(),
-      },
-    ]
-  }
-
-  return sections
-}
-
-function parseChordSequence(input?: string) {
-  if (!input) return []
-
-  return input
-    .replace(/[–—]/g, '-')
-    .replace(/\n/g, ' ')
-    .split('|')
-    .flatMap((chunk) => chunk.split(/\s{2,}/))
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .flatMap((part) => part.split(/\s+/))
-    .map((token) => token.trim())
-    .filter(Boolean)
-    .filter((token) => /^[A-G](?:#|b)?/.test(token))
-}
-
-function buildPreviewBars(chords: ChordResponse | null, section: PreviewSectionKey): PreviewBar[] {
-  if (!chords) return []
-
-  const verse = parseChordSequence(chords.verse).map((chord) => ({ label: 'Verse', chord }))
-  const chorus = parseChordSequence(chords.chorus).map((chord) => ({ label: 'Chorus', chord }))
-  const bridge = parseChordSequence(chords.bridge).map((chord) => ({ label: 'Bridge', chord }))
-
-  if (section === 'verse') return verse
-  if (section === 'chorus') return chorus
-  if (section === 'bridge') return bridge
-
-  return [...verse, ...chorus, ...bridge]
-}
-
 function rootToNote(root: string, octave: number) {
   return `${normalizeRoot(root)}${octave}`
 }
@@ -415,19 +208,6 @@ function rotateNotesForFingerpick(notes: string[]) {
   if (notes.length <= 1) return notes
   const sorted = [...notes]
   return [sorted[0], sorted[sorted.length - 1], ...sorted.slice(1, -1)]
-}
-
-function findMatchingSectionId(label: string, sections: PerformanceSection[]) {
-  const normalizedLabel = label.trim().toLowerCase()
-  if (!normalizedLabel) return null
-
-  const exact = sections.find((section) => section.label.trim().toLowerCase() === normalizedLabel)
-  if (exact) return exact.id
-
-  const partial = sections.find((section) => section.label.trim().toLowerCase().includes(normalizedLabel))
-  if (partial) return partial.id
-
-  return null
 }
 
 export default function Home() {
@@ -2425,14 +2205,6 @@ export default function Home() {
     padding: '12px',
   }
 
-  const performanceSheetStyle: CSSProperties = {
-    background: '#0f0f12',
-    padding: 20,
-    borderRadius: 16,
-    border: '1px solid #3f3f46',
-    minHeight: 360,
-  }
-
   const updateArtistDNA = (key: keyof ArtistDNAProfile, value: string) => {
     setArtistDNA((prev) => ({
       ...prev,
@@ -3419,27 +3191,11 @@ export default function Home() {
 
           {performanceMode ? (
             <>
-              {performanceSections.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-                  {performanceSections.map((section) => {
-                    const isActive = section.id === activePerformanceSectionId
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => jumpToPerformanceSection(section.id)}
-                        style={{
-                          ...secondaryButtonStyle,
-                          borderColor: isActive ? '#60a5fa' : '#52525b',
-                          background: isActive ? '#1d4ed8' : '#3f3f46',
-                          boxShadow: isActive ? '0 0 0 1px #93c5fd inset' : 'none',
-                        }}
-                      >
-                        {section.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+              <SectionJumpButtons
+                performanceSections={performanceSections}
+                activePerformanceSectionId={activePerformanceSectionId}
+                onJumpToSection={jumpToPerformanceSection}
+              />
 
               <div
                 ref={performanceScrollRef}
@@ -3453,52 +3209,13 @@ export default function Home() {
                   scrollBehavior: 'smooth',
                 }}
               >
-                {performanceSheet.trim() ? (
-                  <div
-                    style={{
-                      ...performanceSheetStyle,
-                      fontSize: performanceFontSize,
-                    }}
-                  >
-                    {performanceSections.map((section) => {
-                      const isActive = section.id === activePerformanceSectionId
-
-                      return (
-                        <div
-                          key={section.id}
-                          ref={(el) => {
-                            performanceSectionRefs.current[section.id] = el
-                          }}
-                          style={{
-                            marginBottom: 28,
-                            padding: '10px 12px',
-                            borderRadius: 12,
-                            border: isActive ? '1px solid #60a5fa' : '1px solid transparent',
-                            background: isActive ? '#172554' : 'transparent',
-                            boxShadow: isActive ? '0 0 0 1px rgba(96,165,250,0.25) inset' : 'none',
-                            transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                          }}
-                        >
-                          <pre
-                            style={{
-                              margin: 0,
-                              whiteSpace: 'pre-wrap',
-                              fontFamily: 'Courier New, monospace',
-                              fontSize: performanceFontSize,
-                              lineHeight: 1.8,
-                              background: 'transparent',
-                              color: 'white',
-                            }}
-                          >
-                            {section.content}
-                          </pre>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ color: '#a1a1aa', padding: 20 }}>Create a song sheet first to use Performance Mode.</div>
-                )}
+                <SongSheet
+                  performanceSheet={performanceSheet}
+                  performanceSections={performanceSections}
+                  performanceFontSize={performanceFontSize}
+                  activePerformanceSectionId={activePerformanceSectionId}
+                  performanceSectionRefs={performanceSectionRefs}
+                />
               </div>
             </>
           ) : (
