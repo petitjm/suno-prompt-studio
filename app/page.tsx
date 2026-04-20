@@ -106,6 +106,7 @@ type PerformanceSection = {
 type PreviewSectionKey = 'verse' | 'chorus' | 'bridge' | 'full_song'
 type PreviewInstrument = 'guitar' | 'piano'
 type PreviewFeel = 'straight' | 'swing'
+type PreviewPattern = 'ballad_strum' | 'country_train' | 'fingerpick' | 'piano_block'
 
 type PreviewBar = {
   label: string
@@ -357,7 +358,7 @@ function buildPreviewBars(chords: ChordResponse | null, section: PreviewSectionK
   return [...verse, ...chorus, ...bridge]
 }
 
-function rootToMidiNote(root: string, octave: number) {
+function rootToNote(root: string, octave: number) {
   return `${normalizeRoot(root)}${octave}`
 }
 
@@ -400,7 +401,13 @@ function chordSymbolToBassNote(symbol: string, octave = 2) {
   const match = cleaned.match(/^([A-G](?:#|b)?)(.*?)(?:\/([A-G](?:#|b)?))?$/)
   if (!match) return 'C2'
   const bass = match[3] || match[1]
-  return rootToMidiNote(bass, octave)
+  return rootToNote(bass, octave)
+}
+
+function rotateNotesForFingerpick(notes: string[]) {
+  if (notes.length <= 1) return notes
+  const sorted = [...notes]
+  return [sorted[0], sorted[sorted.length - 1], ...sorted.slice(1, -1)]
 }
 
 export default function Home() {
@@ -410,7 +417,7 @@ export default function Home() {
   const performanceIntervalRef = useRef<number | null>(null)
   const performanceSectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const previewEventIdsRef = useRef<number[]>([])
-  const previewChordInstrumentRef = useRef<Tone.PolySynth | Tone.PluckSynth | null>(null)
+  const previewChordInstrumentRef = useRef<Tone.PolySynth | null>(null)
   const previewBassSynthRef = useRef<Tone.MonoSynth | null>(null)
   const previewClickSynthRef = useRef<Tone.MembraneSynth | null>(null)
 
@@ -483,6 +490,7 @@ export default function Home() {
   const [previewFeel, setPreviewFeel] = useState<PreviewFeel>('straight')
   const [previewInstrument, setPreviewInstrument] = useState<PreviewInstrument>('guitar')
   const [previewSection, setPreviewSection] = useState<PreviewSectionKey>('verse')
+  const [previewPattern, setPreviewPattern] = useState<PreviewPattern>('ballad_strum')
   const [previewLoop, setPreviewLoop] = useState(true)
   const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
@@ -632,6 +640,14 @@ export default function Home() {
     return buildPreviewBars(transposedChordData, previewSection)
   }, [chords, previewSection, transposeAmount])
 
+  useEffect(() => {
+    if (previewPattern === 'piano_block') {
+      setPreviewInstrument('piano')
+    } else if (previewInstrument === 'piano' && previewPattern !== 'piano_block') {
+      setPreviewInstrument('guitar')
+    }
+  }, [previewPattern])
+
   const toggleProjectSort = (key: ProjectSortKey) => {
     if (projectSortKey === key) {
       setProjectSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
@@ -718,34 +734,26 @@ export default function Home() {
   }
 
   const ensurePreviewInstruments = () => {
-    if (!previewChordInstrumentRef.current) {
-      previewChordInstrumentRef.current =
-        previewInstrument === 'piano'
-          ? new Tone.PolySynth(Tone.Synth, {
-              oscillator: { type: 'triangle' },
-              envelope: { attack: 0.01, decay: 0.15, sustain: 0.3, release: 0.9 },
-            }).toDestination()
-          : new Tone.PluckSynth({
-              attackNoise: 1.2,
-              dampening: 2800,
-              resonance: 0.9,
-            }).toDestination()
-    }
+    previewChordInstrumentRef.current?.dispose()
 
-    if (previewChordInstrumentRef.current) {
-      previewChordInstrumentRef.current.dispose()
-      previewChordInstrumentRef.current =
-        previewInstrument === 'piano'
-          ? new Tone.PolySynth(Tone.Synth, {
-              oscillator: { type: 'triangle' },
-              envelope: { attack: 0.01, decay: 0.15, sustain: 0.3, release: 0.9 },
-            }).toDestination()
-          : new Tone.PluckSynth({
-              attackNoise: 1.2,
-              dampening: 2800,
-              resonance: 0.9,
-            }).toDestination()
-    }
+    previewChordInstrumentRef.current = new Tone.PolySynth(
+      previewInstrument === 'piano' ? Tone.Synth : Tone.AMSynth,
+      previewInstrument === 'piano'
+        ? {
+            oscillator: { type: 'triangle' },
+            envelope: { attack: 0.01, decay: 0.2, sustain: 0.35, release: 1.0 },
+            volume: -8,
+          }
+        : {
+            harmonicity: 1.6,
+            envelope: { attack: 0.005, decay: 0.18, sustain: 0.2, release: 0.8 },
+            modulation: { type: 'sine' },
+            modulationEnvelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.35 },
+            volume: -9,
+          }
+    ).toDestination()
+
+    previewChordInstrumentRef.current.maxPolyphony = 12
 
     if (!previewBassSynthRef.current) {
       previewBassSynthRef.current = new Tone.MonoSynth({
@@ -778,7 +786,153 @@ export default function Home() {
     transport.stop()
     transport.cancel(0)
     transport.position = 0
+    previewChordInstrumentRef.current?.releaseAll()
     setPreviewPlaying(false)
+  }
+
+  const scheduleBassForBar = (transport: Tone.Transport, index: number, bassNote: string, pattern: PreviewPattern) => {
+    if (!previewIncludeBass) return
+
+    const bass = previewBassSynthRef.current
+    if (!bass) return
+
+    if (pattern === 'country_train') {
+      const id = transport.scheduleRepeat(
+        (time) => {
+          bass.triggerAttackRelease(bassNote, '8n', time, 0.75)
+        },
+        '4n',
+        `${index}m`,
+        '1m'
+      )
+      previewEventIdsRef.current.push(id)
+      return
+    }
+
+    const id = transport.scheduleRepeat(
+      (time) => {
+        bass.triggerAttackRelease(bassNote, '8n', time, 0.7)
+      },
+      '2n',
+      `${index}m`,
+      '1m'
+    )
+    previewEventIdsRef.current.push(id)
+  }
+
+  const scheduleClickForBar = (transport: Tone.Transport, index: number) => {
+    if (!previewIncludeClick) return
+
+    const click = previewClickSynthRef.current
+    if (!click) return
+
+    const id = transport.scheduleRepeat(
+      (time) => {
+        click.triggerAttackRelease('C2', '32n', time, 0.22)
+      },
+      '4n',
+      `${index}m`,
+      '1m'
+    )
+    previewEventIdsRef.current.push(id)
+  }
+
+  const scheduleBalladStrum = (
+    transport: Tone.Transport,
+    chordSynth: Tone.PolySynth,
+    chordNotes: string[],
+    index: number
+  ) => {
+    const strumOffsets =
+      previewFeel === 'swing'
+        ? ['0:0:0', '0:1:0', '0:2:2', '0:3:0']
+        : ['0:0:0', '0:1:0', '0:2:0', '0:3:0']
+
+    strumOffsets.forEach((offset, strumIndex) => {
+      const id = transport.schedule((time) => {
+        chordNotes.forEach((note, noteIndex) => {
+          const velocity = strumIndex === 0 ? 0.9 : 0.64
+          chordSynth.triggerAttackRelease(note, '8n', time + noteIndex * 0.018, velocity)
+        })
+      }, `${index}m + ${offset}`)
+      previewEventIdsRef.current.push(id)
+    })
+  }
+
+  const scheduleCountryTrain = (
+    transport: Tone.Transport,
+    chordSynth: Tone.PolySynth,
+    chordNotes: string[],
+    bassNote: string,
+    index: number
+  ) => {
+    const lowerChord = chordNotes.slice(0, Math.max(2, Math.ceil(chordNotes.length / 2)))
+    const upperChord = chordNotes
+
+    const bassHit = transport.schedule((time) => {
+      previewBassSynthRef.current?.triggerAttackRelease(bassNote, '8n', time, 0.8)
+    }, `${index}m + 0:0:0`)
+    previewEventIdsRef.current.push(bassHit)
+
+    const chop1 = transport.schedule((time) => {
+      upperChord.forEach((note, noteIndex) => {
+        chordSynth.triggerAttackRelease(note, '16n', time + noteIndex * 0.01, 0.62)
+      })
+    }, `${index}m + 0:1:0`)
+    previewEventIdsRef.current.push(chop1)
+
+    const bassHit2 = transport.schedule((time) => {
+      previewBassSynthRef.current?.triggerAttackRelease(bassNote, '8n', time, 0.76)
+    }, `${index}m + 0:2:0`)
+    previewEventIdsRef.current.push(bassHit2)
+
+    const chop2 = transport.schedule((time) => {
+      lowerChord.forEach((note, noteIndex) => {
+        chordSynth.triggerAttackRelease(note, '16n', time + noteIndex * 0.01, 0.58)
+      })
+    }, `${index}m + 0:3:0`)
+    previewEventIdsRef.current.push(chop2)
+  }
+
+  const scheduleFingerpick = (
+    transport: Tone.Transport,
+    chordSynth: Tone.PolySynth,
+    chordNotes: string[],
+    bassNote: string,
+    index: number
+  ) => {
+    const ordered = rotateNotesForFingerpick(chordNotes)
+    const patternNotes = [
+      bassNote,
+      ordered[0] || bassNote,
+      ordered[1] || ordered[0] || bassNote,
+      ordered[2] || ordered[1] || ordered[0] || bassNote,
+      bassNote,
+      ordered[1] || ordered[0] || bassNote,
+      ordered[2] || ordered[1] || ordered[0] || bassNote,
+      ordered[0] || bassNote,
+    ]
+    const offsets = ['0:0:0', '0:0:2', '0:1:0', '0:1:2', '0:2:0', '0:2:2', '0:3:0', '0:3:2']
+
+    offsets.forEach((offset, noteIndex) => {
+      const id = transport.schedule((time) => {
+        chordSynth.triggerAttackRelease(patternNotes[noteIndex], '8n', time, noteIndex % 4 === 0 ? 0.86 : 0.6)
+      }, `${index}m + ${offset}`)
+      previewEventIdsRef.current.push(id)
+    })
+  }
+
+  const schedulePianoBlock = (
+    transport: Tone.Transport,
+    chordSynth: Tone.PolySynth,
+    chordNotes: string[],
+    index: number
+  ) => {
+    const id = transport.schedule((time) => {
+      chordSynth.volume.value = -8
+      chordSynth.triggerAttackRelease(chordNotes, '1m', time, 0.55)
+    }, `${index}m`)
+    previewEventIdsRef.current.push(id)
   }
 
   const startPreviewPlayback = async () => {
@@ -795,93 +949,69 @@ export default function Home() {
       ensurePreviewInstruments()
 
       const transport = Tone.getTransport()
+      const chordSynth = previewChordInstrumentRef.current
+      if (!chordSynth) {
+        setProjectMessage('Preview instrument could not be created.')
+        return
+      }
+
       transport.bpm.value = previewTempo
       transport.timeSignature = 4
       transport.loop = previewLoop
       transport.loopStart = 0
       transport.loopEnd = `${previewBars.length}m`
-
-      const swingAmount = previewFeel === 'swing' ? 0.25 : 0
-      transport.swing = swingAmount
+      transport.swing = previewFeel === 'swing' ? 0.25 : 0
       transport.swingSubdivision = '8n'
 
       previewBars.forEach((bar, index) => {
-        const chordNotes = chordSymbolToNotes(bar.chord, previewInstrument === 'piano' ? 4 : 4)
+        const chordNotes = chordSymbolToNotes(bar.chord, previewPattern === 'piano_block' ? 4 : 4)
         const bassNote = chordSymbolToBassNote(bar.chord, 2)
-        const barStart = `${index}m`
 
-        if (previewInstrument === 'piano') {
-          const id = transport.schedule((time) => {
-            const synth = previewChordInstrumentRef.current as Tone.PolySynth | null
-            synth?.triggerAttackRelease(chordNotes, '1m', time, 0.5)
-          }, barStart)
-          previewEventIdsRef.current.push(id)
+        if (previewPattern === 'piano_block') {
+          schedulePianoBlock(transport, chordSynth, chordNotes, index)
+        } else if (previewPattern === 'country_train') {
+          scheduleCountryTrain(transport, chordSynth, chordNotes, bassNote, index)
+        } else if (previewPattern === 'fingerpick') {
+          scheduleFingerpick(transport, chordSynth, chordNotes, bassNote, index)
         } else {
-          const strumOffsets =
-            previewFeel === 'swing'
-              ? ['0:0:0', '0:1:0', '0:2:2', '0:3:0']
-              : ['0:0:0', '0:1:0', '0:2:0', '0:3:0']
-
-          strumOffsets.forEach((offset, strumIndex) => {
-  const id = transport.schedule((time) => {
-    const synth = previewChordInstrumentRef.current as Tone.PluckSynth | null
-    if (!synth) return
-
-    const orderedNotes = [...chordNotes]
-    synth.volume.value = strumIndex === 0 ? -6 : -10
-
-    orderedNotes.forEach((note, noteIndex) => {
-      synth.triggerAttack(note, time + noteIndex * 0.012)
-    })
-  }, `${index}m + ${offset}`)
-  previewEventIdsRef.current.push(id)
-})
+          scheduleBalladStrum(transport, chordSynth, chordNotes, index)
         }
 
-        if (previewIncludeBass) {
-          const id = transport.scheduleRepeat(
-            (time) => {
-              const bass = previewBassSynthRef.current
-              bass?.triggerAttackRelease(bassNote, '8n', time, 0.7)
-            },
-            '2n',
-            `${index}m`,
-            '1m'
-          )
-          previewEventIdsRef.current.push(id)
+        if (previewPattern !== 'country_train' && previewPattern !== 'fingerpick') {
+          scheduleBassForBar(transport, index, bassNote, previewPattern)
         }
 
-        if (previewIncludeClick) {
-          const id = transport.scheduleRepeat(
-            (time) => {
-              const click = previewClickSynthRef.current
-              click?.triggerAttackRelease('C2', '32n', time, 0.25)
-            },
-            '4n',
-            `${index}m`,
-            '1m'
-          )
-          previewEventIdsRef.current.push(id)
-        }
+        scheduleClickForBar(transport, index)
       })
 
       if (!previewLoop) {
-        const endId = transport.schedule((time) => {
-          void time
+        const endId = transport.schedule(() => {
           setPreviewPlaying(false)
           transport.stop()
           transport.position = 0
+          chordSynth.releaseAll()
         }, `${previewBars.length}m`)
         previewEventIdsRef.current.push(endId)
       }
 
       transport.start('+0.05')
       setPreviewPlaying(true)
-      setProjectMessage(
-        `Preview playing: ${
-          previewSection === 'full_song' ? 'Full Song' : previewSection.charAt(0).toUpperCase() + previewSection.slice(1)
-        }`
-      )
+
+      const sectionLabel =
+        previewSection === 'full_song'
+          ? 'Full Song'
+          : previewSection.charAt(0).toUpperCase() + previewSection.slice(1)
+
+      const patternLabel =
+        previewPattern === 'ballad_strum'
+          ? 'Ballad Strum'
+          : previewPattern === 'country_train'
+            ? 'Country Train'
+            : previewPattern === 'fingerpick'
+              ? 'Fingerpick'
+              : 'Piano Block Chords'
+
+      setProjectMessage(`Preview playing: ${sectionLabel} • ${patternLabel}`)
     } catch (err: any) {
       console.error(err)
       setProjectMessage(err.message || 'Failed to start preview')
@@ -930,7 +1060,16 @@ export default function Home() {
     if (previewPlaying) {
       stopPreviewPlayback()
     }
-  }, [previewTempo, previewFeel, previewInstrument, previewSection, previewLoop, previewIncludeBass, previewIncludeClick])
+  }, [
+    previewTempo,
+    previewFeel,
+    previewInstrument,
+    previewSection,
+    previewLoop,
+    previewIncludeBass,
+    previewIncludeClick,
+    previewPattern,
+  ])
 
   const loadProjects = async (preferredProjectId?: string) => {
     try {
@@ -3066,11 +3205,26 @@ export default function Home() {
               </label>
 
               <label style={{ cursor: 'pointer' }}>
+                Pattern
+                <select
+                  value={previewPattern}
+                  onChange={(e) => setPreviewPattern(e.target.value as PreviewPattern)}
+                  style={{ ...inputStyle, width: 210, marginLeft: 10, padding: '10px 12px' }}
+                >
+                  <option value="ballad_strum">Ballad Strum</option>
+                  <option value="country_train">Country Train</option>
+                  <option value="fingerpick">Fingerpick</option>
+                  <option value="piano_block">Piano Block Chords</option>
+                </select>
+              </label>
+
+              <label style={{ cursor: 'pointer' }}>
                 Instrument
                 <select
                   value={previewInstrument}
                   onChange={(e) => setPreviewInstrument(e.target.value as PreviewInstrument)}
                   style={{ ...inputStyle, width: 170, marginLeft: 10, padding: '10px 12px' }}
+                  disabled={previewPattern === 'piano_block'}
                 >
                   <option value="guitar">Guitar</option>
                   <option value="piano">Piano</option>
@@ -3083,6 +3237,7 @@ export default function Home() {
                   value={previewFeel}
                   onChange={(e) => setPreviewFeel(e.target.value as PreviewFeel)}
                   style={{ ...inputStyle, width: 150, marginLeft: 10, padding: '10px 12px' }}
+                  disabled={previewPattern === 'fingerpick' || previewPattern === 'piano_block'}
                 >
                   <option value="straight">Straight</option>
                   <option value="swing">Swing</option>
@@ -3120,6 +3275,7 @@ export default function Home() {
                   checked={previewIncludeBass}
                   onChange={(e) => setPreviewIncludeBass(e.target.checked)}
                   style={{ marginRight: 8 }}
+                  disabled={previewPattern === 'country_train'}
                 />
                 Add bass
               </label>
