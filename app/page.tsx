@@ -823,21 +823,19 @@ export default function Home() {
               : ['0:0:0', '0:1:0', '0:2:0', '0:3:0']
 
           strumOffsets.forEach((offset, strumIndex) => {
-            const id = transport.schedule((time) => {
-              const synth = previewChordInstrumentRef.current as Tone.PluckSynth | null
-              if (!synth) return
+  const id = transport.schedule((time) => {
+    const synth = previewChordInstrumentRef.current as Tone.PluckSynth | null
+    if (!synth) return
 
-              const orderedNotes = [...chordNotes]
-              orderedNotes.forEach((note, noteIndex) => {
-                synth.triggerAttack(
-                  note,
-                  time + noteIndex * 0.012,
-                  strumIndex === 0 ? 0.9 : 0.55
-                )
-              })
-            }, `${index}m + ${offset}`)
-            previewEventIdsRef.current.push(id)
-          })
+    const orderedNotes = [...chordNotes]
+    synth.volume.value = strumIndex === 0 ? -6 : -10
+
+    orderedNotes.forEach((note, noteIndex) => {
+      synth.triggerAttack(note, time + noteIndex * 0.012)
+    })
+  }, `${index}m + ${offset}`)
+  previewEventIdsRef.current.push(id)
+})
         }
 
         if (previewIncludeBass) {
