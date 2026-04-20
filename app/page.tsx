@@ -640,13 +640,13 @@ export default function Home() {
     return buildPreviewBars(transposedChordData, previewSection)
   }, [chords, previewSection, transposeAmount])
 
-useEffect(() => {
-  if (previewPattern === 'piano_block') {
-    setPreviewInstrument('piano')
-  } else {
-    setPreviewInstrument((current) => (current === 'piano' ? 'guitar' : current))
-  }
-}, [previewPattern])
+  useEffect(() => {
+    if (previewPattern === 'piano_block') {
+      setPreviewInstrument('piano')
+    } else {
+      setPreviewInstrument((current) => (current === 'piano' ? 'guitar' : current))
+    }
+  }, [previewPattern])
 
   const toggleProjectSort = (key: ProjectSortKey) => {
     if (projectSortKey === key) {
@@ -734,52 +734,52 @@ useEffect(() => {
   }
 
   const ensurePreviewInstruments = () => {
-  previewChordInstrumentRef.current?.dispose()
+    previewChordInstrumentRef.current?.dispose()
 
-  if (previewInstrument === 'piano') {
-    previewChordInstrumentRef.current = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.01, decay: 0.2, sustain: 0.35, release: 1.0 },
-      volume: -8,
-    }).toDestination()
-  } else {
-    previewChordInstrumentRef.current = new Tone.PolySynth(Tone.AMSynth, {
-      harmonicity: 1.6,
-      envelope: { attack: 0.005, decay: 0.18, sustain: 0.2, release: 0.8 },
-      modulation: { type: 'sine' },
-      modulationEnvelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.35 },
-      volume: -9,
-    }).toDestination()
-  }
+    if (previewInstrument === 'piano') {
+      previewChordInstrumentRef.current = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.01, decay: 0.2, sustain: 0.35, release: 1.0 },
+        volume: -8,
+      }).toDestination()
+    } else {
+      previewChordInstrumentRef.current = new Tone.PolySynth(Tone.AMSynth, {
+        harmonicity: 1.6,
+        envelope: { attack: 0.005, decay: 0.18, sustain: 0.2, release: 0.8 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.35 },
+        volume: -9,
+      }).toDestination()
+    }
 
-  if (previewChordInstrumentRef.current) {
-    previewChordInstrumentRef.current.maxPolyphony = 12
-  }
+    if (previewChordInstrumentRef.current) {
+      previewChordInstrumentRef.current.maxPolyphony = 12
+    }
 
-  if (!previewBassSynthRef.current) {
-    previewBassSynthRef.current = new Tone.MonoSynth({
-      oscillator: { type: 'sine' },
-      filter: { Q: 1, type: 'lowpass', rolloff: -24 },
-      envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.5 },
-      filterEnvelope: {
-        attack: 0.01,
-        decay: 0.2,
-        sustain: 0.2,
-        release: 0.8,
-        baseFrequency: 90,
-        octaves: 2.5,
-      },
-    }).toDestination()
-  }
+    if (!previewBassSynthRef.current) {
+      previewBassSynthRef.current = new Tone.MonoSynth({
+        oscillator: { type: 'sine' },
+        filter: { Q: 1, type: 'lowpass', rolloff: -24 },
+        envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.5 },
+        filterEnvelope: {
+          attack: 0.01,
+          decay: 0.2,
+          sustain: 0.2,
+          release: 0.8,
+          baseFrequency: 90,
+          octaves: 2.5,
+        },
+      }).toDestination()
+    }
 
-  if (!previewClickSynthRef.current) {
-    previewClickSynthRef.current = new Tone.MembraneSynth({
-      pitchDecay: 0.008,
-      octaves: 2,
-      envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
-    }).toDestination()
+    if (!previewClickSynthRef.current) {
+      previewClickSynthRef.current = new Tone.MembraneSynth({
+        pitchDecay: 0.008,
+        octaves: 2,
+        envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
+      }).toDestination()
+    }
   }
-}
 
   const stopPreviewPlayback = () => {
     clearPreviewSchedules()
@@ -791,7 +791,12 @@ useEffect(() => {
     setPreviewPlaying(false)
   }
 
-  const scheduleBassForBar = (transport: Tone.Transport, index: number, bassNote: string, pattern: PreviewPattern) => {
+  const scheduleBassForBar = (
+    transport: ReturnType<typeof Tone.getTransport>,
+    index: number,
+    bassNote: string,
+    pattern: PreviewPattern
+  ) => {
     if (!previewIncludeBass) return
 
     const bass = previewBassSynthRef.current
@@ -821,7 +826,7 @@ useEffect(() => {
     previewEventIdsRef.current.push(id)
   }
 
-  const scheduleClickForBar = (transport: Tone.Transport, index: number) => {
+  const scheduleClickForBar = (transport: ReturnType<typeof Tone.getTransport>, index: number) => {
     if (!previewIncludeClick) return
 
     const click = previewClickSynthRef.current
@@ -839,7 +844,7 @@ useEffect(() => {
   }
 
   const scheduleBalladStrum = (
-    transport: Tone.Transport,
+    transport: ReturnType<typeof Tone.getTransport>,
     chordSynth: Tone.PolySynth,
     chordNotes: string[],
     index: number
@@ -861,7 +866,7 @@ useEffect(() => {
   }
 
   const scheduleCountryTrain = (
-    transport: Tone.Transport,
+    transport: ReturnType<typeof Tone.getTransport>,
     chordSynth: Tone.PolySynth,
     chordNotes: string[],
     bassNote: string,
@@ -896,7 +901,7 @@ useEffect(() => {
   }
 
   const scheduleFingerpick = (
-    transport: Tone.Transport,
+    transport: ReturnType<typeof Tone.getTransport>,
     chordSynth: Tone.PolySynth,
     chordNotes: string[],
     bassNote: string,
@@ -924,7 +929,7 @@ useEffect(() => {
   }
 
   const schedulePianoBlock = (
-    transport: Tone.Transport,
+    transport: ReturnType<typeof Tone.getTransport>,
     chordSynth: Tone.PolySynth,
     chordNotes: string[],
     index: number
