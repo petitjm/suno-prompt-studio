@@ -640,13 +640,13 @@ export default function Home() {
     return buildPreviewBars(transposedChordData, previewSection)
   }, [chords, previewSection, transposeAmount])
 
-  useEffect(() => {
-    if (previewPattern === 'piano_block') {
-      setPreviewInstrument('piano')
-    } else if (previewInstrument === 'piano' && previewPattern !== 'piano_block') {
-      setPreviewInstrument('guitar')
-    }
-  }, [previewPattern])
+useEffect(() => {
+  if (previewPattern === 'piano_block') {
+    setPreviewInstrument('piano')
+  } else {
+    setPreviewInstrument((current) => (current === 'piano' ? 'guitar' : current))
+  }
+}, [previewPattern])
 
   const toggleProjectSort = (key: ProjectSortKey) => {
     if (projectSortKey === key) {
