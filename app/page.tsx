@@ -113,6 +113,13 @@ type PreviewBar = {
   chord: string
 }
 
+type PreviewBarMeta = {
+  barIndex: number
+  label: string
+  chord: string
+  sectionId: string | null
+}
+
 const defaultForm: FormState = {
   genre: '',
   moods: [],
@@ -410,6 +417,19 @@ function rotateNotesForFingerpick(notes: string[]) {
   return [sorted[0], sorted[sorted.length - 1], ...sorted.slice(1, -1)]
 }
 
+function findMatchingSectionId(label: string, sections: PerformanceSection[]) {
+  const normalizedLabel = label.trim().toLowerCase()
+  if (!normalizedLabel) return null
+
+  const exact = sections.find((section) => section.label.trim().toLowerCase() === normalizedLabel)
+  if (exact) return exact.id
+
+  const partial = sections.find((section) => section.label.trim().toLowerCase().includes(normalizedLabel))
+  if (partial) return partial.id
+
+  return null
+}
+
 export default function Home() {
   const supabase = useMemo(() => createClient(), [])
   const latestProjectLoadRef = useRef(0)
@@ -420,6 +440,7 @@ export default function Home() {
   const previewChordInstrumentRef = useRef<Tone.PolySynth | null>(null)
   const previewBassSynthRef = useRef<Tone.MonoSynth | null>(null)
   const previewClickSynthRef = useRef<Tone.MembraneSynth | null>(null)
+  const lastFollowedSectionIdRef = useRef<string | null>(null)
 
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -494,6 +515,7 @@ export default function Home() {
   const [previewLoop, setPreviewLoop] = useState(true)
   const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
+  const [followPlayback, setFollowPlayback] = useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -639,6 +661,15 @@ export default function Home() {
 
     return buildPreviewBars(transposedChordData, previewSection)
   }, [chords, previewSection, transposeAmount])
+
+  const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
+    return previewBars.map((bar, index) => ({
+      barIndex: index,
+      label: bar.label,
+      chord: bar.chord,
+      sectionId: findMatchingSectionId(bar.label, performanceSections),
+    }))
+  }, [previewBars, performanceSections])
 
   useEffect(() => {
     if (previewPattern === 'piano_block') {
@@ -788,7 +819,29 @@ export default function Home() {
     transport.cancel(0)
     transport.position = 0
     previewChordInstrumentRef.current?.releaseAll()
+    lastFollowedSectionIdRef.current = null
     setPreviewPlaying(false)
+  }
+
+  const schedulePlaybackFollowForBar = (
+    transport: ReturnType<typeof Tone.getTransport>,
+    barMeta: PreviewBarMeta,
+    index: number
+  ) => {
+    const id = transport.schedule(() => {
+      if (!followPlayback || !performanceMode) return
+      if (!barMeta.sectionId) return
+      if (lastFollowedSectionIdRef.current === barMeta.sectionId) return
+
+      lastFollowedSectionIdRef.current = barMeta.sectionId
+      setActivePerformanceSectionId(barMeta.sectionId)
+
+      window.requestAnimationFrame(() => {
+        jumpToPerformanceSection(barMeta.sectionId as string)
+      })
+    }, `${index}m`)
+
+    previewEventIdsRef.current.push(id)
   }
 
   const scheduleBassForBar = (
@@ -954,6 +1007,10 @@ export default function Home() {
       stopPreviewPlayback()
       ensurePreviewInstruments()
 
+      if (followPlayback) {
+        stopPerformanceScroll()
+      }
+
       const transport = Tone.getTransport()
       const chordSynth = previewChordInstrumentRef.current
       if (!chordSynth) {
@@ -970,8 +1027,13 @@ export default function Home() {
       transport.swingSubdivision = '8n'
 
       previewBars.forEach((bar, index) => {
-        const chordNotes = chordSymbolToNotes(bar.chord, previewPattern === 'piano_block' ? 4 : 4)
+        const chordNotes = chordSymbolToNotes(bar.chord, 4)
         const bassNote = chordSymbolToBassNote(bar.chord, 2)
+        const barMeta = previewBarMeta[index]
+
+        if (barMeta) {
+          schedulePlaybackFollowForBar(transport, barMeta, index)
+        }
 
         if (previewPattern === 'piano_block') {
           schedulePianoBlock(transport, chordSynth, chordNotes, index)
@@ -996,12 +1058,22 @@ export default function Home() {
           transport.stop()
           transport.position = 0
           chordSynth.releaseAll()
+          lastFollowedSectionIdRef.current = null
         }, `${previewBars.length}m`)
         previewEventIdsRef.current.push(endId)
       }
 
       transport.start('+0.05')
       setPreviewPlaying(true)
+
+      const firstFollowId = previewBarMeta.find((bar) => bar.sectionId)?.sectionId
+      if (followPlayback && performanceMode && firstFollowId) {
+        lastFollowedSectionIdRef.current = firstFollowId
+        setActivePerformanceSectionId(firstFollowId)
+        window.requestAnimationFrame(() => {
+          jumpToPerformanceSection(firstFollowId)
+        })
+      }
 
       const sectionLabel =
         previewSection === 'full_song'
@@ -1047,11 +1119,15 @@ export default function Home() {
     if (!container) return
 
     const handleScroll = () => {
-      syncActivePerformanceSection()
+      if (!followPlayback || !previewPlaying) {
+        syncActivePerformanceSection()
+      }
     }
 
     const raf = window.requestAnimationFrame(() => {
-      syncActivePerformanceSection()
+      if (!followPlayback || !previewPlaying) {
+        syncActivePerformanceSection()
+      }
     })
 
     container.addEventListener('scroll', handleScroll, { passive: true })
@@ -1060,7 +1136,7 @@ export default function Home() {
       window.cancelAnimationFrame(raf)
       container.removeEventListener('scroll', handleScroll)
     }
-  }, [performanceMode, performanceSections, performanceFontSize])
+  }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
 
   useEffect(() => {
     if (previewPlaying) {
@@ -1075,6 +1151,7 @@ export default function Home() {
     previewIncludeBass,
     previewIncludeClick,
     previewPattern,
+    followPlayback,
   ])
 
   const loadProjects = async (preferredProjectId?: string) => {
@@ -3128,6 +3205,16 @@ export default function Home() {
             </label>
 
             <label style={{ cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={followPlayback}
+                onChange={(e) => setFollowPlayback(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              Follow playback
+            </label>
+
+            <label style={{ cursor: 'pointer' }}>
               Font size
               <input
                 type="range"
@@ -3158,7 +3245,7 @@ export default function Home() {
             <button
               onClick={() => setPerformanceIsScrolling(true)}
               style={secondaryButtonStyle}
-              disabled={!performanceMode || !performanceSheet.trim()}
+              disabled={!performanceMode || !performanceSheet.trim() || (previewPlaying && followPlayback)}
             >
               Start Scroll
             </button>
