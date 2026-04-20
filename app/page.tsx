@@ -147,14 +147,7 @@ const genreOptions = [
   'Festival Anthem',
 ]
 
-const moodOptions = [
-  'Reflective',
-  'Hopeful',
-  'Melancholic',
-  'Heartfelt',
-  'Gritty',
-  'Warm',
-]
+const moodOptions = ['Reflective', 'Hopeful', 'Melancholic', 'Heartfelt', 'Gritty', 'Warm']
 
 const rewriteButtons: Array<{ mode: RewriteMode; label: string }> = [
   { mode: 'strengthen_chorus', label: 'Strengthen Chorus' },
@@ -248,20 +241,24 @@ function transposeTextPreservingLayout(text: string, semitones: number) {
     .split('\n')
     .map((line) => {
       if (!line.trim()) return line
-      return line.replace(/\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g, (_match, root, quality = '', bass) => {
-        const nextRoot = transposeRoot(root, semitones)
-        if (bass) {
-          const nextBass = transposeRoot(bass, semitones)
-          return `${nextRoot}${quality}/${nextBass}`
+      return line.replace(
+        /\b([A-G](?:#|b)?)([^/\s|]*)?(?:\/([A-G](?:#|b)?))?/g,
+        (_match, root, quality = '', bass) => {
+          const nextRoot = transposeRoot(root, semitones)
+          if (bass) {
+            const nextBass = transposeRoot(bass, semitones)
+            return `${nextRoot}${quality}/${nextBass}`
+          }
+          return `${nextRoot}${quality}`
         }
-        return `${nextRoot}${quality}`
-      })
+      )
     })
     .join('\n')
 }
 
 function removeChordLinesFromSheet(sheet: string) {
-  const chordLikeLine = /^(\s*[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G](?:#|b)?)?[\s-]*)+$/
+  const chordLikeLine =
+    /^(\s*[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G](?:#|b)?)?[\s-]*)+$/
 
   return sheet
     .split('\n')
@@ -388,6 +385,7 @@ export default function Home() {
   const [performanceScrollSpeed, setPerformanceScrollSpeed] = useState(2)
   const [performanceIsScrolling, setPerformanceIsScrolling] = useState(false)
   const [performanceFontSize, setPerformanceFontSize] = useState(28)
+  const [activePerformanceSectionId, setActivePerformanceSectionId] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -488,6 +486,16 @@ export default function Home() {
     return parsePerformanceSections(performanceSheet)
   }, [performanceSheet])
 
+  const activePerformanceSectionIndex = useMemo(() => {
+    if (!performanceSections.length) return -1
+    return performanceSections.findIndex((section) => section.id === activePerformanceSectionId)
+  }, [performanceSections, activePerformanceSectionId])
+
+  const nextPerformanceSection = useMemo(() => {
+    if (activePerformanceSectionIndex === -1) return performanceSections[0] || null
+    return performanceSections[activePerformanceSectionIndex + 1] || null
+  }, [performanceSections, activePerformanceSectionIndex])
+
   const transposedKey = useMemo(() => {
     if (!chords?.key) return ''
     return transposeTextPreservingLayout(chords.key, transposeAmount)
@@ -523,25 +531,102 @@ export default function Home() {
     if (performanceScrollRef.current) {
       performanceScrollRef.current.scrollTop = 0
     }
+    setActivePerformanceSectionId(performanceSections[0]?.id || null)
   }
 
- const jumpToPerformanceSection = (sectionId: string) => {
-  const container = performanceScrollRef.current
-  const target = performanceSectionRefs.current[sectionId]
+  const syncActivePerformanceSection = () => {
+    const container = performanceScrollRef.current
+    if (!container || performanceSections.length === 0) {
+      setActivePerformanceSectionId(null)
+      return
+    }
 
-  if (!container || !target) return
+    const containerRect = container.getBoundingClientRect()
+    const markerY = containerRect.top + Math.min(120, containerRect.height * 0.22)
 
-  const containerRect = container.getBoundingClientRect()
-  const targetRect = target.getBoundingClientRect()
+    let bestId = performanceSections[0].id
+    let bestDistance = Number.POSITIVE_INFINITY
 
-  const top =
-    container.scrollTop + (targetRect.top - containerRect.top) - 12
+    for (const section of performanceSections) {
+      const el = performanceSectionRefs.current[section.id]
+      if (!el) continue
+      const rect = el.getBoundingClientRect()
+      const distance = Math.abs(rect.top - markerY)
 
-  container.scrollTo({
-    top,
-    behavior: 'smooth',
-  })
-}
+      if (rect.top <= markerY + 8) {
+        if (distance <= bestDistance) {
+          bestDistance = distance
+          bestId = section.id
+        }
+      }
+    }
+
+    if (!bestId) bestId = performanceSections[0].id
+
+    setActivePerformanceSectionId((prev) => (prev === bestId ? prev : bestId))
+  }
+
+  const jumpToPerformanceSection = (sectionId: string) => {
+    const container = performanceScrollRef.current
+    const target = performanceSectionRefs.current[sectionId]
+
+    if (!container || !target) return
+
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+
+    const top = container.scrollTop + (targetRect.top - containerRect.top) - 12
+
+    container.scrollTo({
+      top,
+      behavior: 'smooth',
+    })
+
+    setActivePerformanceSectionId(sectionId)
+  }
+
+  const jumpToNextPerformanceSection = () => {
+    if (!nextPerformanceSection) return
+    jumpToPerformanceSection(nextPerformanceSection.id)
+  }
+
+  useEffect(() => {
+    performanceSectionRefs.current = {}
+  }, [performanceSheet])
+
+  useEffect(() => {
+    if (!performanceMode || performanceSections.length === 0) {
+      setActivePerformanceSectionId(null)
+      return
+    }
+
+    setActivePerformanceSectionId((prev) => {
+      if (prev && performanceSections.some((section) => section.id === prev)) return prev
+      return performanceSections[0].id
+    })
+  }, [performanceMode, performanceSections])
+
+  useEffect(() => {
+    if (!performanceMode) return
+
+    const container = performanceScrollRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      syncActivePerformanceSection()
+    }
+
+    const raf = window.requestAnimationFrame(() => {
+      syncActivePerformanceSection()
+    })
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.cancelAnimationFrame(raf)
+      container.removeEventListener('scroll', handleScroll)
+    }
+  }, [performanceMode, performanceSections, performanceFontSize])
 
   const loadProjects = async (preferredProjectId?: string) => {
     try {
@@ -557,9 +642,7 @@ export default function Home() {
       if (nextProjects.length > 0) {
         setActiveProject((prev: Project | null) => {
           const targetId = preferredProjectId || prev?.id
-          return targetId
-            ? nextProjects.find((p) => p.id === targetId) || nextProjects[0]
-            : nextProjects[0]
+          return targetId ? nextProjects.find((p) => p.id === targetId) || nextProjects[0] : nextProjects[0]
         })
       } else {
         setActiveProject(null)
@@ -595,6 +678,7 @@ export default function Home() {
       setImportLyricsTitle('Imported Lyrics')
       setActiveSongVersionId(null)
       setActiveChordVersionId(null)
+      setActivePerformanceSectionId(null)
     }
   }, [user])
 
@@ -992,15 +1076,14 @@ export default function Home() {
     setActiveSongVersionId(null)
     setActiveChordVersionId(null)
     setTransposeAmount(0)
+    setActivePerformanceSectionId(null)
     resetPerformanceScroll()
   }
 
   const toggleMood = (mood: string) => {
     setForm((prev) => ({
       ...prev,
-      moods: prev.moods.includes(mood)
-        ? prev.moods.filter((m) => m !== mood)
-        : [...prev.moods, mood],
+      moods: prev.moods.includes(mood) ? prev.moods.filter((m) => m !== mood) : [...prev.moods, mood],
     }))
   }
 
@@ -1836,9 +1919,7 @@ export default function Home() {
         {authLoading ? (
           <div style={{ color: '#a1a1aa', fontSize: 14 }}>Checking sign-in status...</div>
         ) : !user ? (
-          <div style={{ color: '#a1a1aa', fontSize: 14 }}>
-            Sign in to create and manage projects.
-          </div>
+          <div style={{ color: '#a1a1aa', fontSize: 14 }}>Sign in to create and manage projects.</div>
         ) : (
           <>
             <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -1878,9 +1959,7 @@ export default function Home() {
             </div>
 
             {projectMessage && (
-              <div style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 10 }}>
-                {projectMessage}
-              </div>
+              <div style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 10 }}>{projectMessage}</div>
             )}
 
             <div style={tableWrapStyle}>
@@ -1898,7 +1977,8 @@ export default function Home() {
                         style={{ ...projectThStyle, width: 260 }}
                         onClick={() => toggleProjectSort('updated_at')}
                       >
-                        Last updated {projectSortKey === 'updated_at' ? (projectSortDirection === 'asc' ? '▲' : '▼') : ''}
+                        Last updated{' '}
+                        {projectSortKey === 'updated_at' ? (projectSortDirection === 'asc' ? '▲' : '▼') : ''}
                       </th>
                     </tr>
                   </thead>
@@ -1923,11 +2003,7 @@ export default function Home() {
                               }}
                               title={p.title}
                             >
-                              <button
-                                onClick={() => setActiveProject(p)}
-                                style={projectRowButtonStyle}
-                                title={p.title}
-                              >
+                              <button onClick={() => setActiveProject(p)} style={projectRowButtonStyle} title={p.title}>
                                 {p.title}
                               </button>
                             </td>
@@ -1971,11 +2047,10 @@ export default function Home() {
               background: '#1d2a44',
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-              Applied Artist DNA
-            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Applied Artist DNA</div>
             <div style={{ color: '#dbeafe', marginBottom: 10 }}>
-              Your saved Artist DNA is currently shaping song generation, rewrites, chord generation, and chord rewrites.
+              Your saved Artist DNA is currently shaping song generation, rewrites, chord generation, and chord
+              rewrites.
             </div>
 
             {artistDNA.dna_summary && (
@@ -2053,8 +2128,7 @@ export default function Home() {
               Active project: <strong>{activeProject ? activeProject.title : 'None selected'}</strong>
             </div>
             <div style={{ marginBottom: 8 }}>
-              Artist DNA status:{' '}
-              <strong>{hasSavedArtistDNA ? 'Applied to outputs' : 'No saved DNA yet'}</strong>
+              Artist DNA status: <strong>{hasSavedArtistDNA ? 'Applied to outputs' : 'No saved DNA yet'}</strong>
             </div>
             <div style={{ marginBottom: 8 }}>
               Auto-save:{' '}
@@ -2068,9 +2142,7 @@ export default function Home() {
                 {autoSave ? 'On' : 'Off'}
               </label>
             </div>
-            {versionsLoading && (
-              <div style={{ color: '#a1a1aa', marginBottom: 12 }}>Loading project history...</div>
-            )}
+            {versionsLoading && <div style={{ color: '#a1a1aa', marginBottom: 12 }}>Loading project history...</div>}
             <button onClick={signOut} style={secondaryButtonStyle}>
               Sign out
             </button>
@@ -2196,11 +2268,7 @@ export default function Home() {
                 />
               </div>
 
-              <button
-                onClick={handleImportLyrics}
-                disabled={importLyricsLoading}
-                style={secondaryButtonStyle}
-              >
+              <button onClick={handleImportLyrics} disabled={importLyricsLoading} style={secondaryButtonStyle}>
                 {importLyricsLoading ? 'Creating Project...' : 'Create Project from Lyrics'}
               </button>
             </div>
@@ -2210,11 +2278,7 @@ export default function Home() {
                 {loading ? 'Generating...' : 'Generate Song'}
               </button>
 
-              <button
-                onClick={handleGenerateChords}
-                disabled={chordLoading}
-                style={secondaryButtonStyle}
-              >
+              <button onClick={handleGenerateChords} disabled={chordLoading} style={secondaryButtonStyle}>
                 {chordLoading ? 'Generating Chords...' : 'Generate Chords'}
               </button>
             </div>
@@ -2228,19 +2292,11 @@ export default function Home() {
                 style={inputStyle}
               />
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                <button
-                  onClick={handleManualSaveSong}
-                  disabled={manualSongSaveLoading}
-                  style={primaryButtonStyle}
-                >
+                <button onClick={handleManualSaveSong} disabled={manualSongSaveLoading} style={primaryButtonStyle}>
                   {manualSongSaveLoading ? 'Saving Song...' : 'Save Song As Version'}
                 </button>
 
-                <button
-                  onClick={handleManualSaveChords}
-                  disabled={manualChordSaveLoading}
-                  style={primaryButtonStyle}
-                >
+                <button onClick={handleManualSaveChords} disabled={manualChordSaveLoading} style={primaryButtonStyle}>
                   {manualChordSaveLoading ? 'Saving Chords...' : 'Save Chords As Version'}
                 </button>
               </div>
@@ -2413,11 +2469,7 @@ export default function Home() {
                   Apply Edits
                 </button>
 
-                <button
-                  onClick={handleSaveEditedLyrics}
-                  disabled={saveEditedLyricsLoading}
-                  style={primaryButtonStyle}
-                >
+                <button onClick={handleSaveEditedLyrics} disabled={saveEditedLyricsLoading} style={primaryButtonStyle}>
                   {saveEditedLyricsLoading ? 'Saving Edited Lyrics...' : 'Save Edited Version'}
                 </button>
               </div>
@@ -2454,9 +2506,7 @@ export default function Home() {
                     </div>
 
                     {chords.notes && (
-                      <div style={{ color: '#d4d4d8', fontStyle: 'italic', marginBottom: 20 }}>
-                        {chords.notes}
-                      </div>
+                      <div style={{ color: '#d4d4d8', fontStyle: 'italic', marginBottom: 20 }}>{chords.notes}</div>
                     )}
                   </>
                 )
@@ -2569,31 +2619,19 @@ export default function Home() {
           <h2 style={{ marginTop: 0 }}>Performance Mode</h2>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-            <button
-              onClick={() => setPerformanceMode((prev) => !prev)}
-              style={primaryButtonStyle}
-            >
+            <button onClick={() => setPerformanceMode((prev) => !prev)} style={primaryButtonStyle}>
               {performanceMode ? 'Hide Performance Mode' : 'Show Performance Mode'}
             </button>
 
-            <button
-              onClick={() => setTransposeAmount((prev) => prev - 1)}
-              style={secondaryButtonStyle}
-            >
+            <button onClick={() => setTransposeAmount((prev) => prev - 1)} style={secondaryButtonStyle}>
               Transpose -1
             </button>
 
-            <button
-              onClick={() => setTransposeAmount(0)}
-              style={secondaryButtonStyle}
-            >
+            <button onClick={() => setTransposeAmount(0)} style={secondaryButtonStyle}>
               Reset Transpose
             </button>
 
-            <button
-              onClick={() => setTransposeAmount((prev) => prev + 1)}
-              style={secondaryButtonStyle}
-            >
+            <button onClick={() => setTransposeAmount((prev) => prev + 1)} style={secondaryButtonStyle}>
               Transpose +1
             </button>
           </div>
@@ -2608,6 +2646,14 @@ export default function Home() {
             <div>
               <strong>Capo:</strong> {transposedCapoHint || chords?.capo || '—'}
             </div>
+            {performanceMode && performanceSections.length > 0 && (
+              <div>
+                <strong>Current section:</strong>{' '}
+                {activePerformanceSectionIndex >= 0
+                  ? performanceSections[activePerformanceSectionIndex]?.label
+                  : performanceSections[0]?.label}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
@@ -2657,20 +2703,24 @@ export default function Home() {
               Start Scroll
             </button>
 
-            <button
-              onClick={stopPerformanceScroll}
-              style={secondaryButtonStyle}
-              disabled={!performanceMode}
-            >
+            <button onClick={stopPerformanceScroll} style={secondaryButtonStyle} disabled={!performanceMode}>
               Pause Scroll
             </button>
 
-            <button
-              onClick={resetPerformanceScroll}
-              style={secondaryButtonStyle}
-              disabled={!performanceMode}
-            >
+            <button onClick={resetPerformanceScroll} style={secondaryButtonStyle} disabled={!performanceMode}>
               Reset Scroll
+            </button>
+
+            <button
+              onClick={jumpToNextPerformanceSection}
+              style={{
+                ...primaryButtonStyle,
+                opacity: !performanceMode || !nextPerformanceSection ? 0.55 : 1,
+                cursor: !performanceMode || !nextPerformanceSection ? 'not-allowed' : 'pointer',
+              }}
+              disabled={!performanceMode || !nextPerformanceSection}
+            >
+              {nextPerformanceSection ? `Next Section: ${nextPerformanceSection.label}` : 'Next Section'}
             </button>
           </div>
 
@@ -2678,15 +2728,23 @@ export default function Home() {
             <>
               {performanceSections.length > 0 && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-                  {performanceSections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => jumpToPerformanceSection(section.id)}
-                      style={secondaryButtonStyle}
-                    >
-                      {section.label}
-                    </button>
-                  ))}
+                  {performanceSections.map((section) => {
+                    const isActive = section.id === activePerformanceSectionId
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => jumpToPerformanceSection(section.id)}
+                        style={{
+                          ...secondaryButtonStyle,
+                          borderColor: isActive ? '#60a5fa' : '#52525b',
+                          background: isActive ? '#1d4ed8' : '#3f3f46',
+                          boxShadow: isActive ? '0 0 0 1px #93c5fd inset' : 'none',
+                        }}
+                      >
+                        {section.label}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
@@ -2699,6 +2757,7 @@ export default function Home() {
                   border: '1px solid #3f3f46',
                   background: '#0b0b0d',
                   padding: 8,
+                  scrollBehavior: 'smooth',
                 }}
               >
                 {performanceSheet.trim() ? (
@@ -2708,41 +2767,49 @@ export default function Home() {
                       fontSize: performanceFontSize,
                     }}
                   >
-                    {performanceSections.map((section) => (
-                      <div
-                        key={section.id}
-                        ref={(el) => {
-                          performanceSectionRefs.current[section.id] = el
-                        }}
-                        style={{ marginBottom: 28 }}
-                      >
-                        <pre
+                    {performanceSections.map((section) => {
+                      const isActive = section.id === activePerformanceSectionId
+
+                      return (
+                        <div
+                          key={section.id}
+                          ref={(el) => {
+                            performanceSectionRefs.current[section.id] = el
+                          }}
                           style={{
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                            fontFamily: 'Courier New, monospace',
-                            fontSize: performanceFontSize,
-                            lineHeight: 1.8,
-                            background: 'transparent',
-                            color: 'white',
+                            marginBottom: 28,
+                            padding: '10px 12px',
+                            borderRadius: 12,
+                            border: isActive ? '1px solid #60a5fa' : '1px solid transparent',
+                            background: isActive ? '#172554' : 'transparent',
+                            boxShadow: isActive ? '0 0 0 1px rgba(96,165,250,0.25) inset' : 'none',
+                            transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                           }}
                         >
-                          {section.content}
-                        </pre>
-                      </div>
-                    ))}
+                          <pre
+                            style={{
+                              margin: 0,
+                              whiteSpace: 'pre-wrap',
+                              fontFamily: 'Courier New, monospace',
+                              fontSize: performanceFontSize,
+                              lineHeight: 1.8,
+                              background: 'transparent',
+                              color: 'white',
+                            }}
+                          >
+                            {section.content}
+                          </pre>
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : (
-                  <div style={{ color: '#a1a1aa', padding: 20 }}>
-                    Create a song sheet first to use Performance Mode.
-                  </div>
+                  <div style={{ color: '#a1a1aa', padding: 20 }}>Create a song sheet first to use Performance Mode.</div>
                 )}
               </div>
             </>
           ) : (
-            <div style={{ color: '#a1a1aa' }}>
-              Performance Mode is hidden.
-            </div>
+            <div style={{ color: '#a1a1aa' }}>Performance Mode is hidden.</div>
           )}
         </div>
 
@@ -2756,9 +2823,7 @@ export default function Home() {
           <div style={panelStyle}>
             <h2 style={{ marginTop: 0 }}>Artist DNA Analyzer</h2>
 
-            {dnaAnalyzerMessage && (
-              <div style={{ color: '#a1a1aa', marginBottom: 12 }}>{dnaAnalyzerMessage}</div>
-            )}
+            {dnaAnalyzerMessage && <div style={{ color: '#a1a1aa', marginBottom: 12 }}>{dnaAnalyzerMessage}</div>}
 
             <div style={{ marginBottom: 16 }}>
               <label style={sectionTitleStyle}>Lyrics Samples</label>
@@ -2800,11 +2865,7 @@ export default function Home() {
               />
             </div>
 
-            <button
-              onClick={analyzeArtistDNA}
-              disabled={dnaAnalyzing}
-              style={primaryButtonStyle}
-            >
+            <button onClick={analyzeArtistDNA} disabled={dnaAnalyzing} style={primaryButtonStyle}>
               {dnaAnalyzing ? 'Analyzing...' : 'Analyze My Style'}
             </button>
           </div>
@@ -2923,11 +2984,7 @@ export default function Home() {
             </div>
 
             <div style={{ marginTop: 20 }}>
-              <button
-                onClick={saveArtistDNA}
-                disabled={artistDNASaving}
-                style={primaryButtonStyle}
-              >
+              <button onClick={saveArtistDNA} disabled={artistDNASaving} style={primaryButtonStyle}>
                 {artistDNASaving ? 'Saving...' : 'Save Artist DNA'}
               </button>
             </div>
