@@ -726,7 +726,7 @@ setPreviewPlaying(true)
     const localBarProgress = Math.max(0, Math.min(1, (safeBarIndex - currentSectionStartBar) / sectionBarSpan))
 
     const anchorOffset = container.clientHeight * 0.22
-    const currentTop = Math.max(0, currentSectionEl.offsetTop - anchorOffset - 12))
+    const currentTop = Math.max(0, currentSectionEl.offsetTop - anchorOffset - 12)
 
     let targetTop = currentTop
 
