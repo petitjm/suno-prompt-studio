@@ -25,7 +25,7 @@ export default function Page() {
   // REFS
   // ===============================
 
-  const transportRef = useRef<Tone.Transport | null>(null)
+  const transportRef = useRef<ReturnType<typeof Tone.getTransport> | null>(null)
   const intervalRef = useRef<number | null>(null)
 
   const performanceScrollRef = useRef<HTMLDivElement | null>(null)
@@ -65,7 +65,7 @@ export default function Page() {
 
     Tone.Transport.start()
 
-    transportRef.current = Tone.Transport
+    transportRef.current = Tone.getTransport()
   }
 
   const stopAudio = () => {
