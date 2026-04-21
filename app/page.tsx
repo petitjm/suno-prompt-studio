@@ -632,23 +632,26 @@ export default function Home() {
       }
 
       setCurrentPreviewBarIndex(safeStartBarIndex)
-      transport.position = `${safeStartBarIndex}m`
-      transport.start('+0.05')
-      setPreviewPlaying(true)
+transport.position = `${safeStartBarIndex}m`
+transport.start('+0.05')
+setPreviewPlaying(true)
 
-      const startBarMeta = previewBarMeta[safeStartBarIndex]
-      const startSectionId = startBarMeta?.sectionId || null
+const startBarMeta = previewBarMeta[safeStartBarIndex]
+const startSectionId = startBarMeta?.sectionId || null
 
-            if (followPlayback && performanceMode && startSectionId) {
-        lastFollowedSectionIdRef.current = startSectionId
-        setActivePerformanceSectionId(startSectionId)
+if (startSectionId) {
+  setActivePerformanceSectionId(startSectionId)
+}
 
-        window.requestAnimationFrame(() => {
-          scrollPerformanceToBarIndex(safeStartBarIndex, 'auto')
-        })
-      } else {
-        lastFollowedSectionIdRef.current = null
-      }
+if (followPlayback && performanceMode && startSectionId) {
+  lastFollowedSectionIdRef.current = startSectionId
+
+  window.requestAnimationFrame(() => {
+    scrollPerformanceToBarIndex(safeStartBarIndex, 'auto')
+  })
+} else {
+  lastFollowedSectionIdRef.current = null
+}
 
       const sectionLabel =
         previewSection === 'full_song'
