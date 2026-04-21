@@ -238,55 +238,54 @@ export function buildOrderedPreviewBarsFromSections(
   const chorusBars = parseChordSequence(chords.chorus).map((chord) => ({ label: 'Chorus', chord }))
   const bridgeBars = parseChordSequence(chords.bridge).map((chord) => ({ label: 'Bridge', chord }))
 
+  const attachSection = (bars: Array<{ label: string; chord: string }>, section: OrderedSongSection): PreviewBar[] =>
+    bars.map((bar) => ({
+      label: section.label,
+      chord: bar.chord,
+      sectionId: section.id,
+    }))
+
   return sections.flatMap((section) => {
     if (section.type === 'verse') {
-      return verseBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+      return attachSection(verseBars, section)
     }
 
     if (section.type === 'pre_chorus') {
       if (verseBars.length >= 4) {
-        return verseBars.slice(Math.max(0, verseBars.length - 4)).map((bar) => ({
-          label: section.label,
-          chord: bar.chord,
-        }))
+        return attachSection(verseBars.slice(Math.max(0, verseBars.length - 4)), section)
       }
-      return verseBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+      return attachSection(verseBars, section)
     }
 
     if (section.type === 'chorus' || section.type === 'final_chorus') {
-      return chorusBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+      return attachSection(chorusBars, section)
     }
 
     if (section.type === 'bridge') {
-      return bridgeBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+      return attachSection(bridgeBars, section)
     }
 
     if (section.type === 'breakdown') {
       if (chorusBars.length >= 4) {
-        return chorusBars.slice(0, 4).map((bar) => ({ label: section.label, chord: bar.chord }))
+        return attachSection(chorusBars.slice(0, 4), section)
       }
       if (verseBars.length >= 4) {
-        return verseBars.slice(0, 4).map((bar) => ({ label: section.label, chord: bar.chord }))
+        return attachSection(verseBars.slice(0, 4), section)
       }
-      return chorusBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+      return attachSection(chorusBars, section)
     }
 
     if (section.type === 'outro') {
       if (chorusBars.length >= 4) {
-        return chorusBars.slice(Math.max(0, chorusBars.length - 4)).map((bar) => ({
-          label: section.label,
-          chord: bar.chord,
-        }))
+        return attachSection(chorusBars.slice(Math.max(0, chorusBars.length - 4)), section)
       }
       if (verseBars.length >= 4) {
-        return verseBars.slice(Math.max(0, verseBars.length - 4)).map((bar) => ({
-          label: section.label,
-          chord: bar.chord,
-        }))
+        return attachSection(verseBars.slice(Math.max(0, verseBars.length - 4)), section)
       }
-      return chorusBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+      return attachSection(chorusBars, section)
     }
 
-    return verseBars.map((bar) => ({ label: section.label, chord: bar.chord }))
+    return attachSection(verseBars, section)
   })
+}
 }

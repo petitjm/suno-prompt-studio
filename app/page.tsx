@@ -412,19 +412,13 @@ export default function Home() {
   }, [chords, previewSection, transposeAmount, performanceSheet])
 
    const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
-    return previewBars.map((bar, index) => {
-      const exact =
-        performanceSections.find((section) => section.label.trim().toLowerCase() === bar.label.trim().toLowerCase())
-          ?.id || null
-
-      return {
-        barIndex: index,
-        label: bar.label,
-        chord: bar.chord,
-        sectionId: exact || findMatchingSectionId(bar.label, performanceSections),
-      }
-    })
-  }, [previewBars, performanceSections])
+  return previewBars.map((bar, index) => ({
+    barIndex: index,
+    label: bar.label,
+    chord: bar.chord,
+    sectionId: bar.sectionId || findMatchingSectionId(bar.label, performanceSections),
+  }))
+}, [previewBars, performanceSections])
 
   useEffect(() => {
     if (previewPattern === 'piano_block') {

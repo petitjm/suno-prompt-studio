@@ -105,7 +105,11 @@ export type PreviewFeel = 'straight' | 'swing'
 export type PreviewPattern = 'ballad_strum' | 'country_train' | 'fingerpick' | 'piano_block'
 
 export type PreviewBar = {
+  labeexport type PreviewBar = {
   label: string
+  chord: string
+  sectionId?: string | null
+}l: string
   chord: string
 }
 
