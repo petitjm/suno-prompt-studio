@@ -92,17 +92,21 @@ export function parsePerformanceSections(sheet: string): PerformanceSection[] {
   }
 
   const normalizePlainHeaderLabel = (value: string) => {
-    return value
-      .trim()
-      .replace(/:$/, '')
-      .replace(/\s+/g, ' ')
-  }
+  return value
+    .trim()
+    .replace(/:$/, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^pre chorus/i, 'Pre-Chorus')
+    .replace(/^pre-chorus/i, 'Pre-Chorus')
+    .replace(/^post chorus/i, 'Post-Chorus')
+    .replace(/^post-chorus/i, 'Post-Chorus')
+}
 
   const isPlainSectionHeader = (value: string) => {
-    return /^(intro|verse(?:\s+\d+)?|pre-chorus|chorus(?:\s+\d+)?|bridge|middle 8|outro|refrain|hook)(:)?$/i.test(
-      value.trim()
-    )
-  }
+  return /^(intro|verse(?:\s+\d+)?|pre[-\s]?chorus(?:\s+\d+)?|chorus(?:\s+\d+)?|post[-\s]?chorus(?:\s+\d+)?|bridge(?:\s+\d+)?|middle\s*8|instrumental|solo|outro|refrain|hook)(:)?$/i.test(
+    value.trim()
+  )
+}
 
   for (const line of lines) {
     const trimmed = line.trim()
