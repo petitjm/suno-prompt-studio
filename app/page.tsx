@@ -643,25 +643,9 @@ if (startSectionId) {
 if (followPlayback && performanceMode && startSectionId) {
   lastFollowedSectionIdRef.current = startSectionId
 
-  const container = performanceScrollRef.current
-  const target = performanceSectionRefs.current[startSectionId]
-
-  if (container) {
-    container.scrollTo({
-      top: 0,
-      behavior: 'auto',
-    })
-  }
-
-  if (container && target) {
-    const anchorOffset = container.clientHeight * 0.22
-    const targetTop = Math.max(0, target.offsetTop - anchorOffset - 12)
-
-    container.scrollTo({
-      top: targetTop,
-      behavior: 'auto',
-    })
-  }
+  window.requestAnimationFrame(() => {
+    jumpToPerformanceSection(startSectionId)
+  })
 } else {
   lastFollowedSectionIdRef.current = null
 }
