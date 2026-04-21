@@ -632,9 +632,6 @@ export default function Home() {
       }
 
       setCurrentPreviewBarIndex(safeStartBarIndex)
-transport.position = `${safeStartBarIndex}m`
-transport.start('+0.05')
-setPreviewPlaying(true)
 
 const startBarMeta = previewBarMeta[safeStartBarIndex]
 const startSectionId = startBarMeta?.sectionId || null
@@ -646,12 +643,24 @@ if (startSectionId) {
 if (followPlayback && performanceMode && startSectionId) {
   lastFollowedSectionIdRef.current = startSectionId
 
+  const container = performanceScrollRef.current
+  if (container) {
+    container.scrollTo({
+      top: 0,
+      behavior: 'auto',
+    })
+  }
+
   window.requestAnimationFrame(() => {
     scrollPerformanceToBarIndex(safeStartBarIndex, 'auto')
   })
 } else {
   lastFollowedSectionIdRef.current = null
 }
+
+transport.position = `${safeStartBarIndex}m`
+transport.start('+0.05')
+setPreviewPlaying(true)
 
       const sectionLabel =
         previewSection === 'full_song'
@@ -717,7 +726,7 @@ if (followPlayback && performanceMode && startSectionId) {
     const localBarProgress = Math.max(0, Math.min(1, (safeBarIndex - currentSectionStartBar) / sectionBarSpan))
 
     const anchorOffset = container.clientHeight * 0.22
-    const currentTop = Math.max(0, currentSectionEl.offsetTop - anchorOffset)
+    const currentTop = Math.max(0, currentSectionEl.offsetTop - anchorOffset - 12))
 
     let targetTop = currentTop
 
