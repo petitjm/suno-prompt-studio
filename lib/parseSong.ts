@@ -28,6 +28,18 @@ const detectType = (title: string): SongSection['type'] => {
   return 'other'
 }
 
+  export function normalizeRoot(note: string): string {
+  return note
+    .trim()
+    .toUpperCase()
+    .replace('♯', '#')
+    .replace('♭', 'B')
+}
+
+export function displayRoot(note: string): string {
+  return note
+}
+
 export function parseSongSheet(text: string): SongSection[] {
   const lines = text.split('\n')
 
@@ -59,15 +71,5 @@ export function parseSongSheet(text: string): SongSection[] {
 
   return sections
 
-  export function normalizeRoot(note: string): string {
-  return note
-    .trim()
-    .toUpperCase()
-    .replace('♯', '#')
-    .replace('♭', 'B')
-}
 
-export function displayRoot(note: string): string {
-  return note
-}
 }
