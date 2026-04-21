@@ -780,12 +780,11 @@ setPreviewPlaying(true)
     })
   }, [performanceMode, performanceSections])
 
-   useEffect(() => {
+    useEffect(() => {
     if (!performanceMode || !followPlayback || !previewPlaying) return
     if (!performanceSheet.trim()) return
     if (previewBars.length === 0) return
     if (previewBarMeta.length === 0) return
-
     if (currentPreviewBarIndex <= 0) return
 
     scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
