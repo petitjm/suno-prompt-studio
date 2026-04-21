@@ -734,7 +734,7 @@ export default function Home() {
     }
   }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
 
-  useEffect(() => {
+  u  useEffect(() => {
     if (!performanceMode || !followPlayback || !previewPlaying) return
 
     const container = performanceScrollRef.current
@@ -742,12 +742,21 @@ export default function Home() {
     if (!performanceSheet.trim()) return
     if (previewBars.length === 0) return
 
-    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
-    if (maxScrollTop === 0) return
+    const activeBarMeta = previewBarMeta[currentPreviewBarIndex]
+    const activeSectionId = activeBarMeta?.sectionId
 
-    const denominator = Math.max(1, previewBars.length - 1)
-    const progress = currentPreviewBarIndex / denominator
-    const targetTop = maxScrollTop * progress
+    if (!activeSectionId) return
+
+    const target = performanceSectionRefs.current[activeSectionId]
+    if (!target) return
+
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+
+    const anchorOffset = container.clientHeight * 0.22
+    const rawTop = container.scrollTop + (targetRect.top - containerRect.top) - anchorOffset
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    const targetTop = Math.max(0, Math.min(rawTop, maxScrollTop))
 
     container.scrollTo({
       top: targetTop,
@@ -760,6 +769,7 @@ export default function Home() {
     previewPlaying,
     performanceSheet,
     previewBars.length,
+    previewBarMeta,
   ])
 
   useEffect(() => {
