@@ -288,4 +288,3 @@ export function buildOrderedPreviewBarsFromSections(
     return attachSection(verseBars, section)
   })
 }
-}
