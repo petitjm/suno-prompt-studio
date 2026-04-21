@@ -8,8 +8,9 @@ import { createClient } from '@/lib/supabase/client'
 import SongSheet from '@/components/SongSheet'
 import SectionJumpButtons from '@/components/SectionJumpButtons'
 import {
-  buildPreviewBars,
+  buildOrderedPreviewBarsFromSections,
   findMatchingSectionId,
+  parseOrderedSongSections,
   parsePerformanceSections,
   removeChordLinesFromSheet,
   transposeTextPreservingLayout,
@@ -376,7 +377,7 @@ export default function Home() {
     return ''
   }, [chords?.capo, transposeAmount])
 
-  const previewBars = useMemo(() => {
+    const previewBars = useMemo(() => {
     const transposedChordData: ChordResponse | null = chords
       ? {
           ...chords,
@@ -387,16 +388,42 @@ export default function Home() {
         }
       : null
 
-    return buildPreviewBars(transposedChordData, previewSection)
-  }, [chords, previewSection, transposeAmount])
+    if (!transposedChordData) return []
 
-  const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
-    return previewBars.map((bar, index) => ({
-      barIndex: index,
-      label: bar.label,
-      chord: bar.chord,
-      sectionId: findMatchingSectionId(bar.label, performanceSections),
-    }))
+    if (previewSection !== 'full_song') {
+      return buildOrderedPreviewBarsFromSections(
+        parseOrderedSongSections(
+          previewSection === 'verse'
+            ? '[Verse]\n...'
+            : previewSection === 'chorus'
+              ? '[Chorus]\n...'
+              : '[Bridge]\n...'
+        ),
+        {
+          ...transposedChordData,
+          verse: previewSection === 'verse' ? transposedChordData.verse : '',
+          chorus: previewSection === 'chorus' ? transposedChordData.chorus : '',
+          bridge: previewSection === 'bridge' ? transposedChordData.bridge : '',
+        }
+      )
+    }
+
+    return buildOrderedPreviewBarsFromSections(parseOrderedSongSections(performanceSheet), transposedChordData)
+  }, [chords, previewSection, transposeAmount, performanceSheet])
+
+   const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
+    return previewBars.map((bar, index) => {
+      const exact =
+        performanceSections.find((section) => section.label.trim().toLowerCase() === bar.label.trim().toLowerCase())
+          ?.id || null
+
+      return {
+        barIndex: index,
+        label: bar.label,
+        chord: bar.chord,
+        sectionId: exact || findMatchingSectionId(bar.label, performanceSections),
+      }
+    })
   }, [previewBars, performanceSections])
 
   useEffect(() => {
