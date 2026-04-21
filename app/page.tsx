@@ -639,11 +639,12 @@ export default function Home() {
       const startBarMeta = previewBarMeta[safeStartBarIndex]
       const startSectionId = startBarMeta?.sectionId || null
 
-      if (followPlayback && performanceMode && startSectionId) {
+            if (followPlayback && performanceMode && startSectionId) {
         lastFollowedSectionIdRef.current = startSectionId
         setActivePerformanceSectionId(startSectionId)
+
         window.requestAnimationFrame(() => {
-          jumpToPerformanceSection(startSectionId)
+          scrollPerformanceToBarIndex(safeStartBarIndex, 'auto')
         })
       } else {
         lastFollowedSectionIdRef.current = null
@@ -679,6 +680,59 @@ export default function Home() {
     if (startBarIndex === -1) return
 
     await startPreviewPlaybackFromBar(startBarIndex)
+  }
+
+    const scrollPerformanceToBarIndex = (barIndex: number, behavior: ScrollBehavior = 'smooth') => {
+    const container = performanceScrollRef.current
+    if (!container) return
+    if (!performanceMode) return
+    if (!performanceSections.length) return
+    if (!previewBarMeta.length) return
+
+    const safeBarIndex = Math.max(0, Math.min(barIndex, previewBarMeta.length - 1))
+    const activeBarMeta = previewBarMeta[safeBarIndex]
+    const activeSectionId = activeBarMeta?.sectionId
+    if (!activeSectionId) return
+
+    const currentSectionIndex = performanceSections.findIndex((section) => section.id === activeSectionId)
+    if (currentSectionIndex === -1) return
+
+    const currentSection = performanceSections[currentSectionIndex]
+    const nextSection = performanceSections[currentSectionIndex + 1] || null
+
+    const currentSectionEl = performanceSectionRefs.current[currentSection.id]
+    if (!currentSectionEl) return
+
+    const currentSectionStartBar =
+      previewBarMeta.find((bar) => bar.sectionId === currentSection.id)?.barIndex ?? safeBarIndex
+
+    const nextSectionStartBar = nextSection
+      ? (previewBarMeta.find((bar) => bar.sectionId === nextSection.id)?.barIndex ?? previewBarMeta.length)
+      : previewBarMeta.length
+
+    const sectionBarSpan = Math.max(1, nextSectionStartBar - currentSectionStartBar)
+    const localBarProgress = Math.max(0, Math.min(1, (safeBarIndex - currentSectionStartBar) / sectionBarSpan))
+
+    const anchorOffset = container.clientHeight * 0.22
+    const currentTop = Math.max(0, currentSectionEl.offsetTop - anchorOffset)
+
+    let targetTop = currentTop
+
+    if (nextSection) {
+      const nextSectionEl = performanceSectionRefs.current[nextSection.id]
+      if (nextSectionEl) {
+        const nextTop = Math.max(0, nextSectionEl.offsetTop - anchorOffset)
+        targetTop = currentTop + (nextTop - currentTop) * localBarProgress
+      }
+    }
+
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    const clampedTop = Math.max(0, Math.min(targetTop, maxScrollTop))
+
+    container.scrollTo({
+      top: clampedTop,
+      behavior,
+    })
   }
 
   const jumpToNextPerformanceSection = async () => {
@@ -732,65 +786,13 @@ export default function Home() {
     }
   }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
 
-    useEffect(() => {
+      useEffect(() => {
     if (!performanceMode || !followPlayback || !previewPlaying) return
-
-    const container = performanceScrollRef.current
-    if (!container) return
     if (!performanceSheet.trim()) return
     if (previewBars.length === 0) return
     if (previewBarMeta.length === 0) return
 
-    const activeBarMeta = previewBarMeta[currentPreviewBarIndex]
-    const activeSectionId = activeBarMeta?.sectionId
-    if (!activeSectionId) return
-
-    const currentSectionIndex = performanceSections.findIndex((section) => section.id === activeSectionId)
-    if (currentSectionIndex === -1) return
-
-    const currentSection = performanceSections[currentSectionIndex]
-    const nextSection = performanceSections[currentSectionIndex + 1] || null
-
-    const currentSectionEl = performanceSectionRefs.current[currentSection.id]
-    if (!currentSectionEl) return
-
-    const currentSectionStartBar =
-      previewBarMeta.find((bar) => bar.sectionId === currentSection.id)?.barIndex ?? currentPreviewBarIndex
-
-    const nextSectionStartBar = nextSection
-      ? (previewBarMeta.find((bar) => bar.sectionId === nextSection.id)?.barIndex ?? previewBars.length)
-      : previewBars.length
-
-    const sectionBarSpan = Math.max(1, nextSectionStartBar - currentSectionStartBar)
-    const localBarProgress = Math.max(
-      0,
-      Math.min(1, (currentPreviewBarIndex - currentSectionStartBar) / sectionBarSpan)
-    )
-
-    const containerRect = container.getBoundingClientRect()
-    const currentRect = currentSectionEl.getBoundingClientRect()
-
-    const anchorOffset = container.clientHeight * 0.22
-    const currentTop = container.scrollTop + (currentRect.top - containerRect.top) - anchorOffset
-
-    let targetTop = currentTop
-
-    if (nextSection) {
-      const nextSectionEl = performanceSectionRefs.current[nextSection.id]
-      if (nextSectionEl) {
-        const nextRect = nextSectionEl.getBoundingClientRect()
-        const nextTop = container.scrollTop + (nextRect.top - containerRect.top) - anchorOffset
-        targetTop = currentTop + (nextTop - currentTop) * localBarProgress
-      }
-    }
-
-    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
-    const clampedTop = Math.max(0, Math.min(targetTop, maxScrollTop))
-
-    container.scrollTo({
-      top: clampedTop,
-      behavior: 'smooth',
-    })
+    scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
   }, [
     currentPreviewBarIndex,
     performanceMode,
@@ -799,7 +801,6 @@ export default function Home() {
     performanceSheet,
     previewBars.length,
     previewBarMeta,
-    performanceSections,
   ])
 
   useEffect(() => {
