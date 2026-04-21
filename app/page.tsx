@@ -631,7 +631,7 @@ export default function Home() {
         previewEventIdsRef.current.push(endId)
       }
 
-      setCurrentPreviewBarIndex(safeStartBarIndex)
+     setCurrentPreviewBarIndex(safeStartBarIndex)
 
 const startBarMeta = previewBarMeta[safeStartBarIndex]
 const startSectionId = startBarMeta?.sectionId || null
@@ -644,6 +644,8 @@ if (followPlayback && performanceMode && startSectionId) {
   lastFollowedSectionIdRef.current = startSectionId
 
   const container = performanceScrollRef.current
+  const target = performanceSectionRefs.current[startSectionId]
+
   if (container) {
     container.scrollTo({
       top: 0,
@@ -651,9 +653,15 @@ if (followPlayback && performanceMode && startSectionId) {
     })
   }
 
-  window.requestAnimationFrame(() => {
-    scrollPerformanceToBarIndex(safeStartBarIndex, 'auto')
-  })
+  if (container && target) {
+    const anchorOffset = container.clientHeight * 0.22
+    const targetTop = Math.max(0, target.offsetTop - anchorOffset - 12)
+
+    container.scrollTo({
+      top: targetTop,
+      behavior: 'auto',
+    })
+  }
 } else {
   lastFollowedSectionIdRef.current = null
 }
@@ -772,37 +780,24 @@ setPreviewPlaying(true)
     })
   }, [performanceMode, performanceSections])
 
-  useEffect(() => {
-    if (!performanceMode) return
-
-    const container = performanceScrollRef.current
-    if (!container) return
-
-    const handleScroll = () => {
-      if (!followPlayback || !previewPlaying) {
-        syncActivePerformanceSection()
-      }
-    }
-
-    const raf = window.requestAnimationFrame(() => {
-      if (!followPlayback || !previewPlaying) {
-        syncActivePerformanceSection()
-      }
-    })
-
-    container.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      window.cancelAnimationFrame(raf)
-      container.removeEventListener('scroll', handleScroll)
-    }
-  }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
-
-      useEffect(() => {
+   useEffect(() => {
     if (!performanceMode || !followPlayback || !previewPlaying) return
     if (!performanceSheet.trim()) return
     if (previewBars.length === 0) return
     if (previewBarMeta.length === 0) return
+
+    if (currentPreviewBarIndex <= 0) return
+
+    scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
+  }, [
+    currentPreviewBarIndex,
+    performanceMode,
+    followPlayback,
+    previewPlaying,
+    performanceSheet,
+    previewBars.length,
+    previewBarMeta,
+  ])
 
     scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
   }, [
