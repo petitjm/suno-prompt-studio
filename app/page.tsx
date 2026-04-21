@@ -798,16 +798,6 @@ setPreviewPlaying(true)
     previewBarMeta,
   ])
 
-    scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
-  }, [
-    currentPreviewBarIndex,
-    performanceMode,
-    followPlayback,
-    previewPlaying,
-    performanceSheet,
-    previewBars.length,
-    previewBarMeta,
-  ])
 
   useEffect(() => {
     if (previewPlaying) {
