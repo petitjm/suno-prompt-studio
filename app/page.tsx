@@ -734,7 +734,7 @@ export default function Home() {
     }
   }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
 
-  u  useEffect(() => {
+  useEffect(() => {
     if (!performanceMode || !followPlayback || !previewPlaying) return
 
     const container = performanceScrollRef.current
