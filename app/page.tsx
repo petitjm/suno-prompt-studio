@@ -548,18 +548,16 @@ export default function Home() {
         }, `${index}m`)
         previewEventIdsRef.current.push(barPositionId)
 
-        if (barMeta) {
-          schedulePlaybackFollowForBar({
-            transport,
-            barMeta,
-            index,
-            followPlayback,
-            performanceMode,
-            lastFollowedSectionIdRef,
-            setActivePerformanceSectionId,
-            jumpToPerformanceSection: () => {},
-            previewEventIdsRef,
-          })
+                if (barMeta?.sectionId) {
+          const followId = transport.schedule(() => {
+            if (!followPlayback || !performanceMode) return
+            if (lastFollowedSectionIdRef.current === barMeta.sectionId) return
+
+            lastFollowedSectionIdRef.current = barMeta.sectionId
+            setActivePerformanceSectionId(barMeta.sectionId)
+          }, `${index}m`)
+
+          previewEventIdsRef.current.push(followId)
         }
 
         if (previewPattern === 'piano_block') {
