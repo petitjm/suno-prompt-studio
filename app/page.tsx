@@ -734,32 +734,63 @@ export default function Home() {
     }
   }, [performanceMode, performanceSections, performanceFontSize, followPlayback, previewPlaying])
 
-  useEffect(() => {
+    useEffect(() => {
     if (!performanceMode || !followPlayback || !previewPlaying) return
 
     const container = performanceScrollRef.current
     if (!container) return
     if (!performanceSheet.trim()) return
     if (previewBars.length === 0) return
+    if (previewBarMeta.length === 0) return
 
     const activeBarMeta = previewBarMeta[currentPreviewBarIndex]
     const activeSectionId = activeBarMeta?.sectionId
-
     if (!activeSectionId) return
 
-    const target = performanceSectionRefs.current[activeSectionId]
-    if (!target) return
+    const currentSectionIndex = performanceSections.findIndex((section) => section.id === activeSectionId)
+    if (currentSectionIndex === -1) return
+
+    const currentSection = performanceSections[currentSectionIndex]
+    const nextSection = performanceSections[currentSectionIndex + 1] || null
+
+    const currentSectionEl = performanceSectionRefs.current[currentSection.id]
+    if (!currentSectionEl) return
+
+    const currentSectionStartBar =
+      previewBarMeta.find((bar) => bar.sectionId === currentSection.id)?.barIndex ?? currentPreviewBarIndex
+
+    const nextSectionStartBar = nextSection
+      ? (previewBarMeta.find((bar) => bar.sectionId === nextSection.id)?.barIndex ?? previewBars.length)
+      : previewBars.length
+
+    const sectionBarSpan = Math.max(1, nextSectionStartBar - currentSectionStartBar)
+    const localBarProgress = Math.max(
+      0,
+      Math.min(1, (currentPreviewBarIndex - currentSectionStartBar) / sectionBarSpan)
+    )
 
     const containerRect = container.getBoundingClientRect()
-    const targetRect = target.getBoundingClientRect()
+    const currentRect = currentSectionEl.getBoundingClientRect()
 
     const anchorOffset = container.clientHeight * 0.22
-    const rawTop = container.scrollTop + (targetRect.top - containerRect.top) - anchorOffset
+    const currentTop = container.scrollTop + (currentRect.top - containerRect.top) - anchorOffset
+
+    let targetTop = currentTop
+
+    if (nextSection) {
+      const nextSectionEl = performanceSectionRefs.current[nextSection.id]
+      if (nextSectionEl) {
+        const nextRect = nextSectionEl.getBoundingClientRect()
+        const nextTop = container.scrollTop + (nextRect.top - containerRect.top) - anchorOffset
+        targetTop = currentTop + (nextTop - currentTop) * localBarProgress
+      }
+    }
+
     const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
-    const targetTop = Math.max(0, Math.min(rawTop, maxScrollTop))
+    const clampedTop = Math.max(0, Math.min(targetTop, maxScrollTop))
 
     container.scrollTo({
-      top: targetTop,
+      top: clampedTop,
       behavior: 'smooth',
     })
   }, [
@@ -770,6 +801,7 @@ export default function Home() {
     performanceSheet,
     previewBars.length,
     previewBarMeta,
+    performanceSections,
   ])
 
   useEffect(() => {
