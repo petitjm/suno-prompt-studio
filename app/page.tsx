@@ -753,31 +753,30 @@ setPreviewPlaying(true)
     performanceSectionRefs.current = {}
   }, [performanceSheet])
 
-   useEffect(() => {
-    if (!performanceMode || !followPlayback || !previewPlaying) return
-    if (!performanceSheet.trim()) return
-    if (!previewBarMeta.length) return
-    if (currentPreviewBarIndex <= 0) return
+useEffect(() => {
+  if (!performanceMode || !followPlayback || !previewPlaying) return
+  if (!performanceSheet.trim()) return
+  if (!previewBarMeta.length) return
+  if (currentPreviewBarIndex <= 0) return
 
-    const currentMeta = previewBarMeta[currentPreviewBarIndex]
-    if (!currentMeta?.sectionId) return
+  const currentMeta = previewBarMeta[currentPreviewBarIndex]
+  if (!currentMeta?.sectionId) return
 
-    const sectionId = currentMeta.sectionId
+  const sectionId = currentMeta.sectionId
 
-    if (sectionId !== lastFollowedSectionIdRef.current) {
-      lastFollowedSectionIdRef.current = sectionId
-      setActivePerformanceSectionId(sectionId)
-    }
-
-    scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
-  }, [
-    currentPreviewBarIndex,
-    performanceMode,
-    followPlayback,
-    previewPlaying,
-    performanceSheet,
-    previewBarMeta,
-  ])
+  if (sectionId !== lastFollowedSectionIdRef.current) {
+    lastFollowedSectionIdRef.current = sectionId
+    setActivePerformanceSectionId(sectionId)
+    jumpToPerformanceSection(sectionId)
+  }
+}, [
+  currentPreviewBarIndex,
+  performanceMode,
+  followPlayback,
+  previewPlaying,
+  performanceSheet,
+  previewBarMeta,
+])
 
 
   useEffect(() => {
