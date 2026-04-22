@@ -198,7 +198,31 @@ export default function Page() {
 
             {mode === 'rehearse' && (
               <div className="h-full">
-                <RehearsePanel />
+                <RehearsePanel
+                  previewSection={previewSection}
+                  setPreviewSection={setPreviewSection}
+                  previewPattern={previewPattern}
+                  setPreviewPattern={setPreviewPattern}
+                  previewInstrument={previewInstrument}
+                  setPreviewInstrument={setPreviewInstrument}
+                  previewFeel={previewFeel}
+                  setPreviewFeel={setPreviewFeel}
+                  previewTempo={previewTempo}
+                  setPreviewTempo={setPreviewTempo}
+                  previewLoop={previewLoop}
+                  setPreviewLoop={setPreviewLoop}
+                  previewIncludeBass={previewIncludeBass}
+                  setPreviewIncludeBass={setPreviewIncludeBass}
+                  previewIncludeClick={previewIncludeClick}
+                  setPreviewIncludeClick={setPreviewIncludeClick}
+                  previewBarsLength={previewBars.length}
+                  previewPlaying={previewPlaying}
+                  previewReady={previewReady}
+                  followPlayback={followPlayback}
+                  setFollowPlayback={setFollowPlayback}
+                  startPreviewPlayback={startPreviewPlayback}
+                  stopPreviewPlayback={stopPreviewPlayback}
+                />
               </div>
             )}
 
