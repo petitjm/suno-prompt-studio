@@ -55,8 +55,18 @@ export default function RehearsePanel({
   stopPreviewPlayback,
 }: RehearsePanelProps) {
   return (
+    <div
+      style={{
+        marginBottom: 20,
+        padding: 16,
+        borderRadius: 16,
+        border: '1px solid #3f3f46',
+        background: '#1b1b20',
+      }}
+    >
+      <h3 style={{ marginTop: 0, marginBottom: 14 }}>Audio Preview</h3>
 
-<div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
               <label style={{ cursor: 'pointer' }}>
                 Section
                 <select
