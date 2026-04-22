@@ -54,6 +54,15 @@ export default function RehearsePanel({
   startPreviewPlayback,
   stopPreviewPlayback,
 }: RehearsePanelProps) {
+    const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px',
+  borderRadius: 10,
+  border: '1px solid #444',
+  background: '#3f3f46',
+  color: 'white',
+  boxSizing: 'border-box',
+}
   return (
     <div
       style={{
