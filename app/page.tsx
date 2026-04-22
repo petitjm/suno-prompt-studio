@@ -1,4 +1,8 @@
+
 'use client'
+
+
+import LegacyRehearseUI from '@/components/LegacyRehearseUI'
 
 import React, { useState } from 'react'
 
@@ -74,7 +78,7 @@ export default function Page() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
 
-  const isPerformMode = false
+  
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -189,14 +193,11 @@ export default function Page() {
             </div>
           )}
 
-          {mode === 'rehearse' && (
-            <div>
-              <h1 className="text-xl mb-4">Rehearse</h1>
-              <p className="text-gray-400">
-                Playback, tempo, scroll and practice tools.
-              </p>
-            </div>
-          )}
+            {mode === 'rehearse' && (
+              <div className="h-full">
+                <LegacyRehearseUI />
+              </div>
+            )}
 
           {mode === 'perform' && (
             <div className="text-center text-2xl">
