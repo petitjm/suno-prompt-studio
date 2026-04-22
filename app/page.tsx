@@ -25,7 +25,6 @@ import {
   scheduleCountryTrain,
   scheduleFingerpick,
   schedulePianoBlock,
-  schedulePlaybackFollowForBar,
   stopPreviewPlayback as stopPreviewPlaybackEngine,
 } from '@/lib/previewEngine'
 import {
