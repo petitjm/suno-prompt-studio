@@ -218,6 +218,17 @@ export function classifyOrderedSongSection(label: string): OrderedSongSectionTyp
 export function parseOrderedSongSections(sheet: string): OrderedSongSection[] {
   const performanceSections = parsePerformanceSections(sheet)
 
+  if (performanceSections.length === 0 && sheet.trim()) {
+    return [
+      {
+        id: 'section-0',
+        label: 'Song',
+        type: classifyOrderedSongSection('Song'),
+        content: sheet.trim(),
+      },
+    ]
+  }
+
   return performanceSections.map((section) => ({
     id: section.id,
     label: section.label,
