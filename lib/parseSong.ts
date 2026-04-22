@@ -237,52 +237,7 @@ export function parseOrderedSongSections(sheet: string): OrderedSongSection[] {
   }))
 }
 
-  const isSectionHeader = (value: string) => {
-    const trimmed = value.trim()
-
-    if (/^\[(.+?)\]$/.test(trimmed)) return true
-
-    return /^(intro|verse(?:\s+\d+)?|pre[-\s]?chorus(?:\s+\d+)?|chorus(?:\s+\d+)?|final chorus|bridge|breakdown|outro|refrain|hook)(:)?$/i.test(
-      trimmed
-    )
-  }
-
-  const cleanHeader = (value: string) => {
-    const trimmed = value.trim()
-
-    if (/^\[(.+?)\]$/.test(trimmed)) {
-      return trimmed.replace(/^\[(.+)\]$/, '$1').trim()
-    }
-
-    return trimmed.replace(/:$/, '').trim()
-  }
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-
-    if (isSectionHeader(trimmed)) {
-      pushSection()
-      currentLabel = cleanHeader(trimmed)
-      currentContent = [line]
-    } else {
-      currentContent.push(line)
-    }
-  }
-
-  pushSection()
-
-  if (sections.length === 0 && sheet.trim()) {
-    return [
-      {
-        id: 'ordered-section-0',
-        label: 'Song',
-        type: classifyOrderedSongSection('Song'),
-        content: sheet.trim(),
-      },
-    ]
-  }
-
-  return sections
+ 
 }
 
 export function buildOrderedPreviewBarsFromSections(
