@@ -9,6 +9,7 @@ import SongSheet from '@/components/SongSheet'
 import SectionJumpButtons from '@/components/SectionJumpButtons'
 import {
   buildOrderedPreviewBarsFromSections,
+  buildPreviewBars,
   findMatchingSectionId,
   parseOrderedSongSections,
   parsePerformanceSections,
