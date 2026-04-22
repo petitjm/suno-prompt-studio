@@ -6,6 +6,9 @@ import LegacyRehearseUI from '@/components/LegacyRehearseUI'
 
 import React, { useState } from 'react'
 
+import RehearsePanel from '@/components/RehearsePanel'
+
+
 // ===============================
 // TYPES
 // ===============================
@@ -195,7 +198,7 @@ export default function Page() {
 
             {mode === 'rehearse' && (
               <div className="h-full">
-                <LegacyRehearseUI />
+                <RehearsePanel />
               </div>
             )}
 
