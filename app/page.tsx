@@ -5,6 +5,7 @@
 import LegacyRehearseUI from '@/components/LegacyRehearseUI'
 
 import React, { useState } from 'react'
+import type { PreviewFeel, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
 
 import RehearsePanel from '@/components/RehearsePanel'
 
@@ -80,8 +81,27 @@ function SidebarItem({
 export default function Page() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
+  const startPreviewPlayback = () => {
+  setPreviewReady(true)
+  setPreviewPlaying(true)
+}
 
+const stopPreviewPlayback = () => {
+  setPreviewPlaying(false)
+}
   
+  const [previewReady, setPreviewReady] = useState(false)
+const [previewPlaying, setPreviewPlaying] = useState(false)
+const [previewTempo, setPreviewTempo] = useState(92)
+const [previewFeel, setPreviewFeel] = useState<PreviewFeel>('straight')
+const [previewInstrument, setPreviewInstrument] = useState<PreviewInstrument>('guitar')
+const [previewSection, setPreviewSection] = useState<PreviewSectionKey>('verse')
+const [previewPattern, setPreviewPattern] = useState<PreviewPattern>('ballad_strum')
+const [previewLoop, setPreviewLoop] = useState(true)
+const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
+const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
+const [followPlayback, setFollowPlayback] = useState(true)
+
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
