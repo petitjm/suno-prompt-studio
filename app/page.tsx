@@ -405,6 +405,10 @@ export default function Home() {
   return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
 }, [chords, previewSection, transposeAmount, performanceSheet])
 
+  const orderedSections = parseOrderedSongSections(performanceSheet)
+  return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
+}, [chords, previewSection, transposeAmount, performanceSheet])
+
    const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
   return previewBars.map((bar, index) => ({
     barIndex: index,
@@ -562,8 +566,6 @@ export default function Home() {
   })
 }, `${index}m`)
         previewEventIdsRef.current.push(barPositionId)
-
-                
 
         if (previewPattern === 'piano_block') {
           schedulePianoBlock({
