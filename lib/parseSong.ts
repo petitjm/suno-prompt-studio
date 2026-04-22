@@ -91,38 +91,36 @@ export function parsePerformanceSections(sheet: string): PerformanceSection[] {
     })
   }
 
-  const normalizePlainHeaderLabel = (value: string) => {
-    return value
-      .trim()
-      .replace(/:$/, '')
-      .replace(/\s+/g, ' ')
+  const isSectionHeader = (value: string) => {
+    const trimmed = value.trim()
+
+    if (/^\[(.+?)\]$/.test(trimmed)) return true
+
+    return /^(intro|verse(?:\s+\d+)?|pre[-\s]?chorus(?:\s+\d+)?|chorus(?:\s+\d+)?|final chorus|bridge|breakdown|outro|refrain|hook)(:)?$/i.test(
+      trimmed
+    )
   }
 
-  const isPlainSectionHeader = (value: string) => {
-    return /^(intro|verse(?:\s+\d+)?|pre-chorus|chorus(?:\s+\d+)?|bridge|middle 8|outro|refrain|hook)(:)?$/i.test(
-      value.trim()
-    )
+  const cleanHeader = (value: string) => {
+    const trimmed = value.trim()
+
+    if (/^\[(.+?)\]$/.test(trimmed)) {
+      return trimmed.replace(/^\[(.+)\]$/, '$1').trim()
+    }
+
+    return trimmed.replace(/:$/, '').trim()
   }
 
   for (const line of lines) {
     const trimmed = line.trim()
-    const bracketMatch = trimmed.match(/^\[(.+?)\]$/)
 
-    if (bracketMatch) {
+    if (isSectionHeader(trimmed)) {
       pushSection()
-      currentLabel = bracketMatch[1].trim()
+      currentLabel = cleanHeader(trimmed)
       currentContent = [line]
-      continue
+    } else {
+      currentContent.push(line)
     }
-
-    if (isPlainSectionHeader(trimmed)) {
-      pushSection()
-      currentLabel = normalizePlainHeaderLabel(trimmed)
-      currentContent = [line]
-      continue
-    }
-
-    currentContent.push(line)
   }
 
   pushSection()
@@ -218,23 +216,15 @@ export function classifyOrderedSongSection(label: string): OrderedSongSectionTyp
 }
 
 export function parseOrderedSongSections(sheet: string): OrderedSongSection[] {
-  const lines = sheet.split('\n')
-  const sections: OrderedSongSection[] = []
+  const performanceSections = parsePerformanceSections(sheet)
 
-  let currentLabel = 'Song'
-  let currentContent: string[] = []
-
-  const pushSection = () => {
-    const content = currentContent.join('\n').trim()
-    if (!content) return
-
-    sections.push({
-      id: `ordered-section-${sections.length}`,
-      label: currentLabel,
-      type: classifyOrderedSongSection(currentLabel),
-      content,
-    })
-  }
+  return performanceSections.map((section) => ({
+    id: section.id,
+    label: section.label,
+    type: classifyOrderedSongSection(section.label),
+    content: section.content,
+  }))
+}
 
   const isSectionHeader = (value: string) => {
     const trimmed = value.trim()

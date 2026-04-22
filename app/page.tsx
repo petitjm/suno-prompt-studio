@@ -401,6 +401,10 @@ export default function Home() {
   return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
 }, [chords, previewSection, transposeAmount, performanceSheet])
 
+  const orderedSections = parseOrderedSongSections(performanceSheet)
+  return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
+}, [chords, previewSection, transposeAmount, performanceSheet])
+
    const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
   return previewBars.map((bar, index) => ({
     barIndex: index,
@@ -552,8 +556,6 @@ export default function Home() {
       previewBars.forEach((bar, index) => {
         const chordNotes = chordSymbolToNotes(bar.chord, 4)
         const bassNote = chordSymbolToBassNote(bar.chord, 2)
-        const barMeta = previewBarMeta[index]
-
         const barPositionId = transport.schedule(() => {
   window.requestAnimationFrame(() => {
     setCurrentPreviewBarIndex(index)
