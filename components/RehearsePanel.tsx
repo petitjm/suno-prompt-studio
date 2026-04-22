@@ -1,10 +1,60 @@
 'use client'
 
 import React from 'react'
+import type { PreviewFeel, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
 
-export default function RehearsePanel() {
+type RehearsePanelProps = {
+  previewSection: PreviewSectionKey
+  setPreviewSection: (value: PreviewSectionKey) => void
+  previewPattern: PreviewPattern
+  setPreviewPattern: (value: PreviewPattern) => void
+  previewInstrument: PreviewInstrument
+  setPreviewInstrument: (value: PreviewInstrument) => void
+  previewFeel: PreviewFeel
+  setPreviewFeel: (value: PreviewFeel) => void
+  previewTempo: number
+  setPreviewTempo: (value: number) => void
+  previewLoop: boolean
+  setPreviewLoop: (value: boolean) => void
+  previewIncludeBass: boolean
+  setPreviewIncludeBass: (value: boolean) => void
+  previewIncludeClick: boolean
+  setPreviewIncludeClick: (value: boolean) => void
+  previewBarsLength: number
+  previewPlaying: boolean
+  previewReady: boolean
+  followPlayback: boolean
+  setFollowPlayback: (value: boolean) => void
+  startPreviewPlayback: () => void
+  stopPreviewPlayback: () => void
+}
+
+export default function RehearsePanel({
+  previewSection,
+  setPreviewSection,
+  previewPattern,
+  setPreviewPattern,
+  previewInstrument,
+  setPreviewInstrument,
+  previewFeel,
+  setPreviewFeel,
+  previewTempo,
+  setPreviewTempo,
+  previewLoop,
+  setPreviewLoop,
+  previewIncludeBass,
+  setPreviewIncludeBass,
+  previewIncludeClick,
+  setPreviewIncludeClick,
+  previewBarsLength,
+  previewPlaying,
+  previewReady,
+  followPlayback,
+  setFollowPlayback,
+  startPreviewPlayback,
+  stopPreviewPlayback,
+}: RehearsePanelProps) {
   return (
-    <div>
 
 <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
               <label style={{ cursor: 'pointer' }}>
