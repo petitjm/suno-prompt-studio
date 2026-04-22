@@ -377,38 +377,28 @@ export default function Home() {
   }, [chords?.capo, transposeAmount])
 
     const previewBars = useMemo(() => {
-    const transposedChordData: ChordResponse | null = chords
-      ? {
-          ...chords,
-          key: transposeTextPreservingLayout(chords.key || '', transposeAmount),
-          verse: transposeTextPreservingLayout(chords.verse || '', transposeAmount),
-          chorus: transposeTextPreservingLayout(chords.chorus || '', transposeAmount),
-          bridge: transposeTextPreservingLayout(chords.bridge || '', transposeAmount),
-        }
-      : null
+  const transposedChordData: ChordResponse | null = chords
+    ? {
+        ...chords,
+        key: transposeTextPreservingLayout(chords.key || '', transposeAmount),
+        verse: transposeTextPreservingLayout(chords.verse || '', transposeAmount),
+        chorus: transposeTextPreservingLayout(chords.chorus || '', transposeAmount),
+        bridge: transposeTextPreservingLayout(chords.bridge || '', transposeAmount),
+      }
+    : null
 
-    if (!transposedChordData) return []
+  if (!transposedChordData) return []
 
-    if (previewSection !== 'full_song') {
-      return buildOrderedPreviewBarsFromSections(
-        parseOrderedSongSections(
-          previewSection === 'verse'
-            ? '[Verse]\n...'
-            : previewSection === 'chorus'
-              ? '[Chorus]\n...'
-              : '[Bridge]\n...'
-        ),
-        {
-          ...transposedChordData,
-          verse: previewSection === 'verse' ? transposedChordData.verse : '',
-          chorus: previewSection === 'chorus' ? transposedChordData.chorus : '',
-          bridge: previewSection === 'bridge' ? transposedChordData.bridge : '',
-        }
-      )
-    }
+  if (previewSection !== 'full_song') {
+    return buildPreviewBars(transposedChordData, previewSection).map((bar) => ({
+      ...bar,
+      sectionId: null,
+    }))
+  }
 
-    return buildOrderedPreviewBarsFromSections(parseOrderedSongSections(performanceSheet), transposedChordData)
-  }, [chords, previewSection, transposeAmount, performanceSheet])
+  const orderedSections = parseOrderedSongSections(performanceSheet)
+  return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
+}, [chords, previewSection, transposeAmount, performanceSheet])
 
    const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
   return previewBars.map((bar, index) => ({
