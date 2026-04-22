@@ -74,15 +74,14 @@ export default function Page() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
 
-  const isPerformMode = mode === 'perform'
+  const isPerformMode = false
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* ===============================
           SIDEBAR
       =============================== */}
-      {!isPerformMode && (
-        <div
+      <div
           className={`${
             sidebarCollapsed ? 'w-16' : 'w-56'
           } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
@@ -149,13 +148,13 @@ export default function Page() {
       =============================== */}
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        {!isPerformMode && (
+        
           <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
             <span className="text-sm text-gray-400">
               Mode: {mode.toUpperCase()}
             </span>
           </div>
-        )}
+       
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6">
