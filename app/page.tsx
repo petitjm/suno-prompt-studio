@@ -221,7 +221,8 @@ export default function Home() {
   const [performanceScrollSpeed, setPerformanceScrollSpeed] = useState(2)
   const [performanceIsScrolling, setPerformanceIsScrolling] = useState(false)
   
-  const [playbackScrollRate, setPlaybackScrollRate] = useState(6)const [performanceFontSize, setPerformanceFontSize] = useState(28)
+  const [playbackScrollRate, setPlaybackScrollRate] = useState(6)
+  const [performanceFontSize, setPerformanceFontSize] = useState(28)
   const [activePerformanceSectionId, setActivePerformanceSectionId] = useState<string | null>(null)
 
   const [previewReady, setPreviewReady] = useState(false)
