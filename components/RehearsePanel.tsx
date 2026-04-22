@@ -63,6 +63,15 @@ export default function RehearsePanel({
   color: 'white',
   boxSizing: 'border-box',
 }
+const primaryButtonStyle: React.CSSProperties = {
+  padding: '10px 14px',
+  borderRadius: 10,
+  border: 'none',
+  background: '#2563eb',
+  color: 'white',
+  fontWeight: 600,
+  cursor: 'pointer',
+}
   return (
     <div
       style={{
