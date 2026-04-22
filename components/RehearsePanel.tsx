@@ -180,11 +180,11 @@ export default function RehearsePanel({
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
               <button
                 onClick={startPreviewPlayback}
-                disabled={!previewBars.length}
+                disabled={!previewBarsLength}
                 style={{
                   ...primaryButtonStyle,
-                  opacity: previewBars.length ? 1 : 0.55,
-                  cursor: previewBars.length ? 'pointer' : 'not-allowed',
+                  opacity: previewBarsLength ? 1 : 0.55,
+                  cursor: previewBarsLength ? 'pointer' : 'not-allowed',
                 }}
               >
                 {previewPlaying ? 'Restart Preview' : previewReady ? 'Play Preview' : 'Enable Audio + Play'}
@@ -204,8 +204,8 @@ export default function RehearsePanel({
             </div>
 
             <div style={{ color: '#a1a1aa', fontSize: 13 }}>
-              {previewBars.length > 0
-                ? `${previewBars.length} preview bar${previewBars.length === 1 ? '' : 's'} ready`
+              {previewBarsLength > 0
+                ? `${previewBarsLength} preview bar${previewBarsLength === 1 ? '' : 's'} ready`
                 : 'Generate or load chords to enable preview'}
             </div>
 
