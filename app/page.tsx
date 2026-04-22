@@ -740,14 +740,14 @@ setPreviewPlaying(true)
     })
   }
 
-  const nudgeScrollWithinSection = () => {
+const nudgeScrollWithinSection = () => {
   const container = performanceScrollRef.current
   if (!container) return
 
   const currentTop = container.scrollTop
   const maxScrollTop = container.scrollHeight - container.clientHeight
 
-  const nextTop = Math.min(maxScrollTop, currentTop + 6) // very gentle
+  const nextTop = Math.min(maxScrollTop, currentTop + playbackScrollRate)
 
   container.scrollTo({
     top: nextTop,
@@ -2897,6 +2897,20 @@ useEffect(() => {
               />
               <span style={{ marginLeft: 8 }}>{performanceFontSize}px</span>
             </label>
+
+            <label style={{ cursor: 'pointer' }}>
+              Scroll rate
+              <input
+                type="range"
+                min={1}
+                max={12}
+                value={playbackScrollRate}
+                onChange={(e) => setPlaybackScrollRate(Number(e.target.value))}
+                style={{ marginLeft: 10 }}
+              />
+              <span style={{ marginLeft: 8 }}>{playbackScrollRate}</span>
+            </label>
+
 
             <label style={{ cursor: 'pointer' }}>
               Scroll speed
