@@ -1,3 +1,11 @@
+'use client'
+
+import React from 'react'
+
+export default function RehearsePanel() {
+  return (
+    <div>
+
 <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
               <label style={{ cursor: 'pointer' }}>
                 Section
@@ -131,3 +139,7 @@
                 ? `${previewBars.length} preview bar${previewBars.length === 1 ? '' : 's'} ready`
                 : 'Generate or load chords to enable preview'}
             </div>
+
+    </div>
+  )
+}
