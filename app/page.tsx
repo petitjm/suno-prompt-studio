@@ -401,13 +401,7 @@ export default function Home() {
   return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
 }, [chords, previewSection, transposeAmount, performanceSheet])
 
-  const orderedSections = parseOrderedSongSections(performanceSheet)
-  return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
-}, [chords, previewSection, transposeAmount, performanceSheet])
-
-  const orderedSections = parseOrderedSongSections(performanceSheet)
-  return buildOrderedPreviewBarsFromSections(orderedSections, transposedChordData)
-}, [chords, previewSection, transposeAmount, performanceSheet])
+ 
 
    const previewBarMeta = useMemo<PreviewBarMeta[]>(() => {
   return previewBars.map((bar, index) => ({
