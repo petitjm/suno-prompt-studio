@@ -763,12 +763,16 @@ useEffect(() => {
   if (!currentMeta?.sectionId) return
 
   const sectionId = currentMeta.sectionId
+  const sectionChanged = sectionId !== lastFollowedSectionIdRef.current
 
-  if (sectionId !== lastFollowedSectionIdRef.current) {
+  if (sectionChanged) {
     lastFollowedSectionIdRef.current = sectionId
     setActivePerformanceSectionId(sectionId)
     jumpToPerformanceSection(sectionId)
+    return
   }
+
+  scrollPerformanceToBarIndex(currentPreviewBarIndex, 'smooth')
 }, [
   currentPreviewBarIndex,
   performanceMode,
