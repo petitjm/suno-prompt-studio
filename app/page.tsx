@@ -555,21 +555,13 @@ export default function Home() {
         const barMeta = previewBarMeta[index]
 
         const barPositionId = transport.schedule(() => {
-          setCurrentPreviewBarIndex(index)
-        }, `${index}m`)
+  window.requestAnimationFrame(() => {
+    setCurrentPreviewBarIndex(index)
+  })
+}, `${index}m`)
         previewEventIdsRef.current.push(barPositionId)
 
-                if (barMeta?.sectionId) {
-          const followId = transport.schedule(() => {
-            if (!followPlayback || !performanceMode) return
-            if (lastFollowedSectionIdRef.current === barMeta.sectionId) return
-
-            lastFollowedSectionIdRef.current = barMeta.sectionId
-            setActivePerformanceSectionId(barMeta.sectionId)
-          }, `${index}m`)
-
-          previewEventIdsRef.current.push(followId)
-        }
+                
 
         if (previewPattern === 'piano_block') {
           schedulePianoBlock({
