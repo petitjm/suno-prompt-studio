@@ -1208,6 +1208,6 @@ export default function LegacyRehearseUI() {
         </div>
       </div>
     </div>
-    }
+    )
 
    }
