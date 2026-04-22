@@ -666,7 +666,7 @@ if (followPlayback && performanceMode && startSectionId) {
   lastFollowedSectionIdRef.current = startSectionId
 
   window.requestAnimationFrame(() => {
-    scrollPerformanceToBarIndex(safeStartBarIndex, 'auto')
+    jumpToPerformanceSection(startSectionId)
   })
 }
 
@@ -776,7 +776,7 @@ setPreviewPlaying(true)
     if (!performanceMode || !followPlayback || !previewPlaying) return
     if (!performanceSheet.trim()) return
     if (!previewBarMeta.length) return
-    if (currentPreviewBarIndex < 0) return
+    if (currentPreviewBarIndex <= 0) return
 
     const currentMeta = previewBarMeta[currentPreviewBarIndex]
     if (!currentMeta?.sectionId) return
