@@ -740,6 +740,21 @@ setPreviewPlaying(true)
     })
   }
 
+  const nudgeScrollWithinSection = () => {
+  const container = performanceScrollRef.current
+  if (!container) return
+
+  const currentTop = container.scrollTop
+  const maxScrollTop = container.scrollHeight - container.clientHeight
+
+  const nextTop = Math.min(maxScrollTop, currentTop + 6) // very gentle
+
+  container.scrollTo({
+    top: nextTop,
+    behavior: 'smooth',
+  })
+}
+
   const jumpToNextPerformanceSection = async () => {
     if (!nextPerformanceSection) return
     await handlePerformanceSectionJump(nextPerformanceSection.id)
@@ -768,6 +783,9 @@ useEffect(() => {
     lastFollowedSectionIdRef.current = sectionId
     setActivePerformanceSectionId(sectionId)
     jumpToPerformanceSection(sectionId)
+  } else {
+    // Only nudge when staying in same section
+    nudgeScrollWithinSection()
   }
 }, [
   currentPreviewBarIndex,
