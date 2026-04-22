@@ -238,7 +238,7 @@ export function parseOrderedSongSections(sheet: string): OrderedSongSection[] {
 }
 
  
-}
+
 
 export function buildOrderedPreviewBarsFromSections(
   sections: OrderedSongSection[],
