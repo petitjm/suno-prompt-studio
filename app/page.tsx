@@ -3,12 +3,11 @@
 
 
 import LegacyRehearseUI from '@/components/LegacyRehearseUI'
-
 import React, { useState } from 'react'
 import type { PreviewFeel, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
-
 import RehearsePanel from '@/components/RehearsePanel'
-
+import { buildPreviewBars } from '@/lib/parseSong'
+import type { ChordResponse } from '@/types/song'
 
 // ===============================
 // TYPES
@@ -86,11 +85,11 @@ export default function Page() {
   setPreviewPlaying(true)
 }
 
-const stopPreviewPlayback = () => {
+  const stopPreviewPlayback = () => {
   setPreviewPlaying(false)
 }
   
-  const [previewReady, setPreviewReady] = useState(false)
+const [previewReady, setPreviewReady] = useState(false)
 const [previewPlaying, setPreviewPlaying] = useState(false)
 const [previewTempo, setPreviewTempo] = useState(92)
 const [previewFeel, setPreviewFeel] = useState<PreviewFeel>('straight')
@@ -101,7 +100,10 @@ const [previewLoop, setPreviewLoop] = useState(true)
 const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
 const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
 const [followPlayback, setFollowPlayback] = useState(true)
-
+const [chords] = useState<ChordResponse | null>(null)
+const previewBars = React.useMemo(() => {
+  return buildPreviewBars(chords, previewSection)
+}, [chords, previewSection])
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -235,7 +237,7 @@ const [followPlayback, setFollowPlayback] = useState(true)
                   setPreviewIncludeBass={setPreviewIncludeBass}
                   previewIncludeClick={previewIncludeClick}
                   setPreviewIncludeClick={setPreviewIncludeClick}
-                  previewBarsLength={1}
+                  previewBarsLength={previewBars.length}
                   previewPlaying={previewPlaying}
                   previewReady={previewReady}
                   followPlayback={followPlayback}
