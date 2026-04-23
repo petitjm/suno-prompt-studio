@@ -72,6 +72,17 @@ const primaryButtonStyle: React.CSSProperties = {
   fontWeight: 600,
   cursor: 'pointer',
 }
+
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: '10px 14px',
+  borderRadius: 10,
+  border: '1px solid #52525b',
+  background: '#3f3f46',
+  color: 'white',
+  fontWeight: 600,
+  cursor: 'pointer',
+}
+
   return (
     <div
       style={{
