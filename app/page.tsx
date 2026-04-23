@@ -85,6 +85,7 @@ function SidebarItem({
 // ===============================
 
 export default function Page() {
+    const [currentBarIndex, setCurrentBarIndex] = useState(0)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
 
@@ -102,7 +103,6 @@ export default function Page() {
 
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
-
   const [chords] = useState<ChordResponse | null>({
     key: 'G',
     capo: '0',
@@ -135,9 +135,43 @@ export default function Page() {
 
     previewBars.forEach((bar, index) => {
       const timeoutId = window.setTimeout(() => {
+          if (followPlayback && bar.label) {
+              setCurrentBarIndex(index)
+              scrollToSection(bar.label.toLowerCase())
+            }
         const chord = bar.chord || 'C'
         const rootMatch = chord.match(/^[A-G](?:#|b)?/)
         const root = rootMatch?.[0] || 'C'
+
+       const scrollToPerformanceSection = (sectionLabel: string) => {
+  const normalized = sectionLabel.toLowerCase()
+
+  const match = performanceSections.find((section) => {
+    const label = section.label.toLowerCase()
+    return label === normalized || label.includes(normalized)
+  })
+
+  if (!match) return
+
+  const el = performanceSectionRefs.current[match.id]
+  if (!el) return
+
+  el.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+  })
+}
+
+        const scrollToSection = (section: string) => {
+        const el = sectionRefs.current[section]
+          if (el) {
+            el.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            })
+          }
+        }
+
 
         const noteMap: Record<string, string> = {
           C: 'C4',
