@@ -12,9 +12,7 @@ import * as Tone from 'tone'
 
 
 
-const clearPreviewTimeouts = () => {
-  previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
-  previewTimeoutsRef.current = []
+previewTimeoutsRef.current = []
 }
 
 
@@ -143,17 +141,11 @@ export default function Page() {
   setPreviewPlaying(true)
 }
 
-  const stopPreviewPlayback = () => {
-  clearPreviewTimeouts()
-  setPreviewPlaying(false)
-}
+
+
+
   
-React.useEffect(() => {
-  return () => {
-    clearPreviewTimeouts()
-    previewSynthRef.current?.dispose()
-  }
-}, [])
+
 
 
 const [previewReady, setPreviewReady] = useState(false)
@@ -169,6 +161,9 @@ const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
 const [followPlayback, setFollowPlayback] = useState(true)
 const previewSynthRef = React.useRef<Tone.Synth | null>(null)
 const previewTimeoutsRef = React.useRef<number[]>([])
+const clearPreviewTimeouts = () => {
+  previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+  
 const [chords] = useState<ChordResponse | null>({
   key: 'G',
   capo: '0',
@@ -180,6 +175,18 @@ const [chords] = useState<ChordResponse | null>({
 const previewBars = React.useMemo(() => {
   return buildPreviewBars(chords, previewSection)
 }, [chords, previewSection])
+
+  const stopPreviewPlayback = () => {
+  clearPreviewTimeouts()
+  setPreviewPlaying(false)
+}
+
+React.useEffect(() => {
+  return () => {
+    clearPreviewTimeouts()
+    previewSynthRef.current?.dispose()
+  }
+}, [])
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
