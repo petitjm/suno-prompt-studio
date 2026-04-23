@@ -130,7 +130,7 @@ const secondaryButtonStyle: React.CSSProperties = {
                   value={previewInstrument}
                   onChange={(e) => setPreviewInstrument(e.target.value as PreviewInstrument)}
                   style={{ ...inputStyle, width: 170, marginLeft: 10, padding: '10px 12px' }}
-                  disabled={previewPattern === 'piano_block'}
+                  disabled={previewPattern === 'piano_block' || previewPattern === 'fingerpick'}
                 >
                   <option value="guitar">Guitar</option>
                   <option value="piano">Piano</option>

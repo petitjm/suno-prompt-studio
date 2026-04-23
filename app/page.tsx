@@ -216,6 +216,15 @@ export default function Page() {
   }
 
   React.useEffect(() => {
+  if (previewPattern === 'piano_block') {
+    setPreviewInstrument('piano')
+  } else if (previewPattern === 'fingerpick') {
+    setPreviewInstrument('guitar')
+  }
+}, [previewPattern])
+
+
+  React.useEffect(() => {
     return () => {
       clearPreviewTimeouts()
       previewSynthRef.current?.dispose()
