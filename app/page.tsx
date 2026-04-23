@@ -159,7 +159,21 @@ export default function Page() {
           B: 'B4',
         }
 
-        synth.triggerAttackRelease(noteMap[root] || 'C4', '8n')
+        const chordNotes: Record<string, string[]> = {
+          C: ['C4', 'E4', 'G4'],
+          D: ['D4', 'F#4', 'A4'],
+          Em: ['E4', 'G4', 'B4'],
+          F: ['F4', 'A4', 'C5'],
+          G: ['G4', 'B4', 'D5'],
+          Am: ['A4', 'C5', 'E5'],
+        }
+
+        const chordKey = chord.replace(/[^A-G#m]/g, '') // crude cleanup
+        const notes = chordNotes[chordKey] || ['C4', 'E4', 'G4']
+
+        notes.forEach(note => {
+          synth.triggerAttackRelease(note, '8n')
+        })
       }, index * msPerBar)
 
       previewTimeoutsRef.current.push(timeoutId)
