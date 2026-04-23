@@ -104,7 +104,11 @@ export default function Page() {
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
-  const performanceSections: PerformanceSection[] = []
+  const performanceSections: PerformanceSection[] = [
+        { id: 'verse', label: 'Verse', content: chords?.verse || '' },
+        { id: 'chorus', label: 'Chorus', content: chords?.chorus || '' },
+        { id: 'bridge', label: 'Bridge', content: chords?.bridge || '' },
+               ]
 
   const [chords] = useState<ChordResponse | null>({
     key: 'G',
@@ -317,11 +321,14 @@ export default function Page() {
           )}
 
           {mode === 'sheet' && (
-            <div>
-              <h1 className="text-xl mb-4">Song Sheet</h1>
-              <p className="text-gray-400">View and edit structured song sections.</p>
-            </div>
-          )}
+              <SongSheet
+                performanceSheet="preview"
+                performanceSections={performanceSections}
+                performanceFontSize={18}
+                activePerformanceSectionId={null}
+                performanceSectionRefs={performanceSectionRefs}
+              />
+            )}
 
           {mode === 'rehearse' && (
             <div className="h-full">
@@ -354,10 +361,14 @@ export default function Page() {
           )}
 
           {mode === 'perform' && (
-            <div className="text-center text-2xl">
-              🎤 Performance Mode — full screen lyrics
-            </div>
-          )}
+              <SongSheet
+                performanceSheet="preview"
+                performanceSections={performanceSections}
+                performanceFontSize={24}
+                activePerformanceSectionId={null}
+                performanceSectionRefs={performanceSectionRefs}
+              />
+            )}
 
           {mode === 'video' && (
             <div>
