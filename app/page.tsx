@@ -133,14 +133,16 @@ export default function Page() {
   setPreviewPlaying(true)
 }
 
-  const synth = new Tone.Synth().toDestination()
   synth.triggerAttackRelease('C4', '8n')
 
   setPreviewReady(true)
   setPreviewPlaying(true)
 }
 
-
+ const stopPreviewPlayback = () => {
+  clearPreviewTimeouts()
+  setPreviewPlaying(false)
+}
 
 
   
@@ -179,10 +181,7 @@ const previewBars = React.useMemo(() => {
 const startPreviewPlayback = async () => {
   await Tone.start()
 
-  const stopPreviewPlayback = () => {
-  clearPreviewTimeouts()
-  setPreviewPlaying(false)
-}
+ 
 
 React.useEffect(() => {
   return () => {
