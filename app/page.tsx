@@ -85,111 +85,101 @@ function SidebarItem({
 // ===============================
 
 export default function Page() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
-  
 
+  const [previewReady, setPreviewReady] = useState(false)
+  const [previewPlaying, setPreviewPlaying] = useState(false)
+  const [previewTempo, setPreviewTempo] = useState(92)
+  const [previewFeel, setPreviewFeel] = useState<PreviewFeel>('straight')
+  const [previewInstrument, setPreviewInstrument] = useState<PreviewInstrument>('guitar')
+  const [previewSection, setPreviewSection] = useState<PreviewSectionKey>('verse')
+  const [previewPattern, setPreviewPattern] = useState<PreviewPattern>('ballad_strum')
+  const [previewLoop, setPreviewLoop] = useState(true)
+  const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
+  const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
+  const [followPlayback, setFollowPlayback] = useState(true)
 
+  const previewSynthRef = React.useRef<Tone.Synth | null>(null)
+  const previewTimeoutsRef = React.useRef<number[]>([])
 
-  const synth = previewSynthRef.current
-  const msPerBar = (60 / previewTempo) * 4 * 1000
-  const startPreviewPlayback = async () => {
-  previewBars.forEach((bar, index) => {
-    const timeoutId = window.setTimeout(() => {
-      const chord = bar.chord || 'C'
-      const rootMatch = chord.match(/^[A-G](?:#|b)?/)
-      const root = rootMatch?.[0] || 'C'
-      const noteMap: Record<string, string> = {
-        C: 'C4',
-        'C#': 'C#4',
-        Db: 'C#4',
-        D: 'D4',
-        'D#': 'D#4',
-        Eb: 'D#4',
-        E: 'E4',
-        F: 'F4',
-        'F#': 'F#4',
-        Gb: 'F#4',
-        G: 'G4',
-        'G#': 'G#4',
-        Ab: 'G#4',
-        A: 'A4',
-        'A#': 'A#4',
-        Bb: 'A#4',
-        B: 'B4',
-      }
-
-      synth.triggerAttackRelease(noteMap[root] || 'C4', '8n')
-    }, index * msPerBar)
-
-    previewTimeoutsRef.current.push(timeoutId)
+  const [chords] = useState<ChordResponse | null>({
+    key: 'G',
+    capo: '0',
+    verse: '| G | D | Em | C |',
+    chorus: '| C | G | D | Em |',
+    bridge: '| Em | C | G | D |',
+    notes: '',
   })
 
-  setPreviewReady(true)
-  setPreviewPlaying(true)
-}
-  synth.triggerAttackRelease('C4', '8n')
+  const previewBars = React.useMemo(() => {
+    return buildPreviewBars(chords, previewSection)
+  }, [chords, previewSection])
 
-  setPreviewReady(true)
-  setPreviewPlaying(true)
-}
-
- const stopPreviewPlayback = () => {
-  clearPreviewTimeouts()
-  setPreviewPlaying(false)
-}
-
-
-  
-
-
-
-const [previewReady, setPreviewReady] = useState(false)
-const [previewPlaying, setPreviewPlaying] = useState(false)
-const [previewTempo, setPreviewTempo] = useState(92)
-const [previewFeel, setPreviewFeel] = useState<PreviewFeel>('straight')
-const [previewInstrument, setPreviewInstrument] = useState<PreviewInstrument>('guitar')
-const [previewSection, setPreviewSection] = useState<PreviewSectionKey>('verse')
-const [previewPattern, setPreviewPattern] = useState<PreviewPattern>('ballad_strum')
-const [previewLoop, setPreviewLoop] = useState(true)
-const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
-const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
-const [followPlayback, setFollowPlayback] = useState(true)
-const previewSynthRef = React.useRef<Tone.Synth | null>(null)
-const previewTimeoutsRef = React.useRef<number[]>([])
-const clearPreviewTimeouts = () => {
-  previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
-  
-const [chords] = useState<ChordResponse | null>({
-  key: 'G',
-  capo: '0',
-  verse: '| G | D | Em | C |',
-  chorus: '| C | G | D | Em |',
-  bridge: '| Em | C | G | D |',
-  notes: '',
-})
-
-const previewBars = React.useMemo(() => {
-  return buildPreviewBars(chords, previewSection)
-}, [chords, previewSection])
-
-const clearPreviewTimeouts = () => {
-  previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
-  previewTimeoutsRef.current = []
-}
-
-const startPreviewPlayback = async () => {
-  await Tone.start()
-
- 
-
-React.useEffect(() => {
-  return () => {
-    clearPreviewTimeouts()
-    previewSynthRef.current?.dispose()
+  const clearPreviewTimeouts = () => {
+    previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    previewTimeoutsRef.current = []
   }
-}, [])
 
+  const startPreviewPlayback = async () => {
+    await Tone.start()
+
+    clearPreviewTimeouts()
+
+    if (!previewSynthRef.current) {
+      previewSynthRef.current = new Tone.Synth().toDestination()
+    }
+
+    const synth = previewSynthRef.current
+    const msPerBar = (60 / previewTempo) * 4 * 1000
+
+    previewBars.forEach((bar, index) => {
+      const timeoutId = window.setTimeout(() => {
+        const chord = bar.chord || 'C'
+        const rootMatch = chord.match(/^[A-G](?:#|b)?/)
+        const root = rootMatch?.[0] || 'C'
+
+        const noteMap: Record<string, string> = {
+          C: 'C4',
+          'C#': 'C#4',
+          Db: 'C#4',
+          D: 'D4',
+          'D#': 'D#4',
+          Eb: 'D#4',
+          E: 'E4',
+          F: 'F4',
+          'F#': 'F#4',
+          Gb: 'F#4',
+          G: 'G4',
+          'G#': 'G#4',
+          Ab: 'G#4',
+          A: 'A4',
+          'A#': 'A#4',
+          Bb: 'A#4',
+          B: 'B4',
+        }
+
+        synth.triggerAttackRelease(noteMap[root] || 'C4', '8n')
+      }, index * msPerBar)
+
+      previewTimeoutsRef.current.push(timeoutId)
+    })
+
+    setPreviewReady(true)
+    setPreviewPlaying(true)
+  }
+
+  const stopPreviewPlayback = () => {
+    clearPreviewTimeouts()
+    setPreviewPlaying(false)
+  }
+
+  React.useEffect(() => {
+    return () => {
+      clearPreviewTimeouts()
+      previewSynthRef.current?.dispose()
+    }
+  }, [])
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* ===============================
