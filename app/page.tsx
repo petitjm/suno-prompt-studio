@@ -10,7 +10,7 @@ import SongSheet from '@/components/SongSheet'
 import { buildPreviewBars } from '@/lib/parseSong'
 import type { ChordResponse } from '@/types/song'
 import * as Tone from 'tone'
-
+import { buildPreviewBars, parsePerformanceSections } from '@/lib/parseSong'
 
 
 
@@ -107,14 +107,9 @@ export default function Page() {
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
 
-  const [chords] = useState<ChordResponse | null>({
-    key: 'G',
-    capo: '0',
-    verse: '| G | D | Em | C |',
-    chorus: '| C | G | D | Em |',
-    bridge: '| Em | C | G | D |',
-    notes: '',
-  })
+const [performanceSheet, setPerformanceSheet] = useState('')
+const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
+const [chords, setChords] = useState<ChordResponse | null>(null)
 
     const performanceSections: PerformanceSection[] = [
         { id: 'verse', label: 'Verse', content: chords?.verse || '' },
@@ -149,6 +144,31 @@ export default function Page() {
       block: 'center',
     })
   }
+
+  const loadSavedSongSheet = async (projectId: string) => {
+  try {
+    const res = await fetch(`/api/projects/${projectId}`)
+    const data = await res.json()
+
+    // adjust these keys to your real API response
+    const nextSheet =
+      data.performanceSheet ||
+      data.songSheet ||
+      data.project?.performanceSheet ||
+      ''
+
+    const nextChords =
+      data.chords ||
+      data.project?.chords ||
+      null
+
+    setPerformanceSheet(nextSheet)
+    setChords(nextChords)
+  } catch (err) {
+    console.error('Failed to load saved song sheet', err)
+  }
+}
+
 
   const startPreviewPlayback = async () => {
     await Tone.start()
@@ -226,6 +246,11 @@ export default function Page() {
     clearPreviewTimeouts()
     setPreviewPlaying(false)
   }
+
+  React.useEffect(() => {
+  setPerformanceSections(parsePerformanceSections(performanceSheet))
+}, [performanceSheet])
+
 
   React.useEffect(() => {
     if (previewPattern === 'piano_block') {
@@ -310,11 +335,20 @@ export default function Page() {
 
         <div className="flex-1 overflow-auto p-6">
           {mode === 'write' && (
-            <div>
-              <h1 className="text-xl mb-4">Write</h1>
-              <p className="text-gray-400">Lyrics, ideas, and structure go here.</p>
-            </div>
-          )}
+  <div>
+    <h1 className="text-xl mb-4">Write</h1>
+    <p className="text-gray-400 mb-4">
+      Lyrics, ideas, and structure go here.
+    </p>
+
+    <button
+      onClick={() => loadSavedSongSheet('page to modules')}
+      className="px-4 py-2 rounded bg-blue-600 text-white"
+    >
+      Load Saved SongSheet
+    </button>
+  </div>
+)}
 
           {mode === 'chords' && (
             <div>
@@ -325,7 +359,7 @@ export default function Page() {
 
           {mode === 'sheet' && (
               <SongSheet
-                performanceSheet="preview"
+                performanceSheet={performanceSheet}
                 performanceSections={performanceSections}
                 performanceFontSize={18}
                 activePerformanceSectionId={null}
@@ -365,7 +399,7 @@ export default function Page() {
 
           {mode === 'perform' && (
               <SongSheet
-                performanceSheet="preview"
+                performanceSheet={performanceSheet}
                 performanceSections={performanceSections}
                 performanceFontSize={24}
                 activePerformanceSectionId={null}
