@@ -89,15 +89,11 @@ export default function Page() {
   const [mode, setMode] = useState<AppMode>('write')
   
 
-  clearPreviewTimeouts()
 
-  if (!previewSynthRef.current) {
-    previewSynthRef.current = new Tone.Synth().toDestination()
-  }
 
   const synth = previewSynthRef.current
   const msPerBar = (60 / previewTempo) * 4 * 1000
-
+  const startPreviewPlayback = async () => {
   previewBars.forEach((bar, index) => {
     const timeoutId = window.setTimeout(() => {
       const chord = bar.chord || 'C'
@@ -176,6 +172,11 @@ const [chords] = useState<ChordResponse | null>({
 const previewBars = React.useMemo(() => {
   return buildPreviewBars(chords, previewSection)
 }, [chords, previewSection])
+
+const clearPreviewTimeouts = () => {
+  previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+  previewTimeoutsRef.current = []
+}
 
 const startPreviewPlayback = async () => {
   await Tone.start()
