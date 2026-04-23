@@ -8,6 +8,7 @@ import type { PreviewFeel, PreviewInstrument, PreviewPattern, PreviewSectionKey 
 import RehearsePanel from '@/components/RehearsePanel'
 import { buildPreviewBars } from '@/lib/parseSong'
 import type { ChordResponse } from '@/types/song'
+import * as Tone from 'tone'
 
 // ===============================
 // TYPES
@@ -80,7 +81,12 @@ function SidebarItem({
 export default function Page() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
-  const startPreviewPlayback = () => {
+  const startPreviewPlayback = async () => {
+  await Tone.start()
+
+  const synth = new Tone.Synth().toDestination()
+  synth.triggerAttackRelease('C4', '8n')
+
   setPreviewReady(true)
   setPreviewPlaying(true)
 }
