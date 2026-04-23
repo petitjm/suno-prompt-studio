@@ -100,7 +100,14 @@ const [previewLoop, setPreviewLoop] = useState(true)
 const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
 const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
 const [followPlayback, setFollowPlayback] = useState(true)
-const [chords] = useState<ChordResponse | null>(null)
+const [chords] = useState<ChordResponse | null>({
+  key: 'G',
+  capo: '0',
+  verse: '| G | D | Em | C |',
+  chorus: '| C | G | D | Em |',
+  bridge: '| Em | C | G | D |',
+  notes: '',
+})
 const previewBars = React.useMemo(() => {
   return buildPreviewBars(chords, previewSection)
 }, [chords, previewSection])
