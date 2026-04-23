@@ -171,13 +171,36 @@ export default function Page() {
         const chordKey = chord.replace(/[^A-G#m]/g, '') // crude cleanup
         const notes = chordNotes[chordKey] || ['C4', 'E4', 'G4']
 
-        notes.forEach((note, i) => {
-          const strumId = window.setTimeout(() => {
-            synth.triggerAttackRelease(note, '8n')
-          }, i * 35)
+                if (previewPattern === 'fingerpick') {
+          ;[0, 1, 2, 1].forEach((noteIndex, i) => {
+            const pickId = window.setTimeout(() => {
+              const note = notes[noteIndex] || notes[0]
+              synth.triggerAttackRelease(note, '8n')
+            }, i * 220)
 
-          previewTimeoutsRef.current.push(strumId)
-        })
+            previewTimeoutsRef.current.push(pickId)
+          })
+        } else if (previewPattern === 'country_train') {
+          const rhythm = [0, 180, 360, 540]
+          rhythm.forEach((delay, i) => {
+            const trainId = window.setTimeout(() => {
+              const note = i % 2 === 0 ? notes[0] : notes[1] || notes[0]
+              synth.triggerAttackRelease(note, '8n')
+            }, delay)
+
+            previewTimeoutsRef.current.push(trainId)
+          })
+        } else if (previewPattern === 'piano_block') {
+          synth.triggerAttackRelease(notes, '4n')
+        } else {
+          notes.forEach((note, i) => {
+            const strumId = window.setTimeout(() => {
+              synth.triggerAttackRelease(note, '8n')
+            }, i * 35)
+
+            previewTimeoutsRef.current.push(strumId)
+          })
+        }
       }, index * msPerBar)
 
       previewTimeoutsRef.current.push(timeoutId)
