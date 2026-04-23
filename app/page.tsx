@@ -10,6 +10,14 @@ import { buildPreviewBars } from '@/lib/parseSong'
 import type { ChordResponse } from '@/types/song'
 import * as Tone from 'tone'
 
+
+
+const clearPreviewTimeouts = () => {
+  previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+  previewTimeoutsRef.current = []
+}
+
+
 // ===============================
 // TYPES
 // ===============================
@@ -84,6 +92,50 @@ export default function Page() {
   const startPreviewPlayback = async () => {
   await Tone.start()
 
+  clearPreviewTimeouts()
+
+  if (!previewSynthRef.current) {
+    previewSynthRef.current = new Tone.Synth().toDestination()
+  }
+
+  const synth = previewSynthRef.current
+  const msPerBar = (60 / previewTempo) * 4 * 1000
+
+  previewBars.forEach((bar, index) => {
+    const timeoutId = window.setTimeout(() => {
+      const chord = bar.chord || 'C'
+      const rootMatch = chord.match(/^[A-G](?:#|b)?/)
+      const root = rootMatch?.[0] || 'C'
+      const noteMap: Record<string, string> = {
+        C: 'C4',
+        'C#': 'C#4',
+        Db: 'C#4',
+        D: 'D4',
+        'D#': 'D#4',
+        Eb: 'D#4',
+        E: 'E4',
+        F: 'F4',
+        'F#': 'F#4',
+        Gb: 'F#4',
+        G: 'G4',
+        'G#': 'G#4',
+        Ab: 'G#4',
+        A: 'A4',
+        'A#': 'A#4',
+        Bb: 'A#4',
+        B: 'B4',
+      }
+
+      synth.triggerAttackRelease(noteMap[root] || 'C4', '8n')
+    }, index * msPerBar)
+
+    previewTimeoutsRef.current.push(timeoutId)
+  })
+
+  setPreviewReady(true)
+  setPreviewPlaying(true)
+}
+
   const synth = new Tone.Synth().toDestination()
   synth.triggerAttackRelease('C4', '8n')
 
@@ -92,9 +144,18 @@ export default function Page() {
 }
 
   const stopPreviewPlayback = () => {
+  clearPreviewTimeouts()
   setPreviewPlaying(false)
 }
   
+React.useEffect(() => {
+  return () => {
+    clearPreviewTimeouts()
+    previewSynthRef.current?.dispose()
+  }
+}, [])
+
+
 const [previewReady, setPreviewReady] = useState(false)
 const [previewPlaying, setPreviewPlaying] = useState(false)
 const [previewTempo, setPreviewTempo] = useState(92)
@@ -106,6 +167,8 @@ const [previewLoop, setPreviewLoop] = useState(true)
 const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
 const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
 const [followPlayback, setFollowPlayback] = useState(true)
+const previewSynthRef = React.useRef<Tone.Synth | null>(null)
+const previewTimeoutsRef = React.useRef<number[]>([])
 const [chords] = useState<ChordResponse | null>({
   key: 'G',
   capo: '0',
