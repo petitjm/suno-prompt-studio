@@ -85,8 +85,8 @@ function SidebarItem({
 // ===============================
 
 export default function Page() {
-    const [currentBarIndex, setCurrentBarIndex] = useState(0)
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [currentBarIndex, setCurrentBarIndex] = useState(0)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
 
   const [previewReady, setPreviewReady] = useState(false)
@@ -103,6 +103,7 @@ export default function Page() {
 
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
+
   const [chords] = useState<ChordResponse | null>({
     key: 'G',
     capo: '0',
@@ -121,6 +122,25 @@ export default function Page() {
     previewTimeoutsRef.current = []
   }
 
+  const scrollToPerformanceSection = (sectionLabel: string) => {
+    const normalized = sectionLabel.toLowerCase()
+
+    const match = performanceSections.find((section) => {
+      const label = section.label.toLowerCase()
+      return label === normalized || label.includes(normalized)
+    })
+
+    if (!match) return
+
+    const el = performanceSectionRefs.current[match.id]
+    if (!el) return
+
+    el.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    })
+  }
+
   const startPreviewPlayback = async () => {
     await Tone.start()
 
@@ -135,63 +155,12 @@ export default function Page() {
 
     previewBars.forEach((bar, index) => {
       const timeoutId = window.setTimeout(() => {
-          if (followPlayback && bar.label) {
-              setCurrentBarIndex(index)
-              scrollToSection(bar.label.toLowerCase())
-            }
-        const chord = bar.chord || 'C'
-        const rootMatch = chord.match(/^[A-G](?:#|b)?/)
-        const root = rootMatch?.[0] || 'C'
-
-       const scrollToPerformanceSection = (sectionLabel: string) => {
-  const normalized = sectionLabel.toLowerCase()
-
-  const match = performanceSections.find((section) => {
-    const label = section.label.toLowerCase()
-    return label === normalized || label.includes(normalized)
-  })
-
-  if (!match) return
-
-  const el = performanceSectionRefs.current[match.id]
-  if (!el) return
-
-  el.scrollIntoView({
-    behavior: 'smooth',
-    block: 'center',
-  })
-}
-
-        const scrollToSection = (section: string) => {
-        const el = sectionRefs.current[section]
-          if (el) {
-            el.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            })
-          }
+        if (followPlayback && bar.label) {
+          setCurrentBarIndex(index)
+          scrollToPerformanceSection(bar.label)
         }
 
-
-        const noteMap: Record<string, string> = {
-          C: 'C4',
-          'C#': 'C#4',
-          Db: 'C#4',
-          D: 'D4',
-          'D#': 'D#4',
-          Eb: 'D#4',
-          E: 'E4',
-          F: 'F4',
-          'F#': 'F#4',
-          Gb: 'F#4',
-          G: 'G4',
-          'G#': 'G#4',
-          Ab: 'G#4',
-          A: 'A4',
-          'A#': 'A#4',
-          Bb: 'A#4',
-          B: 'B4',
-        }
+        const chord = (bar.chord || 'C').trim()
 
         const chordNotes: Record<string, string[]> = {
           C: ['C4', 'E4', 'G4'],
@@ -202,10 +171,10 @@ export default function Page() {
           Am: ['A4', 'C5', 'E5'],
         }
 
-        const chordKey = chord.replace(/[^A-G#m]/g, '') // crude cleanup
+        const chordKey = chord.replace(/[^A-G#m]/g, '')
         const notes = chordNotes[chordKey] || ['C4', 'E4', 'G4']
 
-                if (previewPattern === 'fingerpick') {
+        if (previewPattern === 'fingerpick') {
           ;[0, 1, 2, 1].forEach((noteIndex, i) => {
             const pickId = window.setTimeout(() => {
               const note = notes[noteIndex] || notes[0]
@@ -250,13 +219,12 @@ export default function Page() {
   }
 
   React.useEffect(() => {
-  if (previewPattern === 'piano_block') {
-    setPreviewInstrument('piano')
-  } else if (previewPattern === 'fingerpick') {
-    setPreviewInstrument('guitar')
-  }
-}, [previewPattern])
-
+    if (previewPattern === 'piano_block') {
+      setPreviewInstrument('piano')
+    } else if (previewPattern === 'fingerpick') {
+      setPreviewInstrument('guitar')
+    }
+  }, [previewPattern])
 
   React.useEffect(() => {
     return () => {
@@ -264,148 +232,124 @@ export default function Page() {
       previewSynthRef.current?.dispose()
     }
   }, [])
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
-      {/* ===============================
-          SIDEBAR
-      =============================== */}
       <div
-          className={`${
-            sidebarCollapsed ? 'w-16' : 'w-56'
-          } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
+        className={`${
+          sidebarCollapsed ? 'w-16' : 'w-56'
+        } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
+      >
+        <button
+          onClick={() => setSidebarCollapsed((s) => !s)}
+          className="mb-4 text-gray-300 hover:text-white"
+          title="Toggle sidebar"
         >
-          {/* Hamburger */}
-          <button
-            onClick={() => setSidebarCollapsed((s) => !s)}
-            className="mb-4 text-gray-300 hover:text-white"
-            title="Toggle sidebar"
-          >
-            ☰
-          </button>
+          ☰
+        </button>
 
-          {/* Navigation */}
-          <div className="flex flex-col gap-2">
-            <SidebarItem
-              icon="✍️"
-              label="Write"
-              active={mode === 'write'}
-              collapsed={sidebarCollapsed}
-              onClick={() => setMode('write')}
-            />
-            <SidebarItem
-              icon="🎸"
-              label="Chords"
-              active={mode === 'chords'}
-              collapsed={sidebarCollapsed}
-              onClick={() => setMode('chords')}
-            />
-            <SidebarItem
-              icon="📄"
-              label="Sheet"
-              active={mode === 'sheet'}
-              collapsed={sidebarCollapsed}
-              onClick={() => setMode('sheet')}
-            />
-            <SidebarItem
-              icon="🎧"
-              label="Rehearse"
-              active={mode === 'rehearse'}
-              collapsed={sidebarCollapsed}
-              onClick={() => setMode('rehearse')}
-            />
-            <SidebarItem
-              icon="🎤"
-              label="Perform"
-              active={mode === 'perform'}
-              collapsed={sidebarCollapsed}
-              onClick={() => setMode('perform')}
-            />
-            <SidebarItem
-              icon="🎬"
-              label="Video"
-              active={mode === 'video'}
-              collapsed={sidebarCollapsed}
-              onClick={() => setMode('video')}
-            />
-          </div>
+        <div className="flex flex-col gap-2">
+          <SidebarItem
+            icon="✍️"
+            label="Write"
+            active={mode === 'write'}
+            collapsed={sidebarCollapsed}
+            onClick={() => setMode('write')}
+          />
+          <SidebarItem
+            icon="🎸"
+            label="Chords"
+            active={mode === 'chords'}
+            collapsed={sidebarCollapsed}
+            onClick={() => setMode('chords')}
+          />
+          <SidebarItem
+            icon="📄"
+            label="Sheet"
+            active={mode === 'sheet'}
+            collapsed={sidebarCollapsed}
+            onClick={() => setMode('sheet')}
+          />
+          <SidebarItem
+            icon="🎧"
+            label="Rehearse"
+            active={mode === 'rehearse'}
+            collapsed={sidebarCollapsed}
+            onClick={() => setMode('rehearse')}
+          />
+          <SidebarItem
+            icon="🎤"
+            label="Perform"
+            active={mode === 'perform'}
+            collapsed={sidebarCollapsed}
+            onClick={() => setMode('perform')}
+          />
+          <SidebarItem
+            icon="🎬"
+            label="Video"
+            active={mode === 'video'}
+            collapsed={sidebarCollapsed}
+            onClick={() => setMode('video')}
+          />
         </div>
-      
+      </div>
 
-      {/* ===============================
-          MAIN CONTENT
-      =============================== */}
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        
-          <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
-            <span className="text-sm text-gray-400">
-              Mode: {mode.toUpperCase()}
-            </span>
-          </div>
-       
+        <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
+          <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
+        </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-auto p-6">
-          {/* ===============================
-              TEMP CONTENT (replace with your current UI)
-          =============================== */}
-
           {mode === 'write' && (
             <div>
               <h1 className="text-xl mb-4">Write</h1>
-              <p className="text-gray-400">
-                Lyrics, ideas, and structure go here.
-              </p>
+              <p className="text-gray-400">Lyrics, ideas, and structure go here.</p>
             </div>
           )}
 
           {mode === 'chords' && (
             <div>
               <h1 className="text-xl mb-4">Chords</h1>
-              <p className="text-gray-400">
-                Generate and refine harmonic structure.
-              </p>
+              <p className="text-gray-400">Generate and refine harmonic structure.</p>
             </div>
           )}
 
           {mode === 'sheet' && (
             <div>
               <h1 className="text-xl mb-4">Song Sheet</h1>
-              <p className="text-gray-400">
-                View and edit structured song sections.
-              </p>
+              <p className="text-gray-400">View and edit structured song sections.</p>
             </div>
           )}
 
-            {mode === 'rehearse' && (
-              <div className="h-full">
-                <RehearsePanel
-                  previewSection={previewSection}
-                  setPreviewSection={setPreviewSection}
-                  previewPattern={previewPattern}
-                  setPreviewPattern={setPreviewPattern}
-                  previewInstrument={previewInstrument}
-                  setPreviewInstrument={setPreviewInstrument}
-                  previewFeel={previewFeel}
-                  setPreviewFeel={setPreviewFeel}
-                  previewTempo={previewTempo}
-                  setPreviewTempo={setPreviewTempo}
-                  previewLoop={previewLoop}
-                  setPreviewLoop={setPreviewLoop}
-                  previewIncludeBass={previewIncludeBass}
-                  setPreviewIncludeBass={setPreviewIncludeBass}
-                  previewIncludeClick={previewIncludeClick}
-                  setPreviewIncludeClick={setPreviewIncludeClick}
-                  previewBarsLength={previewBars.length}
-                  previewPlaying={previewPlaying}
-                  previewReady={previewReady}
-                  followPlayback={followPlayback}
-                  setFollowPlayback={setFollowPlayback}
-                  startPreviewPlayback={startPreviewPlayback}
-                  stopPreviewPlayback={stopPreviewPlayback}
-                />
-              </div>
-            )}
+          {mode === 'rehearse' && (
+            <div className="h-full">
+              <RehearsePanel
+                previewSection={previewSection}
+                setPreviewSection={setPreviewSection}
+                previewPattern={previewPattern}
+                setPreviewPattern={setPreviewPattern}
+                previewInstrument={previewInstrument}
+                setPreviewInstrument={setPreviewInstrument}
+                previewFeel={previewFeel}
+                setPreviewFeel={setPreviewFeel}
+                previewTempo={previewTempo}
+                setPreviewTempo={setPreviewTempo}
+                previewLoop={previewLoop}
+                setPreviewLoop={setPreviewLoop}
+                previewIncludeBass={previewIncludeBass}
+                setPreviewIncludeBass={setPreviewIncludeBass}
+                previewIncludeClick={previewIncludeClick}
+                setPreviewIncludeClick={setPreviewIncludeClick}
+                previewBarsLength={previewBars.length}
+                previewPlaying={previewPlaying}
+                previewReady={previewReady}
+                followPlayback={followPlayback}
+                setFollowPlayback={setFollowPlayback}
+                startPreviewPlayback={startPreviewPlayback}
+                stopPreviewPlayback={stopPreviewPlayback}
+              />
+            </div>
+          )}
 
           {mode === 'perform' && (
             <div className="text-center text-2xl">
@@ -416,9 +360,7 @@ export default function Page() {
           {mode === 'video' && (
             <div>
               <h1 className="text-xl mb-4">Video Generator</h1>
-              <p className="text-gray-400">
-                OpenArt / prompt generation tools go here.
-              </p>
+              <p className="text-gray-400">OpenArt / prompt generation tools go here.</p>
             </div>
           )}
         </div>
