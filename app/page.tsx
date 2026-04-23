@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 import type { PreviewFeel, PerformanceSection, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
 import RehearsePanel from '@/components/RehearsePanel'
 import { buildPreviewBars } from '@/lib/parseSong'
-import type { PerformanceSection, ChordResponse } from '@/types/song'
+import type { ChordResponse } from '@/types/song'
 import * as Tone from 'tone'
 
 
