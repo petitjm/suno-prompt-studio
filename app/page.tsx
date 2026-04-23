@@ -104,11 +104,7 @@ export default function Page() {
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
-  const performanceSections: PerformanceSection[] = [
-        { id: 'verse', label: 'Verse', content: chords?.verse || '' },
-        { id: 'chorus', label: 'Chorus', content: chords?.chorus || '' },
-        { id: 'bridge', label: 'Bridge', content: chords?.bridge || '' },
-               ]
+
 
   const [chords] = useState<ChordResponse | null>({
     key: 'G',
@@ -118,6 +114,12 @@ export default function Page() {
     bridge: '| Em | C | G | D |',
     notes: '',
   })
+
+    const performanceSections: PerformanceSection[] = [
+        { id: 'verse', label: 'Verse', content: chords?.verse || '' },
+        { id: 'chorus', label: 'Chorus', content: chords?.chorus || '' },
+        { id: 'bridge', label: 'Bridge', content: chords?.bridge || '' },
+               ]
 
   const previewBars = React.useMemo(() => {
     return buildPreviewBars(chords, previewSection)
