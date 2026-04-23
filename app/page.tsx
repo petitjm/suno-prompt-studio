@@ -10,7 +10,7 @@ import SongSheet from '@/components/SongSheet'
 import { buildPreviewBars } from '@/lib/parseSong'
 import type { ChordResponse } from '@/types/song'
 import * as Tone from 'tone'
-import { buildPreviewBars, parsePerformanceSections } from '@/lib/parseSong'
+import { parsePerformanceSections } from '@/lib/parseSong'
 
 
 
@@ -111,11 +111,7 @@ const [performanceSheet, setPerformanceSheet] = useState('')
 const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
 const [chords, setChords] = useState<ChordResponse | null>(null)
 
-    const performanceSections: PerformanceSection[] = [
-        { id: 'verse', label: 'Verse', content: chords?.verse || '' },
-        { id: 'chorus', label: 'Chorus', content: chords?.chorus || '' },
-        { id: 'bridge', label: 'Bridge', content: chords?.bridge || '' },
-               ]
+
 
   const previewBars = React.useMemo(() => {
     return buildPreviewBars(chords, previewSection)
