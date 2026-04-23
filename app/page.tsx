@@ -104,6 +104,8 @@ export default function Page() {
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
+  const performanceSections: PerformanceSection[] = []
+
   const [chords] = useState<ChordResponse | null>({
     key: 'G',
     capo: '0',
