@@ -4,10 +4,10 @@
 
 import LegacyRehearseUI from '@/components/LegacyRehearseUI'
 import React, { useState } from 'react'
-import type { PreviewFeel, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
+import type { PreviewFeel, PerformanceSection, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
 import RehearsePanel from '@/components/RehearsePanel'
 import { buildPreviewBars } from '@/lib/parseSong'
-import type { ChordResponse } from '@/types/song'
+import type { PerformanceSection, ChordResponse } from '@/types/song'
 import * as Tone from 'tone'
 
 
@@ -103,7 +103,7 @@ export default function Page() {
 
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
-
+  const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
   const [chords] = useState<ChordResponse | null>({
     key: 'G',
     capo: '0',
