@@ -132,7 +132,6 @@ export default function Page() {
   setPreviewReady(true)
   setPreviewPlaying(true)
 }
-
   synth.triggerAttackRelease('C4', '8n')
 
   setPreviewReady(true)
