@@ -171,8 +171,12 @@ export default function Page() {
         const chordKey = chord.replace(/[^A-G#m]/g, '') // crude cleanup
         const notes = chordNotes[chordKey] || ['C4', 'E4', 'G4']
 
-        notes.forEach(note => {
-          synth.triggerAttackRelease(note, '8n')
+        notes.forEach((note, i) => {
+          const strumId = window.setTimeout(() => {
+            synth.triggerAttackRelease(note, '8n')
+          }, i * 35)
+
+          previewTimeoutsRef.current.push(strumId)
         })
       }, index * msPerBar)
 
