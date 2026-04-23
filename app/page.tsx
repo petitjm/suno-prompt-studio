@@ -12,7 +12,7 @@ import * as Tone from 'tone'
 
 
 
-previewTimeoutsRef.current = []
+
 
 
 
