@@ -100,7 +100,7 @@ export default function Page() {
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
   const [followPlayback, setFollowPlayback] = useState(true)
 
-  const previewSynthRef = React.useRef<Tone.Synth | null>(null)
+  const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
 
   const [chords] = useState<ChordResponse | null>({
@@ -127,7 +127,7 @@ export default function Page() {
     clearPreviewTimeouts()
 
     if (!previewSynthRef.current) {
-      previewSynthRef.current = new Tone.Synth().toDestination()
+      previewSynthRef.current = new Tone.PolySynth(Tone.Synth).toDestination()
     }
 
     const synth = previewSynthRef.current
