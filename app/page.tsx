@@ -172,6 +172,7 @@ const [chords] = useState<ChordResponse | null>({
   bridge: '| Em | C | G | D |',
   notes: '',
 })
+
 const previewBars = React.useMemo(() => {
   return buildPreviewBars(chords, previewSection)
 }, [chords, previewSection])
