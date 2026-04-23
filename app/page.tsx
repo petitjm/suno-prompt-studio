@@ -87,8 +87,7 @@ function SidebarItem({
 export default function Page() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
-  const startPreviewPlayback = async () => {
-  await Tone.start()
+  
 
   clearPreviewTimeouts()
 
@@ -176,6 +175,9 @@ const [chords] = useState<ChordResponse | null>({
 const previewBars = React.useMemo(() => {
   return buildPreviewBars(chords, previewSection)
 }, [chords, previewSection])
+
+const startPreviewPlayback = async () => {
+  await Tone.start()
 
   const stopPreviewPlayback = () => {
   clearPreviewTimeouts()
