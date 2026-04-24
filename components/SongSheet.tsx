@@ -4,7 +4,7 @@
 
 import React, { CSSProperties } from 'react'
 import { PerformanceSection } from '@/types/song'
-import SongSheet from '@/components/SongSheet'
+
 
 type Props = {
   performanceSheet: string
