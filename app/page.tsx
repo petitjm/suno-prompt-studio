@@ -348,6 +348,17 @@ const nextChords = latestChords?.chord_data || null
     setPreviewPlaying(true)
   }
 
+
+const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
+  return previewBars.map((bar, index) => ({
+    barIndex: index,
+    label: bar.label,
+    chord: bar.chord,
+    sectionId: bar.sectionId || findMatchingSectionId(bar.label, performanceSections),
+  }))
+}, [previewBars, performanceSections])
+
+
   const stopPreviewPlayback = () => {
     clearPreviewTimeouts()
     setPreviewPlaying(false)
