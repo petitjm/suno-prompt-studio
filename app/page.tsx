@@ -20,6 +20,9 @@ import type {
   PreviewInstrument,
   PreviewPattern,
   PreviewSectionKey,
+  Project,
+SongVersionRecord,
+ChordVersionRecord,
 } from '@/types/song'
 
 type PreviewBarMeta = {
@@ -42,6 +45,18 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
     </div>
   )
 }
+
+const readJsonSafe = async (res: Response) => {
+  const text = await res.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return { error: text }
+  }
+}
+
 
 function SidebarItem({
   icon,
@@ -440,7 +455,15 @@ const nextChords = latestChords?.chord_data || null
   }
 
 
+  const latestProjectLoadRef = React.useRef(0)
 
+const [projects, setProjects] = useState<Project[]>([])
+const [activeProject, setActiveProject] = useState<Project | null>(null)
+const [newProjectName, setNewProjectName] = useState('')
+const [projectMessage, setProjectMessage] = useState('')
+const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
+const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
+const [versionsLoading, setVersionsLoading] = useState(false)
 
 
   const stopPreviewPlayback = () => {
