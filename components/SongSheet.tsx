@@ -4,6 +4,7 @@
 
 import React, { CSSProperties } from 'react'
 import { PerformanceSection } from '@/types/song'
+import SongSheet from '@/components/SongSheet'
 
 type Props = {
   performanceSheet: string
@@ -53,16 +54,16 @@ export default function SongSheet({
               performanceSectionRefs.current[section.id] = el
             }}
             style={{
-              marginBottom: 28,
-              padding: '10px 12px',
-              borderRadius: 12,
-              border: isActive ? '1px solid #60a5fa' : '1px solid transparent',
-              background: isActive ? '#172554' : 'transparent',
-              boxShadow: isActive
-                ? '0 0 0 1px rgba(96,165,250,0.25) inset'
-                : 'none',
-              transition:
-                'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+              style={{
+  marginBottom: 40,
+  padding: '16px 18px',
+  borderRadius: 16,
+  border: isActive ? '1px solid #60a5fa' : '1px solid transparent',
+  background: isActive ? '#1e3a8a' : 'transparent',
+  opacity: isActive ? 1 : 0.5,
+  transform: isActive ? 'scale(1.02)' : 'scale(1)',
+  transition: 'all 0.25s ease',
+}}
             }}
           >
             <pre
