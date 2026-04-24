@@ -136,16 +136,35 @@ export default function Page() {
 }, [chords, previewSection, performanceSheet])
 
 const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
-  return previewBars.map((bar, index) => ({
-    barIndex: index,
-    label: bar.label || '',
-    chord: bar.chord || '',
-    sectionId:
-      bar.sectionId ||
-      (bar.label ? findMatchingSectionId(bar.label, performanceSections) : null),
-  }))
-}, [previewBars, performanceSections])
+  let sectionCursor = 0
 
+  return previewBars.map((bar, index) => {
+    let sectionId: string | null = null
+
+    if (bar.label && performanceSections.length) {
+      const label = bar.label.toLowerCase()
+
+      // move forward until we find matching section
+      while (sectionCursor < performanceSections.length) {
+        const current = performanceSections[sectionCursor]
+
+        if (current.label.toLowerCase() === label) {
+          sectionId = current.id
+          break
+        }
+
+        sectionCursor++
+      }
+    }
+
+    return {
+      barIndex: index,
+      label: bar.label || '',
+      chord: bar.chord || '',
+      sectionId,
+    }
+  })
+}, [previewBars, performanceSections])
 
 
 
@@ -376,7 +395,23 @@ const nextChords = latestChords?.chord_data || null
   }
 
   React.useEffect(() => {
-    setPerformanceSections(parsePerformanceSections(performanceSheet))
+    const parsed = parsePerformanceSections(performanceSheet)
+
+// add instance numbering
+const counts: Record<string, number> = {}
+
+const withUniqueIds = parsed.map((section) => {
+  const key = section.label.toLowerCase()
+
+  counts[key] = (counts[key] || 0) + 1
+
+  return {
+    ...section,
+    id: `${key}-${counts[key]}`, // 🔥 unique id
+  }
+})
+
+setPerformanceSections(withUniqueIds)
   }, [performanceSheet])
 
   React.useEffect(() => {
