@@ -86,6 +86,7 @@ function SidebarItem({
 // ===============================
 
 export default function Page() {
+    const [debugOutput, setDebugOutput] = useState('')
   const [currentBarIndex, setCurrentBarIndex] = useState(0)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
@@ -266,11 +267,20 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     }
   }, [])
 
-              const debugProjects = async () => {
-  const res = await fetch('/api/projects')
-  const data = await res.json()
-  console.log(data)
-} 
+const debugProjects = async () => {
+  try {
+    setDebugOutput('Loading projects...')
+
+    const res = await fetch('/api/projects')
+    const data = await res.json()
+
+    console.log('Projects:', data)
+    setDebugOutput(JSON.stringify(data, null, 2))
+  } catch (err: any) {
+    console.error(err)
+    setDebugOutput(err.message || 'Failed to load projects')
+  }
+}
 
 
   return (
@@ -355,11 +365,17 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     </p>
 
 
+    <button
+  type="button"
+  onClick={debugProjects}
+  className="px-4 py-2 rounded bg-blue-600 text-white mr-3"
+>
+  Log Projects
+</button>
 
 
 
-
-    <button onClick={debugProjects}>Log Projects</button>
+   
     <button
       onClick={() => loadSavedSongSheet('page to modules')}
       className="px-4 py-2 rounded bg-blue-600 text-white"
