@@ -54,7 +54,7 @@ export default function SongSheet({
               performanceSectionRefs.current[section.id] = el
             }}
             style={{
-              style={{
+              
   marginBottom: 40,
   padding: '16px 18px',
   borderRadius: 16,
