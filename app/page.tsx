@@ -301,6 +301,70 @@ const nextChords = latestChords?.chord_data || null
     setDebugOutput(err.message || 'Failed to load saved song sheet')
   }
 }
+    const scrollPerformanceToBarIndex = (
+  barIndex: number,
+  behavior: ScrollBehavior = 'smooth'
+) => {
+  if (!followPlayback) return
+  if (!performanceSections.length) return
+  if (!previewBarMeta.length) return
+
+  const safeBarIndex = Math.max(0, Math.min(barIndex, previewBarMeta.length - 1))
+  const activeBarMeta = previewBarMeta[safeBarIndex]
+  const activeSectionId = activeBarMeta?.sectionId
+
+  if (!activeSectionId) return
+
+  const currentSectionIndex = performanceSections.findIndex(
+    (section) => section.id === activeSectionId
+  )
+
+  if (currentSectionIndex === -1) return
+
+  const currentSection = performanceSections[currentSectionIndex]
+  const nextSection = performanceSections[currentSectionIndex + 1] || null
+
+  const currentSectionEl = performanceSectionRefs.current[currentSection.id]
+  if (!currentSectionEl) return
+
+  const currentSectionStartBar =
+    previewBarMeta.find((bar) => bar.sectionId === currentSection.id)?.barIndex ??
+    safeBarIndex
+
+  const nextSectionStartBar = nextSection
+    ? previewBarMeta.find((bar) => bar.sectionId === nextSection.id)?.barIndex ??
+      previewBarMeta.length
+    : previewBarMeta.length
+
+  const sectionBarSpan = Math.max(1, nextSectionStartBar - currentSectionStartBar)
+  const localBarProgress = Math.max(
+    0,
+    Math.min(1, (safeBarIndex - currentSectionStartBar) / sectionBarSpan)
+  )
+
+  const anchorOffset = window.innerHeight * 0.25
+  const currentTop =
+    window.scrollY + currentSectionEl.getBoundingClientRect().top - anchorOffset
+
+  let targetTop = currentTop
+
+  if (nextSection) {
+    const nextSectionEl = performanceSectionRefs.current[nextSection.id]
+
+    if (nextSectionEl) {
+      const nextTop =
+        window.scrollY + nextSectionEl.getBoundingClientRect().top - anchorOffset
+
+      targetTop = currentTop + (nextTop - currentTop) * localBarProgress
+    }
+  }
+
+  window.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior,
+  })
+}
+
 
   const startPreviewPlayback = async () => {
     await Tone.start()
@@ -317,19 +381,9 @@ const nextChords = latestChords?.chord_data || null
     previewBars.forEach((bar, index) => {
       const timeoutId = window.setTimeout(() => {
         if (followPlayback) {
-         setCurrentBarIndex(index)
-
-  const meta = previewBarMeta[index]
-      if (meta?.sectionId) {
-        const el = performanceSectionRefs.current[meta.sectionId]
-        if (el) {
-          el.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          })
-        }
-      }
-    }
+  setCurrentBarIndex(index)
+  scrollPerformanceToBarIndex(index)
+}
 
         const chord = (bar.chord || 'C').trim()
 
