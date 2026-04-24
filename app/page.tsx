@@ -334,18 +334,25 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
 
         <div className="flex-1 overflow-auto p-6">
           {mode === 'write' && (
-  <div>
+  
+          
+             const debugProjects = async () => {
+  const res = await fetch('/api/projects')
+  const data = await res.json()
+  console.log(data)
+} 
+          
+          
+          
+          
+          <div>
     <h1 className="text-xl mb-4">Write</h1>
     <p className="text-gray-400 mb-4">
       Lyrics, ideas, and structure go here.
     </p>
 
 
-    const debugProjects = async () => {
-  const res = await fetch('/api/projects')
-  const data = await res.json()
-  console.log(data)
-}
+
 
 
 
