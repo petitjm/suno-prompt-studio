@@ -86,6 +86,8 @@ function SidebarItem({
 // ===============================
 
 export default function Page() {
+    const [email, setEmail] = useState('')
+const [password, setPassword] = useState('')
     const supabase = React.useMemo(() => createClient(), [])
 const [userEmail, setUserEmail] = useState<string | null>(null)
 const [authMessage, setAuthMessage] = useState('')
@@ -115,7 +117,32 @@ const [performanceSheet, setPerformanceSheet] = useState('')
 const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
 const [chords, setChords] = useState<ChordResponse | null>(null)
 
+const signIn = async () => {
+  setAuthMessage('Signing in...')
 
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error) {
+    setAuthMessage(error.message)
+    return
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  setUserEmail(user?.email || null)
+  setAuthMessage(`Signed in as ${user?.email}`)
+}
+
+const signOut = async () => {
+  await supabase.auth.signOut()
+  setUserEmail(null)
+  setAuthMessage('Signed out')
+}
 
   const previewBars = React.useMemo(() => {
     return buildPreviewBars(chords, previewSection)
@@ -399,6 +426,42 @@ const debugProjects = async () => {
         onClick={debugProjects}
         className="px-4 py-2 rounded bg-green-600 text-white"
       >
+      <div className="mb-4 p-4 rounded bg-gray-800">
+  <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
+
+  {!userEmail ? (
+    <div className="flex flex-col gap-3 max-w-md">
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        className="px-3 py-2 rounded bg-gray-700 text-white"
+      />
+
+      <input
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        type="password"
+        className="px-3 py-2 rounded bg-gray-700 text-white"
+      />
+
+      <button
+        onClick={signIn}
+        className="px-4 py-2 rounded bg-blue-600 text-white"
+      >
+        Sign In
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={signOut}
+      className="px-4 py-2 rounded bg-gray-600 text-white"
+    >
+      Sign Out
+    </button>
+  )}
+</div>
         Log Projects
       </button>
     </div>
