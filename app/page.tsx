@@ -152,7 +152,6 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
   console.log(data)
 }
 
-<button onClick={debugProjects}>Log Projects</button>
 
     // adjust these keys to your real API response
     const nextSheet =
@@ -344,7 +343,7 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     <p className="text-gray-400 mb-4">
       Lyrics, ideas, and structure go here.
     </p>
-
+    <button onClick={debugProjects}>Log Projects</button>
     <button
       onClick={() => loadSavedSongSheet('page to modules')}
       className="px-4 py-2 rounded bg-blue-600 text-white"
