@@ -87,7 +87,8 @@ function SidebarItem({
 
 export default function Page() {
     const [email, setEmail] = useState('')
-const [password, setPassword] = useState('')
+const [otp, setOtp] = useState('')
+
     const supabase = React.useMemo(() => createClient(), [])
 const [userEmail, setUserEmail] = useState<string | null>(null)
 const [authMessage, setAuthMessage] = useState('')
@@ -428,40 +429,45 @@ const debugProjects = async () => {
       >
       <div className="mb-4 p-4 rounded bg-gray-800">
   <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
+  const sendOtp = async () => {
+  setAuthMessage('Sending code...')
 
-  {!userEmail ? (
-    <div className="flex flex-col gap-3 max-w-md">
-      <input
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        className="px-3 py-2 rounded bg-gray-700 text-white"
-      />
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+    },
+  })
 
-      <input
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        type="password"
-        className="px-3 py-2 rounded bg-gray-700 text-white"
-      />
+  if (error) {
+    setAuthMessage(error.message)
+    return
+  }
 
-      <button
-        onClick={signIn}
-        className="px-4 py-2 rounded bg-blue-600 text-white"
-      >
-        Sign In
-      </button>
-    </div>
-  ) : (
-    <button
-      onClick={signOut}
-      className="px-4 py-2 rounded bg-gray-600 text-white"
-    >
-      Sign Out
-    </button>
-  )}
-</div>
+  setAuthMessage('Check your email for the verification code.')
+}
+const verifyOtp = async () => {
+  setAuthMessage('Verifying...')
+
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: 'email',
+  })
+
+  if (error) {
+    setAuthMessage(error.message)
+    return
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  setUserEmail(user?.email || null)
+  setAuthMessage(`Signed in as ${user?.email}`)
+}
+  
         Log Projects
       </button>
     </div>
