@@ -411,7 +411,7 @@ export default function Page() {
 
                 <button
                   type="button"
-                  onClick={() => loadSavedSongSheet('PASTE_REAL_PROJECT_ID_HERE')}
+                  onClick={() => loadSavedSongSheet('e01a6d78-3e08-4f78-8db8-75c6241196c3')}
                   className="px-4 py-2 rounded bg-purple-600 text-white"
                 >
                   Load Saved SongSheet
