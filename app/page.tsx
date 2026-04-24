@@ -59,6 +59,7 @@ function SidebarItem({
 }
 
 export default function Page() {
+    const [performControlsOpen, setPerformControlsOpen] = useState(false)
   const supabase = React.useMemo(() => createClient(), [])
 
   const [mode, setMode] = useState<AppMode>('write')
@@ -495,15 +496,67 @@ const nextChords = latestChords?.chord_data || null
             </div>
           )}
 
-          {mode === 'perform' && (
-            <SongSheet
-              performanceSheet={performanceSheet}
-              performanceSections={performanceSections}
-              performanceFontSize={24}
-              activePerformanceSectionId={activeSection?.id || null}
-              performanceSectionRefs={performanceSectionRefs}
-            />
-          )}
+{mode === 'perform' && (
+  <div className="relative h-full">
+    <button
+      type="button"
+      onClick={() => setPerformControlsOpen((open) => !open)}
+      className="fixed right-6 top-20 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
+    >
+      {performControlsOpen ? 'Hide Controls' : 'Show Controls'}
+    </button>
+
+    <SongSheet
+      performanceSheet={performanceSheet}
+      performanceSections={performanceSections}
+      performanceFontSize={24}
+      activePerformanceSectionId={activeSection?.id || null}
+      performanceSectionRefs={performanceSectionRefs}
+    />
+
+    {performControlsOpen && (
+      <div className="fixed right-0 top-0 h-screen w-[420px] max-w-[90vw] z-40 bg-gray-900 border-l border-gray-700 shadow-2xl overflow-auto p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Performance Controls</h2>
+
+          <button
+            type="button"
+            onClick={() => setPerformControlsOpen(false)}
+            className="px-3 py-1 rounded bg-gray-700 text-white"
+          >
+            Close
+          </button>
+        </div>
+
+        <RehearsePanel
+          previewSection={previewSection}
+          setPreviewSection={setPreviewSection}
+          previewPattern={previewPattern}
+          setPreviewPattern={setPreviewPattern}
+          previewInstrument={previewInstrument}
+          setPreviewInstrument={setPreviewInstrument}
+          previewFeel={previewFeel}
+          setPreviewFeel={setPreviewFeel}
+          previewTempo={previewTempo}
+          setPreviewTempo={setPreviewTempo}
+          previewLoop={previewLoop}
+          setPreviewLoop={setPreviewLoop}
+          previewIncludeBass={previewIncludeBass}
+          setPreviewIncludeBass={setPreviewIncludeBass}
+          previewIncludeClick={previewIncludeClick}
+          setPreviewIncludeClick={setPreviewIncludeClick}
+          previewBarsLength={previewBars.length}
+          previewPlaying={previewPlaying}
+          previewReady={previewReady}
+          followPlayback={followPlayback}
+          setFollowPlayback={setFollowPlayback}
+          startPreviewPlayback={startPreviewPlayback}
+          stopPreviewPlayback={stopPreviewPlayback}
+        />
+      </div>
+    )}
+  </div>
+)}
 
           {mode === 'video' && (
             <div>
