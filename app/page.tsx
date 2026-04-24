@@ -11,7 +11,7 @@ import { buildPreviewBars } from '@/lib/parseSong'
 import type { ChordResponse } from '@/types/song'
 import * as Tone from 'tone'
 import { parsePerformanceSections } from '@/lib/parseSong'
-
+import { createClient } from '@/lib/supabase/client'
 
 
 
@@ -86,6 +86,9 @@ function SidebarItem({
 // ===============================
 
 export default function Page() {
+    const supabase = React.useMemo(() => createClient(), [])
+const [userEmail, setUserEmail] = useState<string | null>(null)
+const [authMessage, setAuthMessage] = useState('')
     const [debugOutput, setDebugOutput] = useState('')
   const [currentBarIndex, setCurrentBarIndex] = useState(0)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -267,6 +270,27 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     }
   }, [])
 
+  React.useEffect(() => {
+  const checkUser = async () => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      setUserEmail(null)
+      setAuthMessage('Not signed in')
+      return
+    }
+
+    setUserEmail(user.email || null)
+    setAuthMessage(`Signed in as ${user.email}`)
+  }
+
+  checkUser()
+}, [supabase])
+
+
 const debugProjects = async () => {
   try {
     setDebugOutput('Loading projects...')
@@ -358,7 +382,13 @@ const debugProjects = async () => {
     </p>
 
     <div className="flex gap-3">
-      <button
+      
+    
+    <p className="text-sm text-gray-400 mb-4">
+  {authMessage}
+</p>
+    
+    <button
         onClick={() => alert('clicked')}
         className="px-4 py-2 rounded bg-blue-600 text-white"
       >
