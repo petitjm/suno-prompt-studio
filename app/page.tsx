@@ -466,7 +466,42 @@ const verifyOtp = async () => {
       >
       <div className="mb-4 p-4 rounded bg-gray-800">
   <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
+  <div className="mb-4 p-4 rounded bg-gray-800">
+  <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
 
+  {!userEmail ? (
+    <div className="flex flex-col gap-3 max-w-md">
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        className="px-3 py-2 rounded bg-gray-700 text-white"
+      />
+
+      <input
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        type="password"
+        className="px-3 py-2 rounded bg-gray-700 text-white"
+      />
+
+      <button
+        onClick={signIn}
+        className="px-4 py-2 rounded bg-blue-600 text-white"
+      >
+        Sign In
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={signOut}
+      className="px-4 py-2 rounded bg-gray-600 text-white"
+    >
+      Sign Out
+    </button>
+  )}
+</div>
   
         Log Projects
       </button>
