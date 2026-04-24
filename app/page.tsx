@@ -146,6 +146,14 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     const res = await fetch(`/api/projects/${projectId}`)
     const data = await res.json()
 
+    const debugProjects = async () => {
+  const res = await fetch('/api/projects')
+  const data = await res.json()
+  console.log(data)
+}
+
+<button onClick={debugProjects}>Log Projects</button>
+
     // adjust these keys to your real API response
     const nextSheet =
       data.performanceSheet ||
