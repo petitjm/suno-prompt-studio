@@ -614,7 +614,7 @@ setPerformanceSections(withUniqueIds)
     />
 
     {performControlsOpen && (
-      className="fixed right-[440px] top-16 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
+     <div className="fixed right-0 top-12 h-[calc(100vh-3rem)] w-[420px] max-w-[90vw] z-40 bg-gray-900 border-l border-gray-700 shadow-2xl overflow-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Performance Controls</h2>
 
