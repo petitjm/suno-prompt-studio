@@ -215,16 +215,11 @@ if (!res.ok) {
       return
     }
 
-    const nextSheet =
-      data?.performanceSheet ||
-      data?.songSheet ||
-      data?.project?.performanceSheet ||
-      ''
+    const latestSong = data?.songVersions?.[0]
+const latestChords = data?.chordVersions?.[0]
 
-    const nextChords =
-      data?.chords ||
-      data?.project?.chords ||
-      null
+const nextSheet = latestSong?.result?.lyrics_full || ''
+const nextChords = latestChords?.chord_data || null
 
     setPerformanceSheet(nextSheet)
     setChords(nextChords)
