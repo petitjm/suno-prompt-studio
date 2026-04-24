@@ -64,7 +64,7 @@ export default function SongSheet({
   transform: isActive ? 'scale(1.02)' : 'scale(1)',
   transition: 'all 0.25s ease',
 }}
-            }}
+          
           >
             <pre
               style={{
