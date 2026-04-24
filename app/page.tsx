@@ -449,10 +449,8 @@ setPerformanceSections(withUniqueIds)
     }
   }, [])
 
-  const activeSectionLabel = previewBars[currentBarIndex]?.label?.toLowerCase() || null
-  const activeSection = performanceSections.find(
-    (section) => section.label.toLowerCase() === activeSectionLabel
-  )
+ const activePerformanceSectionId =
+  previewBarMeta[currentBarIndex]?.sectionId || null
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -562,7 +560,7 @@ setPerformanceSections(withUniqueIds)
               performanceSheet={performanceSheet}
               performanceSections={performanceSections}
               performanceFontSize={18}
-              activePerformanceSectionId={activeSection?.id || null}
+              activePerformanceSectionId={activePerformanceSectionId}
               performanceSectionRefs={performanceSectionRefs}
             />
           )}
@@ -611,7 +609,7 @@ setPerformanceSections(withUniqueIds)
       performanceSheet={performanceSheet}
       performanceSections={performanceSections}
       performanceFontSize={24}
-      activePerformanceSectionId={activeSection?.id || null}
+      activePerformanceSectionId={activePerformanceSectionId}
       performanceSectionRefs={performanceSectionRefs}
     />
 
