@@ -1,45 +1,24 @@
-
 'use client'
 
-
-import LegacyRehearseUI from '@/components/LegacyRehearseUI'
 import React, { useState } from 'react'
-import type { PreviewFeel, PerformanceSection, PreviewInstrument, PreviewPattern, PreviewSectionKey } from '@/types/song'
+import * as Tone from 'tone'
+
 import RehearsePanel from '@/components/RehearsePanel'
 import SongSheet from '@/components/SongSheet'
-import { buildPreviewBars } from '@/lib/parseSong'
-import type { ChordResponse } from '@/types/song'
-import * as Tone from 'tone'
-import { parsePerformanceSections } from '@/lib/parseSong'
+import { buildPreviewBars, parsePerformanceSections } from '@/lib/parseSong'
 import { createClient } from '@/lib/supabase/client'
+import type {
+  ChordResponse,
+  PerformanceSection,
+  PreviewFeel,
+  PreviewInstrument,
+  PreviewPattern,
+  PreviewSectionKey,
+} from '@/types/song'
 
+type AppMode = 'write' | 'chords' | 'sheet' | 'rehearse' | 'perform' | 'video'
 
-
-
-
-// ===============================
-// TYPES
-// ===============================
-
-type AppMode =
-  | 'write'
-  | 'chords'
-  | 'sheet'
-  | 'rehearse'
-  | 'perform'
-  | 'video'
-
-// ===============================
-// TOOLTIP COMPONENT (simple + clean)
-// ===============================
-
-function Tooltip({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="relative group flex items-center justify-center">
       {children}
@@ -49,10 +28,6 @@ function Tooltip({
     </div>
   )
 }
-
-// ===============================
-// SIDEBAR ITEM
-// ===============================
 
 function SidebarItem({
   icon,
@@ -70,9 +45,11 @@ function SidebarItem({
   return (
     <Tooltip label={label}>
       <button
+        type="button"
         onClick={onClick}
-        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition
-        ${active ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
+        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+          active ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+        }`}
       >
         <span className="text-lg">{icon}</span>
         {!collapsed && <span className="text-sm">{label}</span>}
@@ -81,21 +58,19 @@ function SidebarItem({
   )
 }
 
-// ===============================
-// MAIN PAGE
-// ===============================
-
 export default function Page() {
-    const [email, setEmail] = useState('')
-const [otp, setOtp] = useState('')
+  const supabase = React.useMemo(() => createClient(), [])
 
-    const supabase = React.useMemo(() => createClient(), [])
-const [userEmail, setUserEmail] = useState<string | null>(null)
-const [authMessage, setAuthMessage] = useState('')
-    const [debugOutput, setDebugOutput] = useState('')
-  const [currentBarIndex, setCurrentBarIndex] = useState(0)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mode, setMode] = useState<AppMode>('write')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const [email, setEmail] = useState('')
+  const [otp, setOtp] = useState('')
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [authMessage, setAuthMessage] = useState('')
+  const [debugOutput, setDebugOutput] = useState('')
+
+  const [currentBarIndex, setCurrentBarIndex] = useState(0)
 
   const [previewReady, setPreviewReady] = useState(false)
   const [previewPlaying, setPreviewPlaying] = useState(false)
@@ -109,41 +84,13 @@ const [authMessage, setAuthMessage] = useState('')
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
   const [followPlayback, setFollowPlayback] = useState(true)
 
+  const [performanceSheet, setPerformanceSheet] = useState('')
+  const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
+  const [chords, setChords] = useState<ChordResponse | null>(null)
+
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
-
-
-const [performanceSheet, setPerformanceSheet] = useState('')
-const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
-const [chords, setChords] = useState<ChordResponse | null>(null)
-
-const signIn = async () => {
-  setAuthMessage('Signing in...')
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    setAuthMessage(error.message)
-    return
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  setUserEmail(user?.email || null)
-  setAuthMessage(`Signed in as ${user?.email}`)
-}
-
-const signOut = async () => {
-  await supabase.auth.signOut()
-  setUserEmail(null)
-  setAuthMessage('Signed out')
-}
 
   const previewBars = React.useMemo(() => {
     return buildPreviewBars(chords, previewSection)
@@ -173,33 +120,93 @@ const signOut = async () => {
     })
   }
 
-  const loadSavedSongSheet = async (projectId: string) => {
-  try {
-    const res = await fetch(`/api/projects/${projectId}`)
-    const data = await res.json()
+  const sendOtp = async () => {
+    setAuthMessage('Sending code...')
 
-    
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+      },
+    })
 
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
 
-    // adjust these keys to your real API response
-    const nextSheet =
-      data.performanceSheet ||
-      data.songSheet ||
-      data.project?.performanceSheet ||
-      ''
-
-    const nextChords =
-      data.chords ||
-      data.project?.chords ||
-      null
-
-    setPerformanceSheet(nextSheet)
-    setChords(nextChords)
-  } catch (err) {
-    console.error('Failed to load saved song sheet', err)
+    setAuthMessage('Check your email for the verification code.')
   }
-}
 
+  const verifyOtp = async () => {
+    setAuthMessage('Verifying...')
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'email',
+    })
+
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    setUserEmail(user?.email || null)
+    setAuthMessage(`Signed in as ${user?.email}`)
+  }
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setUserEmail(null)
+    setAuthMessage('Signed out')
+  }
+
+  const debugProjects = async () => {
+    try {
+      setDebugOutput('Loading projects...')
+
+      const res = await fetch('/api/projects')
+      const data = await res.json()
+
+      console.log('Projects:', data)
+      setDebugOutput(JSON.stringify(data, null, 2))
+    } catch (err: any) {
+      console.error(err)
+      setDebugOutput(err.message || 'Failed to load projects')
+    }
+  }
+
+  const loadSavedSongSheet = async (projectId: string) => {
+    try {
+      setDebugOutput('Loading song sheet...')
+
+      const res = await fetch(`/api/projects/${projectId}`)
+      const data = await res.json()
+
+      const nextSheet =
+        data.performanceSheet ||
+        data.songSheet ||
+        data.project?.performanceSheet ||
+        ''
+
+      const nextChords =
+        data.chords ||
+        data.project?.chords ||
+        null
+
+      setPerformanceSheet(nextSheet)
+      setChords(nextChords)
+      setDebugOutput(JSON.stringify(data, null, 2))
+    } catch (err: any) {
+      console.error('Failed to load saved song sheet', err)
+      setDebugOutput(err.message || 'Failed to load saved song sheet')
+    }
+  }
 
   const startPreviewPlayback = async () => {
     await Tone.start()
@@ -245,6 +252,7 @@ const signOut = async () => {
           })
         } else if (previewPattern === 'country_train') {
           const rhythm = [0, 180, 360, 540]
+
           rhythm.forEach((delay, i) => {
             const trainId = window.setTimeout(() => {
               const note = i % 2 === 0 ? notes[0] : notes[1] || notes[0]
@@ -279,9 +287,8 @@ const signOut = async () => {
   }
 
   React.useEffect(() => {
-  setPerformanceSections(parsePerformanceSections(performanceSheet))
-}, [performanceSheet])
-
+    setPerformanceSections(parsePerformanceSections(performanceSheet))
+  }, [performanceSheet])
 
   React.useEffect(() => {
     if (previewPattern === 'piano_block') {
@@ -292,85 +299,36 @@ const signOut = async () => {
   }, [previewPattern])
 
   React.useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
+
+      if (error || !user) {
+        setUserEmail(null)
+        setAuthMessage('Not signed in')
+        return
+      }
+
+      setUserEmail(user.email || null)
+      setAuthMessage(`Signed in as ${user.email}`)
+    }
+
+    checkUser()
+  }, [supabase])
+
+  React.useEffect(() => {
     return () => {
       clearPreviewTimeouts()
       previewSynthRef.current?.dispose()
     }
   }, [])
 
-  React.useEffect(() => {
-  const checkUser = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser()
-
-    if (error || !user) {
-      setUserEmail(null)
-      setAuthMessage('Not signed in')
-      return
-    }
-
-    setUserEmail(user.email || null)
-    setAuthMessage(`Signed in as ${user.email}`)
-  }
-
-  checkUser()
-}, [supabase])
-
-
-const debugProjects = async () => {
-  try {
-    setDebugOutput('Loading projects...')
-
-    const res = await fetch('/api/projects')
-    const data = await res.json()
-
-    console.log('Projects:', data)
-    setDebugOutput(JSON.stringify(data, null, 2))
-  } catch (err: any) {
-    console.error(err)
-    setDebugOutput(err.message || 'Failed to load projects')
-  }
-}
-  const sendOtp = async () => {
-  setAuthMessage('Sending code...')
-
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: false,
-    },
-  })
-
-  if (error) {
-    setAuthMessage(error.message)
-    return
-  }
-
-  setAuthMessage('Check your email for the verification code.')
-}
-const verifyOtp = async () => {
-  setAuthMessage('Verifying...')
-
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token: otp,
-    type: 'email',
-  })
-
-  if (error) {
-    setAuthMessage(error.message)
-    return
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  setUserEmail(user?.email || null)
-  setAuthMessage(`Signed in as ${user?.email}`)
-}
+  const activeSectionLabel = previewBars[currentBarIndex]?.label?.toLowerCase() || null
+  const activeSection = performanceSections.find(
+    (section) => section.label.toLowerCase() === activeSectionLabel
+  )
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -380,6 +338,7 @@ const verifyOtp = async () => {
         } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
       >
         <button
+          type="button"
           onClick={() => setSidebarCollapsed((s) => !s)}
           className="mb-4 text-gray-300 hover:text-white"
           title="Toggle sidebar"
@@ -388,48 +347,12 @@ const verifyOtp = async () => {
         </button>
 
         <div className="flex flex-col gap-2">
-          <SidebarItem
-            icon="✍️"
-            label="Write"
-            active={mode === 'write'}
-            collapsed={sidebarCollapsed}
-            onClick={() => setMode('write')}
-          />
-          <SidebarItem
-            icon="🎸"
-            label="Chords"
-            active={mode === 'chords'}
-            collapsed={sidebarCollapsed}
-            onClick={() => setMode('chords')}
-          />
-          <SidebarItem
-            icon="📄"
-            label="Sheet"
-            active={mode === 'sheet'}
-            collapsed={sidebarCollapsed}
-            onClick={() => setMode('sheet')}
-          />
-          <SidebarItem
-            icon="🎧"
-            label="Rehearse"
-            active={mode === 'rehearse'}
-            collapsed={sidebarCollapsed}
-            onClick={() => setMode('rehearse')}
-          />
-          <SidebarItem
-            icon="🎤"
-            label="Perform"
-            active={mode === 'perform'}
-            collapsed={sidebarCollapsed}
-            onClick={() => setMode('perform')}
-          />
-          <SidebarItem
-            icon="🎬"
-            label="Video"
-            active={mode === 'video'}
-            collapsed={sidebarCollapsed}
-            onClick={() => setMode('video')}
-          />
+          <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => setMode('write')} />
+          <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => setMode('chords')} />
+          <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => setMode('sheet')} />
+          <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => setMode('rehearse')} />
+          <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => setMode('perform')} />
+          <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => setMode('video')} />
         </div>
       </div>
 
@@ -439,81 +362,69 @@ const verifyOtp = async () => {
         </div>
 
         <div className="flex-1 overflow-auto p-6">
-{mode === 'write' && (
-  <div>
-    <h1 className="text-xl mb-4">Write</h1>
-    <p className="text-gray-400 mb-4">
-      Lyrics, ideas, and structure go here.
-    </p>
+          {mode === 'write' && (
+            <div>
+              <h1 className="text-xl mb-4">Write</h1>
+              <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
 
-    <div className="flex gap-3">
-      
-    
-    <p className="text-sm text-gray-400 mb-4">
-  {authMessage}
-</p>
-    
-    <button
-        onClick={() => alert('clicked')}
-        className="px-4 py-2 rounded bg-blue-600 text-white"
-      >
-        Test Click
-      </button>
+              <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
+                <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
 
-      <button
-        onClick={debugProjects}
-        className="px-4 py-2 rounded bg-green-600 text-white"
-      >
-      <div className="mb-4 p-4 rounded bg-gray-800">
-  <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
-  <div className="mb-4 p-4 rounded bg-gray-800">
-  <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
+                {!userEmail ? (
+                  <div className="flex flex-col gap-3">
+                    <input
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email"
+                      className="px-3 py-2 rounded bg-gray-700 text-white"
+                    />
 
-  {!userEmail ? (
-    <div className="flex flex-col gap-3 max-w-md">
-      <input
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        className="px-3 py-2 rounded bg-gray-700 text-white"
-      />
+                    <button type="button" onClick={sendOtp} className="px-4 py-2 rounded bg-blue-600 text-white">
+                      Send Verification Code
+                    </button>
 
-      <input
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        type="password"
-        className="px-3 py-2 rounded bg-gray-700 text-white"
-      />
+                    <input
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="Verification code"
+                      className="px-3 py-2 rounded bg-gray-700 text-white"
+                    />
 
-      <button
-        onClick={signIn}
-        className="px-4 py-2 rounded bg-blue-600 text-white"
-      >
-        Sign In
-      </button>
-    </div>
-  ) : (
-    <button
-      onClick={signOut}
-      className="px-4 py-2 rounded bg-gray-600 text-white"
-    >
-      Sign Out
-    </button>
-  )}
-</div>
-  
-        Log Projects
-      </button>
-    </div>
+                    <button type="button" onClick={verifyOtp} className="px-4 py-2 rounded bg-green-600 text-white">
+                      Verify Code
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <p className="text-green-400">Signed in as {userEmail}</p>
+                    <button type="button" onClick={signOut} className="px-4 py-2 rounded bg-gray-600 text-white">
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
 
-    {debugOutput && (
-      <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
-        {debugOutput}
-      </pre>
-    )}
-  </div>
-)}
+              <div className="flex gap-3 mb-4">
+                <button type="button" onClick={debugProjects} className="px-4 py-2 rounded bg-blue-600 text-white">
+                  Log Projects
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => loadSavedSongSheet('PASTE_REAL_PROJECT_ID_HERE')}
+                  className="px-4 py-2 rounded bg-purple-600 text-white"
+                >
+                  Load Saved SongSheet
+                </button>
+              </div>
+
+              {debugOutput && (
+                <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
+                  {debugOutput}
+                </pre>
+              )}
+            </div>
+          )}
 
           {mode === 'chords' && (
             <div>
@@ -523,14 +434,14 @@ const verifyOtp = async () => {
           )}
 
           {mode === 'sheet' && (
-              <SongSheet
-                performanceSheet={performanceSheet}
-                performanceSections={performanceSections}
-                performanceFontSize={18}
-                activePerformanceSectionId={null}
-                performanceSectionRefs={performanceSectionRefs}
-              />
-            )}
+            <SongSheet
+              performanceSheet={performanceSheet}
+              performanceSections={performanceSections}
+              performanceFontSize={18}
+              activePerformanceSectionId={activeSection?.id || null}
+              performanceSectionRefs={performanceSectionRefs}
+            />
+          )}
 
           {mode === 'rehearse' && (
             <div className="h-full">
@@ -563,14 +474,14 @@ const verifyOtp = async () => {
           )}
 
           {mode === 'perform' && (
-              <SongSheet
-                performanceSheet={performanceSheet}
-                performanceSections={performanceSections}
-                performanceFontSize={24}
-                activePerformanceSectionId={null}
-                performanceSectionRefs={performanceSectionRefs}
-              />
-            )}
+            <SongSheet
+              performanceSheet={performanceSheet}
+              performanceSections={performanceSections}
+              performanceFontSize={24}
+              activePerformanceSectionId={activeSection?.id || null}
+              performanceSectionRefs={performanceSectionRefs}
+            />
+          )}
 
           {mode === 'video' && (
             <div>
