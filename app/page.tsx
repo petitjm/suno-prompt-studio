@@ -471,6 +471,31 @@ const [versionsLoading, setVersionsLoading] = useState(false)
     setPreviewPlaying(false)
   }
 
+
+  React.useEffect(() => {
+  if (userEmail) {
+    void loadProjects()
+  } else {
+    setProjects([])
+    setActiveProject(null)
+    setProjectMessage('')
+    setSongVersions([])
+    setChordVersions([])
+    setPerformanceSheet('')
+    setChords(null)
+  }
+}, [userEmail])
+
+React.useEffect(() => {
+  if (activeProject?.id) {
+    void loadProjectData(activeProject.id)
+  }
+}, [activeProject?.id])
+
+
+
+
+
   React.useEffect(() => {
     const parsed = parsePerformanceSections(performanceSheet)
 
@@ -528,6 +553,93 @@ setPerformanceSections(withUniqueIds)
 
  const activePerformanceSectionId =
   previewBarMeta[currentBarIndex]?.sectionId || null
+
+
+  const loadProjects = async (preferredProjectId?: string) => {
+  try {
+    setProjectMessage('Loading projects...')
+
+    const res = await fetch('/api/projects')
+    const data = await readJsonSafe(res)
+
+    if (!res.ok) throw new Error(data.error || 'Failed to load projects')
+
+    const nextProjects: Project[] = Array.isArray(data.projects) ? data.projects : []
+    setProjects(nextProjects)
+
+    if (nextProjects.length > 0) {
+      setActiveProject((prev) => {
+        const targetId = preferredProjectId || prev?.id
+        return targetId
+          ? nextProjects.find((p) => p.id === targetId) || nextProjects[0]
+          : nextProjects[0]
+      })
+    } else {
+      setActiveProject(null)
+    }
+
+    setProjectMessage('')
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to load projects')
+  }
+}
+
+const loadProjectData = async (projectId: string) => {
+  const token = Date.now()
+  latestProjectLoadRef.current = token
+
+  try {
+    setVersionsLoading(true)
+    setProjectMessage('Loading project data...')
+
+    const [songRes, chordRes] = await Promise.all([
+      fetch(`/api/song-versions/${projectId}`),
+      fetch(`/api/chord-versions/${projectId}`),
+    ])
+
+    const songData = await readJsonSafe(songRes)
+    const chordData = await readJsonSafe(chordRes)
+
+    if (latestProjectLoadRef.current !== token) return
+
+    if (!songRes.ok) throw new Error(songData.error || 'Failed to load song versions')
+    if (!chordRes.ok) throw new Error(chordData.error || 'Failed to load chord versions')
+
+    const nextSongVersions: SongVersionRecord[] = Array.isArray(songData.versions)
+      ? songData.versions
+      : []
+
+    const nextChordVersions: ChordVersionRecord[] = Array.isArray(chordData.versions)
+      ? chordData.versions
+      : []
+
+    setSongVersions(nextSongVersions)
+    setChordVersions(nextChordVersions)
+
+    const latestLyrics = songData.latest?.result?.lyrics_full || ''
+    const latestChords = chordData.latest?.chord_data || null
+
+    setPerformanceSheet(latestLyrics)
+    setChords(latestChords)
+
+    setProjectMessage('')
+  } catch (err: any) {
+    if (latestProjectLoadRef.current !== token) return
+
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to load project data')
+    setPerformanceSheet('')
+    setChords(null)
+    setSongVersions([])
+    setChordVersions([])
+  } finally {
+    if (latestProjectLoadRef.current === token) {
+      setVersionsLoading(false)
+    }
+  }
+}
+
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
