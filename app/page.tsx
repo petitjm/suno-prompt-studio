@@ -5,7 +5,13 @@ import * as Tone from 'tone'
 
 import RehearsePanel from '@/components/RehearsePanel'
 import SongSheet from '@/components/SongSheet'
-import { buildPreviewBars, parsePerformanceSections } from '@/lib/parseSong'
+import {
+  buildPreviewBars,
+  buildOrderedPreviewBarsFromSections,
+  findMatchingSectionId,
+  parseOrderedSongSections,
+  parsePerformanceSections,
+} from '@/lib/parseSong'
 import { createClient } from '@/lib/supabase/client'
 import type {
   ChordResponse,
@@ -15,6 +21,14 @@ import type {
   PreviewPattern,
   PreviewSectionKey,
 } from '@/types/song'
+
+type PreviewBarMeta = {
+  barIndex: number
+  label: string
+  chord: string
+  sectionId: string | null
+}
+
 
 type AppMode = 'write' | 'chords' | 'sheet' | 'rehearse' | 'perform' | 'video'
 
@@ -94,8 +108,28 @@ export default function Page() {
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
   const previewBars = React.useMemo(() => {
-    return buildPreviewBars(chords, previewSection)
-  }, [chords, previewSection])
+      if (!chords) return []
+
+      if (previewSection !== 'full_song') {
+        return buildPreviewBars(chords, previewSection).map((bar) => ({
+          ...bar,
+          sectionId: null,
+        }))
+      }
+
+const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
+  return previewBars.map((bar, index) => ({
+    barIndex: index,
+    label: bar.label,
+    chord: bar.chord,
+    sectionId: bar.sectionId || findMatchingSectionId(bar.label, performanceSections),
+  }))
+}, [previewBars, performanceSections])
+
+
+  const orderedSections = parseOrderedSongSections(performanceSheet)
+  return buildOrderedPreviewBarsFromSections(orderedSections, chords)
+}, [chords, previewSection, performanceSheet])
 
   const clearPreviewTimeouts = () => {
     previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
@@ -245,10 +279,20 @@ const nextChords = latestChords?.chord_data || null
 
     previewBars.forEach((bar, index) => {
       const timeoutId = window.setTimeout(() => {
-        if (followPlayback && bar.label) {
-          setCurrentBarIndex(index)
-          scrollToPerformanceSection(bar.label)
+        if (followPlayback) {
+         setCurrentBarIndex(index)
+
+  const meta = previewBarMeta[index]
+      if (meta?.sectionId) {
+        const el = performanceSectionRefs.current[meta.sectionId]
+        if (el) {
+          el.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
         }
+      }
+    }
 
         const chord = (bar.chord || 'C').trim()
 
