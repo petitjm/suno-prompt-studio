@@ -333,7 +333,44 @@ const debugProjects = async () => {
     setDebugOutput(err.message || 'Failed to load projects')
   }
 }
+  const sendOtp = async () => {
+  setAuthMessage('Sending code...')
 
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+    },
+  })
+
+  if (error) {
+    setAuthMessage(error.message)
+    return
+  }
+
+  setAuthMessage('Check your email for the verification code.')
+}
+const verifyOtp = async () => {
+  setAuthMessage('Verifying...')
+
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: 'email',
+  })
+
+  if (error) {
+    setAuthMessage(error.message)
+    return
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  setUserEmail(user?.email || null)
+  setAuthMessage(`Signed in as ${user?.email}`)
+}
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -429,44 +466,7 @@ const debugProjects = async () => {
       >
       <div className="mb-4 p-4 rounded bg-gray-800">
   <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
-  const sendOtp = async () => {
-  setAuthMessage('Sending code...')
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: false,
-    },
-  })
-
-  if (error) {
-    setAuthMessage(error.message)
-    return
-  }
-
-  setAuthMessage('Check your email for the verification code.')
-}
-const verifyOtp = async () => {
-  setAuthMessage('Verifying...')
-
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token: otp,
-    type: 'email',
-  })
-
-  if (error) {
-    setAuthMessage(error.message)
-    return
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  setUserEmail(user?.email || null)
-  setAuthMessage(`Signed in as ${user?.email}`)
-}
   
         Log Projects
       </button>
