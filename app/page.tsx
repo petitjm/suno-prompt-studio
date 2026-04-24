@@ -146,11 +146,7 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     const res = await fetch(`/api/projects/${projectId}`)
     const data = await res.json()
 
-    const debugProjects = async () => {
-  const res = await fetch('/api/projects')
-  const data = await res.json()
-  console.log(data)
-}
+    
 
 
     // adjust these keys to your real API response
@@ -343,6 +339,16 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     <p className="text-gray-400 mb-4">
       Lyrics, ideas, and structure go here.
     </p>
+
+
+    const debugProjects = async () => {
+  const res = await fetch('/api/projects')
+  const data = await res.json()
+  console.log(data)
+}
+
+
+
     <button onClick={debugProjects}>Log Projects</button>
     <button
       onClick={() => loadSavedSongSheet('page to modules')}
