@@ -195,31 +195,45 @@ if (!res.ok) {
   }
 
   const loadSavedSongSheet = async (projectId: string) => {
+  try {
+    setDebugOutput('Loading song sheet...')
+
+    const res = await fetch(`/api/projects/${projectId}`)
+    const text = await res.text()
+
+    let data: any = null
+
     try {
-      setDebugOutput('Loading song sheet...')
-
-      const res = await fetch(`/api/projects/${projectId}`)
-      const data = await res.json()
-
-      const nextSheet =
-        data.performanceSheet ||
-        data.songSheet ||
-        data.project?.performanceSheet ||
-        ''
-
-      const nextChords =
-        data.chords ||
-        data.project?.chords ||
-        null
-
-      setPerformanceSheet(nextSheet)
-      setChords(nextChords)
-      setDebugOutput(JSON.stringify(data, null, 2))
-    } catch (err: any) {
-      console.error('Failed to load saved song sheet', err)
-      setDebugOutput(err.message || 'Failed to load saved song sheet')
+      data = text ? JSON.parse(text) : null
+    } catch {
+      setDebugOutput(`Non-JSON response from server:\n\n${text || '[empty response]'}`)
+      return
     }
+
+    if (!res.ok) {
+      setDebugOutput(JSON.stringify(data, null, 2))
+      return
+    }
+
+    const nextSheet =
+      data?.performanceSheet ||
+      data?.songSheet ||
+      data?.project?.performanceSheet ||
+      ''
+
+    const nextChords =
+      data?.chords ||
+      data?.project?.chords ||
+      null
+
+    setPerformanceSheet(nextSheet)
+    setChords(nextChords)
+    setDebugOutput(JSON.stringify(data, null, 2))
+  } catch (err: any) {
+    console.error('Failed to load saved song sheet', err)
+    setDebugOutput(err.message || 'Failed to load saved song sheet')
   }
+}
 
   const startPreviewPlayback = async () => {
     await Tone.start()
