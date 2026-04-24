@@ -350,38 +350,34 @@ const debugProjects = async () => {
         </div>
 
         <div className="flex-1 overflow-auto p-6">
-          {mode === 'write' && (
-  
-          
- 
-          
-          
-          
-          
-          <div>
+{mode === 'write' && (
+  <div>
     <h1 className="text-xl mb-4">Write</h1>
     <p className="text-gray-400 mb-4">
       Lyrics, ideas, and structure go here.
     </p>
 
+    <div className="flex gap-3">
+      <button
+        onClick={() => alert('clicked')}
+        className="px-4 py-2 rounded bg-blue-600 text-white"
+      >
+        Test Click
+      </button>
 
-    <button
-  type="button"
-  onClick={debugProjects}
-  className="px-4 py-2 rounded bg-blue-600 text-white mr-3"
->
-  Log Projects
-</button>
+      <button
+        onClick={debugProjects}
+        className="px-4 py-2 rounded bg-green-600 text-white"
+      >
+        Log Projects
+      </button>
+    </div>
 
-
-
-   
-    <button
-      onClick={() => loadSavedSongSheet('page to modules')}
-      className="px-4 py-2 rounded bg-blue-600 text-white"
-    >
-      Load Saved SongSheet
-    </button>
+    {debugOutput && (
+      <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
+        {debugOutput}
+      </pre>
+    )}
   </div>
 )}
 
