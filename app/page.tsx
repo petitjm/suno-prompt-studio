@@ -171,7 +171,20 @@ export default function Page() {
       setDebugOutput('Loading projects...')
 
       const res = await fetch('/api/projects')
-      const data = await res.json()
+      const text = await res.text()
+
+let data: any = null
+try {
+  data = text ? JSON.parse(text) : null
+} catch {
+  setDebugOutput(`Non-JSON response from server:\n\n${text}`)
+  return
+}
+
+if (!res.ok) {
+  setDebugOutput(JSON.stringify(data, null, 2))
+  return
+}
 
       console.log('Projects:', data)
       setDebugOutput(JSON.stringify(data, null, 2))
