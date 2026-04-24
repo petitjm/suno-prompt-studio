@@ -108,21 +108,41 @@ export default function Page() {
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
   const previewBars = React.useMemo(() => {
-      if (!chords) return []
+  if (!chords) return []
 
-      if (previewSection !== 'full_song') {
-        return buildPreviewBars(chords, previewSection).map((bar) => ({
-          ...bar,
-          sectionId: null,
-        }))
-      }
+  try {
+    if (previewSection !== 'full_song') {
+      return buildPreviewBars(chords, previewSection).map((bar) => ({
+        ...bar,
+        sectionId: null,
+      }))
+    }
+
+    if (!performanceSheet.trim()) {
+      return []
+    }
+
+    const orderedSections = parseOrderedSongSections(performanceSheet)
+
+    if (!orderedSections.length) {
+      return []
+    }
+
+    return buildOrderedPreviewBarsFromSections(orderedSections, chords)
+  } catch (err) {
+    console.error('Failed to build preview bars:', err)
+    return []
+  }
+}, [chords, previewSection, performanceSheet])
 
 const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
   return previewBars.map((bar, index) => ({
     barIndex: index,
-    label: bar.label,
-    chord: bar.chord,
-    sectionId: bar.sectionId || findMatchingSectionId(bar.label, performanceSections),
+    label: bar.label || '',
+    chord: bar.chord || '',
+    sectionId:
+      bar.sectionId ||
+      (bar.label ? findMatchingSectionId(bar.label, performanceSections) : null),
   }))
 }, [previewBars, performanceSections])
 
