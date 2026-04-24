@@ -600,7 +600,7 @@ setPerformanceSections(withUniqueIds)
     <button
       type="button"
       onClick={() => setPerformControlsOpen((open) => !open)}
-      className="fixed right-[440px] top-16 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
+      className="fixed right-6 top-20 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
     >
       {performControlsOpen ? 'Hide Controls' : 'Show Controls'}
     </button>
