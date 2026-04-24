@@ -147,9 +147,7 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
 }, [previewBars, performanceSections])
 
 
-  const orderedSections = parseOrderedSongSections(performanceSheet)
-  return buildOrderedPreviewBarsFromSections(orderedSections, chords)
-}, [chords, previewSection, performanceSheet])
+
 
   const clearPreviewTimeouts = () => {
     previewTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
