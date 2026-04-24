@@ -266,6 +266,13 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
     }
   }, [])
 
+              const debugProjects = async () => {
+  const res = await fetch('/api/projects')
+  const data = await res.json()
+  console.log(data)
+} 
+
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       <div
@@ -336,11 +343,7 @@ const [chords, setChords] = useState<ChordResponse | null>(null)
           {mode === 'write' && (
   
           
-             const debugProjects = async () => {
-  const res = await fetch('/api/projects')
-  const data = await res.json()
-  console.log(data)
-} 
+ 
           
           
           
