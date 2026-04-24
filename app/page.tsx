@@ -615,17 +615,9 @@ setPerformanceSections(withUniqueIds)
 
     {performControlsOpen && (
      <div className="fixed right-0 top-12 h-[calc(100vh-3rem)] w-[420px] max-w-[90vw] z-40 bg-gray-900 border-l border-gray-700 shadow-2xl overflow-auto p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Performance Controls</h2>
-
-          <button
-            type="button"
-            onClick={() => setPerformControlsOpen(false)}
-            className="px-3 py-1 rounded bg-gray-700 text-white"
-          >
-            Close
-          </button>
-        </div>
+        <div className="mb-4">
+  <h2 className="text-lg font-semibold">Performance Controls</h2>
+</div>
 
         <RehearsePanel
           previewSection={previewSection}
