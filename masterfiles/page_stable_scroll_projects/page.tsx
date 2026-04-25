@@ -694,6 +694,94 @@ const createProject = async () => {
   }
 }
 
+const renameProject = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
+
+    const nextTitle = window.prompt('Enter a new project name:', activeProject.title)
+    if (nextTitle === null) return
+
+    const trimmed = nextTitle.trim()
+    if (!trimmed) {
+      setProjectMessage('Project name cannot be empty.')
+      return
+    }
+
+    if (trimmed === activeProject.title) {
+      setProjectMessage('Project name unchanged.')
+      return
+    }
+
+    const res = await fetch(`/api/projects/${activeProject.id}/rename`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: trimmed }),
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to rename project')
+
+    await loadProjects(activeProject.id)
+    setProjectMessage(`Renamed to: ${trimmed}`)
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to rename project')
+  }
+}
+
+const duplicateProject = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
+
+    const res = await fetch(`/api/projects/${activeProject.id}/duplicate`, {
+      method: 'POST',
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to duplicate project')
+
+    await loadProjects(data.project?.id)
+    setProjectMessage(`Duplicated: ${data.project?.title || 'Copy created'}`)
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to duplicate project')
+  }
+}
+
+const deleteProject = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
+
+    const ok = window.confirm(`Delete "${activeProject.title}"?`)
+    if (!ok) return
+
+    const projectId = activeProject.id
+    const projectTitle = activeProject.title
+
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: 'DELETE',
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to delete project')
+
+    await loadProjects()
+    setProjectMessage(`Deleted: ${projectTitle}`)
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to delete project')
+  }
+}
+
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -807,6 +895,36 @@ const createProject = async () => {
       Create
     </button>
   </div>
+
+  <div className="flex gap-2 mb-3">
+  <button
+    type="button"
+    onClick={renameProject}
+    disabled={!activeProject}
+    className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+  >
+    Rename
+  </button>
+
+  <button
+    type="button"
+    onClick={duplicateProject}
+    disabled={!activeProject}
+    className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+  >
+    Duplicate
+  </button>
+
+  <button
+    type="button"
+    onClick={deleteProject}
+    disabled={!activeProject}
+    className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
+  >
+    Delete
+  </button>
+</div>
+
 
   <div className="space-y-2">
     {projects.map((project) => (
