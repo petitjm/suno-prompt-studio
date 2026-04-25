@@ -869,38 +869,7 @@ const deleteProject = async () => {
   />
 </div>
               
-  try {
-    if (!activeProject) {
-      setProjectMessage('Select a project first.')
-      return
-    }
 
-    if (!performanceSheet.trim()) {
-      setProjectMessage('No lyrics to save.')
-      return
-    }
-
-    const res = await fetch('/api/song-versions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: activeProject.id,
-        result: {
-          lyrics_full: performanceSheet,
-        },
-      }),
-    })
-
-    const data = await readJsonSafe(res)
-    if (!res.ok) throw new Error(data.error || 'Failed to save song')
-
-    await loadProjectData(activeProject.id)
-    setProjectMessage('Song saved')
-  } catch (err: any) {
-    console.error(err)
-    setProjectMessage(err.message || 'Failed to save song')
-  }
-}
 
 
 const saveChords = async () => {
