@@ -790,7 +790,48 @@ const deleteProject = async () => {
   }
 }
 
-const saveSong = async () => {
+
+
+
+
+  return (
+    <div className="flex h-screen bg-gray-900 text-white">
+      <div
+        className={`${
+          sidebarCollapsed ? 'w-16' : 'w-56'
+        } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
+      >
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed((s) => !s)}
+          className="mb-4 text-gray-300 hover:text-white"
+          title="Toggle sidebar"
+        >
+          ☰
+        </button>
+
+        <div className="flex flex-col gap-2">
+          <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => setMode('write')} />
+          <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => setMode('chords')} />
+          <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => setMode('sheet')} />
+          <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => setMode('rehearse')} />
+          <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => setMode('perform')} />
+          <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => setMode('video')} />
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col">
+        <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
+          <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
+        </div>
+
+        <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
+          {mode === 'write' && (
+            <div>
+              <h1 className="text-xl mb-4">Write</h1>
+              <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
+
+              const saveSong = async () => {
   try {
     if (!activeProject) {
       setProjectMessage('Select a project first.')
@@ -858,44 +899,6 @@ const saveChords = async () => {
 }
 
 
-
-
-  return (
-    <div className="flex h-screen bg-gray-900 text-white">
-      <div
-        className={`${
-          sidebarCollapsed ? 'w-16' : 'w-56'
-        } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
-      >
-        <button
-          type="button"
-          onClick={() => setSidebarCollapsed((s) => !s)}
-          className="mb-4 text-gray-300 hover:text-white"
-          title="Toggle sidebar"
-        >
-          ☰
-        </button>
-
-        <div className="flex flex-col gap-2">
-          <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => setMode('write')} />
-          <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => setMode('chords')} />
-          <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => setMode('sheet')} />
-          <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => setMode('rehearse')} />
-          <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => setMode('perform')} />
-          <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => setMode('video')} />
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col">
-        <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
-          <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
-        </div>
-
-        <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
-          {mode === 'write' && (
-            <div>
-              <h1 className="text-xl mb-4">Write</h1>
-              <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
 
               <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
                 <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
