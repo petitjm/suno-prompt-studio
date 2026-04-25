@@ -856,19 +856,7 @@ const deleteProject = async () => {
                 )}
               </div>
 
-              <div className="flex gap-3 mb-4">
-                <button type="button" onClick={debugProjects} className="px-4 py-2 rounded bg-blue-600 text-white">
-                  Log Projects
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => loadSavedSongSheet('e01a6d78-3e08-4f78-8db8-75c6241196c3')}
-                  className="px-4 py-2 rounded bg-purple-600 text-white"
-                >
-                  Load Saved SongSheet
-                </button>
-              </div>
+              
 
 
               <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
