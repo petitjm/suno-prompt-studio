@@ -818,11 +818,51 @@ const deleteProject = async () => {
   }
 }
 
+const saveChords = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
 
+    if (!chords) {
+      setProjectMessage('No chords to save.')
+      return
+    }
+
+    const res = await fetch('/api/chord-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        chord_data: chords,
+      }),
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to save chords')
+
+    await loadProjectData(activeProject.id)
+    setProjectMessage('Chords saved')
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to save chords')
+  }
+}
 
 
 
   return (
+
+
+
+
+
+
+
+
+
+
     <div className="flex h-screen bg-gray-900 text-white">
       <div
         className={`${
@@ -872,37 +912,7 @@ const deleteProject = async () => {
 
 
 
-const saveChords = async () => {
-  try {
-    if (!activeProject) {
-      setProjectMessage('Select a project first.')
-      return
-    }
 
-    if (!chords) {
-      setProjectMessage('No chords to save.')
-      return
-    }
-
-    const res = await fetch('/api/chord-versions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: activeProject.id,
-        chord_data: chords,
-      }),
-    })
-
-    const data = await readJsonSafe(res)
-    if (!res.ok) throw new Error(data.error || 'Failed to save chords')
-
-    await loadProjectData(activeProject.id)
-    setProjectMessage('Chords saved')
-  } catch (err: any) {
-    console.error(err)
-    setProjectMessage(err.message || 'Failed to save chords')
-  }
-}
 
 
 
