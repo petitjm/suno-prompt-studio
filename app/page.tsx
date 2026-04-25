@@ -572,6 +572,19 @@ setPerformanceSections(withUniqueIds)
   previewBarMeta[currentBarIndex]?.sectionId || null
 
 
+  <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+  <h2 className="text-lg font-semibold mb-3">Song / Lyrics</h2>
+
+  <textarea
+    value={performanceSheet}
+    onChange={(e) => setPerformanceSheet(e.target.value)}
+    placeholder="Paste or write lyrics here..."
+    className="w-full min-h-[320px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
+  />
+</div>
+
+
+
   const loadProjects = async (preferredProjectId?: string) => {
   try {
     setProjectMessage('Loading projects...')
