@@ -247,54 +247,7 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
     setAuthMessage(`Signed in as ${user?.email}`)
   }
 
-  <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
-  <h2 className="text-lg font-semibold mb-3">Projects</h2>
 
-  {projectMessage && (
-    <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
-  )}
-
-  <div className="flex gap-2 mb-3">
-    <input
-      value={newProjectName}
-      onChange={(e) => setNewProjectName(e.target.value)}
-      placeholder="New project name"
-      className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
-    />
-
-    <button
-      type="button"
-      onClick={createProject}
-      className="px-4 py-2 rounded bg-blue-600 text-white"
-    >
-      Create
-    </button>
-  </div>
-
-  <div className="space-y-2">
-    {projects.map((project) => (
-      <button
-        key={project.id}
-        type="button"
-        onClick={() => setActiveProject(project)}
-        className={`w-full text-left px-3 py-2 rounded ${
-          activeProject?.id === project.id
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-700 text-gray-200'
-        }`}
-      >
-        <div className="font-medium">{project.title}</div>
-        <div className="text-xs opacity-70">{project.id}</div>
-      </button>
-    ))}
-  </div>
-
-  {activeProject && (
-    <p className="mt-3 text-sm text-green-400">
-      Active project: {activeProject.title}
-    </p>
-  )}
-</div>
 
 
 
@@ -780,6 +733,58 @@ const loadProjectData = async (projectId: string) => {
                   Load Saved SongSheet
                 </button>
               </div>
+
+
+              <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
+  <h2 className="text-lg font-semibold mb-3">Projects</h2>
+
+  {projectMessage && (
+    <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
+  )}
+
+  <div className="flex gap-2 mb-3">
+    <input
+      value={newProjectName}
+      onChange={(e) => setNewProjectName(e.target.value)}
+      placeholder="New project name"
+      className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
+    />
+
+    <button
+      type="button"
+      onClick={createProject}
+      className="px-4 py-2 rounded bg-blue-600 text-white"
+    >
+      Create
+    </button>
+  </div>
+
+  <div className="space-y-2">
+    {projects.map((project) => (
+      <button
+        key={project.id}
+        type="button"
+        onClick={() => setActiveProject(project)}
+        className={`w-full text-left px-3 py-2 rounded ${
+          activeProject?.id === project.id
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-200'
+        }`}
+      >
+        <div className="font-medium">{project.title}</div>
+        <div className="text-xs opacity-70">{project.id}</div>
+      </button>
+    ))}
+  </div>
+
+  {activeProject && (
+    <p className="mt-3 text-sm text-green-400">
+      Active project: {activeProject.title}
+    </p>
+  )}
+</div>
+
+
 
               {debugOutput && (
                 <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
