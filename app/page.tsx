@@ -477,6 +477,8 @@ const [projects, setProjects] = useState<Project[]>([])
 const [activeProject, setActiveProject] = useState<Project | null>(null)
 const [newProjectName, setNewProjectName] = useState('')
 const [projectMessage, setProjectMessage] = useState('')
+const [savingSong, setSavingSong] = useState(false)
+const [justSavedSong, setJustSavedSong] = useState(false)
 const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
 const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
 const [versionsLoading, setVersionsLoading] = useState(false)
@@ -673,6 +675,9 @@ const saveSong = async () => {
       return
     }
 
+    setSavingSong(true)
+    setJustSavedSong(false)
+
     const res = await fetch('/api/song-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -685,15 +690,22 @@ const saveSong = async () => {
     })
 
     const data = await readJsonSafe(res)
+
     if (!res.ok) {
       throw new Error(data.error || 'Failed to save song')
     }
 
     await loadProjectData(activeProject.id)
-    setProjectMessage('Song saved')
+
+    setJustSavedSong(true)
+    window.setTimeout(() => {
+      setJustSavedSong(false)
+    }, 1500)
   } catch (err: any) {
     console.error(err)
     setProjectMessage(err.message || 'Failed to save song')
+  } finally {
+    setSavingSong(false)
   }
 }
 
@@ -910,13 +922,19 @@ const saveChords = async () => {
 
  <div className="flex gap-2 mt-3">
   <button
-    type="button"
-    onClick={saveSong}
-    disabled={!activeProject || !performanceSheet.trim()}
-    className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-40"
-  >
-    Save Song
-  </button>
+  type="button"
+  onClick={saveSong}
+  disabled={savingSong || !activeProject || !performanceSheet.trim()}
+  className={`px-4 py-2 rounded text-white transition ${
+    savingSong
+      ? 'bg-gray-600 scale-95'
+      : justSavedSong
+        ? 'bg-blue-600'
+        : 'bg-green-600'
+  } disabled:opacity-40`}
+>
+  {savingSong ? 'Saving song...' : justSavedSong ? 'Saved ✓' : 'Save Song'}
+</button>
 
   {!activeProject && (
     <span className="text-sm text-yellow-400 self-center">
