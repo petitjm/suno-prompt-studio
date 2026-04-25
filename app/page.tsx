@@ -645,6 +645,38 @@ const loadProjectData = async (projectId: string) => {
   }
 }
 
+const createProject = async () => {
+  const title = newProjectName.trim()
+
+  if (!title) {
+    setProjectMessage('Enter a project name first.')
+    return
+  }
+
+  try {
+    setProjectMessage('Creating project...')
+
+    const res = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    })
+
+    const data = await readJsonSafe(res)
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to create project')
+    }
+
+    setNewProjectName('')
+    await loadProjects(data.id)
+    setProjectMessage('Project created')
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to create project')
+  }
+}
+
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
