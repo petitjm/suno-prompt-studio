@@ -251,11 +251,6 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
     setAuthMessage(`Signed in as ${user?.email}`)
   }
 
-
-
-
-
-
   const signOut = async () => {
     await supabase.auth.signOut()
     setUserEmail(null)
@@ -782,6 +777,76 @@ const deleteProject = async () => {
   }
 }
 
+const saveSong = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
+
+    if (!performanceSheet.trim()) {
+      setProjectMessage('No lyrics to save.')
+      return
+    }
+
+    const res = await fetch('/api/song-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        result: {
+          lyrics_full: performanceSheet,
+        },
+      }),
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to save song')
+
+    await loadProjectData(activeProject.id)
+    setProjectMessage('Song saved')
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to save song')
+  }
+}
+
+
+const saveChords = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
+
+    if (!chords) {
+      setProjectMessage('No chords to save.')
+      return
+    }
+
+    const res = await fetch('/api/chord-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        chord_data: chords,
+      }),
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to save chords')
+
+    await loadProjectData(activeProject.id)
+    setProjectMessage('Chords saved')
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to save chords')
+  }
+}
+
+
+
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       <div
@@ -856,7 +921,27 @@ const deleteProject = async () => {
                 )}
               </div>
 
-              
+     <div className="flex gap-2 mb-4">
+  <button
+    type="button"
+    onClick={saveSong}
+    disabled={!activeProject}
+    className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-40"
+  >
+    Save Song
+  </button>
+
+  <button
+    type="button"
+    onClick={saveChords}
+    disabled={!activeProject}
+    className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
+  >
+    Save Chords
+  </button>
+</div>
+
+
 
 
               <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
