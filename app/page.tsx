@@ -661,6 +661,43 @@ const loadProjectData = async (projectId: string) => {
   }
 }
 
+const saveSong = async () => {
+  try {
+    if (!activeProject) {
+      setProjectMessage('Select a project first.')
+      return
+    }
+
+    if (!performanceSheet.trim()) {
+      setProjectMessage('No lyrics to save.')
+      return
+    }
+
+    const res = await fetch('/api/song-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        result: {
+          lyrics_full: performanceSheet,
+        },
+      }),
+    })
+
+    const data = await readJsonSafe(res)
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to save song')
+    }
+
+    await loadProjectData(activeProject.id)
+    setProjectMessage('Song saved')
+  } catch (err: any) {
+    console.error(err)
+    setProjectMessage(err.message || 'Failed to save song')
+  }
+}
+
+
 const createProject = async () => {
   const title = newProjectName.trim()
 
@@ -831,7 +868,7 @@ const deleteProject = async () => {
     className="w-full min-h-[320px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
   />
 </div>
-              const saveSong = async () => {
+              
   try {
     if (!activeProject) {
       setProjectMessage('Select a project first.')
