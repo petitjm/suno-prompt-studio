@@ -122,6 +122,10 @@ export default function Page() {
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
+  const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
+const lastFollowedSectionIdRef = React.useRef<string | null>(null)
+
+
   const previewBars = React.useMemo(() => {
   if (!chords) return []
 
@@ -385,6 +389,72 @@ const nextChords = latestChords?.chord_data || null
   })
 }
 
+const scrollPerformanceToBarIndex = (
+  barIndex: number,
+  behavior: ScrollBehavior = 'smooth'
+) => {
+  const container = performanceScrollRef.current
+  if (!container) return
+  if (!performanceSections.length) return
+  if (!previewBarMeta.length) return
+
+  const safeBarIndex = Math.max(0, Math.min(barIndex, previewBarMeta.length - 1))
+  const activeBarMeta = previewBarMeta[safeBarIndex]
+  const activeSectionId = activeBarMeta?.sectionId
+  if (!activeSectionId) return
+
+  const currentSectionIndex = performanceSections.findIndex(
+    (section) => section.id === activeSectionId
+  )
+  if (currentSectionIndex === -1) return
+
+  const currentSection = performanceSections[currentSectionIndex]
+  const nextSection = performanceSections[currentSectionIndex + 1] || null
+
+  const currentSectionEl = performanceSectionRefs.current[currentSection.id]
+  if (!currentSectionEl) return
+
+  const currentSectionStartBar =
+    previewBarMeta.find((bar) => bar.sectionId === currentSection.id)?.barIndex ??
+    safeBarIndex
+
+  const nextSectionStartBar = nextSection
+    ? previewBarMeta.find((bar) => bar.sectionId === nextSection.id)?.barIndex ??
+      previewBarMeta.length
+    : previewBarMeta.length
+
+  const sectionBarSpan = Math.max(1, nextSectionStartBar - currentSectionStartBar)
+
+  const localBarProgress = Math.max(
+    0,
+    Math.min(1, (safeBarIndex - currentSectionStartBar) / sectionBarSpan)
+  )
+
+  const anchorOffset = container.clientHeight * 0.22
+
+  const currentTop = Math.max(0, currentSectionEl.offsetTop - anchorOffset - 12)
+
+  let targetTop = currentTop
+
+  if (nextSection) {
+    const nextSectionEl = performanceSectionRefs.current[nextSection.id]
+
+    if (nextSectionEl) {
+      const nextTop = Math.max(0, nextSectionEl.offsetTop - anchorOffset)
+      targetTop = currentTop + (nextTop - currentTop) * localBarProgress
+    }
+  }
+
+  const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+  const clampedTop = Math.max(0, Math.min(targetTop, maxScrollTop))
+
+  container.scrollTo({
+    top: clampedTop,
+    behavior,
+  })
+}
+
+
 
   const startPreviewPlayback = async () => {
     await Tone.start()
@@ -402,6 +472,14 @@ const nextChords = latestChords?.chord_data || null
       const timeoutId = window.setTimeout(() => {
         if (followPlayback) {
   setCurrentBarIndex(index)
+
+  const meta = previewBarMeta[index]
+  const sectionId = meta?.sectionId || null
+
+  if (sectionId && sectionId !== lastFollowedSectionIdRef.current) {
+    lastFollowedSectionIdRef.current = sectionId
+  }
+
   scrollPerformanceToBarIndex(index)
 }
 
@@ -473,6 +551,7 @@ const [versionsLoading, setVersionsLoading] = useState(false)
 
   const stopPreviewPlayback = () => {
     clearPreviewTimeouts()
+    lastFollowedSectionIdRef.current = null
     setPreviewPlaying(false)
   }
 
@@ -709,7 +788,7 @@ const createProject = async () => {
           <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
           {mode === 'write' && (
             <div>
               <h1 className="text-xl mb-4">Write</h1>
