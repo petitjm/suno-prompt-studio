@@ -926,6 +926,36 @@ const deleteProject = async () => {
 </div>
 
 
+  <div className="flex gap-2 mb-3">
+  <button
+    type="button"
+    onClick={renameProject}
+    disabled={!activeProject}
+    className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+  >
+    Rename
+  </button>
+
+  <button
+    type="button"
+    onClick={duplicateProject}
+    disabled={!activeProject}
+    className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+  >
+    Duplicate
+  </button>
+
+  <button
+    type="button"
+    onClick={deleteProject}
+    disabled={!activeProject}
+    className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
+  >
+    Delete
+  </button>
+</div>
+
+
   <div className="space-y-2">
     {projects.map((project) => (
       <button
