@@ -907,10 +907,57 @@ const saveChords = async () => {
     placeholder="Paste or write lyrics here..."
     className="w-full min-h-[320px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
   />
+
+ <div className="flex gap-2 mt-3">
+  <button
+    type="button"
+    onClick={saveSong}
+    disabled={!activeProject || !performanceSheet.trim()}
+    className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-40"
+  >
+    Save Song
+  </button>
+
+  {!activeProject && (
+    <span className="text-sm text-yellow-400 self-center">
+      Select a project first
+    </span>
+  )}
+
+  {activeProject && projectMessage && (
+    <span className="text-sm text-green-400 self-center">
+      {projectMessage}
+    </span>
+  )}
 </div>
-              
+
+</div>
+    
 
 
+
+<div className="flex gap-2 mt-3">
+  <button
+    type="button"
+    onClick={saveSong}
+    disabled={!activeProject || !performanceSheet.trim()}
+    className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-40"
+  >
+    Save Song
+  </button>
+
+  {!activeProject && (
+    <span className="text-sm text-yellow-400 self-center">
+      Select a project first
+    </span>
+  )}
+
+  {activeProject && projectMessage && (
+    <span className="text-sm text-green-400 self-center">
+      {projectMessage}
+    </span>
+  )}
+</div>
 
 
 
