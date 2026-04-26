@@ -497,6 +497,20 @@ const [versionsLoading, setVersionsLoading] = useState(false)
 const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
 const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
 
+const [compareLeftText, setCompareLeftText] = useState('')
+const [compareRightText, setCompareRightText] = useState('')
+
+
+React.useEffect(() => {
+  setCompareLeftText(compareLeftSong?.result?.lyrics_full || '')
+}, [compareLeftSongId])
+
+React.useEffect(() => {
+  setCompareRightText(compareRightSong?.result?.lyrics_full || '')
+}, [compareRightSongId])
+
+
+
 
   const stopPreviewPlayback = () => {
     clearPreviewTimeouts()
@@ -1155,7 +1169,19 @@ const getDiffLines = (left: string, right: string) => {
           <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
             {diffRows.map((row, i) => (
               <div key={i} className={row.changed ? 'bg-yellow-900/40' : ''}>
-                {row.left || ' '}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <textarea
+    value={compareLeftText}
+    onChange={(e) => setCompareLeftText(e.target.value)}
+    className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
+  />
+
+  <textarea
+    value={compareRightText}
+    onChange={(e) => setCompareRightText(e.target.value)}
+    className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
+  />
+</div>
               </div>
             ))}
           </div>
@@ -1172,6 +1198,51 @@ const getDiffLines = (left: string, right: string) => {
     })()}
   </div>
 )}
+
+<div className="flex gap-3 mt-3">
+  <button
+    onClick={async () => {
+      if (!activeProject) return
+
+      await fetch('/api/song-versions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title: 'Compare Left Edit',
+          result: { lyrics_full: compareLeftText },
+        }),
+      })
+
+      await loadProjectData(activeProject.id)
+    }}
+    className="px-3 py-2 bg-green-600 rounded text-white"
+  >
+    Save Left as New Version
+  </button>
+
+  <button
+    onClick={async () => {
+      if (!activeProject) return
+
+      await fetch('/api/song-versions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title: 'Compare Right Edit',
+          result: { lyrics_full: compareRightText },
+        }),
+      })
+
+      await loadProjectData(activeProject.id)
+    }}
+    className="px-3 py-2 bg-green-600 rounded text-white"
+  >
+    Save Right as New Version
+  </button>
+</div>
+
 
 <input
   value={chordVersionTitle}
