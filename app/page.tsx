@@ -1152,6 +1152,11 @@ const getDiffLines = (left: string, right: string) => {
     </div>
   </div>
 )}
+const diffRows = getDiffLines(
+  compareLeftSong?.result?.lyrics_full || '',
+  compareRightSong?.result?.lyrics_full || ''
+)
+
 
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
   <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
