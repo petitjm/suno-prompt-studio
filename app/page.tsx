@@ -945,6 +945,27 @@ const saveChords = async () => {
   )
 }
 
+const getDiffLines = (left: string, right: string) => {
+  const leftLines = left.split('\n')
+  const rightLines = right.split('\n')
+  const max = Math.max(leftLines.length, rightLines.length)
+
+  const rows = []
+
+  for (let i = 0; i < max; i++) {
+    const l = leftLines[i] || ''
+    const r = rightLines[i] || ''
+
+    rows.push({
+      left: l,
+      right: r,
+      changed: l !== r,
+    })
+  }
+
+  return rows
+}
+
   return (
 
 
@@ -1124,16 +1145,37 @@ const saveChords = async () => {
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <pre className="whitespace-pre-wrap break-words rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px] font-mono leading-7">
-          {compareLeftSong?.result?.lyrics_full || 'Select a version'}
-        </pre>
-
-        <pre className="whitespace-pre-wrap break-words rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px] font-mono leading-7">
-          {compareRightSong?.result?.lyrics_full || 'Select a version'}
-        </pre>
+     const diffRows = getDiffLines(
+      compareLeftSong?.result?.lyrics_full || '',
+      compareRightSong?.result?.lyrics_full || ''
+    )
     </div>
   </div>
 )}
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+    {diffRows.map((row, i) => (
+      <div
+        key={i}
+        className={row.changed ? 'bg-yellow-900/40' : ''}
+      >
+        {row.left || ' '}
+      </div>
+    ))}
+  </div>
+
+  <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+    {diffRows.map((row, i) => (
+      <div
+        key={i}
+        className={row.changed ? 'bg-yellow-900/40' : ''}
+      >
+        {row.right || ' '}
+      </div>
+    ))}
+  </div>
+</div>
 
 
 <input
