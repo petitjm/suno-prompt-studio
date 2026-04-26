@@ -617,7 +617,7 @@ const loadProjectData = async (
 
   try {
     setVersionsLoading(true)
-    sif (!options?.silent) {
+    if (!options?.silent) {
   setProjectMessage('Loading project data...')
 }
 
