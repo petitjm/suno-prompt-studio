@@ -1056,11 +1056,7 @@ const saveChords = async () => {
     </span>
   )}
 
-  {activeProject && projectMessage && (
-    <span className="text-sm text-green-400 self-center">
-      {projectMessage}
-    </span>
-  )}
+  
 </div>
 
 
