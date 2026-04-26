@@ -657,6 +657,16 @@ const loadProjectData = async (
       : []
 
     setSongVersions(nextSongVersions)
+
+    if (nextSongVersions.length >= 2) {
+      setCompareLeftSongId(nextSongVersions[0].id)
+      setCompareRightSongId(nextSongVersions[1].id)
+    } else {
+      setCompareLeftSongId('')
+      setCompareRightSongId('')
+    }
+
+
     setChordVersions(nextChordVersions)
     setActiveSongVersionId(songData.latest?.id || null)
     setActiveChordVersionId(chordData.latest?.id || null)
