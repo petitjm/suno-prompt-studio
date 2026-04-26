@@ -486,6 +486,8 @@ const [justSavedSong, setJustSavedSong] = useState(false)
 const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
 const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
 const [versionsLoading, setVersionsLoading] = useState(false)
+const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
+const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
 
 
   const stopPreviewPlayback = () => {
@@ -648,6 +650,8 @@ const loadProjectData = async (
 
     setSongVersions(nextSongVersions)
     setChordVersions(nextChordVersions)
+    setActiveSongVersionId(songData.latest?.id || null)
+    setActiveChordVersionId(chordData.latest?.id || null)
 
     const latestLyrics = songData.latest?.result?.lyrics_full || ''
     const latestChords = chordData.latest?.chord_data || null
