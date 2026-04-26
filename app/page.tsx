@@ -113,6 +113,7 @@ export default function Page() {
   const [previewIncludeBass, setPreviewIncludeBass] = useState(true)
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
   const [followPlayback, setFollowPlayback] = useState(true)
+  const [songVersionTitle, setSongVersionTitle] = useState('')
 
   const [performanceSheet, setPerformanceSheet] = useState('')
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
@@ -689,13 +690,16 @@ const saveSong = async () => {
     }
 
     setSavingSong(true)
+    setSongVersionTitle('')
     setJustSavedSong(false)
+    
 
     const res = await fetch('/api/song-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         project_id: activeProject.id,
+         title: songVersionTitle.trim() || 'Untitled version',
         result: {
           lyrics_full: performanceSheet,
         },
@@ -1012,12 +1016,19 @@ const saveChords = async () => {
     >
       {songVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
-          Version {songVersions.length - i} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
+          {v.title || `Version ${songVersions.length - i}`} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
         </option>
       ))}
     </select>
   </div>
 )}
+
+<input
+  value={songVersionTitle}
+  onChange={(e) => setSongVersionTitle(e.target.value)}
+  placeholder="Version title, e.g. Chorus rewrite, Short radio edit"
+  className="mt-3 w-full px-3 py-2 rounded bg-gray-700 text-white"
+/>
 
 
 <div className="flex gap-2 mt-3">
