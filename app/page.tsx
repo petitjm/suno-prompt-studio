@@ -950,10 +950,21 @@ const saveChords = async () => {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
-        <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
-          <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
-        </div>
+<div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
+  <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
+
+  <div className="ml-auto flex items-center gap-3">
+    <span className="text-xs text-green-400">{userEmail}</span>
+
+    <button
+      type="button"
+      onClick={signOut}
+      className="px-3 py-1 rounded bg-gray-600 text-white text-xs"
+    >
+      Sign Out
+    </button>
+  </div>
+</div>
 
         <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
           {mode === 'write' && (
