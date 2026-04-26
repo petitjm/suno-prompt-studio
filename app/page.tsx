@@ -968,6 +968,9 @@ const saveChords = async () => {
   </div>
 
         <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
+
+// ======================SONG===========================================
+
           {mode === 'write' && (
             <div>
               <h1 className="text-xl mb-4">Write</h1>
@@ -985,8 +988,32 @@ const saveChords = async () => {
  
 
 </div>
-    
+// ======================Song Version Selector (Write page=============    
+{songVersions.length > 0 && (
+  <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+    <h3 className="text-sm text-gray-400 mb-2">Saved Versions</h3>
 
+    <select
+      value={activeSongVersionId || ''}
+      onChange={(e) => {
+        const id = e.target.value
+        setActiveSongVersionId(id)
+
+        const selected = songVersions.find(v => v.id === id)
+        if (selected?.result?.lyrics_full) {
+          setPerformanceSheet(selected.result.lyrics_full)
+        }
+      }}
+      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+    >
+      {songVersions.map((v, i) => (
+        <option key={v.id} value={v.id}>
+          Version {songVersions.length - i} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
 
 
 <div className="flex gap-2 mt-3">
@@ -1020,103 +1047,129 @@ const saveChords = async () => {
 
 
 
-
+// =====================CHORDS==========================================
 
              
 
      <div className="flex gap-2 mb-4">
  
 
-  <button
-    type="button"
-    onClick={saveChords}
-    disabled={!activeProject}
-    className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
-  >
-    Save Chords
-  </button>
-</div>
+          <button
+            type="button"
+            onClick={saveChords}
+            disabled={!activeProject}
+            className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
+          >
+            Save Chords
+          </button>
+    </div>
 
+    // ===================Chord Version Selector================
 
+    {chordVersions.length > 0 && (
+  <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+    <h3 className="text-sm text-gray-400 mb-2">Chord Versions</h3>
 
+    <select
+      value={activeChordVersionId || ''}
+      onChange={(e) => {
+        const id = e.target.value
+        setActiveChordVersionId(id)
 
-              <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
-  <h2 className="text-lg font-semibold mb-3">Projects</h2>
-
-  {projectMessage && (
-    <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
-  )}
-
-  <div className="flex gap-2 mb-3">
-    <input
-      value={newProjectName}
-      onChange={(e) => setNewProjectName(e.target.value)}
-      placeholder="New project name"
-      className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
-    />
-
-    <button
-      type="button"
-      onClick={createProject}
-      className="px-4 py-2 rounded bg-blue-600 text-white"
+        const selected = chordVersions.find(v => v.id === id)
+        if (selected?.chord_data) {
+          setChords(selected.chord_data)
+        }
+      }}
+      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
     >
-      Create
-    </button>
-   </div>
-
-  <div className="flex gap-2 mb-3">
-    <button
-      type="button"
-      onClick={renameProject}
-      disabled={!activeProject}
-      className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
-    >
-      Rename
-    </button>
-
-    <button
-      type="button"
-      onClick={duplicateProject}
-      disabled={!activeProject}
-      className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
-    >
-      Duplicate
-    </button>
-
-    <button
-      type="button"
-      onClick={deleteProject}
-      disabled={!activeProject}
-      className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
-    >
-      Delete
-    </button>
+      {chordVersions.map((v, i) => (
+        <option key={v.id} value={v.id}>
+          Version {chordVersions.length - i} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
+        </option>
+      ))}
+    </select>
   </div>
+)}
 
-  <div className="space-y-2">
-    {projects.map((project) => (
-      <button
-        key={project.id}
-        type="button"
-        onClick={() => setActiveProject(project)}
-        className={`w-full text-left px-3 py-2 rounded ${
-          activeProject?.id === project.id
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-700 text-gray-200'
-        }`}
-      >
-        <div className="font-medium">{project.title}</div>
-        <div className="text-xs opacity-70">{project.id}</div>
-      </button>
-    ))}
-  </div>
 
-  {activeProject && (
-    <p className="mt-3 text-sm text-green-400">
-      Active project: {activeProject.title}
-    </p>
-  )}
-</div>
+    <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
+    <h2 className="text-lg font-semibold mb-3">Projects</h2>
+
+      {projectMessage && (
+        <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
+      )}
+
+      <div className="flex gap-2 mb-3">
+        <input
+          value={newProjectName}
+          onChange={(e) => setNewProjectName(e.target.value)}
+          placeholder="New project name"
+          className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
+        />
+
+        <button
+          type="button"
+          onClick={createProject}
+          className="px-4 py-2 rounded bg-blue-600 text-white"
+        >
+          Create
+        </button>
+       </div>
+
+      <div className="flex gap-2 mb-3">
+        <button
+          type="button"
+          onClick={renameProject}
+          disabled={!activeProject}
+          className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+        >
+          Rename
+        </button>
+
+        <button
+          type="button"
+          onClick={duplicateProject}
+          disabled={!activeProject}
+          className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+        >
+          Duplicate
+        </button>
+
+        <button
+          type="button"
+          onClick={deleteProject}
+          disabled={!activeProject}
+          className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
+        >
+          Delete
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {projects.map((project) => (
+          <button
+            key={project.id}
+            type="button"
+            onClick={() => setActiveProject(project)}
+            className={`w-full text-left px-3 py-2 rounded ${
+              activeProject?.id === project.id
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-200'
+            }`}
+          >
+            <div className="font-medium">{project.title}</div>
+            <div className="text-xs opacity-70">{project.id}</div>
+          </button>
+        ))}
+      </div>
+
+      {activeProject && (
+        <p className="mt-3 text-sm text-green-400">
+          Active project: {activeProject.title}
+        </p>
+      )}
+    </div>
 
 
 
