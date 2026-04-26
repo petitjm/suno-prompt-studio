@@ -959,7 +959,7 @@ const saveChords = async () => {
     <div className="flex h-screen bg-gray-900 text-white">
       <div
         className={`${
-          sidebarCollapsed ? 'w-16' : 'w-56'
+         sidebarCollapsed ? 'w-14' : 'w-44'
         } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
       >
         <button
@@ -1124,13 +1124,13 @@ const saveChords = async () => {
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <pre className="whitespace-pre-wrap rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px]">
-        {compareLeftSong?.result?.lyrics_full || 'Select a version'}
-      </pre>
+        <pre className="whitespace-pre-wrap break-words rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px] font-mono leading-7">
+          {compareLeftSong?.result?.lyrics_full || 'Select a version'}
+        </pre>
 
-      <pre className="whitespace-pre-wrap rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px]">
-        {compareRightSong?.result?.lyrics_full || 'Select a version'}
-      </pre>
+        <pre className="whitespace-pre-wrap break-words rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px] font-mono leading-7">
+          {compareRightSong?.result?.lyrics_full || 'Select a version'}
+        </pre>
     </div>
   </div>
 )}
