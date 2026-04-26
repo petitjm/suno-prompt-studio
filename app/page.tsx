@@ -260,10 +260,12 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setUserEmail(null)
-    setAuthMessage('Signed out')
-  }
+  await supabase.auth.signOut()
+  setUserEmail(null)
+  setEmail('')
+  setOtp('')
+  setAuthMessage('')
+}
 
   const debugProjects = async () => {
     try {
@@ -1331,7 +1333,17 @@ const getDiffLines = (left: string, right: string) => {
 
 
     <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
-    <h2 className="text-lg font-semibold mb-3">Projects</h2>
+    <div className="flex items-center justify-between mb-3">
+  <h2 className="text-lg font-semibold">Projects</h2>
+
+  <button
+    type="button"
+    onClick={() => loadProjects()}
+    className="px-3 py-1 rounded bg-gray-600 text-white text-sm"
+  >
+    Refresh
+  </button>
+</div>
 
       {projectMessage && (
         <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
