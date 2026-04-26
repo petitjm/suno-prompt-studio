@@ -1165,11 +1165,7 @@ const getDiffLines = (left: string, right: string) => {
       )
 
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
-            {diffRows.map((row, i) => (
-              <div key={i} className={row.changed ? 'bg-yellow-900/40' : ''}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
   <textarea
     value={compareLeftText}
     onChange={(e) => setCompareLeftText(e.target.value)}
@@ -1182,18 +1178,6 @@ const getDiffLines = (left: string, right: string) => {
     className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
   />
 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
-            {diffRows.map((row, i) => (
-              <div key={i} className={row.changed ? 'bg-yellow-900/40' : ''}>
-                {row.right || ' '}
-              </div>
-            ))}
-          </div>
-        </div>
       )
     })()}
   </div>
