@@ -933,14 +933,20 @@ const saveChords = async () => {
 
 
 <div className="flex gap-2 mt-3">
-  <button
-    type="button"
-    onClick={saveSong}
-    disabled={!activeProject || !performanceSheet.trim()}
-    className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-40"
-  >
-    Save Song
-  </button>
+<button
+  type="button"
+  onClick={saveSong}
+  disabled={savingSong || !activeProject || !performanceSheet.trim()}
+  className={`px-4 py-2 rounded text-white transition ${
+    savingSong
+      ? 'bg-gray-600 scale-95'
+      : justSavedSong
+        ? 'bg-blue-600'
+        : 'bg-green-600'
+  } disabled:opacity-40`}
+>
+  {savingSong ? 'Saving song...' : justSavedSong ? 'Saved ✓' : 'Save Song'}
+</button>
 
   {!activeProject && (
     <span className="text-sm text-yellow-400 self-center">
