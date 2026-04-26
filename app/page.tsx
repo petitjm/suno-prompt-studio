@@ -1069,19 +1069,43 @@ const saveChords = async () => {
 
 
              
+{chordVersions.length > 0 && (
+  <div className="mb-3 max-w-3xl">
+    <h3 className="text-sm text-gray-400 mb-2">Saved Chord Versions</h3>
 
-     <div className="flex gap-2 mb-4">
- 
+    <select
+      value={activeChordVersionId || ''}
+      onChange={(e) => {
+        const id = e.target.value
+        setActiveChordVersionId(id)
 
-          <button
-            type="button"
-            onClick={saveChords}
-            disabled={!activeProject}
-            className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
-          >
-            Save Chords
-          </button>
-    </div>
+        const selected = chordVersions.find((v) => v.id === id)
+        if (selected?.chord_data) {
+          setChords(selected.chord_data)
+        }
+      }}
+      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+    >
+      {chordVersions.map((v, i) => (
+        <option key={v.id} value={v.id}>
+          {v.title || `Chord Version ${chordVersions.length - i}`}
+          {v.created_at ? ` (${new Date(v.created_at).toLocaleString()})` : ''}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+<div className="flex gap-2 mb-4">
+  <button
+    type="button"
+    onClick={saveChords}
+    disabled={!activeProject}
+    className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
+  >
+    Save Chords
+  </button>
+</div>
 
 
 
