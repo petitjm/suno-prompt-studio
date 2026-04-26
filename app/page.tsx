@@ -114,6 +114,8 @@ export default function Page() {
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
   const [followPlayback, setFollowPlayback] = useState(true)
   const [songVersionTitle, setSongVersionTitle] = useState('')
+  const compareLeftSong = songVersions.find((v) => v.id === compareLeftSongId) || null
+const compareRightSong = songVersions.find((v) => v.id === compareRightSongId) || null
 
   const [performanceSheet, setPerformanceSheet] = useState('')
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
@@ -1073,6 +1075,52 @@ const saveChords = async () => {
 
   
 </div>
+
+{songVersions.length >= 2 && (
+  <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
+    <h3 className="text-lg font-semibold mb-3">Compare Song Versions</h3>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <select
+        value={compareLeftSongId}
+        onChange={(e) => setCompareLeftSongId(e.target.value)}
+        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+      >
+        <option value="">Choose left version</option>
+        {songVersions.map((v, i) => (
+          <option key={v.id} value={v.id}>
+            {v.title || `Version ${songVersions.length - i}`}
+            {v.created_at ? ` (${new Date(v.created_at).toLocaleString()})` : ''}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={compareRightSongId}
+        onChange={(e) => setCompareRightSongId(e.target.value)}
+        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+      >
+        <option value="">Choose right version</option>
+        {songVersions.map((v, i) => (
+          <option key={v.id} value={v.id}>
+            {v.title || `Version ${songVersions.length - i}`}
+            {v.created_at ? ` (${new Date(v.created_at).toLocaleString()})` : ''}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <pre className="whitespace-pre-wrap rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px]">
+        {compareLeftSong?.result?.lyrics_full || 'Select a version'}
+      </pre>
+
+      <pre className="whitespace-pre-wrap rounded bg-gray-900 p-4 text-sm text-gray-100 min-h-[260px]">
+        {compareRightSong?.result?.lyrics_full || 'Select a version'}
+      </pre>
+    </div>
+  </div>
+)}
 
 
 <input
