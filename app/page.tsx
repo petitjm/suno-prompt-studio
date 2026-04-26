@@ -129,6 +129,51 @@ const lastFollowedSectionIdRef = React.useRef<string | null>(null)
   const previewBars = React.useMemo(() => {
   if (!chords) return []
 
+
+  if (!userEmail) {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
+      <div className="w-full max-w-md rounded bg-gray-800 p-6 shadow-xl">
+        <h1 className="text-2xl font-semibold mb-2">Suno Prompt Studio</h1>
+        <p className="text-gray-400 mb-4">{authMessage || 'Sign in to continue.'}</p>
+
+        <div className="flex flex-col gap-3">
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="px-3 py-2 rounded bg-gray-700 text-white"
+          />
+
+          <button
+            type="button"
+            onClick={sendOtp}
+            className="px-4 py-2 rounded bg-blue-600 text-white"
+          >
+            Send Verification Code
+          </button>
+
+          <input
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="Verification code"
+            className="px-3 py-2 rounded bg-gray-700 text-white"
+          />
+
+          <button
+            type="button"
+            onClick={verifyOtp}
+            className="px-4 py-2 rounded bg-green-600 text-white"
+          >
+            Verify Code
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
   try {
     if (previewSection !== 'full_song') {
       return buildPreviewBars(chords, previewSection).map((bar) => ({
@@ -965,42 +1010,7 @@ const saveChords = async () => {
 
 
 
-              <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
-                <p className="text-sm text-gray-300 mb-3">{authMessage}</p>
-
-                {!userEmail ? (
-                  <div className="flex flex-col gap-3">
-                    <input
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Email"
-                      className="px-3 py-2 rounded bg-gray-700 text-white"
-                    />
-
-                    <button type="button" onClick={sendOtp} className="px-4 py-2 rounded bg-blue-600 text-white">
-                      Send Verification Code
-                    </button>
-
-                    <input
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      placeholder="Verification code"
-                      className="px-3 py-2 rounded bg-gray-700 text-white"
-                    />
-
-                    <button type="button" onClick={verifyOtp} className="px-4 py-2 rounded bg-green-600 text-white">
-                      Verify Code
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <p className="text-green-400">Signed in as {userEmail}</p>
-                    <button type="button" onClick={signOut} className="px-4 py-2 rounded bg-gray-600 text-white">
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
+             
 
      <div className="flex gap-2 mb-4">
  
