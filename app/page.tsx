@@ -973,7 +973,7 @@ const saveChords = async () => {
 
         <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
 
-// ======================SONG===========================================
+'  // ======================SONG===========================================
 
           {mode === 'write' && (
             <div>
@@ -992,7 +992,7 @@ const saveChords = async () => {
  
 
 </div>
-// ======================Song Version Selector (Write page=============    
+'  // ======================Song Version Selector (Write page=============    
 {songVersions.length > 0 && (
   <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
     <h3 className="text-sm text-gray-400 mb-2">Saved Versions</h3>
@@ -1051,7 +1051,7 @@ const saveChords = async () => {
 
 
 
-// =====================CHORDS==========================================
+'  // =====================CHORDS==========================================
 
              
 
@@ -1068,7 +1068,7 @@ const saveChords = async () => {
           </button>
     </div>
 
-    // ===================Chord Version Selector================
+  '  // ===================Chord Version Selector================
 
     {chordVersions.length > 0 && (
   <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
