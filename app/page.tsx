@@ -1099,6 +1099,25 @@ const saveChords = async () => {
   </div>
 )}
 
+
+<div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+  <h3 className="text-lg font-semibold mb-3">Chord Data</h3>
+
+  <textarea
+    value={JSON.stringify(chords || {}, null, 2)}
+    onChange={(e) => {
+      try {
+        setChords(JSON.parse(e.target.value))
+      } catch {
+        // Ignore invalid JSON while typing
+      }
+    }}
+    placeholder='Paste chord JSON here, e.g. {"key":"G","verse":"G | D | Em | C"}'
+    className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
+  />
+</div>
+
+
 <p className="text-xs text-gray-400 mb-2">
   activeProject: {activeProject ? 'yes' : 'no'} | chords:{' '}
   {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
