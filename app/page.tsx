@@ -1104,10 +1104,7 @@ const saveChords = async () => {
   {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
 </p>
 
-<div className="flex gap-2 mb-4">
-  <button
-    type="button"
-    onClick={saveChords}
+
 
 <div className="flex gap-2 mb-4">
   <button
