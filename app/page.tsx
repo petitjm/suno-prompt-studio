@@ -608,13 +608,18 @@ setPerformanceSections(withUniqueIds)
   }
 }
 
-const loadProjectData = async (projectId: string) => {
+const loadProjectData = async (
+  projectId: string,
+  options?: { silent?: boolean }
+) => {
   const token = Date.now()
   latestProjectLoadRef.current = token
 
   try {
     setVersionsLoading(true)
-    setProjectMessage('Loading project data...')
+    sif (!options?.silent) {
+  setProjectMessage('Loading project data...')
+}
 
     const [songRes, chordRes] = await Promise.all([
       fetch(`/api/song-versions/${projectId}`),
@@ -695,7 +700,7 @@ const saveSong = async () => {
       throw new Error(data.error || 'Failed to save song')
     }
 
-    await loadProjectData(activeProject.id)
+    await loadProjectData(activeProject.id, { silent: true })
 
     setJustSavedSong(true)
     window.setTimeout(() => {
