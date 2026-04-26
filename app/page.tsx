@@ -118,6 +118,7 @@ export default function Page() {
   const [performanceSheet, setPerformanceSheet] = useState('')
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
   const [chords, setChords] = useState<ChordResponse | null>(null)
+  const [chordVersionTitle, setChordVersionTitle] = useState('')
 
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
@@ -312,10 +313,10 @@ if (!res.ok) {
     }
 
     const latestSong = data?.songVersions?.[0]
-const latestChords = data?.chordVersions?.[0]
+    const latestChords = data?.chordVersions?.[0]
 
-const nextSheet = latestSong?.result?.lyrics_full || ''
-const nextChords = latestChords?.chord_data || null
+    const nextSheet = latestSong?.result?.lyrics_full || ''
+    const nextChords = latestChords?.chord_data || null
 
     setPerformanceSheet(nextSheet)
     setChords(nextChords)
@@ -864,6 +865,7 @@ const saveChords = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         project_id: activeProject.id,
+        title: chordVersionTitle.trim() || 'Untitled chords',
         chord_data: chords,
       }),
     })
@@ -872,6 +874,7 @@ const saveChords = async () => {
     if (!res.ok) throw new Error(data.error || 'Failed to save chords')
 
     await loadProjectData(activeProject.id)
+    setChordVersionTitle('')
     setProjectMessage('Chords saved')
   } catch (err: any) {
     console.error(err)
@@ -1061,7 +1064,12 @@ const saveChords = async () => {
 </div>
 
 
-
+<input
+  value={chordVersionTitle}
+  onChange={(e) => setChordVersionTitle(e.target.value)}
+  placeholder="Chord version title (e.g. Capo 3, Fingerstyle, Simplified)"
+  className="mt-3 w-full px-3 py-2 rounded bg-gray-700 text-white"
+/>
 
 
              
@@ -1082,7 +1090,7 @@ const saveChords = async () => {
 
 
     {chordVersions.length > 0 && (
-  <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+    <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
     <h3 className="text-sm text-gray-400 mb-2">Chord Versions</h3>
 
     <select
@@ -1100,7 +1108,7 @@ const saveChords = async () => {
     >
       {chordVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
-          Version {chordVersions.length - i} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
+          {v.title || `Version ${chordVersions.length - i}`} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
         </option>
       ))}
     </select>
