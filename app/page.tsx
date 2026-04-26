@@ -114,8 +114,7 @@ export default function Page() {
   const [previewIncludeClick, setPreviewIncludeClick] = useState(false)
   const [followPlayback, setFollowPlayback] = useState(true)
   const [songVersionTitle, setSongVersionTitle] = useState('')
-  const compareLeftSong = songVersions.find((v) => v.id === compareLeftSongId) || null
-const compareRightSong = songVersions.find((v) => v.id === compareRightSongId) || null
+ 
 
   const [performanceSheet, setPerformanceSheet] = useState('')
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
@@ -128,9 +127,9 @@ const compareRightSong = songVersions.find((v) => v.id === compareRightSongId) |
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
   const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
-const lastFollowedSectionIdRef = React.useRef<string | null>(null)
-
-
+  const lastFollowedSectionIdRef = React.useRef<string | null>(null)
+  const [compareLeftSongId, setCompareLeftSongId] = useState('')
+  const [compareRightSongId, setCompareRightSongId] = useState('')
   const previewBars = React.useMemo(() => {
   if (!chords) return []
 
@@ -490,6 +489,10 @@ const [savingSong, setSavingSong] = useState(false)
 const [justSavedSong, setJustSavedSong] = useState(false)
 const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
 const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
+
+const compareLeftSong = songVersions.find((v) => v.id === compareLeftSongId) || null
+const compareRightSong = songVersions.find((v) => v.id === compareRightSongId) || null
+
 const [versionsLoading, setVersionsLoading] = useState(false)
 const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
 const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
