@@ -1132,7 +1132,7 @@ const getDiffLines = (left: string, right: string) => {
       <select
         value={compareRightSongId}
         onChange={(e) => setCompareRightSongId(e.target.value)}
-        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
       >
         <option value="">Choose right version</option>
         {songVersions.map((v, i) => (
@@ -1144,44 +1144,34 @@ const getDiffLines = (left: string, right: string) => {
       </select>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-     const diffRows = getDiffLines(
-      compareLeftSong?.result?.lyrics_full || '',
-      compareRightSong?.result?.lyrics_full || ''
-    )
-    </div>
+    {(() => {
+      const diffRows = getDiffLines(
+        compareLeftSong?.result?.lyrics_full || '',
+        compareRightSong?.result?.lyrics_full || ''
+      )
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+            {diffRows.map((row, i) => (
+              <div key={i} className={row.changed ? 'bg-yellow-900/40' : ''}>
+                {row.left || ' '}
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+            {diffRows.map((row, i) => (
+              <div key={i} className={row.changed ? 'bg-yellow-900/40' : ''}>
+                {row.right || ' '}
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    })()}
   </div>
 )}
-const diffRows = getDiffLines(
-  compareLeftSong?.result?.lyrics_full || '',
-  compareRightSong?.result?.lyrics_full || ''
-)
-
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
-    {diffRows.map((row, i) => (
-      <div
-        key={i}
-        className={row.changed ? 'bg-yellow-900/40' : ''}
-      >
-        {row.left || ' '}
-      </div>
-    ))}
-  </div>
-
-  <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
-    {diffRows.map((row, i) => (
-      <div
-        key={i}
-        className={row.changed ? 'bg-yellow-900/40' : ''}
-      >
-        {row.right || ' '}
-      </div>
-    ))}
-  </div>
-</div>
-
 
 <input
   value={chordVersionTitle}
