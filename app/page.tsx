@@ -119,6 +119,7 @@ export default function Page() {
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
   const [chords, setChords] = useState<ChordResponse | null>(null)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
+  const [chordsText, setChordsText] = useState('{}')
 
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
@@ -660,6 +661,7 @@ const loadProjectData = async (
 
     setPerformanceSheet(latestLyrics)
     setChords(latestChords)
+    setChordsText(JSON.stringify(latestChords || {}, null, 2))
 
     setProjectMessage('')
   } catch (err: any) {
@@ -993,11 +995,21 @@ const saveChords = async () => {
   <h2 className="text-lg font-semibold mb-3">Song / Lyrics</h2>
 
   <textarea
-    value={performanceSheet}
-    onChange={(e) => setPerformanceSheet(e.target.value)}
-    placeholder="Paste or write lyrics here..."
-    className="w-full min-h-[320px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
-  />
+  value={chordsText}
+  onChange={(e) => {
+    const text = e.target.value
+    setChordsText(text)
+
+    try {
+      const parsed = JSON.parse(text)
+      setChords(parsed)
+    } catch {
+      // allow invalid JSON while typing
+    }
+  }}
+  placeholder='Paste chord JSON here'
+  className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
+/>
 
  
 
