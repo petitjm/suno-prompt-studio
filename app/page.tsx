@@ -848,9 +848,7 @@ const deleteProject = async () => {
   }
 }
 
-<p className="text-xs text-gray-400 mb-2">
-  activeProject: {activeProject ? 'yes' : 'no'} | chords: {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
-</p>
+
 
 
 const saveChords = async () => {
@@ -1100,6 +1098,16 @@ const saveChords = async () => {
     </select>
   </div>
 )}
+
+<p className="text-xs text-gray-400 mb-2">
+  activeProject: {activeProject ? 'yes' : 'no'} | chords:{' '}
+  {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
+</p>
+
+<div className="flex gap-2 mb-4">
+  <button
+    type="button"
+    onClick={saveChords}
 
 <div className="flex gap-2 mb-4">
   <button
