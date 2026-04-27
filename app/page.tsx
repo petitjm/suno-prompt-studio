@@ -1171,7 +1171,7 @@ const formatUkDateTime = (value?: string) => {
       <select
         value={compareRightSongId}
         onChange={(e) => setCompareRightSongId(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
       >
         <option value="">Choose right version</option>
         {songVersions.map((v, i) => (
@@ -1183,8 +1183,6 @@ const formatUkDateTime = (value?: string) => {
       </select>
     </div>
 
-
-  <>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <textarea
         value={compareLeftText}
@@ -1227,82 +1225,86 @@ const formatUkDateTime = (value?: string) => {
       </div>
     </div>
 
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <input
+        value={compareLeftTitle}
+        onChange={(e) => setCompareLeftTitle(e.target.value)}
+        placeholder="Left save title"
+        className="px-3 py-2 rounded bg-gray-700 text-white"
+      />
 
-<input
-  value={compareLeftTitle}
-  onChange={(e) => setCompareLeftTitle(e.target.value)}
-  placeholder="Left save title"
-  className="px-3 py-2 rounded bg-gray-700 text-white"
-/>
+      <input
+        value={compareRightTitle}
+        onChange={(e) => setCompareRightTitle(e.target.value)}
+        placeholder="Right save title"
+        className="px-3 py-2 rounded bg-gray-700 text-white"
+      />
+    </div>
 
-<input
-  value={compareRightTitle}
-  onChange={(e) => setCompareRightTitle(e.target.value)}
-  placeholder="Right save title"
-  className="px-3 py-2 rounded bg-gray-700 text-white"
-/>
+    <div className="flex gap-3 mt-3">
+      <button
+        type="button"
+        onClick={async () => {
+          if (!activeProject) return
 
-<div className="flex gap-3 mt-3">
-<button
-  onClick={async () => {
-    if (!activeProject) return
+          try {
+            setSavingCompareLeft(true)
 
-    try {
-      setSavingCompareLeft(true)
+            await fetch('/api/song-versions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                project_id: activeProject.id,
+                title: compareLeftTitle.trim() || 'Compare Left Edit',
+                result: { lyrics_full: compareLeftText },
+              }),
+            })
 
-      await fetch('/api/song-versions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProject.id,
-          title: compareLeftTitle.trim() || 'Compare Left Edit',
-          result: { lyrics_full: compareLeftText },
-        }),
-      })
+            await loadProjectData(activeProject.id)
+            setCompareLeftTitle('')
+            setCompareMessage('Left version saved')
+          } finally {
+            setSavingCompareLeft(false)
+          }
+        }}
+        disabled={savingCompareLeft || !activeProject || !compareLeftText.trim()}
+        className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
+      >
+        {savingCompareLeft ? 'Saving left...' : 'Save Left as New Version'}
+      </button>
 
-      await loadProjectData(activeProject.id)
-      setCompareLeftTitle('')
-      setCompareMessage('Left version saved')
-    } finally {
-      setSavingCompareLeft(false)
-    }
-  }}
-  disabled={savingCompareLeft || !activeProject || !compareLeftText.trim()}
-  className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
->
-  {savingCompareLeft ? 'Saving left...' : 'Save Left as New Version'}
-</button>
+      <button
+        type="button"
+        onClick={async () => {
+          if (!activeProject) return
 
-  <button
-  onClick={async () => {
-    if (!activeProject) return
+          try {
+            setSavingCompareRight(true)
 
-    try {
-      setSavingCompareRight(true)
+            await fetch('/api/song-versions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                project_id: activeProject.id,
+                title: compareRightTitle.trim() || 'Compare Right Edit',
+                result: { lyrics_full: compareRightText },
+              }),
+            })
 
-      await fetch('/api/song-versions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProject.id,
-          title: compareRightTitle.trim() || 'Compare Right Edit',
-          result: { lyrics_full: compareRightText },
-        }),
-      })
+            await loadProjectData(activeProject.id)
+            setCompareRightTitle('')
+            setCompareMessage('Right version saved')
+          } finally {
+            setSavingCompareRight(false)
+          }
+        }}
+        disabled={savingCompareRight || !activeProject || !compareRightText.trim()}
+        className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
+      >
+        {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
+      </button>
+    </div>
 
-      await loadProjectData(activeProject.id)
-      setCompareRightTitle('')
-      setCompareMessage('Right version saved')
-    } finally {
-      setSavingCompareRight(false)
-    }
-  }}
-  disabled={savingCompareRight || !activeProject || !compareRightText.trim()}
-  className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
->
-  {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
-</button>
-</div>
     {compareMessage && (
       <p className="text-sm text-green-400 mt-2">{compareMessage}</p>
     )}
