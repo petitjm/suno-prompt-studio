@@ -1101,7 +1101,7 @@ const formatUkDateTime = (value?: string) => {
     >
       {songVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
-          {v.title || `Version ${songVersions.length - i}`} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
+          {v.title || `Version ${songVersions.length - i}`} {v.created_at ? `(${formatUkDateTime(v.created_at)})` : ''}
         </option>
       ))}
     </select>
@@ -1155,7 +1155,7 @@ const formatUkDateTime = (value?: string) => {
         {songVersions.map((v, i) => (
           <option key={v.id} value={v.id}>
             {v.title || `Version ${songVersions.length - i}`}
-            {v.created_at ? ` (${new Date(v.created_at).toLocaleString()})` : ''}
+            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
           </option>
         ))}
       </select>
@@ -1169,7 +1169,7 @@ const formatUkDateTime = (value?: string) => {
         {songVersions.map((v, i) => (
           <option key={v.id} value={v.id}>
             {v.title || `Version ${songVersions.length - i}`}
-            {v.created_at ? ` (${new Date(v.created_at).toLocaleString()})` : ''}
+            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
           </option>
         ))}
       </select>
@@ -1306,7 +1306,7 @@ const formatUkDateTime = (value?: string) => {
       {chordVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
           {v.title || `Chord Version ${chordVersions.length - i}`}
-          {v.created_at ? ` (${new Date(v.created_at).toLocaleString()})` : ''}
+          {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
         </option>
       ))}
     </select>
@@ -1371,7 +1371,7 @@ const formatUkDateTime = (value?: string) => {
     >
       {chordVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
-          {v.title || `Version ${chordVersions.length - i}`} {v.created_at ? `(${new Date(v.created_at).toLocaleString()})` : ''}
+          {v.title || `Version ${chordVersions.length - i}`} {v.created_at ? `(${formatUkDateTime(v.created_at)})` : ''}
         </option>
       ))}
     </select>
