@@ -1239,8 +1239,9 @@ const formatUkDateTime = (value?: string) => {
 
 
 </div>
-</>
+
       )
+      </>
     })()}
   </div>
 )}
