@@ -501,6 +501,7 @@ const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(
 
 const [compareLeftText, setCompareLeftText] = useState('')
 const [compareRightText, setCompareRightText] = useState('')
+const [compareMessage, setCompareMessage] = useState('')
 
 
 React.useEffect(() => {
