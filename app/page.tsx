@@ -496,7 +496,7 @@ const [justSavedSong, setJustSavedSong] = useState(false)
 const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([])
 const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([])
 
-const editedDiffRows = getDiffLines(compareLeftText, compareRightText)
+
 const compareLeftSong = songVersions.find((v) => v.id === compareLeftSongId) || null
 const compareRightSong = songVersions.find((v) => v.id === compareRightSongId) || null
 
@@ -987,6 +987,7 @@ const getDiffLines = (left: string, right: string) => {
 
   return rows
 }
+const getDiffLines = (left: string, right: string) => {
 
 const formatUkDateTime = (value?: string) => {
   if (!value) return ''
