@@ -1226,9 +1226,7 @@ const formatUkDateTime = (value?: string) => {
         </div>
       </div>
     </div>
-  </>
-  </div>
-)}
+
 
 <input
   value={compareLeftTitle}
@@ -1305,7 +1303,11 @@ const formatUkDateTime = (value?: string) => {
   {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
 </button>
 </div>
-
+    {compareMessage && (
+      <p className="text-sm text-green-400 mt-2">{compareMessage}</p>
+    )}
+  </div>
+)}
 
 <input
   value={chordVersionTitle}
