@@ -1185,64 +1185,51 @@ const formatUkDateTime = (value?: string) => {
       const diffRows = getDiffLines(
         compareLeftSong?.result?.lyrics_full || '',
         compareRightSong?.result?.lyrics_full || ''
-      )
-
-      return (
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <textarea
-    value={compareLeftText}
-    onChange={(e) => setCompareLeftText(e.target.value)}
-    className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
-  />
-
-  <textarea
-    value={compareRightText}
-    onChange={(e) => setCompareRightText(e.target.value)}
-    className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
-  />
-</div>
-
-<div className="mt-4">
-  <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
+return (
   <>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <textarea
+        value={compareLeftText}
+        onChange={(e) => setCompareLeftText(e.target.value)}
+        className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
+      />
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-    <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
-      {editedDiffRows.map((row, i) => (
-
-        <div
-          key={i}
-          className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
-        >
-          {row.left || ' '}
-        </div>
-
-      ))}
+      <textarea
+        value={compareRightText}
+        onChange={(e) => setCompareRightText(e.target.value)}
+        className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
+      />
     </div>
 
-    <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
-      {editedDiffRows.map((row, i) => (
+    <div className="mt-4">
+      <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
 
-        <div
-          key={i}
-          className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
-        >
-          {row.right || ' '}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+          {editedDiffRows.map((row, i) => (
+            <div
+              key={i}
+              className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
+            >
+              {row.left || ' '}
+            </div>
+          ))}
         </div>
 
-      ))}
+        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+          {editedDiffRows.map((row, i) => (
+            <div
+              key={i}
+              className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
+            >
+              {row.right || ' '}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-
-  </div>
-
-
-
-</div>
-
-      )
-      </>
-    })()}
+  </>
+)
   </div>
 )}
 
