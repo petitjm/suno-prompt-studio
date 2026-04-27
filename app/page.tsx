@@ -130,6 +130,10 @@ export default function Page() {
   const lastFollowedSectionIdRef = React.useRef<string | null>(null)
   const [compareLeftSongId, setCompareLeftSongId] = useState('')
   const [compareRightSongId, setCompareRightSongId] = useState('')
+    const [compareLeftTitle, setCompareLeftTitle] = useState('')
+    const [compareRightTitle, setCompareRightTitle] = useState('')
+    const [savingCompareLeft, setSavingCompareLeft] = useState(false)
+    const [savingCompareRight, setSavingCompareRight] = useState(false)
   const previewBars = React.useMemo(() => {
   if (!chords) return []
 
@@ -983,6 +987,16 @@ const getDiffLines = (left: string, right: string) => {
   return rows
 }
 
+const formatUkDateTime = (value?: string) => {
+  if (!value) return ''
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value))
+}
+
+
   return (
 
 
@@ -1186,20 +1200,46 @@ const getDiffLines = (left: string, right: string) => {
   </div>
 )}
 
+<input
+  value={compareLeftTitle}
+  onChange={(e) => setCompareLeftTitle(e.target.value)}
+  placeholder="Left save title"
+  className="px-3 py-2 rounded bg-gray-700 text-white"
+/>
+
+<input
+  value={compareRightTitle}
+  onChange={(e) => setCompareRightTitle(e.target.value)}
+  placeholder="Right save title"
+  className="px-3 py-2 rounded bg-gray-700 text-white"
+/>
+
 <div className="flex gap-3 mt-3">
 <button
-  onClick={async () => {
-    if (!activeProject) return
+ onClick={async () => {
+  if (!activeProject) return
+
+  try {
+    setSavingCompareLeft(true)
 
     await fetch('/api/song-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         project_id: activeProject.id,
-        title: 'Compare Left Edit',
+        title: compareLeftTitle.trim() || 'Compare Left Edit',
         result: { lyrics_full: compareLeftText },
       }),
     })
+
+    await loadProjectData(activeProject.id)
+    setCompareLeftTitle('')
+    setCompareMessage('Left version saved')
+  } finally {
+    setSavingCompareLeft(false)
+  }
+}}
+disabled={savingCompareLeft || !activeProject || !compareLeftText.trim()}
 
     await loadProjectData(activeProject.id)
     setCompareMessage('Left version saved')
@@ -1207,22 +1247,34 @@ const getDiffLines = (left: string, right: string) => {
   disabled={!activeProject || !compareLeftText.trim()}
   className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
 >
-  Save Left as New Version
+ {savingCompareLeft ? 'Saving left...' : 'Save Left as New Version'}
 </button>
 
   <button
   onClick={async () => {
-    if (!activeProject) return
+  if (!activeProject) return
+
+  try {
+    setSavingCompareRight(true)
 
     await fetch('/api/song-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         project_id: activeProject.id,
-        title: 'Compare Right Edit',
+        title: compareRightTitle.trim() || 'Compare Right Edit',
         result: { lyrics_full: compareRightText },
       }),
     })
+
+    await loadProjectData(activeProject.id)
+    setCompareRightTitle('')
+    setCompareMessage('Right version saved')
+  } finally {
+    setSavingCompareRight(false)
+  }
+}}
+disabled={savingCompareRight || !activeProject || !compareRightText.trim()}
 
     await loadProjectData(activeProject.id)
     setCompareMessage('Right version saved')
@@ -1230,7 +1282,7 @@ const getDiffLines = (left: string, right: string) => {
   disabled={!activeProject || !compareRightText.trim()}
   className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
 >
-  Save Right as New Version
+ {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
 </button>
 </div>
 
