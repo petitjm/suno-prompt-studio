@@ -1186,47 +1186,51 @@ const getDiffLines = (left: string, right: string) => {
 )}
 
 <div className="flex gap-3 mt-3">
+<button
+  onClick={async () => {
+    if (!activeProject) return
+
+    await fetch('/api/song-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        title: 'Compare Left Edit',
+        result: { lyrics_full: compareLeftText },
+      }),
+    })
+
+    await loadProjectData(activeProject.id)
+    setCompareMessage('Left version saved')
+  }}
+  disabled={!activeProject || !compareLeftText.trim()}
+  className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
+>
+  Save Left as New Version
+</button>
+
   <button
-    onClick={async () => {
-      if (!activeProject) return
+  onClick={async () => {
+    if (!activeProject) return
 
-      await fetch('/api/song-versions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProject.id,
-          title: 'Compare Left Edit',
-          result: { lyrics_full: compareLeftText },
-        }),
-      })
+    await fetch('/api/song-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        title: 'Compare Right Edit',
+        result: { lyrics_full: compareRightText },
+      }),
+    })
 
-      await loadProjectData(activeProject.id)
-    }}
-    className="px-3 py-2 bg-green-600 rounded text-white"
-  >
-    Save Left as New Version
-  </button>
-
-  <button
-    onClick={async () => {
-      if (!activeProject) return
-
-      await fetch('/api/song-versions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProject.id,
-          title: 'Compare Right Edit',
-          result: { lyrics_full: compareRightText },
-        }),
-      })
-
-      await loadProjectData(activeProject.id)
-    }}
-    className="px-3 py-2 bg-green-600 rounded text-white"
-  >
-    Save Right as New Version
-  </button>
+    await loadProjectData(activeProject.id)
+    setCompareMessage('Right version saved')
+  }}
+  disabled={!activeProject || !compareRightText.trim()}
+  className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
+>
+  Save Right as New Version
+</button>
 </div>
 
 
