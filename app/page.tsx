@@ -126,7 +126,7 @@ export default function Page() {
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
-  const performanceScrollRef = React.useRef<HTMLDivElement | null>(null
+  const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
   const compareLeftRef = React.useRef<HTMLTextAreaElement | null>(null)
 const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
 
