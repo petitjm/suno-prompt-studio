@@ -1204,30 +1204,40 @@ const formatUkDateTime = (value?: string) => {
 
 <div className="mt-4">
   <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
+  <>
 
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
     <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
       {editedDiffRows.map((row, i) => (
+
         <div
           key={i}
           className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
         >
           {row.left || ' '}
         </div>
+
       ))}
     </div>
 
     <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
       {editedDiffRows.map((row, i) => (
+
         <div
           key={i}
           className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
         >
           {row.right || ' '}
         </div>
+
       ))}
     </div>
+
   </div>
+
+</>
+
 </div>
 
       )
