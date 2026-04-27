@@ -1181,12 +1181,7 @@ const formatUkDateTime = (value?: string) => {
       </select>
     </div>
 
-    {(() => {
-      const diffRows = getDiffLines(
-        compareLeftSong?.result?.lyrics_full || '',
-        compareRightSong?.result?.lyrics_full || ''
-      )
-return (
+
   <>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <textarea
@@ -1230,8 +1225,6 @@ return (
       </div>
     </div>
   </>
-)
-})()}
   </div>
 )}
 
