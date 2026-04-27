@@ -987,8 +987,9 @@ const getDiffLines = (left: string, right: string) => {
 
   return rows
 }
-const getDiffLines = (left: string, right: string) => {
-    const editedDiffRows = getDiffLines(compareLeftText, compareRightText)
+
+const editedDiffRows = getDiffLines(compareLeftText, compareRightText)
+
 
 const formatUkDateTime = (value?: string) => {
   if (!value) return ''
