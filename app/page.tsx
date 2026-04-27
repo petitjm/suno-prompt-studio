@@ -126,7 +126,16 @@ export default function Page() {
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
-  const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
+  const performanceScrollRef = React.useRef<HTMLDivElement | null>(null
+  const compareLeftRef = React.useRef<HTMLTextAreaElement | null>(null)
+const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
+
+const syncCompareScroll = (source: 'left' | 'right') => {
+  const src = source === 'left' ? compareLeftRef.current : compareRightRef.current
+  const tgt = source === 'left' ? compareRightRef.current : compareLeftRef.current
+  if (!src || !tgt) return
+  tgt.scrollTop = src.scrollTop
+}
   const lastFollowedSectionIdRef = React.useRef<string | null>(null)
   const [compareLeftSongId, setCompareLeftSongId] = useState('')
   const [compareRightSongId, setCompareRightSongId] = useState('')
@@ -1186,15 +1195,17 @@ const formatUkDateTime = (value?: string) => {
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <textarea
-        value={compareLeftText}
-        onChange={(e) => setCompareLeftText(e.target.value)}
-        className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
+   ref={compareLeftRef}
+  value={compareLeftText}
+  onChange={(e) => setCompareLeftText(e.target.value)}
+  onScroll={() => syncCompareScroll('left')}
       />
 
       <textarea
-        value={compareRightText}
-        onChange={(e) => setCompareRightText(e.target.value)}
-        className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px]"
+  ref={compareRightRef}
+  value={compareRightText}
+  onChange={(e) => setCompareRightText(e.target.value)}
+  onScroll={() => syncCompareScroll('right')}
       />
     </div>
 
