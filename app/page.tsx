@@ -1247,37 +1247,32 @@ const formatUkDateTime = (value?: string) => {
 
   <button
   onClick={async () => {
-  if (!activeProject) return
+    if (!activeProject) return
 
-  try {
-    setSavingCompareRight(true)
+    try {
+      setSavingCompareRight(true)
 
-    await fetch('/api/song-versions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: activeProject.id,
-        title: compareRightTitle.trim() || 'Compare Right Edit',
-        result: { lyrics_full: compareRightText },
-      }),
-    })
+      await fetch('/api/song-versions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title: compareRightTitle.trim() || 'Compare Right Edit',
+          result: { lyrics_full: compareRightText },
+        }),
+      })
 
-    await loadProjectData(activeProject.id)
-    setCompareRightTitle('')
-    setCompareMessage('Right version saved')
-  } finally {
-    setSavingCompareRight(false)
-  }
-}}
-disabled={savingCompareRight || !activeProject || !compareRightText.trim()}
-
-    await loadProjectData(activeProject.id)
-    setCompareMessage('Right version saved')
+      await loadProjectData(activeProject.id)
+      setCompareRightTitle('')
+      setCompareMessage('Right version saved')
+    } finally {
+      setSavingCompareRight(false)
+    }
   }}
-  disabled={!activeProject || !compareRightText.trim()}
+  disabled={savingCompareRight || !activeProject || !compareRightText.trim()}
   className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
 >
- {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
+  {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
 </button>
 </div>
 
