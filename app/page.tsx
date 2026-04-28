@@ -1015,7 +1015,10 @@ const formatUkDateTime = (value?: string) => {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date)
-}
+}const canApplyLeft = !lockCompareLeft
+const canApplyRight = !lockCompareRight
+
+
 
   return (
 
@@ -1236,20 +1239,26 @@ const formatUkDateTime = (value?: string) => {
     />
     <div className="flex flex-col justify-center items-center gap-2">
   <button
-    type="button"
-    onClick={() => setCompareLeftText(compareRightText)}
-    className="px-3 py-2 bg-blue-600 rounded text-white text-sm"
-  >
-    ← Apply
-  </button>
+  type="button"
+  onClick={() => setCompareLeftText(compareRightText)}
+  disabled={!canApplyLeft}
+  className={`px-3 py-2 rounded text-white text-sm ${
+    canApplyLeft ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
+  }`}
+>
+  ← Apply
+</button>
 
   <button
-    type="button"
-    onClick={() => setCompareRightText(compareLeftText)}
-    className="px-3 py-2 bg-gray-600 rounded text-white text-sm"
-  >
-    Apply →
-  </button>
+  type="button"
+  onClick={() => setCompareRightText(compareLeftText)}
+  disabled={!canApplyRight}
+  className={`px-3 py-2 rounded text-white text-sm ${
+    canApplyRight ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
+  }`}
+>
+  Apply →
+</button>
 </div>
     <textarea
           ref={compareRightRef}
