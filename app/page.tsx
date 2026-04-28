@@ -524,6 +524,7 @@ const [versionsLoading, setVersionsLoading] = useState(false)
 const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
 const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
 
+const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>(null)
 const [compareLeftText, setCompareLeftText] = useState('')
 const [compareRightText, setCompareRightText] = useState('')
 const [compareMessage, setCompareMessage] = useState('')
@@ -1045,12 +1046,28 @@ const scrollCompareEditorsToLine = (lineIndex: number) => {
     el.focus()
     el.setSelectionRange(start, end)
 
+    // 🔥 smooth scroll to bring line into view
     requestAnimationFrame(() => {
       const computed = window.getComputedStyle(el)
       const lineHeight = Number.parseFloat(computed.lineHeight) || 28
-      el.scrollTop = Math.max(0, safeLineIndex * lineHeight - lineHeight * 4)
+
+      el.scrollTop = Math.max(
+        0,
+        safeLineIndex * lineHeight - lineHeight * 4
+      )
     })
+
+    // 🔥 brief visual highlight (selection flash)
+    setJumpHighlightLine(safeLineIndex)
+
+    setTimeout(() => {
+      setJumpHighlightLine(null)
+    }, 800)
   }
+
+  jumpToLine(compareLeftRef.current)
+  jumpToLine(compareRightRef.current)
+}
 
   jumpToLine(compareLeftRef.current)
   jumpToLine(compareRightRef.current)
