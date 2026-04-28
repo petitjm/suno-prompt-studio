@@ -1222,7 +1222,7 @@ const formatUkDateTime = (value?: string) => {
   </label>
 </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
 
     <textarea
           ref={compareLeftRef}
@@ -1234,7 +1234,23 @@ const formatUkDateTime = (value?: string) => {
             lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
           }`}
     />
+    <div className="flex flex-col justify-center items-center gap-2">
+  <button
+    type="button"
+    onClick={() => setCompareLeftText(compareRightText)}
+    className="px-3 py-2 bg-blue-600 rounded text-white text-sm"
+  >
+    ← Apply
+  </button>
 
+  <button
+    type="button"
+    onClick={() => setCompareRightText(compareLeftText)}
+    className="px-3 py-2 bg-gray-600 rounded text-white text-sm"
+  >
+    Apply →
+  </button>
+</div>
     <textarea
           ref={compareRightRef}
           value={compareRightText}
