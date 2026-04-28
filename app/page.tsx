@@ -1017,8 +1017,10 @@ const formatUkDateTime = (value?: string) => {
   }).format(date)
 }
 
-const canApplyLeft = !lockCompareLeft
-const canApplyRight = !lockCompareRight
+const noCompareLocks = !lockCompareLeft && !lockCompareRight
+
+const canApplyLeft = noCompareLocks || lockCompareLeft
+const canApplyRight = noCompareLocks || lockCompareRight
 
 
 
@@ -1243,7 +1245,12 @@ const canApplyRight = !lockCompareRight
 <button
   type="button"
   onClick={() => setCompareLeftText(compareRightText)}
-  className="px-3 py-2 rounded text-white text-sm bg-blue-600"
+  disabled={!canApplyLeft}
+  className={`px-3 py-2 rounded text-white text-sm ${
+    canApplyLeft
+      ? 'bg-blue-600'
+      : 'bg-gray-600 opacity-50 cursor-not-allowed'
+  }`}
 >
   ← Apply
 </button>
@@ -1251,9 +1258,11 @@ const canApplyRight = !lockCompareRight
 <button
   type="button"
   onClick={() => setCompareRightText(compareLeftText)}
-  disabled={lockCompareRight}
+  disabled={!canApplyRight}
   className={`px-3 py-2 rounded text-white text-sm ${
-    lockCompareRight ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-blue-600'
+    canApplyRight
+      ? 'bg-blue-600'
+      : 'bg-gray-600 opacity-50 cursor-not-allowed'
   }`}
 >
   Apply →
