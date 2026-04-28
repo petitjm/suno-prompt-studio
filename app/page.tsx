@@ -1030,22 +1030,20 @@ const getWordDiffParts = (left: string, right: string) => {
 }
 
 const scrollCompareEditorsToLine = (lineIndex: number) => {
-  const editor = compareLeftRef.current || compareRightRef.current
-  if (!editor) return
+  const totalLines = Math.max(1, editedDiffRows.length - 1)
+  const ratio = lineIndex / totalLines
 
-  const computed = window.getComputedStyle(editor)
-  const lineHeight = Number.parseFloat(computed.lineHeight) || 28
+  const scrollEditor = (el: HTMLTextAreaElement | null) => {
+    if (!el) return
 
-  const targetTop = Math.max(0, lineIndex * lineHeight - lineHeight * 3)
-
-  if (compareLeftRef.current) {
-    compareLeftRef.current.scrollTop = targetTop
-    compareLeftRef.current.focus()
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight)
+    el.scrollTop = maxScroll * ratio
   }
 
-  if (compareRightRef.current) {
-    compareRightRef.current.scrollTop = targetTop
-  }
+  scrollEditor(compareLeftRef.current)
+  scrollEditor(compareRightRef.current)
+
+  compareLeftRef.current?.focus()
 }
 
 
