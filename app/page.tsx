@@ -143,6 +143,8 @@ const syncCompareScroll = (source: 'left' | 'right') => {
     const [compareRightTitle, setCompareRightTitle] = useState('')
     const [savingCompareLeft, setSavingCompareLeft] = useState(false)
     const [savingCompareRight, setSavingCompareRight] = useState(false)
+    const [lockCompareLeft, setLockCompareLeft] = useState(false)
+    const [lockCompareRight, setLockCompareRight] = useState(false)
   const previewBars = React.useMemo(() => {
   if (!chords) return []
 
@@ -1193,20 +1195,50 @@ const formatUkDateTime = (value?: string) => {
       </select>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <textarea
-   ref={compareLeftRef}
-  value={compareLeftText}
-  onChange={(e) => setCompareLeftText(e.target.value)}
-  onScroll={() => syncCompareScroll('left')}
-      />
 
-      <textarea
-  ref={compareRightRef}
-  value={compareRightText}
-  onChange={(e) => setCompareRightText(e.target.value)}
-  onScroll={() => syncCompareScroll('right')}
-      />
+    <div className="flex gap-3 mb-3">
+  <label className="flex items-center gap-2 text-sm text-gray-300">
+    <input
+      type="checkbox"
+      checked={lockCompareLeft}
+      onChange={(e) => setLockCompareLeft(e.target.checked)}
+    />
+    Lock left
+  </label>
+
+  <label className="flex items-center gap-2 text-sm text-gray-300">
+    <input
+      type="checkbox"
+      checked={lockCompareRight}
+      onChange={(e) => setLockCompareRight(e.target.checked)}
+    />
+    Lock right
+  </label>
+</div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <textarea
+          ref={compareLeftRef}
+          value={compareLeftText}
+          onChange={(e) => setCompareLeftText(e.target.value)}
+          onScroll={() => syncCompareScroll('left')}
+          readOnly={lockCompareLeft}
+          className={`bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
+            lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
+    />
+
+    <textarea
+          ref={compareRightRef}
+          value={compareRightText}
+          onChange={(e) => setCompareRightText(e.target.value)}
+          onScroll={() => syncCompareScroll('right')}
+          readOnly={lockCompareRight}
+          className={`bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
+            lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
+    />
     </div>
 
     <div className="mt-4">
