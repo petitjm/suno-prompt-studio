@@ -1020,6 +1020,21 @@ const getWordDiffParts = (left: string, right: string) => {
   return { leftParts, rightParts }
 }
 
+const scrollCompareEditorsToLine = (lineIndex: number) => {
+  const lineHeight = 28
+  const targetTop = Math.max(0, lineIndex * lineHeight - 80)
+
+  if (compareLeftRef.current) {
+    compareLeftRef.current.scrollTop = targetTop
+    compareLeftRef.current.focus()
+  }
+
+  if (compareRightRef.current) {
+    compareRightRef.current.scrollTop = targetTop
+  }
+}
+
+
 
 const editedDiffRows = getDiffLines(compareLeftText, compareRightText)
 
@@ -1310,7 +1325,15 @@ const canApplyRight = noCompareLocks || lockCompareRight
           {editedDiffRows.map((row, i) => (
             <div
               key={i}
-              className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
+              onClick={() => {
+                if (row.changed) scrollCompareEditorsToLine(i)
+              }}
+              title={row.changed ? 'Click to jump editors to this line' : undefined}
+              className={
+                row.changed
+                  ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
+                  : 'px-1'
+              }
             >
               {getWordDiffParts(row.left, row.right).leftParts.map((part, j) => (
               <span
@@ -1328,7 +1351,15 @@ const canApplyRight = noCompareLocks || lockCompareRight
           {editedDiffRows.map((row, i) => (
             <div
               key={i}
-              className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
+              onClick={() => {
+                if (row.changed) scrollCompareEditorsToLine(i)
+              }}
+              title={row.changed ? 'Click to jump editors to this line' : undefined}
+              className={
+                row.changed
+                  ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
+                  : 'px-1'
+              }
             >
               {getWordDiffParts(row.left, row.right).rightParts.map((part, j) => (
                   <span
