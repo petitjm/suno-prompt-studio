@@ -129,6 +129,15 @@ export default function Page() {
   const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
   const compareLeftRef = React.useRef<HTMLTextAreaElement | null>(null)
 const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
+const previewLeftRef = React.useRef<HTMLDivElement | null>(null)
+const previewRightRef = React.useRef<HTMLDivElement | null>(null)
+
+const syncPreviewScroll = (source: 'left' | 'right') => {
+  const src = source === 'left' ? previewLeftRef.current : previewRightRef.current
+  const tgt = source === 'left' ? previewRightRef.current : previewLeftRef.current
+  if (!src || !tgt) return
+  tgt.scrollTop = src.scrollTop
+}
 
 const syncCompareScroll = (source: 'left' | 'right') => {
   const src = source === 'left' ? compareLeftRef.current : compareRightRef.current
@@ -1321,7 +1330,11 @@ const canApplyRight = noCompareLocks || lockCompareRight
       <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto">
+        <div
+  ref={previewRightRef}
+  onScroll={() => syncPreviewScroll('right')}
+  className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
+>
           {editedDiffRows.map((row, i) => (
             <div
               key={i}
@@ -1347,7 +1360,11 @@ const canApplyRight = noCompareLocks || lockCompareRight
           ))}
         </div>
 
-        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto">
+        <div
+  ref={previewLeftRef}
+  onScroll={() => syncPreviewScroll('left')}
+  className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
+>
           {editedDiffRows.map((row, i) => (
             <div
               key={i}
