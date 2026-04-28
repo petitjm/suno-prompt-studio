@@ -1030,8 +1030,13 @@ const getWordDiffParts = (left: string, right: string) => {
 }
 
 const scrollCompareEditorsToLine = (lineIndex: number) => {
-  const lineHeight = 28
-  const targetTop = Math.max(0, lineIndex * lineHeight - 80)
+  const editor = compareLeftRef.current || compareRightRef.current
+  if (!editor) return
+
+  const computed = window.getComputedStyle(editor)
+  const lineHeight = Number.parseFloat(computed.lineHeight) || 28
+
+  const targetTop = Math.max(0, lineIndex * lineHeight - lineHeight * 3)
 
   if (compareLeftRef.current) {
     compareLeftRef.current.scrollTop = targetTop
