@@ -1069,10 +1069,6 @@ const scrollCompareEditorsToLine = (lineIndex: number) => {
   jumpToLine(compareRightRef.current)
 }
 
-  jumpToLine(compareLeftRef.current)
-  jumpToLine(compareRightRef.current)
-}
-
 
 
 const editedDiffRows = getDiffLines(compareLeftText, compareRightText)
