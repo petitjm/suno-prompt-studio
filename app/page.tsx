@@ -1196,12 +1196,15 @@ const formatUkDateTime = (value?: string) => {
     </div>
 
 
-    <div className="flex gap-3 mb-3">
+   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
   <label className="flex items-center gap-2 text-sm text-gray-300">
     <input
       type="checkbox"
       checked={lockCompareLeft}
-      onChange={(e) => setLockCompareLeft(e.target.checked)}
+      onChange={(e) => {
+  setLockCompareLeft(e.target.checked)
+  if (e.target.checked) setLockCompareRight(false)
+}}
     />
     Lock left
   </label>
@@ -1210,7 +1213,10 @@ const formatUkDateTime = (value?: string) => {
     <input
       type="checkbox"
       checked={lockCompareRight}
-      onChange={(e) => setLockCompareRight(e.target.checked)}
+      onChange={(e) => {
+  setLockCompareRight(e.target.checked)
+  if (e.target.checked) setLockCompareLeft(false)
+}}
     />
     Lock right
   </label>
