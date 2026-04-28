@@ -1213,7 +1213,7 @@ const formatUkDateTime = (value?: string) => {
       <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto">
           {editedDiffRows.map((row, i) => (
             <div
               key={i}
@@ -1224,7 +1224,7 @@ const formatUkDateTime = (value?: string) => {
           ))}
         </div>
 
-        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7">
+        <div className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto">
           {editedDiffRows.map((row, i) => (
             <div
               key={i}
