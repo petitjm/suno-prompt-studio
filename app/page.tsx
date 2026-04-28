@@ -1015,7 +1015,9 @@ const formatUkDateTime = (value?: string) => {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date)
-}const canApplyLeft = !lockCompareLeft
+}
+
+const canApplyLeft = !lockCompareLeft
 const canApplyRight = !lockCompareRight
 
 
