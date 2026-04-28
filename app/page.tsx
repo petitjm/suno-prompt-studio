@@ -999,6 +999,28 @@ const getDiffLines = (left: string, right: string) => {
   return rows
 }
 
+
+const getWordDiffParts = (left: string, right: string) => {
+  const leftWords = left.split(/(\s+)/)
+  const rightWords = right.split(/(\s+)/)
+  const max = Math.max(leftWords.length, rightWords.length)
+
+  const leftParts = []
+  const rightParts = []
+
+  for (let i = 0; i < max; i++) {
+    const l = leftWords[i] || ''
+    const r = rightWords[i] || ''
+    const changed = l !== r
+
+    leftParts.push({ text: l, changed })
+    rightParts.push({ text: r, changed })
+  }
+
+  return { leftParts, rightParts }
+}
+
+
 const editedDiffRows = getDiffLines(compareLeftText, compareRightText)
 
 
@@ -1290,7 +1312,14 @@ const canApplyRight = noCompareLocks || lockCompareRight
               key={i}
               className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
             >
-              {row.left || ' '}
+              {getWordDiffParts(row.left, row.right).leftParts.map((part, j) => (
+              <span
+                key={j}
+                className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
+              >
+                {part.text}
+              </span>
+            ))}
             </div>
           ))}
         </div>
@@ -1301,7 +1330,14 @@ const canApplyRight = noCompareLocks || lockCompareRight
               key={i}
               className={row.changed ? 'bg-yellow-900/40 px-1 rounded' : 'px-1'}
             >
-              {row.right || ' '}
+              {getWordDiffParts(row.left, row.right).rightParts.map((part, j) => (
+                  <span
+                    key={j}
+                    className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
+                  >
+                    {part.text}
+                  </span>
+               ))}
             </div>
           ))}
         </div>
