@@ -1240,23 +1240,20 @@ const canApplyRight = !lockCompareRight
           }`}
     />
     <div className="flex flex-col justify-center items-center gap-2">
-  <button
+<button
   type="button"
   onClick={() => setCompareLeftText(compareRightText)}
-  disabled={!canApplyLeft}
-  className={`px-3 py-2 rounded text-white text-sm ${
-    canApplyLeft ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
-  }`}
+  className="px-3 py-2 rounded text-white text-sm bg-blue-600"
 >
   ← Apply
 </button>
 
-  <button
+<button
   type="button"
   onClick={() => setCompareRightText(compareLeftText)}
-  disabled={!canApplyRight}
+  disabled={lockCompareRight}
   className={`px-3 py-2 rounded text-white text-sm ${
-    canApplyRight ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
+    lockCompareRight ? 'bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-blue-600'
   }`}
 >
   Apply →
