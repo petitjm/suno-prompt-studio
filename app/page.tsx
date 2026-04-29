@@ -126,6 +126,8 @@ export default function Page() {
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
+  const [usingLeft, setUsingLeft] = useState(false)
+  const [usingRight, setUsingRight] = useState(false)
   const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
   const compareLeftRef = React.useRef<HTMLTextAreaElement | null>(null)
 const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
@@ -1290,13 +1292,20 @@ const canApplyRight = noCompareLocks || lockCompareRight
       </label>
 
       <button
-        type="button"
-        onClick={() => setPerformanceSheet(compareLeftText)}
-        disabled={!compareLeftText.trim()}
-        className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
-      >
-        ▶ Use
-      </button>
+  type="button"
+  onClick={() => {
+    setUsingLeft(true)
+    setPerformanceSheet(compareLeftText)
+
+    setTimeout(() => setUsingLeft(false), 1000)
+  }}
+  disabled={!compareLeftText.trim()}
+  className={`px-2 py-1 rounded text-xs text-white transition ${
+    usingLeft ? 'bg-green-600 scale-95' : 'bg-purple-600'
+  } disabled:opacity-40`}
+>
+  {usingLeft ? 'Used ✓' : '▶ Use'}
+</button>
     </div>
 
     <textarea
@@ -1350,14 +1359,20 @@ const canApplyRight = noCompareLocks || lockCompareRight
       </label>
 
       <button
-        type="button"
-        onClick={() => setPerformanceSheet(compareRightText)}
-        disabled={!compareRightText.trim()}
-        className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
-      >
-        ▶ Use
-      </button>
-    </div>
+  type="button"
+  onClick={() => {
+    setUsingRight(true)
+    setPerformanceSheet(compareRightText)
+
+    setTimeout(() => setUsingRight(false), 1000)
+  }}
+  disabled={!compareRightText.trim()}
+  className={`px-2 py-1 rounded text-xs text-white transition ${
+    usingRight ? 'bg-green-600 scale-95' : 'bg-purple-600'
+  } disabled:opacity-40`}
+>
+  {usingRight ? 'Used ✓' : '▶ Use'}
+</button>
 
     <textarea
       ref={compareRightRef}
