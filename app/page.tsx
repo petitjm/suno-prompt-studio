@@ -1274,109 +1274,103 @@ const canApplyRight = noCompareLocks || lockCompareRight
       </select>
     </div>
 
+   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+  <div>
     <div className="flex items-center gap-2 mb-2">
-              <label className="flex items-center gap-1 text-xs text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={lockCompareLeft}
-                  onChange={(e) => {
-                    setLockCompareLeft(e.target.checked)
-                    if (e.target.checked) setLockCompareRight(false)
-                  }}
-                />
-                Lock
-              </label>
+      <label className="flex items-center gap-1 text-xs text-gray-300">
+        <input
+          type="checkbox"
+          checked={lockCompareLeft}
+          onChange={(e) => {
+            setLockCompareLeft(e.target.checked)
+            if (e.target.checked) setLockCompareRight(false)
+          }}
+        />
+        Lock
+      </label>
 
-              <button
-                type="button"
-                onClick={() => setPerformanceSheet(compareLeftText)}
-                disabled={!compareLeftText.trim()}
-                className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
-              >
-                ▶ Use
-              </button>
-        </div>
- 
-
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
-
-    <textarea
-          ref={compareLeftRef}
-          value={compareLeftText}
-          onChange={(e) => setCompareLeftText(e.target.value)}
-          onScroll={() => syncCompareScroll('left')}
-          readOnly={lockCompareLeft}
-          className={`bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
-            lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
-          }`}
-    />
-
-    <div className="flex items-center gap-2 mb-2">
-          <label className="flex items-center gap-1 text-xs text-gray-300">
-            <input
-              type="checkbox"
-              checked={lockCompareRight}
-              onChange={(e) => {
-                setLockCompareRight(e.target.checked)
-                if (e.target.checked) setLockCompareLeft(false)
-              }}
-            />
-            Lock
-          </label>
-
-          <button
-            type="button"
-            onClick={() => setPerformanceSheet(compareRightText)}
-            disabled={!compareRightText.trim()}
-            className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
-          >
-            ▶ Use
-          </button>
-     </div>
-
-
-    <div className="flex flex-col justify-center items-center gap-2">
-<button
-  type="button"
-  onClick={() => setCompareLeftText(compareRightText)}
-  disabled={!canApplyLeft}
-  className={`px-3 py-2 rounded text-white text-sm ${
-    canApplyLeft
-      ? 'bg-blue-600'
-      : 'bg-gray-600 opacity-50 cursor-not-allowed'
-  }`}
->
-  ← Apply
-</button>
-
-<button
-  type="button"
-  onClick={() => setCompareRightText(compareLeftText)}
-  disabled={!canApplyRight}
-  className={`px-3 py-2 rounded text-white text-sm ${
-    canApplyRight
-      ? 'bg-blue-600'
-      : 'bg-gray-600 opacity-50 cursor-not-allowed'
-  }`}
->
-  Apply →
-</button>
-
-
-
-
-</div>
-    <textarea
-          ref={compareRightRef}
-          value={compareRightText}
-          onChange={(e) => setCompareRightText(e.target.value)}
-          onScroll={() => syncCompareScroll('right')}
-          readOnly={lockCompareRight}
-          className={`bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
-            lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
-          }`}
-    />
+      <button
+        type="button"
+        onClick={() => setPerformanceSheet(compareLeftText)}
+        disabled={!compareLeftText.trim()}
+        className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+      >
+        ▶ Use
+      </button>
     </div>
+
+    <textarea
+      ref={compareLeftRef}
+      value={compareLeftText}
+      onChange={(e) => setCompareLeftText(e.target.value)}
+      onScroll={() => syncCompareScroll('left')}
+      readOnly={lockCompareLeft}
+      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
+        lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
+      }`}
+    />
+  </div>
+
+  <div className="flex flex-col justify-center items-center gap-2 pt-8">
+    <button
+      type="button"
+      onClick={() => setCompareLeftText(compareRightText)}
+      disabled={!canApplyLeft}
+      className={`px-3 py-2 rounded text-white text-sm ${
+        canApplyLeft ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
+      }`}
+    >
+      ← Apply
+    </button>
+
+    <button
+      type="button"
+      onClick={() => setCompareRightText(compareLeftText)}
+      disabled={!canApplyRight}
+      className={`px-3 py-2 rounded text-white text-sm ${
+        canApplyRight ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
+      }`}
+    >
+      Apply →
+    </button>
+  </div>
+
+  <div>
+    <div className="flex items-center gap-2 mb-2">
+      <label className="flex items-center gap-1 text-xs text-gray-300">
+        <input
+          type="checkbox"
+          checked={lockCompareRight}
+          onChange={(e) => {
+            setLockCompareRight(e.target.checked)
+            if (e.target.checked) setLockCompareLeft(false)
+          }}
+        />
+        Lock
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setPerformanceSheet(compareRightText)}
+        disabled={!compareRightText.trim()}
+        className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+      >
+        ▶ Use
+      </button>
+    </div>
+
+    <textarea
+      ref={compareRightRef}
+      value={compareRightText}
+      onChange={(e) => setCompareRightText(e.target.value)}
+      onScroll={() => syncCompareScroll('right')}
+      readOnly={lockCompareRight}
+      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
+        lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
+      }`}
+    />
+  </div>
+</div>
 
     <div className="mt-4">
       <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
