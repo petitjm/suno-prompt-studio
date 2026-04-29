@@ -1275,33 +1275,32 @@ const canApplyRight = noCompareLocks || lockCompareRight
     </div>
 
 
-   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-  <label className="flex items-center gap-2 text-sm text-gray-300">
+ 
+
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+
+    <div className="flex items-center gap-2 mb-2">
+  <label className="flex items-center gap-1 text-xs text-gray-300">
     <input
       type="checkbox"
       checked={lockCompareLeft}
       onChange={(e) => {
-  setLockCompareLeft(e.target.checked)
-  if (e.target.checked) setLockCompareRight(false)
-}}
+        setLockCompareLeft(e.target.checked)
+        if (e.target.checked) setLockCompareRight(false)
+      }}
     />
-    Lock left
+    Lock
   </label>
 
-  <label className="flex items-center gap-2 text-sm text-gray-300">
-    <input
-      type="checkbox"
-      checked={lockCompareRight}
-      onChange={(e) => {
-  setLockCompareRight(e.target.checked)
-  if (e.target.checked) setLockCompareLeft(false)
-}}
-    />
-    Lock right
-  </label>
+  <button
+    type="button"
+    onClick={() => setPerformanceSheet(compareLeftText)}
+    disabled={!compareLeftText.trim()}
+    className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+  >
+    ▶ Use
+  </button>
 </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
 
     <textarea
           ref={compareLeftRef}
@@ -1340,6 +1339,32 @@ const canApplyRight = noCompareLocks || lockCompareRight
   Apply →
 </button>
 </div>
+
+
+<div className="flex items-center gap-2 mb-2">
+  <label className="flex items-center gap-1 text-xs text-gray-300">
+    <input
+      type="checkbox"
+      checked={lockCompareRight}
+      onChange={(e) => {
+        setLockCompareRight(e.target.checked)
+        if (e.target.checked) setLockCompareLeft(false)
+      }}
+    />
+    Lock
+  </label>
+
+  <button
+    type="button"
+    onClick={() => setPerformanceSheet(compareRightText)}
+    disabled={!compareRightText.trim()}
+    className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+  >
+    ▶ Use
+  </button>
+</div>
+
+
     <textarea
           ref={compareRightRef}
           value={compareRightText}
