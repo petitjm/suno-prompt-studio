@@ -530,6 +530,7 @@ const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>(null)
 const [compareLeftText, setCompareLeftText] = useState('')
 const [compareRightText, setCompareRightText] = useState('')
 const [compareMessage, setCompareMessage] = useState('')
+const writeScrollTopRef = React.useRef(0)
 
 
 React.useEffect(() => {
@@ -1259,7 +1260,18 @@ const canApplyRight = noCompareLocks || lockCompareRight
 
       <button
         type="button"
-        onClick={() => setPerformanceSheet(compareLeftText)}
+        onClick={() => {
+  setUsingLeft(true)
+  setPerformanceSheet(compareLeftText)
+  setCurrentBarIndex(0)
+  writeScrollTopRef.current = performanceScrollRef.current?.scrollTop || 0
+  setMode('perform')
+  requestAnimationFrame(() => {
+  performanceScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+  setTimeout(() => setUsingLeft(false), 1000)
+}}
         disabled={!compareLeftText.trim()}
         className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
       >
@@ -1319,7 +1331,18 @@ const canApplyRight = noCompareLocks || lockCompareRight
 
       <button
         type="button"
-        onClick={() => setPerformanceSheet(compareRightText)}
+        onClick={() => {
+  setUsingRight(true)
+  setPerformanceSheet(compareRightText)
+  setCurrentBarIndex(0)
+  writeScrollTopRef.current = performanceScrollRef.current?.scrollTop || 0
+  setMode('perform')
+  requestAnimationFrame(() => {
+  performanceScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+  setTimeout(() => setUsingRight(false), 1000)
+}}
         disabled={!compareRightText.trim()}
         className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
       >
