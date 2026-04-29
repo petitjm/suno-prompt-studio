@@ -1279,7 +1279,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
     />
   </div>
 
-  <div className="flex flex-col justify-center items-center gap-2 pt-8">
+  <div className="w-[112px] flex flex-col justify-center items-center gap-2 pt-8">
     <button
       type="button"
       onClick={() => setCompareLeftText(compareRightText)}
