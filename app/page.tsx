@@ -1343,7 +1343,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
 <div className="mt-4">
   <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
     <div
       ref={previewLeftRef}
       onScroll={() => syncPreviewScroll('left')}
@@ -1373,6 +1373,9 @@ const canApplyRight = noCompareLocks || lockCompareRight
         </div>
       ))}
     </div>
+
+<div className="hidden md:block w-[96px]" />
+
 
     <div
       ref={previewRightRef}
