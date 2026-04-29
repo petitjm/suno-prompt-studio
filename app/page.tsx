@@ -1242,41 +1242,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
   
 </div>
 
-{songVersions.length >= 2 && (
-  <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
-    <h3 className="text-lg font-semibold mb-3">Compare Song Versions</h3>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <select
-        value={compareLeftSongId}
-        onChange={(e) => setCompareLeftSongId(e.target.value)}
-        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-      >
-        <option value="">Choose left version</option>
-        {songVersions.map((v, i) => (
-          <option key={v.id} value={v.id}>
-            {v.title || `Version ${songVersions.length - i}`}
-            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={compareRightSongId}
-        onChange={(e) => setCompareRightSongId(e.target.value)}
-        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-      >
-        <option value="">Choose right version</option>
-        {songVersions.map((v, i) => (
-          <option key={v.id} value={v.id}>
-            {v.title || `Version ${songVersions.length - i}`}
-            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-          </option>
-        ))}
-      </select>
-    </div>
-
-   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+<div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
   <div>
     <div className="flex items-center gap-2 mb-2">
       <label className="flex items-center gap-1 text-xs text-gray-300">
@@ -1292,20 +1258,13 @@ const canApplyRight = noCompareLocks || lockCompareRight
       </label>
 
       <button
-  type="button"
-  onClick={() => {
-    setUsingLeft(true)
-    setPerformanceSheet(compareLeftText)
-
-    setTimeout(() => setUsingLeft(false), 1000)
-  }}
-  disabled={!compareLeftText.trim()}
-  className={`px-2 py-1 rounded text-xs text-white transition ${
-    usingLeft ? 'bg-green-600 scale-95' : 'bg-purple-600'
-  } disabled:opacity-40`}
->
-  {usingLeft ? 'Used ✓' : '▶ Use'}
-</button>
+        type="button"
+        onClick={() => setPerformanceSheet(compareLeftText)}
+        disabled={!compareLeftText.trim()}
+        className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+      >
+        ▶ Use
+      </button>
     </div>
 
     <textarea
@@ -1359,20 +1318,14 @@ const canApplyRight = noCompareLocks || lockCompareRight
       </label>
 
       <button
-  type="button"
-  onClick={() => {
-    setUsingRight(true)
-    setPerformanceSheet(compareRightText)
-
-    setTimeout(() => setUsingRight(false), 1000)
-  }}
-  disabled={!compareRightText.trim()}
-  className={`px-2 py-1 rounded text-xs text-white transition ${
-    usingRight ? 'bg-green-600 scale-95' : 'bg-purple-600'
-  } disabled:opacity-40`}
->
-  {usingRight ? 'Used ✓' : '▶ Use'}
-</button>
+        type="button"
+        onClick={() => setPerformanceSheet(compareRightText)}
+        disabled={!compareRightText.trim()}
+        className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+      >
+        ▶ Use
+      </button>
+    </div>
 
     <textarea
       ref={compareRightRef}
@@ -1387,157 +1340,73 @@ const canApplyRight = noCompareLocks || lockCompareRight
   </div>
 </div>
 
-    <div className="mt-4">
-      <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
+<div className="mt-4">
+  <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div
+      ref={previewLeftRef}
+      onScroll={() => syncPreviewScroll('left')}
+      className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
+    >
+      {editedDiffRows.map((row, i) => (
         <div
-  ref={previewRightRef}
-  onScroll={() => syncPreviewScroll('right')}
-  className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
->
-          {editedDiffRows.map((row, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                if (row.changed) scrollCompareEditorsToLine(i)
-              }}
-              title={row.changed ? 'Click to jump editors to this line' : undefined}
-              className={
-                row.changed
-                  ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
-                  : 'px-1'
-              }
+          key={i}
+          onClick={() => {
+            if (row.changed) scrollCompareEditorsToLine(i)
+          }}
+          title={row.changed ? 'Click to jump editors to this line' : undefined}
+          className={
+            row.changed
+              ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
+              : 'px-1'
+          }
+        >
+          {getWordDiffParts(row.left, row.right).leftParts.map((part, j) => (
+            <span
+              key={j}
+              className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
             >
-              {getWordDiffParts(row.left, row.right).leftParts.map((part, j) => (
-              <span
-                key={j}
-                className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
-              >
-                {part.text}
-              </span>
-            ))}
-            </div>
+              {part.text}
+            </span>
           ))}
         </div>
+      ))}
+    </div>
 
+    <div
+      ref={previewRightRef}
+      onScroll={() => syncPreviewScroll('right')}
+      className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
+    >
+      {editedDiffRows.map((row, i) => (
         <div
-  ref={previewLeftRef}
-  onScroll={() => syncPreviewScroll('left')}
-  className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
->
-          {editedDiffRows.map((row, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                if (row.changed) scrollCompareEditorsToLine(i)
-              }}
-              title={row.changed ? 'Click to jump editors to this line' : undefined}
-              className={
-                row.changed
-                  ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
-                  : 'px-1'
-              }
+          key={i}
+          onClick={() => {
+            if (row.changed) scrollCompareEditorsToLine(i)
+          }}
+          title={row.changed ? 'Click to jump editors to this line' : undefined}
+          className={
+            row.changed
+              ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
+              : 'px-1'
+          }
+        >
+          {getWordDiffParts(row.left, row.right).rightParts.map((part, j) => (
+            <span
+              key={j}
+              className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
             >
-              {getWordDiffParts(row.left, row.right).rightParts.map((part, j) => (
-                  <span
-                    key={j}
-                    className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
-                  >
-                    {part.text}
-                  </span>
-               ))}
-            </div>
+              {part.text}
+            </span>
           ))}
         </div>
-      </div>
+      ))}
     </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-      <input
-        value={compareLeftTitle}
-        onChange={(e) => setCompareLeftTitle(e.target.value)}
-        placeholder="Left save title"
-        className="px-3 py-2 rounded bg-gray-700 text-white"
-      />
-
-      <input
-        value={compareRightTitle}
-        onChange={(e) => setCompareRightTitle(e.target.value)}
-        placeholder="Right save title"
-        className="px-3 py-2 rounded bg-gray-700 text-white"
-      />
-    </div>
-
-    <div className="flex gap-3 mt-3">
-      <button
-        type="button"
-        onClick={async () => {
-          if (!activeProject) return
-
-          try {
-            setSavingCompareLeft(true)
-
-            await fetch('/api/song-versions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                project_id: activeProject.id,
-                title: compareLeftTitle.trim() || 'Compare Left Edit',
-                result: { lyrics_full: compareLeftText },
-              }),
-            })
-
-            await loadProjectData(activeProject.id)
-            setCompareLeftTitle('')
-            setCompareMessage('Left version saved')
-          } finally {
-            setSavingCompareLeft(false)
-          }
-        }}
-        disabled={savingCompareLeft || !activeProject || !compareLeftText.trim()}
-        className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
-      >
-        {savingCompareLeft ? 'Saving left...' : 'Save Left as New Version'}
-      </button>
-
-      <button
-        type="button"
-        onClick={async () => {
-          if (!activeProject) return
-
-          try {
-            setSavingCompareRight(true)
-
-            await fetch('/api/song-versions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                project_id: activeProject.id,
-                title: compareRightTitle.trim() || 'Compare Right Edit',
-                result: { lyrics_full: compareRightText },
-              }),
-            })
-
-            await loadProjectData(activeProject.id)
-            setCompareRightTitle('')
-            setCompareMessage('Right version saved')
-          } finally {
-            setSavingCompareRight(false)
-          }
-        }}
-        disabled={savingCompareRight || !activeProject || !compareRightText.trim()}
-        className="px-3 py-2 bg-green-600 rounded text-white disabled:opacity-40"
-      >
-        {savingCompareRight ? 'Saving right...' : 'Save Right as New Version'}
-      </button>
-    </div>
-
-    {compareMessage && (
-      <p className="text-sm text-green-400 mt-2">{compareMessage}</p>
-    )}
   </div>
-)}
+</div>
+
+
 
 <input
   value={chordVersionTitle}
