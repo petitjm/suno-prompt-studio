@@ -1274,33 +1274,33 @@ const canApplyRight = noCompareLocks || lockCompareRight
       </select>
     </div>
 
+    <div className="flex items-center gap-2 mb-2">
+              <label className="flex items-center gap-1 text-xs text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={lockCompareLeft}
+                  onChange={(e) => {
+                    setLockCompareLeft(e.target.checked)
+                    if (e.target.checked) setLockCompareRight(false)
+                  }}
+                />
+                Lock
+              </label>
 
+              <button
+                type="button"
+                onClick={() => setPerformanceSheet(compareLeftText)}
+                disabled={!compareLeftText.trim()}
+                className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
+              >
+                ▶ Use
+              </button>
+        </div>
  
 
     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
 
-    <div className="flex items-center gap-2 mb-2">
-  <label className="flex items-center gap-1 text-xs text-gray-300">
-    <input
-      type="checkbox"
-      checked={lockCompareLeft}
-      onChange={(e) => {
-        setLockCompareLeft(e.target.checked)
-        if (e.target.checked) setLockCompareRight(false)
-      }}
-    />
-    Lock
-  </label>
-
-  <button
-    type="button"
-    onClick={() => setPerformanceSheet(compareLeftText)}
-    disabled={!compareLeftText.trim()}
-    className="px-2 py-1 rounded text-xs bg-purple-600 text-white disabled:opacity-40"
-  >
-    ▶ Use
-  </button>
-</div>
+        
 
     <textarea
           ref={compareLeftRef}
@@ -1338,8 +1338,6 @@ const canApplyRight = noCompareLocks || lockCompareRight
 >
   Apply →
 </button>
-</div>
-
 
 <div className="flex items-center gap-2 mb-2">
   <label className="flex items-center gap-1 text-xs text-gray-300">
@@ -1365,6 +1363,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
 </div>
 
 
+</div>
     <textarea
           ref={compareRightRef}
           value={compareRightText}
