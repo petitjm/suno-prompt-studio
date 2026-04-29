@@ -1374,7 +1374,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
       ))}
     </div>
 
-<div className="hidden md:block w-[96px]" />
+<div className="hidden md:block w-[112px]" />
 
 
     <div
