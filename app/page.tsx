@@ -1413,10 +1413,12 @@ const runRewriteLab = async () => {
       onChange={(e) => setCompareLeftText(e.target.value)}
       onScroll={() => syncCompareScroll('left')}
       readOnly={lockCompareLeft}
-      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition ${
+      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
   lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
 } ${
-  flashLeftPanel ? 'ring-2 ring-green-400 bg-green-900/30' : ''
+  flashLeftPanel ? 'flashLeftPanel
+  ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+  : ''' : ''
 }`}
     />
   </div>
@@ -1518,10 +1520,12 @@ setTimeout(() => setFlashRightPanel(false), 800)
       onChange={(e) => setCompareRightText(e.target.value)}
       onScroll={() => syncCompareScroll('right')}
       readOnly={lockCompareRight}
-      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition ${
+      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
   lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
 } ${
-  flashRightPanel ? 'ring-2 ring-green-400 bg-green-900/30' : ''
+  flashRightPanel ? 'flashLeftPanel
+  ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+  : ''' : ''
 }`}
     />
   </div>
