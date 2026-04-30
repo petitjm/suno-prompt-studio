@@ -537,6 +537,19 @@ const [compareRightText, setCompareRightText] = useState('')
 const [compareMessage, setCompareMessage] = useState('')
 const writeScrollTopRef = React.useRef(0)
 
+const rewritePresets = [
+  'Make it more emotional',
+  'Make it more conversational',
+  'Shorten it',
+  'Make it more radio-friendly',
+  'Strengthen the chorus hook',
+  'Simplify the lyrics',
+  'Make it more country',
+  'Make it more folk-rock',
+]
+
+const [rewritePreset, setRewritePreset] = useState('')
+
 
 
 React.useEffect(() => {
@@ -1368,6 +1381,10 @@ const runRewriteLab = async () => {
       </label>
 
       <button
+      <button
+          title="Send this version to Performance mode"
+          ...
+        >
         type="button"
         onClick={() => {
   setUsingLeft(true)
@@ -1445,6 +1462,10 @@ const runRewriteLab = async () => {
       </label>
 
       <button
+      <button
+          title="Send this version to Performance mode"
+          ...
+        >
         type="button"
         onClick={() => {
   setUsingRight(true)
@@ -1552,24 +1573,30 @@ const runRewriteLab = async () => {
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
   <h3 className="text-lg font-semibold mb-3">Rewrite Lab</h3>
 
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-    <select
-      value={rewriteTarget}
-      onChange={(e) => setRewriteTarget(e.target.value as 'left' | 'right' | 'main')}
-      className="px-3 py-2 rounded bg-gray-700 text-white"
-    >
-      <option value="left">Rewrite left panel</option>
-      <option value="right">Rewrite right panel</option>
-      <option value="main">Rewrite main song editor</option>
-    </select>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+  <select
+    value={rewritePreset}
+    onChange={(e) => {
+      setRewritePreset(e.target.value)
+      setRewriteInstruction(e.target.value)
+    }}
+    className="px-3 py-2 rounded bg-gray-700 text-white"
+  >
+    <option value="">Choose preset</option>
+    {rewritePresets.map((p) => (
+      <option key={p} value={p}>
+        {p}
+      </option>
+    ))}
+  </select>
 
-    <input
-      value={rewriteInstruction}
-      onChange={(e) => setRewriteInstruction(e.target.value)}
-      placeholder="Rewrite instruction"
-      className="md:col-span-2 px-3 py-2 rounded bg-gray-700 text-white"
-    />
-  </div>
+  <input
+    value={rewriteInstruction}
+    onChange={(e) => setRewriteInstruction(e.target.value)}
+    placeholder="Or type custom instruction..."
+    className="md:col-span-2 px-3 py-2 rounded bg-gray-700 text-white"
+  />
+</div>
 
   <button
     type="button"
