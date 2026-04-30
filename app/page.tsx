@@ -533,6 +533,20 @@ const [compareMessage, setCompareMessage] = useState('')
 const writeScrollTopRef = React.useRef(0)
 
 
+
+React.useEffect(() => {
+  if (mode !== 'write') return
+
+  requestAnimationFrame(() => {
+    performanceScrollRef.current?.scrollTo({
+      top: writeScrollTopRef.current,
+      behavior: 'auto',
+    })
+  })
+}, [mode])
+
+
+
 React.useEffect(() => {
   setCompareLeftText(compareLeftSong?.result?.lyrics_full || '')
 }, [compareLeftSongId])
