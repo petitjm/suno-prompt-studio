@@ -755,6 +755,25 @@ const loadProjectData = async (
   }
 }
 
+const autoSnapshot = async (text: string, label: string) => {
+  if (!activeProject || !text.trim()) return
+
+  try {
+    await fetch('/api/song-versions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: activeProject.id,
+        title: `Auto: ${label} ${new Date().toLocaleTimeString()}`,
+        result: { lyrics_full: text },
+      }),
+    })
+  } catch (err) {
+    console.error('Auto snapshot failed', err)
+  }
+}
+
+
 const saveSong = async () => {
   try {
     if (!activeProject) {
@@ -1308,7 +1327,10 @@ const canApplyRight = noCompareLocks || lockCompareRight
   <div className="w-[112px] flex flex-col justify-center items-center gap-2 pt-8">
     <button
       type="button"
-      onClick={() => setCompareLeftText(compareRightText)}
+      onClick={async () => {
+          await autoSnapshot(compareLeftText, 'Left before apply')
+          setCompareLeftText(compareRightText)
+        }}
       disabled={!canApplyLeft}
       className={`px-3 py-2 rounded text-white text-sm ${
         canApplyLeft ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
@@ -1319,7 +1341,10 @@ const canApplyRight = noCompareLocks || lockCompareRight
 
     <button
       type="button"
-      onClick={() => setCompareRightText(compareLeftText)}
+      onClick={async () => {
+  await autoSnapshot(compareRightText, 'Right before apply')
+  setCompareRightText(compareLeftText)
+}}
       disabled={!canApplyRight}
       className={`px-3 py-2 rounded text-white text-sm ${
         canApplyRight ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
