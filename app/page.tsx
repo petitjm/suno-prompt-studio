@@ -1418,6 +1418,7 @@ const runRewriteLab = async () => {
 
   <div className="w-[112px] flex flex-col justify-center items-center gap-2 pt-8">
     <button
+    title="Copy left panel into right panel"
       type="button"
       onClick={async () => {
           await autoSnapshot(compareLeftText, 'Left before apply')
@@ -1432,6 +1433,7 @@ const runRewriteLab = async () => {
     </button>
 
     <button
+    title="Copy right panel into left panel"
       type="button"
       onClick={async () => {
   await autoSnapshot(compareRightText, 'Right before apply')
@@ -1587,6 +1589,19 @@ const runRewriteLab = async () => {
       </option>
     ))}
   </select>
+
+  <select
+  title="Choose which panel or editor to rewrite"
+  value={rewriteTarget}
+  onChange={(e) =>
+    setRewriteTarget(e.target.value as 'left' | 'right' | 'main')
+  }
+  className="px-3 py-2 rounded bg-gray-700 text-white"
+>
+  <option value="left">Rewrite left panel</option>
+  <option value="right">Rewrite right panel</option>
+  <option value="main">Rewrite main song</option>
+</select>
 
   <input
     value={rewriteInstruction}
