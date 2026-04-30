@@ -1381,10 +1381,9 @@ const runRewriteLab = async () => {
       </label>
 
       <button
-      <button
+      
           title="Send this version to Performance mode"
-          ...
-        >
+      
         type="button"
         onClick={() => {
   setUsingLeft(true)
@@ -1462,10 +1461,9 @@ const runRewriteLab = async () => {
       </label>
 
       <button
-      <button
+    
           title="Send this version to Performance mode"
-          ...
-        >
+   
         type="button"
         onClick={() => {
   setUsingRight(true)
