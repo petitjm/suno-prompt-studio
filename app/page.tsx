@@ -536,6 +536,8 @@ const [compareLeftText, setCompareLeftText] = useState('')
 const [compareRightText, setCompareRightText] = useState('')
 const [compareMessage, setCompareMessage] = useState('')
 const writeScrollTopRef = React.useRef(0)
+const [flashLeftPanel, setFlashLeftPanel] = useState(false)
+const [flashRightPanel, setFlashRightPanel] = useState(false)
 
 const rewritePresets = [
   'Make it more emotional',
@@ -1411,9 +1413,11 @@ const runRewriteLab = async () => {
       onChange={(e) => setCompareLeftText(e.target.value)}
       onScroll={() => syncCompareScroll('left')}
       readOnly={lockCompareLeft}
-      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
-        lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
-      }`}
+      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition ${
+  lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
+} ${
+  flashLeftPanel ? 'ring-2 ring-green-400 bg-green-900/30' : ''
+}`}
     />
   </div>
 
@@ -1427,6 +1431,8 @@ const runRewriteLab = async () => {
 
   await autoSnapshot(compareLeftText, 'Left before apply')
   setCompareLeftText(compareRightText)
+  setFlashLeftPanel(true)
+setTimeout(() => setFlashLeftPanel(false), 800)
 
   setTimeout(() => setApplyingLeft(false), 800)
 }}
@@ -1450,6 +1456,8 @@ const runRewriteLab = async () => {
 
   await autoSnapshot(compareRightText, 'Right before apply')
   setCompareRightText(compareLeftText)
+  setFlashRightPanel(true)
+setTimeout(() => setFlashRightPanel(false), 800)
 
   setTimeout(() => setApplyingRight(false), 800)
 }}
@@ -1510,9 +1518,11 @@ const runRewriteLab = async () => {
       onChange={(e) => setCompareRightText(e.target.value)}
       onScroll={() => syncCompareScroll('right')}
       readOnly={lockCompareRight}
-      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto ${
-        lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
-      }`}
+      className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition ${
+  lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
+} ${
+  flashRightPanel ? 'ring-2 ring-green-400 bg-green-900/30' : ''
+}`}
     />
   </div>
 </div>
