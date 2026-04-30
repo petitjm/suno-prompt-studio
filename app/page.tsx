@@ -1418,7 +1418,8 @@ const runRewriteLab = async () => {
 
   <div className="w-[112px] flex flex-col justify-center items-center gap-2 pt-8">
     <button
-    title="Copy left panel into right panel"
+    title="Copy right panel into left panel"
+    
       type="button"
       onClick={async () => {
           await autoSnapshot(compareLeftText, 'Left before apply')
@@ -1433,7 +1434,7 @@ const runRewriteLab = async () => {
     </button>
 
     <button
-    title="Copy right panel into left panel"
+    title="Copy left panel into right panel"
       type="button"
       onClick={async () => {
   await autoSnapshot(compareRightText, 'Right before apply')
