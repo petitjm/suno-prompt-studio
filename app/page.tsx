@@ -147,7 +147,12 @@ const syncCompareScroll = (source: 'left' | 'right') => {
   if (!src || !tgt) return
   tgt.scrollTop = src.scrollTop
 }
-  const lastFollowedSectionIdRef = React.useRef<string | null>(null)
+  
+const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('right')
+const [rewriteInstruction, setRewriteInstruction] = useState('')
+const [rewriteLoading, setRewriteLoading] = useState(false)
+const [rewriteMessage, setRewriteMessage] = useState('')
+const lastFollowedSectionIdRef = React.useRef<string | null>(null)
   const [compareLeftSongId, setCompareLeftSongId] = useState('')
   const [compareRightSongId, setCompareRightSongId] = useState('')
     const [compareLeftTitle, setCompareLeftTitle] = useState('')
@@ -1131,6 +1136,77 @@ const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
 
+const runRewriteLab = async () => {
+  const sourceText =
+    rewriteTarget === 'left'
+      ? compareLeftText
+      : rewriteTarget === 'right'
+        ? compareRightText
+        : performanceSheet
+
+  if (!sourceText.trim()) {
+    setRewriteMessage('No text to rewrite.')
+    return
+  }
+
+  if (!rewriteInstruction.trim()) {
+    setRewriteMessage('Enter a rewrite instruction.')
+    return
+  }
+
+  try {
+    setRewriteLoading(true)
+    setRewriteMessage('Rewriting...')
+
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'rewrite',
+        instruction: rewriteInstruction,
+        lyrics: sourceText,
+      }),
+    })
+
+    const data = await readJsonSafe(res)
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Rewrite failed')
+    }
+
+    const rewritten =
+      data.lyrics_full ||
+      data.lyrics ||
+      data.rewrite ||
+      data.text ||
+      ''
+
+    if (!rewritten.trim()) {
+      throw new Error('Rewrite returned no usable text')
+    }
+
+    if (rewriteTarget === 'left') {
+      setCompareLeftText(rewritten)
+    } else if (rewriteTarget === 'right') {
+      setCompareRightText(rewritten)
+    } else {
+      setPerformanceSheet(rewritten)
+    }
+
+    setRewriteMessage('Rewrite complete')
+  } catch (err: any) {
+    console.error(err)
+    setRewriteMessage(err.message || 'Rewrite failed')
+  } finally {
+    setRewriteLoading(false)
+  }
+}
+
+
+
+
+
+
 
   return (
 
@@ -1470,6 +1546,45 @@ const canApplyRight = noCompareLocks || lockCompareRight
     </div>
   </div>
 </div>
+
+
+
+<div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
+  <h3 className="text-lg font-semibold mb-3">Rewrite Lab</h3>
+
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+    <select
+      value={rewriteTarget}
+      onChange={(e) => setRewriteTarget(e.target.value as 'left' | 'right' | 'main')}
+      className="px-3 py-2 rounded bg-gray-700 text-white"
+    >
+      <option value="left">Rewrite left panel</option>
+      <option value="right">Rewrite right panel</option>
+      <option value="main">Rewrite main song editor</option>
+    </select>
+
+    <input
+      value={rewriteInstruction}
+      onChange={(e) => setRewriteInstruction(e.target.value)}
+      placeholder="Rewrite instruction"
+      className="md:col-span-2 px-3 py-2 rounded bg-gray-700 text-white"
+    />
+  </div>
+
+  <button
+    type="button"
+    onClick={runRewriteLab}
+    disabled={rewriteLoading}
+    className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-40"
+  >
+    {rewriteLoading ? 'Rewriting...' : 'Run Rewrite'}
+  </button>
+
+  {rewriteMessage && (
+    <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
+  )}
+</div>
+
 
 
 
