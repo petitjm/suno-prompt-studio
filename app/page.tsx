@@ -549,7 +549,8 @@ const rewritePresets = [
 ]
 
 const [rewritePreset, setRewritePreset] = useState('')
-
+const [applyingLeft, setApplyingLeft] = useState(false)
+const [applyingRight, setApplyingRight] = useState(false)
 
 
 React.useEffect(() => {
@@ -1422,28 +1423,44 @@ const runRewriteLab = async () => {
     
       type="button"
       onClick={async () => {
-          await autoSnapshot(compareLeftText, 'Left before apply')
-          setCompareLeftText(compareRightText)
-        }}
+  setApplyingLeft(true)
+
+  await autoSnapshot(compareLeftText, 'Left before apply')
+  setCompareLeftText(compareRightText)
+
+  setTimeout(() => setApplyingLeft(false), 800)
+}}
       disabled={!canApplyLeft}
       className={`px-3 py-2 rounded text-white text-sm ${
-        canApplyLeft ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
-      }`}
+          applyingLeft
+            ? 'bg-green-600 scale-95'
+            : canApplyLeft
+              ? 'bg-blue-600'
+              : 'bg-gray-600 opacity-50 cursor-not-allowed'
+        }`}
     >
-      ← Apply
+      {applyingLeft ? 'Applied ✓' : '← Apply'}
     </button>
 
     <button
     title="Copy left panel into right panel"
       type="button"
       onClick={async () => {
+  setApplyingRight(true)
+
   await autoSnapshot(compareRightText, 'Right before apply')
   setCompareRightText(compareLeftText)
+
+  setTimeout(() => setApplyingRight(false), 800)
 }}
       disabled={!canApplyRight}
       className={`px-3 py-2 rounded text-white text-sm ${
-        canApplyRight ? 'bg-blue-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'
-      }`}
+          applyingRight
+            ? 'bg-green-600 scale-95'
+            : canApplyRight
+              ? 'bg-blue-600'
+              : 'bg-gray-600 opacity-50 cursor-not-allowed'
+        }`}
     >
       Apply →
     </button>
