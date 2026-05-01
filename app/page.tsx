@@ -1388,6 +1388,14 @@ const panelsMatch =
       }}
       className="w-full px-3 py-2 rounded bg-gray-700 text-white"
     >
+            <button
+          type="button"
+          onClick={() => setCompareLeftText(performanceSheet)}
+          disabled={!performanceSheet.trim()}
+          className="mt-2 px-3 py-1 rounded bg-gray-600 text-white text-xs disabled:opacity-40"
+        >
+          Load current song into left
+        </button>
       <option value="">Choose version for left</option>
       {songVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
@@ -1416,6 +1424,14 @@ const panelsMatch =
       }}
       className="w-full px-3 py-2 rounded bg-gray-700 text-white"
     >
+            <button
+          type="button"
+          onClick={() => setCompareRightText(performanceSheet)}
+          disabled={!performanceSheet.trim()}
+          className="mt-2 px-3 py-1 rounded bg-gray-600 text-white text-xs disabled:opacity-40"
+        >
+          Load current song into right
+        </button>
       <option value="">Choose version for right</option>
       {songVersions.map((v, i) => (
         <option key={v.id} value={v.id}>
