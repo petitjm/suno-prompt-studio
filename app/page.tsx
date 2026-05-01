@@ -541,6 +541,8 @@ const [comparingNow, setComparingNow] = useState(false)
 const writeScrollTopRef = React.useRef(0)
 const [flashLeftPanel, setFlashLeftPanel] = useState(false)
 const [flashRightPanel, setFlashRightPanel] = useState(false)
+const [rewriteSectionOnly, setRewriteSectionOnly] = useState(false)
+const [rewriteSectionName, setRewriteSectionName] = useState('')
 
 const rewritePresets = [
   'Make it more emotional',
@@ -1154,14 +1156,41 @@ const noCompareLocks = !lockCompareLeft && !lockCompareRight
 const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
+const extractSectionText = (text: string, sectionName: string) => {
+  if (!sectionName.trim()) return text
+
+  const lines = text.split('\n')
+  const startIndex = lines.findIndex(
+    (line) => line.trim().toLowerCase() === `[${sectionName.trim().toLowerCase()}]`
+  )
+
+  if (startIndex === -1) return text
+
+  let endIndex = lines.length
+
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (/^\[.+\]$/.test(lines[i].trim())) {
+      endIndex = i
+      break
+    }
+  }
+
+  return lines.slice(startIndex, endIndex).join('\n')
+}
+
+
 
 const runRewriteLab = async () => {
-  const sourceText =
-    rewriteTarget === 'left'
-      ? compareLeftText
-      : rewriteTarget === 'right'
-        ? compareRightText
-        : performanceSheet
+  const fullSourceText =
+      rewriteTarget === 'left'
+        ? compareLeftText
+        : rewriteTarget === 'right'
+          ? compareRightText
+          : performanceSheet
+
+const sourceText = rewriteSectionOnly
+  ? extractSectionText(fullSourceText, rewriteSectionName)
+  : fullSourceText
 
   if (!sourceText.trim()) {
     setRewriteMessage('No text to rewrite.')
@@ -1786,7 +1815,24 @@ const panelsMatch =
     className="md:col-span-2 px-3 py-2 rounded bg-gray-700 text-white"
   />
 </div>
+<div className="flex flex-col md:flex-row gap-3 mb-3">
+  <label className="flex items-center gap-2 text-sm text-gray-300">
+    <input
+      type="checkbox"
+      checked={rewriteSectionOnly}
+      onChange={(e) => setRewriteSectionOnly(e.target.checked)}
+    />
+    Rewrite section only
+  </label>
 
+  <input
+    value={rewriteSectionName}
+    onChange={(e) => setRewriteSectionName(e.target.value)}
+    placeholder="Section name, e.g. Chorus, Verse 2, Bridge"
+    disabled={!rewriteSectionOnly}
+    className="flex-1 px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
+  />
+</div>
   <button
     type="button"
     onClick={runRewriteLab}
