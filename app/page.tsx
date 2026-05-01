@@ -685,6 +685,8 @@ setPerformanceSections(withUniqueIds)
 
     const res = await fetch('/api/projects')
     const data = await readJsonSafe(res)
+    console.log('Rewrite response:', data)
+
 
     if (!res.ok) throw new Error(data.error || 'Failed to load projects')
 
@@ -1157,20 +1159,40 @@ const noCompareLocks = !lockCompareLeft && !lockCompareRight
 const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
+const isSectionHeader = (line: string) => {
+  const trimmed = line.trim()
+
+  return (
+    /^\[.+\]$/.test(trimmed) ||
+    /^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(trimmed)
+  )
+}
+
+const normaliseSectionName = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/^\[/, '')
+    .replace(/\]$/, '')
+    .replace(/:$/, '')
+
 const extractSectionText = (text: string, sectionName: string) => {
   if (!sectionName.trim()) return text
 
+  const target = normaliseSectionName(sectionName)
   const lines = text.split('\n')
-  const startIndex = lines.findIndex(
-    (line) => line.trim().toLowerCase() === `[${sectionName.trim().toLowerCase()}]`
-  )
+
+  const startIndex = lines.findIndex((line) => {
+    if (!isSectionHeader(line)) return false
+    return normaliseSectionName(line) === target
+  })
 
   if (startIndex === -1) return text
 
   let endIndex = lines.length
 
   for (let i = startIndex + 1; i < lines.length; i++) {
-    if (/^\[.+\]$/.test(lines[i].trim())) {
+    if (isSectionHeader(lines[i])) {
       endIndex = i
       break
     }
@@ -1186,18 +1208,20 @@ const replaceSectionText = (
 ) => {
   if (!sectionName.trim()) return fullText
 
+  const target = normaliseSectionName(sectionName)
   const lines = fullText.split('\n')
 
-  const startIndex = lines.findIndex(
-    (line) => line.trim().toLowerCase() === `[${sectionName.trim().toLowerCase()}]`
-  )
+  const startIndex = lines.findIndex((line) => {
+    if (!isSectionHeader(line)) return false
+    return normaliseSectionName(line) === target
+  })
 
   if (startIndex === -1) return fullText
 
   let endIndex = lines.length
 
   for (let i = startIndex + 1; i < lines.length; i++) {
-    if (/^\[.+\]$/.test(lines[i].trim())) {
+    if (isSectionHeader(lines[i])) {
       endIndex = i
       break
     }
