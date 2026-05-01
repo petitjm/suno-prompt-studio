@@ -1219,7 +1219,8 @@ const runRewriteLab = async () => {
 }
 
 
-
+const panelsMatch =
+  compareLeftText.trim() === compareRightText.trim()
 
 
 
@@ -1482,6 +1483,19 @@ const runRewriteLab = async () => {
 }`}
     />
   </div>
+
+  <div className="w-[112px] flex justify-center mb-2">
+  <span
+    className={`text-xs font-semibold px-2 py-1 rounded ${
+      panelsMatch
+        ? 'bg-green-600/20 text-green-300'
+        : 'bg-yellow-600/20 text-yellow-300'
+    }`}
+  >
+    {panelsMatch ? 'MATCH' : 'NO MATCH'}
+  </span>
+</div>
+
 
   <div className="w-[112px] flex flex-col justify-center items-center gap-2 pt-8">
     <button
