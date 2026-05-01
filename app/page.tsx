@@ -541,6 +541,7 @@ const [comparingNow, setComparingNow] = useState(false)
 const writeScrollTopRef = React.useRef(0)
 const [flashLeftPanel, setFlashLeftPanel] = useState(false)
 const [flashRightPanel, setFlashRightPanel] = useState(false)
+const [rewriteDone, setRewriteDone] = useState(false)
 const [rewriteSectionOnly, setRewriteSectionOnly] = useState(false)
 const [rewriteSectionName, setRewriteSectionName] = useState('')
 
@@ -1242,6 +1243,8 @@ const sourceText = rewriteSectionOnly
     }
 
     setRewriteMessage('Rewrite complete')
+    setRewriteDone(true)
+setTimeout(() => setRewriteDone(false), 1000)
   } catch (err: any) {
     console.error(err)
     setRewriteMessage(err.message || 'Rewrite failed')
@@ -1834,13 +1837,19 @@ const panelsMatch =
   />
 </div>
   <button
-    type="button"
-    onClick={runRewriteLab}
-    disabled={rewriteLoading}
-    className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-40"
-  >
-    {rewriteLoading ? 'Rewriting...' : 'Run Rewrite'}
-  </button>
+  type="button"
+  onClick={runRewriteLab}
+  disabled={rewriteLoading}
+  className={`px-4 py-2 rounded text-white transition ${
+    rewriteLoading
+      ? 'bg-gray-600 scale-95'
+      : rewriteDone
+        ? 'bg-green-600'
+        : 'bg-blue-600'
+  } disabled:opacity-40`}
+>
+  {rewriteLoading ? 'Rewriting...' : rewriteDone ? 'Rewritten ✓' : 'Run Rewrite'}
+</button>
 
   {rewriteMessage && (
     <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
