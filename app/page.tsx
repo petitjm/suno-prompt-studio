@@ -1284,17 +1284,21 @@ const sourceText = rewriteSectionOnly
     }
 
     const rewritten =
-    console.log('rewriteTarget:', rewriteTarget)
-console.log('rewriteSectionOnly:', rewriteSectionOnly)
-console.log('rewriteSectionName:', rewriteSectionName)
-console.log('sourceText:', sourceText)
-console.log('rewritten:', rewritten)
-console.log('fullSourceText before:', fullSourceText)
+   
       data.lyrics_full ||
       data.lyrics ||
       data.rewrite ||
       data.text ||
       ''
+
+
+       console.log('rewriteTarget:', rewriteTarget)
+console.log('rewriteSectionOnly:', rewriteSectionOnly)
+console.log('rewriteSectionName:', rewriteSectionName)
+console.log('sourceText:', sourceText)
+console.log('rewritten:', rewritten)
+console.log('fullSourceText before:', fullSourceText)
+
 
     if (!rewritten.trim()) {
       throw new Error('Rewrite returned no usable text')
