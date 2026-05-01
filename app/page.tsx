@@ -1372,10 +1372,6 @@ const panelsMatch =
 </div>
 
 
-
-
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 <button
   type="button"
   onClick={() => {
@@ -1401,6 +1397,10 @@ const panelsMatch =
 >
   Compare current vs last saved
 </button>
+
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
 
   <div>
     <label className="block text-xs text-gray-400 mb-1">
