@@ -1284,6 +1284,12 @@ const sourceText = rewriteSectionOnly
     }
 
     const rewritten =
+    console.log('rewriteTarget:', rewriteTarget)
+console.log('rewriteSectionOnly:', rewriteSectionOnly)
+console.log('rewriteSectionName:', rewriteSectionName)
+console.log('sourceText:', sourceText)
+console.log('rewritten:', rewritten)
+console.log('fullSourceText before:', fullSourceText)
       data.lyrics_full ||
       data.lyrics ||
       data.rewrite ||
@@ -1303,6 +1309,9 @@ if (rewriteSectionOnly) {
     rewritten
   )
 }
+
+console.log('finalText after:', finalText)
+
 
 if (rewriteTarget === 'left') {
   setCompareLeftText(finalText)
