@@ -1368,6 +1368,66 @@ const runRewriteLab = async () => {
   
 </div>
 
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  <div>
+    <label className="block text-xs text-gray-400 mb-1">
+      Load saved version into left panel
+    </label>
+
+    <select
+      value={compareLeftSongId}
+      onChange={(e) => {
+        const id = e.target.value
+        setCompareLeftSongId(id)
+
+        const selected = songVersions.find((v) => v.id === id)
+        if (selected?.result?.lyrics_full) {
+          setCompareLeftText(selected.result.lyrics_full)
+        }
+      }}
+      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+    >
+      <option value="">Choose version for left</option>
+      {songVersions.map((v, i) => (
+        <option key={v.id} value={v.id}>
+          {v.title || `Version ${songVersions.length - i}`}
+          {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label className="block text-xs text-gray-400 mb-1">
+      Load saved version into right panel
+    </label>
+
+    <select
+      value={compareRightSongId}
+      onChange={(e) => {
+        const id = e.target.value
+        setCompareRightSongId(id)
+
+        const selected = songVersions.find((v) => v.id === id)
+        if (selected?.result?.lyrics_full) {
+          setCompareRightText(selected.result.lyrics_full)
+        }
+      }}
+      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+    >
+      <option value="">Choose version for right</option>
+      {songVersions.map((v, i) => (
+        <option key={v.id} value={v.id}>
+          {v.title || `Version ${songVersions.length - i}`}
+          {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
+
+
+
 <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
   <div>
     <div className="flex items-center gap-2 mb-2">
