@@ -1416,9 +1416,9 @@ const runRewriteLab = async () => {
       className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
   lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
 } ${
-  flashLeftPanel ? 'flashLeftPanel
-  ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-  : ''' : ''
+  flashLeftPanel
+    ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+    : ''
 }`}
     />
   </div>
@@ -1523,9 +1523,9 @@ setTimeout(() => setFlashRightPanel(false), 800)
       className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
   lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
 } ${
-  flashRightPanel ? 'flashLeftPanel
-  ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-  : ''' : ''
+  flashRightPanel
+    ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+    : ''
 }`}
     />
   </div>
