@@ -537,6 +537,7 @@ const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>(null)
 const [compareLeftText, setCompareLeftText] = useState('')
 const [compareRightText, setCompareRightText] = useState('')
 const [compareMessage, setCompareMessage] = useState('')
+const [comparingNow, setComparingNow] = useState(false)
 const writeScrollTopRef = React.useRef(0)
 const [flashLeftPanel, setFlashLeftPanel] = useState(false)
 const [flashRightPanel, setFlashRightPanel] = useState(false)
@@ -1375,27 +1376,32 @@ const panelsMatch =
 <button
   type="button"
   onClick={() => {
-    const latest = songVersions[0]
+  setComparingNow(true)
 
-    if (latest?.result?.lyrics_full) {
-      setCompareLeftSongId(latest.id)
-      setCompareLeftText(latest.result.lyrics_full)
-    }
+  const latest = songVersions[0]
 
-    setCompareRightText(performanceSheet)
+  if (latest?.result?.lyrics_full) {
+    setCompareLeftSongId(latest.id)
+    setCompareLeftText(latest.result.lyrics_full)
+  }
 
-    setFlashLeftPanel(true)
-    setFlashRightPanel(true)
+  setCompareRightText(performanceSheet)
 
-    setTimeout(() => {
-      setFlashLeftPanel(false)
-      setFlashRightPanel(false)
-    }, 600)
-  }}
+  setFlashLeftPanel(true)
+  setFlashRightPanel(true)
+
+  setTimeout(() => {
+    setFlashLeftPanel(false)
+    setFlashRightPanel(false)
+    setComparingNow(false)
+  }, 800)
+}}
   disabled={!performanceSheet.trim() || songVersions.length === 0}
-  className="mb-4 px-3 py-2 rounded bg-blue-600 text-white text-sm disabled:opacity-40"
+  className={`mb-4 px-3 py-2 rounded text-white text-sm transition ${
+  comparingNow ? 'bg-green-600 scale-95' : 'bg-blue-600'
+} disabled:opacity-40`}
 >
-  Compare current vs last saved
+  {comparingNow ? 'Compared ✓' : 'Compare current vs last saved'}
 </button>
 
 
