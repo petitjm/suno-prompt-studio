@@ -1402,7 +1402,11 @@ const panelsMatch =
           type="button"
           onClick={() => {
   setLoadingLeftCurrent(true)
+
   setCompareLeftText(performanceSheet)
+
+  setFlashLeftPanel(true)
+  setTimeout(() => setFlashLeftPanel(false), 600)
 
   setTimeout(() => setLoadingLeftCurrent(false), 800)
 }}
@@ -1444,11 +1448,15 @@ const panelsMatch =
             <button
           type="button"
              onClick={() => {
-              setLoadingRightCurrent(true)
-              setCompareRightText(performanceSheet)
+  setLoadingRightCurrent(true)
 
-              setTimeout(() => setLoadingRightCurrent(false), 800)
-            }}
+  setCompareRightText(performanceSheet)
+
+  setFlashRightPanel(true)
+  setTimeout(() => setFlashRightPanel(false), 600)
+
+  setTimeout(() => setLoadingRightCurrent(false), 800)
+}}
           disabled={!performanceSheet.trim()}
           className={`mt-2 px-3 py-1 rounded text-white text-xs transition ${
   loadingRightCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
