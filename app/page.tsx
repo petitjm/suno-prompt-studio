@@ -1179,6 +1179,42 @@ const extractSectionText = (text: string, sectionName: string) => {
   return lines.slice(startIndex, endIndex).join('\n')
 }
 
+const replaceSectionText = (
+  fullText: string,
+  sectionName: string,
+  newSectionText: string
+) => {
+  if (!sectionName.trim()) return fullText
+
+  const lines = fullText.split('\n')
+
+  const startIndex = lines.findIndex(
+    (line) => line.trim().toLowerCase() === `[${sectionName.trim().toLowerCase()}]`
+  )
+
+  if (startIndex === -1) return fullText
+
+  let endIndex = lines.length
+
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (/^\[.+\]$/.test(lines[i].trim())) {
+      endIndex = i
+      break
+    }
+  }
+
+  const newSectionLines = newSectionText.split('\n')
+
+  return [
+    ...lines.slice(0, startIndex),
+    ...newSectionLines,
+    ...lines.slice(endIndex),
+  ].join('\n')
+}
+
+
+
+
 
 
 const runRewriteLab = async () => {
@@ -1234,13 +1270,27 @@ const sourceText = rewriteSectionOnly
       throw new Error('Rewrite returned no usable text')
     }
 
-    if (rewriteTarget === 'left') {
-      setCompareLeftText(rewritten)
-    } else if (rewriteTarget === 'right') {
-      setCompareRightText(rewritten)
-    } else {
-      setPerformanceSheet(rewritten)
-    }
+    let finalText = rewritten
+
+if (rewriteSectionOnly) {
+  finalText = replaceSectionText(
+    fullSourceText,
+    rewriteSectionName,
+    rewritten
+  )
+}
+
+if (rewriteTarget === 'left') {
+  setCompareLeftText(finalText)
+  setFlashLeftPanel(true)
+  setTimeout(() => setFlashLeftPanel(false), 600)
+} else if (rewriteTarget === 'right') {
+  setCompareRightText(finalText)
+  setFlashRightPanel(true)
+  setTimeout(() => setFlashRightPanel(false), 600)
+} else {
+  setPerformanceSheet(finalText)
+}
 
     setRewriteMessage('Rewrite complete')
     setRewriteDone(true)
