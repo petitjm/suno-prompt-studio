@@ -115,7 +115,7 @@ export default function Page() {
   const [followPlayback, setFollowPlayback] = useState(true)
   const [songVersionTitle, setSongVersionTitle] = useState('')
  
-
+  const [highlightedLines, setHighlightedLines] = useState<number[]>([])
   const [performanceSheet, setPerformanceSheet] = useState('')
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
   const [chords, setChords] = useState<ChordResponse | null>(null)
@@ -1432,7 +1432,14 @@ const runRewriteLab = async () => {
   setApplyingLeft(true)
 
   await autoSnapshot(compareLeftText, 'Left before apply')
-  setCompareLeftText(compareRightText)
+  const changedIndexes = editedDiffRows
+  .map((row, i) => (row.changed ? i : -1))
+  .filter((i) => i !== -1)
+
+setHighlightedLines(changedIndexes)
+setCompareLeftText(compareRightText)
+
+setTimeout(() => setHighlightedLines([]), 800)
   setFlashLeftPanel(true)
 setTimeout(() => setFlashLeftPanel(false), 800)
 
@@ -1457,7 +1464,14 @@ setTimeout(() => setFlashLeftPanel(false), 800)
   setApplyingRight(true)
 
   await autoSnapshot(compareRightText, 'Right before apply')
-  setCompareRightText(compareLeftText)
+  const changedIndexes = editedDiffRows
+  .map((row, i) => (row.changed ? i : -1))
+  .filter((i) => i !== -1)
+
+setHighlightedLines(changedIndexes)
+setCompareRightText(compareLeftText)
+
+setTimeout(() => setHighlightedLines([]), 800)
   setFlashRightPanel(true)
 setTimeout(() => setFlashRightPanel(false), 800)
 
@@ -1548,9 +1562,15 @@ setTimeout(() => setFlashRightPanel(false), 800)
           }}
           title={row.changed ? 'Click to jump editors to this line' : undefined}
           className={
-            row.changed
-              ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
-              : 'px-1'
+            r`px-1 ${
+          row.changed
+            ? 'bg-yellow-900/40 cursor-pointer hover:bg-yellow-800/50'
+            : ''
+        } ${
+          highlightedLines.includes(i)
+            ? 'bg-green-500/20 shadow-[0_0_8px_rgba(34,197,94,0.5)] rounded'
+            : ''
+        }`
           }
         >
           {getWordDiffParts(row.left, row.right).leftParts.map((part, j) => (
