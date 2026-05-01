@@ -1562,7 +1562,7 @@ setTimeout(() => setFlashRightPanel(false), 800)
           }}
           title={row.changed ? 'Click to jump editors to this line' : undefined}
           className={
-            r`px-1 ${
+         `px-1 ${
           row.changed
             ? 'bg-yellow-900/40 cursor-pointer hover:bg-yellow-800/50'
             : ''
