@@ -152,6 +152,8 @@ const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('r
 const [rewriteInstruction, setRewriteInstruction] = useState('')
 const [rewriteLoading, setRewriteLoading] = useState(false)
 const [rewriteMessage, setRewriteMessage] = useState('')
+const [loadingLeftCurrent, setLoadingLeftCurrent] = useState(false)
+const [loadingRightCurrent, setLoadingRightCurrent] = useState(false)
 const lastFollowedSectionIdRef = React.useRef<string | null>(null)
   const [compareLeftSongId, setCompareLeftSongId] = useState('')
   const [compareRightSongId, setCompareRightSongId] = useState('')
@@ -1398,11 +1400,18 @@ const panelsMatch =
     </select>
             <button
           type="button"
-          onClick={() => setCompareLeftText(performanceSheet)}
+          onClick={() => {
+  setLoadingLeftCurrent(true)
+  setCompareLeftText(performanceSheet)
+
+  setTimeout(() => setLoadingLeftCurrent(false), 800)
+}}
           disabled={!performanceSheet.trim()}
-          className="mt-2 px-3 py-1 rounded bg-gray-600 text-white text-xs disabled:opacity-40"
+          className={`mt-2 px-3 py-1 rounded text-white text-xs transition ${
+  loadingLeftCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
+} disabled:opacity-40`}
         >
-          Load current song into left
+          {loadingLeftCurrent ? 'Loaded ✓' : 'Load current → left'}
         </button>
   </div>
 
@@ -1434,11 +1443,18 @@ const panelsMatch =
     </select>
             <button
           type="button"
-          onClick={() => setCompareRightText(performanceSheet)}
+             onClick={() => {
+              setLoadingRightCurrent(true)
+              setCompareRightText(performanceSheet)
+
+              setTimeout(() => setLoadingRightCurrent(false), 800)
+            }}
           disabled={!performanceSheet.trim()}
-          className="mt-2 px-3 py-1 rounded bg-gray-600 text-white text-xs disabled:opacity-40"
+          className={`mt-2 px-3 py-1 rounded text-white text-xs transition ${
+  loadingRightCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
+} disabled:opacity-40`}
         >
-          Load current song into right
+          {loadingRightCurrent ? 'Loaded ✓' : 'Load current → right'}
         </button>
   </div>
 </div>
