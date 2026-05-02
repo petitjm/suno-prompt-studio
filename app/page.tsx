@@ -1904,7 +1904,7 @@ const panelsMatch =
 
 
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
- <div className="flex items-center justify-between mb-3">
+ <div className="flex items-center justify-between mb-1 leading-tight">
   <h3 className="text-lg font-semibold">Rewrite Lab</h3>
 
   <div className="text-xs text-gray-400 flex gap-4">
@@ -1966,7 +1966,7 @@ const panelsMatch =
     className="md:col-span-2 px-3 py-2 rounded bg-gray-700 text-white"
   />
 </div>
-<div className="flex flex-col md:flex-row gap-3 mb-3">
+<div className="flex flex-col md:flex-row gap-2 mb-2">
   <label className="flex items-center gap-2 text-sm text-gray-300">
     <input
         type="checkbox"
