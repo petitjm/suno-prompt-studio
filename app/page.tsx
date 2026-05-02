@@ -1863,7 +1863,20 @@ const panelsMatch =
   </div>
 </div>
 
-
+<div className="mb-3 p-2 rounded bg-gray-800 text-xs text-gray-300">
+  <div><strong>Project:</strong> {activeProject?.title || 'None'}</div>
+  <div>
+    <strong>Source:</strong>{' '}
+    {rewriteTarget === 'left'
+      ? 'Left panel'
+      : rewriteTarget === 'right'
+        ? 'Right panel'
+        : 'Main song'}
+  </div>
+  {rewriteSectionOnly && (
+    <div><strong>Section:</strong> {rewriteSectionName}</div>
+  )}
+</div>
 
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
   <h3 className="text-lg font-semibold mb-3">Rewrite Lab</h3>
