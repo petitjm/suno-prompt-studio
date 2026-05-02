@@ -853,6 +853,16 @@ const saveSong = async () => {
 }
 
 
+const sourceForDetection =
+  rewriteTarget === 'left'
+    ? compareLeftText
+    : rewriteTarget === 'right'
+      ? compareRightText
+      : performanceSheet
+
+const detectedSections = detectSections(sourceForDetection)
+
+
 const createProject = async () => {
   const title = newProjectName.trim()
 
@@ -1238,7 +1248,32 @@ const replaceSectionText = (
 
 
 
+const detectSections = (text: string) => {
+  const lines = text.split('\n')
 
+  return lines
+    .map((line) => line.trim())
+    .filter((line) => {
+      if (!line) return false
+
+      // [Verse 1]
+      if (/^\[.+\]$/.test(line)) return true
+
+      // Verse 1:
+      if (/^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(line)) return true
+
+      // CHORUS / BRIDGE (short uppercase)
+      if (
+        line.length < 20 &&
+        /^[A-Z\s-]+$/.test(line) &&
+        line.split(' ').length <= 3
+      ) {
+        return true
+      }
+
+      return false
+    })
+}
 
 
 const runRewriteLab = async () => {
@@ -1863,23 +1898,33 @@ const panelsMatch =
   </div>
 </div>
 
-<div className="mb-3 p-2 rounded bg-gray-800 text-xs text-gray-300">
-  <div><strong>Project:</strong> {activeProject?.title || 'None'}</div>
-  <div>
-    <strong>Source:</strong>{' '}
-    {rewriteTarget === 'left'
-      ? 'Left panel'
-      : rewriteTarget === 'right'
-        ? 'Right panel'
-        : 'Main song'}
-  </div>
-  {rewriteSectionOnly && (
-    <div><strong>Section:</strong> {rewriteSectionName}</div>
-  )}
-</div>
+
 
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
-  <h3 className="text-lg font-semibold mb-3">Rewrite Lab</h3>
+  <h3 c<div className="flex items-center justify-between mb-3">
+  <h3 className="text-lg font-semibold">Rewrite Lab</h3>
+
+  <div className="text-xs text-gray-400 flex gap-4">
+    <span>
+      <strong>Project:</strong> {activeProject?.title || 'None'}
+    </span>
+
+    <span>
+      <strong>Source:</strong>{' '}
+      {rewriteTarget === 'left'
+        ? 'Left'
+        : rewriteTarget === 'right'
+          ? 'Right'
+          : 'Main'}
+    </span>
+
+    {rewriteSectionOnly && (
+      <span>
+        <strong>Section:</strong> {rewriteSectionName || '—'}
+      </span>
+    )}
+  </div>
+</div>lassName="text-lg font-semibold mb-3">Rewrite Lab</h3>
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
   <select
@@ -1921,20 +1966,34 @@ const panelsMatch =
 <div className="flex flex-col md:flex-row gap-3 mb-3">
   <label className="flex items-center gap-2 text-sm text-gray-300">
     <input
-      type="checkbox"
-      checked={rewriteSectionOnly}
-      onChange={(e) => setRewriteSectionOnly(e.target.checked)}
+        type="checkbox"
+  checked={rewriteSectionOnly}
+  disabled={detectedSections.length === 0}
+  onChange={(e) => setRewriteSectionOnly(e.target.checked)}
     />
     Rewrite section only
   </label>
 
-  <input
-    value={rewriteSectionName}
-    onChange={(e) => setRewriteSectionName(e.target.value)}
-    placeholder="Section name, e.g. Chorus, Verse 2, Bridge"
-    disabled={!rewriteSectionOnly}
-    className="flex-1 px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
-  />
+ <select
+  value={rewriteSectionName}
+  onChange={(e) => setRewriteSectionName(e.target.value)}
+  disabled={!rewriteSectionOnly || detectedSections.length === 0}
+  className="flex-1 px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
+>
+  <option value="">Select section</option>
+
+  {detectedSections.map((section, i) => (
+    <option key={i} value={section}>
+      {section}
+    </option>
+  ))}
+</select>
+{detectedSections.length === 0 && (
+  <div className="text-xs text-yellow-400 mt-1">
+    No sections detected — full rewrite only
+  </div>
+)}
+
 </div>
   <button
   type="button"
