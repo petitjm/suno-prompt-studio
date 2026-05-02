@@ -853,14 +853,7 @@ const saveSong = async () => {
 }
 
 
-const sourceForDetection =
-  rewriteTarget === 'left'
-    ? compareLeftText
-    : rewriteTarget === 'right'
-      ? compareRightText
-      : performanceSheet
 
-const detectedSections = detectSections(sourceForDetection)
 
 
 const createProject = async () => {
@@ -1274,6 +1267,16 @@ const detectSections = (text: string) => {
       return false
     })
 }
+
+
+const sourceForDetection =
+  rewriteTarget === 'left'
+    ? compareLeftText
+    : rewriteTarget === 'right'
+      ? compareRightText
+      : performanceSheet
+
+const detectedSections = detectSections(sourceForDetection)
 
 
 const runRewriteLab = async () => {
