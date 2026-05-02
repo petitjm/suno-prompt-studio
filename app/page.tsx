@@ -1901,7 +1901,7 @@ const panelsMatch =
 
 
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
-  <h3 c<div className="flex items-center justify-between mb-3">
+ <div className="flex items-center justify-between mb-3">
   <h3 className="text-lg font-semibold">Rewrite Lab</h3>
 
   <div className="text-xs text-gray-400 flex gap-4">
@@ -1924,7 +1924,7 @@ const panelsMatch =
       </span>
     )}
   </div>
-</div>lassName="text-lg font-semibold mb-3">Rewrite Lab</h3>
+</div>
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
   <select
