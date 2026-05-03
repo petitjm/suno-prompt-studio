@@ -1333,6 +1333,18 @@ const sourceText = rewriteSectionOnly
     return
   }
 
+  const hasChordLines = sourceText
+  .split('\n')
+  .some((line) => looksLikeChordLine(line))
+
+if (!rewriteSectionOnly && hasChordLines) {
+  setRewriteMessage(
+    'This looks like a chorded sheet. Rewrite lyrics-only text or add section headings first.'
+  )
+  return
+}
+
+
   try {
     setRewriteLoading(true)
     setRewriteMessage('Rewriting...')
