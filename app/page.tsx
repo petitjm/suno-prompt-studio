@@ -1359,10 +1359,7 @@ if (!rewriteSectionOnly && hasChordLines) {
       }),
     })
 
-    if (!rewriteSectionOnly && looksLikeChordLine(sourceText.split('\n').find((line) => line.trim()) || '')) {
-  setRewriteMessage('This looks like a chorded sheet. Rewrite lyrics-only text or add section headings first.')
-  return
-}
+    
 
     const data = await readJsonSafe(res)
 
