@@ -1162,14 +1162,6 @@ const noCompareLocks = !lockCompareLeft && !lockCompareRight
 const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
-const isSectionHeader = (line: string) => {
-  const trimmed = line.trim()
-
-  return (
-    /^\[.+\]$/.test(trimmed) ||
-    /^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(trimmed)
-  )
-}
 
 const normaliseSectionName = (value: string) =>
   value
@@ -1203,6 +1195,66 @@ const extractSectionText = (text: string, sectionName: string) => {
 
   return lines.slice(startIndex, endIndex).join('\n')
 }
+
+
+
+const chordRegex =
+  /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add|dom)?[0-9]*(maj|min|m|sus|add|dim|aug|b|#|\/|[0-9])*$/i
+
+const looksLikeChordLine = (line: string) => {
+  const tokens = line
+    .trim()
+    .split(/\s+/)
+    .map((token) => token.replace(/[|,]/g, '').trim())
+    .filter(Boolean)
+
+  if (!tokens.length) return false
+
+  return tokens.every((token) => chordRegex.test(token))
+}
+
+const knownSectionNames = [
+  'verse',
+  'verse 1',
+  'verse 2',
+  'verse 3',
+  'verse 4',
+  'chorus',
+  'pre-chorus',
+  'pre chorus',
+  'bridge',
+  'middle 8',
+  'intro',
+  'outro',
+  'hook',
+  'refrain',
+  'solo',
+  'instrumental',
+]
+
+
+
+
+const isSectionHeader = (line: string) => {
+  const trimmed = line.trim()
+  if (!trimmed) return false
+
+  // Never treat chord-only lines as section headings
+  if (looksLikeChordLine(trimmed)) return false
+
+  // [Verse 1]
+  if (/^\[.+\]$/.test(trimmed)) return true
+
+  // Verse 1:
+  if (/^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(trimmed)) return true
+
+  // Verse / Chorus / Bridge etc. without brackets or colon
+  const normalised = normaliseSectionName(trimmed)
+
+  return knownSectionNames.includes(normalised)
+}
+
+
 
 const replaceSectionText = (
   fullText: string,
