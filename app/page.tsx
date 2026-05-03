@@ -1339,7 +1339,7 @@ const sourceText = rewriteSectionOnly
 
 if (!rewriteSectionOnly && hasChordLines) {
   setRewriteMessage(
-    'This looks like a chorded sheet. Rewrite lyrics-only text or add section headings first.'
+    'Chorded sheet detected. Full-song rewrite is blocked to protect chords. Add section headings or use a lyrics-only version.'
   )
   return
 }
