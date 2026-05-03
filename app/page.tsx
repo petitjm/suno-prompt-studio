@@ -1294,30 +1294,10 @@ const replaceSectionText = (
 
 
 const detectSections = (text: string) => {
-  const lines = text.split('\n')
-
-  return lines
+  return text
+    .split('\n')
     .map((line) => line.trim())
-    .filter((line) => {
-      if (!line) return false
-
-      // [Verse 1]
-      if (/^\[.+\]$/.test(line)) return true
-
-      // Verse 1:
-      if (/^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(line)) return true
-
-      // CHORUS / BRIDGE (short uppercase)
-      if (
-        line.length < 20 &&
-        /^[A-Z\s-]+$/.test(line) &&
-        line.split(' ').length <= 3
-      ) {
-        return true
-      }
-
-      return false
-    })
+    .filter((line) => isSectionHeader(line))
 }
 
 
