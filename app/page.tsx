@@ -2094,9 +2094,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
   <label className="flex items-center gap-2 text-sm text-gray-300">
     <input
 
-    Preserve rhyme scheme
-Preserve syllable count (advanced)
-Change only one line
+
 
 
         type="checkbox"
