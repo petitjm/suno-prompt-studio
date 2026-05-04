@@ -2089,6 +2089,24 @@ const hasChordLinesInRewriteSource = sourceForDetection
     placeholder="Or type custom instruction..."
     className="md:col-span-2 px-3 py-2 rounded bg-gray-700 text-white"
   />
+
+
+    <select
+    value={rewriteConstraint}
+    onChange={(e) => setRewriteConstraint(e.target.value)}
+    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+  >
+    <option value="default">Default</option>
+    <option value="keep-lines">Keep same number of lines</option>
+    <option value="shorten">Shorten section</option>
+    <option value="extend">Extend section</option>
+    <option value="conversational">More conversational</option>
+    <option value="poetic">More poetic</option>
+    <option value="stronger">Stronger chorus</option>
+    <option value="simplify">Simplify lyrics</option>
+  </select>
+
+
 </div>
 <div className="flex flex-col md:flex-row gap-2 mb-2">
   <label className="flex items-center gap-2 text-sm text-gray-300">
