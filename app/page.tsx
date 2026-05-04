@@ -1395,6 +1395,9 @@ if (!rewriteSectionOnly && hasChordLines) {
     'Chorded sheet detected. Full-song rewrite is blocked to protect chords. Add section headings or use a lyrics-only version.'
   )
   return
+  <p className="text-xs text-gray-400 mt-2">
+  hasChordLinesInRewriteSource: {hasChordLinesInRewriteSource ? 'yes' : 'no'}
+</p>
 }
 
 
