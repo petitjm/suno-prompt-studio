@@ -1360,7 +1360,36 @@ const removeChordsFromRewriteSource = () => {
 }
 
 
+const buildRewriteInstruction = (
+  instruction: string,
+  constraint: string
+) => {
+  switch (constraint) {
+    case 'keep-lines':
+      return `${instruction}. Keep the same number of lines.`
 
+    case 'shorten':
+      return `${instruction}. Make the section shorter.`
+
+    case 'extend':
+      return `${instruction}. Expand the section with additional lines.`
+
+    case 'conversational':
+      return `${instruction}. Make it more natural and conversational.`
+
+    case 'poetic':
+      return `${instruction}. Make it more poetic and expressive.`
+
+    case 'stronger':
+      return `${instruction}. Make it more impactful and emotionally strong.`
+
+    case 'simplify':
+      return `${instruction}. Simplify the language and phrasing.`
+
+    default:
+      return instruction
+  }
+}
 
 
 
@@ -2133,39 +2162,6 @@ const hasChordLinesInRewriteSource = sourceForDetection
     Choose a rewrite preset or type an instruction.
   </p>
 )}
-
-const buildRewriteInstruction = (
-  instruction: string,
-  constraint: string
-) => {
-  switch (constraint) {
-    case 'keep-lines':
-      return `${instruction}. Keep the same number of lines.`
-
-    case 'shorten':
-      return `${instruction}. Make the section shorter.`
-
-    case 'extend':
-      return `${instruction}. Expand the section with additional lines.`
-
-    case 'conversational':
-      return `${instruction}. Make it more natural and conversational.`
-
-    case 'poetic':
-      return `${instruction}. Make it more poetic and expressive.`
-
-    case 'stronger':
-      return `${instruction}. Make it more impactful and emotionally strong.`
-
-    case 'simplify':
-      return `${instruction}. Simplify the language and phrasing.`
-
-    default:
-      return instruction
-  }
-}
-
-
  <button
   type="button"
   onClick={runRewriteLab}
