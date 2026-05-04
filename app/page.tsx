@@ -1203,15 +1203,31 @@ const chordRegex =
   /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add|dom)?[0-9]*(maj|min|m|sus|add|dim|aug|b|#|\/|[0-9])*$/i
 
 const looksLikeChordLine = (line: string) => {
-  const tokens = line
-    .trim()
-    .split(/\s+/)
-    .map((token) => token.replace(/[|,]/g, '').trim())
-    .filter(Boolean)
+  const trimmed = line.trim()
+  if (!trimmed) return false
+
+  const cleaned = trimmed
+    .replace(/\|/g, ' ')
+    .replace(/,/g, ' ')
+    .replace(/\s+/g, ' ')
+
+  let tokens = cleaned.split(' ').filter(Boolean)
+
+  const leadingLabels = ['solo', 'intro', 'outro', 'instrumental', 'break']
+  if (tokens.length > 1 && leadingLabels.includes(tokens[0].toLowerCase())) {
+    tokens = tokens.slice(1)
+  }
 
   if (!tokens.length) return false
 
-  return tokens.every((token) => chordRegex.test(token))
+  const chordTokenRegex =
+    /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add)?[0-9]*(b|#)?[0-9]*(\/[A-G](#|b)?)?$/i
+
+  const chordCount = tokens.filter((token) =>
+    chordTokenRegex.test(token)
+  ).length
+
+  return chordCount >= Math.ceil(tokens.length * 0.6)
 }
 
 const extractLyricsOnly = (text: string) => {
