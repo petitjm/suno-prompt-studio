@@ -2110,11 +2110,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
     <div className="mt-2 flex gap-2">
 
-    {!rewriteInstruction.trim() && (
-  <p className="text-xs text-yellow-400 mb-2">
-    Choose a rewrite preset or type an instruction.
-  </p>
-)}
+   
 
 
       <button
@@ -2142,14 +2138,10 @@ const hasChordLinesInRewriteSource = sourceForDetection
     Choose a rewrite preset or type an instruction.
   </p>
 )}
-  <button
+ <button
   type="button"
   onClick={runRewriteLab}
-  disabled={
-  rewriteLoading ||
-  !rewriteInstruction.trim() ||
-  (!rewriteSectionOnly && hasChordLinesInRewriteSource)
-}
+  disabled={rewriteLoading || !rewriteInstruction.trim()}
   className={`px-4 py-2 rounded text-white transition ${
     rewriteLoading
       ? 'bg-gray-600 scale-95'
