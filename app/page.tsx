@@ -147,7 +147,8 @@ const syncCompareScroll = (source: 'left' | 'right') => {
   if (!src || !tgt) return
   tgt.scrollTop = src.scrollTop
 }
-  
+
+const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)  
 const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('right')
 const [rewriteInstruction, setRewriteInstruction] = useState('')
 const [rewriteLoading, setRewriteLoading] = useState(false)
