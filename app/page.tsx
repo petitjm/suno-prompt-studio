@@ -1321,6 +1321,28 @@ const sourceForDetection =
 
 const detectedSections = detectSections(sourceForDetection)
 
+const removeChordsFromRewriteSource = () => {
+  setExtractingLyricsOnly(true)
+
+  const lyricsOnly = extractLyricsOnly(sourceForDetection)
+
+  if (rewriteTarget === 'left') {
+    setCompareLeftText(lyricsOnly)
+    setFlashLeftPanel(true)
+    setTimeout(() => setFlashLeftPanel(false), 600)
+  } else if (rewriteTarget === 'right') {
+    setCompareRightText(lyricsOnly)
+    setFlashRightPanel(true)
+    setTimeout(() => setFlashRightPanel(false), 600)
+  } else {
+    setPerformanceSheet(lyricsOnly)
+  }
+
+  setRewriteMessage('Chord lines removed. Rewrite is now available.')
+  setTimeout(() => setExtractingLyricsOnly(false), 800)
+}
+
+
 
 const runRewriteLab = async () => {
   const fullSourceText =
@@ -1964,26 +1986,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
   </div>
 </div>
 
-const removeChordsFromRewriteSource = () => {
-  setExtractingLyricsOnly(true)
 
-  const lyricsOnly = extractLyricsOnly(sourceForDetection)
-
-  if (rewriteTarget === 'left') {
-    setCompareLeftText(lyricsOnly)
-    setFlashLeftPanel(true)
-    setTimeout(() => setFlashLeftPanel(false), 600)
-  } else if (rewriteTarget === 'right') {
-    setCompareRightText(lyricsOnly)
-    setFlashRightPanel(true)
-    setTimeout(() => setFlashRightPanel(false), 600)
-  } else {
-    setPerformanceSheet(lyricsOnly)
-  }
-
-  setRewriteMessage('Chord lines removed. Rewrite is now available.')
-  setTimeout(() => setExtractingLyricsOnly(false), 800)
-}
 
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
  <div className="flex items-center justify-between mb-1 leading-tight">
