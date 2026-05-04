@@ -121,7 +121,7 @@ export default function Page() {
   const [chords, setChords] = useState<ChordResponse | null>(null)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
-
+  const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
@@ -148,7 +148,7 @@ const syncCompareScroll = (source: 'left' | 'right') => {
   tgt.scrollTop = src.scrollTop
 }
 
-const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)  
+  
 const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('right')
 const [rewriteInstruction, setRewriteInstruction] = useState('')
 const [rewriteLoading, setRewriteLoading] = useState(false)
@@ -1386,19 +1386,7 @@ const sourceText = rewriteSectionOnly
     return
   }
 
-  const hasChordLines = sourceText
-  .split('\n')
-  .some((line) => looksLikeChordLine(line))
-
-if (!rewriteSectionOnly && hasChordLines) {
-  setRewriteMessage(
-    'Chorded sheet detected. Full-song rewrite is blocked to protect chords. Add section headings or use a lyrics-only version.'
-  )
-  return
-  <p className="text-xs text-gray-400 mt-2">
-  hasChordLinesInRewriteSource: {hasChordLinesInRewriteSource ? 'yes' : 'no'}
-</p>
-}
+ 
 
 
   try {
