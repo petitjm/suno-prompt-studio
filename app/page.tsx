@@ -1368,7 +1368,6 @@ const runRewriteLab = async () => {
           ? compareRightText
           : performanceSheet
 
-const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)
 
 
 
