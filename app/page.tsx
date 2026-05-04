@@ -1442,7 +1442,9 @@ setTimeout(() => setRewriteDone(false), 1000)
 
 const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
-
+const hasChordLinesInRewriteSource = sourceForDetection
+  .split('\n')
+  .some((line) => looksLikeChordLine(line))
 
 
 
@@ -1962,7 +1964,26 @@ const panelsMatch =
   </div>
 </div>
 
+const removeChordsFromRewriteSource = () => {
+  setExtractingLyricsOnly(true)
 
+  const lyricsOnly = extractLyricsOnly(sourceForDetection)
+
+  if (rewriteTarget === 'left') {
+    setCompareLeftText(lyricsOnly)
+    setFlashLeftPanel(true)
+    setTimeout(() => setFlashLeftPanel(false), 600)
+  } else if (rewriteTarget === 'right') {
+    setCompareRightText(lyricsOnly)
+    setFlashRightPanel(true)
+    setTimeout(() => setFlashRightPanel(false), 600)
+  } else {
+    setPerformanceSheet(lyricsOnly)
+  }
+
+  setRewriteMessage('Chord lines removed. Rewrite is now available.')
+  setTimeout(() => setExtractingLyricsOnly(false), 800)
+}
 
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
  <div className="flex items-center justify-between mb-1 leading-tight">
@@ -2059,10 +2080,38 @@ const panelsMatch =
 )}
 
 </div>
+{!rewriteSectionOnly && hasChordLinesInRewriteSource && (
+  <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
+    <div>
+      Chords detected. Rewrite is available only after removing chord lines.
+    </div>
+
+    <div className="mt-2 flex gap-2">
+      <button
+        type="button"
+        onClick={removeChordsFromRewriteSource}
+        className={`px-3 py-1 rounded text-white text-xs transition ${
+          extractingLyricsOnly ? 'bg-green-600 scale-95' : 'bg-yellow-600'
+        }`}
+      >
+        {extractingLyricsOnly ? 'Removed ✓' : 'Remove chords'}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setRewriteMessage('Rewrite cancelled.')}
+        className="px-3 py-1 rounded bg-gray-600 text-white text-xs"
+      >
+        No
+      </button>
+    </div>
+  </div>
+)}
+
   <button
   type="button"
   onClick={runRewriteLab}
-  disabled={rewriteLoading}
+  disabled={rewriteLoading || (!rewriteSectionOnly && hasChordLinesInRewriteSource)}
   className={`px-4 py-2 rounded text-white transition ${
     rewriteLoading
       ? 'bg-gray-600 scale-95'
@@ -2079,41 +2128,7 @@ const panelsMatch =
   )}
 </div>
 
-<button
-  type="button"
-  onClick={() => {
-    setExtractingLyricsOnly(true)
 
-    const sourceText =
-      rewriteTarget === 'left'
-        ? compareLeftText
-        : rewriteTarget === 'right'
-          ? compareRightText
-          : performanceSheet
-
-    const lyricsOnly = extractLyricsOnly(sourceText)
-
-    if (rewriteTarget === 'left') {
-      setCompareLeftText(lyricsOnly)
-      setFlashLeftPanel(true)
-      setTimeout(() => setFlashLeftPanel(false), 600)
-    } else if (rewriteTarget === 'right') {
-      setCompareRightText(lyricsOnly)
-      setFlashRightPanel(true)
-      setTimeout(() => setFlashRightPanel(false), 600)
-    } else {
-      setPerformanceSheet(lyricsOnly)
-    }
-
-    setRewriteMessage('Lyrics-only version extracted')
-    setTimeout(() => setExtractingLyricsOnly(false), 800)
-  }}
-  className={`ml-2 px-4 py-2 rounded text-white transition ${
-    extractingLyricsOnly ? 'bg-green-600 scale-95' : 'bg-gray-600'
-  }`}
->
-  {extractingLyricsOnly ? 'Extracted ✓' : 'Extract lyrics only'}
-</button>
 
 
 <input
