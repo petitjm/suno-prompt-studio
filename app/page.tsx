@@ -1213,6 +1213,16 @@ const looksLikeChordLine = (line: string) => {
   return tokens.every((token) => chordRegex.test(token))
 }
 
+const extractLyricsOnly = (text: string) => {
+  return text
+    .split('\n')
+    .filter((line) => !looksLikeChordLine(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+
 const knownSectionNames = [
   'verse',
   'verse 1',
@@ -1318,6 +1328,10 @@ const runRewriteLab = async () => {
         : rewriteTarget === 'right'
           ? compareRightText
           : performanceSheet
+
+const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)
+
+
 
 const sourceText = rewriteSectionOnly
   ? extractSectionText(fullSourceText, rewriteSectionName)
@@ -2064,7 +2078,41 @@ const panelsMatch =
   )}
 </div>
 
+<button
+  type="button"
+  onClick={() => {
+    setExtractingLyricsOnly(true)
 
+    const sourceText =
+      rewriteTarget === 'left'
+        ? compareLeftText
+        : rewriteTarget === 'right'
+          ? compareRightText
+          : performanceSheet
+
+    const lyricsOnly = extractLyricsOnly(sourceText)
+
+    if (rewriteTarget === 'left') {
+      setCompareLeftText(lyricsOnly)
+      setFlashLeftPanel(true)
+      setTimeout(() => setFlashLeftPanel(false), 600)
+    } else if (rewriteTarget === 'right') {
+      setCompareRightText(lyricsOnly)
+      setFlashRightPanel(true)
+      setTimeout(() => setFlashRightPanel(false), 600)
+    } else {
+      setPerformanceSheet(lyricsOnly)
+    }
+
+    setRewriteMessage('Lyrics-only version extracted')
+    setTimeout(() => setExtractingLyricsOnly(false), 800)
+  }}
+  className={`ml-2 px-4 py-2 rounded text-white transition ${
+    extractingLyricsOnly ? 'bg-green-600 scale-95' : 'bg-gray-600'
+  }`}
+>
+  {extractingLyricsOnly ? 'Extracted ✓' : 'Extract lyrics only'}
+</button>
 
 
 <input
