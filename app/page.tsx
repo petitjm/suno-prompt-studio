@@ -2130,7 +2130,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
   <button
   type="button"
   onClick={runRewriteLab}
-  disabled={rewriteLoading || (!rewriteSectionOnly && hasChordLinesInRewriteSource)}
+  disabled={rewriteLoading}
   className={`px-4 py-2 rounded text-white transition ${
     rewriteLoading
       ? 'bg-gray-600 scale-95'
