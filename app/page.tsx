@@ -121,6 +121,7 @@ export default function Page() {
   const [chords, setChords] = useState<ChordResponse | null>(null)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
+  const [rewriteConstraint, setRewriteConstraint] = useState('default')
   const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
   const previewTimeoutsRef = React.useRef<number[]>([])
@@ -1359,6 +1360,38 @@ const removeChordsFromRewriteSource = () => {
 }
 
 
+const buildRewriteInstruction = (
+  instruction: string,
+  constraint: string
+) => {
+  switch (constraint) {
+    case 'keep-lines':
+      return `${instruction}. Keep the same number of lines.`
+
+    case 'shorten':
+      return `${instruction}. Make the section shorter.`
+
+    case 'extend':
+      return `${instruction}. Expand the section with additional lines.`
+
+    case 'conversational':
+      return `${instruction}. Make it more natural and conversational.`
+
+    case 'poetic':
+      return `${instruction}. Make it more poetic and expressive.`
+
+    case 'stronger':
+      return `${instruction}. Make it more impactful and emotionally strong.`
+
+    case 'simplify':
+      return `${instruction}. Simplify the language and phrasing.`
+
+    default:
+      return instruction
+  }
+}
+
+
 
 const runRewriteLab = async () => {
   const fullSourceText =
@@ -1397,7 +1430,7 @@ const sourceText = rewriteSectionOnly
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: 'rewrite',
-        instruction: rewriteInstruction,
+        instruction: buildRewriteInstruction(rewriteInstruction, rewriteConstraint),
         lyrics: sourceText,
       }),
     })
@@ -2060,6 +2093,12 @@ const hasChordLinesInRewriteSource = sourceForDetection
 <div className="flex flex-col md:flex-row gap-2 mb-2">
   <label className="flex items-center gap-2 text-sm text-gray-300">
     <input
+
+    Preserve rhyme scheme
+Preserve syllable count (advanced)
+Change only one line
+
+
         type="checkbox"
   checked={rewriteSectionOnly}
   disabled={detectedSections.length === 0}
