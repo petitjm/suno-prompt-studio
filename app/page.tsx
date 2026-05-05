@@ -1197,6 +1197,31 @@ const extractSectionText = (text: string, sectionName: string) => {
 }
 
 
+const extractSectionTextStrict = (text: string, sectionName: string) => {
+  if (!sectionName.trim()) return null
+
+  const target = normaliseSectionName(sectionName)
+  const lines = text.split('\n')
+
+  const startIndex = lines.findIndex((line) => {
+    if (!isSectionHeader(line)) return false
+    return normaliseSectionName(line) === target
+  })
+
+  if (startIndex === -1) return null
+
+  let endIndex = lines.length
+
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (isSectionHeader(lines[i])) {
+      endIndex = i
+      break
+    }
+  }
+
+  return lines.slice(startIndex, endIndex).join('\n')
+}
+
 
 const chordRegex =
   /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add|dom)?[0-9]*(maj|min|m|sus|add|dim|aug|b|#|\/|[0-9])*$/i
@@ -1366,8 +1391,9 @@ const buildRewriteInstruction = (
   const baseRules = [
     instruction,
     'Return rewritten lyrics only.',
-    'Do not explain the changes.',
     'Do not add new section headings unless they already existed in the supplied text.',
+    'Do not explain the changes.',
+    
     'Do not create a new song structure.',
   ]
 
@@ -1375,7 +1401,9 @@ const buildRewriteInstruction = (
     baseRules.push(
       'Rewrite ONLY the supplied section.',
       'Do not rewrite the full song.',
+      'Return only the rewritten section, not the full song.',
       'Do not add other sections.'
+
     )
   }
 
@@ -1499,21 +1527,16 @@ console.log('fullSourceText before:', fullSourceText)
 
     let finalText = rewritten
 
+
+
 if (rewriteSectionOnly) {
-  const rewrittenSection = extractSectionText(rewritten, rewriteSectionName)
+  const rewrittenSection =
+    extractSectionTextStrict(rewritten, rewriteSectionName) || rewritten
 
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
     rewrittenSection
-  )
-}
-
-if (rewriteSectionOnly) {
-  finalText = replaceSectionText(
-    fullSourceText,
-    rewriteSectionName,
-    rewritten
   )
 }
 
