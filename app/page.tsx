@@ -1509,7 +1509,12 @@ if (rewriteSectionOnly) {
   )
 }
 
-
+if (rewriteSectionOnly) {
+  finalText = replaceSectionText(
+    fullSourceText,
+    rewriteSectionName,
+    rewritten
+  )
 }
 
 console.log('finalText after:', finalText)
