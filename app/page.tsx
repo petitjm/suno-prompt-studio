@@ -550,12 +550,10 @@ const [rewriteSectionName, setRewriteSectionName] = useState('')
 const rewritePresets = [
   'Make it more emotional',
   'Make it more conversational',
-  'Shorten it',
+  'Make it more poetic',
   'Make it more radio-friendly',
-  'Strengthen the chorus hook',
-  'Simplify the lyrics',
-  'Make it more country',
-  'Make it more folk-rock',
+  'Strengthen the hook',
+  'Simplify the language',
 ]
 
 const [rewritePreset, setRewritePreset] = useState('')
@@ -1362,37 +1360,66 @@ const removeChordsFromRewriteSource = () => {
 
 const buildRewriteInstruction = (
   instruction: string,
-  constraint: string
+  constraint: string,
+  sectionOnly: boolean
 ) => {
+  const baseRules = [
+    instruction,
+    'Return rewritten lyrics only.',
+    'Do not explain the changes.',
+    'Do not add new section headings unless they already existed in the supplied text.',
+    'Do not create a new song structure.',
+  ]
+
+  if (sectionOnly) {
+    baseRules.push(
+      'Rewrite ONLY the supplied section.',
+      'Do not rewrite the full song.',
+      'Do not add other sections.'
+    )
+  }
+
   switch (constraint) {
     case 'keep-lines':
-      return `${instruction}. 
-      You must keep exactly the same number of lines as the original. 
-      Do not add sections, do not remove sections, do not change structure.`
+      baseRules.push(
+        'Keep exactly the same number of lines as the original.',
+        'Do not add lines.',
+        'Do not remove lines.'
+      )
+      break
 
     case 'shorten':
-      return `${instruction}. 
-      Shorten the content but keep the same number of lines and structure.`
+      baseRules.push(
+        'Shorten the wording within the existing structure.',
+        'Do not add new sections.',
+        'Do not make the song longer.'
+      )
+      break
 
     case 'extend':
-      return `${instruction}. 
-      Extend the content but keep the same structure and section layout.`
+      baseRules.push(
+        'Extend the wording slightly, but do not create a new song structure.'
+      )
+      break
 
     case 'conversational':
-      return `${instruction}. Make it more natural and conversational.`
+      baseRules.push('Make the wording more natural and conversational.')
+      break
 
     case 'poetic':
-      return `${instruction}. Make it more poetic and expressive.`
+      baseRules.push('Make the wording more poetic and expressive.')
+      break
 
     case 'stronger':
-      return `${instruction}. Make it more impactful and emotionally strong.`
+      baseRules.push('Make the emotional impact stronger.')
+      break
 
     case 'simplify':
-      return `${instruction}. Simplify the language and phrasing.`
-
-    default:
-      return instruction
+      baseRules.push('Simplify the language and phrasing.')
+      break
   }
+
+  return baseRules.join(' ')
 }
 
 
@@ -1435,7 +1462,7 @@ const sourceText = rewriteSectionOnly
       body: JSON.stringify({
         mode: 'rewrite',
         instruction: rewriteSectionOnly
-      ? `Rewrite ONLY the provided section. Do not add new sections. Do not rewrite the full song. ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint)}`
+      ? `Rewrite ONLY the provided section. Do not add new sections. Do not rewrite the full song. ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}`
       : buildRewriteInstruction(rewriteInstruction, rewriteConstraint),
         lyrics: sourceText,
       }),
@@ -1473,11 +1500,16 @@ console.log('fullSourceText before:', fullSourceText)
     let finalText = rewritten
 
 if (rewriteSectionOnly) {
+  const rewrittenSection = extractSectionText(rewritten, rewriteSectionName)
+
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
-    rewritten
+    rewrittenSection
   )
+}
+
+
 }
 
 console.log('finalText after:', finalText)
