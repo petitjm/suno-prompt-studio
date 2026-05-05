@@ -1461,10 +1461,10 @@ const runRewriteLab = async () => {
           : performanceSheet
 
 
-
+const runRewriteLab = async () => {
 
 const sourceText = rewriteSectionOnly
-  ? extractSectionText(fullSourceText, rewriteSectionName)
+  ? extractSectionText(fullSourceText, normalizedSectionName)
   : fullSourceText
 
   if (!sourceText.trim()) {
@@ -1490,8 +1490,20 @@ const sourceText = rewriteSectionOnly
       body: JSON.stringify({
         mode: 'rewrite',
         instruction: rewriteSectionOnly
-      ? `Rewrite ONLY the provided section. Do not add new sections. Do not rewrite the full song. ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}`
-      : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
+              ? `
+            STRICT RULES:
+            - Rewrite ONLY the provided section
+            - DO NOT add any new section headers
+            - DO NOT add [Verse], [Chorus], etc.
+            - DO NOT change structure
+            - KEEP the EXACT same number of lines
+            - KEEP line breaks identical
+            - DO NOT expand or shorten
+
+            TASK:
+            ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
+            `
+              : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
         lyrics: sourceText,
       }),
     })
@@ -1521,21 +1533,32 @@ console.log('rewritten:', rewritten)
 console.log('fullSourceText before:', fullSourceText)
 
 
-    if (!rewritten.trim()) {
-      throw new Error('Rewrite returned no usable text')
-    }
+if (!rewritten.trim()) {
+  throw new Error('Rewrite returned no usable text')
+}
 
-    let finalText = rewritten
+// 🔥 Clean AI output (remove any section headers it may have added)
+const cleanedRewrite = rewritten
+  .replace(/^\s*\[[^\]]+\]\s*$/gm, '') // remove lines like [Chorus]
+  .trim()
+
+let finalText = cleanedRewrite
 
 
 
 if (rewriteSectionOnly) {
-  const rewrittenSection =
-    extractSectionTextStrict(rewritten, rewriteSectionName) || rewritten
+  const rewrittenSection = extractSectionTextStrict(
+      rewritten,
+      normalizedSectionName
+    )
+
+    if (!rewrittenSection) {
+      throw new Error('Failed to isolate rewritten section')
+    }
 
   finalText = replaceSectionText(
     fullSourceText,
-    rewriteSectionName,
+    normalizedSectionName,
     rewrittenSection
   )
 }
@@ -2113,7 +2136,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
     {rewriteSectionOnly && (
       <span>
-        <strong>Section:</strong> {rewriteSectionName || '—'}
+        <strong>Section:</strong> {normalizedSectionName || '—'}
       </span>
     )}
   </div>
