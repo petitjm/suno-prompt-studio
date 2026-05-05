@@ -1463,7 +1463,7 @@ const sourceText = rewriteSectionOnly
         mode: 'rewrite',
         instruction: rewriteSectionOnly
       ? `Rewrite ONLY the provided section. Do not add new sections. Do not rewrite the full song. ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}`
-      : buildRewriteInstruction(rewriteInstruction, rewriteConstraint),
+      : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
         lyrics: sourceText,
       }),
     })
