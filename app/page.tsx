@@ -1366,13 +1366,17 @@ const buildRewriteInstruction = (
 ) => {
   switch (constraint) {
     case 'keep-lines':
-      return `${instruction}. Keep the same number of lines.`
+      return `${instruction}. 
+      You must keep exactly the same number of lines as the original. 
+      Do not add sections, do not remove sections, do not change structure.`
 
     case 'shorten':
-      return `${instruction}. Make the section shorter.`
+      return `${instruction}. 
+      Shorten the content but keep the same number of lines and structure.`
 
     case 'extend':
-      return `${instruction}. Expand the section with additional lines.`
+      return `${instruction}. 
+      Extend the content but keep the same structure and section layout.`
 
     case 'conversational':
       return `${instruction}. Make it more natural and conversational.`
@@ -1430,7 +1434,9 @@ const sourceText = rewriteSectionOnly
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: 'rewrite',
-        instruction: buildRewriteInstruction(rewriteInstruction, rewriteConstraint),
+        instruction: rewriteSectionOnly
+      ? `Rewrite ONLY the provided section. Do not add new sections. Do not rewrite the full song. ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint)}`
+      : buildRewriteInstruction(rewriteInstruction, rewriteConstraint),
         lyrics: sourceText,
       }),
     })
@@ -2097,12 +2103,12 @@ const hasChordLinesInRewriteSource = sourceForDetection
     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
   >
     <option value="default">Default</option>
-    <option value="keep-lines">Keep same number of lines</option>
-    <option value="shorten">Shorten section</option>
-    <option value="extend">Extend section</option>
+    <option value="keep-lines">Keep structure (same lines)</option>
+    <option value="shorten">Shorten content</option>
+    <option value="extend">Extend content</option>
     <option value="conversational">More conversational</option>
     <option value="poetic">More poetic</option>
-    <option value="stronger">Stronger chorus</option>
+    <option value="stronger">Stronger impact</option>
     <option value="simplify">Simplify lyrics</option>
   </select>
 
@@ -2183,7 +2189,11 @@ const hasChordLinesInRewriteSource = sourceForDetection
  <button
   type="button"
   onClick={runRewriteLab}
-  disabled={rewriteLoading || !rewriteInstruction.trim()}
+  disabled={
+      rewriteLoading ||
+      !rewriteInstruction.trim() ||
+      (!rewriteSectionOnly && hasChordLinesInRewriteSource)
+    }
   className={`px-4 py-2 rounded text-white transition ${
     rewriteLoading
       ? 'bg-gray-600 scale-95'
