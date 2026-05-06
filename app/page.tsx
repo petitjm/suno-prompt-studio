@@ -1464,7 +1464,7 @@ const runRewriteLab = async () => {
 
 
 const sourceText = rewriteSectionOnly
-  ? extractSectionText(fullSourceText, normalizedSectionName)
+  ? extractSectionText(fullSourceText, normalisedSectionName)
   : fullSourceText
 
   if (!sourceText.trim()) {
@@ -1549,7 +1549,7 @@ let finalText = cleanedRewrite
 if (rewriteSectionOnly) {
   const rewrittenSection = extractSectionTextStrict(
       rewritten,
-      normalizedSectionName
+      normalisedSectionName
     )
 
     if (!rewrittenSection) {
@@ -1558,7 +1558,7 @@ if (rewriteSectionOnly) {
 
   finalText = replaceSectionText(
     fullSourceText,
-    normalizedSectionName,
+    normalisedSectionName,
     rewrittenSection
   )
 }
@@ -2122,7 +2122,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
     {rewriteSectionOnly && (
       <span>
-        <strong>Section:</strong> {normalizedSectionName || '—'}
+        <strong>Section:</strong> {normalisedSectionName || '—'}
       </span>
     )}
   </div>
