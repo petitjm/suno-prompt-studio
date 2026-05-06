@@ -1495,17 +1495,7 @@ const sourceText = rewriteSectionOnly
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-      if (rewriteConstraint === 'same_lines' && rewrittenLineCount !== originalLineCount) {
-    throw new Error(
-      `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
-    )
-  }
 
-  finalText = replaceSectionText(
-    fullSourceText,
-    rewriteSectionName,
-    rewrittenSection
-  )
 
 
     const res = await fetch('/api/generate', {
@@ -1586,6 +1576,17 @@ if (rewriteSectionOnly) {
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
+          if (rewriteConstraint === 'same_lines' && rewrittenLineCount !== originalLineCount) {
+    throw new Error(
+      `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
+    )
+  }
+
+  finalText = replaceSectionText(
+    fullSourceText,
+    rewriteSectionName,
+    rewrittenSection
+  )
 
 }
 
