@@ -1464,7 +1464,7 @@ const runRewriteLab = async () => {
 
 
 const sourceText = rewriteSectionOnly
-  ? extractSectionText(fullSourceText, normalisedSectionName)
+  ? extractSectionText(fullSourceText, normaliseSectionName)
   : fullSourceText
 
   if (!sourceText.trim()) {
