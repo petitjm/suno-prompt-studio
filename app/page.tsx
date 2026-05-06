@@ -1547,16 +1547,15 @@ const cleanedRewrite = rewritten
 
 let finalText = cleanedRewrite
 
+if (rewriteSectionOnly) {
+  const rewrittenSection = extractSectionTextStrict(
+    rewritten,
+    rewriteSectionName
+  )
 
-
-const rewrittenSection = extractSectionTextStrict(
-  rewritten,
-  rewriteSectionName
-)
-
-    if (!rewrittenSection) {
-      throw new Error('Failed to isolate rewritten section')
-    }
+  if (!rewrittenSection) {
+    throw new Error('Failed to isolate rewritten section')
+  }
 
   finalText = replaceSectionText(
     fullSourceText,
@@ -1566,7 +1565,6 @@ const rewrittenSection = extractSectionTextStrict(
 }
 
 console.log('finalText after:', finalText)
-
 
 if (rewriteTarget === 'left') {
   setCompareLeftText(finalText)
@@ -1580,17 +1578,15 @@ if (rewriteTarget === 'left') {
   setPerformanceSheet(finalText)
 }
 
-    setRewriteMessage('Rewrite complete')
-    setRewriteDone(true)
-    setTimeout(() => setRewriteDone(false), 1000)
-  } catch (err: any) {
-    console.error(err)
-    setRewriteMessage(err.message || 'Rewrite failed')
-  } finally {
-    setRewriteLoading(false)
-  }
+setRewriteMessage('Rewrite complete')
+setRewriteDone(true)
+setTimeout(() => setRewriteDone(false), 1000)
+} catch (err: any) {
+  console.error(err)
+  setRewriteMessage(err.message || 'Rewrite failed')
+} finally {
+  setRewriteLoading(false)
 }
-
 
 const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
