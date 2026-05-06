@@ -1742,6 +1742,8 @@ console.log('rewrittenLineCount:', rewrittenLineCount)
   )
 }
 
+let finalText = cleanedRewrite
+
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
