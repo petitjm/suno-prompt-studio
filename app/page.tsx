@@ -87,6 +87,14 @@ function SidebarItem({
   )
 }
 
+function normaliseSectionName(name: string): string {
+  return name
+    .replace(/[\[\]:]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+
 export default function Page() {
     const [performControlsOpen, setPerformControlsOpen] = useState(false)
   const supabase = React.useMemo(() => createClient(), [])
@@ -1300,10 +1308,10 @@ const isSectionHeader = (line: string) => {
   if (/^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(trimmed)) return true
 
   // Verse / Chorus / Bridge etc. without brackets or colon
-  const normalise = normaliseSectionName(trimmed)
+  const normalised = normaliseSectionName(trimmed)
 
-  return knownSectionNames.includes(normalised)
-}
+  return knownSectionNames.includes(normaliseSectionName(trimmed))
+
 
 
 
