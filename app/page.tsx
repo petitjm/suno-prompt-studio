@@ -1167,25 +1167,37 @@ const noCompareLocks = !lockCompareLeft && !lockCompareRight
 const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
+const parseSectionTarget = (sectionName: string) => {
+  const match = sectionName.match(/^(.*?)(?:\s+#(\d+))?$/)
 
-const normaliseSectionName = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/^\[/, '')
-    .replace(/\]$/, '')
-    .replace(/:$/, '')
+  return {
+    label: normaliseSectionName(match?.[1] || sectionName),
+    instance: match?.[2] ? Number(match[2]) : 1,
+  }
+}
+
 
 const extractSectionText = (text: string, sectionName: string) => {
   if (!sectionName.trim()) return text
 
-  const target = normaliseSectionName(sectionName)
+  const target = parseSectionTarget(sectionName)
   const lines = text.split('\n')
 
-  const startIndex = lines.findIndex((line) => {
-    if (!isSectionHeader(line)) return false
-    return normaliseSectionName(line) === target
-  })
+  let matchCount = 0
+  let startIndex = -1
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!isSectionHeader(lines[i])) continue
+
+    if (normaliseSectionName(lines[i]) === target.label) {
+      matchCount++
+
+      if (matchCount === target.instance) {
+        startIndex = i
+        break
+      }
+    }
+  }
 
   if (startIndex === -1) return text
 
@@ -1205,13 +1217,24 @@ const extractSectionText = (text: string, sectionName: string) => {
 const extractSectionTextStrict = (text: string, sectionName: string) => {
   if (!sectionName.trim()) return null
 
-  const target = normaliseSectionName(sectionName)
+  const target = parseSectionTarget(sectionName)
   const lines = text.split('\n')
 
-  const startIndex = lines.findIndex((line) => {
-    if (!isSectionHeader(line)) return false
-    return normaliseSectionName(line) === target
-  })
+  let matchCount = 0
+  let startIndex = -1
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!isSectionHeader(lines[i])) continue
+
+    if (normaliseSectionName(lines[i]) === target.label) {
+      matchCount++
+
+      if (matchCount === target.instance) {
+        startIndex = i
+        break
+      }
+    }
+  }
 
   if (startIndex === -1) return null
 
@@ -1320,13 +1343,24 @@ const replaceSectionText = (
 ) => {
   if (!sectionName.trim()) return fullText
 
-  const target = normaliseSectionName(sectionName)
+  const target = parseSectionTarget(sectionName)
   const lines = fullText.split('\n')
 
-  const startIndex = lines.findIndex((line) => {
-    if (!isSectionHeader(line)) return false
-    return normaliseSectionName(line) === target
-  })
+  let matchCount = 0
+  let startIndex = -1
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!isSectionHeader(lines[i])) continue
+
+    if (normaliseSectionName(lines[i]) === target.label) {
+      matchCount++
+
+      if (matchCount === target.instance) {
+        startIndex = i
+        break
+      }
+    }
+  }
 
   if (startIndex === -1) return fullText
 
@@ -1351,10 +1385,26 @@ const replaceSectionText = (
 
 
 const detectSections = (text: string) => {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => isSectionHeader(line))
+  const lines = text.split('\n')
+
+  const counts: Record<string, number> = {}
+  const result: string[] = []
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+
+    if (!isSectionHeader(line)) continue
+
+    const base = line.replace(/[\[\]:]/g, '').trim()
+
+    counts[base] = (counts[base] || 0) + 1
+
+    const label = `${base} #${counts[base]}`
+
+    result.push(label)
+  }
+
+  return result
 }
 
 
@@ -2299,10 +2349,10 @@ const hasChordLinesInRewriteSource = sourceForDetection
               <option value="">Select section</option>
 
               {detectedSections.map((section, i) => (
-                <option key={i} value={section}>
-                  {section}
-                </option>
-              ))}
+                  <option key={`${section}-${i}`} value={section}>
+                    {section}
+                  </option>
+                ))}
          </select>
     
      {detectedSections.length === 0 && (
