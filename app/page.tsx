@@ -1517,6 +1517,11 @@ STRICT RULES:
 - Do not split lines.
 - Do not add extra lines.
 - Do not remove lines.
+- Rewrite line 1 as line 1.
+- Rewrite line 2 as line 2.
+- Rewrite line 3 as line 3.
+- Continue one-for-one until all original lines are rewritten.
+- Do not create a new overall version of the section.
 
 TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
