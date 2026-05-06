@@ -1163,7 +1163,7 @@ const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
 
-const normalisedSectionName = (value: string) =>
+const normaliseSectionName = (value: string) =>
   value
     .trim()
     .toLowerCase()
@@ -1549,7 +1549,7 @@ let finalText = cleanedRewrite
 if (rewriteSectionOnly) {
   const rewrittenSection = extractSectionTextStrict(
       rewritten,
-      normalisedSectionName
+      normaliseSectionName
     )
 
     if (!rewrittenSection) {
@@ -1558,7 +1558,7 @@ if (rewriteSectionOnly) {
 
   finalText = replaceSectionText(
     fullSourceText,
-    normalisedSectionName,
+    normaliseSectionName,
     rewrittenSection
   )
 }
@@ -1580,7 +1580,7 @@ if (rewriteTarget === 'left') {
 
     setRewriteMessage('Rewrite complete')
     setRewriteDone(true)
-setTimeout(() => setRewriteDone(false), 1000)
+    setTimeout(() => setRewriteDone(false), 1000)
   } catch (err: any) {
     console.error(err)
     setRewriteMessage(err.message || 'Rewrite failed')
@@ -2122,7 +2122,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
     {rewriteSectionOnly && (
       <span>
-        <strong>Section:</strong> {normalisedSectionName || '—'}
+        <strong>Section:</strong> {normaliseSectionName || '—'}
       </span>
     )}
   </div>
