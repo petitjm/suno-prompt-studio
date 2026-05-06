@@ -1576,6 +1576,12 @@ if (rewriteSectionOnly) {
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
+
+    console.log('rewriteConstraint:', rewriteConstraint)
+console.log('originalLineCount:', originalLineCount)
+console.log('rewrittenLineCount:', rewrittenLineCount)
+
+
           if (rewriteConstraint === 'same_lines' && rewrittenLineCount !== originalLineCount) {
     throw new Error(
       `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
