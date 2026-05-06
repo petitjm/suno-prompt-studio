@@ -1711,14 +1711,16 @@ const cleanedRewrite = rewritten
 
 let finalText = cleanedRewrite
 
-const rewrittenSection =
+const rewrittenSectionRaw =
   rewriteConstraint === 'keep-lines'
     ? cleanedRewrite
     : extractSectionTextStrict(rewritten, rewriteSectionName)
 
-if (!rewrittenSection || !rewrittenSection.trim()) {
+if (!rewrittenSectionRaw || !rewrittenSectionRaw.trim()) {
   throw new Error('Failed to isolate rewritten section')
 }
+
+const rewrittenSection = rewrittenSectionRaw
 
   
 
