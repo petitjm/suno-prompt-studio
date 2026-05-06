@@ -1499,10 +1499,7 @@ const sourceText = rewriteSectionOnly
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: 'rewrite',
-       const originalLineCount = sourceText
-  .split('\n')
-  .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
-  .length
+      
 
   instruction: rewriteSectionOnly
   ? `
