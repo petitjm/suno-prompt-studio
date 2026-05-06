@@ -1739,24 +1739,6 @@ if (rewriteSectionOnly) {
   )
 }
 
-
-
-          if (rewriteConstraint === 'keep-lines' && rewrittenLineCount !== originalLineCount) {
-  throw new Error(
-    `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
-  )
-}
-
-
-
-  finalText = replaceSectionText(
-    fullSourceText,
-    rewriteSectionName,
-    safeRewrittenSection
-  )
-
-}
-
 console.log('finalText after:', finalText)
 
 if (rewriteTarget === 'left') {
