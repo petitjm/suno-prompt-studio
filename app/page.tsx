@@ -1722,8 +1722,6 @@ if (!rewrittenSectionRaw || !rewrittenSectionRaw.trim()) {
 
 const rewrittenSection = rewrittenSectionRaw
 
-  
-
   const rewrittenLineCount = rewrittenSection
     .split('\n')
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
