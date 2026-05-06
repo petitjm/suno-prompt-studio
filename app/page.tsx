@@ -1687,7 +1687,9 @@ if (
   lastLineCount !== originalLineCount
 ) {
   throw new Error(
-    `Rewrite changed the line count (${originalLineCount} → ${lastLineCount}) after 3 attempts. Try a looser structure option.`
+    `throw new Error(
+  `Couldn’t keep ${originalLineCount} lines after 3 attempts (got ${lastLineCount}). Try again or untick “keep lines”.`
+)
   )
 }
 
@@ -1701,7 +1703,7 @@ console.log('fullSourceText before:', fullSourceText)
 
 
 if (!rewritten || !rewritten.trim()) {
-  throw new Error('Rewrite returned empty output — AI could not satisfy constraints')
+  throw new Error('Rewrite failed — AI could not produce a valid version. Try again.')
 }
 
 // 🔥 Clean AI output (remove any section headers it may have added)
@@ -1712,15 +1714,14 @@ const cleanedRewrite = rewritten
 
 let finalText = cleanedRewrite
 
-if (rewriteSectionOnly) {
-  const rewrittenSection = extractSectionTextStrict(
-    rewritten,
-    rewriteSectionName
-  )
+const rewrittenSection =
+  rewriteConstraint === 'keep-lines'
+    ? cleanedRewrite
+    : extractSectionTextStrict(rewritten, rewriteSectionName)
 
-  if (!rewrittenSection) {
-    throw new Error('Failed to isolate rewritten section')
-  }
+if (!rewrittenSection || !rewrittenSection.trim()) {
+  throw new Error('Failed to isolate rewritten section')
+}
 
   
 
@@ -1763,7 +1764,11 @@ if (rewriteTarget === 'left') {
   setPerformanceSheet(finalText)
 }
 
-setRewriteMessage('Rewrite complete')
+if (rewriteConstraint === 'keep-lines') {
+  setRewriteMessage(`Rewrite complete — ${originalLineCount} lines preserved`)
+} else {
+  setRewriteMessage('Rewrite complete')
+}
 setRewriteDone(true)
 setTimeout(() => setRewriteDone(false), 1000)
 } catch (err: any) {
