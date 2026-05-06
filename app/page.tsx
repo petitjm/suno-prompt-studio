@@ -309,6 +309,11 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
     try {
       setDebugOutput('Loading projects...')
 
+      const originalLineCount = sourceText
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+    .length
+
       const res = await fetch('/api/projects')
       const text = await res.text()
 
@@ -1561,10 +1566,7 @@ if (rewriteSectionOnly) {
     throw new Error('Failed to isolate rewritten section')
   }
 
-  const originalLineCount = sourceText
-    .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
-    .length
+  
 
   const rewrittenLineCount = rewrittenSection
     .split('\n')
