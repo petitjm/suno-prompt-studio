@@ -1711,25 +1711,33 @@ const cleanedRewrite = rewritten
 
 let finalText = cleanedRewrite
 
-const rewrittenSectionRaw =
-  rewriteConstraint === 'keep-lines'
-    ? cleanedRewrite
-    : extractSectionTextStrict(rewritten, rewriteSectionName)
+if (rewriteSectionOnly) {
+  const safeRewrittenSection =
+    rewriteConstraint === 'keep-lines'
+      ? cleanedRewrite
+      : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
 
-const safeRewrittenSection =
-  rewriteConstraint === 'keep-lines'
-    ? cleanedRewrite
-    : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
-
-if (!safeRewrittenSection.trim()) {
-  throw new Error('Failed to isolate rewritten section')
-}
+  if (!safeRewrittenSection.trim()) {
+    throw new Error('Failed to isolate rewritten section')
+  }
 
   const rewrittenLineCount = safeRewrittenSection
     .split('\n')
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
+  if (rewriteConstraint === 'keep-lines' && rewrittenLineCount !== originalLineCount) {
+    throw new Error(
+      `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
+    )
+  }
+
+  finalText = replaceSectionText(
+    fullSourceText,
+    rewriteSectionName,
+    safeRewrittenSection
+  )
+}
 
     console.log('rewriteConstraint:', rewriteConstraint)
 console.log('originalLineCount:', originalLineCount)
