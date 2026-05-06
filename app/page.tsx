@@ -87,12 +87,7 @@ function SidebarItem({
   )
 }
 
-function normaliseSectionName(name: string): string {
-  return name
-    .replace(/[\[\]:]/g, '')
-    .trim()
-    .toLowerCase()
-}
+
 
 
 export default function Page() {
@@ -1554,11 +1549,10 @@ let finalText = cleanedRewrite
 
 
 
-if (rewriteSectionOnly) {
-  const rewrittenSection = extractSectionTextStrict(
-      rewritten,
-      normaliseSectionName
-    )
+const rewrittenSection = extractSectionTextStrict(
+  rewritten,
+  rewriteSectionName
+)
 
     if (!rewrittenSection) {
       throw new Error('Failed to isolate rewritten section')
@@ -1566,7 +1560,7 @@ if (rewriteSectionOnly) {
 
   finalText = replaceSectionText(
     fullSourceText,
-    normaliseSectionName,
+    rewriteSectionName,
     rewrittenSection
   )
 }
