@@ -1606,6 +1606,24 @@ STRICT RULES:
 - Do NOT include section headers like [Chorus].
 - Output ONLY the numbered rewritten lines.
 
+
+STYLE RULES:
+- Maintain strong lyrical flow and natural phrasing for singing.
+- Prioritise a clear emotional hook, especially in chorus sections.
+- Use consistent rhythm across lines (similar syllable feel).
+- Keep line endings musically satisfying (avoid awkward phrasing).
+
+- Where appropriate, use light rhyme or near-rhyme between lines.
+- Avoid over-complex wording — keep it direct and singable.
+
+- The section should feel cohesive and connected, not like separate lines.
+- Preserve the core meaning and emotional direction of the original.
+
+- For chorus sections:
+  - Emphasise memorability and repetition strength
+  - Make at least one line feel like a central hook
+
+
 TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
 `
