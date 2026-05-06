@@ -1495,14 +1495,28 @@ const sourceText = rewriteSectionOnly
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-    const numberedSourceText =
-      rewriteSectionOnly && rewriteConstraint === 'keep-lines'
-        ? sourceText
-            .split('\n')
-            .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
-            .map((line, index) => `${index + 1}. ${line}`)
-            .join('\n')
-        : sourceText
+    const structuredSourceText =
+  rewriteSectionOnly && rewriteConstraint === 'keep-lines'
+    ? (() => {
+        const lines = sourceText.split('\n')
+
+        const lyricLines = lines.filter(
+          (line) => line.trim().length > 0 && !isSectionHeader(line)
+        )
+
+        const numbered = lyricLines
+          .map((line, index) => `${index + 1}. ${line}`)
+          .join('\n')
+
+        return `
+        FULL SECTION (for context):
+        ${sourceText}
+
+        REWRITE THESE NUMBERED LINES:
+        ${numbered}
+        `
+              })()
+            : sourceText
 
 
 const runRewriteAttempt = async () => {
@@ -1515,32 +1529,29 @@ const runRewriteAttempt = async () => {
         ? `
 STRICT RULES:
 - Rewrite ONLY the provided section.
-- Return lyric lines ONLY.
-- DO NOT include section headers.
-- DO NOT add [Verse], [Chorus], etc.
-- You MUST return exactly ${originalLineCount} lyric lines.
-- Count before replying.
-- Do not merge lines.
-- Do not split lines.
-- Do not add extra lines.
-- Do not remove lines.
-- The input lines are numbered.
-- Return exactly one rewritten line for each numbered input line.
-- Keep the same numbering: 1., 2., 3., etc.
+- Preserve the same theme, meaning, and emotional tone.
+- Treat the section as one connected musical idea.
+
+- The input contains a full section for context.
+- You MUST use that context when rewriting.
+
+- Rewrite ONLY the numbered lines.
+- Return exactly one rewritten line for each numbered line.
+
+- Keep numbering exactly: 1., 2., 3., etc.
 - Do not skip numbers.
 - Do not add numbers.
-- Do not combine numbered lines.
-- Rewrite line 1 as line 1.
-- Rewrite line 2 as line 2.
-- Rewrite line 3 as line 3.
-- Continue one-for-one until all original lines are rewritten.
-- Do not create a new overall version of the section.
+- Do not merge lines.
+- Do not split lines.
+
+- Do NOT include section headers like [Chorus].
+- Output ONLY the numbered rewritten lines.
 
 TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
 `
         : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
-      lyrics: numberedSourceText,
+      lyrics: structuredSourceText,
     }),
   })
 
