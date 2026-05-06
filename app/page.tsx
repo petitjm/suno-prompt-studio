@@ -1492,22 +1492,26 @@ const sourceText = rewriteSectionOnly
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: 'rewrite',
-        instruction: rewriteSectionOnly
-              ? `
-            STRICT RULES:
-            - Rewrite ONLY the provided section
-            - DO NOT add any new section headers
-            - DO NOT add [Verse], [Chorus], etc.
-            - DO NOT change structure
-            - KEEP the EXACT same number of lines
-            - KEEP line breaks identical
-            - DO NOT expand or shorten
+       const originalLineCount = sourceText
+  .split('\n')
+  .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+  .length
 
-            TASK:
-            ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
-            `
-              : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
-        lyrics: sourceText,
+  instruction: rewriteSectionOnly
+  ? `
+        STRICT RULES:
+        - Rewrite ONLY the provided section
+        - Return lyric lines ONLY
+        - DO NOT include section headers
+        - DO NOT add [Verse], [Chorus], etc.
+        - You MUST return exactly ${originalLineCount} lyric lines
+        - Do not add or remove lines
+        - Keep line breaks identical
+
+        TASK:
+        ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
+        `
+          : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
       }),
     })
 
@@ -1558,19 +1562,20 @@ if (rewriteSectionOnly) {
   }
 
   const originalLineCount = sourceText
-  .split('\n')
-  .filter((line) => line.trim().length > 0).length
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+    .length
 
-const rewrittenLineCount = rewrittenSection
-  .split('\n')
-  .filter((line) => line.trim().length > 0).length
+  const rewrittenLineCount = rewrittenSection
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+    .length
 
-if (rewriteConstraint === 'same_lines' && rewrittenLineCount !== originalLineCount) {
-  throw new Error(
-    `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again or use a looser structure option.`
-  )
-}
-
+  if (rewriteConstraint === 'same_lines' && rewrittenLineCount !== originalLineCount) {
+    throw new Error(
+      `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
+    )
+  }
 
   finalText = replaceSectionText(
     fullSourceText,
