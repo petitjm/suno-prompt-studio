@@ -1498,51 +1498,81 @@ const sourceText = rewriteSectionOnly
 
 
 
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mode: 'rewrite',
-      
+const runRewriteAttempt = async () => {
+  const res = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode: 'rewrite',
+      instruction: rewriteSectionOnly
+        ? `
+STRICT RULES:
+- Rewrite ONLY the provided section.
+- Return lyric lines ONLY.
+- DO NOT include section headers.
+- DO NOT add [Verse], [Chorus], etc.
+- You MUST return exactly ${originalLineCount} lyric lines.
+- Count before replying.
+- Do not merge lines.
+- Do not split lines.
+- Do not add extra lines.
+- Do not remove lines.
 
-  instruction: rewriteSectionOnly
-  ? `
-        STRICT RULES:
-        - Rewrite ONLY the provided section
-        - Return lyric lines ONLY
-        - DO NOT include section headers
-        - DO NOT add [Verse], [Chorus], etc.
-        - You MUST return exactly ${originalLineCount} lyric lines
-        - Do not add or remove lines
-        - Keep line breaks identical
-        - You MUST return exactly ${originalLineCount} lyric lines.
-        - Count the lines before replying.
-        - If the original section has ${originalLineCount} lyric lines, your rewritten section must also have ${originalLineCount} lyric lines.
-        - Do not merge lines.
-        - Do not split lines.
+TASK:
+${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
+`
+        : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
+      lyrics: sourceText,
+    }),
+  })
 
-        TASK:
-        ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
-        `
-          : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
-      }),
-    })
+  const data = await readJsonSafe(res)
 
-    
+  if (!res.ok) {
+    throw new Error(data.error || 'Rewrite failed')
+  }
 
-    const data = await readJsonSafe(res)
+  return (
+    data.lyrics_full ||
+    data.lyrics ||
+    data.rewrite ||
+    data.text ||
+    ''
+  )
+}
 
-    if (!res.ok) {
-      throw new Error(data.error || 'Rewrite failed')
-    }
+let rewritten = ''
+let lastLineCount = originalLineCount
 
-    const rewritten =
-   
-      data.lyrics_full ||
-      data.lyrics ||
-      data.rewrite ||
-      data.text ||
-      ''
+for (let attempt = 1; attempt <= 3; attempt++) {
+  rewritten = await runRewriteAttempt()
+
+  const testSection =
+    extractSectionTextStrict(rewritten, rewriteSectionName) || rewritten
+
+  lastLineCount = testSection
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+    .length
+
+  if (!rewriteSectionOnly || rewriteConstraint !== 'keep-lines') {
+    break
+  }
+
+  if (lastLineCount === originalLineCount) {
+    break
+  }
+}
+
+if (
+  rewriteSectionOnly &&
+  rewriteConstraint === 'keep-lines' &&
+  lastLineCount !== originalLineCount
+) {
+  throw new Error(
+    `Rewrite changed the line count (${originalLineCount} → ${lastLineCount}) after 3 attempts. Try a looser structure option.`
+  )
+}
 
 
        console.log('rewriteTarget:', rewriteTarget)
