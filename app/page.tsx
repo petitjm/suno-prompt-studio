@@ -1739,16 +1739,7 @@ if (rewriteSectionOnly) {
   )
 }
 
-    console.log('rewriteConstraint:', rewriteConstraint)
-console.log('originalLineCount:', originalLineCount)
-console.log('rewrittenLineCount:', rewrittenLineCount)
-
-
-          if (rewriteConstraint === 'keep-lines' && rewrittenLineCount !== originalLineCount) {
-  throw new Error(
-    `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
-  )
-}
+  
 
 
 
