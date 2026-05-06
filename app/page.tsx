@@ -1557,6 +1557,21 @@ if (rewriteSectionOnly) {
     throw new Error('Failed to isolate rewritten section')
   }
 
+  const originalLineCount = sourceText
+  .split('\n')
+  .filter((line) => line.trim().length > 0).length
+
+const rewrittenLineCount = rewrittenSection
+  .split('\n')
+  .filter((line) => line.trim().length > 0).length
+
+if (rewriteConstraint === 'same_lines' && rewrittenLineCount !== originalLineCount) {
+  throw new Error(
+    `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again or use a looser structure option.`
+  )
+}
+
+
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
