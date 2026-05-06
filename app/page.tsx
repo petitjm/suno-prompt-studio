@@ -1686,12 +1686,12 @@ if (
   rewriteConstraint === 'keep-lines' &&
   lastLineCount !== originalLineCount
 ) {
-    throw new Error(
-      `Couldn’t keep ${originalLineCount} lines after 3 attempts (got ${lastLineCount}). Try again or untick “keep lines”.`
-    )
+  throw new Error(
+    `Couldn’t keep ${originalLineCount} lines after 3 attempts (got ${lastLineCount}). Try again or untick “keep lines”.`
+  )
+}
 
-
-       console.log('rewriteTarget:', rewriteTarget)
+console.log('rewriteTarget:', rewriteTarget)
 console.log('rewriteSectionOnly:', rewriteSectionOnly)
 console.log('rewriteSectionName:', rewriteSectionName)
 console.log('sourceText:', sourceText)
