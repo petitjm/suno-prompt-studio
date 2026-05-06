@@ -309,10 +309,7 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
     try {
       setDebugOutput('Loading projects...')
 
-      const originalLineCount = sourceText
-    .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
-    .length
+      
 
       const res = await fetch('/api/projects')
       const text = await res.text()
@@ -1491,6 +1488,11 @@ const sourceText = rewriteSectionOnly
   try {
     setRewriteLoading(true)
     setRewriteMessage('Rewriting...')
+
+    const originalLineCount = sourceText
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+    .length
 
     const res = await fetch('/api/generate', {
       method: 'POST',
