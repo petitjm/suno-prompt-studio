@@ -1716,11 +1716,12 @@ const rewrittenSectionRaw =
     ? cleanedRewrite
     : extractSectionTextStrict(rewritten, rewriteSectionName)
 
-if (!rewrittenSectionRaw || !rewrittenSectionRaw.trim()) {
+const rewrittenSection =
+  typeof rewrittenSectionRaw === 'string' ? rewrittenSectionRaw : ''
+
+if (!rewrittenSection.trim()) {
   throw new Error('Failed to isolate rewritten section')
 }
-
-const rewrittenSection = rewrittenSectionRaw
 
   const rewrittenLineCount = rewrittenSection
     .split('\n')
