@@ -1495,7 +1495,14 @@ const sourceText = rewriteSectionOnly
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-
+    const numberedSourceText =
+      rewriteSectionOnly && rewriteConstraint === 'keep-lines'
+        ? sourceText
+            .split('\n')
+            .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+            .map((line, index) => `${index + 1}. ${line}`)
+            .join('\n')
+        : sourceText
 
 
 const runRewriteAttempt = async () => {
@@ -1517,6 +1524,12 @@ STRICT RULES:
 - Do not split lines.
 - Do not add extra lines.
 - Do not remove lines.
+- The input lines are numbered.
+- Return exactly one rewritten line for each numbered input line.
+- Keep the same numbering: 1., 2., 3., etc.
+- Do not skip numbers.
+- Do not add numbers.
+- Do not combine numbered lines.
 - Rewrite line 1 as line 1.
 - Rewrite line 2 as line 2.
 - Rewrite line 3 as line 3.
@@ -1527,7 +1540,7 @@ TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
 `
         : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
-      lyrics: sourceText,
+      lyrics: numberedSourceText,
     }),
   })
 
@@ -1594,7 +1607,8 @@ if (!rewritten.trim()) {
 
 // 🔥 Clean AI output (remove any section headers it may have added)
 const cleanedRewrite = rewritten
-  .replace(/^\s*\[[^\]]+\]\s*$/gm, '') // remove lines like [Chorus]
+  .replace(/^\s*\[[^\]]+\]\s*$/gm, '')
+  .replace(/^\s*\d+\.\s*/gm, '')
   .trim()
 
 let finalText = cleanedRewrite
