@@ -1461,7 +1461,7 @@ const runRewriteLab = async () => {
           : performanceSheet
 
 
-const runRewriteLab = async () => {
+
 
 const sourceText = rewriteSectionOnly
   ? extractSectionText(fullSourceText, normalizedSectionName)
@@ -1596,18 +1596,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
   .split('\n')
   .some((line) => looksLikeChordLine(line))
 
-
-
   return (
-
-
-
-
-
-
-
-
-
 
     <div className="flex h-screen bg-gray-900 text-white">
       <div
@@ -1678,8 +1667,6 @@ const hasChordLinesInRewriteSource = sourceForDetection
   placeholder='Paste chord JSON here'
   className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
 />
-
- 
 
 </div>
    
@@ -2115,7 +2102,6 @@ const hasChordLinesInRewriteSource = sourceForDetection
 </div>
 
 
-
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
  <div className="flex items-center justify-between mb-1 leading-tight">
   <h3 className="text-lg font-semibold">Rewrite Lab</h3>
@@ -2197,302 +2183,299 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
 
 </div>
-<div className="flex flex-col md:flex-row gap-2 mb-2">
-  <label className="flex items-center gap-2 text-sm text-gray-300">
-    <input
+    <div className="flex flex-col md:flex-row gap-2 mb-2">
+      <label className="flex items-center gap-2 text-sm text-gray-300">
+        <input
+          type="checkbox"
+          checked={rewriteSectionOnly}
+          disabled={detectedSections.length === 0}
+          onChange={(e) => setRewriteSectionOnly(e.target.checked)}
+        />
+        Rewrite section only
+      </label>
 
+         <select
+          value={rewriteSectionName}
+          onChange={(e) => setRewriteSectionName(e.target.value)}
+          disabled={!rewriteSectionOnly || detectedSections.length === 0}
+          className="flex-1 px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
+            >
+              <option value="">Select section</option>
 
+              {detectedSections.map((section, i) => (
+                <option key={i} value={section}>
+                  {section}
+                </option>
+              ))}
+         </select>
+    
+     {detectedSections.length === 0 && (
+      <div className="text-xs text-yellow-400 mt-1">
+        No sections detected — full rewrite only
+      </div>
+    )}
 
-
-        type="checkbox"
-  checked={rewriteSectionOnly}
-  disabled={detectedSections.length === 0}
-  onChange={(e) => setRewriteSectionOnly(e.target.checked)}
-    />
-    Rewrite section only
-  </label>
-
- <select
-  value={rewriteSectionName}
-  onChange={(e) => setRewriteSectionName(e.target.value)}
-  disabled={!rewriteSectionOnly || detectedSections.length === 0}
-  className="flex-1 px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
->
-  <option value="">Select section</option>
-
-  {detectedSections.map((section, i) => (
-    <option key={i} value={section}>
-      {section}
-    </option>
-  ))}
-</select>
-{detectedSections.length === 0 && (
-  <div className="text-xs text-yellow-400 mt-1">
-    No sections detected — full rewrite only
-  </div>
-)}
-
-</div>
-{!rewriteSectionOnly && hasChordLinesInRewriteSource && (
-  <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
-    <div>
-      Chords detected. Rewrite is available only after removing chord lines.
     </div>
 
-    <div className="mt-2 flex gap-2">
+        {!rewriteSectionOnly && hasChordLinesInRewriteSource && (
+          <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
+            <div>
+              Chords detected. Rewrite is available only after removing chord lines.
+            </div>
+
+            <div className="mt-2 flex gap-2">
 
    
 
 
-      <button
-        type="button"
-        onClick={removeChordsFromRewriteSource}
-        className={`px-3 py-1 rounded text-white text-xs transition ${
-          extractingLyricsOnly ? 'bg-green-600 scale-95' : 'bg-yellow-600'
-        }`}
-      >
-        {extractingLyricsOnly ? 'Removed ✓' : 'Remove chords'}
-      </button>
+              <button
+                type="button"
+                onClick={removeChordsFromRewriteSource}
+                className={`px-3 py-1 rounded text-white text-xs transition ${
+                  extractingLyricsOnly ? 'bg-green-600 scale-95' : 'bg-yellow-600'
+                }`}
+              >
+                {extractingLyricsOnly ? 'Removed ✓' : 'Remove chords'}
+              </button>
 
-      <button
-        type="button"
-        onClick={() => setRewriteMessage('Rewrite cancelled.')}
-        className="px-3 py-1 rounded bg-gray-600 text-white text-xs"
-      >
-        No
-      </button>
-    </div>
-  </div>
-)}
-{!rewriteInstruction.trim() && (
-  <p className="text-xs text-yellow-400 mb-2">
-    Choose a rewrite preset or type an instruction.
-  </p>
-)}
- <button
-  type="button"
-  onClick={runRewriteLab}
-  disabled={
-      rewriteLoading ||
-      !rewriteInstruction.trim() ||
-      (!rewriteSectionOnly && hasChordLinesInRewriteSource)
-    }
-  className={`px-4 py-2 rounded text-white transition ${
-    rewriteLoading
-      ? 'bg-gray-600 scale-95'
-      : rewriteDone
-        ? 'bg-green-600'
-        : 'bg-blue-600'
-  } disabled:opacity-40`}
->
-  {rewriteLoading ? 'Rewriting...' : rewriteDone ? 'Rewritten ✓' : 'Run Rewrite'}
-</button>
+              <button
+                type="button"
+                onClick={() => setRewriteMessage('Rewrite cancelled.')}
+                className="px-3 py-1 rounded bg-gray-600 text-white text-xs"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        )}
+        {!rewriteInstruction.trim() && (
+          <p className="text-xs text-yellow-400 mb-2">
+            Choose a rewrite preset or type an instruction.
+          </p>
+        )}
 
-  {rewriteMessage && (
-    <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
-  )}
+        <button
+          type="button"
+          onClick={runRewriteLab}
+          disabled={
+              rewriteLoading ||
+              !rewriteInstruction.trim() ||
+              (!rewriteSectionOnly && hasChordLinesInRewriteSource)
+            }
+          className={`px-4 py-2 rounded text-white transition ${
+            rewriteLoading
+              ? 'bg-gray-600 scale-95'
+              : rewriteDone
+                ? 'bg-green-600'
+                : 'bg-blue-600'
+          } disabled:opacity-40`}
+        >
+          {rewriteLoading ? 'Rewriting...' : rewriteDone ? 'Rewritten ✓' : 'Run Rewrite'}
+        </button>
+
+          {rewriteMessage && (
+            <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
+          )}
 </div>
 
-
-
-
-<input
-  value={chordVersionTitle}
-  onChange={(e) => setChordVersionTitle(e.target.value)}
-  placeholder="Chord version title (e.g. Capo 3, Fingerstyle, Simplified)"
-  className="mt-3 w-full px-3 py-2 rounded bg-gray-700 text-white"
-/>
+    <input
+      value={chordVersionTitle}
+      onChange={(e) => setChordVersionTitle(e.target.value)}
+      placeholder="Chord version title (e.g. Capo 3, Fingerstyle, Simplified)"
+      className="mt-3 w-full px-3 py-2 rounded bg-gray-700 text-white"
+    />
 
 
              
-{chordVersions.length > 0 && (
-  <div className="mb-3 max-w-3xl">
-    <h3 className="text-sm text-gray-400 mb-2">Saved Chord Versions</h3>
+    {chordVersions.length > 0 && (
+      <div className="mb-3 max-w-3xl">
+        <h3 className="text-sm text-gray-400 mb-2">Saved Chord Versions</h3>
 
-    <select
-      value={activeChordVersionId || ''}
-      onChange={(e) => {
-        const id = e.target.value
-        setActiveChordVersionId(id)
+        <select
+          value={activeChordVersionId || ''}
+          onChange={(e) => {
+            const id = e.target.value
+            setActiveChordVersionId(id)
 
-        const selected = chordVersions.find((v) => v.id === id)
-        if (selected?.chord_data) {
-          setChords(selected.chord_data)
-        }
-      }}
-      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-    >
-      {chordVersions.map((v, i) => (
-        <option key={v.id} value={v.id}>
-          {v.title || `Chord Version ${chordVersions.length - i}`}
-          {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
-
-
-<div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-  <h3 className="text-lg font-semibold mb-3">Chord Data</h3>
-
-  <textarea
-    value={JSON.stringify(chords || {}, null, 2)}
-    onChange={(e) => {
-      try {
-        setChords(JSON.parse(e.target.value))
-      } catch {
-        // Ignore invalid JSON while typing
-      }
-    }}
-    placeholder='Paste chord JSON here, e.g. {"key":"G","verse":"G | D | Em | C"}'
-    className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
-  />
-</div>
+            const selected = chordVersions.find((v) => v.id === id)
+            if (selected?.chord_data) {
+              setChords(selected.chord_data)
+            }
+          }}
+          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+        >
+          {chordVersions.map((v, i) => (
+            <option key={v.id} value={v.id}>
+              {v.title || `Chord Version ${chordVersions.length - i}`}
+              {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+    )}
 
 
-<p className="text-xs text-gray-400 mb-2">
-  activeProject: {activeProject ? 'yes' : 'no'} | chords:{' '}
-  {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
-</p>
+    <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+      <h3 className="text-lg font-semibold mb-3">Chord Data</h3>
+
+      <textarea
+        value={JSON.stringify(chords || {}, null, 2)}
+        onChange={(e) => {
+          try {
+            setChords(JSON.parse(e.target.value))
+          } catch {
+            // Ignore invalid JSON while typing
+          }
+        }}
+        placeholder='Paste chord JSON here, e.g. {"key":"G","verse":"G | D | Em | C"}'
+        className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
+      />
+    </div>
+
+
+    <p className="text-xs text-gray-400 mb-2">
+      activeProject: {activeProject ? 'yes' : 'no'} | chords:{' '}
+      {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
+    </p>
 
 
 
-<div className="flex gap-2 mb-4">
-  <button
-    type="button"
-    onClick={saveChords}
-    disabled={!activeProject}
-    className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
-  >
-    Save Chords
-  </button>
-</div>
+    <div className="flex gap-2 mb-4">
+      <button
+        type="button"
+        onClick={saveChords}
+        disabled={!activeProject}
+        className="px-4 py-2 rounded bg-yellow-600 text-white disabled:opacity-40"
+      >
+        Save Chords
+      </button>
+    </div>
 
 
 
     {chordVersions.length > 0 && (
-    <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-    <h3 className="text-sm text-gray-400 mb-2">Chord Versions</h3>
+        <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+             <h3 className="text-sm text-gray-400 mb-2">Chord Versions</h3>
 
-    <select
-      value={activeChordVersionId || ''}
-      onChange={(e) => {
-        const id = e.target.value
-        setActiveChordVersionId(id)
+                <select
+                  value={activeChordVersionId || ''}
+                  onChange={(e) => {
+                    const id = e.target.value
+                    setActiveChordVersionId(id)
 
-        const selected = chordVersions.find(v => v.id === id)
-        if (selected?.chord_data) {
-          setChords(selected.chord_data)
-        }
-      }}
-      className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-    >
-      {chordVersions.map((v, i) => (
-        <option key={v.id} value={v.id}>
-          {v.title || `Version ${chordVersions.length - i}`} {v.created_at ? `(${formatUkDateTime(v.created_at)})` : ''}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
+                    const selected = chordVersions.find(v => v.id === id)
+                    if (selected?.chord_data) {
+                      setChords(selected.chord_data)
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  {chordVersions.map((v, i) => (
+                    <option key={v.id} value={v.id}>
+                      {v.title || `Version ${chordVersions.length - i}`} {v.created_at ? `(${formatUkDateTime(v.created_at)})` : ''}
+                    </option>
+                  ))}
+                </select>
+        </div>
+    )}
 
 
     <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
-    <div className="flex items-center justify-between mb-3">
-  <h2 className="text-lg font-semibold">Projects</h2>
+        <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Projects</h2>
 
-  <button
-    type="button"
-    onClick={() => loadProjects()}
-    className="px-3 py-1 rounded bg-gray-600 text-white text-sm"
-  >
-    Refresh
-  </button>
-</div>
+              <button
+                type="button"
+                onClick={() => loadProjects()}
+                className="px-3 py-1 rounded bg-gray-600 text-white text-sm"
+              >
+                Refresh
+              </button>
+        </div>
 
-      {projectMessage && (
-        <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
-      )}
+          {projectMessage && (
+            <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
+          )}
 
-      <div className="flex gap-2 mb-3">
-        <input
-          value={newProjectName}
-          onChange={(e) => setNewProjectName(e.target.value)}
-          placeholder="New project name"
-          className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
-        />
+          <div className="flex gap-2 mb-3">
+            <input
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="New project name"
+              className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
+             />
 
-        <button
-          type="button"
-          onClick={createProject}
-          className="px-4 py-2 rounded bg-blue-600 text-white"
-        >
-          Create
-        </button>
-       </div>
+            <button
+              type="button"
+              onClick={createProject}
+              className="px-4 py-2 rounded bg-blue-600 text-white"
+            >
+              Create
+            </button>
+          </div>
 
-      <div className="flex gap-2 mb-3">
-        <button
-          type="button"
-          onClick={renameProject}
-          disabled={!activeProject}
-          className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
-        >
-          Rename
-        </button>
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={renameProject}
+              disabled={!activeProject}
+              className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+            >
+              Rename
+            </button>
 
-        <button
-          type="button"
-          onClick={duplicateProject}
-          disabled={!activeProject}
-          className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
-        >
-          Duplicate
-        </button>
+            <button
+              type="button"
+              onClick={duplicateProject}
+              disabled={!activeProject}
+              className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+            >
+              Duplicate
+            </button>
 
-        <button
-          type="button"
-          onClick={deleteProject}
-          disabled={!activeProject}
-          className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
-        >
-          Delete
-        </button>
+            <button
+              type="button"
+              onClick={deleteProject}
+              disabled={!activeProject}
+              className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
+            >
+              Delete
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {projects.map((project) => (
+              <button
+                key={project.id}
+                type="button"
+                onClick={() => setActiveProject(project)}
+                className={`w-full text-left px-3 py-2 rounded ${
+                  activeProject?.id === project.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-200'
+                }`}
+              >
+                <div className="font-medium">{project.title}</div>
+                <div className="text-xs opacity-70">{project.id}</div>
+              </button>
+            ))}
+          </div>
+
+          {activeProject && (
+            <p className="mt-3 text-sm text-green-400">
+              Active project: {activeProject.title}
+            </p>
+          )}
+    
       </div>
-
-      <div className="space-y-2">
-        {projects.map((project) => (
-          <button
-            key={project.id}
-            type="button"
-            onClick={() => setActiveProject(project)}
-            className={`w-full text-left px-3 py-2 rounded ${
-              activeProject?.id === project.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-200'
-            }`}
-          >
-            <div className="font-medium">{project.title}</div>
-            <div className="text-xs opacity-70">{project.id}</div>
-          </button>
-        ))}
-      </div>
-
-      {activeProject && (
-        <p className="mt-3 text-sm text-green-400">
-          Active project: {activeProject.title}
-        </p>
-      )}
-    </div>
 
 
 
               {debugOutput && (
-                <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
-                  {debugOutput}
-                </pre>
-              )}
+                  <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
+                      {debugOutput}
+                  </pre>
+               )}
             </div>
           )}
 
@@ -2543,66 +2526,67 @@ const hasChordLinesInRewriteSource = sourceForDetection
             </div>
           )}
 
-{mode === 'perform' && (
-  <div className="relative h-full">
-    <button
-      type="button"
-      onClick={() => setPerformControlsOpen((open) => !open)}
-      className="fixed right-6 top-20 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
-    >
-      {performControlsOpen ? 'Hide Controls' : 'Show Controls'}
-    </button>
+            {mode === 'perform' && (
+              <div className="relative h-full">
+                <button
+                  type="button"
+                  onClick={() => setPerformControlsOpen((open) => !open)}
+                  className="fixed right-6 top-20 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
+                >
+                  {performControlsOpen ? 'Hide Controls' : 'Show Controls'}
+                </button>
 
-    <SongSheet
-      performanceSheet={performanceSheet}
-      performanceSections={performanceSections}
-      performanceFontSize={24}
-      activePerformanceSectionId={activePerformanceSectionId}
-      performanceSectionRefs={performanceSectionRefs}
-    />
+                <SongSheet
+                  performanceSheet={performanceSheet}
+                  performanceSections={performanceSections}
+                  performanceFontSize={24}
+                  activePerformanceSectionId={activePerformanceSectionId}
+                  performanceSectionRefs={performanceSectionRefs}
+                />
 
-    {performControlsOpen && (
-     <div className="fixed right-0 top-12 h-[calc(100vh-3rem)] w-[420px] max-w-[90vw] z-40 bg-gray-900 border-l border-gray-700 shadow-2xl overflow-auto p-4">
-        <div className="mb-4">
-  <h2 className="text-lg font-semibold">Performance Controls</h2>
-</div>
+                    {performControlsOpen && (
+                      <div className="fixed right-0 top-12 h-[calc(100vh-3rem)] w-[420px] max-w-[90vw] z-40 bg-gray-900 border-l border-gray-700 shadow-2xl overflow-auto p-4">
+                        <div className="mb-4">
+                            <h2 className="text-lg font-semibold">Performance Controls</h2>
+                        </div>
 
-        <RehearsePanel
-          previewSection={previewSection}
-          setPreviewSection={setPreviewSection}
-          previewPattern={previewPattern}
-          setPreviewPattern={setPreviewPattern}
-          previewInstrument={previewInstrument}
-          setPreviewInstrument={setPreviewInstrument}
-          previewFeel={previewFeel}
-          setPreviewFeel={setPreviewFeel}
-          previewTempo={previewTempo}
-          setPreviewTempo={setPreviewTempo}
-          previewLoop={previewLoop}
-          setPreviewLoop={setPreviewLoop}
-          previewIncludeBass={previewIncludeBass}
-          setPreviewIncludeBass={setPreviewIncludeBass}
-          previewIncludeClick={previewIncludeClick}
-          setPreviewIncludeClick={setPreviewIncludeClick}
-          previewBarsLength={previewBars.length}
-          previewPlaying={previewPlaying}
-          previewReady={previewReady}
-          followPlayback={followPlayback}
-          setFollowPlayback={setFollowPlayback}
-          startPreviewPlayback={startPreviewPlayback}
-          stopPreviewPlayback={stopPreviewPlayback}
-        />
-      </div>
-    )}
-  </div>
-)}
+                        <RehearsePanel
+                          previewSection={previewSection}
+                          setPreviewSection={setPreviewSection}
+                          previewPattern={previewPattern}
+                          setPreviewPattern={setPreviewPattern}
+                          previewInstrument={previewInstrument}
+                          setPreviewInstrument={setPreviewInstrument}
+                          previewFeel={previewFeel}
+                          setPreviewFeel={setPreviewFeel}
+                          previewTempo={previewTempo}
+                          setPreviewTempo={setPreviewTempo}
+                          previewLoop={previewLoop}
+                          setPreviewLoop={setPreviewLoop}
+                          previewIncludeBass={previewIncludeBass}
+                          setPreviewIncludeBass={setPreviewIncludeBass}
+                          previewIncludeClick={previewIncludeClick}
+                          setPreviewIncludeClick={setPreviewIncludeClick}
+                          previewBarsLength={previewBars.length}
+                          previewPlaying={previewPlaying}
+                          previewReady={previewReady}
+                          followPlayback={followPlayback}
+                          setFollowPlayback={setFollowPlayback}
+                          startPreviewPlayback={startPreviewPlayback}
+                          stopPreviewPlayback={stopPreviewPlayback}
+                         />
+                      </div>
+                     )}
+              </div>
+            )}
 
-          {mode === 'video' && (
-            <div>
-              <h1 className="text-xl mb-4">Video Generator</h1>
-              <p className="text-gray-400">OpenArt / prompt generation tools go here.</p>
-            </div>
-          )}
+            {mode === 'video' && (
+                <div>
+                  <h1 className="text-xl mb-4">Video Generator</h1>
+                  <p className="text-gray-400">OpenArt / prompt generation tools go here.</p>
+                </div>
+            )}
+
         </div>
       </div>
     </div>
