@@ -2121,7 +2121,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
     {rewriteSectionOnly && (
       <span>
-        <strong>Section:</strong> {normaliseSectionName || '—'}
+       <strong>Section:</strong> {rewriteSectionName || '—'}
       </span>
     )}
   </div>
