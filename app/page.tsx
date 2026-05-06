@@ -1716,14 +1716,16 @@ const rewrittenSectionRaw =
     ? cleanedRewrite
     : extractSectionTextStrict(rewritten, rewriteSectionName)
 
-const rewrittenSection =
-  typeof rewrittenSectionRaw === 'string' ? rewrittenSectionRaw : ''
+const safeRewrittenSection =
+  rewriteConstraint === 'keep-lines'
+    ? cleanedRewrite
+    : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
 
-if (!rewrittenSection.trim()) {
+if (!safeRewrittenSection.trim()) {
   throw new Error('Failed to isolate rewritten section')
 }
 
-  const rewrittenLineCount = rewrittenSection
+  const rewrittenLineCount = safeRewrittenSection
     .split('\n')
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
@@ -1743,7 +1745,7 @@ console.log('rewrittenLineCount:', rewrittenLineCount)
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
-    rewrittenSection
+    safeRewrittenSection
   )
 
 }
