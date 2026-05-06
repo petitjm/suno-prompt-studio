@@ -1605,6 +1605,7 @@ STRICT RULES:
 
 - Do NOT include section headers like [Chorus].
 - Output ONLY the numbered rewritten lines.
+- If unsure, prioritise keeping structure over creativity.
 
 
 STYLE RULES:
@@ -1622,6 +1623,12 @@ STYLE RULES:
 - For chorus sections:
   - Emphasise memorability and repetition strength
   - Make at least one line feel like a central hook
+
+  - For chorus sections, preserve repeated hook phrases where possible.
+    - Do not over-rewrite repeated chorus lines.
+    - Keep the chorus simple, chantable, and repeatable.
+    - Prefer small emotional upgrades over complete reinvention.
+    - Prioritise structure and singability over novelty.
 
 
 TASK:
@@ -1656,6 +1663,10 @@ for (let attempt = 1; attempt <= 3; attempt++) {
   const testSection =
     extractSectionTextStrict(rewritten, rewriteSectionName) || rewritten
 
+    if (!testSection || !testSection.trim()) {
+  continue // try next attempt
+}
+
   lastLineCount = testSection
     .split('\n')
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
@@ -1689,8 +1700,8 @@ console.log('rewritten:', rewritten)
 console.log('fullSourceText before:', fullSourceText)
 
 
-if (!rewritten.trim()) {
-  throw new Error('Rewrite returned no usable text')
+if (!rewritten || !rewritten.trim()) {
+  throw new Error('Rewrite returned empty output — AI could not satisfy constraints')
 }
 
 // 🔥 Clean AI output (remove any section headers it may have added)
