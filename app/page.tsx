@@ -1176,6 +1176,15 @@ const parseSectionTarget = (sectionName: string) => {
   }
 }
 
+const normaliseSectionName = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/^\[/, '')
+    .replace(/\]$/, '')
+    .replace(/:$/, '')
+
+
 
 const extractSectionText = (text: string, sectionName: string) => {
   if (!sectionName.trim()) return text
