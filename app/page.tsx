@@ -1311,7 +1311,7 @@ const isSectionHeader = (line: string) => {
   const normalised = normaliseSectionName(trimmed)
 
   return knownSectionNames.includes(normaliseSectionName(trimmed))
-
+}
 
 
 
