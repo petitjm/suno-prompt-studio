@@ -1163,7 +1163,7 @@ const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
 
-const normaliseSectionName = (value: string) =>
+const normalisedSectionName = (value: string) =>
   value
     .trim()
     .toLowerCase()
