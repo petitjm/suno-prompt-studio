@@ -1515,6 +1515,11 @@ const sourceText = rewriteSectionOnly
         - You MUST return exactly ${originalLineCount} lyric lines
         - Do not add or remove lines
         - Keep line breaks identical
+        - You MUST return exactly ${originalLineCount} lyric lines.
+        - Count the lines before replying.
+        - If the original section has ${originalLineCount} lyric lines, your rewritten section must also have ${originalLineCount} lyric lines.
+        - Do not merge lines.
+        - Do not split lines.
 
         TASK:
         ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
