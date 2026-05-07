@@ -1675,7 +1675,9 @@ let rewritten = ''
 let lastLineCount = originalLineCount
 
 for (let attempt = 1; attempt <= 3; attempt++) {
-  rewritten = await runRewriteAttemptconst isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
+  rewritten = await runRewriteAttempt()
+
+const isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
 const shouldRelaxAfterTwoFailures =
   isChorusRewrite &&
   rewriteConstraint === 'keep-lines' &&
