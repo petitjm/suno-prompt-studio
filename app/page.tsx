@@ -1725,7 +1725,13 @@ const shouldRelaxAfterTwoFailures =
 
 
   const testSection =
-    extractSectionTextStrict(rewritten, rewriteSectionName) || rewritten
+  rewriteSectionOnly
+    ? extractSectionTextStrict(rewritten, rewriteSectionName)
+    : rewritten
+
+if (!testSection || !testSection.trim()) {
+  continue
+}
 
     if (!testSection || !testSection.trim()) {
   continue // try next attempt
