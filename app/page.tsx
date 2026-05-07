@@ -1603,96 +1603,30 @@ const runRewriteAttempt = async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mode: 'rewrite',
-      instruction: rewriteSectionOnly
-        ? `
+     instruction: isHookMode
+  ? `
+HOOK ENHANCEMENT MODE:
+- You are given a numbered section.
+- Change ONLY ONE line (the strongest hook).
+- Keep all other lines EXACTLY the same.
+- Keep numbering unchanged.
+- Do NOT add or remove lines.
+- Do NOT rewrite the full section.
+
+OUTPUT:
+Return the full numbered section with only ONE line changed.
+`
+  : rewriteSectionOnly
+  ? `
 STRICT RULES:
 - Rewrite ONLY the provided section.
-- Preserve the same theme, meaning, and emotional tone.
-- Treat the section as one connected musical idea.
-
-- The input contains a full section for context.
-- You MUST use that context when rewriting.
-
-- Rewrite ONLY the numbered lines.
-- Return exactly one rewritten line for each numbered line.
-
-- Keep numbering exactly: 1., 2., 3., etc.
-- Do not skip numbers.
-- Do not add numbers.
-- Do not merge lines.
-- Do not split lines.
-
-- Do NOT include section headers like [Chorus].
-- Output ONLY the numbered rewritten lines.
-- If unsure, prioritise keeping structure over creativity.
-- If a section is selected, return ONLY that selected section and nothing else.
-
-
-STYLE RULES:
-- Maintain strong lyrical flow and natural phrasing for singing.
-- Prioritise a clear emotional hook, especially in chorus sections.
-- Use consistent rhythm across lines (similar syllable feel).
-- Keep line endings musically satisfying (avoid awkward phrasing).
-
-- Where appropriate, use light rhyme or near-rhyme between lines.
-- Avoid over-complex wording — keep it direct and singable.
-
-- The section should feel cohesive and connected, not like separate lines.
-- Preserve the core meaning and emotional direction of the original.
-
-- For chorus sections:
-  - Emphasise memorability and repetition strength
-  - Make at least one line feel like a central hook
-
-  - For chorus sections, preserve repeated hook phrases where possible.
-    - Do not over-rewrite repeated chorus lines.
-    - Keep the chorus simple, chantable, and repeatable.
-    - Prefer small emotional upgrades over complete reinvention.
-    - Prioritise structure and singability over novelty.
-
+- Preserve meaning and emotional tone.
+- Keep structure unless instructed otherwise.
 
 TASK:
-${commercialPolishMode ? `
-COMMERCIAL POLISH MODE:
-- Strengthen the central hook so it is memorable after one listen.
-- Prefer simple, direct, singable language over abstract phrasing.
-- Make the section feel emotionally immediate and radio-ready.
-- Tighten weak lines rather than overcomplicating them.
-- Improve rhythm, cadence, and repeatability.
-- For chorus sections, make the hook feel stronger, clearer, and easier to sing back.
-- Preserve the original meaning and emotional truth.
-` : ''}
-
-TASK:
-
-${isHookMode ? `
-HOOK ENHANCEMENT MODE:
-- The section is provided as numbered lines.
-- Identify ONE line that is the strongest hook.
-- Rewrite ONLY that one numbered line.
-- Return ALL numbered lines.
-- Keep every other line EXACTLY the same.
-- Do NOT change numbering.
-- Do NOT add or remove lines.
-- Do NOT rewrite multiple lines.
-
-- If unsure, choose the line that repeats or feels like the chorus hook.
-
-- The rewritten line should be:
-  - more memorable
-  - more singable
-  - emotionally stronger
-
-- Preserve meaning and tone.
-
-OUTPUT FORMAT:
-Return the full numbered section with only ONE line changed.
-` : ''}
-
-TASK:
-${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}`
-        : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
-      lyrics: structuredSourceText,
+${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
+`
+  : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)
     }),
   })
 
