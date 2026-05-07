@@ -1648,6 +1648,19 @@ COMMERCIAL POLISH MODE:
 - For chorus sections, make the hook feel stronger, clearer, and easier to sing back.
 - Preserve the original meaning and emotional truth.
 ` : ''}
+const isHookMode =
+  rewriteInstruction.toLowerCase().includes('hook')
+TASK:
+${isHookMode ? `
+HOOK ENHANCEMENT MODE:
+- Identify the strongest hook line in the section.
+- Rewrite ONLY that line.
+- Keep all other lines unchanged.
+- Preserve meaning and emotional tone.
+- Make the hook more memorable, punchy, and singable.
+- Do not change the number of lines.
+- Return the FULL section with only the hook line improved.
+` : ''}
 
 TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}`
