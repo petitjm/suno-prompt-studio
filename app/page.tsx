@@ -157,6 +157,7 @@ const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('r
 const [rewriteInstruction, setRewriteInstruction] = useState('')
 const [rewriteLoading, setRewriteLoading] = useState(false)
 const [rewriteMessage, setRewriteMessage] = useState('')
+const [commercialPolishMode, setCommercialPolishMode] = React.useState(false)
 const [loadingLeftCurrent, setLoadingLeftCurrent] = useState(false)
 const [loadingRightCurrent, setLoadingRightCurrent] = useState(false)
 const lastFollowedSectionIdRef = React.useRef<string | null>(null)
@@ -1632,8 +1633,19 @@ STYLE RULES:
 
 
 TASK:
-${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
-`
+${commercialPolishMode ? `
+COMMERCIAL POLISH MODE:
+- Strengthen the central hook so it is memorable after one listen.
+- Prefer simple, direct, singable language over abstract phrasing.
+- Make the section feel emotionally immediate and radio-ready.
+- Tighten weak lines rather than overcomplicating them.
+- Improve rhythm, cadence, and repeatability.
+- For chorus sections, make the hook feel stronger, clearer, and easier to sing back.
+- Preserve the original meaning and emotional truth.
+` : ''}
+
+TASK:
+${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}`
         : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly),
       lyrics: structuredSourceText,
     }),
@@ -2362,7 +2374,16 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
 </div>
     <div className="flex flex-col md:flex-row gap-2 mb-2">
-      <label className="flex items-center gap-2 text-sm text-gray-300">
+        <label className="flex items-center gap-2 text-sm text-gray-200">
+          <input
+            type="checkbox"
+            checked={commercialPolishMode}
+            onChange={(e) => setCommercialPolishMode(e.target.checked)}
+          />
+          Commercial polish mode
+        </label>
+      
+        <label className="flex items-center gap-2 text-sm text-gray-300">
         <input
           type="checkbox"
           checked={rewriteSectionOnly}
