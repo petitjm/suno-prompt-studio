@@ -1574,7 +1574,7 @@ const sourceText = rewriteSectionOnly
 
 
     const structuredSourceText =
-  rewriteSectionOnly && mustPreserveLines
+ rewriteSectionOnly && (mustPreserveLines || isHookMode)
     ? (() => {
         const lines = sourceText.split('\n')
 
@@ -1667,16 +1667,26 @@ TASK:
 
 ${isHookMode ? `
 HOOK ENHANCEMENT MODE:
-- You are editing ONLY the selected section.
-- Do NOT rewrite the full song.
-- Do NOT create new verses, pre-choruses, bridges, tags, or extra choruses.
-- Identify the strongest hook line inside this selected section.
-- Improve ONLY that hook line, or at most one repeated hook phrase.
-- Keep all other lines in the selected section unchanged unless a tiny wording change is needed for flow.
-- Return ONLY the selected section.
-- Do NOT return any other song sections.
-- Preserve the original meaning, theme, and emotional tone.
-- Make the hook more memorable, punchy, singable, and repeatable.
+- The section is provided as numbered lines.
+- Identify ONE line that is the strongest hook.
+- Rewrite ONLY that one numbered line.
+- Return ALL numbered lines.
+- Keep every other line EXACTLY the same.
+- Do NOT change numbering.
+- Do NOT add or remove lines.
+- Do NOT rewrite multiple lines.
+
+- If unsure, choose the line that repeats or feels like the chorus hook.
+
+- The rewritten line should be:
+  - more memorable
+  - more singable
+  - emotionally stronger
+
+- Preserve meaning and tone.
+
+OUTPUT FORMAT:
+Return the full numbered section with only ONE line changed.
 ` : ''}
 
 TASK:
