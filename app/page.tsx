@@ -1850,6 +1850,14 @@ if (rewriteSectionOnly) {
     )
   }
 
+  console.log('HOOK MODE:', isHookMode)
+console.log('rewriteSectionName:', rewriteSectionName)
+console.log('sourceText:', sourceText)
+console.log('finalSectionForReplacement:', finalSectionForReplacement)
+console.log('fullSourceText before replace:', fullSourceText)
+
+
+
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
