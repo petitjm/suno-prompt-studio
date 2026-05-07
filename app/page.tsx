@@ -567,6 +567,12 @@ const [applyingLeft, setApplyingLeft] = useState(false)
 const [applyingRight, setApplyingRight] = useState(false)
 
 React.useEffect(() => {
+  if (rewriteInstruction.toLowerCase().includes('hook')) {
+    setRewriteSectionOnly(true)
+  }
+}, [rewriteInstruction])
+
+React.useEffect(() => {
   if (commercialPolishMode && rewriteConstraint === 'keep-lines') {
     setRewriteConstraint('default')
   }
@@ -2353,6 +2359,12 @@ const hasChordLinesInRewriteSource = sourceForDetection
           ? 'Right'
           : 'Main'}
     </span>
+
+    {rewriteInstruction.toLowerCase().includes('hook') && (
+  <div className="text-xs text-yellow-300 mt-1">
+    Hook strengthening works best on a selected chorus section.
+  </div>
+)}
 
     {rewriteSectionOnly && (
       <span>
