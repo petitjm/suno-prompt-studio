@@ -1567,7 +1567,7 @@ const sourceText = rewriteSectionOnly
     .length
 
     const structuredSourceText =
-  rewriteSectionOnly && rewriteConstraint === 'keep-lines'
+  rewriteSectionOnly && mustPreserveLines
     ? (() => {
         const lines = sourceText.split('\n')
 
@@ -1590,6 +1590,9 @@ const sourceText = rewriteSectionOnly
             : sourceText
 const isHookMode =
   rewriteInstruction.toLowerCase().includes('hook')
+
+  const mustPreserveLines =
+  rewriteConstraint === 'keep-lines' || isHookMode
 
 const runRewriteAttempt = async () => {
   const res = await fetch('/api/generate', {
@@ -1722,7 +1725,7 @@ const shouldRelaxAfterTwoFailures =
 
   if (
   !rewriteSectionOnly ||
-  rewriteConstraint !== 'keep-lines' ||
+  !mustPreserveLines ||
   shouldRelaxAfterTwoFailures
 ) {
   break
