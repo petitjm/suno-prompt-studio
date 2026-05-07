@@ -1582,7 +1582,8 @@ const sourceText = rewriteSectionOnly
         `
               })()
             : sourceText
-
+const isHookMode =
+  rewriteInstruction.toLowerCase().includes('hook')
 
 const runRewriteAttempt = async () => {
   const res = await fetch('/api/generate', {
@@ -1648,8 +1649,7 @@ COMMERCIAL POLISH MODE:
 - For chorus sections, make the hook feel stronger, clearer, and easier to sing back.
 - Preserve the original meaning and emotional truth.
 ` : ''}
-const isHookMode =
-  rewriteInstruction.toLowerCase().includes('hook')
+
 TASK:
 ${isHookMode ? `
 HOOK ENHANCEMENT MODE:
