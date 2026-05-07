@@ -1792,11 +1792,54 @@ if (rewriteSectionOnly) {
       ? cleanedRewrite
       : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
 
+      const finalSectionForReplacement =
+  isHookMode
+    ? (() => {
+        const originalLines = sourceText
+          .split('\n')
+          .filter((line) => line.trim().length > 0)
+
+        const rewrittenLines = safeRewrittenSection
+          .split('\n')
+          .filter((line) => line.trim().length > 0)
+
+        const originalLyricLines = originalLines.filter(
+          (line) => !isSectionHeader(line)
+        )
+
+        const rewrittenLyricLines = rewrittenLines.filter(
+          (line) => !isSectionHeader(line)
+        )
+
+        const changedIndex = rewrittenLyricLines.findIndex(
+          (line, index) =>
+            originalLyricLines[index] &&
+            line.trim() !== originalLyricLines[index].trim()
+        )
+
+        if (changedIndex === -1) return sourceText
+
+        let lyricCounter = -1
+
+        return originalLines
+          .map((line) => {
+            if (isSectionHeader(line)) return line
+
+            lyricCounter++
+
+            return lyricCounter === changedIndex
+              ? rewrittenLyricLines[changedIndex]
+              : line
+          })
+          .join('\n')
+      })()
+    : safeRewrittenSection
+
   if (!safeRewrittenSection.trim()) {
     throw new Error('Failed to isolate rewritten section')
   }
 
-  const rewrittenLineCount = safeRewrittenSection
+  const rewrittenLineCount = finalSectionForReplacement
     .split('\n')
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
@@ -1810,7 +1853,7 @@ if (rewriteSectionOnly) {
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
-    safeRewrittenSection
+    finalSectionForReplacement
   )
 }
 
