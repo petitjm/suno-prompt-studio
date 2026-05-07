@@ -1675,7 +1675,12 @@ let rewritten = ''
 let lastLineCount = originalLineCount
 
 for (let attempt = 1; attempt <= 3; attempt++) {
-  rewritten = await runRewriteAttempt()
+  rewritten = await runRewriteAttemptconst isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
+const shouldRelaxAfterTwoFailures =
+  isChorusRewrite &&
+  rewriteConstraint === 'keep-lines' &&
+  attempt >= 3
+
 
   const testSection =
     extractSectionTextStrict(rewritten, rewriteSectionName) || rewritten
@@ -1689,19 +1694,30 @@ for (let attempt = 1; attempt <= 3; attempt++) {
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-  if (!rewriteSectionOnly || rewriteConstraint !== 'keep-lines') {
-    break
-  }
+  if (
+  !rewriteSectionOnly ||
+  rewriteConstraint !== 'keep-lines' ||
+  shouldRelaxAfterTwoFailures
+) {
+  break
+}
 
   if (lastLineCount === originalLineCount) {
     break
   }
 }
 
+const isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
+const relaxedChorusRewrite =
+  isChorusRewrite &&
+  rewriteConstraint === 'keep-lines' &&
+  lastLineCount !== originalLineCount
+
 if (
   rewriteSectionOnly &&
   rewriteConstraint === 'keep-lines' &&
-  lastLineCount !== originalLineCount
+  lastLineCount !== originalLineCount &&
+  !relaxedChorusRewrite
 ) {
   throw new Error(
     `Couldn’t keep ${originalLineCount} lines after 3 attempts (got ${lastLineCount}). Try again or untick “keep lines”.`
@@ -1770,7 +1786,15 @@ if (rewriteTarget === 'left') {
   setPerformanceSheet(finalText)
 }
 
-if (rewriteConstraint === 'keep-lines') {
+if (
+  rewriteConstraint === 'keep-lines' &&
+  normaliseSectionName(rewriteSectionName).includes('chorus') &&
+  lastLineCount !== originalLineCount
+) {
+  setRewriteMessage(
+    `Rewrite complete — chorus polished with flexible structure (${originalLineCount} → ${lastLineCount} lines)`
+  )
+} else if (rewriteConstraint === 'keep-lines') {
   setRewriteMessage(`Rewrite complete — ${originalLineCount} lines preserved`)
 } else {
   setRewriteMessage('Rewrite complete')
@@ -2390,9 +2414,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
           Commercial polish mode
         </label>
         {commercialPolishMode && (
-  <div className="text-xs text-yellow-300 mt-1">
-    Commercial polish works best with flexible structure, so keep-structure is disabled.
-  </div>
+  
 )}
       
         <label className="flex items-center gap-2 text-sm text-gray-300">
