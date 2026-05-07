@@ -1566,6 +1566,13 @@ const sourceText = rewriteSectionOnly
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
+    const isHookMode =
+  rewriteInstruction.toLowerCase().includes('hook')
+
+  const mustPreserveLines =
+  rewriteConstraint === 'keep-lines' || isHookMode
+
+
     const structuredSourceText =
   rewriteSectionOnly && mustPreserveLines
     ? (() => {
@@ -1588,11 +1595,7 @@ const sourceText = rewriteSectionOnly
         `
               })()
             : sourceText
-const isHookMode =
-  rewriteInstruction.toLowerCase().includes('hook')
 
-  const mustPreserveLines =
-  rewriteConstraint === 'keep-lines' || isHookMode
 
 const runRewriteAttempt = async () => {
   const res = await fetch('/api/generate', {
