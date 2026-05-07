@@ -1702,13 +1702,22 @@ ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionO
     throw new Error(data.error || 'Rewrite failed')
   }
 
+if (rewriteSectionOnly) {
   return (
-    data.lyrics_full ||
-    data.lyrics ||
     data.rewrite ||
+    data.lyrics ||
     data.text ||
     ''
   )
+}
+
+return (
+  data.lyrics_full ||
+  data.lyrics ||
+  data.rewrite ||
+  data.text ||
+  ''
+)
 }
 
 let rewritten = ''
