@@ -566,6 +566,11 @@ const [rewritePreset, setRewritePreset] = useState('')
 const [applyingLeft, setApplyingLeft] = useState(false)
 const [applyingRight, setApplyingRight] = useState(false)
 
+React.useEffect(() => {
+  if (commercialPolishMode && rewriteConstraint === 'keep-lines') {
+    setRewriteConstraint('default')
+  }
+}, [commercialPolishMode, rewriteConstraint])
 
 React.useEffect(() => {
   if (mode !== 'write') return
@@ -2362,7 +2367,9 @@ const hasChordLinesInRewriteSource = sourceForDetection
     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
   >
     <option value="default">Default</option>
-    <option value="keep-lines">Keep structure (same lines)</option>
+   <option value="keep-lines" disabled={commercialPolishMode}>
+  Keep structure {commercialPolishMode ? '(disabled in polish mode)' : ''}
+</option>
     <option value="shorten">Shorten content</option>
     <option value="extend">Extend content</option>
     <option value="conversational">More conversational</option>
@@ -2382,6 +2389,11 @@ const hasChordLinesInRewriteSource = sourceForDetection
           />
           Commercial polish mode
         </label>
+        {commercialPolishMode && (
+  <div className="text-xs text-yellow-300 mt-1">
+    Commercial polish works best with flexible structure, so keep-structure is disabled.
+  </div>
+)}
       
         <label className="flex items-center gap-2 text-sm text-gray-300">
         <input
