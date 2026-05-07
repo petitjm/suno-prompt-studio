@@ -1619,6 +1619,7 @@ STRICT RULES:
 - Do NOT include section headers like [Chorus].
 - Output ONLY the numbered rewritten lines.
 - If unsure, prioritise keeping structure over creativity.
+- If a section is selected, return ONLY that selected section and nothing else.
 
 
 STYLE RULES:
@@ -1657,15 +1658,19 @@ COMMERCIAL POLISH MODE:
 ` : ''}
 
 TASK:
+
 ${isHookMode ? `
 HOOK ENHANCEMENT MODE:
-- Identify the strongest hook line in the section.
-- Rewrite ONLY that line.
-- Keep all other lines unchanged.
-- Preserve meaning and emotional tone.
-- Make the hook more memorable, punchy, and singable.
-- Do not change the number of lines.
-- Return the FULL section with only the hook line improved.
+- You are editing ONLY the selected section.
+- Do NOT rewrite the full song.
+- Do NOT create new verses, pre-choruses, bridges, tags, or extra choruses.
+- Identify the strongest hook line inside this selected section.
+- Improve ONLY that hook line, or at most one repeated hook phrase.
+- Keep all other lines in the selected section unchanged unless a tiny wording change is needed for flow.
+- Return ONLY the selected section.
+- Do NOT return any other song sections.
+- Preserve the original meaning, theme, and emotional tone.
+- Make the hook more memorable, punchy, singable, and repeatable.
 ` : ''}
 
 TASK:
