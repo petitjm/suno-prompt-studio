@@ -1434,7 +1434,29 @@ const sourceForDetection =
       ? compareRightText
       : performanceSheet
 
-const detectedSections = detectSections(sourceForDetection)
+            const detectSections = (text: string) => {
+              const counts: Record<string, number> = {}
+
+              return text
+                .split('\n')
+                .map((line) => line.trim())
+                .filter((line) => isSectionHeader(line))
+                .map((line) => {
+                  const label = line
+                    .replace(/^\[/, '')
+                    .replace(/\]$/, '')
+                    .trim()
+
+                  const key = label.toLowerCase()
+
+                  counts[key] = (counts[key] || 0) + 1
+
+                  return {
+                    id: `${key}-${counts[key]}`,
+                    label,
+                  }
+                })
+            }
 
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
@@ -2429,9 +2451,12 @@ const hasChordLinesInRewriteSource = sourceForDetection
               <option value="">Select section</option>
 
               {detectedSections.map((section, i) => (
-                  <option key={`${section}-${i}`} value={section}>
-                    {section}
-                  </option>
+                  <option
+                      key={section.id}
+                      value={section.label}
+                    >
+                      {section.label}
+                    </option>
                 ))}
          </select>
     
