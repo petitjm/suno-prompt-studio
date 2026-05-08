@@ -51,6 +51,55 @@ export async function POST(req: Request) {
     const body = await req.json()
     const artistDNA = await getArtistDNAString()
 
+    if (body.mode === 'rewrite') {
+      const prompt = `
+You are an expert songwriter and lyric editor.
+
+Rewrite task:
+${body.instruction || ''}
+
+Lyrics to rewrite:
+${body.lyrics || ''}
+
+${artistDNA}
+
+Return ONLY valid JSON in this exact shape:
+{
+  "rewrite": ""
+}
+
+Rules:
+- Return rewritten lyrics only inside the "rewrite" field.
+- Do not return a full song unless the supplied text is a full song.
+- Do not add commentary.
+- Do not include markdown fences.
+- Do not include explanations.
+`
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-5',
+        messages: [{ role: 'user', content: prompt }],
+      })
+
+      const text = completion.choices[0].message.content || '{}'
+
+      let parsed
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        return NextResponse.json(
+          { error: 'Invalid JSON from model', raw: text },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        rewrite: parsed.rewrite || '',
+        lyrics: parsed.rewrite || '',
+        text: parsed.rewrite || '',
+      })
+    }
+
     const prompt = `
 You are an expert songwriter helping create a song concept and lyrics.
 
