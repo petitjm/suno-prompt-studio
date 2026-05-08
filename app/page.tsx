@@ -1735,7 +1735,7 @@ const cleanedRewrite = rewritten
   .trim()
 
 let finalText = cleanedRewrite
-
+if (rewriteSectionOnly) {
 const safeRewrittenSection =
   isHookMode || mustPreserveLines
     ? cleanedRewrite
