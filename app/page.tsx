@@ -1628,7 +1628,6 @@ if (rewriteSectionOnly) {
     data.rewrite ||
     data.lyrics ||
     data.text ||
-    data.lyrics_full ||
     ''
   )
 }
