@@ -1744,27 +1744,26 @@ if (!rewritten || !rewritten.trim()) {
   throw new Error('Rewrite failed — AI could not produce a valid version. Try again.')
 }
 
-// 🔥 Clean AI output (remove any section headers it may have added)
+// 🔥 Clean AI output
 const cleanedRewrite = rewritten
   .replace(/^\s*\[[^\]]+\]\s*$/gm, '')
   .replace(/^\s*\d+\.\s*/gm, '')
   .trim()
 
 let finalText = cleanedRewrite
+
 if (rewriteSectionOnly) {
-const extractedRewrittenSection =
-  extractSectionTextStrict(rewritten, rewriteSectionName)
+  const extractedRewrittenSection =
+    extractSectionTextStrict(rewritten, rewriteSectionName)
 
-const safeRewrittenSection =
-  extractedRewrittenSection || cleanedRewrite
-
-const finalSectionForReplacement = safeRewrittenSection
+  const safeRewrittenSection =
+    extractedRewrittenSection || cleanedRewrite
 
   if (!safeRewrittenSection.trim()) {
     throw new Error('Failed to isolate rewritten section')
   }
 
-  const rewrittenLineCount = finalSectionForReplacement
+  const rewrittenLineCount = safeRewrittenSection
     .split('\n')
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
@@ -1775,24 +1774,22 @@ const finalSectionForReplacement = safeRewrittenSection
     )
   }
 
-//  console.log('HOOK MODE:', isHookMode)
-console.log('rewriteSectionName:', rewriteSectionName)
-console.log('sourceText:', sourceText)
-console.log('finalSectionForReplacement:', finalSectionForReplacement)
-console.log('fullSourceText before replace:', fullSourceText)
+  const originalLyricLineCount = sourceText
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
+    .length
 
-const originalLyricLineCount = sourceText
-  .split('\n')
-  .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
-  .length
+  const safeSectionForReplacement = safeRewrittenSection
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
+    .slice(0, originalLyricLineCount)
+    .join('\n')
 
-
-
- finalText = replaceSectionText(
-  fullSourceText,
-  rewriteSectionName,
-  finalSectionForReplacement
-)
+  finalText = replaceSectionText(
+    fullSourceText,
+    rewriteSectionName,
+    safeSectionForReplacement
+  )
 }
 
 console.log('finalText after:', finalText)
