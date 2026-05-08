@@ -1803,6 +1803,12 @@ if (rewriteSectionOnly) {
     .slice(0, originalLyricLineCount)
     .join('\n')
 
+    console.log('SAFE SECTION:')
+console.log(safeSectionForReplacement)
+
+console.log('FULL SOURCE BEFORE REPLACE:')
+console.log(fullSourceText)
+
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
