@@ -92,12 +92,19 @@ Rules:
           { status: 500 }
         )
       }
+const rewriteText =
+  parsed.rewrite ||
+  parsed.lyrics ||
+  parsed.text ||
+  parsed.lyrics_full ||
+  ''
 
-      return NextResponse.json({
-        rewrite: parsed.rewrite || '',
-        lyrics: parsed.rewrite || '',
-        text: parsed.rewrite || '',
-      })
+return NextResponse.json({
+  rewrite: rewriteText,
+  lyrics: rewriteText,
+  text: rewriteText,
+  raw: parsed,
+})
     }
 
     const prompt = `
