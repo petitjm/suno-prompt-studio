@@ -1613,7 +1613,7 @@ STRICT RULES:
 TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
 `
-    : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)
+    : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly), lyrics: structuredSourceText,
     }),
   })
 
