@@ -1569,11 +1569,11 @@ const sourceText = rewriteSectionOnly
    // const isHookMode = rewriteInstruction.toLowerCase().includes('hook')
 
   const mustPreserveLines =
-  rewriteConstraint === 'keep-lines' || isHookMode
+  rewriteConstraint === 'keep-lines' 
 
 
     const structuredSourceText =
- rewriteSectionOnly && (mustPreserveLines || isHookMode)
+ rewriteSectionOnly && mustPreserveLines
     ? (() => {
         const lines = sourceText.split('\n')
 
