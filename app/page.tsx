@@ -1724,7 +1724,7 @@ const cleanedRewrite = rewritten
 let finalText = cleanedRewrite
 if (rewriteSectionOnly) {
 const safeRewrittenSection =
-   mustPreserveLines
+  rewriteConstraint === 'keep-lines'
     ? cleanedRewrite
     : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
 
