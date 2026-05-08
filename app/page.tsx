@@ -1378,7 +1378,7 @@ const replaceSectionText = (
   let startIndex = -1
 
   for (let i = 0; i < lines.length; i++) {
-    if (!isSectionHeader(lines[i])) continue
+    if (!isSectionBoundary(lines[i])) continue
 
     if (normaliseSectionName(lines[i]) === target.label) {
       matchCount++
@@ -1401,11 +1401,15 @@ const replaceSectionText = (
     }
   }
 
-  const newSectionLines = newSectionText.split('\n')
+  const originalHeader = lines[startIndex]
+  const cleanedNewLines = newSectionText
+    .split('\n')
+    .filter((line) => !isSectionBoundary(line))
 
   return [
     ...lines.slice(0, startIndex),
-    ...newSectionLines,
+    originalHeader,
+    ...cleanedNewLines,
     ...lines.slice(endIndex),
   ].join('\n')
 }
