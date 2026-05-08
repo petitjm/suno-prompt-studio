@@ -1180,11 +1180,15 @@ const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
 const parseSectionTarget = (sectionName: string) => {
-  const match = sectionName.match(/^(.*?)(?:\s+#(\d+))?$/)
+  const clean = sectionName
+    .replace(/\s*#\d+$/, '')
+    .trim()
+
+  const instanceMatch = sectionName.match(/#(\d+)$/)
 
   return {
-    label: normaliseSectionName(match?.[1] || sectionName),
-    instance: match?.[2] ? Number(match[2]) : 1,
+    label: normaliseSectionName(clean),
+    instance: instanceMatch ? Number(instanceMatch[1]) : 1,
   }
 }
 
@@ -1457,7 +1461,7 @@ const sourceForDetection =
 
                   return {
                     id: `${key}-${counts[key]}`,
-                    label,
+                    label: `${label} #${counts[key]}`,
                   }
                 })
             }
