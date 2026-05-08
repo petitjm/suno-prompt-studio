@@ -1355,10 +1355,10 @@ const isSectionHeader = (line: string) => {
   // Verse 1:
   if (/^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)) return true
 
-  // Verse / Chorus / Bridge etc. without brackets or colon
-  return knownSectionNames.includes(normalised)
+ // Verse / Chorus / Bridge etc. without brackets or colon
+const normalised = normaliseSectionName(trimmed)
 
-  return knownSectionNames.includes(normaliseSectionName(trimmed))
+return knownSectionNames.includes(normalised)
 }
 
 
