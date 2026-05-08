@@ -70,6 +70,10 @@ Return ONLY valid JSON in this exact shape:
 
 Rules:
 - Return rewritten lyrics only inside the "rewrite" field.
+- Preserve line breaks exactly when the instruction asks to keep the same number of lines.
+- If the input has numbered lines, return numbered lines.
+- If the input has separate lyric lines, return separate lyric lines.
+- Do not collapse the rewrite into one paragraph.
 - Do not return a full song unless the supplied text is a full song.
 - Do not add commentary.
 - Do not include markdown fences.
