@@ -1403,28 +1403,7 @@ const replaceSectionText = (
 
 
 
-const detectSections = (text: string) => {
-  const lines = text.split('\n')
 
-  const counts: Record<string, number> = {}
-  const result: string[] = []
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim()
-
-    if (!isSectionHeader(line)) continue
-
-    const base = line.replace(/[\[\]:]/g, '').trim()
-
-    counts[base] = (counts[base] || 0) + 1
-
-    const label = `${base} #${counts[base]}`
-
-    result.push(label)
-  }
-
-  return result
-}
 
 
 const sourceForDetection =
