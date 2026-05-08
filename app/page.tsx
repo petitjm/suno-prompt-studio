@@ -1260,7 +1260,7 @@ const extractSectionTextStrict = (
     const line = lines[i].trim()
 
     // stop at ANY new section header
-    if (isSectionHeader(line)) {
+    if (isSectionBoundary(lines[i])) {
       endIndex = i
       break
     }
@@ -1331,7 +1331,16 @@ const knownSectionNames = [
 ]
 
 
+const isSectionBoundary = (line: string) => {
+  const trimmed = line.trim()
+  if (!trimmed) return false
+  if (looksLikeChordLine(trimmed)) return false
 
+  return (
+    /^\[[^\]]+\]$/.test(trimmed) ||              // [Verse 2]
+    /^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed) // Verse 2:
+  )
+}
 
 const isSectionHeader = (line: string) => {
   const trimmed = line.trim()
@@ -1386,7 +1395,7 @@ const replaceSectionText = (
   let endIndex = lines.length
 
   for (let i = startIndex + 1; i < lines.length; i++) {
-    if (isSectionHeader(lines[i])) {
+    if (isSectionBoundary(lines[i])) {
       endIndex = i
       break
     }
