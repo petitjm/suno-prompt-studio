@@ -1413,6 +1413,8 @@ const sourceForDetection =
       ? compareRightText
       : performanceSheet
 
+      const detectedSections = detectSections(sourceForDetection)
+
             const detectSections = (text: string) => {
               const counts: Record<string, number> = {}
 
