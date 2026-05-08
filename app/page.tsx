@@ -1602,8 +1602,9 @@ const runRewriteAttempt = async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mode: 'rewrite',
-     instruction:  rewriteSectionOnly
-  ? 
+instruction:
+  rewriteSectionOnly
+    ? `
 STRICT RULES:
 - Rewrite ONLY the provided section.
 - Preserve meaning and emotional tone.
@@ -1612,7 +1613,7 @@ STRICT RULES:
 TASK:
 ${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
 `
-  : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)
+    : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)
     }),
   })
 
