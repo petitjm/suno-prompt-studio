@@ -1403,28 +1403,7 @@ const replaceSectionText = (
 
 
 
-const detectSections = (text: string) => {
-  const lines = text.split('\n')
 
-  const counts: Record<string, number> = {}
-  const result: string[] = []
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim()
-
-    if (!isSectionHeader(line)) continue
-
-    const base = line.replace(/[\[\]:]/g, '').trim()
-
-    counts[base] = (counts[base] || 0) + 1
-
-    const label = `${base} #${counts[base]}`
-
-    result.push(label)
-  }
-
-  return result
-}
 
 
 const sourceForDetection =
@@ -1434,7 +1413,31 @@ const sourceForDetection =
       ? compareRightText
       : performanceSheet
 
-            const detectedSections = detectSections(sourceForDetection)
+      const detectedSections = detectSections(sourceForDetection)
+
+            const detectSections = (text: string) => {
+              const counts: Record<string, number> = {}
+
+              return text
+                .split('\n')
+                .map((line) => line.trim())
+                .filter((line) => isSectionHeader(line))
+                .map((line) => {
+                  const label = line
+                    .replace(/^\[/, '')
+                    .replace(/\]$/, '')
+                    .trim()
+
+                  const key = label.toLowerCase()
+
+                  counts[key] = (counts[key] || 0) + 1
+
+                  return {
+                    id: `${key}-${counts[key]}`,
+                    label,
+                  }
+                })
+            }
 
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
