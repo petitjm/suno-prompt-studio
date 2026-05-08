@@ -1374,56 +1374,38 @@ const replaceSectionText = (
   const target = parseSectionTarget(sectionName)
   const lines = fullText.split('\n')
 
+  const sectionIndexes = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => isSectionBoundary(line))
+
   let matchCount = 0
-  let startIndex = -1
+  const targetBoundary = sectionIndexes.find(({ line }) => {
+    if (normaliseSectionName(line) !== target.label) return false
+    matchCount += 1
+    return matchCount === target.instance
+  })
 
-  for (let i = 0; i < lines.length; i++) {
-    if (!isSectionBoundary(lines[i])) continue
+  if (!targetBoundary) return fullText
 
-    if (normaliseSectionName(lines[i]) === target.label) {
-      matchCount++
+  const startIndex = targetBoundary.index
 
-      if (matchCount === target.instance) {
-        startIndex = i
-        break
-      }
-    }
-  }
+  const nextBoundary = sectionIndexes.find(
+    ({ index }) => index > startIndex
+  )
 
-  if (startIndex === -1) return fullText
-
-  let endIndex = lines.length
-
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    if (isSectionBoundary(lines[i])) {
-      endIndex = i
-      break
-    }
-  }
+  const endIndex = nextBoundary ? nextBoundary.index : lines.length
 
   const originalHeader = lines[startIndex]
 
-  const incomingLines = newSectionText.split('\n')
-  const cleanedNewLines: string[] = []
-
-  for (const line of incomingLines) {
-    if (!line.trim()) continue
-
-    if (isSectionBoundary(line)) {
-      if (cleanedNewLines.length === 0) {
-        continue
-      }
-
-      break
-    }
-
-    cleanedNewLines.push(line)
-  }
+  const replacementBody = newSectionText
+    .split('\n')
+    .filter((line) => line.trim().length > 0)
+    .filter((line) => !isSectionBoundary(line))
 
   return [
     ...lines.slice(0, startIndex),
     originalHeader,
-    ...cleanedNewLines,
+    ...replacementBody,
     ...lines.slice(endIndex),
   ].join('\n')
 }
@@ -1756,10 +1738,11 @@ const cleanedRewrite = rewritten
 
 let finalText = cleanedRewrite
 if (rewriteSectionOnly) {
+const extractedRewrittenSection =
+  extractSectionTextStrict(rewritten, rewriteSectionName)
+
 const safeRewrittenSection =
-  rewriteConstraint === 'keep-lines'
-    ? cleanedRewrite
-    : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
+  extractedRewrittenSection || cleanedRewrite
 
 const finalSectionForReplacement = safeRewrittenSection
 
