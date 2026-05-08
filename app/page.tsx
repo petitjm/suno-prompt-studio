@@ -1724,16 +1724,16 @@ const cleanedRewrite = rewritten
 let finalText = cleanedRewrite
 if (rewriteSectionOnly) {
 const safeRewrittenSection =
-  isHookMode || mustPreserveLines
+   mustPreserveLines
     ? cleanedRewrite
     : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
 
-      const finalSectionForReplacement =
+   /*   const finalSectionForReplacement =
   isHookMode
     ? (() => {
         const originalLines = sourceText
           .split('\n')
-          .filter((line) => line.trim().length > 0)
+          .filter((line) => line.trim().length > 0)   */
 
         const rewrittenLines = safeRewrittenSection
           .split('\n')
