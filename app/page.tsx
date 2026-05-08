@@ -558,7 +558,7 @@ const rewritePresets = [
   'Make it more conversational',
   'Make it more poetic',
   'Make it more radio-friendly',
-  'Strengthen the hook',
+  // 'Strengthen the hook', ← disable for now
   'Simplify the language',
 ]
 
@@ -1566,8 +1566,7 @@ const sourceText = rewriteSectionOnly
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-    const isHookMode =
-  rewriteInstruction.toLowerCase().includes('hook')
+   // const isHookMode = rewriteInstruction.toLowerCase().includes('hook')
 
   const mustPreserveLines =
   rewriteConstraint === 'keep-lines' || isHookMode
