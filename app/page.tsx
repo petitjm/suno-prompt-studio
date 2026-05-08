@@ -1400,10 +1400,21 @@ const replaceSectionText = (
 
   const originalHeader = lines[startIndex]
 
-  const replacementBody = newSectionText
-    .split('\n')
-    .filter((line) => line.trim().length > 0)
-    .filter((line) => !isSectionBoundary(line))
+const replacementBody: string[] = []
+let hasStartedBody = false
+
+for (const line of newSectionText.split('\n')) {
+  const trimmed = line.trim()
+  if (!trimmed) continue
+
+  if (isSectionBoundary(trimmed)) {
+    if (hasStartedBody) break
+    continue
+  }
+
+  hasStartedBody = true
+  replacementBody.push(line)
+}
 
   return [
     ...lines.slice(0, startIndex),
