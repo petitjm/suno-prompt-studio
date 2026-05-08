@@ -1235,40 +1235,35 @@ const extractSectionText = (text: string, sectionName: string) => {
 }
 
 
-const extractSectionTextStrict = (text: string, sectionName: string) => {
-  if (!sectionName.trim()) return null
+const extractSectionTextStrict = (
+  text: string,
+  sectionName: string
+) => {
+  if (!sectionName.trim()) return text
 
-  const target = parseSectionTarget(sectionName)
+  const target = normaliseSectionName(sectionName)
   const lines = text.split('\n')
 
-  let matchCount = 0
-  let startIndex = -1
+  const startIndex = lines.findIndex((line) => {
+    if (!isSectionHeader(line)) return false
+    return normaliseSectionName(line) === target
+  })
 
-  for (let i = 0; i < lines.length; i++) {
-    if (!isSectionHeader(lines[i])) continue
-
-    if (normaliseSectionName(lines[i]) === target.label) {
-      matchCount++
-
-      if (matchCount === target.instance) {
-        startIndex = i
-        break
-      }
-    }
-  }
-
-  if (startIndex === -1) return null
+  if (startIndex === -1) return ''
 
   let endIndex = lines.length
 
   for (let i = startIndex + 1; i < lines.length; i++) {
-    if (isSectionHeader(lines[i])) {
+    const line = lines[i].trim()
+
+    // stop at ANY new section header
+    if (isSectionHeader(line)) {
       endIndex = i
       break
     }
   }
 
-  return lines.slice(startIndex, endIndex).join('\n')
+  return lines.slice(startIndex, endIndex).join('\n').trim()
 }
 
 
