@@ -1242,29 +1242,32 @@ const extractSectionTextStrict = (
   text: string,
   sectionName: string
 ) => {
-  if (!sectionName.trim()) return text
+  if (!sectionName.trim()) return ''
 
-  const target = normaliseSectionName(sectionName)
+  const target = parseSectionTarget(sectionName)
   const lines = text.split('\n')
 
-  const startIndex = lines.findIndex((line) => {
-    if (!isSectionHeader(line)) return false
-    return normaliseSectionName(line) === target
+  const sectionIndexes = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => isSectionBoundary(line))
+
+  let matchCount = 0
+
+  const targetBoundary = sectionIndexes.find(({ line }) => {
+    if (normaliseSectionName(line) !== target.label) return false
+    matchCount += 1
+    return matchCount === target.instance
   })
 
-  if (startIndex === -1) return ''
+  if (!targetBoundary) return ''
 
-  let endIndex = lines.length
+  const startIndex = targetBoundary.index
 
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i].trim()
+  const nextBoundary = sectionIndexes.find(
+    ({ index }) => index > startIndex
+  )
 
-    // stop at ANY new section header
-    if (isSectionBoundary(lines[i])) {
-      endIndex = i
-      break
-    }
-  }
+  const endIndex = nextBoundary ? nextBoundary.index : lines.length
 
   return lines.slice(startIndex, endIndex).join('\n').trim()
 }
