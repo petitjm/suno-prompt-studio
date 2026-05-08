@@ -1424,7 +1424,8 @@ return [
   ...lines.slice(0, startIndex),
   originalHeader,
   ...replacementBody,
-  ...lines.slice(endIndex),
+  '',
+  ...lines.slice(endIndex).filter((line, index) => index !== 0 || line.trim() !== ''),
 ].join('\n')
 }
 
