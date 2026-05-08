@@ -1641,6 +1641,7 @@ if (rewriteSectionOnly) {
     data.rewrite ||
     data.lyrics ||
     data.text ||
+    data.lyrics_full ||
     ''
   )
 }
@@ -1735,11 +1736,10 @@ const cleanedRewrite = rewritten
 
 let finalText = cleanedRewrite
 
-if (rewriteSectionOnly) {
-  const safeRewrittenSection =
-    rewriteConstraint === 'keep-lines'
-      ? cleanedRewrite
-      : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
+const safeRewrittenSection =
+  isHookMode || mustPreserveLines
+    ? cleanedRewrite
+    : extractSectionTextStrict(rewritten, rewriteSectionName) || ''
 
       const finalSectionForReplacement =
   isHookMode
@@ -1793,7 +1793,7 @@ if (rewriteSectionOnly) {
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-  if (rewriteConstraint === 'keep-lines' && rewrittenLineCount !== originalLineCount) {
+  if (mustPreserveLines && rewrittenLineCount !== originalLineCount) {
     throw new Error(
       `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
     )
