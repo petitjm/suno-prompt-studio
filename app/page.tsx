@@ -1772,17 +1772,13 @@ const originalLyricLineCount = sourceText
   .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
   .length
 
-const safeSectionForReplacement = finalSectionForReplacement
-  .split('\n')
-  .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
-  .slice(0, originalLyricLineCount)
-  .join('\n')
 
-  finalText = replaceSectionText(
-    fullSourceText,
-    rewriteSectionName,
-    safeSectionForReplacement
-  )
+
+ finalText = replaceSectionText(
+  fullSourceText,
+  rewriteSectionName,
+  finalSectionForReplacement
+)
 }
 
 console.log('finalText after:', finalText)
