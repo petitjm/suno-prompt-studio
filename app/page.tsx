@@ -1353,10 +1353,10 @@ const isSectionHeader = (line: string) => {
   if (/^\[.+\]$/.test(trimmed)) return true
 
   // Verse 1:
-  if (/^[A-Za-z0-9][A-Za-z0-9\s-]*:$/.test(trimmed)) return true
+  if (/^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)) return true
 
   // Verse / Chorus / Bridge etc. without brackets or colon
-  const normalised = normaliseSectionName(trimmed)
+  return knownSectionNames.includes(normalised)
 
   return knownSectionNames.includes(normaliseSectionName(trimmed))
 }
@@ -1402,9 +1402,23 @@ const replaceSectionText = (
   }
 
   const originalHeader = lines[startIndex]
-  const cleanedNewLines = newSectionText
-    .split('\n')
-    .filter((line) => !isSectionBoundary(line))
+
+  const incomingLines = newSectionText.split('\n')
+  const cleanedNewLines: string[] = []
+
+  for (const line of incomingLines) {
+    if (!line.trim()) continue
+
+    if (isSectionBoundary(line)) {
+      if (cleanedNewLines.length === 0) {
+        continue
+      }
+
+      break
+    }
+
+    cleanedNewLines.push(line)
+  }
 
   return [
     ...lines.slice(0, startIndex),
