@@ -1602,21 +1602,8 @@ const runRewriteAttempt = async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mode: 'rewrite',
-     instruction: isHookMode
-  ? `
-HOOK ENHANCEMENT MODE:
-- You are given a numbered section.
-- Change ONLY ONE line (the strongest hook).
-- Keep all other lines EXACTLY the same.
-- Keep numbering unchanged.
-- Do NOT add or remove lines.
-- Do NOT rewrite the full section.
-
-OUTPUT:
-Return the full numbered section with only ONE line changed.
-`
-  : rewriteSectionOnly
-  ? `
+     instruction:  rewriteSectionOnly
+  ? 
 STRICT RULES:
 - Rewrite ONLY the provided section.
 - Preserve meaning and emotional tone.
