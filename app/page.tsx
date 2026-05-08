@@ -1194,7 +1194,10 @@ const normaliseSectionName = (value: string) =>
     .toLowerCase()
     .replace(/^\[/, '')
     .replace(/\]$/, '')
+    .replace(/#/g, '')
     .replace(/:$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 
 
 
