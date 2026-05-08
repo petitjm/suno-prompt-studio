@@ -1535,9 +1535,13 @@ const runRewriteLab = async () => {
 
 
 
-const sourceText = rewriteSectionOnly
-  ? extractSectionText(fullSourceText, rewriteSectionName)
-  : fullSourceText
+const sourceText =
+  rewriteSectionOnly
+    ? extractSectionTextStrict(
+        fullSourceText,
+        rewriteSectionName
+      )
+    : fullSourceText
 
   if (!sourceText.trim()) {
     setRewriteMessage('No text to rewrite.')
