@@ -1574,6 +1574,20 @@ const sourceText =
       )
     : fullSourceText
 
+    if (rewriteSectionOnly) {
+  const sourceSectionCount = sourceText
+    .split('\n')
+    .filter((line) => isSectionBoundary(line))
+    .length
+
+  if (sourceSectionCount > 1) {
+    throw new Error(
+      `Selected section extraction failed — found ${sourceSectionCount} sections instead of 1.`
+    )
+  }
+}
+
+
   if (!sourceText.trim()) {
     setRewriteMessage('No text to rewrite.')
     return
