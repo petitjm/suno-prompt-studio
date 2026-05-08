@@ -1420,12 +1420,12 @@ for (const line of newSectionText.split('\n')) {
   replacementBody.push(line)
 }
 
-  return [
-    ...lines.slice(0, startIndex),
-    originalHeader,
-    ...replacementBody,
-    ...lines.slice(endIndex),
-  ].join('\n')
+return [
+  ...lines.slice(0, startIndex),
+  originalHeader,
+  ...replacementBody,
+  ...lines.slice(endIndex),
+].join('\n')
 }
 
 
