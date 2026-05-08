@@ -1434,7 +1434,7 @@ const sourceForDetection =
       ? compareRightText
       : performanceSheet
 
-            
+            const detectedSections = detectSections(sourceForDetection)
 
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
