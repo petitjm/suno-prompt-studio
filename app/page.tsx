@@ -1247,7 +1247,7 @@ const extractSectionTextStrict = (
 
   const sectionIndexes = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line, LooksLikeChordLine))
+    .filter(({ line }) => isSectionBoundary(line, looksLikeChordLine))
 
   let matchCount = 0
 
@@ -1368,7 +1368,7 @@ const replaceSectionText = (
 
   const sectionIndexes = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line, LooksLikeChordLine))
+    .filter(({ line }) => isSectionBoundary(line, looksLikeChordLine))
 
   let matchCount = 0
   const targetBoundary = sectionIndexes.find(({ line }) => {
@@ -1396,7 +1396,7 @@ for (const line of newSectionText.split('\n')) {
   const trimmed = line.trim()
   if (!trimmed) continue
 
-  if (isSectionBoundary(trimmed, LooksLikeChordLine)) {
+  if (isSectionBoundary(trimmed, looksLikeChordLine)) {
     if (hasStartedBody) break
     continue
   }
@@ -1549,7 +1549,7 @@ const sourceText =
     if (rewriteSectionOnly) {
   const sourceSectionCount = sourceText
     .split('\n')
-    .filter((line) => isSectionBoundary(line,LooksLikeChordLine))
+    .filter((line) => isSectionBoundary(line,looksLikeChordLine))
     .length
 
   if (sourceSectionCount > 1) {
@@ -1825,7 +1825,7 @@ const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
 const hasChordLinesInRewriteSource = sourceForDetection
   .split('\n')
-  .some((line) => (line))
+  .some((line) => looksLikeChordLine(line))
 
   return (
 
