@@ -1189,7 +1189,8 @@ const canApplyRight = noCompareLocks || lockCompareRight
 
   const instanceMatch = sectionName.match(/#(\d+)$/)
 
-  
+ 
+}
 
 
 
@@ -1815,7 +1816,7 @@ setTimeout(() => setRewriteDone(false), 1000)
 } finally {
   setRewriteLoading(false)
 }
-
+}
 
 
 const panelsMatch =
