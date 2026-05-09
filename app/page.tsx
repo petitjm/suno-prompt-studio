@@ -1187,7 +1187,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
 
 
 
- 
+  
 
 
 
@@ -1813,7 +1813,7 @@ setTimeout(() => setRewriteDone(false), 1000)
 } finally {
   setRewriteLoading(false)
 }
-
+}
 
 
 const panelsMatch =
