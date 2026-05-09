@@ -1520,14 +1520,11 @@ const buildRewriteInstruction = (
       baseRules.push(
         'Keep exactly the same number of lines as the original.',
         'Do not add lines.',
-        'Do not remove lines.'
-        'Keep exactly the same number of lines as the original.',
-        'Do not add lines.',
         'Do not remove lines.',
         'Keep each rewritten line roughly the same length as the original line.',
         'Preserve a similar syllable count and lyrical cadence.',
         'Avoid expanding short lines into long phrases.',
-        'Keep phrasing tight and singable.',
+        'Keep phrasing tight and singable.'
       )
       break
 
