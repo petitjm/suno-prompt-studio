@@ -1825,7 +1825,7 @@ const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
 const hasChordLinesInRewriteSource = sourceForDetection
   .split('\n')
-  .some((line) => looksLikeChordLine(line))
+  .some((line) => (line))
 
   return (
 
