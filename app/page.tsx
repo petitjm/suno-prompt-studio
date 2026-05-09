@@ -1819,7 +1819,8 @@ setTimeout(() => setRewriteDone(false), 1000)
 } finally {
   setRewriteLoading(false)
 }
-}
+
+
 
 const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
