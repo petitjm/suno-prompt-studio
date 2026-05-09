@@ -1189,11 +1189,7 @@ const canApplyRight = noCompareLocks || lockCompareRight
 
   const instanceMatch = sectionName.match(/#(\d+)$/)
 
-  return {
-    label: normaliseSectionName(clean),
-    instance: instanceMatch ? Number(instanceMatch[1]) : 1,
-  }
-}
+  
 
 
 
