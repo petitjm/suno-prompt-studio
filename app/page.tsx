@@ -13,6 +13,12 @@ import {
   parsePerformanceSections,
 } from '@/lib/parseSong'
 import { createClient } from '@/lib/supabase/client'
+import {
+  detectSections,
+  isSectionBoundary,
+  normaliseSectionName,
+  parseSectionTarget,
+} from '@/lib/songSections'
 import type {
   ChordResponse,
   PerformanceSection,
@@ -1179,10 +1185,7 @@ const noCompareLocks = !lockCompareLeft && !lockCompareRight
 const canApplyLeft = noCompareLocks || lockCompareLeft
 const canApplyRight = noCompareLocks || lockCompareRight
 
-const parseSectionTarget = (sectionName: string) => {
-  const clean = sectionName
-    .replace(/\s*#\d+$/, '')
-    .trim()
+
 
   const instanceMatch = sectionName.match(/#(\d+)$/)
 
@@ -1192,16 +1195,7 @@ const parseSectionTarget = (sectionName: string) => {
   }
 }
 
-const normaliseSectionName = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/^\[/, '')
-    .replace(/\]$/, '')
-    .replace(/#/g, '')
-    .replace(/:$/, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+
 
 
 
@@ -1253,7 +1247,7 @@ const extractSectionTextStrict = (
 
   const sectionIndexes = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line))
+    .filter(({ line }) => isSectionBoundary(line, LooksLikeChordLine))
 
   let matchCount = 0
 
@@ -1338,16 +1332,7 @@ const knownSectionNames = [
 ]
 
 
-const isSectionBoundary = (line: string) => {
-  const trimmed = line.trim()
-  if (!trimmed) return false
-  if (looksLikeChordLine(trimmed)) return false
 
-  return (
-    /^\[[^\]]+\]$/.test(trimmed) ||              // [Verse 2]
-    /^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed) // Verse 2:
-  )
-}
 
 const isSectionHeader = (line: string) => {
   const trimmed = line.trim()
@@ -1383,7 +1368,7 @@ const replaceSectionText = (
 
   const sectionIndexes = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line))
+    .filter(({ line }) => isSectionBoundary(line, LooksLikeChordLine))
 
   let matchCount = 0
   const targetBoundary = sectionIndexes.find(({ line }) => {
@@ -1411,7 +1396,7 @@ for (const line of newSectionText.split('\n')) {
   const trimmed = line.trim()
   if (!trimmed) continue
 
-  if (isSectionBoundary(trimmed)) {
+  if (isSectionBoundary(trimmed, LooksLikeChordLine)) {
     if (hasStartedBody) break
     continue
   }
@@ -1443,31 +1428,9 @@ const sourceForDetection =
 
      
 
-            const detectSections = (text: string) => {
-              const counts: Record<string, number> = {}
+            
 
-              return text
-                .split('\n')
-                .map((line) => line.trim())
-                .filter((line) => isSectionHeader(line))
-                .map((line) => {
-                  const label = line
-                    .replace(/^\[/, '')
-                    .replace(/\]$/, '')
-                    .trim()
-
-                  const key = label.toLowerCase()
-
-                  counts[key] = (counts[key] || 0) + 1
-
-                  return {
-                    id: `${key}-${counts[key]}`,
-                    label: `${label} #${counts[key]}`,
-                  }
-                })
-            }
-
-             const detectedSections = detectSections(sourceForDetection)
+             const detectedSections = detectSections(sourceForDetection, isSectionHeader)
 
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
@@ -1586,7 +1549,7 @@ const sourceText =
     if (rewriteSectionOnly) {
   const sourceSectionCount = sourceText
     .split('\n')
-    .filter((line) => isSectionBoundary(line))
+    .filter((line) => isSectionBoundary(line,LooksLikeChordLine))
     .length
 
   if (sourceSectionCount > 1) {
@@ -1799,12 +1762,12 @@ if (rewriteSectionOnly) {
 
   const originalLyricLineCount = sourceText
     .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
+    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line, looksLikeChordLine))
     .length
 
   const safeSectionForReplacement = safeRewrittenSection
     .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line))
+    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line, LookLikeChordLine))
     .slice(0, originalLyricLineCount)
     .join('\n')
 
