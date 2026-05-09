@@ -1761,7 +1761,7 @@ if (rewriteSectionOnly) {
 
   const safeSectionForReplacement = safeRewrittenSection
     .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line, lookLikeChordLine))
+    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line, looksLikeChordLine))
     .slice(0, originalLyricLineCount)
     .join('\n')
 
