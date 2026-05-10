@@ -64,3 +64,100 @@ export const detectSections = (
       }
     })
 }
+
+
+export const extractSectionTextStrict = (
+  text: string,
+  sectionName: string,
+  isSectionBoundary: (line: string) => boolean
+) => {
+  if (!sectionName.trim()) return ''
+
+  const target = parseSectionTarget(sectionName)
+  const lines = text.split('\n')
+
+  const sectionIndexes = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => isSectionBoundary(line))
+
+  let matchCount = 0
+
+  const targetBoundary = sectionIndexes.find(({ line }) => {
+    if (normaliseSectionName(line) !== target.label) return false
+    matchCount += 1
+    return matchCount === target.instance
+  })
+
+  if (!targetBoundary) return ''
+
+  const startIndex = targetBoundary.index
+
+  const nextBoundary = sectionIndexes.find(
+    ({ index }) => index > startIndex
+  )
+
+  const endIndex = nextBoundary ? nextBoundary.index : lines.length
+
+  return lines.slice(startIndex, endIndex).join('\n').trim()
+}
+
+export const replaceSectionText = (
+  fullText: string,
+  sectionName: string,
+  newSectionText: string,
+  isSectionBoundary: (line: string) => boolean
+) => {
+  if (!sectionName.trim()) return fullText
+
+  const target = parseSectionTarget(sectionName)
+  const lines = fullText.split('\n')
+
+  const sectionIndexes = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => isSectionBoundary(line))
+
+  let matchCount = 0
+
+  const targetBoundary = sectionIndexes.find(({ line }) => {
+    if (normaliseSectionName(line) !== target.label) return false
+    matchCount += 1
+    return matchCount === target.instance
+  })
+
+  if (!targetBoundary) return fullText
+
+  const startIndex = targetBoundary.index
+
+  const nextBoundary = sectionIndexes.find(
+    ({ index }) => index > startIndex
+  )
+
+  const endIndex = nextBoundary ? nextBoundary.index : lines.length
+  const originalHeader = lines[startIndex]
+
+  const replacementBody: string[] = []
+  let hasStartedBody = false
+
+  for (const line of newSectionText.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    if (isSectionBoundary(trimmed)) {
+      if (hasStartedBody) break
+      continue
+    }
+
+    hasStartedBody = true
+    replacementBody.push(line)
+  }
+
+  return [
+    ...lines.slice(0, startIndex),
+    originalHeader,
+    ...replacementBody,
+    '',
+    ...lines.slice(endIndex).filter((line, index) => index !== 0 || line.trim() !== ''),
+  ].join('\n')
+}
+
+
