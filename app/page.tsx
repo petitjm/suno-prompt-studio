@@ -1,5 +1,6 @@
 'use client'
 
+import { shouldStopRewriteAttempts } from '@/lib/rewriteRetry'
 
 import { finalizeRewriteText } from '@/lib/rewriteFinalize'
 
@@ -1507,17 +1508,17 @@ if (!testSection || !testSection.trim()) {
     .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
     .length
 
-  if (
-  !rewriteSectionOnly ||
-  !mustPreserveLines ||
-  shouldRelaxAfterTwoFailures
+ if (
+  shouldStopRewriteAttempts({
+    rewriteSectionOnly,
+    mustPreserveLines,
+    shouldRelaxAfterTwoFailures,
+    lastLineCount,
+    originalLineCount,
+  })
 ) {
   break
 }
-
-  if (lastLineCount === originalLineCount) {
-    break
-  }
 }
 
 const relaxedChorusRewrite = isRelaxedChorusRewrite({
