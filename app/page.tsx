@@ -564,7 +564,7 @@ const [rewriteSectionName, setRewriteSectionName] = useState('')
 const rewritePresets = [
   'Make it more emotional',
   'Make it more conversational',
-  'Make it more poetic without becoming ornate. Preserve the emotional meaning, natural voice, and singability. Improve imagery only where it strengthens the line. Do not replace simple heartfelt phrases with awkward metaphors. Keep the lyric clear, human, and performable.'
+  'Make it more poetic without becoming ornate. Preserve the emotional meaning, natural voice, and singability. Improve imagery only where it strengthens the line. Do not replace simple heartfelt phrases with awkward metaphors. Keep the lyric clear, human, and performable.',
   'Make it more radio-friendly',
   // 'Strengthen the hook', ← disable for now
   'Simplify the language',
