@@ -1,5 +1,11 @@
 'use client'
 
+import {
+  buildRewriteInstruction,
+  rewritePresets,
+} from '@/lib/rewritePrompts'
+
+
 import React, { useState } from 'react'
 import * as Tone from 'tone'
 
@@ -561,14 +567,7 @@ const [rewriteDone, setRewriteDone] = useState(false)
 const [rewriteSectionOnly, setRewriteSectionOnly] = useState(false)
 const [rewriteSectionName, setRewriteSectionName] = useState('')
 
-const rewritePresets = [
-  'Make it more emotional',
-  'Make it more conversational',
-  'Make it more poetic without becoming ornate. Preserve the emotional meaning, natural voice, and singability. Improve imagery only where it strengthens the line. Do not replace simple heartfelt phrases with awkward metaphors. Keep the lyric clear, human, and performable.',
-  'Make it more radio-friendly',
-  // 'Strengthen the hook', ← disable for now
-  'Simplify the language',
-]
+
 
 const [rewritePreset, setRewritePreset] = useState('')
 const [applyingLeft, setApplyingLeft] = useState(false)
@@ -1362,76 +1361,7 @@ const removeChordsFromRewriteSource = () => {
 }
 
 
-const buildRewriteInstruction = (
-  instruction: string,
-  constraint: string,
-  sectionOnly: boolean
-) => {
-  const baseRules = [
-    instruction,
-    'Return rewritten lyrics only.',
-    'Do not add new section headings unless they already existed in the supplied text.',
-    'Do not explain the changes.',
-    
-    'Do not create a new song structure.',
-  ]
 
-  if (sectionOnly) {
-    baseRules.push(
-      'Rewrite ONLY the supplied section.',
-      'Do not rewrite the full song.',
-      'Return only the rewritten section, not the full song.',
-      'Do not add other sections.'
-
-    )
-  }
-
-  switch (constraint) {
-    case 'keep-lines':
-      baseRules.push(
-        'Keep exactly the same number of lines as the original.',
-        'Do not add lines.',
-        'Do not remove lines.',
-        'Keep each rewritten line roughly the same length as the original line.',
-        'Preserve a similar syllable count and lyrical cadence.',
-        'Avoid expanding short lines into long phrases.',
-        'Keep phrasing tight and singable.'
-      )
-      break
-
-    case 'shorten':
-      baseRules.push(
-        'Shorten the wording within the existing structure.',
-        'Do not add new sections.',
-        'Do not make the song longer.'
-      )
-      break
-
-    case 'extend':
-      baseRules.push(
-        'Extend the wording slightly, but do not create a new song structure.'
-      )
-      break
-
-    case 'conversational':
-      baseRules.push('Make the wording more natural and conversational.')
-      break
-
-    case 'poetic':
-      baseRules.push('Make the wording more poetic and expressive.')
-      break
-
-    case 'stronger':
-      baseRules.push('Make the emotional impact stronger.')
-      break
-
-    case 'simplify':
-      baseRules.push('Simplify the language and phrasing.')
-      break
-  }
-
-  return baseRules.join(' ')
-}
 
 
 
