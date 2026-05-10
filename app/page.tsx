@@ -1,5 +1,13 @@
 'use client'
 
+import {
+  assertLineCountPreserved,
+  assertSelectedSectionOnly,
+  isRelaxedChorusRewrite,
+  shouldRelaxChorusAfterTwoFailures,
+} from '@/lib/rewriteValidation'
+
+
 import { buildRewriteSuccessMessage } from '@/lib/rewriteMessages'
 
 
@@ -1398,18 +1406,11 @@ const sourceText =
 )
     : fullSourceText
 
-    if (rewriteSectionOnly) {
-  const sourceSectionCount = sourceText
-    .split('\n')
-    .filter((line) => isSectionBoundary(line,looksLikeChordLine))
-    .length
-
-  if (sourceSectionCount > 1) {
-    throw new Error(
-      `Selected section extraction failed — found ${sourceSectionCount} sections instead of 1.`
-    )
-  }
-}
+    assertSelectedSectionOnly({
+      rewriteSectionOnly,
+      sourceText,
+      isSectionBoundary: (line) => isSectionBoundary(line, looksLikeChordLine),
+    })
 
 
   if (!sourceText.trim()) {
@@ -1474,11 +1475,12 @@ ${buildRewriteInstruction(
   sectionOnly: rewriteSectionOnly,
 })
 
-const isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
-const shouldRelaxAfterTwoFailures =
-  isChorusRewrite &&
-  rewriteConstraint === 'keep-lines' &&
-  attempt >= 3
+const shouldRelaxAfterTwoFailures = shouldRelaxChorusAfterTwoFailures({
+  rewriteSectionName,
+  rewriteConstraint,
+  attempt,
+  normaliseSectionName,
+})
 
 
   const testSection =
@@ -1514,11 +1516,13 @@ if (!testSection || !testSection.trim()) {
   }
 }
 
-const isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
-const relaxedChorusRewrite =
-  isChorusRewrite &&
-  rewriteConstraint === 'keep-lines' &&
-  lastLineCount !== originalLineCount
+const relaxedChorusRewrite = isRelaxedChorusRewrite({
+  rewriteSectionName,
+  rewriteConstraint,
+  lastLineCount,
+  originalLineCount,
+  normaliseSectionName,
+})
 
 if (
   rewriteSectionOnly &&
@@ -1566,11 +1570,11 @@ const rewrittenLineCount = countLyricLines(
   isSectionHeader
 )
 
-  if (mustPreserveLines && rewrittenLineCount !== originalLineCount) {
-    throw new Error(
-      `Rewrite changed the line count (${originalLineCount} → ${rewrittenLineCount}). Try again.`
-    )
-  }
+  assertLineCountPreserved({
+  mustPreserveLines,
+  rewrittenLineCount,
+  originalLineCount,
+})
 
   const originalLyricLineCount = sourceText
     .split('\n')
