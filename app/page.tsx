@@ -1,6 +1,10 @@
 'use client'
 
 
+import { finalizeRewriteText } from '@/lib/rewriteFinalize'
+
+
+
 import { buildStructuredRewriteSource } from '@/lib/rewritePrepare'
 
 import { applyRewriteToTarget } from '@/lib/rewriteApply'
@@ -24,7 +28,6 @@ import { buildRewriteSuccessMessage } from '@/lib/rewriteMessages'
 
 
 import {
-  cleanRewriteText,
   countLyricLines,
 } from '@/lib/rewriteText'
 
@@ -57,7 +60,6 @@ import {
   isSectionBoundary,
   normaliseSectionName,
   parseSectionTarget,
-  replaceSectionText,
 } from '@/lib/songSections'
 import type {
   ChordResponse,
@@ -1549,58 +1551,17 @@ if (!rewritten || !rewritten.trim()) {
   throw new Error('Rewrite failed — AI could not produce a valid version. Try again.')
 }
 
-// 🔥 Clean AI output
-const cleanedRewrite = cleanRewriteText(rewritten)
-
-let finalText = cleanedRewrite
-
-if (rewriteSectionOnly) {
-  const extractedRewrittenSection =
-    extractSectionTextStrict(rewritten, rewriteSectionName,
-  (line) => isSectionBoundary(line, looksLikeChordLine)
-)
-
-  const safeRewrittenSection =
-    extractedRewrittenSection || cleanedRewrite
-
-  if (!safeRewrittenSection.trim()) {
-    throw new Error('Failed to isolate rewritten section')
-  }
-
-const rewrittenLineCount = countLyricLines(
-  safeRewrittenSection,
-  isSectionHeader
-)
-
-  assertLineCountPreserved({
+const finalText = finalizeRewriteText({
+  rewritten,
+  rewriteSectionOnly,
+  rewriteSectionName,
+  fullSourceText,
+  sourceText,
   mustPreserveLines,
-  rewrittenLineCount,
   originalLineCount,
+  isSectionHeader,
+  looksLikeChordLine,
 })
-
-  const originalLyricLineCount = sourceText
-    .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line, looksLikeChordLine))
-    .length
-
-  const safeSectionForReplacement = safeRewrittenSection
-    .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionBoundary(line, looksLikeChordLine))
-    .slice(0, originalLyricLineCount)
-    .join('\n')
-
-    console.log('SAFE SECTION:')
-console.log(safeSectionForReplacement)
-
-console.log('FULL SOURCE BEFORE REPLACE:')
-console.log(fullSourceText)
-
-  finalText = replaceSectionText(
-    fullSourceText,
-    rewriteSectionName,
-    safeSectionForReplacement,
-  (line) => isSectionBoundary(line, looksLikeChordLine)
-)
 }
 
 applyRewriteToTarget({
