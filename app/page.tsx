@@ -1,5 +1,12 @@
 'use client'
 
+import {
+  buildNumberedRewriteSource,
+  cleanRewriteText,
+  countLyricLines,
+} from '@/lib/rewriteText'
+
+
 import { requestRewrite } from '@/lib/rewriteApi'
 
 
@@ -1419,10 +1426,7 @@ const sourceText =
     setRewriteLoading(true)
     setRewriteMessage('Rewriting...')
 
-    const originalLineCount = sourceText
-    .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
-    .length
+const originalLineCount = countLyricLines(sourceText, isSectionHeader)
 
    // const isHookMode = rewriteInstruction.toLowerCase().includes('hook')
 
@@ -1431,27 +1435,9 @@ const sourceText =
 
 
     const structuredSourceText =
- rewriteSectionOnly && mustPreserveLines
-    ? (() => {
-        const lines = sourceText.split('\n')
-
-        const lyricLines = lines.filter(
-          (line) => line.trim().length > 0 && !isSectionHeader(line)
-        )
-
-        const numbered = lyricLines
-          .map((line, index) => `${index + 1}. ${line}`)
-          .join('\n')
-
-        return `
-        FULL SECTION (for context):
-        ${sourceText}
-
-        REWRITE THESE NUMBERED LINES:
-        ${numbered}
-        `
-              })()
-            : sourceText
+  rewriteSectionOnly && mustPreserveLines
+    ? buildNumberedRewriteSource(sourceText, isSectionHeader)
+    : sourceText
 
 
 
@@ -1555,10 +1541,7 @@ if (!rewritten || !rewritten.trim()) {
 }
 
 // 🔥 Clean AI output
-const cleanedRewrite = rewritten
-  .replace(/^\s*\[[^\]]+\]\s*$/gm, '')
-  .replace(/^\s*\d+\.\s*/gm, '')
-  .trim()
+const cleanedRewrite = cleanRewriteText(rewritten)
 
 let finalText = cleanedRewrite
 
@@ -1575,10 +1558,10 @@ if (rewriteSectionOnly) {
     throw new Error('Failed to isolate rewritten section')
   }
 
-  const rewrittenLineCount = safeRewrittenSection
-    .split('\n')
-    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
-    .length
+const rewrittenLineCount = countLyricLines(
+  safeRewrittenSection,
+  isSectionHeader
+)
 
   if (mustPreserveLines && rewrittenLineCount !== originalLineCount) {
     throw new Error(
