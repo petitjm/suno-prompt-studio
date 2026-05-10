@@ -1450,8 +1450,9 @@ const sourceText =
   rewriteSectionOnly
     ? extractSectionTextStrict(
         fullSourceText,
-        rewriteSectionName
-      )
+        rewriteSectionName,
+  (line) => isSectionBoundary(line, looksLikeChordLine)
+)
     : fullSourceText
 
     if (rewriteSectionOnly) {
@@ -1580,7 +1581,9 @@ const shouldRelaxAfterTwoFailures =
 
   const testSection =
   rewriteSectionOnly
-    ? extractSectionTextStrict(rewritten, rewriteSectionName)
+    ? extractSectionTextStrict(rewritten, rewriteSectionName,
+  (line) => isSectionBoundary(line, looksLikeChordLine)
+)
     : rewritten
 
 if (!testSection || !testSection.trim()) {
@@ -1648,7 +1651,9 @@ let finalText = cleanedRewrite
 
 if (rewriteSectionOnly) {
   const extractedRewrittenSection =
-    extractSectionTextStrict(rewritten, rewriteSectionName)
+    extractSectionTextStrict(rewritten, rewriteSectionName,
+  (line) => isSectionBoundary(line, looksLikeChordLine)
+)
 
   const safeRewrittenSection =
     extractedRewrittenSection || cleanedRewrite
@@ -1688,8 +1693,9 @@ console.log(fullSourceText)
   finalText = replaceSectionText(
     fullSourceText,
     rewriteSectionName,
-    safeSectionForReplacement
-  )
+    safeSectionForReplacement,
+  (line) => isSectionBoundary(line, looksLikeChordLine)
+)
 }
 
 console.log('finalText after:', finalText)
