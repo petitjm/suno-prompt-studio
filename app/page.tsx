@@ -1,5 +1,8 @@
 'use client'
 
+
+import { buildStructuredRewriteSource } from '@/lib/rewritePrepare'
+
 import { applyRewriteToTarget } from '@/lib/rewriteApply'
 
 
@@ -21,7 +24,6 @@ import { buildRewriteSuccessMessage } from '@/lib/rewriteMessages'
 
 
 import {
-  buildNumberedRewriteSource,
   cleanRewriteText,
   countLyricLines,
 } from '@/lib/rewriteText'
@@ -1436,10 +1438,12 @@ const originalLineCount = countLyricLines(sourceText, isSectionHeader)
     const mustPreserveLines = getMustPreserveLines(rewriteConstraint)
 
 
-    const structuredSourceText =
-  rewriteSectionOnly && mustPreserveLines
-    ? buildNumberedRewriteSource(sourceText, isSectionHeader)
-    : sourceText
+    const structuredSourceText = buildStructuredRewriteSource({
+      sourceText,
+      rewriteSectionOnly,
+      mustPreserveLines,
+      isSectionHeader,
+    })
 
 
 
