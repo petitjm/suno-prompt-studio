@@ -15,9 +15,11 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import {
   detectSections,
+  extractSectionTextStrict,
   isSectionBoundary,
   normaliseSectionName,
   parseSectionTarget,
+  replaceSectionText,
 } from '@/lib/songSections'
 import type {
   ChordResponse,
@@ -1230,39 +1232,7 @@ const extractSectionText = (text: string, sectionName: string) => {
 }
 
 
-const extractSectionTextStrict = (
-  text: string,
-  sectionName: string
-) => {
-  if (!sectionName.trim()) return ''
 
-  const target = parseSectionTarget(sectionName)
-  const lines = text.split('\n')
-
-  const sectionIndexes = lines
-    .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line, looksLikeChordLine))
-
-  let matchCount = 0
-
-  const targetBoundary = sectionIndexes.find(({ line }) => {
-    if (normaliseSectionName(line) !== target.label) return false
-    matchCount += 1
-    return matchCount === target.instance
-  })
-
-  if (!targetBoundary) return ''
-
-  const startIndex = targetBoundary.index
-
-  const nextBoundary = sectionIndexes.find(
-    ({ index }) => index > startIndex
-  )
-
-  const endIndex = nextBoundary ? nextBoundary.index : lines.length
-
-  return lines.slice(startIndex, endIndex).join('\n').trim()
-}
 
 
 const chordRegex =
@@ -1350,63 +1320,7 @@ return knownSectionNames.includes(normalised)
 
 
 
-const replaceSectionText = (
-  fullText: string,
-  sectionName: string,
-  newSectionText: string
-) => {
-  if (!sectionName.trim()) return fullText
 
-  const target = parseSectionTarget(sectionName)
-  const lines = fullText.split('\n')
-
-  const sectionIndexes = lines
-    .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line, looksLikeChordLine))
-
-  let matchCount = 0
-  const targetBoundary = sectionIndexes.find(({ line }) => {
-    if (normaliseSectionName(line) !== target.label) return false
-    matchCount += 1
-    return matchCount === target.instance
-  })
-
-  if (!targetBoundary) return fullText
-
-  const startIndex = targetBoundary.index
-
-  const nextBoundary = sectionIndexes.find(
-    ({ index }) => index > startIndex
-  )
-
-  const endIndex = nextBoundary ? nextBoundary.index : lines.length
-
-  const originalHeader = lines[startIndex]
-
-const replacementBody: string[] = []
-let hasStartedBody = false
-
-for (const line of newSectionText.split('\n')) {
-  const trimmed = line.trim()
-  if (!trimmed) continue
-
-  if (isSectionBoundary(trimmed, looksLikeChordLine)) {
-    if (hasStartedBody) break
-    continue
-  }
-
-  hasStartedBody = true
-  replacementBody.push(line)
-}
-
-return [
-  ...lines.slice(0, startIndex),
-  originalHeader,
-  ...replacementBody,
-  '',
-  ...lines.slice(endIndex).filter((line, index) => index !== 0 || line.trim() !== ''),
-].join('\n')
-}
 
 
 
