@@ -1,5 +1,8 @@
 'use client'
 
+import { buildRewriteSuccessMessage } from '@/lib/rewriteMessages'
+
+
 import {
   buildNumberedRewriteSource,
   cleanRewriteText,
@@ -1608,19 +1611,15 @@ if (rewriteTarget === 'left') {
   setPerformanceSheet(finalText)
 }
 
-if (
-  rewriteConstraint === 'keep-lines' &&
-  normaliseSectionName(rewriteSectionName).includes('chorus') &&
-  lastLineCount !== originalLineCount
-) {
-  setRewriteMessage(
-    `Rewrite complete — chorus polished with flexible structure (${originalLineCount} → ${lastLineCount} lines)`
-  )
-} else if (rewriteConstraint === 'keep-lines') {
-  setRewriteMessage(`Rewrite complete — ${originalLineCount} lines preserved`)
-} else {
-  setRewriteMessage('Rewrite complete')
-}
+setRewriteMessage(
+  buildRewriteSuccessMessage({
+    rewriteConstraint,
+    rewriteSectionName,
+    originalLineCount,
+    lastLineCount,
+    normaliseSectionName,
+  })
+)
 setRewriteDone(true)
 setTimeout(() => setRewriteDone(false), 1000)
 } catch (err: any) {
