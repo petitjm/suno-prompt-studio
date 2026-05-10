@@ -1374,15 +1374,7 @@ const removeChordsFromRewriteSource = () => {
 
   const lyricsOnly = extractLyricsOnly(sourceForDetection)
 
-applyRewriteToTarget({
-  rewriteTarget,
-  finalText,
-  setCompareLeftText,
-  setCompareRightText,
-  setPerformanceSheet,
-  setFlashLeftPanel,
-  setFlashRightPanel,
-})
+
 
   setRewriteMessage('Chord lines removed. Rewrite is now available.')
   setTimeout(() => setExtractingLyricsOnly(false), 800)
@@ -1607,19 +1599,15 @@ console.log(fullSourceText)
 )
 }
 
-console.log('finalText after:', finalText)
-
-if (rewriteTarget === 'left') {
-  setCompareLeftText(finalText)
-  setFlashLeftPanel(true)
-  setTimeout(() => setFlashLeftPanel(false), 600)
-} else if (rewriteTarget === 'right') {
-  setCompareRightText(finalText)
-  setFlashRightPanel(true)
-  setTimeout(() => setFlashRightPanel(false), 600)
-} else {
-  setPerformanceSheet(finalText)
-}
+applyRewriteToTarget({
+  rewriteTarget,
+  finalText,
+  setCompareLeftText,
+  setCompareRightText,
+  setPerformanceSheet,
+  setFlashLeftPanel,
+  setFlashRightPanel,
+})
 
 setRewriteMessage(
   buildRewriteSuccessMessage({
