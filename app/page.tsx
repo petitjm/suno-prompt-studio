@@ -1562,7 +1562,7 @@ const finalText = finalizeRewriteText({
   isSectionHeader,
   looksLikeChordLine,
 })
-}
+
 
 applyRewriteToTarget({
   rewriteTarget,
