@@ -1,6 +1,12 @@
 'use client'
 
 import {
+  getMustPreserveLines,
+  getRewriteFullSourceText,
+} from '@/lib/rewriteSource'
+
+
+import {
   assertLineCountPreserved,
   assertSelectedSectionOnly,
   isRelaxedChorusRewrite,
@@ -1387,12 +1393,12 @@ const removeChordsFromRewriteSource = () => {
 
 
 const runRewriteLab = async () => {
-  const fullSourceText =
-      rewriteTarget === 'left'
-        ? compareLeftText
-        : rewriteTarget === 'right'
-          ? compareRightText
-          : performanceSheet
+ const fullSourceText = getRewriteFullSourceText({
+  rewriteTarget,
+  compareLeftText,
+  compareRightText,
+  performanceSheet,
+})
 
 
 
@@ -1434,8 +1440,7 @@ const originalLineCount = countLyricLines(sourceText, isSectionHeader)
 
    // const isHookMode = rewriteInstruction.toLowerCase().includes('hook')
 
-  const mustPreserveLines =
-  rewriteConstraint === 'keep-lines' 
+    const mustPreserveLines = getMustPreserveLines(rewriteConstraint)
 
 
     const structuredSourceText =
