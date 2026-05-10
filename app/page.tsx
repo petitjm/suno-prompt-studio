@@ -1,5 +1,8 @@
 'use client'
 
+import { requestRewrite } from '@/lib/rewriteApi'
+
+
 import {
   buildRewriteInstruction,
   rewritePresets,
@@ -1451,56 +1454,36 @@ const sourceText =
             : sourceText
 
 
-const runRewriteAttempt = async () => {
-  const res = await fetch('/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      mode: 'rewrite',
-instruction:
-  rewriteSectionOnly
-    ? `
+
+
+let rewritten = ''
+let lastLineCount = originalLineCount
+
+for (let attempt = 1; attempt <= 3; attempt++) {
+  rewritten = await requestRewrite({
+  instruction:
+    rewriteSectionOnly
+      ? `
 STRICT RULES:
 - Rewrite ONLY the provided section.
 - Preserve meaning and emotional tone.
 - Keep structure unless instructed otherwise.
 
 TASK:
-${buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly)}
+${buildRewriteInstruction(
+  rewriteInstruction,
+  rewriteConstraint,
+  rewriteSectionOnly
+)}
 `
-    : buildRewriteInstruction(rewriteInstruction, rewriteConstraint, rewriteSectionOnly), lyrics: structuredSourceText,
-    }),
-  })
-
-  const data = await readJsonSafe(res)
-
-  if (!res.ok) {
-    throw new Error(data.error || 'Rewrite failed')
-  }
-
-if (rewriteSectionOnly) {
-  return (
-    data.rewrite ||
-    data.lyrics ||
-    data.text ||
-    ''
-  )
-}
-
-return (
-  data.lyrics_full ||
-  data.lyrics ||
-  data.rewrite ||
-  data.text ||
-  ''
-)
-}
-
-let rewritten = ''
-let lastLineCount = originalLineCount
-
-for (let attempt = 1; attempt <= 3; attempt++) {
-  rewritten = await runRewriteAttempt()
+      : buildRewriteInstruction(
+          rewriteInstruction,
+          rewriteConstraint,
+          rewriteSectionOnly
+        ),
+  lyrics: structuredSourceText,
+  sectionOnly: rewriteSectionOnly,
+})
 
 const isChorusRewrite = normaliseSectionName(rewriteSectionName).includes('chorus')
 const shouldRelaxAfterTwoFailures =
