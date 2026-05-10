@@ -1,4 +1,5 @@
-'use client'
+'use client'import { applyRewriteToTarget } from '@/lib/rewriteApply'
+
 
 import {
   getMustPreserveLines,
@@ -1371,17 +1372,15 @@ const removeChordsFromRewriteSource = () => {
 
   const lyricsOnly = extractLyricsOnly(sourceForDetection)
 
-  if (rewriteTarget === 'left') {
-    setCompareLeftText(lyricsOnly)
-    setFlashLeftPanel(true)
-    setTimeout(() => setFlashLeftPanel(false), 600)
-  } else if (rewriteTarget === 'right') {
-    setCompareRightText(lyricsOnly)
-    setFlashRightPanel(true)
-    setTimeout(() => setFlashRightPanel(false), 600)
-  } else {
-    setPerformanceSheet(lyricsOnly)
-  }
+applyRewriteToTarget({
+  rewriteTarget,
+  finalText,
+  setCompareLeftText,
+  setCompareRightText,
+  setPerformanceSheet,
+  setFlashLeftPanel,
+  setFlashRightPanel,
+})
 
   setRewriteMessage('Chord lines removed. Rewrite is now available.')
   setTimeout(() => setExtractingLyricsOnly(false), 800)
