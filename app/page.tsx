@@ -1,4 +1,6 @@
-'use client'import { applyRewriteToTarget } from '@/lib/rewriteApply'
+'use client'
+
+import { applyRewriteToTarget } from '@/lib/rewriteApply'
 
 
 import {
