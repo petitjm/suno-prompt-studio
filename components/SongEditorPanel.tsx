@@ -2,34 +2,7 @@
 
 import React from 'react'
 
-type Project = {
-  id: string
-  title: string
-  created_at?: string
-  updated_at?: string
-}
-
-type SongVersionRecord = {
-  id: string
-  project_id: string
-  title?: string
-  created_at?: string
-  result?: {
-    lyrics_full?: string
-    [key: string]: unknown
-  }
-}
-
-type ChordResponse = {
-  key?: string
-  capo?: string
-  verse?: string
-  chorus?: string
-  bridge?: string
-  notes?: string
-  error?: string
-}
-
+import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
 
 type SongEditorPanelProps = {
   chordsText: string
