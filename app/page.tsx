@@ -1390,6 +1390,20 @@ const sourceForDetection =
 
              const detectedSections = detectSections(sourceForDetection, isSectionHeader)
 
+             React.useEffect(() => {
+              if (!rewriteSectionOnly) return
+              if (!rewriteSectionName) return
+
+  const sectionStillExists = detectedSections.some(
+    (section) => section.label === rewriteSectionName
+  )
+
+  if (!sectionStillExists) {
+    setRewriteSectionName('')
+    setRewriteMessage('The previous section choice is no longer valid. Please choose a section again.')
+  }
+}, [rewriteSectionOnly, rewriteSectionName, detectedSections])
+
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
 
@@ -1628,9 +1642,10 @@ setTimeout(() => setRewriteDone(false), 1000)
 
 const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
-const hasChordLinesInRewriteSource = sourceForDetection
-  .split('\n')
-  .some((line) => looksLikeChordLine(line))
+const cleanedRewriteSource = extractLyricsOnly(sourceForDetection)
+
+const hasChordLinesInRewriteSource =
+  sourceForDetection.trim() !== cleanedRewriteSource.trim()
 
   return (
 
