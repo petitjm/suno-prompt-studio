@@ -90,6 +90,14 @@ export type ChordRewriteMode =
   | 'baritone_key'
   | 'capo_friendly'
 
+  export type AppMode =
+  | 'write'
+  | 'chords'
+  | 'sheet'
+  | 'rehearse'
+  | 'perform'
+  | 'video'
+
 export type ProjectSortKey = 'updated_at' | 'title'
 export type SortDirection = 'asc' | 'desc'
 
