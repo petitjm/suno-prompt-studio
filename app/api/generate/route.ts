@@ -85,29 +85,50 @@ Rules:
         messages: [{ role: 'user', content: prompt }],
       })
 
-      const text = completion.choices[0].message.content || '{}'
+      const text = completion.choices[0].message.content || ''
 
-      let parsed
-      try {
-        parsed = JSON.parse(text)
-      } catch {
-        return NextResponse.json(
-          { error: 'Invalid JSON from model', raw: text },
-          { status: 500 }
-        )
-      }
-const rewriteText =
-  parsed.rewrite ||
-  parsed.lyrics ||
-  parsed.text ||
-  parsed.lyrics_full ||
-  ''
+function stripJsonFences(value: string) {
+  return value
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```$/i, '')
+    .trim()
+}
+
+const cleanedText = stripJsonFences(text)
+
+let parsed: any = null
+let rewriteText = ''
+
+try {
+  parsed = JSON.parse(cleanedText)
+
+  rewriteText =
+    parsed.rewrite ||
+    parsed.lyrics ||
+    parsed.text ||
+    parsed.lyrics_full ||
+    ''
+} catch {
+  // Rewrite mode fallback:
+  // If the model returns plain lyric text instead of JSON,
+  // use it as the rewrite instead of failing the request.
+  rewriteText = cleanedText
+}
+
+if (!rewriteText.trim()) {
+  return NextResponse.json(
+    { error: 'No rewrite returned from model', raw: text },
+    { status: 500 }
+  )
+}
 
 return NextResponse.json({
   rewrite: rewriteText,
   lyrics: rewriteText,
   text: rewriteText,
-  raw: parsed,
+  raw: parsed || cleanedText,
 })
     }
 
