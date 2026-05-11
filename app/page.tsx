@@ -1410,7 +1410,7 @@ const removeChordsFromRewriteSource = () => {
   if (rewriteTarget === 'main') {
     setPerformanceSheet(lyricsOnly)
   }
-
+  setRewriteSectionName('')
   setRewriteMessage('Chord lines removed. Rewrite is now available.')
 
   setTimeout(() => setExtractingLyricsOnly(false), 800)
