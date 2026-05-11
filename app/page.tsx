@@ -1389,9 +1389,24 @@ const removeChordsFromRewriteSource = () => {
 
   const lyricsOnly = extractLyricsOnly(sourceForDetection)
 
+  if (rewriteTarget === 'left') {
+    setCompareLeftText(lyricsOnly)
+    setFlashLeftPanel(true)
+    setTimeout(() => setFlashLeftPanel(false), 600)
+  }
 
+  if (rewriteTarget === 'right') {
+    setCompareRightText(lyricsOnly)
+    setFlashRightPanel(true)
+    setTimeout(() => setFlashRightPanel(false), 600)
+  }
+
+  if (rewriteTarget === 'main') {
+    setPerformanceSheet(lyricsOnly)
+  }
 
   setRewriteMessage('Chord lines removed. Rewrite is now available.')
+
   setTimeout(() => setExtractingLyricsOnly(false), 800)
 }
 
