@@ -1,6 +1,27 @@
 'use client'
 
-
+import type {
+  Project,
+  FormState,
+  GenerateResponse,
+  ChordResponse,
+  SongVersionRecord,
+  ChordVersionRecord,
+  ArtistDNAProfile,
+  DNAAnalysisInput,
+  RewriteMode,
+  ChordRewriteMode,
+  ProjectSortKey,
+  SortDirection,
+  PerformanceSection,
+  PreviewSectionKey,
+  PreviewInstrument,
+  PreviewFeel,
+  PreviewPattern,
+  PreviewBar,
+  PreviewBarMeta,
+  AppMode,
+} from '@/types/song'
 import SongEditorPanel from '@/components/SongEditorPanel'
 
 import LiveDiffPreview from '@/components/LiveDiffPreview'
@@ -72,27 +93,12 @@ import {
   normaliseSectionName,
   parseSectionTarget,
 } from '@/lib/songSections'
-import type {
-  ChordResponse,
-  PerformanceSection,
-  PreviewFeel,
-  PreviewInstrument,
-  PreviewPattern,
-  PreviewSectionKey,
-  Project,
-SongVersionRecord,
-ChordVersionRecord,
-} from '@/types/song'
-
-type PreviewBarMeta = {
-  barIndex: number
-  label: string
-  chord: string
-  sectionId: string | null
-}
 
 
-type AppMode = 'write' | 'chords' | 'sheet' | 'rehearse' | 'perform' | 'video'
+
+
+
+
 
 function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
