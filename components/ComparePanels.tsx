@@ -5,6 +5,8 @@
 
 import React from 'react'
 
+import type { AppMode } from '@/types/song'
+
 type ComparePanelsProps = {
   compareLeftRef: React.RefObject<HTMLTextAreaElement | null>
   compareRightRef: React.RefObject<HTMLTextAreaElement | null>
@@ -45,7 +47,7 @@ type ComparePanelsProps = {
   performanceScrollRef: React.RefObject<HTMLDivElement | null>
   setPerformanceSheet: (value: string) => void
   setCurrentBarIndex: (value: number) => void
-  setMode: (value: 'write' | 'chords' | 'sheet' | 'rehearse' | 'perform' | 'video') => void
+  setMode: (value: AppMode) => void
 }
 
 export default function ComparePanels({
