@@ -1,6 +1,5 @@
 import {
   extractSectionTextStrict,
-  isSectionBoundary,
   replaceSectionText,
 } from './songSections'
 import {
@@ -8,6 +7,14 @@ import {
   countLyricLines,
 } from './rewriteText'
 import { assertLineCountPreserved } from './rewriteValidation'
+
+const stripRewriteLineNumbers = (text: string) => {
+  return text
+    .split('\n')
+    .map((line) => line.replace(/^\s*\d+\.\s*/, ''))
+    .join('\n')
+    .trim()
+}
 
 export const finalizeRewriteText = ({
   rewritten,
@@ -18,7 +25,6 @@ export const finalizeRewriteText = ({
   mustPreserveLines,
   originalLineCount,
   isSectionHeader,
-  looksLikeChordLine,
 }: {
   rewritten: string
   rewriteSectionOnly: boolean
@@ -31,21 +37,21 @@ export const finalizeRewriteText = ({
   looksLikeChordLine: (line: string) => boolean
 }) => {
   const cleanedRewrite = cleanRewriteText(rewritten)
+  const cleanedRewriteWithoutNumbers = stripRewriteLineNumbers(cleanedRewrite)
 
-  let finalText = cleanedRewrite
+  let finalText = cleanedRewriteWithoutNumbers
 
   if (rewriteSectionOnly) {
-    const boundaryCheck = (line: string) =>
-      isSectionBoundary(line, looksLikeChordLine)
+    const boundaryCheck = isSectionHeader
 
     const extractedRewrittenSection = extractSectionTextStrict(
-      rewritten,
+      cleanedRewriteWithoutNumbers,
       rewriteSectionName,
       boundaryCheck
     )
 
     const safeRewrittenSection =
-      extractedRewrittenSection || cleanedRewrite
+      extractedRewrittenSection || cleanedRewriteWithoutNumbers
 
     if (!safeRewrittenSection.trim()) {
       throw new Error('Failed to isolate rewritten section')

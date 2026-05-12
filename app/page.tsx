@@ -102,7 +102,7 @@ import {
 
 function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="relative group flex items-center justify-center">
+    <div className="relative group flex w-full items-center justify-center">
       {children}
       <div className="absolute left-full ml-2 hidden group-hover:block whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 z-50">
         {label}
@@ -323,6 +323,9 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
     })
   }
 
+
+
+
   const sendOtp = async () => {
     setAuthMessage('Sending code...')
 
@@ -341,35 +344,55 @@ const previewBarMeta = React.useMemo<PreviewBarMeta[]>(() => {
     setAuthMessage('Check your email for the verification code.')
   }
 
-  const verifyOtp = async () => {
-    setAuthMessage('Verifying...')
+const verifyOtp = async () => {
+  setAuthMessage('Verifying...')
 
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email',
-    })
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: 'email',
+  })
 
-    if (error) {
-      setAuthMessage(error.message)
-      return
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    setUserEmail(user?.email || null)
-    setAuthMessage(`Signed in as ${user?.email}`)
+  if (error) {
+    setAuthMessage(error.message)
+    return
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  resetRewriteWorkbenchState()
+
+  setUserEmail(user?.email || null)
+  setAuthMessage(`Signed in as ${user?.email}`)
+}
+
+const resetRewriteWorkbenchState = () => {
+  setRewriteTarget('right')
+  setRewritePreset('')
+  setRewriteInstruction('')
+  setRewriteConstraint('default')
+  setCommercialPolishMode(false)
+
+  setRewriteSectionOnly(false)
+  setRewriteSectionName('')
+  setRewriteMessage('')
+  setRewriteDone(false)
+}
+
+
   const signOut = async () => {
+  resetRewriteWorkbenchState()
+
   await supabase.auth.signOut()
+
   setUserEmail(null)
   setEmail('')
   setOtp('')
   setAuthMessage('')
 }
+
 
   const debugProjects = async () => {
     try {
@@ -618,6 +641,11 @@ const [rewriteDone, setRewriteDone] = useState(false)
 const [rewriteSectionOnly, setRewriteSectionOnly] = useState(false)
 const [rewriteSectionName, setRewriteSectionName] = useState('')
 
+
+const resetRewriteSelection = () => {
+  setRewriteSectionName('')
+  setRewriteMessage('')
+}
 
 
 const [rewritePreset, setRewritePreset] = useState('')
@@ -1088,40 +1116,46 @@ const saveChords = async () => {
   }
 }
 
-  if (!userEmail) {
+if (!userEmail) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded bg-gray-800 p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-gray-800 p-6 shadow-xl border border-gray-700">
         <h1 className="text-2xl font-semibold mb-2">Suno Prompt Studio</h1>
-        <p className="text-gray-400 mb-4">{authMessage || 'Sign in to continue.'}</p>
+
+        <p className="text-gray-300 mb-4">
+          {authMessage || 'Sign in to continue.'}
+        </p>
 
         <div className="flex flex-col gap-3">
+          <label className="text-sm text-gray-300">Email address</label>
           <input
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="px-3 py-2 rounded bg-gray-700 text-white"
+            placeholder="you@example.com"
+            className="w-full px-3 py-2 rounded bg-white text-black border border-gray-400 placeholder-gray-500"
           />
 
           <button
             type="button"
             onClick={sendOtp}
-            className="px-4 py-2 rounded bg-blue-600 text-white"
+            className="w-full px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold"
           >
             Send Verification Code
           </button>
 
+          <label className="text-sm text-gray-300 mt-3">Verification code</label>
           <input
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
-            placeholder="Verification code"
-            className="px-3 py-2 rounded bg-gray-700 text-white"
+            placeholder="Enter code"
+            className="w-full px-3 py-2 rounded bg-white text-black border border-gray-400 placeholder-gray-500"
           />
 
           <button
             type="button"
             onClick={verifyOtp}
-            className="px-4 py-2 rounded bg-green-600 text-white"
+            className="w-full px-4 py-2 rounded bg-green-600 hover:bg-green-500 text-white font-semibold"
           >
             Verify Code
           </button>
@@ -1292,28 +1326,63 @@ const looksLikeChordLine = (line: string) => {
   const trimmed = line.trim()
   if (!trimmed) return false
 
+  // Do not treat obvious lyric lines as chord lines
+  if (/[a-z]{2,}/.test(trimmed.replace(/\b(add|maj|min|dim|aug|sus|solo|intro|outro|bridge|verse|chorus)\b/gi, ''))) {
+    const lyricWords = trimmed
+      .split(/\s+/)
+      .filter((word) => /^[a-z]{2,}$/i.test(word))
+      .length
+
+    if (lyricWords >= 3 && !trimmed.includes('|')) return false
+  }
+
+  const chordTokenRegex =
+    /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add)?[0-9]*(\((add|sus|maj|min|dim|aug)?[#b]?[0-9]+\))?((add|sus|maj|min|dim|aug)[#b]?[0-9]+)?(\/[A-G](#|b)?)?$/i
+
   const cleaned = trimmed
-    .replace(/\|/g, ' ')
+    .replace(/[|]/g, ' ')
     .replace(/,/g, ' ')
+    .replace(/[–—]/g, '-')
     .replace(/\s+/g, ' ')
+    .trim()
 
-  let tokens = cleaned.split(' ').filter(Boolean)
+  let tokens = cleaned
+    .split(' ')
+    .flatMap((token) =>
+      token
+        .replace(/[()[\]]/g, '')
+        .split('-')
+        .map((part) => part.trim())
+        .filter(Boolean)
+    )
 
-  const leadingLabels = ['solo', 'intro', 'outro', 'instrumental', 'break']
+  const leadingLabels = [
+    'solo',
+    'intro',
+    'outro',
+    'instrumental',
+    'break',
+    'turnaround',
+    'alt',
+  ]
+
   if (tokens.length > 1 && leadingLabels.includes(tokens[0].toLowerCase())) {
     tokens = tokens.slice(1)
   }
 
   if (!tokens.length) return false
 
-  const chordTokenRegex =
-    /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add)?[0-9]*(b|#)?[0-9]*(\/[A-G](#|b)?)?$/i
+  const chordCount = tokens.filter((token) => chordTokenRegex.test(token)).length
 
-  const chordCount = tokens.filter((token) =>
-    chordTokenRegex.test(token)
-  ).length
+  // Bar-line chord format, e.g. solo |G |D7 |G |C
+  if (trimmed.includes('|') && chordCount >= 2) return true
 
-  return chordCount >= Math.ceil(tokens.length * 0.6)
+  // Spaced chord line, e.g. G        D7       C
+  if (chordCount >= 2 && chordCount >= Math.ceil(tokens.length * 0.6)) {
+    return true
+  }
+
+  return false
 }
 
 const extractLyricsOnly = (text: string) => {
@@ -1361,10 +1430,18 @@ const isSectionHeader = (line: string) => {
   // Verse 1:
   if (/^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)) return true
 
- // Verse / Chorus / Bridge etc. without brackets or colon
-const normalised = normaliseSectionName(trimmed)
+  const normalised = normaliseSectionName(trimmed)
 
-return knownSectionNames.includes(normalised)
+  // Common song section names, with optional numbers
+  if (
+    /^(intro|verse|pre chorus|pre-chorus|chorus|bridge|middle 8|solo|instrumental|break|outro|tag|refrain)(\s+\d+)?$/.test(
+      normalised
+    )
+  ) {
+    return true
+  }
+
+  return knownSectionNames.includes(normalised)
 }
 
 
@@ -1390,19 +1467,7 @@ const sourceForDetection =
 
              const detectedSections = detectSections(sourceForDetection, isSectionHeader)
 
-             React.useEffect(() => {
-              if (!rewriteSectionOnly) return
-              if (!rewriteSectionName) return
 
-  const sectionStillExists = detectedSections.some(
-    (section) => section.label === rewriteSectionName
-  )
-
-  if (!sectionStillExists) {
-    setRewriteSectionName('')
-    setRewriteMessage('The previous section choice is no longer valid. Please choose a section again.')
-  }
-}, [rewriteSectionOnly, rewriteSectionName, detectedSections])
 
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
@@ -1424,8 +1489,9 @@ const removeChordsFromRewriteSource = () => {
   if (rewriteTarget === 'main') {
     setPerformanceSheet(lyricsOnly)
   }
+
   setRewriteSectionName('')
-  setRewriteMessage('Chord lines removed. Rewrite is now available.')
+  setRewriteMessage('Chord lines removed. Please re-select the section to rewrite.')
 
   setTimeout(() => setExtractingLyricsOnly(false), 800)
 }
@@ -1436,12 +1502,11 @@ const removeChordsFromRewriteSource = () => {
 
 
 const runRewriteLab = async () => {
- const fullSourceText = getRewriteFullSourceText({
-  rewriteTarget,
-  compareLeftText,
-  compareRightText,
-  performanceSheet,
-})
+const fullSourceText = sourceForDetection
+    if (hasChordLinesInRewriteSource) {
+      setRewriteMessage('Chords detected. Please remove chord lines before rewriting.')
+      return
+    }
 
 
 
@@ -1451,8 +1516,8 @@ const sourceText =
     ? extractSectionTextStrict(
         fullSourceText,
         rewriteSectionName,
-  (line) => isSectionBoundary(line, looksLikeChordLine)
-)
+        isSectionHeader
+      )
     : fullSourceText
 
     assertSelectedSectionOnly({
@@ -1609,6 +1674,30 @@ const finalText = finalizeRewriteText({
   looksLikeChordLine,
 })
 
+console.log('REWRITE DEBUG', {
+  rewriteTarget,
+  rewriteSectionOnly,
+  rewriteSectionName,
+  sourceText,
+  rewritten,
+  finalText,
+  changed: finalText.trim() !== fullSourceText.trim(),
+})
+
+
+const normaliseForCompare = (value: string) =>
+  value
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+$/gm, '')
+    .trim()
+
+if (normaliseForCompare(finalText) === normaliseForCompare(fullSourceText)) {
+  setRewriteMessage(
+    'Rewrite completed, but the model returned no visible changes. Try a stronger instruction or a different rewrite style.'
+  )
+  return
+}
+
 
 applyRewriteToTarget({
   rewriteTarget,
@@ -1642,18 +1731,17 @@ setTimeout(() => setRewriteDone(false), 1000)
 
 const panelsMatch =
   compareLeftText.trim() === compareRightText.trim()
-const cleanedRewriteSource = extractLyricsOnly(sourceForDetection)
-
-const hasChordLinesInRewriteSource =
-  sourceForDetection.trim() !== cleanedRewriteSource.trim()
+const hasChordLinesInRewriteSource = sourceForDetection
+  .split('\n')
+  .some((line) => looksLikeChordLine(line))
 
   return (
 
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-900 text-white">
       <div
         className={`${
-         sidebarCollapsed ? 'w-14' : 'w-44'
-        } bg-gray-800 p-3 flex flex-col transition-all duration-300`}
+          sidebarCollapsed ? 'w-14' : 'w-44'
+        } shrink-0 bg-gray-800 p-3 flex flex-col transition-all duration-300`}
       >
         <button
           type="button"
@@ -1674,7 +1762,7 @@ const hasChordLinesInRewriteSource =
         </div>
       </div>
 
-<div className="flex-1 flex flex-col">
+<div className="flex-1 min-w-0 flex flex-col">
   <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
     <span className="text-sm text-gray-400">Mode: {mode.toUpperCase()}</span>
 
@@ -1691,7 +1779,7 @@ const hasChordLinesInRewriteSource =
     </div>
   </div>
 
-        <div ref={performanceScrollRef} className="flex-1 overflow-auto p-6">
+        <div ref={performanceScrollRef} className="flex-1 min-h-0 overflow-auto p-6">
 
 
 

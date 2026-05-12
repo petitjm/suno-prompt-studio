@@ -173,21 +173,24 @@ export default function RewritePanel({
 
          <select
           value={rewriteSectionName}
-          onChange={(e) => setRewriteSectionName(e.target.value)}
+          onChange={(e) => {
+            setRewriteSectionName(e.target.value)
+            setRewriteMessage('')
+          }}
           disabled={!rewriteSectionOnly || detectedSections.length === 0}
           className="flex-1 px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
-            >
-              <option value="">Select section</option>
+        >
+          <option value="">Select section</option>
 
-              {detectedSections.map((section, i) => (
-                  <option
-                      key={section.id}
-                      value={section.label}
-                    >
-                      {section.label}
-                    </option>
-                ))}
-         </select>
+          {detectedSections.map((section) => (
+            <option
+              key={section.id}
+              value={section.label}
+            >
+              {section.label}
+            </option>
+          ))}
+        </select>
     
      {detectedSections.length === 0 && (
       <div className="text-xs text-yellow-400 mt-1">
