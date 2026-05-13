@@ -1113,23 +1113,26 @@ const saveChords = async () => {
 
     let chordsToSave: ChordResponse | null = null
 
-    try {
-      const parsed = JSON.parse(chordsText)
+        try {
+          const parsed = JSON.parse(chordsText)
 
-      if (
-        parsed &&
-        typeof parsed === 'object' &&
-        !Array.isArray(parsed)
-      ) {
-        chordsToSave = parsed
-      }
-    } catch {
-      setProjectMessage('Chord JSON is not valid.')
-      return
-    }
+          if (
+            parsed &&
+            typeof parsed === 'object' &&
+            !Array.isArray(parsed)
+          ) {
+            chordsToSave = parsed
+          } else {
+            setProjectMessage('Chord JSON must be an object, not a number, string, or array.')
+            return
+          }
+        } catch {
+          setProjectMessage('Chord JSON is not valid.')
+          return
+        }
 
     if (!chordsToSave) {
-      setProjectMessage('No valid chord JSON to save.')
+      setProjectMessage('Chord JSON must be an object, for example: {"key":"G","verse":"G | D7 | G | C"}')
       return
     }
 
@@ -1146,17 +1149,29 @@ const saveChords = async () => {
       }),
     })
 
-    const data = await readJsonSafe(res)
-    if (!res.ok) throw new Error(data.error || 'Failed to save chords')
+        const data = await readJsonSafe(res)
+        if (!res.ok) throw new Error(data.error || 'Failed to save chords')
 
-    await loadProjectData(activeProject.id)
+        const savedVersion = data.version
 
-    setChords(chordsToSave)
-    setChordsText(JSON.stringify(chordsToSave, null, 2))
 
-    setChordVersionTitle('')
-    setProjectMessage('Chords saved')
-    setJustSavedChords(true)
+
+
+        setChords(chordsToSave)
+        setChordsText(JSON.stringify(chordsToSave, null, 2))
+
+        if (savedVersion?.id) {
+          setActiveChordVersionId(savedVersion.id)
+
+          setChordVersions((current) => [
+            savedVersion,
+            ...current.filter((version) => version.id !== savedVersion.id),
+          ])
+        }
+
+        setChordVersionTitle('')
+        setProjectMessage('Chords saved')
+        setJustSavedChords(true)
 
     setTimeout(() => setJustSavedChords(false), 1000)
   } catch (err: any) {
