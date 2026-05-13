@@ -203,7 +203,7 @@ export default function RewritePanel({
         {!rewriteSectionOnly && hasChordLinesInRewriteSource && (
           <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
             <div>
-              Chords detected. Rewrite is available only after removing chord lines.
+              Chord lines were detected in the selected song sheet. Remove them before rewriting lyrics.
             </div>
 
             <div className="mt-2 flex gap-2">
@@ -235,10 +235,10 @@ export default function RewritePanel({
           type="button"
           onClick={runRewriteLab}
           disabled={
-              rewriteLoading ||
-              !rewriteInstruction.trim() ||
-              (!rewriteSectionOnly && hasChordLinesInRewriteSource)
-            }
+            rewriteLoading ||
+            !rewriteInstruction.trim() ||
+            (!rewriteSectionOnly && hasChordLinesInRewriteSource)
+          }
           className={`px-4 py-2 rounded text-white transition ${
             rewriteLoading
               ? 'bg-gray-600 scale-95'
@@ -250,10 +250,9 @@ export default function RewritePanel({
           {rewriteLoading ? 'Rewriting...' : rewriteDone ? 'Rewritten ✓' : 'Run Rewrite'}
         </button>
 
-          {rewriteMessage && (
-            <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
-          )}
-</div>
-    
-  )
+        {rewriteMessage && (
+          <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
+        )}
+      </div>
+    )
 }

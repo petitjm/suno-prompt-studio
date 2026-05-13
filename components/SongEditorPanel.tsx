@@ -84,7 +84,10 @@ export default function SongEditorPanel({
       <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
 
       <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-        <h2 className="text-lg font-semibold mb-3">Chord JSON</h2>
+       <h2 className="text-lg font-semibold mb-1">Structured Chord JSON</h2>
+        <p className="text-xs text-gray-400 mb-3">
+          Optional: paste structured chord data here. Chords embedded in the song sheet are handled separately by Remove Chords.
+        </p>
 
         <textarea
           value={chordsText}
@@ -106,13 +109,16 @@ export default function SongEditorPanel({
               // allow invalid JSON while typing
             }
           }}
-          placeholder="Paste chord JSON here"
+          placeholder='Optional structured chord JSON, e.g. {"key":"G","verse":"G | D7 | G | C"}'
           className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
         />
       </div>
 
       <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-        <h2 className="text-lg font-semibold mb-3">Song / Lyrics</h2>
+        <h2 className="text-lg font-semibold mb-1">Song Sheet / Lyrics</h2>
+            <p className="text-xs text-gray-400 mb-3">
+              Paste lyrics here. Chord lines above lyrics are allowed; use Remove Chords in the Rewrite Lab before rewriting.
+            </p>
 
         <textarea
           value={performanceSheet}
