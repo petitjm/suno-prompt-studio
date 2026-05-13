@@ -221,13 +221,7 @@ export default function RewritePanel({
                 {extractingLyricsOnly ? 'Removed ✓' : 'Remove chords'}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setRewriteMessage('Rewrite cancelled.')}
-                className="px-3 py-1 rounded bg-gray-600 text-white text-xs"
-              >
-                No
-              </button>
+              
             </div>
           </div>
         )}

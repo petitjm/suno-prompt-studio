@@ -368,8 +368,10 @@ const verifyOtp = async () => {
   setAuthMessage(`Signed in as ${user?.email}`)
 }
 
-const resetRewriteWorkbenchState = () => {
-  setRewriteTarget('right')
+const resetRewriteWorkbenchState = (
+  target: 'left' | 'right' | 'main' = 'right'
+) => {
+  setRewriteTarget(target)
   setRewritePreset('')
   setRewriteInstruction('')
   setRewriteConstraint('default')
@@ -379,6 +381,23 @@ const resetRewriteWorkbenchState = () => {
   setRewriteSectionName('')
   setRewriteMessage('')
   setRewriteDone(false)
+}
+
+
+
+const setPerformanceSheetFromEditor = (value: string) => {
+  setPerformanceSheet(value)
+  resetRewriteWorkbenchState('main')
+}
+
+const setCompareLeftTextFromLoader = (value: string) => {
+  setCompareLeftText(value)
+  resetRewriteWorkbenchState('left')
+}
+
+const setCompareRightTextFromLoader = (value: string) => {
+  setCompareRightText(value)
+  resetRewriteWorkbenchState('right')
 }
 
 
@@ -1372,17 +1391,22 @@ const looksLikeChordLine = (line: string) => {
 
   if (!tokens.length) return false
 
-  const chordCount = tokens.filter((token) => chordTokenRegex.test(token)).length
+const chordCount = tokens.filter((token) => chordTokenRegex.test(token)).length
 
-  // Bar-line chord format, e.g. solo |G |D7 |G |C
-  if (trimmed.includes('|') && chordCount >= 2) return true
+// Single standalone chord line, e.g. G, D7, Am, Bbmaj7
+if (tokens.length === 1 && chordCount === 1) {
+  return true
+}
 
-  // Spaced chord line, e.g. G        D7       C
-  if (chordCount >= 2 && chordCount >= Math.ceil(tokens.length * 0.6)) {
-    return true
-  }
+// Bar-line chord format, e.g. solo |G |D7 |G |C
+if (trimmed.includes('|') && chordCount >= 2) return true
 
-  return false
+// Spaced chord line, e.g. G        D7       C
+if (chordCount >= 2 && chordCount >= Math.ceil(tokens.length * 0.6)) {
+  return true
+}
+
+return false
 }
 
 const extractLyricsOnly = (text: string) => {
@@ -1786,36 +1810,36 @@ const hasChordLinesInRewriteSource = sourceForDetection
           {mode === 'write' && (
             <div>
           <SongEditorPanel
-  chordsText={chordsText}
-  setChordsText={setChordsText}
-  setChords={setChords}
-  performanceSheet={performanceSheet}
-  setPerformanceSheet={setPerformanceSheet}
-  songVersions={songVersions}
-  activeSongVersionId={activeSongVersionId}
-  setActiveSongVersionId={setActiveSongVersionId}
-  songVersionTitle={songVersionTitle}
-  setSongVersionTitle={setSongVersionTitle}
-  activeProject={activeProject}
-  savingSong={savingSong}
-  justSavedSong={justSavedSong}
-  saveSong={saveSong}
-  comparingNow={comparingNow}
-  setComparingNow={setComparingNow}
-  compareLeftSongId={compareLeftSongId}
-  setCompareLeftSongId={setCompareLeftSongId}
-  compareRightSongId={compareRightSongId}
-  setCompareRightSongId={setCompareRightSongId}
-  setCompareLeftText={setCompareLeftText}
-  setCompareRightText={setCompareRightText}
-  setFlashLeftPanel={setFlashLeftPanel}
-  setFlashRightPanel={setFlashRightPanel}
-  loadingLeftCurrent={loadingLeftCurrent}
-  setLoadingLeftCurrent={setLoadingLeftCurrent}
-  loadingRightCurrent={loadingRightCurrent}
-  setLoadingRightCurrent={setLoadingRightCurrent}
-  formatUkDateTime={formatUkDateTime}
-/>
+              chordsText={chordsText}
+              setChordsText={setChordsText}
+              setChords={setChords}
+              performanceSheet={performanceSheet}
+              setPerformanceSheet={setPerformanceSheetFromEditor}
+              songVersions={songVersions}
+              activeSongVersionId={activeSongVersionId}
+              setActiveSongVersionId={setActiveSongVersionId}
+              songVersionTitle={songVersionTitle}
+              setSongVersionTitle={setSongVersionTitle}
+              activeProject={activeProject}
+              savingSong={savingSong}
+              justSavedSong={justSavedSong}
+              saveSong={saveSong}
+              comparingNow={comparingNow}
+              setComparingNow={setComparingNow}
+              compareLeftSongId={compareLeftSongId}
+              setCompareLeftSongId={setCompareLeftSongId}
+              compareRightSongId={compareRightSongId}
+              setCompareRightSongId={setCompareRightSongId}
+              setCompareLeftText={setCompareLeftTextFromLoader}
+              setCompareRightText={setCompareRightTextFromLoader}
+              setFlashLeftPanel={setFlashLeftPanel}
+              setFlashRightPanel={setFlashRightPanel}
+              loadingLeftCurrent={loadingLeftCurrent}
+              setLoadingLeftCurrent={setLoadingLeftCurrent}
+              loadingRightCurrent={loadingRightCurrent}
+              setLoadingRightCurrent={setLoadingRightCurrent}
+              formatUkDateTime={formatUkDateTime}
+            />
 
 <ComparePanels
   compareLeftRef={compareLeftRef}
@@ -1846,7 +1870,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
   syncCompareScroll={syncCompareScroll}
   autoSnapshot={autoSnapshot}
   performanceScrollRef={performanceScrollRef}
-  setPerformanceSheet={setPerformanceSheet}
+  setPerformanceSheet={setPerformanceSheetFromEditor}
   setCurrentBarIndex={setCurrentBarIndex}
   setMode={setMode}
 />
