@@ -1971,10 +1971,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
     </div>
 
 
-    <p className="text-xs text-gray-400 mb-2">
-      activeProject: {activeProject ? 'yes' : 'no'} | chords:{' '}
-      {chords ? 'yes' : 'no'} | chordVersions: {chordVersions.length}
-    </p>
+
 
 
 
