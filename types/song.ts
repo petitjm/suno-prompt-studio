@@ -32,6 +32,9 @@ export type ChordResponse = {
   bridge?: string
   notes?: string
   error?: string
+  source?: string
+  sections?: Record<string, string>
+  [key: string]: unknown
 }
 
 export type SongVersionRecord = {

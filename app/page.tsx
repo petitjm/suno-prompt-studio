@@ -1382,8 +1382,67 @@ const extractSectionText = (text: string, sectionName: string) => {
 }
 
 
+const extractEmbeddedChordsToJson = (text: string) => {
+  const lines = text.split('\n')
 
+  const sections: Record<string, string[]> = {}
+  const sectionCounts: Record<string, number> = {}
 
+  let currentSection = 'unsectioned'
+
+  const makeSectionKey = (heading: string) => {
+    const base = normaliseSectionName(heading)
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/gi, '')
+      .toLowerCase()
+
+    sectionCounts[base] = (sectionCounts[base] || 0) + 1
+
+    // If the heading already has a number, e.g. verse_1, keep it.
+    // If it repeats without a number, e.g. chorus, make chorus_1, chorus_2, etc.
+    if (/\d+$/.test(base)) {
+      return base
+    }
+
+    return `${base}_${sectionCounts[base]}`
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    if (isSectionHeader(trimmed)) {
+      currentSection = makeSectionKey(trimmed)
+      continue
+    }
+
+    if (looksLikeChordLine(line)) {
+      const chordLine = trimmed
+        .replace(/^solo\s*/i, '')
+        .replace(/\|+/g, '|')
+        .replace(/\s*\|\s*/g, ' | ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      if (!sections[currentSection]) {
+        sections[currentSection] = []
+      }
+
+      sections[currentSection].push(chordLine)
+    }
+  }
+
+  const compactSections: Record<string, string> = {}
+
+  for (const [section, chordLines] of Object.entries(sections)) {
+    compactSections[section] = chordLines.join(' / ')
+  }
+
+  return {
+    source: 'embedded-song-sheet',
+    sections: compactSections,
+  }
+}
 
 const chordRegex =
   /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add|dom)?[0-9]*(maj|min|m|sus|add|dim|aug|b|#|\/|[0-9])*$/i
@@ -1538,7 +1597,18 @@ const sourceForDetection =
 
              const detectedSections = detectSections(sourceForDetection, isSectionHeader)
 
+const extractChordsFromRewriteSourceToJson = () => {
+  const extracted = extractEmbeddedChordsToJson(sourceForDetection)
 
+  if (!Object.keys(extracted.sections).length) {
+    setRewriteMessage('No chord lines found to extract.')
+    return
+  }
+
+  setChords(extracted)
+  setChordsText(JSON.stringify(extracted, null, 2))
+  setRewriteMessage('Chord lines extracted to Structured Chord JSON. Review them before saving chords.')
+}
 
 const removeChordsFromRewriteSource = () => {
   setExtractingLyricsOnly(true)
@@ -1955,6 +2025,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
     hasChordLinesInRewriteSource={hasChordLinesInRewriteSource}
     extractingLyricsOnly={extractingLyricsOnly}
     removeChordsFromRewriteSource={removeChordsFromRewriteSource}
+    extractChordsFromRewriteSourceToJson={extractChordsFromRewriteSourceToJson}
     setRewriteMessage={setRewriteMessage}
     runRewriteLab={runRewriteLab}
     rewriteLoading={rewriteLoading}

@@ -26,6 +26,7 @@ type RewritePanelProps = {
   hasChordLinesInRewriteSource: boolean
   extractingLyricsOnly: boolean
   removeChordsFromRewriteSource: () => void
+  extractChordsFromRewriteSourceToJson: () => void
   setRewriteMessage: (value: string) => void
   runRewriteLab: () => void
   rewriteLoading: boolean
@@ -53,6 +54,7 @@ export default function RewritePanel({
   detectedSections,
   hasChordLinesInRewriteSource,
   extractingLyricsOnly,
+  extractChordsFromRewriteSourceToJson,
   removeChordsFromRewriteSource,
   setRewriteMessage,
   runRewriteLab,
@@ -220,6 +222,13 @@ export default function RewritePanel({
               >
                 {extractingLyricsOnly ? 'Removed ✓' : 'Remove chords'}
               </button>
+              <button
+                  type="button"
+                  onClick={extractChordsFromRewriteSourceToJson}
+                  className="px-3 py-1 rounded bg-blue-600 text-white text-xs"
+                >
+                  Extract chords to JSON
+                </button>
 
               
             </div>
