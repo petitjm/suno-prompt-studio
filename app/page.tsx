@@ -1988,31 +1988,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
 
 
-    {chordVersions.length > 0 && (
-        <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-             <h3 className="text-sm text-gray-400 mb-2">Chord Versions</h3>
 
-                <select
-                  value={activeChordVersionId || ''}
-                  onChange={(e) => {
-                    const id = e.target.value
-                    setActiveChordVersionId(id)
-
-                    const selected = chordVersions.find(v => v.id === id)
-                    if (selected?.chord_data) {
-                      setChords(selected.chord_data)
-                    }
-                  }}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-                >
-                  {chordVersions.map((v, i) => (
-                    <option key={v.id} value={v.id}>
-                      {v.title || `Version ${chordVersions.length - i}`} {v.created_at ? `(${formatUkDateTime(v.created_at)})` : ''}
-                    </option>
-                  ))}
-                </select>
-        </div>
-    )}
 
 
     <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
