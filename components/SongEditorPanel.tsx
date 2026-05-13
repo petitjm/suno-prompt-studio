@@ -94,7 +94,14 @@ export default function SongEditorPanel({
 
             try {
               const parsed = JSON.parse(text)
-              setChords(parsed)
+
+              if (
+                parsed &&
+                typeof parsed === 'object' &&
+                !Array.isArray(parsed)
+              ) {
+                setChords(parsed)
+              }
             } catch {
               // allow invalid JSON while typing
             }

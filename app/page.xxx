@@ -899,15 +899,9 @@ const loadProjectData = async (
     setProjectMessage(err.message || 'Failed to load project data')
     setPerformanceSheet('')
     setChords(null)
-    setChordsText('')
     setSongVersions([])
     setChordVersions([])
-  } finally {
-    if (latestProjectLoadRef.current === token) {
-      setVersionsLoading(false)
-    }
-  }
-}
+  } finall
 
 const autoSnapshot = async (text: string, label: string) => {
   if (!activeProject || !text.trim()) return
