@@ -5,6 +5,7 @@ import React from 'react'
 import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
 
 type SongEditorPanelProps = {
+  structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
   chordsText: string
   setChordsText: (value: string) => void
   setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
@@ -48,6 +49,7 @@ type SongEditorPanelProps = {
 }
 
 export default function SongEditorPanel({
+  structuredChordJsonRef,
   chordsText,
   setChordsText,
   setChords,
@@ -83,7 +85,10 @@ export default function SongEditorPanel({
       <h1 className="text-xl mb-4">Write</h1>
       <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
 
-      <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+      <div
+  ref={structuredChordJsonRef}
+  className="mb-4 p-4 rounded bg-gray-800 max-w-3xl scroll-mt-6"
+>
        <h2 className="text-lg font-semibold mb-1">Structured Chord JSON</h2>
         <p className="text-xs text-gray-400 mb-3">
           Optional: paste structured chord data here. Chords embedded in the song sheet are handled separately by Remove Chords.

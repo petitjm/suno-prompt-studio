@@ -191,6 +191,7 @@ export default function Page() {
   const [justExtractedAndRemovedChords, setJustExtractedAndRemovedChords] = useState(false)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
+  const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
   const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)
   const previewSynthRef = React.useRef<Tone.PolySynth | null>(null)
@@ -1105,7 +1106,14 @@ const deleteProject = async () => {
   }
 }
 
-
+const scrollToStructuredChordJson = () => {
+  window.setTimeout(() => {
+    structuredChordJsonRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }, 150)
+}
 
 
 const saveChords = async () => {
@@ -1611,13 +1619,14 @@ const extractChordsAndRemoveFromRewriteSource = () => {
 
   setChords(extracted)
   setChordsText(JSON.stringify(extracted, null, 2))
+  scrollToStructuredChordJson()
 
   removeChordsFromRewriteSource()
 
   setJustExtractedAndRemovedChords(true)
   setRewriteMessage(
-    'Chord lines extracted to Structured Chord JSON and removed from the song sheet. Review the JSON before saving chords.'
-  )
+      'Chord lines extracted to Structured Chord JSON below and removed from the song sheet. Review the JSON, then click Save Chords if you want to keep this version.'
+    )
 
   setTimeout(() => setJustExtractedAndRemovedChords(false), 2000)
 }
@@ -1632,9 +1641,10 @@ const extractChordsFromRewriteSourceToJson = () => {
 
   setChords(extracted)
   setChordsText(JSON.stringify(extracted, null, 2))
+  scrollToStructuredChordJson()
 
   setJustExtractedChords(true)
-  setRewriteMessage('Chord lines extracted to Structured Chord JSON. Review them before saving chords.')
+  setRewriteMessage('Chord lines extracted to Structured Chord JSON below. Review the JSON, then click Save Chords if you want to keep this version.')
 
   setTimeout(() => setJustExtractedChords(false), 1000)
 }
@@ -1956,6 +1966,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
           {mode === 'write' && (
             <div>
           <SongEditorPanel
+              structuredChordJsonRef={structuredChordJsonRef}
               chordsText={chordsText}
               setChordsText={setChordsText}
               setChords={setChords}
