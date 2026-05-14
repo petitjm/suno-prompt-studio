@@ -2045,12 +2045,18 @@ const hasChordLinesInRewriteSource = sourceForDetection
   />
 </div>
 
-    <input
-      value={chordVersionTitle}
-      onChange={(e) => setChordVersionTitle(e.target.value)}
-      placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
-      className="mt-3 w-full px-3 py-2 rounded bg-gray-700 text-white"
-    />
+   <div className="mt-3 max-w-3xl">
+      <label className="block text-sm font-medium text-gray-300 mb-1">
+        Save chord version as...
+      </label>
+
+      <input
+        value={chordVersionTitle}
+        onChange={(e) => setChordVersionTitle(e.target.value)}
+        placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
+        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+      />
+  </div>
 
 
              
