@@ -27,6 +27,7 @@ type RewritePanelProps = {
   extractingLyricsOnly: boolean
   removeChordsFromRewriteSource: () => void
   extractChordsFromRewriteSourceToJson: () => void
+  extractChordsAndRemoveFromRewriteSource: () => void
   setRewriteMessage: (value: string) => void
   runRewriteLab: () => void
   rewriteLoading: boolean
@@ -55,6 +56,7 @@ export default function RewritePanel({
   hasChordLinesInRewriteSource,
   extractingLyricsOnly,
   extractChordsFromRewriteSourceToJson,
+  extractChordsAndRemoveFromRewriteSource,
   removeChordsFromRewriteSource,
   setRewriteMessage,
   runRewriteLab,
@@ -211,7 +213,13 @@ export default function RewritePanel({
             <div className="mt-2 flex gap-2">
 
    
-
+            <button
+              type="button"
+              onClick={extractChordsAndRemoveFromRewriteSource}
+              className="px-3 py-1 rounded bg-purple-600 text-white text-xs"
+            >
+              Extract JSON + Remove chords
+            </button>
 
               <button
                 type="button"

@@ -885,11 +885,13 @@ const loadProjectData = async (
     setActiveChordVersionId(chordData.latest?.id || null)
 
     const latestLyrics = songData.latest?.result?.lyrics_full || ''
-    const latestChords = chordData.latest?.chord_data || null
+    const latestChordVersion = chordData.latest || null
+    const latestChords = latestChordVersion?.chord_data || null
 
     setPerformanceSheet(latestLyrics)
     setChords(latestChords)
     setChordsText(JSON.stringify(latestChords || {}, null, 2))
+    setChordVersionTitle(latestChordVersion?.title || '')
 
     setProjectMessage('')
   } catch (err: any) {
@@ -1169,7 +1171,7 @@ const saveChords = async () => {
           ])
         }
 
-        setChordVersionTitle('')
+        setChordVersionTitle(savedVersion?.title || chordVersionTitle.trim() || 'Untitled chords')
         setProjectMessage('Chords saved')
         setJustSavedChords(true)
 
@@ -1595,7 +1597,15 @@ const sourceForDetection =
 
             
 
-             const detectedSections = detectSections(sourceForDetection, isSectionHeader)
+ const detectedSections = detectSections(sourceForDetection, isSectionHeader)
+
+const extractChordsAndRemoveFromRewriteSource = () => {
+  extractChordsFromRewriteSourceToJson()
+  removeChordsFromRewriteSource()
+  setRewriteMessage(
+    'Chord lines extracted to Structured Chord JSON and removed from the song sheet. Review the JSON before saving chords.'
+  )
+}
 
 const extractChordsFromRewriteSourceToJson = () => {
   const extracted = extractEmbeddedChordsToJson(sourceForDetection)
@@ -2022,6 +2032,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
     rewriteSectionName={rewriteSectionName}
     setRewriteSectionName={setRewriteSectionName}
     detectedSections={detectedSections}
+    extractChordsAndRemoveFromRewriteSource={extractChordsAndRemoveFromRewriteSource}
     hasChordLinesInRewriteSource={hasChordLinesInRewriteSource}
     extractingLyricsOnly={extractingLyricsOnly}
     removeChordsFromRewriteSource={removeChordsFromRewriteSource}
@@ -2037,7 +2048,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
     <input
       value={chordVersionTitle}
       onChange={(e) => setChordVersionTitle(e.target.value)}
-      placeholder="Chord version title (e.g. Capo 3, Fingerstyle, Simplified)"
+      placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
       className="mt-3 w-full px-3 py-2 rounded bg-gray-700 text-white"
     />
 
@@ -2057,6 +2068,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
             if (selected?.chord_data) {
               setChords(selected.chord_data)
               setChordsText(JSON.stringify(selected.chord_data, null, 2))
+              setChordVersionTitle(selected.title || '')
             }
           }}
           className="w-full px-3 py-2 rounded bg-gray-700 text-white"

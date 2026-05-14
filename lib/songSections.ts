@@ -135,28 +135,39 @@ export const replaceSectionText = (
   const endIndex = nextBoundary ? nextBoundary.index : lines.length
   const originalHeader = lines[startIndex]
 
-  const replacementBody: string[] = []
-  let hasStartedBody = false
+  const replacementLyricLines = newSectionText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !isSectionBoundary(line))
 
-  for (const line of newSectionText.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
+  const originalSectionLines = lines.slice(startIndex, endIndex)
 
-    if (isSectionBoundary(trimmed)) {
-      if (hasStartedBody) break
-      continue
+  let replacementIndex = 0
+
+  const rebuiltSection = originalSectionLines.map((line, index) => {
+    // Keep the original section heading exactly as it was.
+    if (index === 0) return line
+
+    // Preserve blank spacer lines so the diff preview stays aligned.
+    if (!line.trim()) return line
+
+    // Preserve any unexpected nested boundary.
+    if (isSectionBoundary(line)) return line
+
+    // Replace lyric lines only.
+    if (replacementIndex < replacementLyricLines.length) {
+      const nextLine = replacementLyricLines[replacementIndex]
+      replacementIndex += 1
+      return nextLine
     }
 
-    hasStartedBody = true
-    replacementBody.push(line)
-  }
+    return line
+  })
 
   return [
     ...lines.slice(0, startIndex),
-    originalHeader,
-    ...replacementBody,
-    '',
-    ...lines.slice(endIndex).filter((line, index) => index !== 0 || line.trim() !== ''),
+    ...rebuiltSection,
+    ...lines.slice(endIndex),
   ].join('\n')
 }
 
