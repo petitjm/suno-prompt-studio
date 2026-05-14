@@ -24,6 +24,7 @@ type RewritePanelProps = {
   setRewriteSectionName: (value: string) => void
   detectedSections: DetectedSection[]
   hasChordLinesInRewriteSource: boolean
+  justExtractedAndRemovedChords: boolean
   justExtractedChords: boolean
   extractingLyricsOnly: boolean
   removeChordsFromRewriteSource: () => void
@@ -59,6 +60,7 @@ export default function RewritePanel({
   extractingLyricsOnly,
   extractChordsFromRewriteSourceToJson,
   extractChordsAndRemoveFromRewriteSource,
+  justExtractedAndRemovedChords,
   removeChordsFromRewriteSource,
   setRewriteMessage,
   runRewriteLab,
@@ -206,13 +208,18 @@ export default function RewritePanel({
 
     </div>
 
-        {!rewriteSectionOnly && hasChordLinesInRewriteSource && (
+        {!rewriteSectionOnly && (hasChordLinesInRewriteSource || justExtractedAndRemovedChords) && (
           <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
             <div>
-              Chord lines were detected in the selected song sheet.
+              {hasChordLinesInRewriteSource
+                ? 'Chord lines were detected in the selected song sheet.'
+                : 'Chord lines were extracted and removed.'}
             </div>
+
             <p className="text-xs text-yellow-100/80 mt-1">
-              Extract them to Structured Chord JSON if you want to save the chords, then remove them before rewriting lyrics.
+              {hasChordLinesInRewriteSource
+                ? 'Extract them to Structured Chord JSON if you want to save the chords, then remove them before rewriting lyrics.'
+                : 'Review the Structured Chord JSON before saving chords.'}
             </p>
 
             <div className="mt-2 flex flex-wrap gap-2">
@@ -227,11 +234,13 @@ export default function RewritePanel({
                </button>
 
               <button
-                type="button"
-                onClick={extractChordsAndRemoveFromRewriteSource}
-                className="px-3 py-1 rounded bg-purple-600 text-white text-xs"
-              >
-                Extract JSON + Remove chords
+                  type="button"
+                  onClick={extractChordsAndRemoveFromRewriteSource}
+                  className={`px-3 py-1 rounded text-white text-xs transition ${
+                    justExtractedAndRemovedChords ? 'bg-green-600 scale-95' : 'bg-purple-600'
+                  }`}
+                >
+                  {justExtractedAndRemovedChords ? 'Done ✓' : 'Extract JSON + Remove chords'}
               </button>
 
               <button

@@ -188,6 +188,7 @@ export default function Page() {
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
   const [chords, setChords] = useState<ChordResponse | null>(null)
   const [justExtractedChords, setJustExtractedChords] = useState(false)
+  const [justExtractedAndRemovedChords, setJustExtractedAndRemovedChords] = useState(false)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1601,11 +1602,24 @@ const sourceForDetection =
  const detectedSections = detectSections(sourceForDetection, isSectionHeader)
 
 const extractChordsAndRemoveFromRewriteSource = () => {
-  extractChordsFromRewriteSourceToJson()
+  const extracted = extractEmbeddedChordsToJson(sourceForDetection)
+
+  if (!Object.keys(extracted.sections).length) {
+    setRewriteMessage('No chord lines found to extract.')
+    return
+  }
+
+  setChords(extracted)
+  setChordsText(JSON.stringify(extracted, null, 2))
+
   removeChordsFromRewriteSource()
+
+  setJustExtractedAndRemovedChords(true)
   setRewriteMessage(
     'Chord lines extracted to Structured Chord JSON and removed from the song sheet. Review the JSON before saving chords.'
   )
+
+  setTimeout(() => setJustExtractedAndRemovedChords(false), 2000)
 }
 
 const extractChordsFromRewriteSourceToJson = () => {
@@ -2038,6 +2052,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
     setRewriteSectionName={setRewriteSectionName}
     detectedSections={detectedSections}
     extractChordsAndRemoveFromRewriteSource={extractChordsAndRemoveFromRewriteSource}
+    justExtractedAndRemovedChords={justExtractedAndRemovedChords}
     justExtractedChords={justExtractedChords}
     hasChordLinesInRewriteSource={hasChordLinesInRewriteSource}
     extractingLyricsOnly={extractingLyricsOnly}
