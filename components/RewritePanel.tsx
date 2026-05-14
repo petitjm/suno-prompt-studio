@@ -207,8 +207,11 @@ export default function RewritePanel({
         {!rewriteSectionOnly && hasChordLinesInRewriteSource && (
           <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
             <div>
-              Chord lines were detected in the selected song sheet. Remove them before rewriting lyrics.
+              Chord lines were detected in the selected song sheet.
             </div>
+            <p className="text-xs text-yellow-100/80 mt-1">
+              Extract them to Structured Chord JSON if you want to save the chords, then remove them before rewriting lyrics.
+            </p>
 
             <div className="mt-2 flex gap-2">
 
