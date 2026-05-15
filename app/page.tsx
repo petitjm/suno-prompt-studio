@@ -2144,41 +2144,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
     )}
 
 
-    <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-      <h3 className="text-lg font-semibold mb-1">Saved Structured Chord JSON</h3>
-        <p className="text-xs text-gray-400 mb-3">
-          This stores chord JSON versions for the project. It does not automatically read chords from pasted song sheets.
-        </p>
-
- <textarea
-  value={chordsText}
-  onChange={(e) => {
-    const text = e.target.value
-    setChordsText(text)
-
-    if (!text.trim()) {
-      setChords(null)
-      return
-    }
-
-    try {
-      const parsed = JSON.parse(text)
-
-      if (
-        parsed &&
-        typeof parsed === 'object' &&
-        !Array.isArray(parsed)
-      ) {
-        setChords(parsed)
-      }
-    } catch {
-      // Allow invalid JSON while typing
-    }
-  }}
-        placeholder='Structured chord JSON only, e.g. {"key":"G","verse":"G | D | Em | C"}'
-        className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
-      />
-    </div>
+   
 
 
 
