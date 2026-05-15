@@ -6,6 +6,8 @@ import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
 
 type SongEditorPanelProps = {
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
+  chordVersionTitle: string
+  setChordVersionTitle: (value: string) => void
   chordsText: string
   chordExtractionMessage: string
   setChordsText: (value: string) => void
@@ -57,6 +59,8 @@ export default function SongEditorPanel({
   savingChords,
   justSavedChords,
   chordsText,
+  chordVersionTitle,
+  setChordVersionTitle,
   chordExtractionMessage,
   setChordsText,
   setChords,
@@ -130,6 +134,20 @@ export default function SongEditorPanel({
           placeholder='Optional structured chord JSON, e.g. {"key":"G","verse":"G | D7 | G | C"}'
           className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
         />
+
+        <div className="mt-3 max-w-3xl">
+  <label className="block text-sm font-medium text-gray-300 mb-1">
+    Save chord version as...
+  </label>
+
+  <input
+    value={chordVersionTitle}
+    onChange={(e) => setChordVersionTitle(e.target.value)}
+    placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
+    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+  />
+</div>
+
 
         <div className="mt-3 flex items-center gap-2">
           <button
