@@ -2151,22 +2151,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
 
 
 
-    <div className="flex gap-2 mb-4">
-        <button
-          type="button"
-          onClick={saveChords}
-          disabled={!activeProject || savingChords}
-          className={`px-4 py-2 rounded text-white transition disabled:opacity-40 ${
-            savingChords
-              ? 'bg-gray-600 scale-95'
-              : justSavedChords
-                ? 'bg-green-600'
-                : 'bg-yellow-600'
-          }`}
-        >
-          {savingChords ? 'Saving chords...' : justSavedChords ? 'Saved ✓' : 'Save Chords'}
-        </button>
-    </div>
+ 
 
 
 
