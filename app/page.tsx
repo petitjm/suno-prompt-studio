@@ -2116,7 +2116,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
              
     {chordVersions.length > 0 && (
       <div className="mb-3 max-w-3xl">
-        <h3 className="text-sm text-gray-400 mb-2">Saved Chord Versions</h3>
+        <h3 className="text-sm text-gray-400 mb-2">Load saved chord version</h3>
 
         <select
           value={activeChordVersionId || ''}
