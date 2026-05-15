@@ -187,6 +187,7 @@ export default function Page() {
   const [performanceSheet, setPerformanceSheet] = useState('')
   const [performanceSections, setPerformanceSections] = useState<PerformanceSection[]>([])
   const [chords, setChords] = useState<ChordResponse | null>(null)
+  const [chordExtractionMessage, setChordExtractionMessage] = useState('')
   const [justExtractedChords, setJustExtractedChords] = useState(false)
   const [justExtractedAndRemovedChords, setJustExtractedAndRemovedChords] = useState(false)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
@@ -1624,9 +1625,17 @@ const extractChordsAndRemoveFromRewriteSource = () => {
   removeChordsFromRewriteSource()
 
   setJustExtractedAndRemovedChords(true)
-  setRewriteMessage(
-      'Chord lines extracted to Structured Chord JSON below and removed from the song sheet. Review the JSON, then click Save Chords if you want to keep this version.'
-    )
+  const sectionCount = Object.keys(extracted.sections).length
+  
+  const message = `Chord lines extracted: ${sectionCount} section${
+          sectionCount === 1 ? '' : 's'
+        } found. Review the JSON, then click Save Chords if you want to keep this version.`
+
+        setChordExtractionMessage(message)
+        setRewriteMessage(
+          `Chord lines extracted to Structured Chord JSON: ${sectionCount} section${sectionCount === 1 ? '' : 's'} found. Review the JSON, then click Save Chords if you want to keep this version.`
+        )
+    
 
   setTimeout(() => setJustExtractedAndRemovedChords(false), 2000)
 }
@@ -1644,7 +1653,16 @@ const extractChordsFromRewriteSourceToJson = () => {
   scrollToStructuredChordJson()
 
   setJustExtractedChords(true)
-  setRewriteMessage('Chord lines extracted to Structured Chord JSON below. Review the JSON, then click Save Chords if you want to keep this version.')
+  const sectionCount = Object.keys(extracted.sections).length
+  const message = `Chord lines extracted and removed: ${sectionCount} section${
+          sectionCount === 1 ? '' : 's'
+        } found. Review the JSON, then click Save Chords if you want to keep this version.`
+
+        setChordExtractionMessage(message)
+
+    setRewriteMessage(
+                      `Chord lines extracted to Structured Chord JSON and removed from the song sheet: ${sectionCount} section${sectionCount === 1 ? '' : 's'} found. Review the JSON, then click Save Chords if you want to keep this version.`
+                        )
 
   setTimeout(() => setJustExtractedChords(false), 1000)
 }
@@ -1968,8 +1986,12 @@ const hasChordLinesInRewriteSource = sourceForDetection
           <SongEditorPanel
               structuredChordJsonRef={structuredChordJsonRef}
               chordsText={chordsText}
+              chordExtractionMessage={chordExtractionMessage}
               setChordsText={setChordsText}
               setChords={setChords}
+              saveChords={saveChords}
+              savingChords={savingChords}
+              justSavedChords={justSavedChords}
               performanceSheet={performanceSheet}
               setPerformanceSheet={setPerformanceSheetFromEditor}
               songVersions={songVersions}

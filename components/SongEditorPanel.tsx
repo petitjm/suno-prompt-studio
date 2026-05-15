@@ -7,6 +7,7 @@ import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
 type SongEditorPanelProps = {
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
   chordsText: string
+  chordExtractionMessage: string
   setChordsText: (value: string) => void
   setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
 
@@ -19,7 +20,9 @@ type SongEditorPanelProps = {
 
   songVersionTitle: string
   setSongVersionTitle: (value: string) => void
-
+  saveChords: () => void
+  savingChords: boolean
+  justSavedChords: boolean
   activeProject: Project | null
 
   savingSong: boolean
@@ -50,7 +53,11 @@ type SongEditorPanelProps = {
 
 export default function SongEditorPanel({
   structuredChordJsonRef,
+  saveChords,
+  savingChords,
+  justSavedChords,
   chordsText,
+  chordExtractionMessage,
   setChordsText,
   setChords,
   performanceSheet,
@@ -94,6 +101,12 @@ export default function SongEditorPanel({
           Optional: paste structured chord data here. Chords embedded in the song sheet are handled separately by Remove Chords.
         </p>
 
+        {chordExtractionMessage && (
+          <p className="text-xs text-green-300 mb-3">
+            {chordExtractionMessage}
+          </p>
+        )}
+
         <textarea
           value={chordsText}
           onChange={(e) => {
@@ -117,6 +130,28 @@ export default function SongEditorPanel({
           placeholder='Optional structured chord JSON, e.g. {"key":"G","verse":"G | D7 | G | C"}'
           className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
         />
+
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={saveChords}
+            disabled={!activeProject || savingChords}
+            className={`px-4 py-2 rounded text-white transition disabled:opacity-40 ${
+              savingChords
+                ? 'bg-gray-600 scale-95'
+                : justSavedChords
+                  ? 'bg-green-600'
+                  : 'bg-yellow-600'
+            }`}
+          >
+            {savingChords ? 'Saving chords...' : justSavedChords ? 'Saved ✓' : 'Save Chords'}
+          </button>
+
+          <span className="text-xs text-gray-400">
+            Saves the Structured Chord JSON for this project.
+          </span>
+        </div>
+
       </div>
 
       <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
@@ -131,6 +166,9 @@ export default function SongEditorPanel({
           placeholder="Paste lyrics here. Use headings like [Verse 1], [Chorus], [Bridge]."
           className="w-full min-h-[300px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
         />
+
+
+
       </div>
 
       {songVersions.length > 0 && (
