@@ -1,11 +1,6 @@
 'use client'
 
-type ChordVersion = {
-  id: string
-  title?: string | null
-  created_at?: string | null
-  chord_data?: unknown
-}
+import type { ChordVersion } from '@/types/song'
 
 type SavedChordVersionSelectorProps = {
   chordVersions: ChordVersion[]

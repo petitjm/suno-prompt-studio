@@ -24,6 +24,13 @@ export type GenerateResponse = {
   error?: string
 }
 
+export type ChordVersion = {
+  id: string
+  title?: string | null
+  created_at?: string | null
+  chord_data?: unknown
+}
+
 export type ChordResponse = {
   key?: string
   capo?: string

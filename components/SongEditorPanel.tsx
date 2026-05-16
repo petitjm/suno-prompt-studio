@@ -2,16 +2,16 @@
 
 import React from 'react'
 
-import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
+
 
 import SavedChordVersionSelector from './SavedChordVersionSelector'
 
-type ChordVersion = {
-  id: string
-  title?: string | null
-  created_at?: string | null
-  chord_data?: unknown
-}
+import type {
+  Project,
+  ChordResponse,
+  SongVersionRecord,
+  ChordVersion,
+} from '@/types/song'
 
 
 
