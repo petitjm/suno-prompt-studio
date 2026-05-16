@@ -4,6 +4,8 @@ import React from 'react'
 
 import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
 
+import SavedChordVersionSelector from './SavedChordVersionSelector'
+
 type ChordVersion = {
   id: string
   title?: string | null
@@ -139,31 +141,12 @@ formatUkDateTime,
           </p>
         )}
 
-  <div className="mt-3">
-      <label className="block text-sm font-medium text-gray-300 mb-1">
-        Load saved chord version
-      </label>
-
-      <select
-        value={activeChordVersionId || ''}
-        onChange={(e) => onActiveChordVersionChange(e.target.value)}
-        disabled={chordVersions.length === 0}
-        className="w-full px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <option value="">
-          {chordVersions.length === 0
-            ? 'No saved chord versions yet'
-            : 'Choose a saved chord version...'}
-        </option>
-
-        {chordVersions.map((v, i) => (
-          <option key={v.id} value={v.id}>
-            {v.title || `Chord Version ${chordVersions.length - i}`}
-            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-          </option>
-        ))}
-      </select>
-    </div>
+         <SavedChordVersionSelector
+          chordVersions={chordVersions}
+          activeChordVersionId={activeChordVersionId}
+          onActiveChordVersionChange={onActiveChordVersionChange}
+          formatUkDateTime={formatUkDateTime}
+        />
 
         <textarea
           value={chordsText}
