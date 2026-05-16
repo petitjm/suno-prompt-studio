@@ -4,7 +4,7 @@ import React from 'react'
 
 import StructuredChordJsonEditor from './StructuredChordJsonEditor'
 
-
+import SavedSongVersionSelector from './SavedSongVersionSelector'
 
 import type {
   Project,
@@ -172,24 +172,12 @@ structuredChordJsonRef={structuredChordJsonRef}
 
       </div>
 
-      {songVersions.length > 0 && (
-        <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
-          <h3 className="text-sm text-gray-400 mb-2">Saved Versions</h3>
-
-                  <select
-                    value={activeSongVersionId || ''}
-                    onChange={(e) => handleActiveSongVersionChange(e.target.value)}
-                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-                  >
-                    {songVersions.map((v, i) => (
-                      <option key={v.id} value={v.id}>
-                        {v.title || `Version ${songVersions.length - i}`}
-                        {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-                      </option>
-                    ))}
-                  </select>
-        </div>
-      )}
+      <SavedSongVersionSelector
+          songVersions={songVersions}
+          activeSongVersionId={activeSongVersionId}
+          onActiveSongVersionChange={handleActiveSongVersionChange}
+          formatUkDateTime={formatUkDateTime}
+       />
 
       <input
         value={songVersionTitle}
