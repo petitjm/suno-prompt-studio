@@ -4,7 +4,22 @@ import React from 'react'
 
 import type { Project, ChordResponse, SongVersionRecord } from '@/types/song'
 
+type ChordVersion = {
+  id: string
+  title?: string | null
+  created_at?: string | null
+  chord_data?: unknown
+}
+
+
+
+
 type SongEditorPanelProps = {
+
+  chordVersions: ChordVersion[]
+  activeChordVersionId: string | null
+  onActiveChordVersionChange: (id: string) => void
+  formatUkDateTime: (value: string) => string
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
   chordVersionTitle: string
   setChordVersionTitle: (value: string) => void
@@ -25,6 +40,10 @@ type SongEditorPanelProps = {
   saveChords: () => void
   savingChords: boolean
   justSavedChords: boolean
+
+
+
+
   activeProject: Project | null
 
   savingSong: boolean
@@ -50,10 +69,20 @@ type SongEditorPanelProps = {
   loadingRightCurrent: boolean
   setLoadingRightCurrent: (value: boolean) => void
 
-  formatUkDateTime: (value: string) => string
+  
 }
 
 export default function SongEditorPanel({
+
+
+
+
+
+
+chordVersions,
+activeChordVersionId,
+onActiveChordVersionChange,
+formatUkDateTime,
   structuredChordJsonRef,
   saveChords,
   savingChords,
@@ -89,7 +118,6 @@ export default function SongEditorPanel({
   setLoadingLeftCurrent,
   loadingRightCurrent,
   setLoadingRightCurrent,
-  formatUkDateTime,
 }: SongEditorPanelProps) {
   return (
     <>
@@ -110,6 +138,23 @@ export default function SongEditorPanel({
             {chordExtractionMessage}
           </p>
         )}
+
+  <div className="mt-3">
+      <select
+        value={activeChordVersionId || ''}
+        onChange={(e) => onActiveChordVersionChange(e.target.value)}
+        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+      >
+        <option value="">Load saved chord version...</option>
+
+        {chordVersions.map((v, i) => (
+          <option key={v.id} value={v.id}>
+            {v.title || `Chord Version ${chordVersions.length - i}`}
+            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+          </option>
+        ))}
+      </select>
+    </div>
 
         <textarea
           value={chordsText}
@@ -169,7 +214,22 @@ export default function SongEditorPanel({
             Saves the Structured Chord JSON for this project.
           </span>
         </div>
+        <div className="mt-3">
+          <select
+            value={activeChordVersionId || ''}
+            onChange={(e) => onActiveChordVersionChange(e.target.value)}
+            className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+          >
+            <option value="">Load saved chord version...</option>
 
+            {chordVersions.map((v, i) => (
+              <option key={v.id} value={v.id}>
+                {v.title || `Chord Version ${chordVersions.length - i}`}
+                {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">

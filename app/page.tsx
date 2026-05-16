@@ -192,6 +192,7 @@ export default function Page() {
   const [justExtractedAndRemovedChords, setJustExtractedAndRemovedChords] = useState(false)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
+  
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
   const [extractingLyricsOnly, setExtractingLyricsOnly] = useState(false)
@@ -240,10 +241,6 @@ const lastFollowedSectionIdRef = React.useRef<string | null>(null)
     const [lockCompareRight, setLockCompareRight] = useState(false)
   const previewBars = React.useMemo(() => {
   if (!chords) return []
-
-
-
-
 
   try {
     if (previewSection !== 'full_song') {
@@ -1195,8 +1192,25 @@ const saveChords = async () => {
   }
 }
 
+  const handleActiveChordVersionChange = (id: string) => {
+  setActiveChordVersionId(id)
+
+  if (!id) {
+    return
+  }
+
+  const selected = chordVersions.find((v) => v.id === id)
+
+  if (selected?.chord_data) {
+    setChords(selected.chord_data)
+    setChordsText(JSON.stringify(selected.chord_data, null, 2))
+    setChordVersionTitle(selected.title || '')
+  }
+}
+
 if (!userEmail) {
   return (
+
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-xl bg-gray-800 p-6 shadow-xl border border-gray-700">
         <h1 className="text-2xl font-semibold mb-2">Suno Prompt Studio</h1>
@@ -1988,12 +2002,17 @@ const hasChordLinesInRewriteSource = sourceForDetection
               chordsText={chordsText}
               chordExtractionMessage={chordExtractionMessage}
               setChordsText={setChordsText}
+              chordVersions={chordVersions}
+              activeChordVersionId={activeChordVersionId}
+              onActiveChordVersionChange={handleActiveChordVersionChange}
+              formatUkDateTime={formatUkDateTime}
               chordVersionTitle={chordVersionTitle}
               setChordVersionTitle={setChordVersionTitle}
               setChords={setChords}
               saveChords={saveChords}
               savingChords={savingChords}
               justSavedChords={justSavedChords}
+              
               performanceSheet={performanceSheet}
               setPerformanceSheet={setPerformanceSheetFromEditor}
               songVersions={songVersions}
@@ -2019,7 +2038,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
               setLoadingLeftCurrent={setLoadingLeftCurrent}
               loadingRightCurrent={loadingRightCurrent}
               setLoadingRightCurrent={setLoadingRightCurrent}
-              formatUkDateTime={formatUkDateTime}
+              
             />
 
 <ComparePanels
@@ -2109,28 +2128,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
       <div className="mb-3 max-w-3xl">
         <h3 className="text-sm text-gray-400 mb-2">Load saved chord version</h3>
 
-        <select
-          value={activeChordVersionId || ''}
-          onChange={(e) => {
-            const id = e.target.value
-            setActiveChordVersionId(id)
-
-            const selected = chordVersions.find((v) => v.id === id)
-            if (selected?.chord_data) {
-              setChords(selected.chord_data)
-              setChordsText(JSON.stringify(selected.chord_data, null, 2))
-              setChordVersionTitle(selected.title || '')
-            }
-          }}
-          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-        >
-          {chordVersions.map((v, i) => (
-            <option key={v.id} value={v.id}>
-              {v.title || `Chord Version ${chordVersions.length - i}`}
-              {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-            </option>
-          ))}
-        </select>
+        
       </div>
     )}
 
