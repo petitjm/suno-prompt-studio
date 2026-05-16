@@ -2,9 +2,9 @@
 
 import React from 'react'
 
+import StructuredChordJsonEditor from './StructuredChordJsonEditor'
 
 
-import SavedChordVersionSelector from './SavedChordVersionSelector'
 
 import type {
   Project,
@@ -125,104 +125,21 @@ formatUkDateTime,
     <>
       <h1 className="text-xl mb-4">Write</h1>
       <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
-
-      <div
-  ref={structuredChordJsonRef}
-  className="mb-4 p-4 rounded bg-gray-800 max-w-3xl scroll-mt-6"
->
-       <h2 className="text-lg font-semibold mb-1">Structured Chord JSON</h2>
-        <p className="text-xs text-gray-400 mb-3">
-          Optional: paste structured chord data here. Chords embedded in the song sheet are handled separately by Remove Chords.
-        </p>
-
-        {chordExtractionMessage && (
-          <p className="text-xs text-green-300 mb-3">
-            {chordExtractionMessage}
-          </p>
-        )}
-
-         <SavedChordVersionSelector
-          chordVersions={chordVersions}
-          activeChordVersionId={activeChordVersionId}
-          onActiveChordVersionChange={onActiveChordVersionChange}
-          formatUkDateTime={formatUkDateTime}
-        />
-
-        <textarea
-          value={chordsText}
-          onChange={(e) => {
-            const text = e.target.value
-            setChordsText(text)
-
-            try {
-              const parsed = JSON.parse(text)
-
-              if (
-                parsed &&
-                typeof parsed === 'object' &&
-                !Array.isArray(parsed)
-              ) {
-                setChords(parsed)
-              }
-            } catch {
-              // allow invalid JSON while typing
-            }
-          }}
-          placeholder='Optional structured chord JSON, e.g. {"key":"G","verse":"G | D7 | G | C"}'
-          className="w-full min-h-[220px] px-3 py-2 rounded bg-gray-700 text-white font-mono text-sm"
-        />
-
-        <div className="mt-3 max-w-3xl">
-  <label className="block text-sm font-medium text-gray-300 mb-1">
-    Save chord version as...
-  </label>
-
-  <input
-    value={chordVersionTitle}
-    onChange={(e) => setChordVersionTitle(e.target.value)}
-    placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
-    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-  />
-</div>
-
-
-        <div className="mt-3 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={saveChords}
-            disabled={!activeProject || savingChords}
-            className={`px-4 py-2 rounded text-white transition disabled:opacity-40 ${
-              savingChords
-                ? 'bg-gray-600 scale-95'
-                : justSavedChords
-                  ? 'bg-green-600'
-                  : 'bg-yellow-600'
-            }`}
-          >
-            {savingChords ? 'Saving chords...' : justSavedChords ? 'Saved ✓' : 'Save Chords'}
-          </button>
-
-          <span className="text-xs text-gray-400">
-            Saves the Structured Chord JSON for this project.
-          </span>
-        </div>
-        <div className="mt-3">
-          <select
-            value={activeChordVersionId || ''}
-            onChange={(e) => onActiveChordVersionChange(e.target.value)}
-            className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-          >
-            <option value="">Load saved chord version...</option>
-
-            {chordVersions.map((v, i) => (
-              <option key={v.id} value={v.id}>
-                {v.title || `Chord Version ${chordVersions.length - i}`}
-                {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+<StructuredChordJsonEditor
+  structuredChordJsonRef={structuredChordJsonRef}
+  chordVersionTitle={chordVersionTitle}
+  setChordVersionTitle={setChordVersionTitle}
+  chordsText={chordsText}
+  chordExtractionMessage={chordExtractionMessage}
+  setChordsText={setChordsText}
+  chordVersions={chordVersions}
+  activeChordVersionId={activeChordVersionId}
+  onActiveChordVersionChange={onActiveChordVersionChange}
+  formatUkDateTime={formatUkDateTime}
+  saveChords={saveChords}
+  savingChords={savingChords}
+  justSavedChords={justSavedChords}
+/>
 
       <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
         <h2 className="text-lg font-semibold mb-1">Song Sheet / Lyrics</h2>
