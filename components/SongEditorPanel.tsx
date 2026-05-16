@@ -15,18 +15,22 @@ type ChordVersion = {
 
 
 type SongEditorPanelProps = {
-
-  chordVersions: ChordVersion[]
-  activeChordVersionId: string | null
-  onActiveChordVersionChange: (id: string) => void
-  formatUkDateTime: (value: string) => string
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
+
+  // Structured Chord JSON controls
   chordVersionTitle: string
   setChordVersionTitle: (value: string) => void
+
   chordsText: string
   chordExtractionMessage: string
   setChordsText: (value: string) => void
   setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
+
+  // Saved chord-version selector
+  chordVersions: ChordVersion[]
+  activeChordVersionId: string | null
+  onActiveChordVersionChange: (id: string) => void
+  formatUkDateTime: (value: string) => string
 
   performanceSheet: string
   setPerformanceSheet: (value: string) => void
@@ -37,12 +41,10 @@ type SongEditorPanelProps = {
 
   songVersionTitle: string
   setSongVersionTitle: (value: string) => void
+
   saveChords: () => void
   savingChords: boolean
   justSavedChords: boolean
-
-
-
 
   activeProject: Project | null
 
@@ -68,8 +70,6 @@ type SongEditorPanelProps = {
   setLoadingLeftCurrent: (value: boolean) => void
   loadingRightCurrent: boolean
   setLoadingRightCurrent: (value: boolean) => void
-
-  
 }
 
 export default function SongEditorPanel({
