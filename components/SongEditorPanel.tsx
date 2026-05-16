@@ -121,6 +121,19 @@ formatUkDateTime,
   loadingRightCurrent,
   setLoadingRightCurrent,
 }: SongEditorPanelProps) {
+    const handleActiveSongVersionChange = (id: string) => {
+  setActiveSongVersionId(id)
+
+  if (!id) {
+    return
+  }
+
+  const selected = songVersions.find((v) => v.id === id)
+
+  if (selected?.result?.lyrics_full) {
+    setPerformanceSheet(selected.result.lyrics_full)
+  }
+}
   return (
     <>
       <h1 className="text-xl mb-4">Write</h1>
@@ -163,26 +176,18 @@ structuredChordJsonRef={structuredChordJsonRef}
         <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
           <h3 className="text-sm text-gray-400 mb-2">Saved Versions</h3>
 
-          <select
-            value={activeSongVersionId || ''}
-            onChange={(e) => {
-              const id = e.target.value
-              setActiveSongVersionId(id)
-
-              const selected = songVersions.find((v) => v.id === id)
-              if (selected?.result?.lyrics_full) {
-                setPerformanceSheet(selected.result.lyrics_full)
-              }
-            }}
-            className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-          >
-            {songVersions.map((v, i) => (
-              <option key={v.id} value={v.id}>
-                {v.title || `Version ${songVersions.length - i}`}
-                {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-              </option>
-            ))}
-          </select>
+                  <select
+                    value={activeSongVersionId || ''}
+                    onChange={(e) => handleActiveSongVersionChange(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                  >
+                    {songVersions.map((v, i) => (
+                      <option key={v.id} value={v.id}>
+                        {v.title || `Version ${songVersions.length - i}`}
+                        {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+                      </option>
+                    ))}
+                  </select>
         </div>
       )}
 
