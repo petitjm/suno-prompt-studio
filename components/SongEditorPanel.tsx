@@ -154,8 +154,9 @@ structuredChordJsonRef={structuredChordJsonRef}
   savingChords={savingChords}
   justSavedChords={justSavedChords}
 />
-
+    {/* Song sheet editor and save controls */}
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+        
   <h2 className="text-lg font-semibold mb-1">Song Sheet / Lyrics</h2>
 
   <p className="text-xs text-gray-400 mb-3">
