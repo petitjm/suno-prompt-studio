@@ -26,11 +26,14 @@ export default function SavedSongVersionSelector({
       </h3>
 
       <select
-        value={activeSongVersionId || ''}
-        onChange={(e) => onActiveSongVersionChange(e.target.value)}
-        className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-      >
-        {songVersions.map((v, i) => (
+          value={activeSongVersionId || ''}
+          onChange={(e) => onActiveSongVersionChange(e.target.value)}
+          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+        >
+          <option value="">Choose a saved song version...</option>
+
+          {songVersions.map((v, i) => (
+
           <option key={v.id} value={v.id}>
             {v.title || `Version ${songVersions.length - i}`}
             {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
