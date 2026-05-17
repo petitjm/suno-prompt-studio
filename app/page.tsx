@@ -1984,48 +1984,54 @@ const hasChordLinesInRewriteSource = sourceForDetection
           {mode === 'write' && (
             <div>
           <SongEditorPanel
-              structuredChordJsonRef={structuredChordJsonRef}
-              chordsText={chordsText}
-              chordExtractionMessage={chordExtractionMessage}
-              setChordsText={setChordsText}
-              chordVersions={chordVersions}
-              activeChordVersionId={activeChordVersionId}
-              setActiveChordVersionId={setActiveChordVersionId}
-              formatUkDateTime={formatUkDateTime}
-              chordVersionTitle={chordVersionTitle}
-              setChordVersionTitle={setChordVersionTitle}
-              setChords={setChords}
-              saveChords={saveChords}
-              savingChords={savingChords}
-              justSavedChords={justSavedChords}
+  // Song sheet / song versions / song saving
+  performanceSheet={performanceSheet}
+  setPerformanceSheet={setPerformanceSheet}
+  songVersions={songVersions}
+  activeSongVersionId={activeSongVersionId}
+  setActiveSongVersionId={setActiveSongVersionId}
+  songVersionTitle={songVersionTitle}
+  setSongVersionTitle={setSongVersionTitle}
+  activeProject={activeProject}
+  savingSong={savingSong}
+  justSavedSong={justSavedSong}
+  saveSong={saveSong}
+
+  // Structured chord JSON / chord versions / chord saving
+  structuredChordJsonRef={structuredChordJsonRef}
+  chordVersionTitle={chordVersionTitle}
+  setChordVersionTitle={setChordVersionTitle}
+  chordsText={chordsText}
+  chordExtractionMessage={chordExtractionMessage}
+  setChordsText={setChordsText}
+  setChords={setChords}
+  chordVersions={chordVersions}
+  activeChordVersionId={activeChordVersionId}
+  setActiveChordVersionId={setActiveChordVersionId}
+  saveChords={saveChords}
+  savingChords={savingChords}
+  justSavedChords={justSavedChords}
+
+  // Shared formatting
+  formatUkDateTime={formatUkDateTime}
+
+  // Compare controls
+  comparingNow={comparingNow}
+  setComparingNow={setComparingNow}
+  compareLeftSongId={compareLeftSongId}
+  setCompareLeftSongId={setCompareLeftSongId}
+  compareRightSongId={compareRightSongId}
+  setCompareRightSongId={setCompareRightSongId}
+  setCompareLeftText={setCompareLeftText}
+  setCompareRightText={setCompareRightText}
+  setFlashLeftPanel={setFlashLeftPanel}
+  setFlashRightPanel={setFlashRightPanel}
+  loadingLeftCurrent={loadingLeftCurrent}
+  setLoadingLeftCurrent={setLoadingLeftCurrent}
+  loadingRightCurrent={loadingRightCurrent}
+  setLoadingRightCurrent={setLoadingRightCurrent}
+/>
               
-              performanceSheet={performanceSheet}
-              setPerformanceSheet={setPerformanceSheetFromEditor}
-              songVersions={songVersions}
-              activeSongVersionId={activeSongVersionId}
-              setActiveSongVersionId={setActiveSongVersionId}
-              songVersionTitle={songVersionTitle}
-              setSongVersionTitle={setSongVersionTitle}
-              activeProject={activeProject}
-              savingSong={savingSong}
-              justSavedSong={justSavedSong}
-              saveSong={saveSong}
-              comparingNow={comparingNow}
-              setComparingNow={setComparingNow}
-              compareLeftSongId={compareLeftSongId}
-              setCompareLeftSongId={setCompareLeftSongId}
-              compareRightSongId={compareRightSongId}
-              setCompareRightSongId={setCompareRightSongId}
-              setCompareLeftText={setCompareLeftTextFromLoader}
-              setCompareRightText={setCompareRightTextFromLoader}
-              setFlashLeftPanel={setFlashLeftPanel}
-              setFlashRightPanel={setFlashRightPanel}
-              loadingLeftCurrent={loadingLeftCurrent}
-              setLoadingLeftCurrent={setLoadingLeftCurrent}
-              loadingRightCurrent={loadingRightCurrent}
-              setLoadingRightCurrent={setLoadingRightCurrent}
-              
-            />
 
 <ComparePanels
   compareLeftRef={compareLeftRef}
