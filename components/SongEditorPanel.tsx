@@ -34,7 +34,7 @@ type SongEditorPanelProps = {
   // Saved chord-version selector
   chordVersions: ChordVersion[]
   activeChordVersionId: string | null
-  onActiveChordVersionChange: (id: string) => void
+  setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>
   formatUkDateTime: (value: string) => string
 
   performanceSheet: string
@@ -78,15 +78,9 @@ type SongEditorPanelProps = {
 }
 
 export default function SongEditorPanel({
-
-
-
-
-
-
 chordVersions,
 activeChordVersionId,
-onActiveChordVersionChange,
+setActiveChordVersionId,
 formatUkDateTime,
   structuredChordJsonRef,
   saveChords,
@@ -139,7 +133,8 @@ structuredChordJsonRef={structuredChordJsonRef}
   setChordsText={setChordsText}
   chordVersions={chordVersions}
   activeChordVersionId={activeChordVersionId}
-  onActiveChordVersionChange={onActiveChordVersionChange}
+  setActiveChordVersionId={setActiveChordVersionId}
+  setChords={setChords}
   formatUkDateTime={formatUkDateTime}
   saveChords={saveChords}
   savingChords={savingChords}

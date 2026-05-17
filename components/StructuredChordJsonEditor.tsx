@@ -4,7 +4,7 @@ import React from 'react'
 
 import SavedChordVersionSelector from './SavedChordVersionSelector'
 
-import type { ChordVersion } from '@/types/song'
+import type { ChordResponse, ChordVersion } from '@/types/song'
 
 type StructuredChordJsonEditorProps = {
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
@@ -18,7 +18,8 @@ type StructuredChordJsonEditorProps = {
 
   chordVersions: ChordVersion[]
   activeChordVersionId: string | null
-  onActiveChordVersionChange: (id: string) => void
+  setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>
+setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
   formatUkDateTime: (value: string) => string
 
   saveChords: () => void
@@ -38,13 +39,29 @@ export default function StructuredChordJsonEditor({
 
   chordVersions,
   activeChordVersionId,
-  onActiveChordVersionChange,
+  setActiveChordVersionId,
+  setChords,
   formatUkDateTime,
 
   saveChords,
   savingChords,
   justSavedChords,
 }: StructuredChordJsonEditorProps) {
+    const handleActiveChordVersionChange = (id: string) => {
+  setActiveChordVersionId(id)
+
+  if (!id) {
+    return
+  }
+
+  const selected = chordVersions.find((v) => v.id === id)
+
+  if (selected?.chord_data) {
+    setChords(selected.chord_data as ChordResponse)
+    setChordsText(JSON.stringify(selected.chord_data, null, 2))
+    setChordVersionTitle(selected.title || '')
+  }
+}
   return (
     <div ref={structuredChordJsonRef} className="mt-4">
       <h3 className="text-lg font-semibold mb-2">
@@ -69,12 +86,12 @@ export default function StructuredChordJsonEditor({
         </button>
       </div>
 
-      <SavedChordVersionSelector
-        chordVersions={chordVersions}
-        activeChordVersionId={activeChordVersionId}
-        onActiveChordVersionChange={onActiveChordVersionChange}
-        formatUkDateTime={formatUkDateTime}
-      />
+     <SavedChordVersionSelector
+      chordVersions={chordVersions}
+      activeChordVersionId={activeChordVersionId}
+      onActiveChordVersionChange={handleActiveChordVersionChange}
+      formatUkDateTime={formatUkDateTime}
+    />
 
       <textarea
         value={chordsText}

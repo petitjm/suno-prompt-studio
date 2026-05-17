@@ -1192,21 +1192,7 @@ const saveChords = async () => {
   }
 }
 
-  const handleActiveChordVersionChange = (id: string) => {
-  setActiveChordVersionId(id)
-
-  if (!id) {
-    return
-  }
-
-  const selected = chordVersions.find((v) => v.id === id)
-
-  if (selected?.chord_data) {
-    setChords(selected.chord_data)
-    setChordsText(JSON.stringify(selected.chord_data, null, 2))
-    setChordVersionTitle(selected.title || '')
-  }
-}
+  
 
 if (!userEmail) {
   return (
@@ -2004,7 +1990,7 @@ const hasChordLinesInRewriteSource = sourceForDetection
               setChordsText={setChordsText}
               chordVersions={chordVersions}
               activeChordVersionId={activeChordVersionId}
-              onActiveChordVersionChange={handleActiveChordVersionChange}
+              setActiveChordVersionId={setActiveChordVersionId}
               formatUkDateTime={formatUkDateTime}
               chordVersionTitle={chordVersionTitle}
               setChordVersionTitle={setChordVersionTitle}
