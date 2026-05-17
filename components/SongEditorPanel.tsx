@@ -4,11 +4,10 @@ import React from 'react'
 
 import StructuredChordJsonEditor from './StructuredChordJsonEditor'
 
-import SavedSongVersionSelector from './SavedSongVersionSelector'
+import SongVersionEditor from './SongVersionEditor'
 
-import SongSheetEditor from './SongSheetEditor'
 
-import SongVersionSaveControls from './SongVersionSaveControls'
+
 
 import type {
   Project,
@@ -159,26 +158,19 @@ structuredChordJsonRef={structuredChordJsonRef}
   justSavedChords={justSavedChords}
 />
     {/* Song sheet, saved versions, and save controls */}
-<SongSheetEditor
+<SongVersionEditor
   performanceSheet={performanceSheet}
   setPerformanceSheet={setPerformanceSheet}
-/>
-
-<SavedSongVersionSelector
   songVersions={songVersions}
   activeSongVersionId={activeSongVersionId}
   onActiveSongVersionChange={handleActiveSongVersionChange}
   formatUkDateTime={formatUkDateTime}
-/>
-
-<SongVersionSaveControls
   songVersionTitle={songVersionTitle}
   setSongVersionTitle={setSongVersionTitle}
   saveSong={saveSong}
   savingSong={savingSong}
   justSavedSong={justSavedSong}
   activeProject={activeProject}
-  performanceSheet={performanceSheet}
 />
 
       <button
