@@ -19,9 +19,7 @@ import type {
 // - SongVersionEditor handles lyrics, saved song versions, and song saving.
 // - StructuredChordJsonEditor handles structured chord JSON, saved chord versions, and chord saving.
 
-type SongEditorPanelProps = {
-
-   // Editor workspace: song sheet / song versions / song saving
+type SongEditorWorkspaceSongProps = {
   performanceSheet: string
   setPerformanceSheet: (value: string) => void
 
@@ -37,35 +35,29 @@ type SongEditorPanelProps = {
   savingSong: boolean
   justSavedSong: boolean
   saveSong: () => void
+}
 
-  // Editor workspace: structured chord JSON / chord versions / chord saving
+type SongEditorWorkspaceChordProps = {
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
 
-  // Structured Chord JSON controls
   chordVersionTitle: string
   setChordVersionTitle: (value: string) => void
-  
 
   chordsText: string
   chordExtractionMessage: string
   setChordsText: (value: string) => void
   setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
 
-  // Saved chord-version selector
   chordVersions: ChordVersion[]
   activeChordVersionId: string | null
   setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>
 
-  
-
   saveChords: () => void
   savingChords: boolean
   justSavedChords: boolean
+}
 
-  // Shared formatting
-  formatUkDateTime: (value: string) => string
-
-  // Compare controls
+type SongEditorCompareProps = {
   comparingNow: boolean
   setComparingNow: (value: boolean) => void
 
@@ -85,6 +77,16 @@ type SongEditorPanelProps = {
   loadingRightCurrent: boolean
   setLoadingRightCurrent: (value: boolean) => void
 }
+
+type SongEditorSharedProps = {
+  formatUkDateTime: (value: string) => string
+}
+
+type SongEditorPanelProps =
+  SongEditorWorkspaceSongProps &
+  SongEditorWorkspaceChordProps &
+  SongEditorCompareProps &
+  SongEditorSharedProps
 
 export default function SongEditorPanel({
 chordVersions,
