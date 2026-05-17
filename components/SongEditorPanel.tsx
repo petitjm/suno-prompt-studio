@@ -15,7 +15,10 @@ import type {
 } from '@/types/song'
 
 
-
+// SongEditorPanel is now a wiring component.
+// Main editor UI is grouped in EditorWorkspace:
+// - SongVersionEditor handles lyrics, saved song versions, and song saving.
+// - StructuredChordJsonEditor handles structured chord JSON, saved chord versions, and chord saving.
 
 type SongEditorPanelProps = {
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
