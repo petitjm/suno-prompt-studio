@@ -158,7 +158,7 @@ structuredChordJsonRef={structuredChordJsonRef}
   savingChords={savingChords}
   justSavedChords={justSavedChords}
 />
-    {/* Song sheet editor and save controls */}
+    {/* Song sheet, saved versions, and save controls */}
 <SongSheetEditor
   performanceSheet={performanceSheet}
   setPerformanceSheet={setPerformanceSheet}
