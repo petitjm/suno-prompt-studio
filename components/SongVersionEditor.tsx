@@ -45,8 +45,10 @@ export default function SongVersionEditor({
 
   activeProject,
 }: SongVersionEditorProps) {
-const handleActiveSongVersionChange = (id: string) => {
-  setActiveSongVersionId(id)
+    // Keep version-loading behaviour local to the song editor.
+    // The parent owns state, but this component decides how selecting a saved song version updates the sheet.
+    const handleActiveSongVersionChange = (id: string) => {
+    setActiveSongVersionId(id)
 
   if (!id) {
     return

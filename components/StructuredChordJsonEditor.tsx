@@ -47,6 +47,8 @@ export default function StructuredChordJsonEditor({
   savingChords,
   justSavedChords,
 }: StructuredChordJsonEditorProps) {
+    // Keep version-loading behaviour local to the chord JSON editor.
+// The parent owns state, but this component decides how selecting a saved chord version updates JSON and title.
     const handleActiveChordVersionChange = (id: string) => {
   setActiveChordVersionId(id)
 
