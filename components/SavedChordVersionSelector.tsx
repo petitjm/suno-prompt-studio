@@ -2,6 +2,7 @@
 
 import type { ChordVersion } from '@/types/song'
 
+// Selector-only props. Version loading logic lives in StructuredChordJsonEditor.
 type SavedChordVersionSelectorProps = {
   chordVersions: ChordVersion[]
   activeChordVersionId: string | null

@@ -2,6 +2,7 @@
 
 import type { SongVersionRecord } from '@/types/song'
 
+// Selector-only props. Version loading logic lives in SongVersionEditor.
 type SavedSongVersionSelectorProps = {
   songVersions: SongVersionRecord[]
   activeSongVersionId: string | null
