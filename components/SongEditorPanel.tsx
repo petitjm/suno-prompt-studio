@@ -2,9 +2,7 @@
 
 import React from 'react'
 
-import StructuredChordJsonEditor from './StructuredChordJsonEditor'
-
-import SongVersionEditor from './SongVersionEditor'
+import EditorWorkspace from './EditorWorkspace'
 
 
 
@@ -123,27 +121,7 @@ formatUkDateTime,
     <>
       <h1 className="text-xl mb-4">Write</h1>
       <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
-<StructuredChordJsonEditor
-/* Structured Chord JSON editor and saved chord-version selector */  
-structuredChordJsonRef={structuredChordJsonRef}
-  chordVersionTitle={chordVersionTitle}
-  setChordVersionTitle={setChordVersionTitle}
-  chordsText={chordsText}
-  chordExtractionMessage={chordExtractionMessage}
-  setChordsText={setChordsText}
-  chordVersions={chordVersions}
-  activeChordVersionId={activeChordVersionId}
-  setActiveChordVersionId={setActiveChordVersionId}
-  setChords={setChords}
-  formatUkDateTime={formatUkDateTime}
-  saveChords={saveChords}
-  savingChords={savingChords}
-  justSavedChords={justSavedChords}
-/>
-    {/* Song sheet, saved versions, and save controls */}
-
-  
-  <SongVersionEditor
+<EditorWorkspace
   performanceSheet={performanceSheet}
   setPerformanceSheet={setPerformanceSheet}
   songVersions={songVersions}
@@ -156,6 +134,19 @@ structuredChordJsonRef={structuredChordJsonRef}
   savingSong={savingSong}
   justSavedSong={justSavedSong}
   activeProject={activeProject}
+  structuredChordJsonRef={structuredChordJsonRef}
+  chordVersionTitle={chordVersionTitle}
+  setChordVersionTitle={setChordVersionTitle}
+  chordsText={chordsText}
+  chordExtractionMessage={chordExtractionMessage}
+  setChordsText={setChordsText}
+  setChords={setChords}
+  chordVersions={chordVersions}
+  activeChordVersionId={activeChordVersionId}
+  setActiveChordVersionId={setActiveChordVersionId}
+  saveChords={saveChords}
+  savingChords={savingChords}
+  justSavedChords={justSavedChords}
 />
 
 
