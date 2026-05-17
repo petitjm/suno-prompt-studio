@@ -4,6 +4,7 @@ import React from 'react'
 
 import EditorWorkspace from './EditorWorkspace'
 import CompareVersionControls from './CompareVersionControls'
+import WritePanelHeader from './WritePanelHeader'
 
 import type {
   Project,
@@ -120,8 +121,7 @@ formatUkDateTime,
     
   return (
     <>
-      <h1 className="text-xl mb-4">Write</h1>
-      <p className="text-gray-400 mb-4">Lyrics, ideas, and structure go here.</p>
+<WritePanelHeader />
 <EditorWorkspace
   performanceSheet={performanceSheet}
   setPerformanceSheet={setPerformanceSheet}
