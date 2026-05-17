@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+
 import SongSheetEditor from './SongSheetEditor'
 import SavedSongVersionSelector from './SavedSongVersionSelector'
 import SongVersionSaveControls from './SongVersionSaveControls'
@@ -12,7 +14,7 @@ type SongVersionEditorProps = {
 
   songVersions: SongVersionRecord[]
   activeSongVersionId: string | null
-  onActiveSongVersionChange: (id: string) => void
+  setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>
   formatUkDateTime: (value: string) => string
 
   songVersionTitle: string
@@ -31,7 +33,7 @@ export default function SongVersionEditor({
 
   songVersions,
   activeSongVersionId,
-  onActiveSongVersionChange,
+  setActiveSongVersionId,
   formatUkDateTime,
 
   songVersionTitle,
@@ -43,6 +45,20 @@ export default function SongVersionEditor({
 
   activeProject,
 }: SongVersionEditorProps) {
+const handleActiveSongVersionChange = (id: string) => {
+  setActiveSongVersionId(id)
+
+  if (!id) {
+    return
+  }
+
+  const selected = songVersions.find((v) => v.id === id)
+
+  if (selected?.result?.lyrics_full) {
+    setPerformanceSheet(selected.result.lyrics_full)
+  }
+}
+
   return (
     <>
       <SongSheetEditor
@@ -50,12 +66,12 @@ export default function SongVersionEditor({
         setPerformanceSheet={setPerformanceSheet}
       />
 
-      <SavedSongVersionSelector
-        songVersions={songVersions}
-        activeSongVersionId={activeSongVersionId}
-        onActiveSongVersionChange={onActiveSongVersionChange}
-        formatUkDateTime={formatUkDateTime}
-      />
+     <SavedSongVersionSelector
+      songVersions={songVersions}
+      activeSongVersionId={activeSongVersionId}
+      onActiveSongVersionChange={handleActiveSongVersionChange}
+      formatUkDateTime={formatUkDateTime}
+    />
 
       <SongVersionSaveControls
         songVersionTitle={songVersionTitle}

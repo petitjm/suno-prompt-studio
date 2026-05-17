@@ -124,19 +124,7 @@ formatUkDateTime,
   loadingRightCurrent,
   setLoadingRightCurrent,
 }: SongEditorPanelProps) {
-    const handleActiveSongVersionChange = (id: string) => {
-  setActiveSongVersionId(id)
-
-  if (!id) {
-    return
-  }
-
-  const selected = songVersions.find((v) => v.id === id)
-
-  if (selected?.result?.lyrics_full) {
-    setPerformanceSheet(selected.result.lyrics_full)
-  }
-}
+    
   return (
     <>
       <h1 className="text-xl mb-4">Write</h1>
@@ -158,12 +146,14 @@ structuredChordJsonRef={structuredChordJsonRef}
   justSavedChords={justSavedChords}
 />
     {/* Song sheet, saved versions, and save controls */}
-<SongVersionEditor
+
+  
+  <SongVersionEditor
   performanceSheet={performanceSheet}
   setPerformanceSheet={setPerformanceSheet}
   songVersions={songVersions}
   activeSongVersionId={activeSongVersionId}
-  onActiveSongVersionChange={handleActiveSongVersionChange}
+  setActiveSongVersionId={setActiveSongVersionId}
   formatUkDateTime={formatUkDateTime}
   songVersionTitle={songVersionTitle}
   setSongVersionTitle={setSongVersionTitle}
@@ -172,6 +162,7 @@ structuredChordJsonRef={structuredChordJsonRef}
   justSavedSong={justSavedSong}
   activeProject={activeProject}
 />
+
 
       <button
         type="button"
