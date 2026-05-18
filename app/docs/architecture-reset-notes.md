@@ -39,6 +39,26 @@ Saved chord versions affect the Structured Chord JSON editor.
 // =================================================================
 // component checklist 
 ## Component responsibilities
+## Prop grouping pattern
+
+Large UI components now prefer grouped object props where it improves readability.
+
+Examples:
+
+```<CompareVersionControls
+  source={{ ... }}
+  actionState={{ ... }}
+  panelSelection={{ ... }}
+/>
+
+This keeps wiring components easier to scan while still leaving state ownership in app/page.tsx.
+<EditorWorkspace
+  songEditor={{ ... }}
+  chordEditor={{ ... }}
+  shared={{ ... }}
+/>
+
+
 
 ### `SongEditorPanel`
 
