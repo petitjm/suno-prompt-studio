@@ -101,7 +101,10 @@ import {
   normaliseProjectVersionData,
 } from '@/lib/projectVersions'
 
-import { looksLikeChordLine } from '@/lib/chords'
+import {
+  extractLyricsOnly,
+  looksLikeChordLine,
+} from '@/lib/chords'
 
 
 
@@ -1435,14 +1438,7 @@ const chordRegex =
 
 
 
-const extractLyricsOnly = (text: string) => {
-  return text
-    .split('\n')
-    .filter((line) => !looksLikeChordLine(line))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-}
+
 
 
 const knownSectionNames = [

@@ -72,3 +72,12 @@ export const looksLikeChordLine = (line: string) => {
 
   return false
 }
+
+export const extractLyricsOnly = (text: string) => {
+  return text
+    .split('\n')
+    .filter((line) => !looksLikeChordLine(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
