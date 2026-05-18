@@ -2,14 +2,23 @@
 
 import type { SongVersionRecord } from '@/types/song'
 
-type CompareVersionControlsProps = {
+type CompareSourceProps = {
   performanceSheet: string
   songVersions: SongVersionRecord[]
   formatUkDateTime: (value: string) => string
+}
 
+type CompareActionStateProps = {
   comparingNow: boolean
   setComparingNow: (value: boolean) => void
 
+  loadingLeftCurrent: boolean
+  setLoadingLeftCurrent: (value: boolean) => void
+  loadingRightCurrent: boolean
+  setLoadingRightCurrent: (value: boolean) => void
+}
+
+type ComparePanelSelectionProps = {
   compareLeftSongId: string
   setCompareLeftSongId: (value: string) => void
   compareRightSongId: string
@@ -20,12 +29,12 @@ type CompareVersionControlsProps = {
 
   setFlashLeftPanel: (value: boolean) => void
   setFlashRightPanel: (value: boolean) => void
-
-  loadingLeftCurrent: boolean
-  setLoadingLeftCurrent: (value: boolean) => void
-  loadingRightCurrent: boolean
-  setLoadingRightCurrent: (value: boolean) => void
 }
+
+type CompareVersionControlsProps =
+  CompareSourceProps &
+  CompareActionStateProps &
+  ComparePanelSelectionProps
 
 export default function CompareVersionControls({
   performanceSheet,
