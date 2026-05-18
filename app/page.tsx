@@ -96,7 +96,7 @@ import {
   parseSectionTarget,
 } from '@/lib/songSections'
 
-
+import { loadProjectVersions } from '@/lib/projectVersions'
 
 
 
@@ -851,18 +851,12 @@ const loadProjectData = async (
   setProjectMessage('Loading project data...')
 }
 
-    const [songRes, chordRes] = await Promise.all([
-      fetch(`/api/song-versions/${projectId}`),
-      fetch(`/api/chord-versions/${projectId}`),
-    ])
+const { songData, chordData } = await loadProjectVersions(
+  projectId,
+  readJsonSafe
+)
 
-    const songData = await readJsonSafe(songRes)
-    const chordData = await readJsonSafe(chordRes)
-
-    if (latestProjectLoadRef.current !== token) return
-
-    if (!songRes.ok) throw new Error(songData.error || 'Failed to load song versions')
-    if (!chordRes.ok) throw new Error(chordData.error || 'Failed to load chord versions')
+if (latestProjectLoadRef.current !== token) return
 
     const nextSongVersions: SongVersionRecord[] = Array.isArray(songData.versions)
       ? songData.versions
