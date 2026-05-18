@@ -8,6 +8,8 @@ import SongVersionSaveControls from './SongVersionSaveControls'
 
 import type { Project, SongVersionRecord } from '@/types/song'
 
+import { getSongVersionLyrics } from '@/lib/songVersions'
+
 type SongVersionEditorProps = {
   performanceSheet: string
   setPerformanceSheet: (value: string) => void
@@ -55,10 +57,11 @@ export default function SongVersionEditor({
   }
 
   const selected = songVersions.find((v) => v.id === id)
+        const lyrics = getSongVersionLyrics(selected)
 
-  if (selected?.result?.lyrics_full) {
-    setPerformanceSheet(selected.result.lyrics_full)
-  }
+        if (lyrics) {
+          setPerformanceSheet(lyrics)
+        }
 }
 
   return (

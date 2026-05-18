@@ -2,6 +2,8 @@
 
 import type { SongVersionRecord } from '@/types/song'
 
+import { getSongVersionLyrics } from '@/lib/songVersions'
+
 type CompareSourceProps = {
   performanceSheet: string
   songVersions: SongVersionRecord[]
@@ -50,11 +52,12 @@ export default function CompareVersionControls({
           actionState.setComparingNow(true)
 
           const latest = source.songVersions[0]
+        const latestLyrics = getSongVersionLyrics(latest)
 
-          if (latest?.result?.lyrics_full) {
-            panelSelection.setCompareLeftSongId(latest.id)
-            panelSelection.setCompareLeftText(latest.result.lyrics_full)
-          }
+        if (latestLyrics) {
+          panelSelection.setCompareLeftSongId(latest.id)
+          panelSelection.setCompareLeftText(latestLyrics)
+        }
 
           panelSelection.setCompareRightText(source.performanceSheet)
 
@@ -88,9 +91,11 @@ export default function CompareVersionControls({
               panelSelection.setCompareLeftSongId(id)
 
               const selected = source.songVersions.find((v) => v.id === id)
-              if (selected?.result?.lyrics_full) {
-                panelSelection.setCompareLeftText(selected.result.lyrics_full)
-              }
+            const lyrics = getSongVersionLyrics(selected)
+
+            if (lyrics) {
+              panelSelection.setCompareLeftText(lyrics)
+            }
             }}
             className="w-full px-3 py-2 rounded bg-gray-700 text-white"
           >
@@ -137,9 +142,11 @@ export default function CompareVersionControls({
               panelSelection.setCompareRightSongId(id)
 
               const selected = source.songVersions.find((v) => v.id === id)
-              if (selected?.result?.lyrics_full) {
-                panelSelection.setCompareRightText(selected.result.lyrics_full)
-              }
+                const lyrics = getSongVersionLyrics(selected)
+
+                if (lyrics) {
+                  panelSelection.setCompareRightText(lyrics)
+                }
             }}
             className="w-full px-3 py-2 rounded bg-gray-700 text-white"
           >
