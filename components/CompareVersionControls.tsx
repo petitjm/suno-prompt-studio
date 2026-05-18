@@ -31,66 +31,48 @@ type ComparePanelSelectionProps = {
   setFlashRightPanel: (value: boolean) => void
 }
 
-type CompareVersionControlsProps =
-  CompareSourceProps &
-  CompareActionStateProps &
-  ComparePanelSelectionProps
+type CompareVersionControlsProps = {
+  source: CompareSourceProps
+  actionState: CompareActionStateProps
+  panelSelection: ComparePanelSelectionProps
+}
 
 export default function CompareVersionControls({
-  performanceSheet,
-  songVersions,
-  formatUkDateTime,
-
-  comparingNow,
-  setComparingNow,
-
-  compareLeftSongId,
-  setCompareLeftSongId,
-  compareRightSongId,
-  setCompareRightSongId,
-
-  setCompareLeftText,
-  setCompareRightText,
-
-  setFlashLeftPanel,
-  setFlashRightPanel,
-
-  loadingLeftCurrent,
-  setLoadingLeftCurrent,
-  loadingRightCurrent,
-  setLoadingRightCurrent,
+  source,
+  actionState,
+  panelSelection,
 }: CompareVersionControlsProps) {
-  return (
+    return (
     <>
       <button
         type="button"
         onClick={() => {
-          setComparingNow(true)
+          actionState.setComparingNow(true)
 
-          const latest = songVersions[0]
+          const latest = source.songVersions[0]
 
           if (latest?.result?.lyrics_full) {
-            setCompareLeftSongId(latest.id)
-            setCompareLeftText(latest.result.lyrics_full)
+            panelSelection.setCompareLeftSongId(latest.id)
+            panelSelection.setCompareLeftText(latest.result.lyrics_full)
           }
 
-          setCompareRightText(performanceSheet)
+          panelSelection.setCompareRightText(source.performanceSheet)
 
-          setFlashLeftPanel(true)
-          setFlashRightPanel(true)
+          panelSelection.setFlashLeftPanel(true)
+          panelSelection.setFlashRightPanel(true)
 
           setTimeout(() => {
-            setFlashLeftPanel(false)
-            setFlashRightPanel(false)
-            setComparingNow(false)
+            panelSelection.setFlashLeftPanel(false)
+            panelSelection.setFlashRightPanel(false)
+            actionState.setComparingNow(false)
           }, 800)
         }}
-        disabled={!performanceSheet.trim() || songVersions.length === 0}
+        disabled={!source.performanceSheet.trim() || source.songVersions.length === 0}
         className={`mb-4 px-3 py-2 rounded text-white text-sm transition ${
-          comparingNow ? 'bg-green-600 scale-95' : 'bg-blue-600'
+          actionState.comparingNow ? 'bg-green-600 scale-95' : 'bg-blue-600'
         } disabled:opacity-40`}
       >
-        {comparingNow ? 'Compared ✓' : 'Compare current vs last saved'}
+        {actionState.comparingNow ? 'Compared ✓' : 'Compare current vs last saved'}
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -100,23 +82,24 @@ export default function CompareVersionControls({
           </label>
 
           <select
-            value={compareLeftSongId}
+            value={panelSelection.compareLeftSongId}
             onChange={(e) => {
               const id = e.target.value
-              setCompareLeftSongId(id)
+              panelSelection.setCompareLeftSongId(id)
 
-              const selected = songVersions.find((v) => v.id === id)
+              const selected = source.songVersions.find((v) => v.id === id)
               if (selected?.result?.lyrics_full) {
-                setCompareLeftText(selected.result.lyrics_full)
+                panelSelection.setCompareLeftText(selected.result.lyrics_full)
               }
             }}
             className="w-full px-3 py-2 rounded bg-gray-700 text-white"
           >
             <option value="">Choose version for left</option>
-            {songVersions.map((v, i) => (
+
+            {source.songVersions.map((v, i) => (
               <option key={v.id} value={v.id}>
-                {v.title || `Version ${songVersions.length - i}`}
-                {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+                {v.title || `Version ${source.songVersions.length - i}`}
+                {v.created_at ? ` (${source.formatUkDateTime(v.created_at)})` : ''}
               </option>
             ))}
           </select>
@@ -124,21 +107,21 @@ export default function CompareVersionControls({
           <button
             type="button"
             onClick={() => {
-              setLoadingLeftCurrent(true)
+              actionState.setLoadingLeftCurrent(true)
 
-              setCompareLeftText(performanceSheet)
+              panelSelection.setCompareLeftText(source.performanceSheet)
 
-              setFlashLeftPanel(true)
-              setTimeout(() => setFlashLeftPanel(false), 600)
+              panelSelection.setFlashLeftPanel(true)
+              setTimeout(() => panelSelection.setFlashLeftPanel(false), 600)
 
-              setTimeout(() => setLoadingLeftCurrent(false), 800)
+              setTimeout(() => actionState.setLoadingLeftCurrent(false), 800)
             }}
-            disabled={!performanceSheet.trim()}
+            disabled={!source.performanceSheet.trim()}
             className={`mt-2 px-3 py-1 rounded text-white text-xs transition ${
-              loadingLeftCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
+              actionState.loadingLeftCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
             } disabled:opacity-40`}
           >
-            {loadingLeftCurrent ? 'Loaded ✓' : 'Load current → left'}
+            {actionState.loadingLeftCurrent ? 'Loaded ✓' : 'Load current → left'}
           </button>
         </div>
 
@@ -148,23 +131,24 @@ export default function CompareVersionControls({
           </label>
 
           <select
-            value={compareRightSongId}
+            value={panelSelection.compareRightSongId}
             onChange={(e) => {
               const id = e.target.value
-              setCompareRightSongId(id)
+              panelSelection.setCompareRightSongId(id)
 
-              const selected = songVersions.find((v) => v.id === id)
+              const selected = source.songVersions.find((v) => v.id === id)
               if (selected?.result?.lyrics_full) {
-                setCompareRightText(selected.result.lyrics_full)
+                panelSelection.setCompareRightText(selected.result.lyrics_full)
               }
             }}
             className="w-full px-3 py-2 rounded bg-gray-700 text-white"
           >
             <option value="">Choose version for right</option>
-            {songVersions.map((v, i) => (
+
+            {source.songVersions.map((v, i) => (
               <option key={v.id} value={v.id}>
-                {v.title || `Version ${songVersions.length - i}`}
-                {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+                {v.title || `Version ${source.songVersions.length - i}`}
+                {v.created_at ? ` (${source.formatUkDateTime(v.created_at)})` : ''}
               </option>
             ))}
           </select>
@@ -172,21 +156,21 @@ export default function CompareVersionControls({
           <button
             type="button"
             onClick={() => {
-              setLoadingRightCurrent(true)
+              actionState.setLoadingRightCurrent(true)
 
-              setCompareRightText(performanceSheet)
+              panelSelection.setCompareRightText(source.performanceSheet)
 
-              setFlashRightPanel(true)
-              setTimeout(() => setFlashRightPanel(false), 600)
+              panelSelection.setFlashRightPanel(true)
+              setTimeout(() => panelSelection.setFlashRightPanel(false), 600)
 
-              setTimeout(() => setLoadingRightCurrent(false), 800)
+              setTimeout(() => actionState.setLoadingRightCurrent(false), 800)
             }}
-            disabled={!performanceSheet.trim()}
+            disabled={!source.performanceSheet.trim()}
             className={`mt-2 px-3 py-1 rounded text-white text-xs transition ${
-              loadingRightCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
+              actionState.loadingRightCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
             } disabled:opacity-40`}
           >
-            {loadingRightCurrent ? 'Loaded ✓' : 'Load current → right'}
+            {actionState.loadingRightCurrent ? 'Loaded ✓' : 'Load current → right'}
           </button>
         </div>
       </div>

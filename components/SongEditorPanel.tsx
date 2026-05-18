@@ -167,29 +167,30 @@ formatUkDateTime,
     }}
 />
 
-      <CompareVersionControls
-  // Compare source data
-  performanceSheet={performanceSheet}
-  songVersions={songVersions}
-  formatUkDateTime={formatUkDateTime}
-
-  // Compare action state
-  comparingNow={comparingNow}
-  setComparingNow={setComparingNow}
-  loadingLeftCurrent={loadingLeftCurrent}
-  setLoadingLeftCurrent={setLoadingLeftCurrent}
-  loadingRightCurrent={loadingRightCurrent}
-  setLoadingRightCurrent={setLoadingRightCurrent}
-
-  // Compare panel selection
-  compareLeftSongId={compareLeftSongId}
-  setCompareLeftSongId={setCompareLeftSongId}
-  compareRightSongId={compareRightSongId}
-  setCompareRightSongId={setCompareRightSongId}
-  setCompareLeftText={setCompareLeftText}
-  setCompareRightText={setCompareRightText}
-  setFlashLeftPanel={setFlashLeftPanel}
-  setFlashRightPanel={setFlashRightPanel}
+     <CompareVersionControls
+  source={{
+    performanceSheet,
+    songVersions,
+    formatUkDateTime,
+  }}
+  actionState={{
+    comparingNow,
+    setComparingNow,
+    loadingLeftCurrent,
+    setLoadingLeftCurrent,
+    loadingRightCurrent,
+    setLoadingRightCurrent,
+  }}
+  panelSelection={{
+    compareLeftSongId,
+    setCompareLeftSongId,
+    compareRightSongId,
+    setCompareRightSongId,
+    setCompareLeftText,
+    setCompareRightText,
+    setFlashLeftPanel,
+    setFlashRightPanel,
+  }}
 />
 
         <div>
