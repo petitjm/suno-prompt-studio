@@ -134,6 +134,7 @@ formatUkDateTime,
     <>
 <WritePanelHeader />
 <EditorWorkspace
+ // Song sheet / song versions / song saving
   performanceSheet={performanceSheet}
   setPerformanceSheet={setPerformanceSheet}
   songVersions={songVersions}
@@ -146,6 +147,8 @@ formatUkDateTime,
   savingSong={savingSong}
   justSavedSong={justSavedSong}
   activeProject={activeProject}
+
+  // Structured chord JSON / chord versions / chord saving
   structuredChordJsonRef={structuredChordJsonRef}
   chordVersionTitle={chordVersionTitle}
   setChordVersionTitle={setChordVersionTitle}
