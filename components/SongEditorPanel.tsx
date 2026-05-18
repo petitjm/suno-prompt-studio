@@ -168,11 +168,20 @@ formatUkDateTime,
 />
 
       <CompareVersionControls
+  // Compare source data
   performanceSheet={performanceSheet}
   songVersions={songVersions}
   formatUkDateTime={formatUkDateTime}
+
+  // Compare action state
   comparingNow={comparingNow}
   setComparingNow={setComparingNow}
+  loadingLeftCurrent={loadingLeftCurrent}
+  setLoadingLeftCurrent={setLoadingLeftCurrent}
+  loadingRightCurrent={loadingRightCurrent}
+  setLoadingRightCurrent={setLoadingRightCurrent}
+
+  // Compare panel selection
   compareLeftSongId={compareLeftSongId}
   setCompareLeftSongId={setCompareLeftSongId}
   compareRightSongId={compareRightSongId}
@@ -181,10 +190,6 @@ formatUkDateTime,
   setCompareRightText={setCompareRightText}
   setFlashLeftPanel={setFlashLeftPanel}
   setFlashRightPanel={setFlashRightPanel}
-  loadingLeftCurrent={loadingLeftCurrent}
-  setLoadingLeftCurrent={setLoadingLeftCurrent}
-  loadingRightCurrent={loadingRightCurrent}
-  setLoadingRightCurrent={setLoadingRightCurrent}
 />
 
         <div>
