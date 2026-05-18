@@ -120,9 +120,21 @@ Current helpers:
 
 - `lib/projectVersions.ts`
   - `loadProjectVersions`
+  - `normaliseProjectVersionData`
   - Fetches song-version and chord-version API data for a project.
+  - Normalises raw API responses into editor-ready values.
   - Does not update React state directly.
 
+  `loadProjectData` in `app/page.tsx` still owns React state updates.
+
+`normaliseProjectVersionData` prepares the data used by those state updates, including:
+
+- saved song versions
+- saved chord versions
+- active song/chord version IDs
+- latest lyrics
+- latest structured chord JSON
+- initial compare panel IDs
 
   Project data loading still lives in `app/page.tsx`.
   The helper only handles API fetching and response validation. State updates remain in the page component for now.
