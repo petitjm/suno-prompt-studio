@@ -1,5 +1,31 @@
 # Architecture Reset Notes
 
+
+## Current checkpoint
+
+The architecture reset has reached a stable checkpoint.
+
+Completed:
+
+- Write mode editor split into focused UI components.
+- `SongEditorPanel` reduced to a wiring/composition component.
+- Major prop boundaries grouped into object props.
+- Saved song-version and chord-version selectors extracted.
+- Song sheet editor extracted.
+- Structured Chord JSON editor extracted.
+- Compare controls extracted.
+- Shared helpers added for formatting and version data access.
+- Project version fetching and normalisation extracted into `lib/projectVersions.ts`.
+- `ChordVersionRecord` preserved for page state and project-loading data.
+
+Recommended next development rule:
+
+Make future changes in small, isolated steps and avoid moving React state ownership unless there is a clear reason.
+
+
+
+
+
 ## Current editor structure
 
 The Write mode editor has been split into smaller UI components while keeping state ownership mostly in `app/page.tsx`.
