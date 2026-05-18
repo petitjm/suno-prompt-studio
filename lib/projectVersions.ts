@@ -1,6 +1,6 @@
 import type {
   ChordResponse,
-  ChordVersion,
+  ChordVersionRecord,
   SongVersionRecord,
 } from '@/types/song'
 
@@ -45,11 +45,11 @@ export async function loadProjectVersions(
 
 type NormalisedProjectVersionData = {
   songVersions: SongVersionRecord[]
-  chordVersions: ChordVersion[]
+  chordVersions: ChordVersionRecord[]
   activeSongVersionId: string | null
   activeChordVersionId: string | null
   latestLyrics: string
-  latestChordVersion: ChordVersion | null
+  latestChordVersion: ChordVersionRecord | null
   latestChords: ChordResponse | null
   initialCompareSongIds: {
     leftId: string
@@ -65,9 +65,9 @@ export function normaliseProjectVersionData(
     ? songData.versions
     : []
 
-  const chordVersions: ChordVersion[] = Array.isArray(chordData.versions)
-    ? chordData.versions
-    : []
+  const chordVersions: ChordVersionRecord[] = Array.isArray(chordData.versions)
+  ? chordData.versions
+  : []
 
   const latestChordVersion = chordData.latest || null
   const latestChords = getChordVersionData(latestChordVersion) || null
