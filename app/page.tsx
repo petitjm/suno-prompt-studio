@@ -103,6 +103,8 @@ import {
   getSongVersionLyrics,
 } from '@/lib/songVersions'
 
+import { getChordVersionData } from '@/lib/chordVersions'
+
 
 
 
@@ -884,7 +886,7 @@ if (latestProjectLoadRef.current !== token) return
 
     const latestLyrics = getSongVersionLyrics(songData.latest)
     const latestChordVersion = chordData.latest || null
-    const latestChords = latestChordVersion?.chord_data || null
+    const latestChords = getChordVersionData(latestChordVersion) || null
 
     setPerformanceSheet(latestLyrics)
     setChords(latestChords)
