@@ -98,7 +98,10 @@ import {
 
 import { loadProjectVersions } from '@/lib/projectVersions'
 
-import { getInitialCompareSongIds } from '@/lib/songVersions'
+import {
+  getInitialCompareSongIds,
+  getSongVersionLyrics,
+} from '@/lib/songVersions'
 
 
 
@@ -879,7 +882,7 @@ if (latestProjectLoadRef.current !== token) return
     setActiveSongVersionId(songData.latest?.id || null)
     setActiveChordVersionId(chordData.latest?.id || null)
 
-    const latestLyrics = songData.latest?.result?.lyrics_full || ''
+    const latestLyrics = getSongVersionLyrics(songData.latest)
     const latestChordVersion = chordData.latest || null
     const latestChords = latestChordVersion?.chord_data || null
 
