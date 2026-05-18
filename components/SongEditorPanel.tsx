@@ -82,52 +82,18 @@ type SongEditorSharedProps = {
   formatUkDateTime: (value: string) => string
 }
 
-type SongEditorPanelProps =
-  SongEditorWorkspaceSongProps &
-  SongEditorWorkspaceChordProps &
-  SongEditorCompareProps &
-  SongEditorSharedProps
+type SongEditorPanelProps = {
+  songEditor: SongEditorWorkspaceSongProps
+  chordEditor: SongEditorWorkspaceChordProps
+  compareControls: SongEditorCompareProps
+  shared: SongEditorSharedProps
+}
 
 export default function SongEditorPanel({
-chordVersions,
-activeChordVersionId,
-setActiveChordVersionId,
-formatUkDateTime,
-  structuredChordJsonRef,
-  saveChords,
-  savingChords,
-  justSavedChords,
-  chordsText,
-  chordVersionTitle,
-  setChordVersionTitle,
-  chordExtractionMessage,
-  setChordsText,
-  setChords,
-  performanceSheet,
-  setPerformanceSheet,
-  songVersions,
-  activeSongVersionId,
-  setActiveSongVersionId,
-  songVersionTitle,
-  setSongVersionTitle,
-  activeProject,
-  savingSong,
-  justSavedSong,
-  saveSong,
-  comparingNow,
-  setComparingNow,
-  compareLeftSongId,
-  setCompareLeftSongId,
-  compareRightSongId,
-  setCompareRightSongId,
-  setCompareLeftText,
-  setCompareRightText,
-  setFlashLeftPanel,
-  setFlashRightPanel,
-  loadingLeftCurrent,
-  setLoadingLeftCurrent,
-  loadingRightCurrent,
-  setLoadingRightCurrent,
+  songEditor,
+  chordEditor,
+  compareControls,
+  shared,
 }: SongEditorPanelProps) {
     
   return (
@@ -135,111 +101,64 @@ formatUkDateTime,
 <WritePanelHeader />
 <EditorWorkspace
   songEditor={{
-    performanceSheet,
-    setPerformanceSheet,
-    songVersions,
-    activeSongVersionId,
-    setActiveSongVersionId,
-    songVersionTitle,
-    setSongVersionTitle,
-    saveSong,
-    savingSong,
-    justSavedSong,
-    activeProject,
+    performanceSheet: songEditor.performanceSheet,
+    setPerformanceSheet: songEditor.setPerformanceSheet,
+    songVersions: songEditor.songVersions,
+    activeSongVersionId: songEditor.activeSongVersionId,
+    setActiveSongVersionId: songEditor.setActiveSongVersionId,
+    songVersionTitle: songEditor.songVersionTitle,
+    setSongVersionTitle: songEditor.setSongVersionTitle,
+    saveSong: songEditor.saveSong,
+    savingSong: songEditor.savingSong,
+    justSavedSong: songEditor.justSavedSong,
+    activeProject: songEditor.activeProject,
   }}
   chordEditor={{
-    structuredChordJsonRef,
-    chordVersionTitle,
-    setChordVersionTitle,
-    chordsText,
-    chordExtractionMessage,
-    setChordsText,
-    setChords,
-    chordVersions,
-    activeChordVersionId,
-    setActiveChordVersionId,
-    saveChords,
-    savingChords,
-    justSavedChords,
+    structuredChordJsonRef: chordEditor.structuredChordJsonRef,
+    chordVersionTitle: chordEditor.chordVersionTitle,
+    setChordVersionTitle: chordEditor.setChordVersionTitle,
+    chordsText: chordEditor.chordsText,
+    chordExtractionMessage: chordEditor.chordExtractionMessage,
+    setChordsText: chordEditor.setChordsText,
+    setChords: chordEditor.setChords,
+    chordVersions: chordEditor.chordVersions,
+    activeChordVersionId: chordEditor.activeChordVersionId,
+    setActiveChordVersionId: chordEditor.setActiveChordVersionId,
+    saveChords: chordEditor.saveChords,
+    savingChords: chordEditor.savingChords,
+    justSavedChords: chordEditor.justSavedChords,
   }}
   shared={{
-      formatUkDateTime,
-    }}
+    formatUkDateTime: shared.formatUkDateTime,
+  }}
 />
-
      <CompareVersionControls
   source={{
-    performanceSheet,
-    songVersions,
-    formatUkDateTime,
+    performanceSheet: songEditor.performanceSheet,
+    songVersions: songEditor.songVersions,
+    formatUkDateTime: shared.formatUkDateTime,
   }}
   actionState={{
-    comparingNow,
-    setComparingNow,
-    loadingLeftCurrent,
-    setLoadingLeftCurrent,
-    loadingRightCurrent,
-    setLoadingRightCurrent,
+    comparingNow: compareControls.comparingNow,
+    setComparingNow: compareControls.setComparingNow,
+    loadingLeftCurrent: compareControls.loadingLeftCurrent,
+    setLoadingLeftCurrent: compareControls.setLoadingLeftCurrent,
+    loadingRightCurrent: compareControls.loadingRightCurrent,
+    setLoadingRightCurrent: compareControls.setLoadingRightCurrent,
   }}
   panelSelection={{
-    compareLeftSongId,
-    setCompareLeftSongId,
-    compareRightSongId,
-    setCompareRightSongId,
-    setCompareLeftText,
-    setCompareRightText,
-    setFlashLeftPanel,
-    setFlashRightPanel,
+    compareLeftSongId: compareControls.compareLeftSongId,
+    setCompareLeftSongId: compareControls.setCompareLeftSongId,
+    compareRightSongId: compareControls.compareRightSongId,
+    setCompareRightSongId: compareControls.setCompareRightSongId,
+    setCompareLeftText: compareControls.setCompareLeftText,
+    setCompareRightText: compareControls.setCompareRightText,
+    setFlashLeftPanel: compareControls.setFlashLeftPanel,
+    setFlashRightPanel: compareControls.setFlashRightPanel,
   }}
 />
 
-        <div>
-          <label className="block text-xs text-gray-400 mb-1">
-            Load saved version into right panel
-          </label>
-
-          <select
-            value={compareRightSongId}
-            onChange={(e) => {
-              const id = e.target.value
-              setCompareRightSongId(id)
-
-              const selected = songVersions.find((v) => v.id === id)
-              if (selected?.result?.lyrics_full) {
-                setCompareRightText(selected.result.lyrics_full)
-              }
-            }}
-            className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-          >
-            <option value="">Choose version for right</option>
-            {songVersions.map((v, i) => (
-              <option key={v.id} value={v.id}>
-                {v.title || `Version ${songVersions.length - i}`}
-                {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={() => {
-              setLoadingRightCurrent(true)
-
-              setCompareRightText(performanceSheet)
-
-              setFlashRightPanel(true)
-              setTimeout(() => setFlashRightPanel(false), 600)
-
-              setTimeout(() => setLoadingRightCurrent(false), 800)
-            }}
-            disabled={!performanceSheet.trim()}
-            className={`mt-2 px-3 py-1 rounded text-white text-xs transition ${
-              loadingRightCurrent ? 'bg-green-600 scale-95' : 'bg-gray-600'
-            } disabled:opacity-40`}
-          >
-            {loadingRightCurrent ? 'Loaded ✓' : 'Load current → right'}
-          </button>
-        </div>
+        
       
     </>
   )

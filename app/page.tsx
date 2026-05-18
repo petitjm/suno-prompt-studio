@@ -1984,52 +1984,53 @@ const hasChordLinesInRewriteSource = sourceForDetection
           {mode === 'write' && (
             <div>
           <SongEditorPanel
-  // Song sheet / song versions / song saving
-  performanceSheet={performanceSheet}
-  setPerformanceSheet={setPerformanceSheet}
-  songVersions={songVersions}
-  activeSongVersionId={activeSongVersionId}
-  setActiveSongVersionId={setActiveSongVersionId}
-  songVersionTitle={songVersionTitle}
-  setSongVersionTitle={setSongVersionTitle}
-  activeProject={activeProject}
-  savingSong={savingSong}
-  justSavedSong={justSavedSong}
-  saveSong={saveSong}
-
-  // Structured chord JSON / chord versions / chord saving
-  structuredChordJsonRef={structuredChordJsonRef}
-  chordVersionTitle={chordVersionTitle}
-  setChordVersionTitle={setChordVersionTitle}
-  chordsText={chordsText}
-  chordExtractionMessage={chordExtractionMessage}
-  setChordsText={setChordsText}
-  setChords={setChords}
-  chordVersions={chordVersions}
-  activeChordVersionId={activeChordVersionId}
-  setActiveChordVersionId={setActiveChordVersionId}
-  saveChords={saveChords}
-  savingChords={savingChords}
-  justSavedChords={justSavedChords}
-
-  // Shared formatting
-  formatUkDateTime={formatUkDateTime}
-
-  // Compare controls
-  comparingNow={comparingNow}
-  setComparingNow={setComparingNow}
-  compareLeftSongId={compareLeftSongId}
-  setCompareLeftSongId={setCompareLeftSongId}
-  compareRightSongId={compareRightSongId}
-  setCompareRightSongId={setCompareRightSongId}
-  setCompareLeftText={setCompareLeftText}
-  setCompareRightText={setCompareRightText}
-  setFlashLeftPanel={setFlashLeftPanel}
-  setFlashRightPanel={setFlashRightPanel}
-  loadingLeftCurrent={loadingLeftCurrent}
-  setLoadingLeftCurrent={setLoadingLeftCurrent}
-  loadingRightCurrent={loadingRightCurrent}
-  setLoadingRightCurrent={setLoadingRightCurrent}
+  songEditor={{
+    performanceSheet,
+    setPerformanceSheet,
+    songVersions,
+    activeSongVersionId,
+    setActiveSongVersionId,
+    songVersionTitle,
+    setSongVersionTitle,
+    activeProject,
+    savingSong,
+    justSavedSong,
+    saveSong,
+  }}
+  chordEditor={{
+    structuredChordJsonRef,
+    chordVersionTitle,
+    setChordVersionTitle,
+    chordsText,
+    chordExtractionMessage,
+    setChordsText,
+    setChords,
+    chordVersions,
+    activeChordVersionId,
+    setActiveChordVersionId,
+    saveChords,
+    savingChords,
+    justSavedChords,
+  }}
+  compareControls={{
+    comparingNow,
+    setComparingNow,
+    compareLeftSongId,
+    setCompareLeftSongId,
+    compareRightSongId,
+    setCompareRightSongId,
+    setCompareLeftText,
+    setCompareRightText,
+    setFlashLeftPanel,
+    setFlashRightPanel,
+    loadingLeftCurrent,
+    setLoadingLeftCurrent,
+    loadingRightCurrent,
+    setLoadingRightCurrent,
+  }}
+  shared={{
+    formatUkDateTime,
+  }}
 />
               
 
