@@ -118,6 +118,15 @@ Small pure helpers now live in `lib/` rather than inside UI components or `app/p
 
 Current helpers:
 
+- `lib/projectVersions.ts`
+  - `loadProjectVersions`
+  - Fetches song-version and chord-version API data for a project.
+  - Does not update React state directly.
+
+
+  Project data loading still lives in `app/page.tsx`.
+  The helper only handles API fetching and response validation. State updates remain in the page component for now.
+
 - `lib/format.ts`
   - `formatUkDateTime`
   - Formats saved version timestamps for UK display.

@@ -98,6 +98,7 @@ import {
 
 import { loadProjectVersions } from '@/lib/projectVersions'
 
+import { getInitialCompareSongIds } from '@/lib/songVersions'
 
 
 
@@ -868,13 +869,10 @@ if (latestProjectLoadRef.current !== token) return
 
     setSongVersions(nextSongVersions)
 
-    if (nextSongVersions.length >= 2) {
-      setCompareLeftSongId(nextSongVersions[0].id)
-      setCompareRightSongId(nextSongVersions[1].id)
-    } else {
-      setCompareLeftSongId('')
-      setCompareRightSongId('')
-    }
+    const initialCompareSongIds = getInitialCompareSongIds(nextSongVersions)
+
+    setCompareLeftSongId(initialCompareSongIds.leftId)
+    setCompareRightSongId(initialCompareSongIds.rightId)
 
 
     setChordVersions(nextChordVersions)
