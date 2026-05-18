@@ -96,14 +96,14 @@ import {
   parseSectionTarget,
 } from '@/lib/songSections'
 
-import { loadProjectVersions } from '@/lib/projectVersions'
-
 import {
-  getInitialCompareSongIds,
-  getSongVersionLyrics,
-} from '@/lib/songVersions'
+  loadProjectVersions,
+  normaliseProjectVersionData,
+} from '@/lib/projectVersions'
 
-import { getChordVersionData } from '@/lib/chordVersions'
+
+
+
 
 
 
@@ -864,34 +864,21 @@ const { songData, chordData } = await loadProjectVersions(
 
 if (latestProjectLoadRef.current !== token) return
 
-    const nextSongVersions: SongVersionRecord[] = Array.isArray(songData.versions)
-      ? songData.versions
-      : []
+const normalisedProjectData = normaliseProjectVersionData(songData, chordData)
 
-    const nextChordVersions: ChordVersionRecord[] = Array.isArray(chordData.versions)
-      ? chordData.versions
-      : []
+setSongVersions(normalisedProjectData.songVersions)
 
-    setSongVersions(nextSongVersions)
+setCompareLeftSongId(normalisedProjectData.initialCompareSongIds.leftId)
+setCompareRightSongId(normalisedProjectData.initialCompareSongIds.rightId)
 
-    const initialCompareSongIds = getInitialCompareSongIds(nextSongVersions)
+setChordVersions(normalisedProjectData.chordVersions)
+setActiveSongVersionId(normalisedProjectData.activeSongVersionId)
+setActiveChordVersionId(normalisedProjectData.activeChordVersionId)
 
-    setCompareLeftSongId(initialCompareSongIds.leftId)
-    setCompareRightSongId(initialCompareSongIds.rightId)
-
-
-    setChordVersions(nextChordVersions)
-    setActiveSongVersionId(songData.latest?.id || null)
-    setActiveChordVersionId(chordData.latest?.id || null)
-
-    const latestLyrics = getSongVersionLyrics(songData.latest)
-    const latestChordVersion = chordData.latest || null
-    const latestChords = getChordVersionData(latestChordVersion) || null
-
-    setPerformanceSheet(latestLyrics)
-    setChords(latestChords)
-    setChordsText(JSON.stringify(latestChords || {}, null, 2))
-    setChordVersionTitle(latestChordVersion?.title || '')
+setPerformanceSheet(normalisedProjectData.latestLyrics)
+setChords(normalisedProjectData.latestChords)
+setChordsText(JSON.stringify(normalisedProjectData.latestChords || {}, null, 2))
+setChordVersionTitle(normalisedProjectData.latestChordVersion?.title || '')
 
     setProjectMessage('')
   } catch (err: any) {

@@ -1,3 +1,15 @@
+import type {
+  ChordResponse,
+  ChordVersion,
+  SongVersionRecord,
+} from '@/types/song'
+
+import { getChordVersionData } from '@/lib/chordVersions'
+import {
+  getInitialCompareSongIds,
+  getSongVersionLyrics,
+} from '@/lib/songVersions'
+
 type ReadJsonSafe = (response: Response) => Promise<any>
 
 type LoadProjectVersionsResult = {
@@ -28,5 +40,46 @@ export async function loadProjectVersions(
   return {
     songData,
     chordData,
+  }
+}
+
+type NormalisedProjectVersionData = {
+  songVersions: SongVersionRecord[]
+  chordVersions: ChordVersion[]
+  activeSongVersionId: string | null
+  activeChordVersionId: string | null
+  latestLyrics: string
+  latestChordVersion: ChordVersion | null
+  latestChords: ChordResponse | null
+  initialCompareSongIds: {
+    leftId: string
+    rightId: string
+  }
+}
+
+export function normaliseProjectVersionData(
+  songData: any,
+  chordData: any
+): NormalisedProjectVersionData {
+  const songVersions: SongVersionRecord[] = Array.isArray(songData.versions)
+    ? songData.versions
+    : []
+
+  const chordVersions: ChordVersion[] = Array.isArray(chordData.versions)
+    ? chordData.versions
+    : []
+
+  const latestChordVersion = chordData.latest || null
+  const latestChords = getChordVersionData(latestChordVersion) || null
+
+  return {
+    songVersions,
+    chordVersions,
+    activeSongVersionId: songData.latest?.id || null,
+    activeChordVersionId: chordData.latest?.id || null,
+    latestLyrics: getSongVersionLyrics(songData.latest),
+    latestChordVersion,
+    latestChords,
+    initialCompareSongIds: getInitialCompareSongIds(songVersions),
   }
 }
