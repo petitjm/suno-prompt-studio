@@ -111,6 +111,26 @@ Selector components should stay simple and UI-only.
 
 They receive data and callbacks, but should not decide how loaded content changes editor state.
 
+
+## Shared helpers
+
+Small pure helpers now live in `lib/` rather than inside UI components or `app/page.tsx`.
+
+Current helpers:
+
+- `lib/format.ts`
+  - `formatUkDateTime`
+  - Formats saved version timestamps for UK display.
+
+- `lib/songVersions.ts`
+  - `getSongVersionLyrics`
+  - Safely extracts `lyrics_full` from a saved song version.
+
+- `lib/chordVersions.ts`
+  - `getChordVersionData`
+  - Safely extracts structured chord data from a saved chord version.
+
+These helpers should stay pure and should not call APIs, mutate React state, or depend on component lifecycle.
 // ========================================================
 
 Known local build note

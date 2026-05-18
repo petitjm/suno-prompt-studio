@@ -6,6 +6,8 @@ import SavedChordVersionSelector from './SavedChordVersionSelector'
 
 import type { ChordResponse, ChordVersion } from '@/types/song'
 
+import { getChordVersionData } from '@/lib/chordVersions'
+
 type StructuredChordJsonEditorProps = {
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
 
@@ -57,12 +59,13 @@ export default function StructuredChordJsonEditor({
   }
 
   const selected = chordVersions.find((v) => v.id === id)
+    const chordData = getChordVersionData(selected)
 
-  if (selected?.chord_data) {
-    setChords(selected.chord_data as ChordResponse)
-    setChordsText(JSON.stringify(selected.chord_data, null, 2))
-    setChordVersionTitle(selected.title || '')
-  }
+    if (chordData) {
+      setChords(chordData)
+      setChordsText(JSON.stringify(chordData, null, 2))
+      setChordVersionTitle(selected?.title || '')
+    }
 }
   return (
     <div ref={structuredChordJsonRef} className="mt-4">
