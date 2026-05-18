@@ -13,6 +13,7 @@ import type {
 } from '@/types/song'
 
 type EditorWorkspaceProps = {
+    // Song sheet / song versions / song saving
   performanceSheet: string
   setPerformanceSheet: (value: string) => void
 
@@ -29,7 +30,7 @@ type EditorWorkspaceProps = {
   justSavedSong: boolean
 
   activeProject: Project | null
-
+   // Structured chord JSON / chord versions / chord saving
   structuredChordJsonRef: React.RefObject<HTMLDivElement | null>
 
   chordVersionTitle: string
