@@ -133,12 +133,14 @@ Current helpers:
 
 - `lib/songVersions.ts`
   - `getSongVersionLyrics`
-  - Safely extracts `lyrics_full` from a saved song version.
+  - `getInitialCompareSongIds`
+  - Safely extracts `lyrics_full` from a saved song version and chooses initial compare panel version IDs.
 
 - `lib/chordVersions.ts`
   - `getChordVersionData`
   - Safely extracts structured chord data from a saved chord version.
 
+`app/page.tsx` now uses these helpers during project loading, so UI components and project-loading logic rely on the same version-data access patterns.
 These helpers should stay pure and should not call APIs, mutate React state, or depend on component lifecycle.
 // ========================================================
 
