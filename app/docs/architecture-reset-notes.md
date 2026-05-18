@@ -152,6 +152,21 @@ Current helpers:
   - `getChordVersionData`
   - Safely extracts structured chord data from a saved chord version.
 
+  ## Chord version types
+
+There are two chord-version shapes in use:
+
+- `ChordVersionRecord`
+  - Full database/API record.
+  - Used by `app/page.tsx` state and project loading.
+  - Includes fields such as `project_id`.
+
+- `ChordVersion`
+  - Lightweight UI shape.
+  - Used by selector/editor components where only `id`, `title`, `created_at`, and `chord_data` are needed.
+
+Project-loading helpers should preserve `ChordVersionRecord[]` so they remain compatible with page state.
+
 `app/page.tsx` now uses these helpers during project loading, so UI components and project-loading logic rely on the same version-data access patterns.
 These helpers should stay pure and should not call APIs, mutate React state, or depend on component lifecycle.
 // ========================================================
