@@ -19,7 +19,7 @@ type EditorWorkspaceSongProps = {
   songVersions: SongVersionRecord[]
   activeSongVersionId: string | null
   setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>
-  formatUkDateTime: (value: string) => string
+ 
 
   songVersionTitle: string
   setSongVersionTitle: (value: string) => void
@@ -51,81 +51,56 @@ type EditorWorkspaceChordProps = {
   justSavedChords: boolean
 }
 
-type EditorWorkspaceProps =
-  EditorWorkspaceSongProps &
-  EditorWorkspaceChordProps
+type EditorWorkspaceSharedProps = {
+  formatUkDateTime: (value: string) => string
+}
+
+type EditorWorkspaceProps = {
+  songEditor: EditorWorkspaceSongProps
+  chordEditor: EditorWorkspaceChordProps
+  shared: EditorWorkspaceSharedProps
+}
 
 export default function EditorWorkspace({
-  performanceSheet,
-  setPerformanceSheet,
-
-  songVersions,
-  activeSongVersionId,
-  setActiveSongVersionId,
-  formatUkDateTime,
-
-  songVersionTitle,
-  setSongVersionTitle,
-
-  saveSong,
-  savingSong,
-  justSavedSong,
-
-  activeProject,
-
-  structuredChordJsonRef,
-
-  chordVersionTitle,
-  setChordVersionTitle,
-
-  chordsText,
-  chordExtractionMessage,
-  setChordsText,
-  setChords,
-
-  chordVersions,
-  activeChordVersionId,
-  setActiveChordVersionId,
-
-  saveChords,
-  savingChords,
-  justSavedChords,
+  songEditor,
+  chordEditor,
+  shared,
 }: EditorWorkspaceProps) {
   return (
     <>
       {/* Song sheet, saved versions, and save controls */}
       <SongVersionEditor
-        performanceSheet={performanceSheet}
-        setPerformanceSheet={setPerformanceSheet}
-        songVersions={songVersions}
-        activeSongVersionId={activeSongVersionId}
-        setActiveSongVersionId={setActiveSongVersionId}
-        formatUkDateTime={formatUkDateTime}
-        songVersionTitle={songVersionTitle}
-        setSongVersionTitle={setSongVersionTitle}
-        saveSong={saveSong}
-        savingSong={savingSong}
-        justSavedSong={justSavedSong}
-        activeProject={activeProject}
-      />
+      performanceSheet={songEditor.performanceSheet}
+      setPerformanceSheet={songEditor.setPerformanceSheet}
+      songVersions={songEditor.songVersions}
+      activeSongVersionId={songEditor.activeSongVersionId}
+      setActiveSongVersionId={songEditor.setActiveSongVersionId}
+      formatUkDateTime={shared.formatUkDateTime}
+      songVersionTitle={songEditor.songVersionTitle}
+      setSongVersionTitle={songEditor.setSongVersionTitle}
+      saveSong={songEditor.saveSong}
+      savingSong={songEditor.savingSong}
+      justSavedSong={songEditor.justSavedSong}
+      activeProject={songEditor.activeProject}
+    />
 
       {/* Structured Chord JSON editor and saved chord-version selector */}
       <StructuredChordJsonEditor
-        structuredChordJsonRef={structuredChordJsonRef}
-        chordVersionTitle={chordVersionTitle}
-        setChordVersionTitle={setChordVersionTitle}
-        chordsText={chordsText}
-        chordExtractionMessage={chordExtractionMessage}
-        setChordsText={setChordsText}
-        setChords={setChords}
-        chordVersions={chordVersions}
-        activeChordVersionId={activeChordVersionId}
-        setActiveChordVersionId={setActiveChordVersionId}
-        formatUkDateTime={formatUkDateTime}
-        saveChords={saveChords}
-        savingChords={savingChords}
-        justSavedChords={justSavedChords}
-      />
+      structuredChordJsonRef={chordEditor.structuredChordJsonRef}
+      chordVersionTitle={chordEditor.chordVersionTitle}
+      setChordVersionTitle={chordEditor.setChordVersionTitle}
+      chordsText={chordEditor.chordsText}
+      chordExtractionMessage={chordEditor.chordExtractionMessage}
+      setChordsText={chordEditor.setChordsText}
+      setChords={chordEditor.setChords}
+      chordVersions={chordEditor.chordVersions}
+      activeChordVersionId={chordEditor.activeChordVersionId}
+      setActiveChordVersionId={chordEditor.setActiveChordVersionId}
+      formatUkDateTime={shared.formatUkDateTime}
+      saveChords={chordEditor.saveChords}
+      savingChords={chordEditor.savingChords}
+      justSavedChords={chordEditor.justSavedChords}
+    />
     </>
   )
 }

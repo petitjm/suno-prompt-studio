@@ -134,34 +134,37 @@ formatUkDateTime,
     <>
 <WritePanelHeader />
 <EditorWorkspace
- // Song sheet / song versions / song saving
-  performanceSheet={performanceSheet}
-  setPerformanceSheet={setPerformanceSheet}
-  songVersions={songVersions}
-  activeSongVersionId={activeSongVersionId}
-  setActiveSongVersionId={setActiveSongVersionId}
-  formatUkDateTime={formatUkDateTime}
-  songVersionTitle={songVersionTitle}
-  setSongVersionTitle={setSongVersionTitle}
-  saveSong={saveSong}
-  savingSong={savingSong}
-  justSavedSong={justSavedSong}
-  activeProject={activeProject}
-
-  // Structured chord JSON / chord versions / chord saving
-  structuredChordJsonRef={structuredChordJsonRef}
-  chordVersionTitle={chordVersionTitle}
-  setChordVersionTitle={setChordVersionTitle}
-  chordsText={chordsText}
-  chordExtractionMessage={chordExtractionMessage}
-  setChordsText={setChordsText}
-  setChords={setChords}
-  chordVersions={chordVersions}
-  activeChordVersionId={activeChordVersionId}
-  setActiveChordVersionId={setActiveChordVersionId}
-  saveChords={saveChords}
-  savingChords={savingChords}
-  justSavedChords={justSavedChords}
+  songEditor={{
+    performanceSheet,
+    setPerformanceSheet,
+    songVersions,
+    activeSongVersionId,
+    setActiveSongVersionId,
+    songVersionTitle,
+    setSongVersionTitle,
+    saveSong,
+    savingSong,
+    justSavedSong,
+    activeProject,
+  }}
+  chordEditor={{
+    structuredChordJsonRef,
+    chordVersionTitle,
+    setChordVersionTitle,
+    chordsText,
+    chordExtractionMessage,
+    setChordsText,
+    setChords,
+    chordVersions,
+    activeChordVersionId,
+    setActiveChordVersionId,
+    saveChords,
+    savingChords,
+    justSavedChords,
+  }}
+  shared={{
+      formatUkDateTime,
+    }}
 />
 
       <CompareVersionControls
