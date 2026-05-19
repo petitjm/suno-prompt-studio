@@ -161,8 +161,17 @@ This helps keep Remove Chords, section parsing, and rewrite workflows consistent
   - `loadProjectVersions`
   - `normaliseProjectVersionData`
   - Fetches song-version and chord-version API data for a project.
+  - Returns per-endpoint success/error state so one failed endpoint does not automatically wipe the other.
   - Normalises raw API responses into editor-ready values.
   - Does not update React state directly.
+
+  ## Project loading resilience
+
+`loadProjectData` in `app/page.tsx` now handles song-version and chord-version load results separately.
+
+If one endpoint fails and the other succeeds, the successful data is still applied to the editor.
+
+Unexpected errors still fall through to the catch block and clear editor state as a defensive fallback.
 
   `loadProjectData` in `app/page.tsx` still owns React state updates.
 
