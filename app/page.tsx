@@ -883,7 +883,7 @@ try {
       projectVersionResult.chord.ok ? '' : projectVersionResult.chord.error,
     ].filter(Boolean)
 
-    setProjectMessage(`Project partially loaded: ${messages.join(' / ')}`)
+    setProjectMessage(messages.join(' / '))
   }
 
   const normalisedProjectData = normaliseProjectVersionData(songData, chordData)
@@ -1816,7 +1816,27 @@ const hasChordLinesInRewriteSource = sourceForDetection
   .split('\n')
   .some((line) => looksLikeChordLine(line))
 
-  return (
+const rewriteSectionCount = detectedSections.length
+
+const rewriteTargetLabel =
+  rewriteTarget === 'left'
+    ? 'Left compare panel'
+    : rewriteTarget === 'right'
+      ? 'Right compare panel'
+      : 'Song Sheet / Lyrics'
+
+const rewriteScopeLabel =
+  rewriteSectionOnly && rewriteSectionName
+    ? `Selected section: ${rewriteSectionName}`
+    : 'Whole selected source'
+
+const rewriteAvailabilityLabel = hasChordLinesInRewriteSource
+  ? 'Rewrite blocked until chord lines are removed'
+  : sourceForDetection.trim()
+    ? 'Rewrite available'
+    : 'No rewrite source text'
+
+return (
 
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900 text-white">
       <div
@@ -1985,6 +2005,10 @@ const hasChordLinesInRewriteSource = sourceForDetection
     justExtractedAndRemovedChords={justExtractedAndRemovedChords}
     justExtractedChords={justExtractedChords}
     hasChordLinesInRewriteSource={hasChordLinesInRewriteSource}
+    rewriteSectionCount={rewriteSectionCount}
+    rewriteTargetLabel={rewriteTargetLabel}
+    rewriteScopeLabel={rewriteScopeLabel}
+    rewriteAvailabilityLabel={rewriteAvailabilityLabel}
     extractingLyricsOnly={extractingLyricsOnly}
     removeChordsFromRewriteSource={removeChordsFromRewriteSource}
     extractChordsFromRewriteSourceToJson={extractChordsFromRewriteSourceToJson}
