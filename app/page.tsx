@@ -855,47 +855,68 @@ const loadProjectData = async (
   const token = Date.now()
   latestProjectLoadRef.current = token
 
-  try {
-    setVersionsLoading(true)
-    if (!options?.silent) {
-  setProjectMessage('Loading project data...')
-}
+try {
+  setVersionsLoading(true)
 
-const { songData, chordData } = await loadProjectVersions(
-  projectId,
-  readJsonSafe
-)
+  if (!options?.silent) {
+    setProjectMessage('Loading project data...')
+  }
 
-if (latestProjectLoadRef.current !== token) return
+  const projectVersionResult = await loadProjectVersions(
+    projectId,
+    readJsonSafe
+  )
 
-const normalisedProjectData = normaliseProjectVersionData(songData, chordData)
+  if (latestProjectLoadRef.current !== token) return
 
-setSongVersions(normalisedProjectData.songVersions)
+  const songData = projectVersionResult.song.ok
+    ? projectVersionResult.song.data
+    : { versions: [], latest: null }
 
-setCompareLeftSongId(normalisedProjectData.initialCompareSongIds.leftId)
-setCompareRightSongId(normalisedProjectData.initialCompareSongIds.rightId)
+  const chordData = projectVersionResult.chord.ok
+    ? projectVersionResult.chord.data
+    : { versions: [], latest: null }
 
-setChordVersions(normalisedProjectData.chordVersions)
-setActiveSongVersionId(normalisedProjectData.activeSongVersionId)
-setActiveChordVersionId(normalisedProjectData.activeChordVersionId)
+  if (!projectVersionResult.song.ok || !projectVersionResult.chord.ok) {
+    const messages = [
+      projectVersionResult.song.ok ? '' : projectVersionResult.song.error,
+      projectVersionResult.chord.ok ? '' : projectVersionResult.chord.error,
+    ].filter(Boolean)
 
-setPerformanceSheet(normalisedProjectData.latestLyrics)
-setChords(normalisedProjectData.latestChords)
-setChordsText(JSON.stringify(normalisedProjectData.latestChords || {}, null, 2))
-setChordVersionTitle(normalisedProjectData.latestChordVersion?.title || '')
+    setProjectMessage(messages.join(' / '))
+  }
 
+  const normalisedProjectData = normaliseProjectVersionData(songData, chordData)
+
+  setSongVersions(normalisedProjectData.songVersions)
+
+  setCompareLeftSongId(normalisedProjectData.initialCompareSongIds.leftId)
+  setCompareRightSongId(normalisedProjectData.initialCompareSongIds.rightId)
+
+  setChordVersions(normalisedProjectData.chordVersions)
+  setActiveSongVersionId(normalisedProjectData.activeSongVersionId)
+  setActiveChordVersionId(normalisedProjectData.activeChordVersionId)
+
+  setPerformanceSheet(normalisedProjectData.latestLyrics)
+  setChords(normalisedProjectData.latestChords)
+  setChordsText(JSON.stringify(normalisedProjectData.latestChords || {}, null, 2))
+  setChordVersionTitle(normalisedProjectData.latestChordVersion?.title || '')
+
+  if (projectVersionResult.song.ok && projectVersionResult.chord.ok) {
     setProjectMessage('')
-  } catch (err: any) {
-    if (latestProjectLoadRef.current !== token) return
+  }
+} catch (err: any) {
+  if (latestProjectLoadRef.current !== token) return
 
-    console.error(err)
-    setProjectMessage(err.message || 'Failed to load project data')
-    setPerformanceSheet('')
-    setChords(null)
-    setChordsText('')
-    setSongVersions([])
-    setChordVersions([])
-  } finally {
+  console.error(err)
+  setProjectMessage(err.message || 'Failed to load project data')
+  setPerformanceSheet('')
+  setChords(null)
+  setChordsText('')
+  setSongVersions([])
+  setChordVersions([])
+}
+   finally {
     if (latestProjectLoadRef.current === token) {
       setVersionsLoading(false)
     }

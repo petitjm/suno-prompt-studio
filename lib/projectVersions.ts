@@ -12,9 +12,15 @@ import {
 
 type ReadJsonSafe = (response: Response) => Promise<any>
 
+type ProjectVersionLoadResult = {
+  ok: boolean
+  data: any
+  error: string
+}
+
 type LoadProjectVersionsResult = {
-  songData: any
-  chordData: any
+  song: ProjectVersionLoadResult
+  chord: ProjectVersionLoadResult
 }
 
 export async function loadProjectVersions(
@@ -29,18 +35,18 @@ export async function loadProjectVersions(
   const songData = await readJsonSafe(songRes)
   const chordData = await readJsonSafe(chordRes)
 
-  if (!songRes.ok) {
-    throw new Error(songData.error || 'Failed to load song versions')
-  }
-
-  if (!chordRes.ok) {
-    throw new Error(chordData.error || 'Failed to load chord versions')
-  }
-
-  return {
-    songData,
-    chordData,
-  }
+    return {
+      song: {
+        ok: songRes.ok,
+        data: songData,
+        error: songRes.ok ? '' : songData.error || 'Failed to load song versions',
+      },
+      chord: {
+        ok: chordRes.ok,
+        data: chordData,
+        error: chordRes.ok ? '' : chordData.error || 'Failed to load chord versions',
+      },
+    }
 }
 
 type NormalisedProjectVersionData = {
