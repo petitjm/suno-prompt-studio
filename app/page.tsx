@@ -883,7 +883,7 @@ try {
       projectVersionResult.chord.ok ? '' : projectVersionResult.chord.error,
     ].filter(Boolean)
 
-    setProjectMessage(messages.join(' / '))
+    setProjectMessage(`Project partially loaded: ${messages.join(' / ')}`)
   }
 
   const normalisedProjectData = normaliseProjectVersionData(songData, chordData)
