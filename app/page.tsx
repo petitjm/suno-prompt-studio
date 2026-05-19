@@ -92,6 +92,7 @@ import {
   detectSections,
   extractSectionTextStrict,
   isSectionBoundary,
+  isSectionHeader,
   normaliseSectionName,
   parseSectionTarget,
 } from '@/lib/songSections'
@@ -1441,54 +1442,12 @@ const chordRegex =
 
 
 
-const knownSectionNames = [
-  'verse',
-  'verse 1',
-  'verse 2',
-  'verse 3',
-  'verse 4',
-  'chorus',
-  'pre-chorus',
-  'pre chorus',
-  'bridge',
-  'middle 8',
-  'intro',
-  'outro',
-  'hook',
-  'refrain',
-  'solo',
-  'instrumental',
-]
 
 
 
 
-const isSectionHeader = (line: string) => {
-  const trimmed = line.trim()
-  if (!trimmed) return false
 
-  // Never treat chord-only lines as section headings
-  if (looksLikeChordLine(trimmed)) return false
 
-  // [Verse 1]
-  if (/^\[.+\]$/.test(trimmed)) return true
-
-  // Verse 1:
-  if (/^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)) return true
-
-  const normalised = normaliseSectionName(trimmed)
-
-  // Common song section names, with optional numbers
-  if (
-    /^(intro|verse|pre chorus|pre-chorus|chorus|bridge|middle 8|solo|instrumental|break|outro|tag|refrain)(\s+\d+)?$/.test(
-      normalised
-    )
-  ) {
-    return true
-  }
-
-  return knownSectionNames.includes(normalised)
-}
 
 
 
