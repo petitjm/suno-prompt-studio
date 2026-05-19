@@ -144,6 +144,19 @@ Small pure helpers now live in `lib/` rather than inside UI components or `app/p
 
 Current helpers:
 
+- `lib/chords.ts`
+  - `looksLikeChordLine`
+  - `extractLyricsOnly`
+  - Detects chord-only lines and extracts lyrics-only text while preserving sensible spacing.
+
+- `lib/songSections.ts`
+  - `isSectionHeader`
+  - Detects song section headings while avoiding chord-only lines.
+
+  Chord-line detection is shared by lyrics extraction and section detection.
+
+This helps keep Remove Chords, section parsing, and rewrite workflows consistent.
+
 - `lib/projectVersions.ts`
   - `loadProjectVersions`
   - `normaliseProjectVersionData`
