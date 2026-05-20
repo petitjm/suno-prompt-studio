@@ -1861,15 +1861,20 @@ if (rewriteTarget === 'main') {
   }, 600)
 }
 
+const rewriteSuccessMessage = buildRewriteSuccessMessage({
+  rewriteConstraint,
+  rewriteSectionName,
+  originalLineCount,
+  lastLineCount,
+  normaliseSectionName,
+})
+
 setRewriteMessage(
-  buildRewriteSuccessMessage({
-    rewriteConstraint,
-    rewriteSectionName,
-    originalLineCount,
-    lastLineCount,
-    normaliseSectionName,
-  })
+  rewriteTarget === 'main'
+    ? `${rewriteSuccessMessage} Original copied to the left compare panel and rewritten version copied to the right compare panel.`
+    : rewriteSuccessMessage
 )
+
 setRewriteDone(true)
 setTimeout(() => setRewriteDone(false), 1000)
 } catch (err: any) {
