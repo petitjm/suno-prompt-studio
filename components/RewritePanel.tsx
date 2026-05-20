@@ -176,13 +176,29 @@ export default function RewritePanel({
     <div className="flex flex-col md:flex-row gap-2 mb-2">
         <label className="flex items-center gap-2 text-sm text-gray-200">
           <input
-            type="checkbox"
-            checked={commercialPolishMode}
-            onChange={(e) => setCommercialPolishMode(e.target.checked)}
-          />
+              type="checkbox"
+              checked={commercialPolishMode}
+              onChange={(e) => {
+                const enabled = e.target.checked
+
+                setCommercialPolishMode(enabled)
+
+                if (enabled && rewriteConstraint === 'keep-lines') {
+                  setRewriteConstraint('default')
+                }
+
+                setRewriteMessage('')
+              }}
+            />
           Commercial polish mode
         </label>
-        
+        {commercialPolishMode && (
+          <div className="text-xs text-blue-300">
+            Commercial polish mode may reshape lines for stronger phrasing.
+          </div>
+        )}
+
+
       
         <label className="flex items-center gap-2 text-sm text-gray-300">
         <input
