@@ -1869,11 +1869,14 @@ const rewriteSuccessMessage = buildRewriteSuccessMessage({
   normaliseSectionName,
 })
 
-setRewriteMessage(
+const rewriteOutputMessage =
   rewriteTarget === 'main'
-    ? `${rewriteSuccessMessage} Original copied to the left compare panel and rewritten version copied to the right compare panel.`
-    : rewriteSuccessMessage
-)
+    ? 'Original copied to the left compare panel and rewritten version copied to the right compare panel.'
+    : rewriteTarget === 'left'
+      ? 'Left compare panel rewritten. Output replaced the left compare panel. Right panel was unchanged.'
+      : 'Right compare panel rewritten. Output replaced the right compare panel. Left panel was unchanged.'
+
+setRewriteMessage(`${rewriteSuccessMessage} ${rewriteOutputMessage}`)
 
 setRewriteDone(true)
 setTimeout(() => setRewriteDone(false), 1000)
