@@ -1589,7 +1589,10 @@ const fullSourceText = sourceForDetection
       return
     }
 
-
+if (rewriteSectionOnly && !rewriteSectionName) {
+  setRewriteMessage('Please choose a section before running a section rewrite.')
+  return
+}
 
 
 const sourceText =
@@ -1828,13 +1831,17 @@ const rewriteTargetLabel =
 const rewriteScopeLabel =
   rewriteSectionOnly && rewriteSectionName
     ? `Selected section: ${rewriteSectionName}`
-    : 'Whole selected source'
+    : rewriteSectionOnly
+      ? 'Section rewrite selected, but no section chosen'
+      : 'Whole selected source'
 
 const rewriteAvailabilityLabel = hasChordLinesInRewriteSource
   ? 'Rewrite blocked until chord lines are removed'
-  : sourceForDetection.trim()
-    ? 'Rewrite available'
-    : 'No rewrite source text'
+  : rewriteSectionOnly && !rewriteSectionName
+    ? 'Choose a section before rewriting'
+    : sourceForDetection.trim()
+      ? 'Rewrite available'
+      : 'No rewrite source text'
 
 return (
 

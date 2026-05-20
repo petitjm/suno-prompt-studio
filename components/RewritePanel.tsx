@@ -25,9 +25,9 @@ type RewritePanelProps = {
   detectedSections: DetectedSection[]
   hasChordLinesInRewriteSource: boolean
   rewriteSectionCount: number
-    rewriteTargetLabel: string
-    rewriteScopeLabel: string
-    rewriteAvailabilityLabel: string
+  rewriteTargetLabel: string
+  rewriteScopeLabel: string
+  rewriteAvailabilityLabel: string
   justExtractedAndRemovedChords: boolean
   justExtractedChords: boolean
   extractingLyricsOnly: boolean
@@ -61,9 +61,9 @@ export default function RewritePanel({
   detectedSections,
   hasChordLinesInRewriteSource,
   rewriteSectionCount,
-rewriteTargetLabel,
-rewriteScopeLabel,
-rewriteAvailabilityLabel,
+  rewriteTargetLabel,
+  rewriteScopeLabel,
+  rewriteAvailabilityLabel,
   justExtractedChords,
   extractingLyricsOnly,
   extractChordsFromRewriteSourceToJson,
@@ -216,7 +216,7 @@ rewriteAvailabilityLabel,
 
     </div>
 
-        {!rewriteSectionOnly && (hasChordLinesInRewriteSource || justExtractedAndRemovedChords) && (
+        {(hasChordLinesInRewriteSource || justExtractedAndRemovedChords) && (
           <div className="mb-3 p-3 rounded bg-yellow-900/30 text-yellow-200 text-sm">
             <div>
               {hasChordLinesInRewriteSource
@@ -269,14 +269,61 @@ rewriteAvailabilityLabel,
           </p>
         )}
 
+ <div className="mb-4 rounded bg-gray-900 border border-gray-700 p-4">
+          <h3 className="text-sm font-semibold text-gray-200 mb-2">
+            Rewrite Lab Status
+          </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-gray-400">Source: </span>
+              <span className="text-white">{rewriteTargetLabel}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-400">Scope: </span>
+              <span className="text-white">{rewriteScopeLabel}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-400">Sections detected: </span>
+              <span className="text-white">{rewriteSectionCount}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-400">Chord lines: </span>
+              <span
+                className={
+                  hasChordLinesInRewriteSource ? 'text-yellow-400' : 'text-green-400'
+                }
+              >
+                {hasChordLinesInRewriteSource ? 'Detected' : 'Clear'}
+              </span>
+            </div>
+
+            <div className="sm:col-span-2">
+              <span className="text-gray-400">Rewrite status: </span>
+              <span
+                className={
+                  hasChordLinesInRewriteSource ? 'text-yellow-400' : 'text-green-400'
+                }
+              >
+                {rewriteAvailabilityLabel}
+              </span>
+            </div>
+        </div>
+    </div>
+
+
         <button
           type="button"
           onClick={runRewriteLab}
           disabled={
-            rewriteLoading ||
-            !rewriteInstruction.trim() ||
-            (!rewriteSectionOnly && hasChordLinesInRewriteSource)
-          }
+              rewriteLoading ||
+              !rewriteInstruction.trim() ||
+              hasChordLinesInRewriteSource ||
+              (rewriteSectionOnly && !rewriteSectionName)
+            }
           className={`px-4 py-2 rounded text-white transition ${
             rewriteLoading
               ? 'bg-gray-600 scale-95'
@@ -287,50 +334,7 @@ rewriteAvailabilityLabel,
         >
           {rewriteLoading ? 'Rewriting...' : rewriteDone ? 'Rewritten ✓' : 'Run Rewrite'}
         </button>
-        <div className="mb-4 rounded bg-gray-900 border border-gray-700 p-4">
-  <h3 className="text-sm font-semibold text-gray-200 mb-2">
-    Rewrite Lab Status
-  </h3>
-
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-    <div>
-      <span className="text-gray-400">Source: </span>
-      <span className="text-white">{rewriteTargetLabel}</span>
-    </div>
-
-    <div>
-      <span className="text-gray-400">Scope: </span>
-      <span className="text-white">{rewriteScopeLabel}</span>
-    </div>
-
-    <div>
-      <span className="text-gray-400">Sections detected: </span>
-      <span className="text-white">{rewriteSectionCount}</span>
-    </div>
-
-    <div>
-      <span className="text-gray-400">Chord lines: </span>
-      <span
-        className={
-          hasChordLinesInRewriteSource ? 'text-yellow-400' : 'text-green-400'
-        }
-      >
-        {hasChordLinesInRewriteSource ? 'Detected' : 'Clear'}
-      </span>
-    </div>
-
-    <div className="sm:col-span-2">
-      <span className="text-gray-400">Rewrite status: </span>
-      <span
-        className={
-          hasChordLinesInRewriteSource ? 'text-yellow-400' : 'text-green-400'
-        }
-      >
-        {rewriteAvailabilityLabel}
-      </span>
-    </div>
-  </div>
-</div>
+       
         {rewriteMessage && (
           <p className="text-sm text-gray-400 mt-2">{rewriteMessage}</p>
         )}
