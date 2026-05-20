@@ -75,7 +75,7 @@ import {
 } from '@/lib/rewritePrompts'
 
 
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import * as Tone from 'tone'
 
 import RehearsePanel from '@/components/RehearsePanel'
@@ -686,6 +686,9 @@ const [rewritePreset, setRewritePreset] = useState('')
 const [applyingLeft, setApplyingLeft] = useState(false)
 const [applyingRight, setApplyingRight] = useState(false)
 
+
+
+
 React.useEffect(() => {
   if (rewriteInstruction.toLowerCase().includes('hook')) {
     setRewriteSectionOnly(true)
@@ -728,6 +731,16 @@ React.useEffect(() => {
     setPreviewPlaying(false)
   }
 
+  useEffect(() => {
+      setRewriteTarget('main')
+      setRewritePreset('')
+      setRewriteInstruction('')
+      setRewriteConstraint('default')
+      setCommercialPolishMode(false)
+      setRewriteSectionOnly(false)
+      setRewriteSectionName('')
+      setRewriteMessage('')
+    }, [activeProject?.id])
 
   React.useEffect(() => {
   if (userEmail) {
@@ -1843,6 +1856,8 @@ const rewriteAvailabilityLabel = hasChordLinesInRewriteSource
       ? 'Rewrite available'
       : 'No rewrite source text'
 
+      const hasRewriteSourceText = sourceForDetection.trim().length > 0
+
 return (
 
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900 text-white">
@@ -2012,6 +2027,7 @@ return (
     justExtractedAndRemovedChords={justExtractedAndRemovedChords}
     justExtractedChords={justExtractedChords}
     hasChordLinesInRewriteSource={hasChordLinesInRewriteSource}
+    hasRewriteSourceText={hasRewriteSourceText}
     rewriteSectionCount={rewriteSectionCount}
     rewriteTargetLabel={rewriteTargetLabel}
     rewriteScopeLabel={rewriteScopeLabel}

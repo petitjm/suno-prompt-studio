@@ -24,6 +24,7 @@ type RewritePanelProps = {
   setRewriteSectionName: (value: string) => void
   detectedSections: DetectedSection[]
   hasChordLinesInRewriteSource: boolean
+  hasRewriteSourceText: boolean
   rewriteSectionCount: number
   rewriteTargetLabel: string
   rewriteScopeLabel: string
@@ -60,6 +61,7 @@ export default function RewritePanel({
   setRewriteSectionName,
   detectedSections,
   hasChordLinesInRewriteSource,
+  hasRewriteSourceText,
   rewriteSectionCount,
   rewriteTargetLabel,
   rewriteScopeLabel,
@@ -129,9 +131,11 @@ export default function RewritePanel({
   <select
   title="Choose which panel or editor to rewrite"
   value={rewriteTarget}
-  onChange={(e) =>
-    setRewriteTarget(e.target.value as 'left' | 'right' | 'main')
-  }
+  onChange={(e) => {
+      setRewriteTarget(e.target.value as 'left' | 'right' | 'main')
+      setRewriteSectionName('')
+      setRewriteMessage('')
+    }}
   className="px-3 py-2 rounded bg-gray-700 text-white"
 >
   <option value="left">Rewrite left panel</option>
@@ -182,7 +186,15 @@ export default function RewritePanel({
           type="checkbox"
           checked={rewriteSectionOnly}
           disabled={detectedSections.length === 0}
-          onChange={(e) => setRewriteSectionOnly(e.target.checked)}
+          onChange={(e) => {
+              setRewriteSectionOnly(e.target.checked)
+
+              if (!e.target.checked) {
+                setRewriteSectionName('')
+              }
+
+              setRewriteMessage('')
+            }}
         />
         Rewrite section only
       </label>
@@ -321,6 +333,7 @@ export default function RewritePanel({
           disabled={
               rewriteLoading ||
               !rewriteInstruction.trim() ||
+              !hasRewriteSourceText ||
               hasChordLinesInRewriteSource ||
               (rewriteSectionOnly && !rewriteSectionName)
             }
