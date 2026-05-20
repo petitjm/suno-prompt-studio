@@ -712,7 +712,7 @@ React.useEffect(() => {
   })
 }, [mode])
 
-
+const [compareUpdateMessage, setCompareUpdateMessage] = useState('')
 
 React.useEffect(() => {
   setCompareLeftText(compareLeftSong?.result?.lyrics_full || '')
@@ -1829,15 +1829,18 @@ if (normaliseForCompare(finalText) === normaliseForCompare(fullSourceText)) {
 }
 
 
-applyRewriteToTarget({
-  rewriteTarget,
-  finalText,
-  setCompareLeftText,
-  setCompareRightText,
-  setPerformanceSheet,
-  setFlashLeftPanel,
-  setFlashRightPanel,
-})
+
+
+
+const nextCompareUpdateMessage =
+  rewriteTarget === 'main'
+    ? 'Original is on the left. Rewritten version is on the right.'
+    : rewriteTarget === 'left'
+      ? 'Left panel was rewritten. Right panel was unchanged.'
+      : 'Right panel was rewritten. Left panel was unchanged.'
+
+setCompareUpdateMessage(nextCompareUpdateMessage)
+
 
 if (rewriteTarget === 'main') {
   setCompareLeftText(fullSourceText)
@@ -2055,6 +2058,7 @@ return (
   setLockCompareLeft={setLockCompareLeft}
   lockCompareRight={lockCompareRight}
   setLockCompareRight={setLockCompareRight}
+  compareUpdateMessage={compareUpdateMessage}
   flashLeftPanel={flashLeftPanel}
   flashRightPanel={flashRightPanel}
   setFlashLeftPanel={setFlashLeftPanel}

@@ -16,12 +16,14 @@ type ComparePanelsProps = {
   compareRightText: string
   setCompareRightText: (value: string) => void
 
-  lockCompareLeft: boolean
-  setLockCompareLeft: (value: boolean) => void
-  lockCompareRight: boolean
-  setLockCompareRight: (value: boolean) => void
+lockCompareLeft: boolean
+setLockCompareLeft: (value: boolean) => void
+lockCompareRight: boolean
+setLockCompareRight: (value: boolean) => void
 
-  flashLeftPanel: boolean
+compareUpdateMessage: string
+
+flashLeftPanel: boolean
   flashRightPanel: boolean
   setFlashLeftPanel: (value: boolean) => void
   setFlashRightPanel: (value: boolean) => void
@@ -61,6 +63,7 @@ export default function ComparePanels({
   setLockCompareLeft,
   lockCompareRight,
   setLockCompareRight,
+  compareUpdateMessage,
   flashLeftPanel,
   flashRightPanel,
   setFlashLeftPanel,
@@ -83,11 +86,18 @@ export default function ComparePanels({
   setCurrentBarIndex,
   setMode,
 }: ComparePanelsProps) {
-  return (
-    <div
-  id="rewrite-compare-preview"
-  className="grid grid-cols-1 md:grid-cols-[1fr_112px_1fr] gap-4 items-start"
->
+
+
+
+return (
+  <div id="rewrite-compare-preview">
+    {compareUpdateMessage && (
+      <div className="mb-3 rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-sm text-blue-100">
+        {compareUpdateMessage}
+      </div>
+    )}
+
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_112px_1fr] gap-4 items-start">
       <div>
         <div className="flex items-center gap-2 mb-2">
           <label className="flex items-center gap-1 text-xs text-gray-300">
@@ -250,5 +260,6 @@ export default function ComparePanels({
         />
       </div>
     </div>
+   </div>
   )
 }
