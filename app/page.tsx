@@ -1847,6 +1847,15 @@ if (rewriteTarget === 'main') {
   setFlashRightPanel(true)
 
   setTimeout(() => {
+    document
+      .getElementById('rewrite-compare-preview')
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+  }, 150)
+
+  setTimeout(() => {
     setFlashLeftPanel(false)
     setFlashRightPanel(false)
   }, 600)

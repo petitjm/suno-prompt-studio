@@ -84,7 +84,10 @@ export default function ComparePanels({
   setMode,
 }: ComparePanelsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_112px_1fr] gap-4 items-start">
+    <div
+  id="rewrite-compare-preview"
+  className="grid grid-cols-1 md:grid-cols-[1fr_112px_1fr] gap-4 items-start"
+>
       <div>
         <div className="flex items-center gap-2 mb-2">
           <label className="flex items-center gap-1 text-xs text-gray-300">
