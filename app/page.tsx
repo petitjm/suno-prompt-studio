@@ -1839,6 +1839,19 @@ applyRewriteToTarget({
   setFlashRightPanel,
 })
 
+if (rewriteTarget === 'main') {
+  setCompareLeftText(fullSourceText)
+  setCompareRightText(finalText)
+
+  setFlashLeftPanel(true)
+  setFlashRightPanel(true)
+
+  setTimeout(() => {
+    setFlashLeftPanel(false)
+    setFlashRightPanel(false)
+  }, 600)
+}
+
 setRewriteMessage(
   buildRewriteSuccessMessage({
     rewriteConstraint,
