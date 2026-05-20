@@ -1901,7 +1901,7 @@ const rewriteAvailabilityLabel = hasChordLinesInRewriteSource
         ? 'Choose a section before running a section rewrite.'
         : ''
 
-
+const rewriteCanRun = !rewriteBlockedReason && !rewriteLoading
 
 
 
@@ -2080,6 +2080,7 @@ return (
     rewriteScopeLabel={rewriteScopeLabel}
     rewriteAvailabilityLabel={rewriteAvailabilityLabel}
     rewriteBlockedReason={rewriteBlockedReason}
+    rewriteCanRun={rewriteCanRun}
     extractingLyricsOnly={extractingLyricsOnly}
     removeChordsFromRewriteSource={removeChordsFromRewriteSource}
     extractChordsFromRewriteSourceToJson={extractChordsFromRewriteSourceToJson}

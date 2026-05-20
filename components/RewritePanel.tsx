@@ -30,6 +30,7 @@ type RewritePanelProps = {
   rewriteScopeLabel: string
   rewriteAvailabilityLabel: string
   rewriteBlockedReason: string
+  rewriteCanRun: boolean
   justExtractedAndRemovedChords: boolean
   justExtractedChords: boolean
   extractingLyricsOnly: boolean
