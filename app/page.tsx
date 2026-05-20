@@ -722,6 +722,19 @@ React.useEffect(() => {
   setCompareRightText(compareRightSong?.result?.lyrics_full || '')
 }, [compareRightSongId])
 
+  const sourceForDetection =
+  rewriteTarget === 'left'
+    ? compareLeftText
+    : rewriteTarget === 'right'
+      ? compareRightText
+      : performanceSheet
+
+ const detectedSections = detectSections(sourceForDetection, isSectionHeader)
+
+
+   const detectedSectionLabels = detectedSections
+  .map((section) => section.label)
+  .join('|||')
 
 
 
@@ -741,6 +754,36 @@ React.useEffect(() => {
       setRewriteSectionName('')
       setRewriteMessage('')
     }, [activeProject?.id])
+
+
+      useEffect(() => {
+  const availableSectionLabels = detectedSectionLabels
+    ? detectedSectionLabels.split('|||')
+    : []
+
+  if (availableSectionLabels.length === 0) {
+    if (rewriteSectionOnly) {
+      setRewriteSectionOnly(false)
+    }
+
+    if (rewriteSectionName) {
+      setRewriteSectionName('')
+      setRewriteMessage('')
+    }
+
+    return
+  }
+
+  if (
+    rewriteSectionName &&
+    !availableSectionLabels.includes(rewriteSectionName)
+  ) {
+    setRewriteSectionName('')
+    setRewriteMessage('')
+  }
+}, [detectedSectionLabels, rewriteSectionName, rewriteSectionOnly])
+
+
 
   React.useEffect(() => {
   if (userEmail) {
@@ -1493,18 +1536,8 @@ const chordRegex =
 
 
 
-const sourceForDetection =
-  rewriteTarget === 'left'
-    ? compareLeftText
-    : rewriteTarget === 'right'
-      ? compareRightText
-      : performanceSheet
 
-     
 
-            
-
- const detectedSections = detectSections(sourceForDetection, isSectionHeader)
 
 const extractChordsAndRemoveFromRewriteSource = () => {
   const extracted = extractEmbeddedChordsToJson(sourceForDetection)
