@@ -29,6 +29,7 @@ type RewritePanelProps = {
   rewriteTargetLabel: string
   rewriteScopeLabel: string
   rewriteAvailabilityLabel: string
+  rewriteBlockedReason: string
   justExtractedAndRemovedChords: boolean
   justExtractedChords: boolean
   extractingLyricsOnly: boolean
@@ -66,6 +67,7 @@ export default function RewritePanel({
   rewriteTargetLabel,
   rewriteScopeLabel,
   rewriteAvailabilityLabel,
+  rewriteBlockedReason,
   justExtractedChords,
   extractingLyricsOnly,
   extractChordsFromRewriteSourceToJson,
@@ -313,16 +315,25 @@ export default function RewritePanel({
               </span>
             </div>
 
+
+
             <div className="sm:col-span-2">
               <span className="text-gray-400">Rewrite status: </span>
-              <span
-                className={
-                  hasChordLinesInRewriteSource ? 'text-yellow-400' : 'text-green-400'
-                }
-              >
-                {rewriteAvailabilityLabel}
-              </span>
+                  <span
+                    className={
+                      hasChordLinesInRewriteSource ? 'text-yellow-400' : 'text-green-400'
+                    }
+                  >
+                    {rewriteAvailabilityLabel}
+                  </span>
             </div>
+
+            {rewriteBlockedReason && (
+              <div className="sm:col-span-2 text-xs text-yellow-300">
+                {rewriteBlockedReason}
+              </div>
+            )}
+
         </div>
     </div>
 

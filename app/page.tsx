@@ -1891,6 +1891,20 @@ const rewriteAvailabilityLabel = hasChordLinesInRewriteSource
 
       const hasRewriteSourceText = sourceForDetection.trim().length > 0
 
+      const rewriteBlockedReason = !hasRewriteSourceText
+  ? 'Add lyrics to the selected source before rewriting.'
+  : !rewriteInstruction.trim()
+    ? 'Choose a preset or type a custom instruction.'
+    : hasChordLinesInRewriteSource
+      ? 'Remove or extract chord lines before rewriting.'
+      : rewriteSectionOnly && !rewriteSectionName
+        ? 'Choose a section before running a section rewrite.'
+        : ''
+
+
+
+
+
 return (
 
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900 text-white">
@@ -2065,6 +2079,7 @@ return (
     rewriteTargetLabel={rewriteTargetLabel}
     rewriteScopeLabel={rewriteScopeLabel}
     rewriteAvailabilityLabel={rewriteAvailabilityLabel}
+    rewriteBlockedReason={rewriteBlockedReason}
     extractingLyricsOnly={extractingLyricsOnly}
     removeChordsFromRewriteSource={removeChordsFromRewriteSource}
     extractChordsFromRewriteSourceToJson={extractChordsFromRewriteSourceToJson}
