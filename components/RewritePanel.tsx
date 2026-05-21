@@ -76,6 +76,7 @@ export default function RewritePanel({
   justExtractedAndRemovedChords,
   removeChordsFromRewriteSource,
   setRewriteMessage,
+  setCompareUpdateMessage,
   runRewriteLab,
   rewriteLoading,
   rewriteDone,
@@ -134,10 +135,11 @@ export default function RewritePanel({
   <select
   title="Choose which panel or editor to rewrite"
   value={rewriteTarget}
-  onChange={(e) => {
+    onChange={(e) => {
       setRewriteTarget(e.target.value as 'left' | 'right' | 'main')
       setRewriteSectionName('')
       setRewriteMessage('')
+      setCompareUpdateMessage('')
     }}
   className="px-3 py-2 rounded bg-gray-700 text-white"
 >

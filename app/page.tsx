@@ -753,6 +753,7 @@ React.useEffect(() => {
       setRewriteSectionOnly(false)
       setRewriteSectionName('')
       setRewriteMessage('')
+      setCompareUpdateMessage('')
     }, [activeProject?.id])
 
 
@@ -2124,6 +2125,7 @@ return (
     rewriteAvailabilityLabel={rewriteAvailabilityLabel}
     rewriteBlockedReason={rewriteBlockedReason}
     rewriteCanRun={rewriteCanRun}
+    setCompareUpdateMessage={setCompareUpdateMessage}
     extractingLyricsOnly={extractingLyricsOnly}
     removeChordsFromRewriteSource={removeChordsFromRewriteSource}
     extractChordsFromRewriteSourceToJson={extractChordsFromRewriteSourceToJson}
