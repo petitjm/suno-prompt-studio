@@ -399,8 +399,14 @@ const resetRewriteWorkbenchState = (
 
 const setPerformanceSheetFromEditor = (value: string) => {
   setPerformanceSheet(value)
-  resetRewriteWorkbenchState('main')
+  setRewriteTarget('main')
+  setRewriteSectionName('')
+  setRewriteMessage('')
+  setRewriteDone(false)
+  setCompareUpdateMessage('')
 }
+
+
 
 const setPerformanceSheetFromCompareUse = (value: string) => {
   setPerformanceSheet(value)
