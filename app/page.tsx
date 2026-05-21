@@ -2059,6 +2059,7 @@ return (
   lockCompareRight={lockCompareRight}
   setLockCompareRight={setLockCompareRight}
   compareUpdateMessage={compareUpdateMessage}
+  setCompareUpdateMessage={setCompareUpdateMessage}
   flashLeftPanel={flashLeftPanel}
   flashRightPanel={flashRightPanel}
   setFlashLeftPanel={setFlashLeftPanel}

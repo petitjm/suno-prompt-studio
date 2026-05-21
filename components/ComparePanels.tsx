@@ -22,6 +22,7 @@ lockCompareRight: boolean
 setLockCompareRight: (value: boolean) => void
 
 compareUpdateMessage: string
+setCompareUpdateMessage: (value: string) => void
 
 flashLeftPanel: boolean
   flashRightPanel: boolean
@@ -64,6 +65,7 @@ export default function ComparePanels({
   lockCompareRight,
   setLockCompareRight,
   compareUpdateMessage,
+  setCompareUpdateMessage,
   flashLeftPanel,
   flashRightPanel,
   setFlashLeftPanel,
@@ -137,7 +139,10 @@ return (
         <textarea
           ref={compareLeftRef}
           value={compareLeftText}
-          onChange={(e) => setCompareLeftText(e.target.value)}
+          onChange={(e) => {
+              setCompareLeftText(e.target.value)
+              setCompareUpdateMessage('')
+            }}
           onScroll={() => syncCompareScroll('left')}
           readOnly={lockCompareLeft}
           className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
@@ -247,7 +252,10 @@ return (
         <textarea
           ref={compareRightRef}
           value={compareRightText}
-          onChange={(e) => setCompareRightText(e.target.value)}
+          onChange={(e) => {
+              setCompareRightText(e.target.value)
+              setCompareUpdateMessage('')
+            }}
           onScroll={() => syncCompareScroll('right')}
           readOnly={lockCompareRight}
           className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
