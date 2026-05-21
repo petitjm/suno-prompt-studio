@@ -31,6 +31,7 @@ type RewritePanelProps = {
   rewriteAvailabilityLabel: string
   rewriteBlockedReason: string
   rewriteCanRun: boolean
+  setCompareUpdateMessage: (value: string) => void
   justExtractedAndRemovedChords: boolean
   justExtractedChords: boolean
   extractingLyricsOnly: boolean
