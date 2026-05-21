@@ -389,7 +389,6 @@ const resetRewriteWorkbenchState = (
   setRewriteInstruction('')
   setRewriteConstraint('default')
   setCommercialPolishMode(false)
-
   setRewriteSectionOnly(false)
   setRewriteSectionName('')
   setRewriteMessage('')
@@ -401,6 +400,13 @@ const resetRewriteWorkbenchState = (
 const setPerformanceSheetFromEditor = (value: string) => {
   setPerformanceSheet(value)
   resetRewriteWorkbenchState('main')
+}
+
+const setPerformanceSheetFromCompareUse = (value: string) => {
+  setPerformanceSheet(value)
+  setRewriteSectionName('')
+  setRewriteMessage('')
+  setRewriteDone(false)
 }
 
 const setCompareLeftTextFromLoader = (value: string) => {
@@ -2079,7 +2085,7 @@ return (
   syncCompareScroll={syncCompareScroll}
   autoSnapshot={autoSnapshot}
   performanceScrollRef={performanceScrollRef}
-  setPerformanceSheet={setPerformanceSheetFromEditor}
+  setPerformanceSheet={setPerformanceSheetFromCompareUse}
   setCurrentBarIndex={setCurrentBarIndex}
   setMode={setMode}
 />
