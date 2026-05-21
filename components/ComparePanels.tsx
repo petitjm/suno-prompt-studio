@@ -117,6 +117,7 @@ return (
           <button
             type="button"
             onClick={() => {
+              setCompareUpdateMessage('')
               setUsingLeft(true)
               performanceScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
               setPerformanceSheet(compareLeftText)
@@ -170,6 +171,7 @@ return (
           title="Copy right panel into left panel"
           type="button"
           onClick={async () => {
+            setCompareUpdateMessage('')
             setApplyingLeft(true)
             await autoSnapshot(compareLeftText, 'Left before apply')
             setCompareLeftText(compareRightText)
@@ -193,6 +195,7 @@ return (
           title="Copy left panel into right panel"
           type="button"
           onClick={async () => {
+            setCompareUpdateMessage('')
             setApplyingRight(true)
             await autoSnapshot(compareRightText, 'Right before apply')
             setCompareRightText(compareLeftText)
@@ -230,6 +233,7 @@ return (
           <button
             type="button"
             onClick={() => {
+              setCompareUpdateMessage('')
               setUsingRight(true)
               performanceScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
               setPerformanceSheet(compareRightText)
