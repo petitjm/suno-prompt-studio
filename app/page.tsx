@@ -1785,12 +1785,12 @@ const relaxedChorusRewrite = isRelaxedChorusRewrite({
 
 if (
   rewriteSectionOnly &&
-  rewriteConstraint === 'keep-lines' &&
+  mustPreserveLines &&
   lastLineCount !== originalLineCount &&
   !relaxedChorusRewrite
 ) {
   throw new Error(
-    `Couldn’t keep ${originalLineCount} lines after 3 attempts (got ${lastLineCount}). Try again or untick “keep lines”.`
+    `Couldn’t keep ${originalLineCount} lines after 3 attempts (got ${lastLineCount}). Try again or choose a less strict constraint.`
   )
 }
 

@@ -164,9 +164,19 @@ export default function RewritePanel({
     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
   >
     <option value="default">Default</option>
-   <option value="keep-lines" disabled={commercialPolishMode}>
-  Keep structure {commercialPolishMode ? '(disabled in polish mode)' : ''}
-</option>
+
+    <option value="keep-lines" disabled={commercialPolishMode}>
+      Keep structure {commercialPolishMode ? '(disabled in polish mode)' : ''}
+    </option>
+
+    <option value="syllable-feel" disabled={commercialPolishMode}>
+      Maintain syllable feel {commercialPolishMode ? '(disabled in polish mode)' : ''}
+    </option>
+
+    <option value="syllable-feel" disabled={commercialPolishMode}>
+      Maintain syllable feel {commercialPolishMode ? '(disabled in polish mode)' : ''}
+    </option>
+
     <option value="shorten">Shorten content</option>
     <option value="extend">Extend content</option>
     <option value="conversational">More conversational</option>
@@ -187,9 +197,12 @@ export default function RewritePanel({
 
                 setCommercialPolishMode(enabled)
 
-                if (enabled && rewriteConstraint === 'keep-lines') {
-                  setRewriteConstraint('default')
-                }
+                if (
+                      enabled &&
+                      (rewriteConstraint === 'keep-lines' || rewriteConstraint === 'syllable-feel')
+                    ) {
+                      setRewriteConstraint('default')
+                    }
 
                 setRewriteMessage('')
               }}

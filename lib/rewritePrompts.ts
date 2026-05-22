@@ -26,6 +26,8 @@ export const buildRewriteInstruction = (
   parts.push('Return rewritten lyrics only.')
   parts.push('Do not explain the changes.')
   parts.push('Do not create a new song structure.')
+  parts.push('Preserve the emotional meaning, story context, and point of view of the original lyric.')
+  parts.push('Do not introduce new characters, places, imagery, or cultural references unless they already exist in the source lyric or the user explicitly asks for them.')
 
   if (sectionOnly) {
     parts.push('Rewrite ONLY the supplied section.')
@@ -42,6 +44,17 @@ export const buildRewriteInstruction = (
     parts.push('Preserve a similar syllable count and lyrical cadence.')
     parts.push('Avoid expanding short lines into long phrases.')
     parts.push('Keep phrasing tight and singable.')
+  }
+
+  if (constraint === 'syllable-feel') {
+    parts.push('RHYTHM / SYLLABLE CONSTRAINT:')
+    parts.push('Keep exactly the same number of lyric lines as the original.')
+    parts.push('For each rewritten line, stay close to the original syllable count and sung rhythm.')
+    parts.push('Preserve the natural stress pattern and phrasing shape where possible.')
+    parts.push('Do not make lines noticeably longer or shorter than the original.')
+    parts.push('Prioritise singability with the existing melody over clever new wording.')
+    parts.push('Preserve the emotional meaning and context of each line.')
+    parts.push('If a line is short, keep it short. If a line has a strong rhythmic hook, preserve that hook-like rhythm.')
   }
 
   if (constraint === 'shorten') {

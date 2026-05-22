@@ -15,5 +15,8 @@ export const getRewriteFullSourceText = ({
 }
 
 export const getMustPreserveLines = (rewriteConstraint: string) => {
-  return rewriteConstraint === 'keep-lines'
+  return (
+    rewriteConstraint === 'keep-lines' ||
+    rewriteConstraint === 'syllable-feel'
+  )
 }
