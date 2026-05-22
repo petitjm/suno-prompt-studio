@@ -1960,7 +1960,9 @@ const rewriteOutputMessage =
       ? 'Left compare panel rewritten. Output replaced the left compare panel. Right panel was unchanged.'
       : 'Right compare panel rewritten. Output replaced the right compare panel. Left panel was unchanged.'
 
-setRewriteMessage(`${rewriteSuccessMessage} ${rewriteOutputMessage}`)
+setRewriteMessage(
+  `${rewriteSuccessMessage} ${rewriteOutputMessage} Voice: ${currentRewriteVoiceLabel}. Constraint: ${currentRewriteConstraintLabel}.`
+)
 
 setRewriteDone(true)
 setTimeout(() => setRewriteDone(false), 1000)
