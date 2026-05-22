@@ -7,6 +7,7 @@ type RewriteTarget = 'left' | 'right' | 'main'
 
 type RewritePanelProps = {
   activeProjectTitle?: string
+
   rewriteTarget: RewriteTarget
   setRewriteTarget: (value: RewriteTarget) => void
   rewritePreset: string
@@ -26,6 +27,8 @@ type RewritePanelProps = {
   setRewriteConstraint: (value: string) => void
   commercialPolishMode: boolean
   setCommercialPolishMode: (value: boolean) => void
+  protectSongContext: boolean
+  setProtectSongContext: (value: boolean) => void
   rewriteSectionOnly: boolean
   setRewriteSectionOnly: (value: boolean) => void
   rewriteSectionName: string
@@ -71,6 +74,8 @@ export default function RewritePanel({
   setRewriteConstraint,
   commercialPolishMode,
   setCommercialPolishMode,
+  protectSongContext,
+  setProtectSongContext,
   rewriteSectionOnly,
   setRewriteSectionOnly,
   rewriteSectionName,
@@ -233,6 +238,19 @@ const rewriteVoiceDescription =
 
 </div>
     <div className="flex flex-col md:flex-row gap-2 mb-2">
+
+    <label className="flex items-center gap-2 text-sm text-gray-200">
+  <input
+    type="checkbox"
+    checked={protectSongContext}
+    onChange={(e) => {
+      setProtectSongContext(e.target.checked)
+      setRewriteMessage('')
+    }}
+  />
+  Protect song context
+</label>
+
         <label className="flex items-center gap-2 text-sm text-gray-200">
           <input
               type="checkbox"

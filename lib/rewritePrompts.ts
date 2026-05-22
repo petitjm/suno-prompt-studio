@@ -10,7 +10,8 @@ export const buildRewriteInstruction = (
   instruction: string,
   constraint: string,
   sectionOnly: boolean,
-  rewriteVoice: string
+  rewriteVoice: string,
+  protectSongContext: boolean
 ) => {
   const parts: string[] = []
 
@@ -27,9 +28,13 @@ export const buildRewriteInstruction = (
   parts.push('Return rewritten lyrics only.')
   parts.push('Do not explain the changes.')
   parts.push('Do not create a new song structure.')
-  parts.push('Preserve the emotional meaning, story context, and point of view of the original lyric.')
-  parts.push('Do not introduce new characters, places, imagery, or cultural references unless they already exist in the source lyric or the user explicitly asks for them.')
-
+ 
+  if (protectSongContext) {
+  parts.push('CONTEXT PROTECTION:')
+  parts.push('Preserve the song’s existing story, emotional situation, speaker, and point of view.')
+  parts.push('Do not introduce new characters, locations, events, cultural references, or imagery unless they already exist in the source lyric or the user explicitly asks for them.')
+  parts.push('Improve the wording without changing what the line or section is fundamentally saying.')
+}
   if (rewriteVoice === 'british-natural') {
       parts.push(
         'VOICE / LOCALE: Use natural British phrasing. Keep the language believable for a UK songwriter and singer. Avoid unnecessary American idioms, Nashville clichés, Southern imagery, trucks, highways, whiskey bars, dust roads, or small-town USA references unless they already exist in the source lyric or the user explicitly asks for them.'

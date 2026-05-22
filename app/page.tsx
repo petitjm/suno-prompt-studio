@@ -212,6 +212,7 @@ export default function Page() {
   const previewTimeoutsRef = React.useRef<number[]>([])
   const performanceSectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
 
+  const [protectSongContext, setProtectSongContext] = useState(true)
   const [usingLeft, setUsingLeft] = useState(false)
   const [usingRight, setUsingRight] = useState(false)
   const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
@@ -757,18 +758,19 @@ React.useEffect(() => {
     setPreviewPlaying(false)
   }
 
-  useEffect(() => {
-      setRewriteTarget('main')
-      setRewritePreset('')
-      setRewriteInstruction('')
-      setRewriteConstraint('default')
-      setCommercialPolishMode(false)
-      setRewriteVoice('british-natural')
-      setRewriteSectionOnly(false)
-      setRewriteSectionName('')
-      setRewriteMessage('')
-      setCompareUpdateMessage('')
-    }, [activeProject?.id])
+useEffect(() => {
+  setRewriteTarget('main')
+  setRewritePreset('')
+  setRewriteInstruction('')
+  setRewriteConstraint('default')
+  setCommercialPolishMode(false)
+  setRewriteVoice('british-natural')
+  setProtectSongContext(true)
+  setRewriteSectionOnly(false)
+  setRewriteSectionName('')
+  setRewriteMessage('')
+  setCompareUpdateMessage('')
+}, [activeProject?.id])
 
 
       useEffect(() => {
@@ -1725,6 +1727,7 @@ ${buildRewriteInstruction(
   rewriteConstraint,
   rewriteSectionOnly,
   rewriteVoice,
+  protectSongContext,
 )}
 `
       : buildRewriteInstruction(
@@ -1732,6 +1735,7 @@ ${buildRewriteInstruction(
           rewriteConstraint,
           rewriteSectionOnly,
           rewriteVoice,
+          protectSongContext,
         ),
   lyrics: structuredSourceText,
   sectionOnly: rewriteSectionOnly,
@@ -2210,6 +2214,8 @@ return (
 <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
   <RewritePanel
     activeProjectTitle={activeProject?.title}
+    protectSongContext={protectSongContext}
+    setProtectSongContext={setProtectSongContext}
     rewriteTarget={rewriteTarget}
     setRewriteTarget={setRewriteTarget}
     rewritePreset={rewritePreset}
