@@ -215,12 +215,13 @@ export default function Page() {
   const [usingLeft, setUsingLeft] = useState(false)
   const [usingRight, setUsingRight] = useState(false)
   const performanceScrollRef = React.useRef<HTMLDivElement | null>(null)
+  const [lastRewriteTargetLabel, setLastRewriteTargetLabel] = useState('')
   const compareLeftRef = React.useRef<HTMLTextAreaElement | null>(null)
-const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
-const previewLeftRef = React.useRef<HTMLDivElement | null>(null)
-const previewRightRef = React.useRef<HTMLDivElement | null>(null)
+  const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
+  const previewLeftRef = React.useRef<HTMLDivElement | null>(null)
+  const previewRightRef = React.useRef<HTMLDivElement | null>(null)
 
-const syncPreviewScroll = (source: 'left' | 'right') => {
+  const syncPreviewScroll = (source: 'left' | 'right') => {
   const src = source === 'left' ? previewLeftRef.current : previewRightRef.current
   const tgt = source === 'left' ? previewRightRef.current : previewLeftRef.current
   if (!src || !tgt) return
@@ -1854,6 +1855,15 @@ const nextCompareUpdateMessage =
 
 setCompareUpdateMessage(nextCompareUpdateMessage)
 
+const nextRewriteTargetLabel =
+  rewriteTarget === 'main'
+    ? 'Main Song Sheet / Lyrics'
+    : rewriteTarget === 'left'
+      ? 'Left compare panel'
+      : 'Right compare panel'
+
+setLastRewriteTargetLabel(nextRewriteTargetLabel)
+
 
 if (rewriteTarget === 'main') {
   setCompareLeftText(fullSourceText)
@@ -1948,16 +1958,16 @@ const rewriteAvailabilityLabel = rewriteLoading
       const hasRewriteSourceText = sourceForDetection.trim().length > 0
 
       const rewriteBlockedReason = rewriteLoading
-  ? 'Rewrite is currently running.'
-  : !hasRewriteSourceText
-    ? 'Add lyrics to the selected source before rewriting.'
-    : !rewriteInstruction.trim()
-      ? 'Choose a preset or type a custom instruction.'
-      : hasChordLinesInRewriteSource
-        ? 'Remove or extract chord lines before rewriting.'
-        : rewriteSectionOnly && !rewriteSectionName
-          ? 'Choose a section before running a section rewrite.'
-          : ''
+      ? ''
+      : !hasRewriteSourceText
+        ? 'Add lyrics to the selected source before rewriting.'
+        : !rewriteInstruction.trim()
+          ? 'Choose a preset or type a custom instruction.'
+          : hasChordLinesInRewriteSource
+            ? 'Remove or extract chord lines before rewriting.'
+            : rewriteSectionOnly && !rewriteSectionName
+              ? 'Choose a section before running a section rewrite.'
+              : ''
 
 const rewriteCanRun = !rewriteBlockedReason && !rewriteLoading
 
@@ -2077,6 +2087,7 @@ return (
   setLockCompareRight={setLockCompareRight}
   compareUpdateMessage={compareUpdateMessage}
   setCompareUpdateMessage={setCompareUpdateMessage}
+  lastRewriteTargetLabel={lastRewriteTargetLabel}
   flashLeftPanel={flashLeftPanel}
   flashRightPanel={flashRightPanel}
   setFlashLeftPanel={setFlashLeftPanel}

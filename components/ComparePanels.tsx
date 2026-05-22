@@ -20,7 +20,7 @@ lockCompareLeft: boolean
 setLockCompareLeft: (value: boolean) => void
 lockCompareRight: boolean
 setLockCompareRight: (value: boolean) => void
-
+lastRewriteTargetLabel: string
 compareUpdateMessage: string
 setCompareUpdateMessage: (value: string) => void
 
@@ -66,6 +66,7 @@ export default function ComparePanels({
   setLockCompareRight,
   compareUpdateMessage,
   setCompareUpdateMessage,
+  lastRewriteTargetLabel,
   flashLeftPanel,
   flashRightPanel,
   setFlashLeftPanel,
@@ -93,17 +94,31 @@ export default function ComparePanels({
 
 return (
   <div id="rewrite-compare-preview">
-    {compareUpdateMessage && (
-      <div className="mb-3 flex items-start justify-between gap-3 rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-sm text-blue-100">
-        <span>{compareUpdateMessage}</span>
 
-        <button
-          type="button"
-          onClick={() => setCompareUpdateMessage('')}
-          className="shrink-0 rounded bg-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-700"
-        >
-          Dismiss
-        </button>
+          <div className="mb-2 flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-gray-200">
+            Compare Panels
+          </h3>
+
+          {lastRewriteTargetLabel && (
+            <span className="text-xs text-gray-400">
+              Last rewrite: {lastRewriteTargetLabel}
+            </span>
+          )}
+        </div>
+    {compareUpdateMessage && (
+      <div className="mb-3 rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-sm text-blue-100">
+        <div className="flex flex-wrap items-center gap-2">
+          <span>{compareUpdateMessage}</span>
+
+          <button
+            type="button"
+            onClick={() => setCompareUpdateMessage('')}
+            className="shrink-0 rounded bg-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-700"
+          >
+            Dismiss
+          </button>
+        </div>
       </div>
     )}
 
