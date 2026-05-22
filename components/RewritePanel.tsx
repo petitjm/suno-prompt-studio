@@ -99,6 +99,19 @@ export default function RewritePanel({
 
 }: RewritePanelProps) {
 
+
+const rewriteVoiceDescription =
+  rewriteVoice === 'british-natural'
+    ? 'Natural UK phrasing. Avoids unnecessary American idioms or Nashville-style imagery.'
+    : rewriteVoice === 'british-songwriter'
+      ? 'Understated, direct British singer-songwriter phrasing.'
+      : rewriteVoice === 'uk-folk-rock'
+        ? 'Grounded UK folk-rock language suited to acoustic performance.'
+        : rewriteVoice === 'americana-country'
+          ? 'Allows modern country / Americana phrasing while preserving the original story.'
+          : 'Clear, broadly accessible commercial phrasing without strong regional idioms.'
+
+
   return (
     <div>
        <div className="flex items-center justify-between mb-1 leading-tight">
@@ -199,6 +212,7 @@ export default function RewritePanel({
     <option value="stronger">Stronger impact</option>
     <option value="simplify">Simplify lyrics</option>
   </select>
+
   <select
       value={rewriteVoice}
       onChange={(e) => {
@@ -213,6 +227,9 @@ export default function RewritePanel({
         </option>
       ))}
     </select>
+    <div className="md:col-span-4 text-xs text-gray-400 -mt-2">
+  Rewrite voice: {rewriteVoiceDescription}
+</div>
 
 </div>
     <div className="flex flex-col md:flex-row gap-2 mb-2">
