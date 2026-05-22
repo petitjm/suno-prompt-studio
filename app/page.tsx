@@ -1857,14 +1857,48 @@ applyRewriteToTarget({
 
 
 
-const nextCompareUpdateMessage =
+const nextCompareUpdateMessageBase =
   rewriteTarget === 'main'
     ? 'Original is on the left. Rewritten version is on the right.'
     : rewriteTarget === 'left'
       ? 'Left panel was rewritten. Right panel was unchanged.'
       : 'Right panel was rewritten. Left panel was unchanged.'
 
-setCompareUpdateMessage(nextCompareUpdateMessage)
+const currentRewriteVoiceLabel =
+  rewriteVoice === 'british-natural'
+    ? 'Natural British'
+    : rewriteVoice === 'british-songwriter'
+      ? 'British singer-songwriter'
+      : rewriteVoice === 'uk-folk-rock'
+        ? 'UK folk rock'
+        : rewriteVoice === 'americana-country'
+          ? 'Modern country / Americana'
+          : 'Neutral commercial'
+
+const currentRewriteConstraintLabel =
+  rewriteConstraint === 'keep-lines'
+    ? 'Keep structure'
+    : rewriteConstraint === 'syllable-feel'
+      ? 'Maintain syllable feel'
+      : rewriteConstraint === 'shorten'
+        ? 'Shorten content'
+        : rewriteConstraint === 'extend'
+          ? 'Extend content'
+          : rewriteConstraint === 'conversational'
+            ? 'More conversational'
+            : rewriteConstraint === 'poetic'
+              ? 'More poetic'
+              : rewriteConstraint === 'stronger'
+                ? 'Stronger impact'
+                : rewriteConstraint === 'simplify'
+                  ? 'Simplify lyrics'
+                  : 'Default'
+
+setCompareUpdateMessage(
+  `${nextCompareUpdateMessageBase} Voice: ${currentRewriteVoiceLabel}. Constraint: ${currentRewriteConstraintLabel}.`
+)
+
+
 
 
 const rewriteVoiceLabel =
