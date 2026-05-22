@@ -191,7 +191,7 @@ return (
         </span>
 
         <button
-          title="Copy right panel into left panel"
+          title="Replace the left panel with the right panel text"
           type="button"
           onClick={async () => {
             setCompareUpdateMessage('')
@@ -215,7 +215,7 @@ return (
         </button>
 
         <button
-          title="Copy left panel into right panel"
+          title="Replace the right panel with the left panel text"
           type="button"
           onClick={async () => {
             setCompareUpdateMessage('')
