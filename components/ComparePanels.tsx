@@ -94,8 +94,16 @@ export default function ComparePanels({
 return (
   <div id="rewrite-compare-preview">
     {compareUpdateMessage && (
-      <div className="mb-3 rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-sm text-blue-100">
-        {compareUpdateMessage}
+      <div className="mb-3 flex items-start justify-between gap-3 rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-sm text-blue-100">
+        <span>{compareUpdateMessage}</span>
+
+        <button
+          type="button"
+          onClick={() => setCompareUpdateMessage('')}
+          className="shrink-0 rounded bg-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-700"
+        >
+          Dismiss
+        </button>
       </div>
     )}
 

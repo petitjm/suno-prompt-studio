@@ -1935,25 +1935,29 @@ const rewriteScopeLabel =
       ? 'Section rewrite selected, but no section chosen'
       : 'Whole selected source'
 
-const rewriteAvailabilityLabel = hasChordLinesInRewriteSource
-  ? 'Rewrite blocked until chord lines are removed'
-  : rewriteSectionOnly && !rewriteSectionName
-    ? 'Choose a section before rewriting'
-    : sourceForDetection.trim()
-      ? 'Rewrite available'
-      : 'No rewrite source text'
+const rewriteAvailabilityLabel = rewriteLoading
+  ? 'Rewriting...'
+  : hasChordLinesInRewriteSource
+    ? 'Rewrite blocked until chord lines are removed'
+    : rewriteSectionOnly && !rewriteSectionName
+      ? 'Choose a section before rewriting'
+      : sourceForDetection.trim()
+        ? 'Rewrite available'
+        : 'No rewrite source text'
 
       const hasRewriteSourceText = sourceForDetection.trim().length > 0
 
-      const rewriteBlockedReason = !hasRewriteSourceText
-  ? 'Add lyrics to the selected source before rewriting.'
-  : !rewriteInstruction.trim()
-    ? 'Choose a preset or type a custom instruction.'
-    : hasChordLinesInRewriteSource
-      ? 'Remove or extract chord lines before rewriting.'
-      : rewriteSectionOnly && !rewriteSectionName
-        ? 'Choose a section before running a section rewrite.'
-        : ''
+      const rewriteBlockedReason = rewriteLoading
+  ? 'Rewrite is currently running.'
+  : !hasRewriteSourceText
+    ? 'Add lyrics to the selected source before rewriting.'
+    : !rewriteInstruction.trim()
+      ? 'Choose a preset or type a custom instruction.'
+      : hasChordLinesInRewriteSource
+        ? 'Remove or extract chord lines before rewriting.'
+        : rewriteSectionOnly && !rewriteSectionName
+          ? 'Choose a section before running a section rewrite.'
+          : ''
 
 const rewriteCanRun = !rewriteBlockedReason && !rewriteLoading
 
