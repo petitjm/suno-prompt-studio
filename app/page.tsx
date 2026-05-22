@@ -1999,6 +1999,27 @@ const rewriteVoiceLabel =
   rewriteVoiceOptions.find((option) => option.id === rewriteVoice)?.label ||
   'Natural British'
 
+  const rewriteConstraintLabel =
+  rewriteConstraint === 'keep-lines'
+    ? 'Keep structure'
+    : rewriteConstraint === 'syllable-feel'
+      ? 'Maintain syllable feel'
+      : rewriteConstraint === 'shorten'
+        ? 'Shorten content'
+        : rewriteConstraint === 'extend'
+          ? 'Extend content'
+          : rewriteConstraint === 'conversational'
+            ? 'More conversational'
+            : rewriteConstraint === 'poetic'
+              ? 'More poetic'
+              : rewriteConstraint === 'stronger'
+                ? 'Stronger impact'
+                : rewriteConstraint === 'simplify'
+                  ? 'Simplify lyrics'
+                  : 'Default'
+
+
+
 
 
 return (
@@ -2178,7 +2199,8 @@ return (
     rewriteTargetLabel={rewriteTargetLabel}
     rewriteScopeLabel={rewriteScopeLabel}
     rewriteVoiceLabel={rewriteVoiceLabel}
-    rewriteAvailabilityLabel={rewriteAvailabilityLabel}
+    rewriteAvailabilityLabel={rewriteAvailabilityLabel}rewriteConstraintLabel={rewriteConstraintLabel}
+
     rewriteBlockedReason={rewriteBlockedReason}
     rewriteCanRun={rewriteCanRun}
     setCompareUpdateMessage={setCompareUpdateMessage}

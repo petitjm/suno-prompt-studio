@@ -15,6 +15,7 @@ type RewritePanelProps = {
   rewriteVoice: string
   rewriteVoiceLabel: string
   setRewriteVoice: (value: string) => void
+  rewriteConstraintLabel: string
   rewriteVoiceOptions: {
       id: string
       label: string
@@ -65,6 +66,7 @@ export default function RewritePanel({
   rewriteVoiceOptions,
   rewriteInstruction,
   setRewriteInstruction,
+  rewriteConstraintLabel,
   rewriteConstraint,
   setRewriteConstraint,
   commercialPolishMode,
@@ -359,6 +361,10 @@ export default function RewritePanel({
               <span className="text-white">{rewriteVoiceLabel}</span>
             </div>
 
+            <div>
+              <span className="text-gray-400">Constraint: </span>
+              <span className="text-white">{rewriteConstraintLabel}</span>
+            </div>
 
             <div>
               <span className="text-gray-400">Scope: </span>
