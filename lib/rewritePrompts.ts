@@ -9,7 +9,8 @@ export const rewritePresets = [
 export const buildRewriteInstruction = (
   instruction: string,
   constraint: string,
-  sectionOnly: boolean
+  sectionOnly: boolean,
+  rewriteVoice: string
 ) => {
   const parts: string[] = []
 
@@ -28,6 +29,37 @@ export const buildRewriteInstruction = (
   parts.push('Do not create a new song structure.')
   parts.push('Preserve the emotional meaning, story context, and point of view of the original lyric.')
   parts.push('Do not introduce new characters, places, imagery, or cultural references unless they already exist in the source lyric or the user explicitly asks for them.')
+
+  if (rewriteVoice === 'british-natural') {
+      parts.push(
+        'VOICE / LOCALE: Use natural British phrasing. Keep the language believable for a UK songwriter and singer. Avoid unnecessary American idioms, Nashville clichés, Southern imagery, trucks, highways, whiskey bars, dust roads, or small-town USA references unless they already exist in the source lyric or the user explicitly asks for them.'
+      )
+    }
+
+    if (rewriteVoice === 'british-songwriter') {
+      parts.push(
+        'VOICE / LOCALE: Use a British singer-songwriter voice. Keep the lyric emotionally direct, understated where appropriate, literate but not ornate, and natural for a UK performer. Avoid Americanised phrasing and imported Americana imagery unless requested.'
+      )
+    }
+
+    if (rewriteVoice === 'uk-folk-rock') {
+      parts.push(
+        'VOICE / LOCALE: Use a UK folk rock voice. Keep phrasing grounded, human, melodic, and suitable for acoustic guitar performance. Prefer natural British imagery and avoid American country clichés unless already present in the lyric.'
+      )
+    }
+
+    if (rewriteVoice === 'americana-country') {
+      parts.push(
+        'VOICE / LOCALE: Use modern country / Americana phrasing where appropriate. Warm, direct, emotionally clear, and singable. Country imagery is allowed, but do not add clichés or new story details that conflict with the original lyric.'
+      )
+    }
+
+    if (rewriteVoice === 'neutral-commercial') {
+      parts.push(
+        'VOICE / LOCALE: Use neutral commercial songwriting language. Keep it clear, accessible, emotionally direct, and broadly singable. Avoid strong regional idioms unless already present in the source lyric.'
+      )
+    }
+
 
   if (sectionOnly) {
     parts.push('Rewrite ONLY the supplied section.')

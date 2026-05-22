@@ -16,6 +16,52 @@ const stripRewriteLineNumbers = (text: string) => {
     .trim()
 }
 
+const restoreSectionHeadersForWholeRewrite = ({
+  originalText,
+  rewrittenText,
+  isSectionHeader,
+}: {
+  originalText: string
+  rewrittenText: string
+  isSectionHeader: (line: string) => boolean
+}) => {
+  const originalLines = originalText.split('\n')
+  const rewrittenLyricLines = rewrittenText
+    .split('\n')
+    .filter((line) => line.trim().length > 0 && !isSectionHeader(line))
+
+  if (!originalLines.some((line) => isSectionHeader(line))) {
+    return rewrittenText
+  }
+
+  if (rewrittenText.split('\n').some((line) => isSectionHeader(line))) {
+    return rewrittenText
+  }
+
+  let lyricIndex = 0
+
+  const restoredLines = originalLines.map((line) => {
+    if (isSectionHeader(line)) {
+      return line
+    }
+
+    if (!line.trim()) {
+      return line
+    }
+
+    const nextLine = rewrittenLyricLines[lyricIndex]
+
+    if (nextLine === undefined) {
+      return line
+    }
+
+    lyricIndex += 1
+    return nextLine
+  })
+
+  return restoredLines.join('\n').trim()
+}
+
 export const finalizeRewriteText = ({
   rewritten,
   rewriteSectionOnly,
@@ -40,6 +86,14 @@ export const finalizeRewriteText = ({
   const cleanedRewriteWithoutNumbers = stripRewriteLineNumbers(cleanedRewrite)
 
   let finalText = cleanedRewriteWithoutNumbers
+
+      if (!rewriteSectionOnly) {
+      finalText = restoreSectionHeadersForWholeRewrite({
+        originalText: fullSourceText,
+        rewrittenText: cleanedRewriteWithoutNumbers,
+        isSectionHeader,
+      })
+    }
 
   if (rewriteSectionOnly) {
     const boundaryCheck = isSectionHeader

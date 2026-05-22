@@ -12,6 +12,12 @@ type RewritePanelProps = {
   rewritePreset: string
   setRewritePreset: (value: string) => void
   rewritePresets: string[]
+  rewriteVoice: string
+  setRewriteVoice: (value: string) => void
+  rewriteVoiceOptions: {
+      id: string
+      label: string
+    }[]
   rewriteInstruction: string
   setRewriteInstruction: (value: string) => void
   rewriteConstraint: string
@@ -52,6 +58,9 @@ export default function RewritePanel({
   rewritePreset,
   setRewritePreset,
   rewritePresets,
+  rewriteVoice,
+  setRewriteVoice,
+  rewriteVoiceOptions,
   rewriteInstruction,
   setRewriteInstruction,
   rewriteConstraint,
@@ -83,7 +92,9 @@ export default function RewritePanel({
   rewriteLoading,
   rewriteDone,
   rewriteMessage,
+
 }: RewritePanelProps) {
+
   return (
     <div>
        <div className="flex items-center justify-between mb-1 leading-tight">
@@ -117,7 +128,7 @@ export default function RewritePanel({
   </div>
 </div>
 
-<div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+<div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
   <select
     value={rewritePreset}
     onChange={(e) => {
@@ -184,7 +195,20 @@ export default function RewritePanel({
     <option value="stronger">Stronger impact</option>
     <option value="simplify">Simplify lyrics</option>
   </select>
-
+  <select
+      value={rewriteVoice}
+      onChange={(e) => {
+        setRewriteVoice(e.target.value)
+        setRewriteMessage('')
+      }}
+      className="px-3 py-2 rounded bg-gray-700 text-white"
+    >
+      {rewriteVoiceOptions.map((option) => (
+        <option key={option.id} value={option.id}>
+          {option.label}
+        </option>
+      ))}
+    </select>
 
 </div>
     <div className="flex flex-col md:flex-row gap-2 mb-2">

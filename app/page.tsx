@@ -235,7 +235,7 @@ const syncCompareScroll = (source: 'left' | 'right') => {
   tgt.scrollTop = src.scrollTop
 }
 
-  
+const [rewriteVoice, setRewriteVoice] = useState('british-natural') 
 const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('right')
 const [rewriteInstruction, setRewriteInstruction] = useState('')
 const [rewriteLoading, setRewriteLoading] = useState(false)
@@ -763,6 +763,7 @@ React.useEffect(() => {
       setRewriteInstruction('')
       setRewriteConstraint('default')
       setCommercialPolishMode(false)
+      setRewriteVoice('british-natural')
       setRewriteSectionOnly(false)
       setRewriteSectionName('')
       setRewriteMessage('')
@@ -1722,13 +1723,15 @@ TASK:
 ${buildRewriteInstruction(
   rewriteInstruction,
   rewriteConstraint,
-  rewriteSectionOnly
+  rewriteSectionOnly,
+  rewriteVoice,
 )}
 `
       : buildRewriteInstruction(
           rewriteInstruction,
           rewriteConstraint,
-          rewriteSectionOnly
+          rewriteSectionOnly,
+          rewriteVoice,
         ),
   lyrics: structuredSourceText,
   sectionOnly: rewriteSectionOnly,
@@ -1842,7 +1845,15 @@ if (normaliseForCompare(finalText) === normaliseForCompare(fullSourceText)) {
   return
 }
 
-
+applyRewriteToTarget({
+  rewriteTarget,
+  finalText,
+  setCompareLeftText,
+  setCompareRightText,
+  setPerformanceSheet,
+  setFlashLeftPanel,
+  setFlashRightPanel,
+})
 
 
 
@@ -1970,6 +1981,16 @@ const rewriteAvailabilityLabel = rewriteLoading
               : ''
 
 const rewriteCanRun = !rewriteBlockedReason && !rewriteLoading
+
+const rewriteVoiceOptions = [
+  { id: 'british-natural', label: 'Natural British' },
+  { id: 'british-songwriter', label: 'British singer-songwriter' },
+  { id: 'uk-folk-rock', label: 'UK folk rock' },
+  { id: 'americana-country', label: 'Modern country / Americana' },
+  { id: 'neutral-commercial', label: 'Neutral commercial' },
+]
+
+
 
 
 
@@ -2161,6 +2182,9 @@ return (
     rewriteLoading={rewriteLoading}
     rewriteDone={rewriteDone}
     rewriteMessage={rewriteMessage}
+    rewriteVoice={rewriteVoice}
+    setRewriteVoice={setRewriteVoice}
+    rewriteVoiceOptions={rewriteVoiceOptions}
   />
 </div>
 
