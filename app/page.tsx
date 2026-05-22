@@ -1866,6 +1866,11 @@ const nextCompareUpdateMessage =
 
 setCompareUpdateMessage(nextCompareUpdateMessage)
 
+
+const rewriteVoiceLabel =
+  rewriteVoiceOptions.find((option) => option.id === rewriteVoice)?.label ||
+  'Natural British'
+
 const nextRewriteTargetLabel =
   rewriteTarget === 'main'
     ? 'Main Song Sheet / Lyrics'
@@ -1990,7 +1995,9 @@ const rewriteVoiceOptions = [
   { id: 'neutral-commercial', label: 'Neutral commercial' },
 ]
 
-
+const rewriteVoiceLabel =
+  rewriteVoiceOptions.find((option) => option.id === rewriteVoice)?.label ||
+  'Natural British'
 
 
 
@@ -2170,6 +2177,7 @@ return (
     rewriteSectionCount={rewriteSectionCount}
     rewriteTargetLabel={rewriteTargetLabel}
     rewriteScopeLabel={rewriteScopeLabel}
+    rewriteVoiceLabel={rewriteVoiceLabel}
     rewriteAvailabilityLabel={rewriteAvailabilityLabel}
     rewriteBlockedReason={rewriteBlockedReason}
     rewriteCanRun={rewriteCanRun}

@@ -13,6 +13,7 @@ type RewritePanelProps = {
   setRewritePreset: (value: string) => void
   rewritePresets: string[]
   rewriteVoice: string
+  rewriteVoiceLabel: string
   setRewriteVoice: (value: string) => void
   rewriteVoiceOptions: {
       id: string
@@ -60,6 +61,7 @@ export default function RewritePanel({
   rewritePresets,
   rewriteVoice,
   setRewriteVoice,
+  rewriteVoiceLabel,
   rewriteVoiceOptions,
   rewriteInstruction,
   setRewriteInstruction,
@@ -351,6 +353,12 @@ export default function RewritePanel({
               <span className="text-gray-400">Source: </span>
               <span className="text-white">{rewriteTargetLabel}</span>
             </div>
+
+            <div>
+              <span className="text-gray-400">Voice: </span>
+              <span className="text-white">{rewriteVoiceLabel}</span>
+            </div>
+
 
             <div>
               <span className="text-gray-400">Scope: </span>
