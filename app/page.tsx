@@ -997,22 +997,35 @@ try {
 }
 
 const autoSnapshot = async (text: string, label: string) => {
-  if (!activeProject || !text.trim()) return
+      if (!activeProject || !text.trim()) return
 
-  try {
-    await fetch('/api/song-versions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: activeProject.id,
-        title: `Auto: ${label} ${new Date().toLocaleTimeString()}`,
-        result: { lyrics_full: text },
-      }),
-    })
-  } catch (err) {
-    console.error('Auto snapshot failed', err)
-  }
-}
+      try {
+        const res = await fetch('/api/song-versions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: activeProject.id,
+            title: `Auto: ${label} ${new Date().toLocaleTimeString()}`,
+            result: { lyrics_full: text },
+          }),
+        })
+
+        const data = await readJsonSafe(res)
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to create auto snapshot')
+        }
+
+        if (data.version?.id) {
+          setSongVersions((current) => [
+            data.version,
+            ...current.filter((version) => version.id !== data.version.id),
+          ])
+        }
+      } catch (err) {
+        console.error('Auto snapshot failed', err)
+      }
+    }
 
 
 const saveSong = async () => {
