@@ -23,11 +23,17 @@ export default function SongVersionSaveControls({
 }: SongVersionSaveControlsProps) {
   return (
     <>
+      {activeProject && (
+        <div className="mt-3 max-w-3xl rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-xs text-blue-100">
+          Tip: save a named version before major rewrites or compare-panel changes.
+        </div>
+      )}
+
       <input
         value={songVersionTitle}
         onChange={(e) => setSongVersionTitle(e.target.value)}
         placeholder="Version title, e.g. Chorus rewrite, Short radio edit"
-        className="mt-3 w-full max-w-3xl px-3 py-2 rounded bg-gray-700 text-white"
+        className="mt-2 w-full max-w-3xl px-3 py-2 rounded bg-gray-700 text-white"
       />
 
       <div className="flex gap-2 mt-3 mb-4">
