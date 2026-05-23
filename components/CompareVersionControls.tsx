@@ -60,6 +60,13 @@ const getSongVersionDisplayTitle = (
   return title
 }
 
+
+const autoBackupCount = source.songVersions.filter((version) =>
+  (version.title || '').startsWith('Auto:')
+).length
+
+const manualVersionCount = source.songVersions.length - autoBackupCount
+
     return (
     <>
       <button
@@ -93,6 +100,10 @@ const getSongVersionDisplayTitle = (
       >
         {actionState.comparingNow ? 'Compared ✓' : 'Compare current vs last saved'}
       </button>
+
+            <div className="mb-2 text-xs text-gray-400">
+            Saved versions: {source.songVersions.length} total · {manualVersionCount} manual · {autoBackupCount} auto backups
+          </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
