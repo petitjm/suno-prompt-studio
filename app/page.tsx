@@ -1005,7 +1005,7 @@ const autoSnapshot = async (text: string, label: string) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             project_id: activeProject.id,
-            title: `Auto: ${label} ${new Date().toLocaleTimeString()}`,
+            title: `Auto: ${label}`,
             result: { lyrics_full: text },
           }),
         })
