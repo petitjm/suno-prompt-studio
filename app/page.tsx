@@ -1046,16 +1046,27 @@ const saveSong = async () => {
 
     const data = await readJsonSafe(res)
 
+    
+
     if (!res.ok) {
       throw new Error(data.error || 'Failed to save song')
     }
+    const savedVersion = data.version
 
     await loadProjectData(activeProject.id, { silent: true })
 
-    setJustSavedSong(true)
-    window.setTimeout(() => {
-      setJustSavedSong(false)
-    }, 1500)
+        if (savedVersion?.id) {
+          setActiveSongVersionId(savedVersion.id)
+        }
+
+        setProjectMessage(
+          `Saved song version: ${savedVersion?.title || songVersionTitle.trim() || 'Untitled version'}`
+        )
+
+        setJustSavedSong(true)
+        window.setTimeout(() => {
+          setJustSavedSong(false)
+        }, 1500)
   } catch (err: any) {
     console.error(err)
     setProjectMessage(err.message || 'Failed to save song')
