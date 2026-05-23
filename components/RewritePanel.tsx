@@ -208,10 +208,6 @@ const rewriteVoiceDescription =
       Maintain syllable feel {commercialPolishMode ? '(disabled in polish mode)' : ''}
     </option>
 
-    <option value="syllable-feel" disabled={commercialPolishMode}>
-      Maintain syllable feel {commercialPolishMode ? '(disabled in polish mode)' : ''}
-    </option>
-
     <option value="shorten">Shorten content</option>
     <option value="extend">Extend content</option>
     <option value="conversational">More conversational</option>

@@ -1898,8 +1898,10 @@ const currentRewriteConstraintLabel =
                   ? 'Simplify lyrics'
                   : 'Default'
 
+const currentProtectSongContextLabel = protectSongContext ? 'On' : 'Off'
+
 setCompareUpdateMessage(
-  `${nextCompareUpdateMessageBase} Voice: ${currentRewriteVoiceLabel}. Constraint: ${currentRewriteConstraintLabel}.`
+  `${nextCompareUpdateMessageBase} Voice: ${currentRewriteVoiceLabel}. Constraint: ${currentRewriteConstraintLabel}. Context protection: ${currentProtectSongContextLabel}.`
 )
 
 
@@ -1965,7 +1967,7 @@ const rewriteOutputMessage =
       : 'Right compare panel rewritten. Output replaced the right compare panel. Left panel was unchanged.'
 
 setRewriteMessage(
-  `${rewriteSuccessMessage} ${rewriteOutputMessage} Voice: ${currentRewriteVoiceLabel}. Constraint: ${currentRewriteConstraintLabel}.`
+  `${rewriteSuccessMessage} ${rewriteOutputMessage} Voice: ${currentRewriteVoiceLabel}. Constraint: ${currentRewriteConstraintLabel}. Context protection: ${currentProtectSongContextLabel}.`
 )
 
 setRewriteDone(true)
