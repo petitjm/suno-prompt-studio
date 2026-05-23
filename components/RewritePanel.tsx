@@ -139,18 +139,18 @@ const rewriteVoiceDescription =
     </span>
 
     {rewriteInstruction.toLowerCase().includes('hook') && (
-  <div className="text-xs text-yellow-300 mt-1">
-    Hook strengthening works best on a selected chorus section.
-  </div>
-)}
+      <div className="text-xs text-yellow-300 mt-1">
+        Hook strengthening works best on a selected chorus section.
+      </div>
+    )}
 
     {rewriteSectionOnly && (
-      <span>
-       <strong>Section:</strong> {rewriteSectionName || '—'}
-      </span>
-    )}
-  </div>
-</div>
+          <span>
+           <strong>Section:</strong> {rewriteSectionName || '—'}
+          </span>
+        )}
+      </div>
+    </div>
 
 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
   <select
@@ -242,17 +242,31 @@ const rewriteVoiceDescription =
     </div>
     <div className="flex flex-col md:flex-row gap-2 mb-2">
 
+    <button
+      type="button"
+      onClick={() => {
+        setRewriteVoice('british-natural')
+        setRewriteConstraint('syllable-feel')
+        setProtectSongContext(true)
+        setCommercialPolishMode(false)
+        setRewriteMessage('')
+      }}
+      className="px-3 py-1 rounded bg-indigo-600 text-white text-xs hover:bg-indigo-500"
+    >
+      Best song rewrite setup
+    </button>
+    
     <label className="flex items-center gap-2 text-sm text-gray-200">
-  <input
-    type="checkbox"
-    checked={protectSongContext}
-    onChange={(e) => {
-      setProtectSongContext(e.target.checked)
-      setRewriteMessage('')
-    }}
-  />
-  Protect song context
-</label>
+      <input
+        type="checkbox"
+        checked={protectSongContext}
+        onChange={(e) => {
+          setProtectSongContext(e.target.checked)
+          setRewriteMessage('')
+        }}
+      />
+      Protect song context
+    </label>
 
         <label className="flex items-center gap-2 text-sm text-gray-200">
           <input
