@@ -231,10 +231,15 @@ const rewriteVoiceDescription =
       ))}
     </select>
     <div className="md:col-span-4 text-xs text-gray-400 -mt-2">
-  Rewrite voice: {rewriteVoiceDescription}
-</div>
+      <div>Rewrite voice: {rewriteVoiceDescription}</div>
+          <div>
+            {protectSongContext
+              ? 'Context protection is on: rewrites should preserve the existing story, speaker, emotional situation and imagery.'
+              : 'Context protection is off: rewrites may take more creative freedom.'}
+          </div>
+      </div>
 
-</div>
+    </div>
     <div className="flex flex-col md:flex-row gap-2 mb-2">
 
     <label className="flex items-center gap-2 text-sm text-gray-200">
