@@ -1274,8 +1274,11 @@ const saveChords = async () => {
           ])
         }
 
-        setChordVersionTitle(savedVersion?.title || chordVersionTitle.trim() || 'Untitled chords')
-        setProjectMessage('Chords saved')
+        const savedChordTitle =
+          savedVersion?.title || chordVersionTitle.trim() || 'Untitled chords'
+
+        setChordVersionTitle(savedChordTitle)
+        setProjectMessage(`Saved chord version: ${savedChordTitle}`)
         setJustSavedChords(true)
 
     setTimeout(() => setJustSavedChords(false), 1000)
