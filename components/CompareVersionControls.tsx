@@ -44,6 +44,22 @@ export default function CompareVersionControls({
   actionState,
   panelSelection,
 }: CompareVersionControlsProps) {
+
+
+const getSongVersionDisplayTitle = (
+  version: { title?: string | null },
+  index: number
+) => {
+  const title =
+    version.title || `Version ${source.songVersions.length - index}`
+
+  if (title.startsWith('Auto:')) {
+    return title.replace(/^Auto:\s*/, 'Auto backup: ')
+  }
+
+  return title
+}
+
     return (
     <>
       <button
@@ -103,7 +119,7 @@ export default function CompareVersionControls({
 
             {source.songVersions.map((v, i) => (
               <option key={v.id} value={v.id}>
-                {v.title || `Version ${source.songVersions.length - i}`}
+                {getSongVersionDisplayTitle(v, i)}
                 {v.created_at ? ` (${source.formatUkDateTime(v.created_at)})` : ''}
               </option>
             ))}
