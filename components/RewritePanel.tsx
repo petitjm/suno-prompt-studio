@@ -406,6 +406,12 @@ const rewriteVoiceDescription =
               <span className="text-white">{rewriteConstraintLabel}</span>
             </div>
 
+            {rewriteConstraint === 'default' && (
+              <div className="sm:col-span-2 text-xs text-blue-300">
+                For melody-fitted lyrics, use “Maintain syllable feel” to preserve phrasing.
+              </div>
+            )}
+
             <div>
               <span className="text-gray-400">Context protection: </span>
               <span className="text-white">{protectSongContextLabel}</span>
