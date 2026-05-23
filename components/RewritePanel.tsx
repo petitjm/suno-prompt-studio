@@ -25,6 +25,7 @@ type RewritePanelProps = {
   setRewriteInstruction: (value: string) => void
   rewriteConstraint: string
   setRewriteConstraint: (value: string) => void
+  protectSongContextLabel: string
   commercialPolishMode: boolean
   setCommercialPolishMode: (value: boolean) => void
   protectSongContext: boolean
@@ -74,6 +75,7 @@ export default function RewritePanel({
   setRewriteConstraint,
   commercialPolishMode,
   setCommercialPolishMode,
+  protectSongContextLabel,
   protectSongContext,
   setProtectSongContext,
   rewriteSectionOnly,
@@ -391,6 +393,8 @@ const rewriteVoiceDescription =
               <span className="text-white">{rewriteTargetLabel}</span>
             </div>
 
+            
+
             <div>
               <span className="text-gray-400">Voice: </span>
               <span className="text-white">{rewriteVoiceLabel}</span>
@@ -399,6 +403,11 @@ const rewriteVoiceDescription =
             <div>
               <span className="text-gray-400">Constraint: </span>
               <span className="text-white">{rewriteConstraintLabel}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-400">Context protection: </span>
+              <span className="text-white">{protectSongContextLabel}</span>
             </div>
 
             <div>

@@ -2026,6 +2026,7 @@ const rewriteAvailabilityLabel = rewriteLoading
               : ''
 
 const rewriteCanRun = !rewriteBlockedReason && !rewriteLoading
+const protectSongContextLabel = protectSongContext ? 'On' : 'Off'
 
 const rewriteVoiceOptions = [
   { id: 'british-natural', label: 'Natural British' },
@@ -2057,6 +2058,8 @@ const rewriteVoiceLabel =
                 : rewriteConstraint === 'simplify'
                   ? 'Simplify lyrics'
                   : 'Default'
+
+
 
 
 
@@ -2241,8 +2244,9 @@ return (
     rewriteTargetLabel={rewriteTargetLabel}
     rewriteScopeLabel={rewriteScopeLabel}
     rewriteVoiceLabel={rewriteVoiceLabel}
-    rewriteAvailabilityLabel={rewriteAvailabilityLabel}rewriteConstraintLabel={rewriteConstraintLabel}
-
+    rewriteAvailabilityLabel={rewriteAvailabilityLabel}
+    rewriteConstraintLabel={rewriteConstraintLabel}
+    protectSongContextLabel={protectSongContextLabel}
     rewriteBlockedReason={rewriteBlockedReason}
     rewriteCanRun={rewriteCanRun}
     setCompareUpdateMessage={setCompareUpdateMessage}
