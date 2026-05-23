@@ -67,6 +67,11 @@ const autoBackupCount = source.songVersions.filter((version) =>
 
 const manualVersionCount = source.songVersions.length - autoBackupCount
 
+const autoBackupsAreCrowdingList =
+  autoBackupCount >= 5 && autoBackupCount > manualVersionCount
+
+
+
     return (
     <>
       <button
@@ -102,8 +107,14 @@ const manualVersionCount = source.songVersions.length - autoBackupCount
       </button>
 
             <div className="mb-2 text-xs text-gray-400">
-            Saved versions: {source.songVersions.length} total · {manualVersionCount} manual · {autoBackupCount} auto backups
-          </div>
+              Saved versions: {source.songVersions.length} total · {manualVersionCount} manual · {autoBackupCount} auto backups
+
+              {autoBackupsAreCrowdingList && (
+                <div className="mt-1 text-yellow-300">
+                  Auto backups are starting to crowd this list. Consider saving named versions for important milestones.
+                </div>
+              )}
+            </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
