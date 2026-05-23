@@ -217,6 +217,46 @@ Project-loading helpers should preserve `ChordVersionRecord[]` so they remain co
 
 `app/page.tsx` now uses these helpers during project loading, so UI components and project-loading logic rely on the same version-data access patterns.
 These helpers should stay pure and should not call APIs, mutate React state, or depend on component lifecycle.
+
+## Rewrite Lab behaviour
+
+The Rewrite Lab now supports several songwriting-focused rewrite controls:
+
+- **Rewrite voice / locale**
+  - Natural British
+  - British singer-songwriter
+  - UK folk rock
+  - Modern country / Americana
+  - Neutral commercial
+
+- **Rewrite constraints**
+  - Default
+  - Keep structure
+  - Maintain syllable feel
+  - Shorten / extend / conversational / poetic / stronger / simplify
+
+- **Protect song context**
+  - Enabled by default.
+  - Adds prompt guidance to preserve the song’s existing story, speaker, emotional situation, point of view, and imagery.
+  - Can be disabled when a more creatively free rewrite is desired.
+
+- **Maintain syllable feel**
+  - Treated as a line-preserving constraint.
+  - Adds prompt guidance to preserve syllable count, stress pattern, sung rhythm, and phrasing shape.
+  - Useful for melody-fitted lyrics where the existing chords/melody should still work.
+
+- **Whole-song rewrite heading preservation**
+  - Whole-song rewrites preserve existing section headings when the model returns lyrics without headings.
+  - Section-only rewrites still replace only the selected section body inside the full source text.
+
+- **Compare panel feedback**
+  - Main rewrites copy the original text to the left compare panel and rewritten text to the right compare panel.
+  - Left/right rewrites update the selected compare panel and leave the other unchanged.
+  - Compare messages record voice, constraint, and context-protection settings used for the rewrite.
+
+
+
+
 // ========================================================
 
 Known local build note
