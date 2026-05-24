@@ -20,6 +20,19 @@ export default function SavedSongVersionSelector({
     return null
   }
 
+  const getSongVersionDisplayTitle = (
+  version: { title?: string | null },
+  index: number
+) => {
+  const title = version.title || `Version ${songVersions.length - index}`
+
+  if (title.startsWith('Auto:')) {
+    return title.replace(/^Auto:\s*/, 'Auto backup: ')
+  }
+
+  return title
+}
+
   return (
     <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
       <h3 className="text-sm text-gray-400 mb-2">
@@ -32,11 +45,9 @@ export default function SavedSongVersionSelector({
           className="w-full px-3 py-2 rounded bg-gray-700 text-white"
         >
           <option value="">Choose a saved song version...</option>
-
           {songVersions.map((v, i) => (
-
           <option key={v.id} value={v.id}>
-            {v.title || `Version ${songVersions.length - i}`}
+            {getSongVersionDisplayTitle(v, i)}
             {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
           </option>
         ))}
