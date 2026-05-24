@@ -119,7 +119,7 @@ const chordJsonIsValidObject = React.useMemo(() => {
 
 {chordsText.trim() && !chordJsonIsValidObject && (
   <p className="mt-2 text-xs text-yellow-300">
-    Enter valid chord JSON before saving.
+    Enter a valid JSON object before saving, for example: {'{ "verse": "G | D | Em | C" }'}
   </p>
 )}
 
