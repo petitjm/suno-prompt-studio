@@ -16,12 +16,13 @@ type StructuredChordJsonEditorProps = {
 
   chordsText: string
   chordExtractionMessage: string
+  setChordExtractionMessage: (value: string) => void
   setChordsText: (value: string) => void
 
   chordVersions: ChordVersion[]
   activeChordVersionId: string | null
   setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>
-setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
+  setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
   formatUkDateTime: (value: string) => string
 
   saveChords: () => void
@@ -37,6 +38,7 @@ export default function StructuredChordJsonEditor({
 
   chordsText,
   chordExtractionMessage,
+  setChordExtractionMessage,
   setChordsText,
 
   chordVersions,
@@ -108,7 +110,10 @@ export default function StructuredChordJsonEditor({
 
       <textarea
         value={chordsText}
-        onChange={(e) => setChordsText(e.target.value)}
+        onChange={(e) => {
+          setChordsText(e.target.value)
+          setChordExtractionMessage('')
+        }}
         placeholder="Structured Chord JSON will appear here..."
         className="mt-3 w-full min-h-[220px] px-3 py-2 rounded bg-gray-900 text-gray-100 font-mono text-sm border border-gray-700"
       />

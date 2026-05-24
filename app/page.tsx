@@ -2178,21 +2178,22 @@ return (
     justSavedSong,
     saveSong,
   }}
-  chordEditor={{
-    structuredChordJsonRef,
-    chordVersionTitle,
-    setChordVersionTitle,
-    chordsText,
-    chordExtractionMessage,
-    setChordsText,
-    setChords,
-    chordVersions,
-    activeChordVersionId,
-    setActiveChordVersionId,
-    saveChords,
-    savingChords,
-    justSavedChords,
-  }}
+ chordEditor={{
+  structuredChordJsonRef,
+  chordVersionTitle,
+  setChordVersionTitle,
+  chordsText,
+  chordExtractionMessage,
+  setChordExtractionMessage,
+  setChordsText,
+  setChords,
+  chordVersions,
+  activeChordVersionId,
+  setActiveChordVersionId,
+  saveChords,
+  savingChords,
+  justSavedChords,
+}}
   compareControls={{
     comparingNow,
     setComparingNow,

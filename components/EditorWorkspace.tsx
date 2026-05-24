@@ -39,6 +39,7 @@ type EditorWorkspaceChordProps = {
 
   chordsText: string
   chordExtractionMessage: string
+  setChordExtractionMessage: (value: string) => void
   setChordsText: (value: string) => void
   setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>
 
@@ -91,6 +92,7 @@ export default function EditorWorkspace({
       setChordVersionTitle={chordEditor.setChordVersionTitle}
       chordsText={chordEditor.chordsText}
       chordExtractionMessage={chordEditor.chordExtractionMessage}
+      setChordExtractionMessage={chordEditor.setChordExtractionMessage}
       setChordsText={chordEditor.setChordsText}
       setChords={chordEditor.setChords}
       chordVersions={chordEditor.chordVersions}
