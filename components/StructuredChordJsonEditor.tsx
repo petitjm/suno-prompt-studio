@@ -60,6 +60,24 @@ export default function StructuredChordJsonEditor({
     return
   }
 
+  const chordJsonIsValidObject = React.useMemo(() => {
+  if (!chordsText.trim()) {
+    return false
+  }
+
+  try {
+    const parsed = JSON.parse(chordsText)
+
+    return (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+    )
+  } catch {
+    return false
+  }
+}, [chordsText])
+
   const selected = chordVersions.find((v) => v.id === id)
     const chordData = getChordVersionData(selected)
 
@@ -69,6 +87,25 @@ export default function StructuredChordJsonEditor({
       setChordVersionTitle(selected?.title || '')
     }
 }
+
+const chordJsonIsValidObject = React.useMemo(() => {
+  if (!chordsText.trim()) {
+    return false
+  }
+
+  try {
+    const parsed = JSON.parse(chordsText)
+
+    return (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+    )
+  } catch {
+    return false
+  }
+}, [chordsText])
+
   return (
     <div ref={structuredChordJsonRef} className="mt-4">
       <h3 className="text-lg font-semibold mb-2">
@@ -90,7 +127,7 @@ export default function StructuredChordJsonEditor({
   <button
     type="button"
     onClick={saveChords}
-    disabled={savingChords || !chordsText.trim()}
+    disabled={savingChords || !chordJsonIsValidObject}
     className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white whitespace-nowrap"
   >
     {savingChords ? 'Saving...' : justSavedChords ? 'Saved' : 'Save Chords'}
