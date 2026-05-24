@@ -1257,12 +1257,15 @@ const saveChords = async () => {
     setSavingChords(true)
     setProjectMessage('Saving chords...')
 
+    const chordTitleToSave =
+       chordVersionTitle.trim() || `Chord version ${chordVersions.length + 1}`
+
     const res = await fetch('/api/chord-versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         project_id: activeProject.id,
-        title: chordVersionTitle.trim() || 'Untitled chords',
+        title: chordTitleToSave,
         chord_data: chordsToSave,
       }),
     })
@@ -1287,9 +1290,8 @@ const saveChords = async () => {
           ])
         }
 
-        const savedChordTitle =
-          savedVersion?.title || chordVersionTitle.trim() || 'Untitled chords'
-
+       const savedChordTitle =
+         savedVersion?.title || chordTitleToSave
         setChordVersionTitle(savedChordTitle)
         setProjectMessage(`Saved chord version: ${savedChordTitle}`)
         setJustSavedChords(true)
