@@ -95,6 +95,10 @@ export default function StructuredChordJsonEditor({
   </button>
 </div>
 
+    <div className="mt-3 text-xs text-gray-400">
+      Saved chord versions: {chordVersions.length}
+    </div>
+
      <SavedChordVersionSelector
       chordVersions={chordVersions}
       activeChordVersionId={activeChordVersionId}
