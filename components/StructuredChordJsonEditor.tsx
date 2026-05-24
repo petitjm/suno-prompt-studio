@@ -134,10 +134,15 @@ const chordJsonIsValidObject = React.useMemo(() => {
   </button>
 </div>
 
-    <div className="mt-3 text-xs text-gray-400">
-      Saved chord versions: {chordVersions.length}
-    </div>
+{chordsText.trim() && !chordJsonIsValidObject && (
+  <p className="mt-2 text-xs text-yellow-300">
+    Enter valid chord JSON before saving.
+  </p>
+)}
 
+<div className="mt-3 text-xs text-gray-400">
+  Saved chord versions: {chordVersions.length}
+</div>
      <SavedChordVersionSelector
       chordVersions={chordVersions}
       activeChordVersionId={activeChordVersionId}
