@@ -1231,34 +1231,51 @@ const saveChords = async () => {
 
     let chordsToSave: ChordResponse | null = null
 
-        try {
-          const parsed = JSON.parse(chordsText)
+    try {
+      const parsed = JSON.parse(chordsText)
 
-          if (
-            parsed &&
-            typeof parsed === 'object' &&
-            !Array.isArray(parsed)
-          ) {
-            chordsToSave = parsed
-          } else {
-            setProjectMessage('Chord JSON must be an object, not a number, string, or array.')
-            return
-          }
-        } catch {
-          setProjectMessage('Chord JSON is not valid.')
-          return
-        }
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed)
+      ) {
+        chordsToSave = parsed
+      } else {
+        setChordExtractionMessage(
+          'Chord JSON must be an object, not a number, string, or array.'
+        )
+        return
+      }
+    } catch {
+      setChordExtractionMessage('Chord JSON is not valid.')
+      return
+    }
 
     if (!chordsToSave) {
-      setProjectMessage('Chord JSON must be an object, for example: {"key":"G","verse":"G | D7 | G | C"}')
+      setChordExtractionMessage(
+        'Chord JSON must be an object, for example: {"key":"G","verse":"G | D7 | G | C"}'
+      )
+      return
+    }
+
+    const chordJsonTextToCheck = JSON.stringify(chordsToSave)
+
+    const suspiciousChordText =
+      /[a-zA-Z]{12,}/.test(chordJsonTextToCheck)
+
+    if (suspiciousChordText) {
+      setChordExtractionMessage(
+        'Chord JSON is valid, but one or more chord lines contains suspicious long text. Please check the chord data before saving.'
+      )
       return
     }
 
     setSavingChords(true)
+    setChordExtractionMessage('')
     setProjectMessage('Saving chords...')
 
     const chordTitleToSave =
-       chordVersionTitle.trim() || `Chord version ${chordVersions.length + 1}`
+      chordVersionTitle.trim() || `Chord version ${chordVersions.length + 1}`
 
     const res = await fetch('/api/chord-versions', {
       method: 'POST',
@@ -1270,31 +1287,29 @@ const saveChords = async () => {
       }),
     })
 
-        const data = await readJsonSafe(res)
-        if (!res.ok) throw new Error(data.error || 'Failed to save chords')
+    const data = await readJsonSafe(res)
+    if (!res.ok) throw new Error(data.error || 'Failed to save chords')
 
-        const savedVersion = data.version
+    const savedVersion = data.version
 
+    setChords(chordsToSave)
+    setChordsText(JSON.stringify(chordsToSave, null, 2))
 
+    if (savedVersion?.id) {
+      setActiveChordVersionId(savedVersion.id)
 
+      setChordVersions((current) => [
+        savedVersion,
+        ...current.filter((version) => version.id !== savedVersion.id),
+      ])
+    }
 
-        setChords(chordsToSave)
-        setChordsText(JSON.stringify(chordsToSave, null, 2))
+    const savedChordTitle =
+      savedVersion?.title || chordTitleToSave
 
-        if (savedVersion?.id) {
-          setActiveChordVersionId(savedVersion.id)
-
-          setChordVersions((current) => [
-            savedVersion,
-            ...current.filter((version) => version.id !== savedVersion.id),
-          ])
-        }
-
-       const savedChordTitle =
-         savedVersion?.title || chordTitleToSave
-        setChordVersionTitle(savedChordTitle)
-        setProjectMessage(`Saved chord version: ${savedChordTitle}`)
-        setJustSavedChords(true)
+    setChordVersionTitle(savedChordTitle)
+    setProjectMessage(`Saved chord version: ${savedChordTitle}`)
+    setJustSavedChords(true)
 
     setTimeout(() => setJustSavedChords(false), 1000)
   } catch (err: any) {
@@ -1304,7 +1319,6 @@ const saveChords = async () => {
     setSavingChords(false)
   }
 }
-
   
 
 if (!userEmail) {
