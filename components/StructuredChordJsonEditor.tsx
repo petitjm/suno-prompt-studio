@@ -73,23 +73,27 @@ export default function StructuredChordJsonEditor({
         Structured Chord JSON
       </h3>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          value={chordVersionTitle}
-          onChange={(e) => setChordVersionTitle(e.target.value)}
-          placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
-          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-        />
+      <div className="mb-3 rounded border border-blue-700 bg-blue-900/30 px-3 py-2 text-xs text-blue-100">
+  Tip: save a named chord version before changing extracted chords or trying a new arrangement.
+</div>
 
-        <button
-          type="button"
-          onClick={saveChords}
-          disabled={savingChords}
-          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white whitespace-nowrap"
-        >
-          {savingChords ? 'Saving...' : justSavedChords ? 'Saved' : 'Save Chords'}
-        </button>
-      </div>
+<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+  <input
+    value={chordVersionTitle}
+    onChange={(e) => setChordVersionTitle(e.target.value)}
+    placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
+    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+  />
+
+  <button
+    type="button"
+    onClick={saveChords}
+    disabled={savingChords}
+    className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white whitespace-nowrap"
+  >
+    {savingChords ? 'Saving...' : justSavedChords ? 'Saved' : 'Save Chords'}
+  </button>
+</div>
 
      <SavedChordVersionSelector
       chordVersions={chordVersions}
