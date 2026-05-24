@@ -1244,10 +1244,12 @@ const saveChords = async () => {
         setChordExtractionMessage(
           'Chord JSON must be an object, not a number, string, or array.'
         )
+        setProjectMessage('')
         return
       }
     } catch {
       setChordExtractionMessage('Chord JSON is not valid.')
+      setProjectMessage('')
       return
     }
 
@@ -1255,6 +1257,7 @@ const saveChords = async () => {
       setChordExtractionMessage(
         'Chord JSON must be an object, for example: {"key":"G","verse":"G | D7 | G | C"}'
       )
+      setProjectMessage('')
       return
     }
 
@@ -1267,6 +1270,7 @@ const saveChords = async () => {
       setChordExtractionMessage(
         'Chord JSON is valid, but one or more chord lines contains suspicious long text. Please check the chord data before saving.'
       )
+      setProjectMessage('')
       return
     }
 
