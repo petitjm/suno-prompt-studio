@@ -123,6 +123,14 @@ const chordJsonIsValidObject = React.useMemo(() => {
   <button
   type="button"
   onClick={() => {
+      const confirmed = window.confirm(
+        'Clear the chord editor? This will remove the current chord JSON and chord version title.'
+      )
+
+      if (!confirmed) {
+        return
+      }
+
       setChordsText('')
       setChordVersionTitle('')
       setChordExtractionMessage('')
