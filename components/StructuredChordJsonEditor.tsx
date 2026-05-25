@@ -176,6 +176,7 @@ const chordJsonIsValidObject = React.useMemo(() => {
         onChange={(e) => {
           setChordsText(e.target.value)
           setChordExtractionMessage('')
+          setActiveChordVersionId(null)
         }}
         placeholder="Structured Chord JSON will appear here..."
         className="mt-3 w-full min-h-[220px] px-3 py-2 rounded bg-gray-900 text-gray-100 font-mono text-sm border border-gray-700"
