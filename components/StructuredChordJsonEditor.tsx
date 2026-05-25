@@ -102,7 +102,10 @@ const chordJsonIsValidObject = React.useMemo(() => {
 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
   <input
     value={chordVersionTitle}
-    onChange={(e) => setChordVersionTitle(e.target.value)}
+    onChange={(e) => {
+      setChordVersionTitle(e.target.value)
+      setChordExtractionMessage('')
+    }}
     placeholder="Chord version title, e.g. Capo 3 - simplified chorus"
     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
   />
