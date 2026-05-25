@@ -123,9 +123,10 @@ const chordJsonIsValidObject = React.useMemo(() => {
   <button
   type="button"
   onClick={() => {
-    setChordsText('')
-    setChordExtractionMessage('')
-  }}
+      setChordsText('')
+      setChordVersionTitle('')
+      setChordExtractionMessage('')
+    }}
   disabled={savingChords || !chordsText.trim()}
   className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white whitespace-nowrap"
 >
