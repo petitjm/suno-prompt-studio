@@ -1278,7 +1278,7 @@ const saveChords = async () => {
 }
 
 const suspiciousChordText = getChordStringValues(chordsToSave).some((value) =>
-  /[a-zA-Z]{12,}/.test(value)
+  /([a-zA-Z])\1{7,}/.test(value)
 )
 
 if (suspiciousChordText) {
