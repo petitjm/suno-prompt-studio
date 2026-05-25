@@ -1261,18 +1261,33 @@ const saveChords = async () => {
       return
     }
 
-    const chordJsonTextToCheck = JSON.stringify(chordsToSave)
+    const getChordStringValues = (value: unknown): string[] => {
+  if (typeof value === 'string') {
+    return [value]
+  }
 
-    const suspiciousChordText =
-      /[a-zA-Z]{12,}/.test(chordJsonTextToCheck)
+  if (Array.isArray(value)) {
+    return value.flatMap(getChordStringValues)
+  }
 
-    if (suspiciousChordText) {
-      setChordExtractionMessage(
-        'Chord JSON is valid, but one or more chord lines contains suspicious long text. Please check the chord data before saving.'
-      )
-      setProjectMessage('')
-      return
-    }
+  if (value && typeof value === 'object') {
+    return Object.values(value).flatMap(getChordStringValues)
+  }
+
+  return []
+}
+
+const suspiciousChordText = getChordStringValues(chordsToSave).some((value) =>
+  /[a-zA-Z]{12,}/.test(value)
+)
+
+if (suspiciousChordText) {
+  setChordExtractionMessage(
+    'Chord JSON is valid, but one or more chord lines contains suspicious long text. Please check the chord data before saving.'
+  )
+  setProjectMessage('')
+  return
+}
 
     setSavingChords(true)
     setChordExtractionMessage('')
