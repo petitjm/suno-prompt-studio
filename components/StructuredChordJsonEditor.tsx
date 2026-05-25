@@ -130,7 +130,7 @@ const chordJsonIsValidObject = React.useMemo(() => {
   disabled={savingChords || !chordsText.trim()}
   className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white whitespace-nowrap"
 >
-  Clear JSON
+  Clear chord editor
 </button>
 
 </div>
