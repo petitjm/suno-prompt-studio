@@ -57,8 +57,9 @@ export default function StructuredChordJsonEditor({
   setActiveChordVersionId(id)
 
   if (!id) {
-    return
-  }
+      setChordExtractionMessage('')
+      return
+    }
 
   const selected = chordVersions.find((v) => v.id === id)
   const chordData = getChordVersionData(selected)
