@@ -62,14 +62,25 @@ export default function StructuredChordJsonEditor({
     }
 
   const selected = chordVersions.find((v) => v.id === id)
-  const chordData = getChordVersionData(selected)
+    const chordData = getChordVersionData(selected)
 
-  if (chordData) {
-    setChords(chordData)
-    setChordsText(JSON.stringify(chordData, null, 2))
-    setChordVersionTitle(selected?.title || '')
-    setChordExtractionMessage('')
-  }
+    if (chordData) {
+      if (chordsText.trim()) {
+        const confirmed = window.confirm(
+          'Load this saved chord version? This will replace the current chord JSON in the editor.'
+        )
+
+        if (!confirmed) {
+          setActiveChordVersionId(activeChordVersionId)
+          return
+        }
+      }
+
+      setChords(chordData)
+      setChordsText(JSON.stringify(chordData, null, 2))
+      setChordVersionTitle(selected?.title || '')
+      setChordExtractionMessage('')
+    }
 }
 
 const chordJsonIsValidObject = React.useMemo(() => {
