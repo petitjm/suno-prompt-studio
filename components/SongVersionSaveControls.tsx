@@ -4,6 +4,7 @@ import type { Project } from '@/types/song'
 
 type SongVersionSaveControlsProps = {
   songVersionTitle: string
+  setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>
   setSongVersionTitle: (value: string) => void
   saveSong: () => void
   savingSong: boolean
@@ -15,6 +16,7 @@ type SongVersionSaveControlsProps = {
 export default function SongVersionSaveControls({
   songVersionTitle,
   setSongVersionTitle,
+  setActiveSongVersionId,
   saveSong,
   savingSong,
   justSavedSong,
@@ -31,7 +33,10 @@ export default function SongVersionSaveControls({
 
       <input
         value={songVersionTitle}
-        onChange={(e) => setSongVersionTitle(e.target.value)}
+        onChange={(e) => {
+          setSongVersionTitle(e.target.value)
+          setActiveSongVersionId(null)
+        }}
         placeholder="Version title, e.g. Chorus rewrite, Short radio edit"
         className="mt-2 w-full max-w-3xl px-3 py-2 rounded bg-gray-700 text-white"
       />

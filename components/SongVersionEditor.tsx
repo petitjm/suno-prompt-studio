@@ -79,14 +79,15 @@ export default function SongVersionEditor({
     />
 
       <SongVersionSaveControls
-        songVersionTitle={songVersionTitle}
-        setSongVersionTitle={setSongVersionTitle}
-        saveSong={saveSong}
-        savingSong={savingSong}
-        justSavedSong={justSavedSong}
-        activeProject={activeProject}
-        performanceSheet={performanceSheet}
-      />
+      songVersionTitle={songVersionTitle}
+      setSongVersionTitle={setSongVersionTitle}
+      setActiveSongVersionId={setActiveSongVersionId}
+      saveSong={saveSong}
+      savingSong={savingSong}
+      justSavedSong={justSavedSong}
+      activeProject={activeProject}
+      performanceSheet={performanceSheet}
+    />
     </>
   )
 }
