@@ -88,6 +88,10 @@ const handlePerformanceSheetChange = (value: string) => {
   if (value !== performanceSheet) {
     setActiveSongVersionId(null)
   }
+
+  if (!value.trim()) {
+    setSongVersionTitle('')
+  }
 }
 
   return (
