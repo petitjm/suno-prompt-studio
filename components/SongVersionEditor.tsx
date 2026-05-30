@@ -50,19 +50,36 @@ export default function SongVersionEditor({
     // Keep version-loading behaviour local to the song editor.
     // The parent owns state, but this component decides how selecting a saved song version updates the sheet.
     const handleActiveSongVersionChange = (id: string) => {
-    setActiveSongVersionId(id)
+      if (!id) {
+        setActiveSongVersionId(null)
+        return
+      }
 
-  if (!id) {
-    return
-  }
+      const selected = songVersions.find((v) => v.id === id)
+      const lyrics = getSongVersionLyrics(selected)
 
-  const selected = songVersions.find((v) => v.id === id)
-        const lyrics = getSongVersionLyrics(selected)
+      if (!lyrics) {
+        setActiveSongVersionId(id)
+        return
+      }
 
-        if (lyrics) {
-          setPerformanceSheet(lyrics)
+      const hasUnsavedLyrics =
+        activeSongVersionId === null &&
+        performanceSheet.trim().length > 0
+
+      if (hasUnsavedLyrics) {
+        const confirmed = window.confirm(
+          'Load this saved song version? This will replace the current song sheet text.'
+        )
+
+        if (!confirmed) {
+          return
         }
-}
+      }
+
+      setActiveSongVersionId(id)
+      setPerformanceSheet(lyrics)
+    }
 
 
 const handlePerformanceSheetChange = (value: string) => {
