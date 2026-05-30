@@ -64,12 +64,18 @@ export default function SongVersionEditor({
         }
 }
 
+
+const handlePerformanceSheetChange = (value: string) => {
+  setPerformanceSheet(value)
+  setActiveSongVersionId(null)
+}
+
   return (
     <>
       <SongSheetEditor
-        performanceSheet={performanceSheet}
-        setPerformanceSheet={setPerformanceSheet}
-      />
+          performanceSheet={performanceSheet}
+          setPerformanceSheet={handlePerformanceSheetChange}
+        />
 
      <SavedSongVersionSelector
       songVersions={songVersions}
