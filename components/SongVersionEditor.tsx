@@ -77,8 +77,9 @@ export default function SongVersionEditor({
         }
       }
 
-      setActiveSongVersionId(id)
-      setPerformanceSheet(lyrics)
+        setActiveSongVersionId(id)
+        setPerformanceSheet(lyrics)
+        setSongVersionTitle(selected?.title ?? '')
     }
 
 
