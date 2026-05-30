@@ -67,7 +67,10 @@ export default function SongVersionEditor({
 
 const handlePerformanceSheetChange = (value: string) => {
   setPerformanceSheet(value)
-  setActiveSongVersionId(null)
+
+  if (value !== performanceSheet) {
+    setActiveSongVersionId(null)
+  }
 }
 
   return (
