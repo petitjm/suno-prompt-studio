@@ -59,6 +59,7 @@ export default function StructuredChordJsonEditor({
   if (!id) {
       setActiveChordVersionId(null)
       setChordVersionTitle('')
+      setChordExtractionMessage('')
       return
     }
 
