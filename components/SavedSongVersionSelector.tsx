@@ -24,7 +24,7 @@ export default function SavedSongVersionSelector({
   version: { title?: string | null },
   index: number
 ) => {
-  const title = version.title || `Untitled song version ${songVersions.length - index}`
+  const title = version.title || `Untitled chord version ${chordVersions.length - index}`
 
   if (title.startsWith('Auto:')) {
     return title.replace(/^Auto:\s*/, 'Auto backup: ')
