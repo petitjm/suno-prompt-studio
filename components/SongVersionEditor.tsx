@@ -52,6 +52,7 @@ export default function SongVersionEditor({
     const handleActiveSongVersionChange = (id: string) => {
       if (!id) {
         setActiveSongVersionId(null)
+        setSongVersionTitle('')
         return
       }
 
