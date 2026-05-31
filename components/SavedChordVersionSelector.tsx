@@ -19,7 +19,7 @@ export default function SavedChordVersionSelector({
   return (
     <div className="mt-3">
       <label className="block text-sm font-medium text-gray-300 mb-1">
-        Load saved chord version ({chordVersions.length})
+        Saved Chord Versions ({chordVersions.length})
       </label>
 
       <select
