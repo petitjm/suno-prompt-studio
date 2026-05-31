@@ -65,7 +65,11 @@ export default function SongVersionSaveControls({
               ? 'Add lyrics to save'
               : 'Save Song'}
         </button>
-
+        {!performanceSheet.trim() && (
+          <p className="text-xs text-gray-400">
+            Add lyrics to the Song Sheet before saving a song version.
+          </p>
+        )}
         {!activeProject && (
           <span className="text-sm text-yellow-400 self-center">
             Select a project first
