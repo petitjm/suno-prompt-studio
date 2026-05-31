@@ -44,7 +44,10 @@ export default function SongVersionSaveControls({
       <div className="flex gap-2 mt-3 mb-4">
         <button
           type="button"
-          onClick={saveSong}
+          onClick={() => {
+              setActiveSongVersionId(null)
+              saveSong()
+            }}
           disabled={savingSong || !activeProject || !performanceSheet.trim()}
           className={`px-4 py-2 rounded text-white transition ${
             savingSong
