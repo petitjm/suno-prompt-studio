@@ -36,7 +36,7 @@ export default function SavedChordVersionSelector({
 
         {chordVersions.map((v, i) => (
           <option key={v.id} value={v.id}>
-            {v.title || `Chord version ${chordVersions.length - i}`}
+            {v.title || `Untitled chord version ${chordVersions.length - i}`}
             {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
           </option>
         ))}
