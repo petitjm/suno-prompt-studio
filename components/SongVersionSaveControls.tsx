@@ -57,7 +57,13 @@ export default function SongVersionSaveControls({
                 : 'bg-green-600'
           } disabled:opacity-40`}
         >
-          {savingSong ? 'Saving song...' : justSavedSong ? 'Saved ✓' : 'Save Song'}
+          {savingSong
+          ? 'Saving...'
+          : justSavedSong
+            ? 'Saved ✓'
+            : !performanceSheet.trim()
+              ? 'Add lyrics to save'
+              : 'Save Song'}
         </button>
 
         {!activeProject && (
