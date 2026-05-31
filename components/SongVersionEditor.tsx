@@ -52,7 +52,9 @@ export default function SongVersionEditor({
     const handleActiveSongVersionChange = (id: string) => {
       if (!id) {
         setActiveSongVersionId(null)
-        setSongVersionTitle('')
+        const fallbackTitle = `Untitled song version ${songVersions.length - songVersions.findIndex((v) => v.id === id)}`
+
+            setSongVersionTitle(selected?.title || fallbackTitle)
         return
       }
 
