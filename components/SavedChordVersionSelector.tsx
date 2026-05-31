@@ -30,8 +30,8 @@ export default function SavedChordVersionSelector({
       >
         <option value="">
           {chordVersions.length === 0
-            ? 'No saved chord versions yet'
-            : 'Choose a saved chord version...'}
+                ? 'No saved chord versions yet'
+    :           'Choose a saved chord version...'}
         </option>
 
         {chordVersions.map((v, i) => (
