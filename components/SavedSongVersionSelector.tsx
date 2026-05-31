@@ -36,7 +36,7 @@ export default function SavedSongVersionSelector({
   return (
     <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
       <h3 className="text-sm text-gray-400 mb-2">
-        Saved Versions
+        Saved Versions ({songVersions.length})
       </h3>
 
       <select
