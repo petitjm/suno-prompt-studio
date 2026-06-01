@@ -22,19 +22,46 @@ const defaultNegativePrompt =
   'Avoid EDM, trap drums, excessive autotune, robotic vocals, spoken word sections, comedy tone, metal guitars, overproduced pop effects, and cluttered instrumentation.'
 
 function getLyricSummary(performanceSheet: string) {
-  const lines = performanceSheet
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => !line.startsWith('['))
-    .slice(0, 6)
+      const lines = performanceSheet
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
 
-  if (lines.length === 0) {
-    return 'No lyrics loaded yet.'
-  }
+      if (lines.length === 0) {
+        return 'No lyrics loaded yet.'
+      }
 
-  return lines.join(' / ')
-}
+      const sections: string[] = []
+      let currentSection = 'Opening'
+      let currentLines: string[] = []
+
+      const flushSection = () => {
+        if (currentLines.length === 0) {
+          return
+        }
+
+        sections.push(`${currentSection}: ${currentLines.slice(0, 3).join(' / ')}`)
+        currentLines = []
+      }
+
+      lines.forEach((line) => {
+        if (/^\[.+\]$/.test(line)) {
+          flushSection()
+          currentSection = line.replace(/^\[/, '').replace(/\]$/, '')
+          return
+        }
+
+        currentLines.push(line)
+      })
+
+      flushSection()
+
+      if (sections.length === 0) {
+        return lines.slice(0, 8).join(' / ')
+      }
+
+      return sections.slice(0, 8).join('\n')
+    }
 
 export default function SunoPromptBuilder({
   performanceSheet,
