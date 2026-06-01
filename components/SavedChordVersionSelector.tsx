@@ -16,6 +16,13 @@ export default function SavedChordVersionSelector({
   onActiveChordVersionChange,
   formatUkDateTime,
 }: SavedChordVersionSelectorProps) {
+
+    const selectedChordVersionExists = chordVersions.some(
+      (version) => version.id === activeChordVersionId
+    )
+
+    const selectedValue = selectedChordVersionExists ? activeChordVersionId || '' : ''
+
   return (
     <div
       className={`mt-3 ${
@@ -27,7 +34,7 @@ export default function SavedChordVersionSelector({
       </label>
 
       <select
-        value={activeChordVersionId || ''}
+        value={selectedValue}
         onChange={(e) => onActiveChordVersionChange(e.target.value)}
         disabled={chordVersions.length === 0}
         className="w-full px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
