@@ -17,7 +17,11 @@ export default function SavedChordVersionSelector({
   formatUkDateTime,
 }: SavedChordVersionSelectorProps) {
   return (
-    <div className="mt-3">
+    <div
+      className={`mt-3 ${
+        chordVersions.length === 0 ? 'opacity-75' : ''
+      }`}
+     >
       <label className="block text-sm font-medium text-gray-300 mb-1">
         Saved Chord Versions ({chordVersions.length})
       </label>
