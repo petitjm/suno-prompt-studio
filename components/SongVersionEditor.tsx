@@ -52,38 +52,36 @@ export default function SongVersionEditor({
     const handleActiveSongVersionChange = (id: string) => {
       if (!id) {
         setActiveSongVersionId(null)
-        const fallbackTitle = `Untitled song version ${songVersions.length - songVersions.findIndex((v) => v.id === id)}`
-
-            setSongVersionTitle(selected?.title || fallbackTitle)
+        setSongVersionTitle('')
         return
       }
 
-      const selected = songVersions.find((v) => v.id === id)
-      const lyrics = getSongVersionLyrics(selected)
+  const selected = songVersions.find((v) => v.id === id)
+  const lyrics = getSongVersionLyrics(selected)
 
-      if (!lyrics) {
-        setActiveSongVersionId(id)
-        return
-      }
+  if (!lyrics) {
+    setActiveSongVersionId(id)
+    return
+  }
 
-      const hasUnsavedLyrics =
-        activeSongVersionId === null &&
-        performanceSheet.trim().length > 0
+  const hasUnsavedLyrics =
+    activeSongVersionId === null &&
+    performanceSheet.trim().length > 0
 
-      if (hasUnsavedLyrics) {
-        const confirmed = window.confirm(
-          'Load this saved song version? This will replace the current song sheet text.'
-        )
+  if (hasUnsavedLyrics) {
+    const confirmed = window.confirm(
+      'Load this saved song version? This will replace the current song sheet text.'
+    )
 
-        if (!confirmed) {
-          return
-        }
-      }
-
-        setActiveSongVersionId(id)
-        setPerformanceSheet(lyrics)
-        setSongVersionTitle(selected?.title ?? '')
+    if (!confirmed) {
+      return
     }
+  }
+
+  setActiveSongVersionId(id)
+  setPerformanceSheet(lyrics)
+  setSongVersionTitle(selected?.title ?? '')
+}
 
 
 const handlePerformanceSheetChange = (value: string) => {
