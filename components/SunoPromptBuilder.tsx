@@ -47,6 +47,7 @@ export default function SunoPromptBuilder({
 
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
+  const [copyMessage, setCopyMessage] = useState('')
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
   const [vocalDirection, setVocalDirection] = useState(defaultVocalDirection)
   const [arrangementNotes, setArrangementNotes] = useState(defaultArrangementNotes)
@@ -72,12 +73,13 @@ export default function SunoPromptBuilder({
   ])
 
   const resetToDefaults = () => {
-    setStylePrompt(defaultStylePrompt)
-    setVocalDirection(defaultVocalDirection)
-    setArrangementNotes(defaultArrangementNotes)
-    setIntroSoloOutro(defaultIntroSoloOutro)
-    setNegativePrompt(defaultNegativePrompt)
-  }
+  setStylePrompt(defaultStylePrompt)
+  setVocalDirection(defaultVocalDirection)
+  setArrangementNotes(defaultArrangementNotes)
+  setIntroSoloOutro(defaultIntroSoloOutro)
+  setNegativePrompt(defaultNegativePrompt)
+  showTemporaryMessage('Defaults restored ✓')
+}
 
   const generateSunoPrompt = async () => {
       setGeneratingPrompt(true)
@@ -92,6 +94,14 @@ export default function SunoPromptBuilder({
       } finally {
         setGeneratingPrompt(false)
       }
+    }
+
+    const showTemporaryMessage = (message: string) => {
+      setCopyMessage(message)
+
+      window.setTimeout(() => {
+        setCopyMessage('')
+      }, 1800)
     }
 
 
@@ -209,7 +219,10 @@ export default function SunoPromptBuilder({
 
         <button
           type="button"
-          onClick={() => navigator.clipboard.writeText(combinedPrompt)}
+          onClick={() => {
+              navigator.clipboard.writeText(combinedPrompt)
+              showTemporaryMessage('Combined prompt copied ✓')
+            }}
           className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
         >
           Copy combined prompt
@@ -217,11 +230,19 @@ export default function SunoPromptBuilder({
 
         <button
           type="button"
-          onClick={() => navigator.clipboard.writeText(negativePrompt)}
+          onClick={() => {
+              navigator.clipboard.writeText(negativePrompt)
+              showTemporaryMessage('Negative prompt copied ✓')
+            }}
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
           Copy negative prompt
         </button>
+        {copyMessage && (
+          <p className="mt-3 text-sm text-green-300">
+            {copyMessage}
+          </p>
+        )}
         {promptMessage && (
           <p className="mt-3 text-sm text-gray-400">
             {promptMessage}
