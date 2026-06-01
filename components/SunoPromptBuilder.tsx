@@ -44,6 +44,9 @@ export default function SunoPromptBuilder({
     [performanceSheet]
   )
 
+
+  const [generatingPrompt, setGeneratingPrompt] = useState(false)
+  const [promptMessage, setPromptMessage] = useState('')
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
   const [vocalDirection, setVocalDirection] = useState(defaultVocalDirection)
   const [arrangementNotes, setArrangementNotes] = useState(defaultArrangementNotes)
@@ -75,6 +78,22 @@ export default function SunoPromptBuilder({
     setIntroSoloOutro(defaultIntroSoloOutro)
     setNegativePrompt(defaultNegativePrompt)
   }
+
+  const generateSunoPrompt = async () => {
+      setGeneratingPrompt(true)
+      setPromptMessage('')
+
+      try {
+        // API wiring comes in the next step.
+        // For now this confirms the panel is ready for generated prompt results.
+        setPromptMessage('Suno prompt generation will be connected to the API in the next step.')
+      } catch {
+        setPromptMessage('Could not generate Suno prompt. Please try again.')
+      } finally {
+        setGeneratingPrompt(false)
+      }
+    }
+
 
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
@@ -173,6 +192,15 @@ export default function SunoPromptBuilder({
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
+          onClick={generateSunoPrompt}
+          disabled={generatingPrompt}
+          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {generatingPrompt ? 'Generating...' : 'Generate Suno prompts'}
+        </button>
+
+        <button
+          type="button"
           onClick={resetToDefaults}
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
@@ -194,6 +222,11 @@ export default function SunoPromptBuilder({
         >
           Copy negative prompt
         </button>
+        {promptMessage && (
+          <p className="mt-3 text-sm text-gray-400">
+            {promptMessage}
+          </p>
+        )}
       </div>
     </section>
   )
