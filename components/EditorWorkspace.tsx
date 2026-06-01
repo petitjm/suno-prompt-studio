@@ -1,5 +1,7 @@
 'use client'
 
+import SunoPromptBuilder from './SunoPromptBuilder'
+
 import React from 'react'
 
 import SongVersionEditor from './SongVersionEditor'
@@ -84,6 +86,9 @@ export default function EditorWorkspace({
       justSavedSong={songEditor.justSavedSong}
       activeProject={songEditor.activeProject}
     />
+
+    <SunoPromptBuilder performanceSheet={songEditor.performanceSheet} />
+
 
       {/* Structured Chord JSON editor and saved chord-version selector */}
       <StructuredChordJsonEditor
