@@ -59,6 +59,11 @@ export default function SavedSongVersionSelector({
           </option>
         ))}
       </select>
+      {songVersions.length === 0 && (
+          <p className="mt-2 text-xs text-gray-400">
+            Save the Song Sheet to create a reusable song version.
+          </p>
+        )}
     </div>
   )
 }
