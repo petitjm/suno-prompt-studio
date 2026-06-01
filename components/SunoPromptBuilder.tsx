@@ -90,8 +90,14 @@ export default function SunoPromptBuilder({
     return
   }
 
-  setGeneratingPrompt(true)
-  setPromptMessage('')
+    setGeneratingPrompt(true)
+    setPromptMessage('')
+
+    setStylePrompt('')
+    setVocalDirection('')
+    setArrangementNotes('')
+    setIntroSoloOutro('')
+    setNegativePrompt('')
 
   try {
     const response = await fetch('/api/suno-prompts', {
