@@ -50,6 +50,7 @@ export default function SunoPromptBuilder({
   const [justCopiedCombined, setJustCopiedCombined] = useState(false)
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
+  const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
   const [vocalDirection, setVocalDirection] = useState(defaultVocalDirection)
   const [arrangementNotes, setArrangementNotes] = useState(defaultArrangementNotes)
@@ -91,6 +92,7 @@ export default function SunoPromptBuilder({
         // API wiring comes in the next step.
         // For now this confirms the panel is ready for generated prompt results.
         setPromptMessage('Suno prompt generation will be connected to the API in the next step.')
+        showButtonFeedback(setJustGeneratedPrompt)
       } catch {
         setPromptMessage('Could not generate Suno prompt. Please try again.')
       } finally {
@@ -210,7 +212,11 @@ export default function SunoPromptBuilder({
           disabled={generatingPrompt}
           className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {generatingPrompt ? 'Generating...' : 'Generate Suno prompts'}
+          {generatingPrompt
+          ? 'Generating...'
+          : justGeneratedPrompt
+            ? 'Generated ✓'
+            : 'Generate Suno prompts'}
         </button>
 
         <button
