@@ -50,6 +50,7 @@ export default function SunoPromptBuilder({
   const [justCopiedCombined, setJustCopiedCombined] = useState(false)
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
+  const [generatedFromSummary, setGeneratedFromSummary] = useState('')
   const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
   const [vocalDirection, setVocalDirection] = useState(defaultVocalDirection)
@@ -77,6 +78,7 @@ export default function SunoPromptBuilder({
 
   const resetToDefaults = () => {
   setStylePrompt(defaultStylePrompt)
+  setGeneratedFromSummary('')
   setVocalDirection(defaultVocalDirection)
   setArrangementNotes(defaultArrangementNotes)
   setIntroSoloOutro(defaultIntroSoloOutro)
@@ -121,6 +123,7 @@ export default function SunoPromptBuilder({
     setArrangementNotes(data.arrangementNotes || '')
     setIntroSoloOutro(data.introSoloOutro || '')
     setNegativePrompt(data.negativePrompt || '')
+    setGeneratedFromSummary(lyricSummary)
 
     setPromptMessage('Suno prompts generated from the current song sheet.')
     showButtonFeedback(setJustGeneratedPrompt)
@@ -240,7 +243,11 @@ export default function SunoPromptBuilder({
           className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
         />
       </div>
-
+      {generatedFromSummary && (
+          <p className="mt-2 text-xs text-gray-400">
+            Generated from: {generatedFromSummary}
+          </p>
+        )}
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
