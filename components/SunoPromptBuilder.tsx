@@ -85,20 +85,50 @@ export default function SunoPromptBuilder({
 }
 
   const generateSunoPrompt = async () => {
-      setGeneratingPrompt(true)
-      setPromptMessage('')
+  if (!performanceSheet.trim()) {
+    setPromptMessage('Add lyrics to the Song Sheet before generating Suno prompts.')
+    return
+  }
 
-      try {
-        // API wiring comes in the next step.
-        // For now this confirms the panel is ready for generated prompt results.
-        setPromptMessage('Suno prompt generation will be connected to the API in the next step.')
-        showButtonFeedback(setJustGeneratedPrompt)
-      } catch {
-        setPromptMessage('Could not generate Suno prompt. Please try again.')
-      } finally {
-        setGeneratingPrompt(false)
-      }
+  setGeneratingPrompt(true)
+  setPromptMessage('')
+
+  try {
+    const response = await fetch('/api/suno-prompts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics: performanceSheet,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Could not generate Suno prompts.')
     }
+
+    setStylePrompt(data.stylePrompt || '')
+    setVocalDirection(data.vocalDirection || '')
+    setArrangementNotes(data.arrangementNotes || '')
+    setIntroSoloOutro(data.introSoloOutro || '')
+    setNegativePrompt(data.negativePrompt || '')
+
+    setPromptMessage('Suno prompts generated from the current song sheet.')
+    showButtonFeedback(setJustGeneratedPrompt)
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Could not generate Suno prompts. Please try again.'
+
+    setPromptMessage(message)
+  } finally {
+    setGeneratingPrompt(false)
+  }
+}
 
     const showButtonFeedback = (
           setFeedback: React.Dispatch<React.SetStateAction<boolean>>
@@ -209,14 +239,16 @@ export default function SunoPromptBuilder({
         <button
           type="button"
           onClick={generateSunoPrompt}
-          disabled={generatingPrompt}
+          disabled={generatingPrompt || !performanceSheet.trim()}
           className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {generatingPrompt
           ? 'Generating...'
           : justGeneratedPrompt
             ? 'Generated ✓'
-            : 'Generate Suno prompts'}
+            : !performanceSheet.trim()
+              ? 'Add lyrics to generate'
+              : 'Generate Suno prompts'}
         </button>
 
         <button
