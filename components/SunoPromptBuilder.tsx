@@ -44,7 +44,7 @@ export default function SunoPromptBuilder({
     [performanceSheet]
   )
 
-
+  const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
   const [justCopiedCombined, setJustCopiedCombined] = useState(false)
@@ -139,6 +139,14 @@ export default function SunoPromptBuilder({
   }
 }
 
+         const showPresetFeedback = (label: string) => {
+          setActivePresetFeedback(label)
+
+          window.setTimeout(() => {
+            setActivePresetFeedback('')
+          }, 1500)
+        }
+
     const showButtonFeedback = (
           setFeedback: React.Dispatch<React.SetStateAction<boolean>>
         ) => {
@@ -229,7 +237,15 @@ export default function SunoPromptBuilder({
           }
 
           setGeneratedFromSummary('')
-          showButtonFeedback(setJustResetDefaults)
+
+        const presetLabels = {
+          'mpj-acoustic': 'MPJ Acoustic applied ✓',
+          'modern-country': 'Modern Country applied ✓',
+          'indie-folk': 'Indie Folk applied ✓',
+          'piano-ballad': 'Piano Ballad applied ✓',
+        }
+
+        showPresetFeedback(presetLabels[preset])
         }
 
 
@@ -263,7 +279,9 @@ export default function SunoPromptBuilder({
               onClick={() => applyPreset('mpj-acoustic')}
               className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
             >
-              MPJ Acoustic
+              {activePresetFeedback === 'MPJ Acoustic applied ✓'
+                  ? 'Applied ✓'
+                  : 'MPJ Acoustic'}
             </button>
 
             <button
@@ -271,7 +289,9 @@ export default function SunoPromptBuilder({
               onClick={() => applyPreset('modern-country')}
               className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
             >
-              Modern Country
+              {activePresetFeedback === 'Modern Country applied ✓'
+                  ? 'Applied ✓'
+                  : 'Modern Country'}
             </button>
 
             <button
@@ -279,7 +299,9 @@ export default function SunoPromptBuilder({
               onClick={() => applyPreset('indie-folk')}
               className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
             >
-              Indie Folk
+              {activePresetFeedback === 'Indie Folk applied ✓'
+                  ? 'Applied ✓'
+                  : 'Indie Folk'}
             </button>
 
             <button
@@ -287,9 +309,16 @@ export default function SunoPromptBuilder({
               onClick={() => applyPreset('piano-ballad')}
               className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
             >
-              Piano Ballad
+              {activePresetFeedback === 'Piano Ballad applied ✓'
+                  ? 'Applied ✓'
+                  : 'Piano Ballad'}
             </button>
           </div>
+          {activePresetFeedback && (
+              <p className="mt-2 text-xs text-green-300">
+                {activePresetFeedback}
+              </p>
+            )}
         </div>
       <div className="grid gap-4">
         <label className="block">
