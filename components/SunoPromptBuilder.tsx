@@ -108,8 +108,13 @@ export default function SunoPromptBuilder({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        lyrics: performanceSheet,
-      }),
+          lyrics: performanceSheet,
+          currentStylePrompt: stylePrompt,
+          currentVocalDirection: vocalDirection,
+          currentArrangementNotes: arrangementNotes,
+          currentIntroSoloOutro: introSoloOutro,
+          currentNegativePrompt: negativePrompt,
+        }),
     })
 
     const data = await response.json()

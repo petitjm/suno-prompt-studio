@@ -7,6 +7,11 @@ const openai = new OpenAI({
 
 type SunoPromptRequest = {
   lyrics?: string
+  currentStylePrompt?: string
+  currentVocalDirection?: string
+  currentArrangementNotes?: string
+  currentIntroSoloOutro?: string
+  currentNegativePrompt?: string
 }
 
 export async function POST(request: Request) {
@@ -20,6 +25,11 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as SunoPromptRequest
     const lyrics = body.lyrics?.trim() || ''
+    const currentStylePrompt = body.currentStylePrompt?.trim() || ''
+    const currentVocalDirection = body.currentVocalDirection?.trim() || ''
+    const currentArrangementNotes = body.currentArrangementNotes?.trim() || ''
+    const currentIntroSoloOutro = body.currentIntroSoloOutro?.trim() || ''
+    const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
 
     if (!lyrics) {
       return NextResponse.json(
@@ -58,6 +68,26 @@ Guidance:
 - Keep the arrangement song-focused, not overproduced.
 - Include useful intro, solo, and outro direction.
 - Include a negative prompt that avoids common unwanted outputs.
+
+Guidance:
+- Keep the prompts practical for Suno.
+- Make the style prompt concise but descriptive.
+- Assume a natural British male low baritone vocal unless the lyrics clearly suggest otherwise.
+- Keep the arrangement song-focused, not overproduced.
+- Include useful intro, solo, and outro direction.
+- Include a negative prompt that avoids common unwanted outputs.
+
+Current prompt direction:
+Style prompt: ${currentStylePrompt || 'Not provided'}
+Vocal direction: ${currentVocalDirection || 'Not provided'}
+Arrangement notes: ${currentArrangementNotes || 'Not provided'}
+Intro / solo / outro: ${currentIntroSoloOutro || 'Not provided'}
+Negative prompt: ${currentNegativePrompt || 'Not provided'}
+
+Use the current prompt direction as guidance. Improve it where useful, but keep the generated prompts aligned with it.
+
+Lyrics:
+${lyrics}
 
 Lyrics:
 ${lyrics}
