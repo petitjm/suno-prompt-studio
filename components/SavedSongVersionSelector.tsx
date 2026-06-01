@@ -32,7 +32,11 @@ export default function SavedSongVersionSelector({
 }
 
   return (
-    <div className="mb-4 p-4 rounded bg-gray-800 max-w-3xl">
+    <div
+      className={`mb-4 p-4 rounded bg-gray-800 max-w-3xl ${
+        songVersions.length === 0 ? 'opacity-75' : ''
+      }`}
+    >
       <h3 className="text-sm text-gray-400 mb-2">
         Saved Song Versions ({songVersions.length})
       </h3>
