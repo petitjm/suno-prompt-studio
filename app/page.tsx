@@ -927,6 +927,11 @@ const loadProjectData = async (
   projectId: string,
   options?: { silent?: boolean }
 ) => {
+    setActiveSongVersionId(null)
+    setSongVersionTitle('')
+
+    setActiveChordVersionId(null)
+    setChordVersionTitle('')
   const token = Date.now()
   latestProjectLoadRef.current = token
 
