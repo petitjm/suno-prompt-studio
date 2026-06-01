@@ -31,6 +31,13 @@ export default function SavedSongVersionSelector({
   return title
 }
 
+
+    const selectedSongVersionExists = songVersions.some(
+      (version) => version.id === activeSongVersionId
+    )
+
+    const selectedValue = selectedSongVersionExists ? activeSongVersionId || '' : ''
+
   return (
     <div
       className={`mb-4 p-4 rounded bg-gray-800 max-w-3xl ${
@@ -42,7 +49,7 @@ export default function SavedSongVersionSelector({
       </h3>
 
       <select
-          value={activeSongVersionId || ''}
+          value={selectedValue}
           onChange={(e) => onActiveSongVersionChange(e.target.value)}
           disabled={songVersions.length === 0}
           className="w-full px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"

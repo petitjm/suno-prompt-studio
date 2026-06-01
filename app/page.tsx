@@ -810,7 +810,9 @@ useEffect(() => {
     setActiveProject(null)
     setProjectMessage('')
     setSongVersions([])
+    setSongVersionTitle('')
     setChordVersions([])
+    setChordVersionTitle('')
     setPerformanceSheet('')
     setChords(null)
   }
