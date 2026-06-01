@@ -71,6 +71,11 @@ export default function SunoPromptBuilder({
     [performanceSheet]
   )
 
+  const [sunoVoice, setSunoVoice] = useState(
+      'MPJ Voice / Persona - natural British low baritone'
+    )
+  const [sunoGender, setSunoGender] = useState('Male')
+  const [lyricsMode, setLyricsMode] = useState('Manual')
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
@@ -280,6 +285,20 @@ export default function SunoPromptBuilder({
         showPresetFeedback(presetLabels[preset])
         }
 
+        const sunoLyricsInput = performanceSheet.trim()
+
+        const sunoStyleInput = [
+          stylePrompt,
+          arrangementNotes,
+          introSoloOutro,
+        ].filter(Boolean).join(' ')
+
+        const sunoVoiceInput = [
+          sunoVoice,
+          vocalDirection,
+        ].filter(Boolean).join('. ')
+
+
 
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
@@ -413,7 +432,81 @@ export default function SunoPromptBuilder({
           />
         </label>
       </div>
+      <div className="mt-5 p-4 rounded bg-gray-800 border border-gray-700">
+          <h3 className="text-sm font-medium text-gray-300 mb-2">
+            Suno Advanced Inputs
+          </h3>
 
+          <div className="grid gap-4">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Lyrics field
+              </span>
+              <textarea
+                value={sunoLyricsInput}
+                readOnly
+                rows={8}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Style field
+              </span>
+              <textarea
+                value={sunoStyleInput}
+                readOnly
+                rows={5}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Voice field
+              </span>
+              <textarea
+                value={sunoVoiceInput}
+                onChange={(e) => setSunoVoice(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Gender
+                </span>
+                <select
+                  value={sunoGender}
+                  onChange={(e) => setSunoGender(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Duet">Duet</option>
+                  <option value="Unspecified">Unspecified</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Lyrics mode
+                </span>
+                <select
+                  value={lyricsMode}
+                  onChange={(e) => setLyricsMode(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  <option value="Manual">Manual</option>
+                  <option value="Auto">Auto</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
       <div className="mt-5 p-3 rounded bg-gray-800 border border-gray-700">
         <h3 className="text-sm font-medium text-gray-300 mb-2">
           Combined Suno Prompt
@@ -475,6 +568,39 @@ export default function SunoPromptBuilder({
         >
           {justCopiedNegative ? 'Copied ✓' : 'Copy negative prompt'}
         </button>
+
+        <button
+  type="button"
+  onClick={() => {
+    navigator.clipboard.writeText(sunoLyricsInput)
+    showButtonFeedback(setJustCopiedCombined)
+  }}
+  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+>
+  Copy Suno lyrics
+</button>
+
+<button
+  type="button"
+  onClick={() => {
+    navigator.clipboard.writeText(sunoStyleInput)
+    showButtonFeedback(setJustCopiedCombined)
+  }}
+  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+>
+  Copy Suno style
+</button>
+
+<button
+  type="button"
+  onClick={() => {
+    navigator.clipboard.writeText(sunoVoiceInput)
+    showButtonFeedback(setJustCopiedCombined)
+  }}
+  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+>
+  Copy Suno voice
+</button>
         
         {promptMessage && (
           <p className="mt-3 text-sm text-gray-400">
