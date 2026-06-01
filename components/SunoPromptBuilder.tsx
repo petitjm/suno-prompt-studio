@@ -149,6 +149,89 @@ export default function SunoPromptBuilder({
           }, 1500)
         }
 
+        const applyPreset = (
+          preset:
+            | 'mpj-acoustic'
+            | 'modern-country'
+            | 'indie-folk'
+            | 'piano-ballad'
+        ) => {
+          if (preset === 'mpj-acoustic') {
+            setStylePrompt(
+              'Acoustic singer-songwriter, heartfelt modern folk-pop, warm low male vocal, emotional storytelling, tasteful guitar arrangement, intimate but radio-friendly production.'
+            )
+            setVocalDirection(
+              'Natural British male vocal, low baritone tone, sincere and intimate delivery, gentle verses, emotionally lifted chorus, avoid theatrical over-singing.'
+            )
+            setArrangementNotes(
+              'Acoustic guitar-led arrangement with subtle bass, light percussion, warm backing harmonies, and a gradual build toward the final chorus.'
+            )
+            setIntroSoloOutro(
+              'Add a short melodic acoustic guitar intro, a tasteful instrumental break after the second chorus, and a natural final chord ring-out.'
+            )
+            setNegativePrompt(
+              'Avoid EDM, trap drums, robotic vocals, excessive autotune, comedy tone, metal guitars, overproduced pop effects, and cluttered instrumentation.'
+            )
+          }
+
+          if (preset === 'modern-country') {
+            setStylePrompt(
+              'Modern country ballad, cinematic storytelling, warm acoustic guitars, subtle pedal steel, steady mid-tempo groove, heartfelt low male vocal, emotional chorus lift.'
+            )
+            setVocalDirection(
+              'Low male baritone vocal, sincere country storytelling delivery, restrained verses, stronger emotional chorus, natural phrasing and clear lyric focus.'
+            )
+            setArrangementNotes(
+              'Start with acoustic guitar and soft country rhythm section. Add bass, light drums, pedal steel textures, and wider backing vocals in the final chorus.'
+            )
+            setIntroSoloOutro(
+              'Use a short country guitar intro, a melodic pedal-steel or electric guitar solo, and a reflective outro that fades or resolves naturally.'
+            )
+            setNegativePrompt(
+              'Avoid bro-country clichés, heavy rock guitars, EDM drums, excessive autotune, novelty vocals, rap sections, and overly glossy pop production.'
+            )
+          }
+
+          if (preset === 'indie-folk') {
+            setStylePrompt(
+              'Indie folk singer-songwriter, organic acoustic textures, intimate vocal, emotional lyric focus, warm room sound, subtle atmospheric production.'
+            )
+            setVocalDirection(
+              'Natural imperfect human vocal, close-mic intimacy, low male tone, vulnerable delivery, conversational phrasing, avoid polished pop vocal effects.'
+            )
+            setArrangementNotes(
+              'Fingerpicked acoustic guitar foundation with gentle bass, soft brushed percussion, ambient textures, and understated harmonies.'
+            )
+            setIntroSoloOutro(
+              'Begin with a delicate fingerpicked intro. Add a short instrumental breath before the final chorus. End quietly and naturally.'
+            )
+            setNegativePrompt(
+              'Avoid stadium rock, EDM, trap, glossy pop production, robotic timing, excessive vocal tuning, and overly busy arrangements.'
+            )
+          }
+
+          if (preset === 'piano-ballad') {
+            setStylePrompt(
+              'Emotional piano ballad, heartfelt singer-songwriter style, cinematic build, warm low male vocal, intimate verses, powerful but controlled chorus.'
+            )
+            setVocalDirection(
+              'Low male baritone vocal, tender and sincere, breathy intimate verses, emotionally stronger chorus, natural British phrasing.'
+            )
+            setArrangementNotes(
+              'Start with solo piano. Gradually add soft strings, bass, light percussion, and subtle backing harmonies for a cinematic final chorus.'
+            )
+            setIntroSoloOutro(
+              'Use a simple piano motif as the intro. Add a short emotional instrumental bridge. End with a gentle piano resolve.'
+            )
+            setNegativePrompt(
+              'Avoid EDM beats, trap drums, rock guitars, robotic vocals, excessive autotune, choir overload, and melodramatic theatrical delivery.'
+            )
+          }
+
+          setGeneratedFromSummary('')
+          showButtonFeedback(setJustResetDefaults)
+        }
+
 
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
@@ -169,7 +252,45 @@ export default function SunoPromptBuilder({
           {lyricSummary}
         </p>
       </div>
+      <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-300 mb-2">
+            Quick style presets
+          </h3>
 
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applyPreset('mpj-acoustic')}
+              className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              MPJ Acoustic
+            </button>
+
+            <button
+              type="button"
+              onClick={() => applyPreset('modern-country')}
+              className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              Modern Country
+            </button>
+
+            <button
+              type="button"
+              onClick={() => applyPreset('indie-folk')}
+              className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              Indie Folk
+            </button>
+
+            <button
+              type="button"
+              onClick={() => applyPreset('piano-ballad')}
+              className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              Piano Ballad
+            </button>
+          </div>
+        </div>
       <div className="grid gap-4">
         <label className="block">
           <span className="block text-sm font-medium text-gray-300 mb-1">
