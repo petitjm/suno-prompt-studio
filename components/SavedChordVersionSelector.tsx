@@ -45,6 +45,11 @@ export default function SavedChordVersionSelector({
           </option>
         ))}
       </select>
+      {chordVersions.length === 0 && (
+          <p className="mt-2 text-xs text-gray-400">
+            Save structured chord JSON to create a reusable chord version.
+          </p>
+        )}
     </div>
   )
 }
