@@ -16,9 +16,7 @@ export default function SavedSongVersionSelector({
   onActiveSongVersionChange,
   formatUkDateTime,
 }: SavedSongVersionSelectorProps) {
-  if (songVersions.length === 0) {
-    return null
-  }
+  
 
   const getSongVersionDisplayTitle = (
   version: { title?: string | null },
@@ -42,9 +40,14 @@ export default function SavedSongVersionSelector({
       <select
           value={activeSongVersionId || ''}
           onChange={(e) => onActiveSongVersionChange(e.target.value)}
-          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+          disabled={songVersions.length === 0}
+          className="w-full px-3 py-2 rounded bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <option value="">Choose a saved song version...</option>
+          <option value="">
+            {songVersions.length === 0
+              ? 'No saved song versions yet'
+              : 'Choose a saved song version...'}
+          </option>
           {songVersions.map((v, i) => (
           <option key={v.id} value={v.id}>
             {getSongVersionDisplayTitle(v, i)}
