@@ -76,12 +76,14 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [creationNotes, setCreationNotes] = useState('')
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
   const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
   const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
+  const [justCopiedRevisionBrief, setJustCopiedRevisionBrief] = useState(false)
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
@@ -115,6 +117,7 @@ export default function SunoPromptBuilder({
   ])
 
   const resetToDefaults = () => {
+  setCreationNotes('')
   setStylePrompt(defaultStylePrompt)
   setGeneratedFromSummary('')
   setVocalDirection(defaultVocalDirection)
@@ -394,6 +397,19 @@ export default function SunoPromptBuilder({
           negativePrompt || 'No negative prompt provided.',
         ].join('\n')
 
+        const sunoRevisionBrief = [
+          'SUNO REVISION NOTES',
+          '',
+          'Current song direction:',
+          lyricSummary,
+          '',
+          'Creation notes:',
+          creationNotes || 'No Suno creation notes added yet.',
+          '',
+          'Suggested next action:',
+          'Use these notes to refine the Style, Voice, Arrangement, or Intro / Solo / Outro prompt before creating another Suno version.',
+        ].join('\n')
+
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
       <div className="mb-4">
@@ -663,6 +679,36 @@ export default function SunoPromptBuilder({
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
             </label>
+          </div>
+        </div>
+        <div className="mt-5 p-4 rounded bg-gray-800 border border-gray-700">
+          <h3 className="text-sm font-medium text-gray-300 mb-2">
+            Suno Creation Notes
+          </h3>
+
+          <p className="text-xs text-gray-400 mb-2">
+            Paste notes from your Suno generations here so you can refine the next prompt.
+          </p>
+
+          <textarea
+            value={creationNotes}
+            onChange={(e) => setCreationNotes(e.target.value)}
+            rows={5}
+            placeholder="Example: Version 1 had a strong chorus but the vocal was too polished. Version 2 had a better voice but the intro was too long."
+            className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+          />
+
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(sunoRevisionBrief)
+                showButtonFeedback(setJustCopiedRevisionBrief)
+              }}
+              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              {justCopiedRevisionBrief ? 'Revision brief copied ✓' : 'Copy revision brief'}
+            </button>
           </div>
         </div>
       <div className="mt-5 p-3 rounded bg-gray-800 border border-gray-700">
