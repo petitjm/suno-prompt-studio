@@ -307,14 +307,7 @@ export default function SunoPromptBuilder({
 
         const sunoLyricsInput = performanceSheet.trim()
 
-        const compactSunoStyleInput = [
-          stylePrompt,
-          vocalDirection,
-          arrangementNotes,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .slice(0, 900)
+        const compactSunoStyleInput = stylePrompt.trim()
 
         const detailedSunoStyleInput = [
           stylePrompt,
