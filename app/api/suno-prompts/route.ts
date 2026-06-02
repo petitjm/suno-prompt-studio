@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4.1-mini',
-      temperature: 0.8,
+      temperature: 0.9,
       messages: [
         {
           role: 'system',
@@ -64,20 +64,14 @@ Return JSON with exactly these keys:
 }
 
 Guidance:
-- Keep the prompts practical for Suno.
+- Keep the prompts practical for Suno 5.5 Advanced mode.
 - Make the style prompt concise but descriptive.
 - Assume a natural British male low baritone vocal unless the lyrics clearly suggest otherwise.
 - Keep the arrangement song-focused, not overproduced.
 - Include useful intro, solo, and outro direction.
 - Include a negative prompt that avoids common unwanted outputs.
+- When revision notes are present, the output should feel like a revised next attempt, not a repeat.
 
-Guidance:
-- Keep the prompts practical for Suno.
-- Make the style prompt concise but descriptive.
-- Assume a natural British male low baritone vocal unless the lyrics clearly suggest otherwise.
-- Keep the arrangement song-focused, not overproduced.
-- Include useful intro, solo, and outro direction.
-- Include a negative prompt that avoids common unwanted outputs.
 
 Current prompt direction:
 Style prompt: ${currentStylePrompt || 'Not provided'}
@@ -88,6 +82,17 @@ Negative prompt: ${currentNegativePrompt || 'Not provided'}
 
 Suno creation notes from previous generations:
 ${creationNotes || 'No previous Suno creation notes provided.'}
+
+Revision rules:
+- If creation notes are provided, you MUST revise the prompts in a noticeable way.
+- Keep anything the notes say worked well.
+- Directly fix anything the notes say did not work.
+- If the notes mention the vocal, change the vocalDirection and voice-related wording.
+- If the notes mention the intro, solo, outro, or arrangement, change the arrangementNotes and introSoloOutro fields.
+- If the notes mention the style being wrong, change the stylePrompt.
+- If the notes mention unwanted sounds, add them to the negativePrompt.
+- Do not simply repeat the current prompt direction when creation notes ask for changes.
+- Make the next Suno version more targeted and practical.
 
 Use the current prompt direction as guidance. If creation notes are provided, adapt the next prompts to address them. Keep what worked, fix what did not work, and make the next Suno version more usable.
 
