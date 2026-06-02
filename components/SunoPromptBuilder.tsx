@@ -302,6 +302,49 @@ export default function SunoPromptBuilder({
         ].filter(Boolean).join('. ')
 
 
+        const applyVoicePreset = (
+          preset:
+            | 'mpj-baritone'
+            | 'intimate-acoustic'
+            | 'country-storyteller'
+            | 'duet-guide'
+        ) => {
+          if (preset === 'mpj-baritone') {
+            setSunoVoice('MPJ Voice / Persona - natural British low baritone')
+            setVocalDirection(
+              'Natural British male low baritone, sincere and warm, intimate verses, emotionally lifted choruses, clear diction, human phrasing, avoid over-singing.'
+            )
+            setSunoGender('Male')
+          }
+
+          if (preset === 'intimate-acoustic') {
+            setSunoVoice('Intimate acoustic male voice - close, warm, vulnerable')
+            setVocalDirection(
+              'Close-mic intimate male vocal, soft breathy verses, warm emotional tone, natural imperfections, gentle chorus lift, understated and human.'
+            )
+            setSunoGender('Male')
+          }
+
+          if (preset === 'country-storyteller') {
+            setSunoVoice('Country storyteller male voice - warm baritone')
+            setVocalDirection(
+              'Warm male country baritone, honest storytelling delivery, relaxed verses, stronger emotional chorus, natural phrasing, clear lyric focus.'
+            )
+            setSunoGender('Male')
+          }
+
+          if (preset === 'duet-guide') {
+            setSunoVoice('Male lead vocal with subtle female harmony support')
+            setVocalDirection(
+              'Male lead vocal with warm female harmony in choruses. Keep the lead intimate and clear. Harmonies should support emotion without overpowering the song.'
+            )
+            setSunoGender('Duet')
+          }
+
+          setGeneratedFromSummary('')
+          showPresetFeedback('Voice preset applied ✓')
+        }
+
 
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
@@ -465,6 +508,45 @@ export default function SunoPromptBuilder({
               />
             </label>
 
+            <div>
+              <h4 className="text-sm font-medium text-gray-300 mb-2">
+                Voice presets
+              </h4>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('mpj-baritone')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  MPJ Baritone
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('intimate-acoustic')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Intimate Acoustic
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('country-storyteller')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Country Storyteller
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('duet-guide')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Duet Guide
+                </button>
+              </div>
+            </div>
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Voice field
