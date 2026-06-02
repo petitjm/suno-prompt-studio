@@ -12,6 +12,7 @@ type SunoPromptRequest = {
   currentArrangementNotes?: string
   currentIntroSoloOutro?: string
   currentNegativePrompt?: string
+  creationNotes?: string
 }
 
 export async function POST(request: Request) {
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     const currentArrangementNotes = body.currentArrangementNotes?.trim() || ''
     const currentIntroSoloOutro = body.currentIntroSoloOutro?.trim() || ''
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
+    const creationNotes = body.creationNotes?.trim() || ''
 
     if (!lyrics) {
       return NextResponse.json(
@@ -84,10 +86,10 @@ Arrangement notes: ${currentArrangementNotes || 'Not provided'}
 Intro / solo / outro: ${currentIntroSoloOutro || 'Not provided'}
 Negative prompt: ${currentNegativePrompt || 'Not provided'}
 
-Use the current prompt direction as guidance. Improve it where useful, but keep the generated prompts aligned with it.
+Suno creation notes from previous generations:
+${creationNotes || 'No previous Suno creation notes provided.'}
 
-Lyrics:
-${lyrics}
+Use the current prompt direction as guidance. If creation notes are provided, adapt the next prompts to address them. Keep what worked, fix what did not work, and make the next Suno version more usable.
 
 Lyrics:
 ${lyrics}

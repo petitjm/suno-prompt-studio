@@ -155,6 +155,7 @@ export default function SunoPromptBuilder({
           currentArrangementNotes: arrangementNotes,
           currentIntroSoloOutro: introSoloOutro,
           currentNegativePrompt: negativePrompt,
+          creationNotes,
         }),
     })
 
