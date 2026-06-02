@@ -84,6 +84,7 @@ export default function SunoPromptBuilder({
   const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
   const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
   const [justCopiedRevisionBrief, setJustCopiedRevisionBrief] = useState(false)
+  const [justCopiedProductionNotes, setJustCopiedProductionNotes] = useState(false)
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
@@ -306,11 +307,23 @@ export default function SunoPromptBuilder({
 
         const sunoLyricsInput = performanceSheet.trim()
 
-        const sunoStyleInput = [
+        const compactSunoStyleInput = [
           stylePrompt,
+          vocalDirection,
+          arrangementNotes,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .slice(0, 900)
+
+        const detailedSunoStyleInput = [
+          stylePrompt,
+          vocalDirection,
           arrangementNotes,
           introSoloOutro,
-        ].filter(Boolean).join(' ')
+        ]
+          .filter(Boolean)
+          .join('\n\n')
 
         const sunoVoiceInput = [
           sunoVoice,
@@ -386,8 +399,11 @@ export default function SunoPromptBuilder({
           sunoLyricsInput || 'No lyrics provided.',
           '',
           'STYLE:',
-          sunoStyleInput || 'No style prompt provided.',
-          '',
+            compactSunoStyleInput || 'No style prompt provided.',
+            '',
+            'DETAILED PRODUCTION NOTES:',
+            detailedSunoStyleInput || 'No detailed production notes provided.',
+                      '',
           'VOICE:',
           sunoVoiceInput || 'No voice prompt provided.',
           '',
@@ -566,9 +582,20 @@ export default function SunoPromptBuilder({
                 Style field
               </span>
               <textarea
-                value={sunoStyleInput}
+                value={compactSunoStyleInput}
                 readOnly
                 rows={5}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Detailed production notes
+              </span>
+              <textarea
+                value={detailedSunoStyleInput}
+                readOnly
+                rows={7}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
             </label>
@@ -788,7 +815,7 @@ export default function SunoPromptBuilder({
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(sunoStyleInput)
+            navigator.clipboard.writeText(compactSunoStyleInput)
             showButtonFeedback(setJustCopiedSunoStyle)
           }}
           className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
@@ -826,6 +853,18 @@ export default function SunoPromptBuilder({
         >
           {justCopiedFullSunoPack ? 'Full pack copied ✓' : 'Copy full Suno pack'}
         </button>
+        <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(detailedSunoStyleInput)
+                showButtonFeedback(setJustCopiedProductionNotes)
+              }}
+              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              {justCopiedProductionNotes
+                ? 'Production notes copied ✓'
+                : 'Copy production notes'}
+            </button>
 
         {promptMessage && (
           <p className="mt-3 text-sm text-gray-400">
