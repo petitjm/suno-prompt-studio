@@ -307,7 +307,32 @@ export default function SunoPromptBuilder({
 
         const sunoLyricsInput = performanceSheet.trim()
 
-        const compactSunoStyleInput = stylePrompt.trim()
+        const getCompactSunoStyle = () => {
+          const style = stylePrompt.trim()
+          const vocal = vocalDirection.trim()
+          const arrangement = arrangementNotes.trim()
+
+          const compactParts = [
+            style,
+            vocal
+              ? vocal
+                  .replace(/^Natural British male low baritone,\s*/i, 'British low baritone vocal, ')
+                  .replace(/^Low male baritone vocal,\s*/i, 'low male baritone vocal, ')
+              : '',
+            arrangement
+              ? arrangement
+                  .split('.')
+                  .map((part) => part.trim())
+                  .filter(Boolean)
+                  .slice(0, 1)
+                  .join('. ')
+              : '',
+          ].filter(Boolean)
+
+          return compactParts.join(' ').slice(0, 500)
+        }
+
+        const compactSunoStyleInput = getCompactSunoStyle()
 
         const detailedSunoStyleInput = [
           stylePrompt,
