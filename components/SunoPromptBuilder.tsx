@@ -76,6 +76,9 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
+  const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
+  const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
@@ -570,37 +573,37 @@ export default function SunoPromptBuilder({
         </button>
 
         <button
-  type="button"
-  onClick={() => {
-    navigator.clipboard.writeText(sunoLyricsInput)
-    showButtonFeedback(setJustCopiedCombined)
-  }}
-  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
->
-  Copy Suno lyrics
-</button>
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoLyricsInput)
+            showButtonFeedback(setJustCopiedSunoLyrics)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedSunoLyrics ? 'Lyrics copied ✓' : 'Copy Suno lyrics'}
+        </button>
 
-<button
-  type="button"
-  onClick={() => {
-    navigator.clipboard.writeText(sunoStyleInput)
-    showButtonFeedback(setJustCopiedCombined)
-  }}
-  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
->
-  Copy Suno style
-</button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoStyleInput)
+            showButtonFeedback(setJustCopiedSunoStyle)
+          }}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+        >
+          {justCopiedSunoStyle ? 'Style copied ✓' : 'Copy Suno style'}
+        </button>
 
-<button
-  type="button"
-  onClick={() => {
-    navigator.clipboard.writeText(sunoVoiceInput)
-    showButtonFeedback(setJustCopiedCombined)
-  }}
-  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
->
-  Copy Suno voice
-</button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoVoiceInput)
+            showButtonFeedback(setJustCopiedSunoVoice)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedSunoVoice ? 'Voice copied ✓' : 'Copy Suno voice'}
+        </button>
         
         {promptMessage && (
           <p className="mt-3 text-sm text-gray-400">
