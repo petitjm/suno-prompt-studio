@@ -76,6 +76,7 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
   const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
   const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
@@ -178,6 +179,15 @@ export default function SunoPromptBuilder({
     setGeneratingPrompt(false)
   }
 }
+
+
+         const showVoicePresetFeedback = (label: string) => {
+          setActiveVoicePresetFeedback(label)
+
+          window.setTimeout(() => {
+            setActiveVoicePresetFeedback('')
+          }, 1500)
+        }
 
          const showPresetFeedback = (label: string) => {
           setActivePresetFeedback(label)
@@ -342,7 +352,15 @@ export default function SunoPromptBuilder({
           }
 
           setGeneratedFromSummary('')
-          showPresetFeedback('Voice preset applied ✓')
+
+            const voicePresetLabels = {
+              'mpj-baritone': 'MPJ Baritone applied ✓',
+              'intimate-acoustic': 'Intimate Acoustic applied ✓',
+              'country-storyteller': 'Country Storyteller applied ✓',
+              'duet-guide': 'Duet Guide applied ✓',
+            }
+
+            showVoicePresetFeedback(voicePresetLabels[preset])
         }
 
 
@@ -519,7 +537,9 @@ export default function SunoPromptBuilder({
                   onClick={() => applyVoicePreset('mpj-baritone')}
                   className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                 >
-                  MPJ Baritone
+                  {activeVoicePresetFeedback === 'MPJ Baritone applied ✓'
+                      ? 'Applied ✓'
+                      : 'MPJ Baritone'}
                 </button>
 
                 <button
@@ -527,7 +547,9 @@ export default function SunoPromptBuilder({
                   onClick={() => applyVoicePreset('intimate-acoustic')}
                   className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                 >
-                  Intimate Acoustic
+                  {activeVoicePresetFeedback === 'Intimate Acoustic applied ✓'
+                      ? 'Applied ✓'
+                      : 'Intimate Acoustic'}
                 </button>
 
                 <button
@@ -535,7 +557,9 @@ export default function SunoPromptBuilder({
                   onClick={() => applyVoicePreset('country-storyteller')}
                   className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                 >
-                  Country Storyteller
+                  {activeVoicePresetFeedback === 'Country Storyteller applied ✓'
+                      ? 'Applied ✓'
+                      : 'Country Storyteller'}
                 </button>
 
                 <button
@@ -543,9 +567,17 @@ export default function SunoPromptBuilder({
                   onClick={() => applyVoicePreset('duet-guide')}
                   className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                 >
-                  Duet Guide
+                  {activeVoicePresetFeedback === 'Duet Guide applied ✓'
+                      ? 'Applied ✓'
+                      : 'Duet Guide'}
                 </button>
+                
               </div>
+              {activeVoicePresetFeedback && (
+                  <p className="mt-2 text-xs text-green-300">
+                    {activeVoicePresetFeedback}
+                  </p>
+                )}
             </div>
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
