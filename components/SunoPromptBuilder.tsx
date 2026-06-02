@@ -77,6 +77,7 @@ export default function SunoPromptBuilder({
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
+  const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
   const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
   const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
@@ -364,6 +365,14 @@ export default function SunoPromptBuilder({
         }
 
 
+        const sunoSettingsSummary = [
+          `Voice: ${sunoVoice}`,
+          `Gender: ${sunoGender}`,
+          `Lyrics mode: ${lyricsMode}`,
+          'Model: Suno 5.5',
+          'Mode: Advanced',
+        ].join('\n')
+
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
       <div className="mb-4">
@@ -622,6 +631,17 @@ export default function SunoPromptBuilder({
                 </select>
               </label>
             </div>
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Suno settings summary
+              </span>
+              <textarea
+                value={sunoSettingsSummary}
+                readOnly
+                rows={5}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+            </label>
           </div>
         </div>
       <div className="mt-5 p-3 rounded bg-gray-800 border border-gray-700">
@@ -718,7 +738,17 @@ export default function SunoPromptBuilder({
         >
           {justCopiedSunoVoice ? 'Voice copied ✓' : 'Copy Suno voice'}
         </button>
-        
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoSettingsSummary)
+            showButtonFeedback(setJustCopiedSunoSettings)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedSunoSettings ? 'Settings copied ✓' : 'Copy Suno settings'}
+        </button>
+
         {promptMessage && (
           <p className="mt-3 text-sm text-gray-400">
             {promptMessage}
