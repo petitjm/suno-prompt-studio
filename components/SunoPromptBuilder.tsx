@@ -76,6 +76,7 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
@@ -364,6 +365,7 @@ export default function SunoPromptBuilder({
             showVoicePresetFeedback(voicePresetLabels[preset])
         }
 
+        
 
         const sunoSettingsSummary = [
           `Voice: ${sunoVoice}`,
@@ -371,6 +373,25 @@ export default function SunoPromptBuilder({
           `Lyrics mode: ${lyricsMode}`,
           'Model: Suno 5.5',
           'Mode: Advanced',
+        ].join('\n')
+
+        const fullSunoPack = [
+          'SUNO 5.5 ADVANCED INPUTS',
+          '',
+          'LYRICS:',
+          sunoLyricsInput || 'No lyrics provided.',
+          '',
+          'STYLE:',
+          sunoStyleInput || 'No style prompt provided.',
+          '',
+          'VOICE:',
+          sunoVoiceInput || 'No voice prompt provided.',
+          '',
+          'SETTINGS:',
+          sunoSettingsSummary,
+          '',
+          'NEGATIVE / AVOID:',
+          negativePrompt || 'No negative prompt provided.',
         ].join('\n')
 
   return (
@@ -747,6 +768,16 @@ export default function SunoPromptBuilder({
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
           {justCopiedSunoSettings ? 'Settings copied ✓' : 'Copy Suno settings'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(fullSunoPack)
+            showButtonFeedback(setJustCopiedFullSunoPack)
+          }}
+          className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-500"
+        >
+          {justCopiedFullSunoPack ? 'Full pack copied ✓' : 'Copy full Suno pack'}
         </button>
 
         {promptMessage && (
