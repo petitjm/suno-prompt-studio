@@ -13,6 +13,7 @@ type SunoPromptRequest = {
   currentIntroSoloOutro?: string
   currentNegativePrompt?: string
   creationNotes?: string
+  useCreationNotesAsMainDriver?: boolean
   revisionFocus?: string
 }
 
@@ -34,6 +35,9 @@ export async function POST(request: Request) {
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
     const revisionFocus = body.revisionFocus?.trim() || 'Balanced revision'
+    const useCreationNotesAsMainDriver = Boolean(
+      body.useCreationNotesAsMainDriver
+    )
 
     if (!lyrics) {
       return NextResponse.json(
@@ -45,11 +49,12 @@ export async function POST(request: Request) {
     const response = await openai.chat.completions.create({
       model: 'gpt-4.1-mini',
       temperature: 0.9,
+      response_format: { type: 'json_object' },
       messages: [
         {
           role: 'system',
           content:
-            'You are a professional songwriting, music production, and Suno prompt assistant. Return only valid JSON.',
+           'You are a professional songwriting, music production, and Suno prompt assistant. Return only valid JSON object text. Do not use markdown. Do not wrap the JSON in code fences.',
         },
         {
           role: 'user',
@@ -93,6 +98,9 @@ Negative prompt: ${currentNegativePrompt || 'Not provided'}
 Revision focus:
 ${revisionFocus}
 
+Creation notes as main driver:
+${useCreationNotesAsMainDriver ? 'Yes' : 'No'}
+
 Suno creation notes from previous generations:
 ${creationNotes || 'No previous Suno creation notes provided.'}
 
@@ -103,6 +111,9 @@ Revision rules:
 - If the revision focus is "Fix intro/solo/outro", prioritise introSoloOutro.
 - If the revision focus is "Make more acoustic", reduce electronic, synthetic, or overproduced elements.
 - If the revision focus is "Make more commercial", improve accessibility, hook lift, and radio-friendly clarity without making the song generic.
+- If "Creation notes as main driver" is Yes, prioritise the creation notes over the current prompt direction.
+- When creation notes are the main driver, make bolder changes to stylePrompt, sunoStyleField, vocalDirection, arrangementNotes, introSoloOutro, and negativePrompt as needed.
+- Still preserve the song’s core lyrical mood and genre unless the creation notes clearly request a change.
 - If creation notes are provided, you MUST revise the prompts in a noticeable way.
 - If the notes mention vocals being too soft, weak, buried, unclear, or lacking presence, strengthen vocalDirection with clearer diction, more forward vocal presence, and stronger emotional projection.
 - If the notes mention guitar needing to be stronger, clearer, more prominent, or more driving, strengthen arrangementNotes and sunoStyleField with more prominent acoustic guitar wording.
@@ -150,12 +161,21 @@ ${lyrics}
     }
 
     return NextResponse.json(parsed)
-  } catch (error) {
-    console.error('Suno prompt generation error:', error)
+  } 
+  
+  catch (error) {
+  console.error('Suno prompt generation error:', error)
 
-    return NextResponse.json(
-      { error: 'Could not generate Suno prompts.' },
-      { status: 500 }
-    )
-  }
+  const message =
+    error instanceof Error
+      ? error.message
+      : 'Unknown Suno prompt generation error.'
+
+  return NextResponse.json(
+    {
+      error: `Could not generate Suno prompts. ${message}`,
+    },
+    { status: 500 }
+  )
+}
 }

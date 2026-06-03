@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 type SunoPromptBuilderProps = {
   performanceSheet: string
@@ -76,6 +76,7 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [useCreationNotesAsMainDriver, setUseCreationNotesAsMainDriver] = useState(false)
   const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
   const [creationNotes, setCreationNotes] = useState('')
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
@@ -101,6 +102,14 @@ export default function SunoPromptBuilder({
   const [introSoloOutro, setIntroSoloOutro] = useState(defaultIntroSoloOutro)
   const [negativePrompt, setNegativePrompt] = useState(defaultNegativePrompt)
 
+  useEffect(() => {
+      setPromptMessage('')
+      setGeneratedFromSummary('')
+      setCreationNotes('')
+      setRevisionFocus('Balanced revision')
+      setUseCreationNotesAsMainDriver(false)
+    }, [performanceSheet])
+
   const combinedPrompt = useMemo(() => {
     return [
       stylePrompt,
@@ -121,6 +130,7 @@ export default function SunoPromptBuilder({
 
   const resetToDefaults = () => {
   setCreationNotes('')
+  setUseCreationNotesAsMainDriver(false)
   setRevisionFocus('Balanced revision')
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
@@ -158,14 +168,19 @@ export default function SunoPromptBuilder({
           currentNegativePrompt: negativePrompt,
           creationNotes,
           revisionFocus,
+          useCreationNotesAsMainDriver,
         }),
     })
 
     const data = await response.json()
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Could not generate Suno prompts.')
-    }
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              data.raw ||
+              `Could not generate Suno prompts. Status: ${response.status}`
+          )
+        }
 
     const nextStylePrompt = data.stylePrompt?.trim() || ''
         const nextSunoStyleField =
@@ -185,8 +200,17 @@ export default function SunoPromptBuilder({
 
         if (!hasCompletePromptResponse) {
           throw new Error(
-            'Suno prompt generation returned an incomplete response. Please try again.'
-          )
+          `Suno prompt generation returned an incomplete response. Missing fields: ${[
+            !nextStylePrompt ? 'stylePrompt' : '',
+            !nextSunoStyleField ? 'sunoStyleField' : '',
+            !nextVocalDirection ? 'vocalDirection' : '',
+            !nextArrangementNotes ? 'arrangementNotes' : '',
+            !nextIntroSoloOutro ? 'introSoloOutro' : '',
+            !nextNegativePrompt ? 'negativePrompt' : '',
+          ]
+            .filter(Boolean)
+            .join(', ')}`
+        )
         }
 
         setStylePrompt(nextStylePrompt)
@@ -454,7 +478,10 @@ export default function SunoPromptBuilder({
           'Revision focus:',
             revisionFocus,
             '',
-            'Creation notes:',
+          'Creation notes as main driver:',
+            useCreationNotesAsMainDriver ? 'Yes' : 'No',
+            '',
+          'Creation notes:',
             creationNotes || 'No Suno creation notes added yet.',
           '',
           'Suggested next action:',
@@ -767,6 +794,21 @@ export default function SunoPromptBuilder({
                 <option value="Make more acoustic">Make more acoustic</option>
                 <option value="Make more commercial">Make more commercial</option>
               </select>
+
+            </label>
+            <label className="flex items-start gap-2 mb-3 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={useCreationNotesAsMainDriver}
+                onChange={(e) => setUseCreationNotesAsMainDriver(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Use creation notes as main driver
+                <span className="block text-xs text-gray-400">
+                  Prioritise your listening notes over the existing prompt direction when generating the next version.
+                </span>
+              </span>
             </label>
           <textarea
             value={creationNotes}
