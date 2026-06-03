@@ -78,6 +78,7 @@ export default function SunoPromptBuilder({
   const [lyricsMode, setLyricsMode] = useState('Manual')
   const [useCreationNotesAsMainDriver, setUseCreationNotesAsMainDriver] = useState(false)
   const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
+  const [revisionSummary, setRevisionSummary] = useState('')
   const [creationNotes, setCreationNotes] = useState('')
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
@@ -106,9 +107,19 @@ export default function SunoPromptBuilder({
   useEffect(() => {
       setPromptMessage('')
       setGeneratedFromSummary('')
+      setPreviousSunoStyleField('')
+      setRevisionSummary('')
+
       setCreationNotes('')
       setRevisionFocus('Balanced revision')
       setUseCreationNotesAsMainDriver(false)
+
+      setStylePrompt(defaultStylePrompt)
+      setSunoStyleField(defaultStylePrompt)
+      setVocalDirection(defaultVocalDirection)
+      setArrangementNotes(defaultArrangementNotes)
+      setIntroSoloOutro(defaultIntroSoloOutro)
+      setNegativePrompt(defaultNegativePrompt)
     }, [performanceSheet])
 
   const combinedPrompt = useMemo(() => {
@@ -133,6 +144,7 @@ export default function SunoPromptBuilder({
   setCreationNotes('')
   setUseCreationNotesAsMainDriver(false)
   setRevisionFocus('Balanced revision')
+  setRevisionSummary('')
   setPreviousSunoStyleField('')
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
@@ -194,6 +206,7 @@ export default function SunoPromptBuilder({
         const nextIntroSoloOutro = data.introSoloOutro?.trim() || ''
         const nextNegativePrompt = data.negativePrompt?.trim() || ''
 
+
         const hasCompletePromptResponse =
           nextStylePrompt &&
           nextSunoStyleField &&
@@ -226,7 +239,8 @@ export default function SunoPromptBuilder({
         setArrangementNotes(nextArrangementNotes)
         setIntroSoloOutro(nextIntroSoloOutro)
         setNegativePrompt(nextNegativePrompt)
-    setGeneratedFromSummary(lyricSummary)
+        setRevisionSummary(data.revisionSummary || '')
+        setGeneratedFromSummary(lyricSummary)
 
     setPromptMessage('Suno prompts generated from the current song sheet.')
     showButtonFeedback(setJustGeneratedPrompt)
@@ -489,6 +503,9 @@ export default function SunoPromptBuilder({
           'Creation notes:',
             creationNotes || 'No Suno creation notes added yet.',
           '',
+          'Revision summary:',
+            revisionSummary || 'No revision summary available yet.',
+            '',
           'Suggested next action:',
           'Use these notes to refine the Style, Voice, Arrangement, or Intro / Solo / Outro prompt before creating another Suno version.',
         ].join('\n')

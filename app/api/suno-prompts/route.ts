@@ -68,7 +68,8 @@ Return JSON with exactly these keys:
   "vocalDirection": string,
   "arrangementNotes": string,
   "introSoloOutro": string,
-  "negativePrompt": string
+  "negativePrompt": string,
+  "revisionSummary": string
 }
 
 Guidance:
@@ -86,6 +87,8 @@ Guidance:
 - If revision notes mention a specific improvement such as stronger guitar, clearer vocal, or female harmony, include a short version of that improvement in sunoStyleField.
 - Include a negative prompt that avoids common unwanted outputs.
 - When revision notes are present, the output should feel like a revised next attempt, not a repeat.
+- revisionSummary should briefly explain what changed and why, especially when creation notes are provided.
+- If no creation notes are provided, revisionSummary should say this is a fresh Suno prompt generation from the current lyrics.
 
 
 Current prompt direction:
