@@ -79,6 +79,7 @@ export default function SunoPromptBuilder({
   const [useCreationNotesAsMainDriver, setUseCreationNotesAsMainDriver] = useState(false)
   const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
   const [creationNotes, setCreationNotes] = useState('')
+  const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
@@ -132,6 +133,7 @@ export default function SunoPromptBuilder({
   setCreationNotes('')
   setUseCreationNotesAsMainDriver(false)
   setRevisionFocus('Balanced revision')
+  setPreviousSunoStyleField('')
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
   setGeneratedFromSummary('')
@@ -182,6 +184,8 @@ export default function SunoPromptBuilder({
           )
         }
 
+    const styleBeforeGeneration = sunoStyleField
+
     const nextStylePrompt = data.stylePrompt?.trim() || ''
         const nextSunoStyleField =
           data.sunoStyleField?.trim() || data.stylePrompt?.trim() || ''
@@ -213,6 +217,7 @@ export default function SunoPromptBuilder({
         )
         }
 
+        setPreviousSunoStyleField(styleBeforeGeneration)
         setStylePrompt(nextStylePrompt)
         setSunoStyleField(
           nextSunoStyleField.charAt(0).toUpperCase() + nextSunoStyleField.slice(1)
@@ -817,7 +822,25 @@ export default function SunoPromptBuilder({
             placeholder="Example: Version 1 had a strong chorus but the vocal was too polished. Version 2 had a better voice but the intro was too long."
             className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
           />
+          {previousSunoStyleField && sunoStyleField && previousSunoStyleField !== sunoStyleField && (
+              <div className="mt-4 p-3 rounded bg-gray-900 border border-gray-700">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">
+                  Last Suno style revision
+                </h4>
 
+                <div className="grid gap-3">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Before</p>
+                    <p className="text-sm text-gray-300">{previousSunoStyleField}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">After</p>
+                    <p className="text-sm text-green-300">{sunoStyleField}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           <div className="mt-3">
             <button
               type="button"
