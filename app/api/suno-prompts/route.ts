@@ -13,6 +13,8 @@ type SunoPromptRequest = {
   currentIntroSoloOutro?: string
   currentNegativePrompt?: string
   creationNotes?: string
+  keepFromLastVersion?: string
+  changeInNextVersion?: string
   useCreationNotesAsMainDriver?: boolean
   revisionFocus?: string
   sunoResultRating?: string
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
     const currentIntroSoloOutro = body.currentIntroSoloOutro?.trim() || ''
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
+    const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
+    const changeInNextVersion = body.changeInNextVersion?.trim() || ''
     const revisionFocus = body.revisionFocus?.trim() || 'Balanced revision'
     const sunoResultRating = body.sunoResultRating?.trim() || 'Good but needs changes'
     const useCreationNotesAsMainDriver = Boolean(
@@ -112,6 +116,12 @@ ${useCreationNotesAsMainDriver ? 'Yes' : 'No'}
 Suno creation notes from previous generations:
 ${creationNotes || 'No previous Suno creation notes provided.'}
 
+Keep from last version:
+${keepFromLastVersion || 'No keep guidance provided.'}
+
+Change in next version:
+${changeInNextVersion || 'No change guidance provided.'}
+
 Revision rules:
 - Use the Last Suno result rating to decide revision strength.
 - If the result was "Great", make only small careful refinements.
@@ -124,6 +134,9 @@ Revision rules:
 - If the revision focus is "Fix intro/solo/outro", prioritise introSoloOutro.
 - If the revision focus is "Make more acoustic", reduce electronic, synthetic, or overproduced elements.
 - If the revision focus is "Make more commercial", improve accessibility, hook lift, and radio-friendly clarity without making the song generic.
+- Treat "Keep from last version" as protected guidance. Preserve those qualities unless they conflict with the lyrics.
+- Treat "Change in next version" as direct revision instructions. These should visibly influence the next prompt.
+- If keep and change instructions conflict, preserve the keep guidance but adjust the change request more subtly.
 - If "Creation notes as main driver" is Yes, prioritise the creation notes over the current prompt direction.
 - When creation notes are the main driver, make bolder changes to stylePrompt, sunoStyleField, vocalDirection, arrangementNotes, introSoloOutro, and negativePrompt as needed.
 - Still preserve the song’s core lyrical mood and genre unless the creation notes clearly request a change.

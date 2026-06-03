@@ -76,6 +76,8 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [keepFromLastVersion, setKeepFromLastVersion] = useState('')
+  const [changeInNextVersion, setChangeInNextVersion] = useState('')
   const [useCreationNotesAsMainDriver, setUseCreationNotesAsMainDriver] = useState(false)
   const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
   const [revisionSummary, setRevisionSummary] = useState('')
@@ -115,7 +117,8 @@ export default function SunoPromptBuilder({
       setRevisionFocus('Balanced revision')
       setUseCreationNotesAsMainDriver(false)
       setSunoResultRating('Good but needs changes')
-
+      setKeepFromLastVersion('')
+      setChangeInNextVersion('')
       setStylePrompt(defaultStylePrompt)
       setSunoStyleField(defaultStylePrompt)
       setVocalDirection(defaultVocalDirection)
@@ -144,6 +147,8 @@ export default function SunoPromptBuilder({
 
   const resetToDefaults = () => {
   setCreationNotes('')
+  setKeepFromLastVersion('')
+  setChangeInNextVersion('')
   setSunoResultRating('Good but needs changes')
   setUseCreationNotesAsMainDriver(false)
   setRevisionFocus('Balanced revision')
@@ -187,6 +192,8 @@ export default function SunoPromptBuilder({
           revisionFocus,
           useCreationNotesAsMainDriver,
           sunoResultRating,
+          keepFromLastVersion,
+          changeInNextVersion,
         }),
     })
 
@@ -503,7 +510,13 @@ export default function SunoPromptBuilder({
             '',
           'Last Suno result:',
             sunoResultRating,
-            '',
+            '','Keep from last version:',
+                keepFromLastVersion || 'No keep guidance added.',
+                '',
+                'Change in next version:',
+                changeInNextVersion || 'No change guidance added.',
+                '',
+           
           'Creation notes as main driver:',
             useCreationNotesAsMainDriver ? 'Yes' : 'No',
             '',
@@ -523,7 +536,8 @@ export default function SunoPromptBuilder({
           setPreviousSunoStyleField('')
           setRevisionSummary('')
           setSunoResultRating('Good but needs changes')
-
+          setKeepFromLastVersion('')
+          setChangeInNextVersion('')
           setCreationNotes('')
           setRevisionFocus('Balanced revision')
           setUseCreationNotesAsMainDriver(false)
@@ -870,6 +884,33 @@ export default function SunoPromptBuilder({
                 </span>
               </span>
             </label>
+            <div className="grid gap-4 md:grid-cols-2 mb-3">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Keep from last version
+                </span>
+                <textarea
+                  value={keepFromLastVersion}
+                  onChange={(e) => setKeepFromLastVersion(e.target.value)}
+                  rows={3}
+                  placeholder="Example: Keep the chorus lift, acoustic mood, and female harmony."
+                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                />
+              </label>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Change in next version
+                </span>
+                <textarea
+                  value={changeInNextVersion}
+                  onChange={(e) => setChangeInNextVersion(e.target.value)}
+                  rows={3}
+                  placeholder="Example: Make the vocal stronger and the guitar more prominent."
+                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                />
+              </label>
+            </div>
           <textarea
             value={creationNotes}
             onChange={(e) => setCreationNotes(e.target.value)}
