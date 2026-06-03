@@ -510,6 +510,21 @@ export default function SunoPromptBuilder({
           'Use these notes to refine the Style, Voice, Arrangement, or Intro / Solo / Outro prompt before creating another Suno version.',
         ].join('\n')
 
+        const clearSunoSession = () => {
+          setPromptMessage('')
+          setGeneratedFromSummary('')
+          setPreviousSunoStyleField('')
+          setRevisionSummary('')
+
+          setCreationNotes('')
+          setRevisionFocus('Balanced revision')
+          setUseCreationNotesAsMainDriver(false)
+
+          showButtonFeedback(setJustResetDefaults)
+        }
+
+
+
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
       <div className="mb-4">
@@ -910,7 +925,13 @@ export default function SunoPromptBuilder({
         >
           {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
         </button>
-
+        <button
+          type="button"
+          onClick={clearSunoSession}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
+        </button>
         <button
           type="button"
           onClick={() => {
