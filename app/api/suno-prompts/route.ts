@@ -15,6 +15,7 @@ type SunoPromptRequest = {
   creationNotes?: string
   useCreationNotesAsMainDriver?: boolean
   revisionFocus?: string
+  sunoResultRating?: string
 }
 
 export async function POST(request: Request) {
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
     const revisionFocus = body.revisionFocus?.trim() || 'Balanced revision'
+    const sunoResultRating = body.sunoResultRating?.trim() || 'Good but needs changes'
     const useCreationNotesAsMainDriver = Boolean(
       body.useCreationNotesAsMainDriver
     )
@@ -101,6 +103,9 @@ Negative prompt: ${currentNegativePrompt || 'Not provided'}
 Revision focus:
 ${revisionFocus}
 
+Last Suno result:
+${sunoResultRating}
+
 Creation notes as main driver:
 ${useCreationNotesAsMainDriver ? 'Yes' : 'No'}
 
@@ -108,6 +113,11 @@ Suno creation notes from previous generations:
 ${creationNotes || 'No previous Suno creation notes provided.'}
 
 Revision rules:
+- Use the Last Suno result rating to decide revision strength.
+- If the result was "Great", make only small careful refinements.
+- If the result was "Good but needs changes", preserve the core direction and fix the notes directly.
+- If the result was "Poor", make stronger changes while preserving the lyrics and intended genre.
+- If the result was "Unusable", make a more decisive reset of style, vocal, and arrangement while still respecting the song.
 - Use the revision focus as the main priority when deciding what to change.
 - If the revision focus is "Fix vocal", prioritise vocalDirection and voice-related wording.
 - If the revision focus is "Fix arrangement", prioritise arrangementNotes and production feel.

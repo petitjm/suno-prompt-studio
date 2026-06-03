@@ -80,6 +80,7 @@ export default function SunoPromptBuilder({
   const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
   const [revisionSummary, setRevisionSummary] = useState('')
   const [creationNotes, setCreationNotes] = useState('')
+  const [sunoResultRating, setSunoResultRating] = useState('Good but needs changes')
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
@@ -113,6 +114,7 @@ export default function SunoPromptBuilder({
       setCreationNotes('')
       setRevisionFocus('Balanced revision')
       setUseCreationNotesAsMainDriver(false)
+      setSunoResultRating('Good but needs changes')
 
       setStylePrompt(defaultStylePrompt)
       setSunoStyleField(defaultStylePrompt)
@@ -142,6 +144,7 @@ export default function SunoPromptBuilder({
 
   const resetToDefaults = () => {
   setCreationNotes('')
+  setSunoResultRating('Good but needs changes')
   setUseCreationNotesAsMainDriver(false)
   setRevisionFocus('Balanced revision')
   setRevisionSummary('')
@@ -183,6 +186,7 @@ export default function SunoPromptBuilder({
           creationNotes,
           revisionFocus,
           useCreationNotesAsMainDriver,
+          sunoResultRating,
         }),
     })
 
@@ -497,6 +501,9 @@ export default function SunoPromptBuilder({
           'Revision focus:',
             revisionFocus,
             '',
+          'Last Suno result:',
+            sunoResultRating,
+            '',
           'Creation notes as main driver:',
             useCreationNotesAsMainDriver ? 'Yes' : 'No',
             '',
@@ -515,6 +522,7 @@ export default function SunoPromptBuilder({
           setGeneratedFromSummary('')
           setPreviousSunoStyleField('')
           setRevisionSummary('')
+          setSunoResultRating('Good but needs changes')
 
           setCreationNotes('')
           setRevisionFocus('Balanced revision')
@@ -832,6 +840,21 @@ export default function SunoPromptBuilder({
                 <option value="Make more commercial">Make more commercial</option>
               </select>
 
+            </label>
+            <label className="block mb-3">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Last Suno result
+              </span>
+              <select
+                value={sunoResultRating}
+                onChange={(e) => setSunoResultRating(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+              >
+                <option value="Great">Great</option>
+                <option value="Good but needs changes">Good but needs changes</option>
+                <option value="Poor">Poor</option>
+                <option value="Unusable">Unusable</option>
+              </select>
             </label>
             <label className="flex items-start gap-2 mb-3 text-sm text-gray-300">
               <input
