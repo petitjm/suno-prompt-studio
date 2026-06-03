@@ -76,6 +76,7 @@ export default function SunoPromptBuilder({
     )
   const [sunoGender, setSunoGender] = useState('Male')
   const [lyricsMode, setLyricsMode] = useState('Manual')
+  const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
   const [creationNotes, setCreationNotes] = useState('')
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
@@ -120,6 +121,7 @@ export default function SunoPromptBuilder({
 
   const resetToDefaults = () => {
   setCreationNotes('')
+  setRevisionFocus('Balanced revision')
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
   setGeneratedFromSummary('')
@@ -139,11 +141,7 @@ export default function SunoPromptBuilder({
     setGeneratingPrompt(true)
     setPromptMessage('')
 
-    setStylePrompt('')
-    setVocalDirection('')
-    setArrangementNotes('')
-    setIntroSoloOutro('')
-    setNegativePrompt('')
+    
 
   try {
     const response = await fetch('/api/suno-prompts', {
@@ -159,6 +157,7 @@ export default function SunoPromptBuilder({
           currentIntroSoloOutro: introSoloOutro,
           currentNegativePrompt: negativePrompt,
           creationNotes,
+          revisionFocus,
         }),
     })
 
@@ -168,12 +167,34 @@ export default function SunoPromptBuilder({
       throw new Error(data.error || 'Could not generate Suno prompts.')
     }
 
-    setStylePrompt(data.stylePrompt || '')
-    setSunoStyleField(data.sunoStyleField || data.stylePrompt || '')
-    setVocalDirection(data.vocalDirection || '')
-    setArrangementNotes(data.arrangementNotes || '')
-    setIntroSoloOutro(data.introSoloOutro || '')
-    setNegativePrompt(data.negativePrompt || '')
+    const nextStylePrompt = data.stylePrompt?.trim() || ''
+        const nextSunoStyleField =
+          data.sunoStyleField?.trim() || data.stylePrompt?.trim() || ''
+        const nextVocalDirection = data.vocalDirection?.trim() || ''
+        const nextArrangementNotes = data.arrangementNotes?.trim() || ''
+        const nextIntroSoloOutro = data.introSoloOutro?.trim() || ''
+        const nextNegativePrompt = data.negativePrompt?.trim() || ''
+
+        const hasCompletePromptResponse =
+          nextStylePrompt &&
+          nextSunoStyleField &&
+          nextVocalDirection &&
+          nextArrangementNotes &&
+          nextIntroSoloOutro &&
+          nextNegativePrompt
+
+        if (!hasCompletePromptResponse) {
+          throw new Error(
+            'Suno prompt generation returned an incomplete response. Please try again.'
+          )
+        }
+
+        setStylePrompt(nextStylePrompt)
+        setSunoStyleField(nextSunoStyleField)
+        setVocalDirection(nextVocalDirection)
+        setArrangementNotes(nextArrangementNotes)
+        setIntroSoloOutro(nextIntroSoloOutro)
+        setNegativePrompt(nextNegativePrompt)
     setGeneratedFromSummary(lyricSummary)
 
     setPromptMessage('Suno prompts generated from the current song sheet.')
@@ -428,8 +449,11 @@ export default function SunoPromptBuilder({
           'Current song direction:',
           lyricSummary,
           '',
-          'Creation notes:',
-          creationNotes || 'No Suno creation notes added yet.',
+          'Revision focus:',
+            revisionFocus,
+            '',
+            'Creation notes:',
+            creationNotes || 'No Suno creation notes added yet.',
           '',
           'Suggested next action:',
           'Use these notes to refine the Style, Voice, Arrangement, or Intro / Solo / Outro prompt before creating another Suno version.',
@@ -725,7 +749,23 @@ export default function SunoPromptBuilder({
           <p className="text-xs text-gray-400 mb-2">
             Paste notes from your Suno generations here so you can refine the next prompt.
           </p>
-
+          <label className="block mb-3">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Revision focus
+              </span>
+              <select
+                value={revisionFocus}
+                onChange={(e) => setRevisionFocus(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+              >
+                <option value="Balanced revision">Balanced revision</option>
+                <option value="Fix vocal">Fix vocal</option>
+                <option value="Fix arrangement">Fix arrangement</option>
+                <option value="Fix intro/solo/outro">Fix intro/solo/outro</option>
+                <option value="Make more acoustic">Make more acoustic</option>
+                <option value="Make more commercial">Make more commercial</option>
+              </select>
+            </label>
           <textarea
             value={creationNotes}
             onChange={(e) => setCreationNotes(e.target.value)}

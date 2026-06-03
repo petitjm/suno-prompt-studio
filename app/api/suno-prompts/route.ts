@@ -13,6 +13,7 @@ type SunoPromptRequest = {
   currentIntroSoloOutro?: string
   currentNegativePrompt?: string
   creationNotes?: string
+  revisionFocus?: string
 }
 
 export async function POST(request: Request) {
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     const currentIntroSoloOutro = body.currentIntroSoloOutro?.trim() || ''
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
+    const revisionFocus = body.revisionFocus?.trim() || 'Balanced revision'
 
     if (!lyrics) {
       return NextResponse.json(
@@ -86,10 +88,19 @@ Arrangement notes: ${currentArrangementNotes || 'Not provided'}
 Intro / solo / outro: ${currentIntroSoloOutro || 'Not provided'}
 Negative prompt: ${currentNegativePrompt || 'Not provided'}
 
+Revision focus:
+${revisionFocus}
+
 Suno creation notes from previous generations:
 ${creationNotes || 'No previous Suno creation notes provided.'}
 
 Revision rules:
+- Use the revision focus as the main priority when deciding what to change.
+- If the revision focus is "Fix vocal", prioritise vocalDirection and voice-related wording.
+- If the revision focus is "Fix arrangement", prioritise arrangementNotes and production feel.
+- If the revision focus is "Fix intro/solo/outro", prioritise introSoloOutro.
+- If the revision focus is "Make more acoustic", reduce electronic, synthetic, or overproduced elements.
+- If the revision focus is "Make more commercial", improve accessibility, hook lift, and radio-friendly clarity without making the song generic.
 - If creation notes are provided, you MUST revise the prompts in a noticeable way.
 - Keep anything the notes say worked well.
 - Directly fix anything the notes say did not work.
