@@ -57,6 +57,7 @@ Create Suno-ready prompts for this song.
 Return JSON with exactly these keys:
 {
   "stylePrompt": string,
+  "sunoStyleField": string,
   "vocalDirection": string,
   "arrangementNotes": string,
   "introSoloOutro": string,
@@ -65,6 +66,11 @@ Return JSON with exactly these keys:
 
 Guidance:
 - Keep the prompts practical for Suno 5.5 Advanced mode.
+- The sunoStyleField must be a compact paste-ready Suno 5.5 Style field.
+- sunoStyleField should include the most important genre, mood, vocal character, instrumentation, and production feel.
+- sunoStyleField should not include detailed intro, solo, outro, or full arrangement instructions.
+- Keep sunoStyleField under 350 characters where possible.
+- stylePrompt may be fuller and more descriptive than sunoStyleField.
 - Make the style prompt concise but descriptive.
 - Assume a natural British male low baritone vocal unless the lyrics clearly suggest otherwise.
 - Keep the arrangement song-focused, not overproduced.

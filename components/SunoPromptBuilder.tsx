@@ -91,6 +91,7 @@ export default function SunoPromptBuilder({
   const [justCopiedCombined, setJustCopiedCombined] = useState(false)
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
+  const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
   const [generatedFromSummary, setGeneratedFromSummary] = useState('')
   const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
@@ -120,6 +121,7 @@ export default function SunoPromptBuilder({
   const resetToDefaults = () => {
   setCreationNotes('')
   setStylePrompt(defaultStylePrompt)
+  setSunoStyleField(defaultStylePrompt)
   setGeneratedFromSummary('')
   setVocalDirection(defaultVocalDirection)
   setArrangementNotes(defaultArrangementNotes)
@@ -167,6 +169,7 @@ export default function SunoPromptBuilder({
     }
 
     setStylePrompt(data.stylePrompt || '')
+    setSunoStyleField(data.sunoStyleField || data.stylePrompt || '')
     setVocalDirection(data.vocalDirection || '')
     setArrangementNotes(data.arrangementNotes || '')
     setIntroSoloOutro(data.introSoloOutro || '')
@@ -222,6 +225,9 @@ export default function SunoPromptBuilder({
             | 'piano-ballad'
         ) => {
           if (preset === 'mpj-acoustic') {
+            setSunoStyleField(
+              'Acoustic singer-songwriter, heartfelt modern folk-pop, warm British low male vocal, emotional storytelling, tasteful guitar arrangement, intimate radio-friendly production.'
+            )
             setStylePrompt(
               'Acoustic singer-songwriter, heartfelt modern folk-pop, warm low male vocal, emotional storytelling, tasteful guitar arrangement, intimate but radio-friendly production.'
             )
@@ -240,6 +246,9 @@ export default function SunoPromptBuilder({
           }
 
           if (preset === 'modern-country') {
+            setSunoStyleField(
+              'Modern country ballad, cinematic storytelling, warm acoustic guitars, subtle pedal steel, steady mid-tempo groove, heartfelt low male vocal, emotional chorus lift.'
+            )
             setStylePrompt(
               'Modern country ballad, cinematic storytelling, warm acoustic guitars, subtle pedal steel, steady mid-tempo groove, heartfelt low male vocal, emotional chorus lift.'
             )
@@ -258,6 +267,9 @@ export default function SunoPromptBuilder({
           }
 
           if (preset === 'indie-folk') {
+            setSunoStyleField(
+              'Indie folk singer-songwriter, organic acoustic textures, intimate low male vocal, emotional lyric focus, warm room sound, subtle atmospheric production.'
+            )
             setStylePrompt(
               'Indie folk singer-songwriter, organic acoustic textures, intimate vocal, emotional lyric focus, warm room sound, subtle atmospheric production.'
             )
@@ -276,6 +288,9 @@ export default function SunoPromptBuilder({
           }
 
           if (preset === 'piano-ballad') {
+            setSunoStyleField(
+              'Emotional piano ballad, heartfelt singer-songwriter style, cinematic build, warm low male vocal, intimate verses, powerful but controlled chorus.'
+            )
             setStylePrompt(
               'Emotional piano ballad, heartfelt singer-songwriter style, cinematic build, warm low male vocal, intimate verses, powerful but controlled chorus.'
             )
@@ -307,32 +322,7 @@ export default function SunoPromptBuilder({
 
         const sunoLyricsInput = performanceSheet.trim()
 
-        const getCompactSunoStyle = () => {
-          const style = stylePrompt.trim()
-          const vocal = vocalDirection.trim()
-          const arrangement = arrangementNotes.trim()
-
-          const compactParts = [
-            style,
-            vocal
-              ? vocal
-                  .replace(/^Natural British male low baritone,\s*/i, 'British low baritone vocal, ')
-                  .replace(/^Low male baritone vocal,\s*/i, 'low male baritone vocal, ')
-              : '',
-            arrangement
-              ? arrangement
-                  .split('.')
-                  .map((part) => part.trim())
-                  .filter(Boolean)
-                  .slice(0, 1)
-                  .join('. ')
-              : '',
-          ].filter(Boolean)
-
-          return compactParts.join(' ').slice(0, 500)
-        }
-
-        const compactSunoStyleInput = getCompactSunoStyle()
+        const compactSunoStyleInput = sunoStyleField.trim()
 
         const detailedSunoStyleInput = [
           stylePrompt,
