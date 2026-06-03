@@ -190,7 +190,9 @@ export default function SunoPromptBuilder({
         }
 
         setStylePrompt(nextStylePrompt)
-        setSunoStyleField(nextSunoStyleField)
+        setSunoStyleField(
+          nextSunoStyleField.charAt(0).toUpperCase() + nextSunoStyleField.slice(1)
+        )
         setVocalDirection(nextVocalDirection)
         setArrangementNotes(nextArrangementNotes)
         setIntroSoloOutro(nextIntroSoloOutro)

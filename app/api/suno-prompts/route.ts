@@ -71,6 +71,7 @@ Guidance:
 - The sunoStyleField must be a compact paste-ready Suno 5.5 Style field.
 - sunoStyleField should include the most important genre, mood, vocal character, instrumentation, and production feel.
 - sunoStyleField should not include detailed intro, solo, outro, or full arrangement instructions.
+- sunoStyleField should start with a capital letter and read as a clean, paste-ready style phrase.
 - Keep sunoStyleField under 350 characters where possible.
 - stylePrompt may be fuller and more descriptive than sunoStyleField.
 - Make the style prompt concise but descriptive.
