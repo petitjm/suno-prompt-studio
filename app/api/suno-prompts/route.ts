@@ -77,6 +77,7 @@ Guidance:
 - Assume a natural British male low baritone vocal unless the lyrics clearly suggest otherwise.
 - Keep the arrangement song-focused, not overproduced.
 - Include useful intro, solo, and outro direction.
+- If revision notes mention a specific improvement such as stronger guitar, clearer vocal, or female harmony, include a short version of that improvement in sunoStyleField.
 - Include a negative prompt that avoids common unwanted outputs.
 - When revision notes are present, the output should feel like a revised next attempt, not a repeat.
 
@@ -102,6 +103,10 @@ Revision rules:
 - If the revision focus is "Make more acoustic", reduce electronic, synthetic, or overproduced elements.
 - If the revision focus is "Make more commercial", improve accessibility, hook lift, and radio-friendly clarity without making the song generic.
 - If creation notes are provided, you MUST revise the prompts in a noticeable way.
+- If the notes mention vocals being too soft, weak, buried, unclear, or lacking presence, strengthen vocalDirection with clearer diction, more forward vocal presence, and stronger emotional projection.
+- If the notes mention guitar needing to be stronger, clearer, more prominent, or more driving, strengthen arrangementNotes and sunoStyleField with more prominent acoustic guitar wording.
+- If the notes mention harmony, backing vocals, duet, or female harmony, include that clearly in vocalDirection and arrangementNotes.
+- If the notes mention a specific section such as first chorus, second verse, bridge, or final chorus, include that section instruction in arrangementNotes or introSoloOutro as appropriate.
 - Keep anything the notes say worked well.
 - Directly fix anything the notes say did not work.
 - If the notes mention the vocal, change the vocalDirection and voice-related wording.
