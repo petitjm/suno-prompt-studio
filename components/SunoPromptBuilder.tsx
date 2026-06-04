@@ -81,6 +81,7 @@ export default function SunoPromptBuilder({
   const [useCreationNotesAsMainDriver, setUseCreationNotesAsMainDriver] = useState(false)
   const [revisionFocus, setRevisionFocus] = useState('Balanced revision')
   const [revisionSummary, setRevisionSummary] = useState('')
+  const [lastRevisionContext, setLastRevisionContext] = useState('')
   const [creationNotes, setCreationNotes] = useState('')
   const [sunoResultRating, setSunoResultRating] = useState('Good but needs changes')
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
@@ -153,6 +154,7 @@ export default function SunoPromptBuilder({
   setUseCreationNotesAsMainDriver(false)
   setRevisionFocus('Balanced revision')
   setRevisionSummary('')
+  setLastRevisionContext('')
   setPreviousSunoStyleField('')
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
@@ -250,6 +252,18 @@ export default function SunoPromptBuilder({
         setArrangementNotes(nextArrangementNotes)
         setIntroSoloOutro(nextIntroSoloOutro)
         setNegativePrompt(nextNegativePrompt)
+        setLastRevisionContext(
+          [
+            `Revision focus: ${revisionFocus}`,
+            `Last Suno result: ${sunoResultRating}`,
+            `Creation notes as main driver: ${
+              useCreationNotesAsMainDriver ? 'Yes' : 'No'
+            }`,
+            `Keep: ${keepFromLastVersion || 'None'}`,
+            `Change: ${changeInNextVersion || 'None'}`,
+            `Notes: ${creationNotes || 'None'}`,
+          ].join('\n')
+        )
         setRevisionSummary(data.revisionSummary || '')
         setGeneratedFromSummary(lyricSummary)
 
@@ -526,6 +540,9 @@ export default function SunoPromptBuilder({
           'Revision summary:',
             revisionSummary || 'No revision summary available yet.',
             '',
+          'Revision context used:',
+            lastRevisionContext || 'No revision context captured yet.',
+            '',
           'Suggested next action:',
           'Use these notes to refine the Style, Voice, Arrangement, or Intro / Solo / Outro prompt before creating another Suno version.',
         ].join('\n')
@@ -535,6 +552,7 @@ export default function SunoPromptBuilder({
           setGeneratedFromSummary('')
           setPreviousSunoStyleField('')
           setRevisionSummary('')
+          setLastRevisionContext('')
           setSunoResultRating('Good but needs changes')
           setKeepFromLastVersion('')
           setChangeInNextVersion('')
@@ -950,6 +968,17 @@ export default function SunoPromptBuilder({
             </button>
           </div>
         </div>
+        {lastRevisionContext && (
+          <div className="mt-4 p-3 rounded bg-gray-900 border border-gray-700">
+            <h4 className="text-sm font-medium text-gray-300 mb-2">
+              Revision context used
+            </h4>
+
+            <pre className="whitespace-pre-wrap text-xs text-gray-400 font-sans">
+              {lastRevisionContext}
+            </pre>
+          </div>
+        )}
       <div className="mt-5 p-3 rounded bg-gray-800 border border-gray-700">
         <h3 className="text-sm font-medium text-gray-300 mb-2">
           Combined Suno Prompt
