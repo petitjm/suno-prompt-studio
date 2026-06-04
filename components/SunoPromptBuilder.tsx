@@ -87,6 +87,7 @@ export default function SunoPromptBuilder({
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
   const [justCopiedRevisedStyle, setJustCopiedRevisedStyle] = useState(false)
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
+  const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
@@ -104,6 +105,7 @@ export default function SunoPromptBuilder({
   const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
   const [generatedFromSummary, setGeneratedFromSummary] = useState('')
   const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
+  const [chordGuidanceMode, setChordGuidanceMode] = useState('Lyrics only')
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
   const [vocalDirection, setVocalDirection] = useState(defaultVocalDirection)
   const [arrangementNotes, setArrangementNotes] = useState(defaultArrangementNotes)
@@ -127,6 +129,7 @@ export default function SunoPromptBuilder({
       setArrangementNotes(defaultArrangementNotes)
       setIntroSoloOutro(defaultIntroSoloOutro)
       setNegativePrompt(defaultNegativePrompt)
+      setChordGuidanceMode('Lyrics only')
     }, [performanceSheet])
 
   const combinedPrompt = useMemo(() => {
@@ -165,6 +168,7 @@ export default function SunoPromptBuilder({
   setIntroSoloOutro(defaultIntroSoloOutro)
   setNegativePrompt(defaultNegativePrompt)
   showButtonFeedback(setJustResetDefaults)
+  setChordGuidanceMode('Lyrics only')
 }
 
   const generateSunoPrompt = async () => {
@@ -492,6 +496,11 @@ export default function SunoPromptBuilder({
           'Mode: Advanced',
         ].join('\n')
 
+        const chordGuidanceForStyle =
+          chordGuidanceMode === 'Add chords to Style'
+            ? 'Use the song’s chord progression as harmonic guidance only. Treat chord names as a loose musical direction rather than a strict arrangement.'
+            : ''
+
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
           '',
@@ -501,6 +510,9 @@ export default function SunoPromptBuilder({
           'STYLE:',
             compactSunoStyleInput || 'No style prompt provided.',
             '',
+          ...(chordGuidanceForStyle
+              ? ['CHORD GUIDANCE FOR STYLE:', chordGuidanceForStyle, '']
+              : []),
             'DETAILED PRODUCTION NOTES:',
             detailedSunoStyleInput || 'No detailed production notes provided.',
                       '',
@@ -562,6 +574,7 @@ export default function SunoPromptBuilder({
           setUseCreationNotesAsMainDriver(false)
 
           showButtonFeedback(setJustResetDefaults)
+          setChordGuidanceMode('Lyrics only')
         }
 
 
@@ -715,7 +728,22 @@ export default function SunoPromptBuilder({
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
             </label>
-
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Chord guidance mode
+              </span>
+              <select
+                value={chordGuidanceMode}
+                onChange={(e) => setChordGuidanceMode(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+              >
+                <option value="Lyrics only">Lyrics only</option>
+                <option value="Add chords to Style">Add chords to Style</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-400">
+                Suno treats chord text as guidance, not a guaranteed chord chart.
+              </p>
+            </label>
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Style field
@@ -727,6 +755,19 @@ export default function SunoPromptBuilder({
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
             </label>
+            {chordGuidanceForStyle && (
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Chord guidance for Style
+                </span>
+                <textarea
+                  value={chordGuidanceForStyle}
+                  readOnly
+                  rows={3}
+                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                />
+              </label>
+            )}
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Detailed production notes
@@ -1080,6 +1121,21 @@ export default function SunoPromptBuilder({
         >
           {justCopiedSunoLyrics ? 'Lyrics copied ✓' : 'Copy Suno lyrics'}
         </button>
+
+        {chordGuidanceForStyle && (
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(chordGuidanceForStyle)
+              showButtonFeedback(setJustCopiedChordGuidance)
+            }}
+            className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+          >
+            {justCopiedChordGuidance
+              ? 'Chord guidance copied ✓'
+              : 'Copy chord guidance'}
+          </button>
+        )}
 
         <button
           type="button"
