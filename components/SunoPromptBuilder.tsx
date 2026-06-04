@@ -113,13 +113,12 @@ export default function SunoPromptBuilder({
       setGeneratedFromSummary('')
       setPreviousSunoStyleField('')
       setRevisionSummary('')
+      setLastRevisionContext('')
 
       setCreationNotes('')
       setRevisionFocus('Balanced revision')
       setUseCreationNotesAsMainDriver(false)
-      setSunoResultRating('Good but needs changes')
-      setKeepFromLastVersion('')
-      setChangeInNextVersion('')
+
       setStylePrompt(defaultStylePrompt)
       setSunoStyleField(defaultStylePrompt)
       setVocalDirection(defaultVocalDirection)
