@@ -85,6 +85,7 @@ export default function SunoPromptBuilder({
   const [creationNotes, setCreationNotes] = useState('')
   const [sunoResultRating, setSunoResultRating] = useState('Good but needs changes')
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
+  const [justCopiedRevisedStyle, setJustCopiedRevisedStyle] = useState(false)
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
@@ -952,6 +953,16 @@ export default function SunoPromptBuilder({
                     <p className="text-sm text-green-300">{sunoStyleField}</p>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(sunoStyleField)
+                    showButtonFeedback(setJustCopiedRevisedStyle)
+                  }}
+                  className="mt-3 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+                >
+                  {justCopiedRevisedStyle ? 'Revised style copied ✓' : 'Copy revised style'}
+                </button>
               </div>
             )}
           <div className="mt-3">
