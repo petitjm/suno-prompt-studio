@@ -552,6 +552,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           `Voice: ${sunoVoice}`,
           `Gender: ${sunoGender}`,
           `Lyrics mode: ${lyricsMode}`,
+          `Chord guidance mode: ${chordGuidanceMode}`,
           'Model: Suno 5.5',
           'Mode: Advanced',
         ].join('\n')
