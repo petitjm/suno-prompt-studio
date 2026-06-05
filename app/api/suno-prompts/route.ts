@@ -20,6 +20,7 @@ type SunoPromptRequest = {
   sunoResultRating?: string
   chordGuidanceMode?: string
   chordGuidanceForStyle?: string
+  productionTarget?: string
 }
 
 export async function POST(request: Request) {
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
     const currentArrangementNotes = body.currentArrangementNotes?.trim() || ''
     const currentIntroSoloOutro = body.currentIntroSoloOutro?.trim() || ''
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
+    const productionTarget = body.productionTarget?.trim() || 'Radio-ready'
     const creationNotes = body.creationNotes?.trim() || ''
     const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
     const changeInNextVersion = body.changeInNextVersion?.trim() || ''
@@ -103,7 +105,13 @@ Guidance:
 - Do not promise exact chord-following in the generated prompts.
 - If chord guidance mode is "Add chords to Style", include a short harmonic reference in sunoStyleField only when it helps the style.
 - Keep chord guidance concise. Do not overload sunoStyleField with full chord charts.
-- Prefer adding fuller chord detail to arrangementNotes rather than sunoStyleField.
+- Prefer adding fuller chord detail to arrangem- Use the production target to shape the production and arrangement language.
+- If production target is "Natural demo", keep the arrangement simple, intimate, and human.
+- If production target is "Radio-ready", make the prompt polished and accessible without becoming generic.
+- If production target is "Live acoustic", prioritise performable acoustic guitar, natural vocal, and minimal studio effects.
+- If production target is "Cinematic", allow wider emotional build, subtle strings, ambience, and dramatic dynamics.
+- If production target is "Minimal arrangement", keep instrumentation sparse and avoid unnecessary layers.entNotes rather than sunoStyleField.
+
 
 
 Current prompt direction:
@@ -118,6 +126,9 @@ ${chordGuidanceMode}
 
 Chord guidance for Style:
 ${chordGuidanceForStyle || 'No chord guidance provided.'}
+
+Production target:
+${productionTarget}
 
 Revision focus:
 ${revisionFocus}

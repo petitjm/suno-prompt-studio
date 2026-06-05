@@ -170,6 +170,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [arrangementNotes, setArrangementNotes] = useState(defaultArrangementNotes)
   const [introSoloOutro, setIntroSoloOutro] = useState(defaultIntroSoloOutro)
   const [negativePrompt, setNegativePrompt] = useState(defaultNegativePrompt)
+  const [productionTarget, setProductionTarget] = useState('Radio-ready')
+
 
   useEffect(() => {
       setPromptMessage('')
@@ -189,6 +191,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       setIntroSoloOutro(defaultIntroSoloOutro)
       setNegativePrompt(defaultNegativePrompt)
       setChordGuidanceMode('Lyrics only')
+      setProductionTarget('Radio-ready')
     }, [performanceSheet])
 
   const combinedPrompt = useMemo(() => {
@@ -228,6 +231,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   setNegativePrompt(defaultNegativePrompt)
   showButtonFeedback(setJustResetDefaults)
   setChordGuidanceMode('Lyrics only')
+  setProductionTarget('Radio-ready')
 }
 
   const generateSunoPrompt = async () => {
@@ -262,6 +266,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           changeInNextVersion,
           chordGuidanceMode,
           chordGuidanceForStyle,
+          productionTarget,
         }),
     })
 
@@ -555,6 +560,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           `Voice: ${sunoVoice}`,
           `Gender: ${sunoGender}`,
           `Lyrics mode: ${lyricsMode}`,
+          `Production target: ${productionTarget}`,
           `Chord guidance mode: ${chordGuidanceMode}`,
           'Model: Suno 5.5',
           'Mode: Advanced',
@@ -658,6 +664,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
           showButtonFeedback(setJustResetDefaults)
           setChordGuidanceMode('Lyrics only')
+          setProductionTarget('Radio-ready')
         }
 
 
@@ -928,7 +935,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               />
             </label>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <label className="block">
                 <span className="block text-sm font-medium text-gray-300 mb-1">
                   Gender
@@ -958,6 +965,22 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   <option value="Auto">Auto</option>
                 </select>
               </label>
+              <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Production target
+                  </span>
+                  <select
+                    value={productionTarget}
+                    onChange={(e) => setProductionTarget(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                  >
+                    <option value="Natural demo">Natural demo</option>
+                    <option value="Radio-ready">Radio-ready</option>
+                    <option value="Live acoustic">Live acoustic</option>
+                    <option value="Cinematic">Cinematic</option>
+                    <option value="Minimal arrangement">Minimal arrangement</option>
+                  </select>
+                </label>
             </div>
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
