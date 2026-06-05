@@ -147,6 +147,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
+  const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
   const [justCopiedStyleAndVoice, setJustCopiedStyleAndVoice] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
@@ -696,6 +697,35 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const sunoStyleCommaList = getSunoStyleCommaList()
 
+        const getNegativePromptCommaList = () => {
+          return negativePrompt
+            .replace(/^Exclude\s+/i, '')
+            .replace(/^Avoid\s+/i, '')
+            .replace(/\bExclude\s+/gi, '')
+            .replace(/\bAvoid\s+/gi, '')
+            .replace(/\bNo\s+/gi, '')
+            .replace(/\bPrevent\s+/gi, '')
+            .replace(/\bDo not include\s+/gi, '')
+            .replace(/\bMaintain a natural, organic, human, and emotionally sincere sound\.?/gi, 'unnatural sound, artificial sound, emotionally insincere sound')
+            .replace(/\bMaintain natural, organic, human, and emotionally sincere sound\.?/gi, 'unnatural sound, artificial sound, emotionally insincere sound')
+            .replace(/\bsynthetic or dance production\b/gi, 'synthetic production, dance production')
+            .replace(/\brobotic or artificial vocal effects\b/gi, 'robotic vocal effects, artificial vocal effects')
+            .replace(/\bnovelty or comedic vocal styles\b/gi, 'novelty vocals, comedic vocal styles')
+            .replace(/\boverly commercial pop gloss\b/gi, 'commercial pop gloss')
+            .replace(/\n+/g, ', ')
+            .replace(/\.\s+/g, ', ')
+            .replace(/:\s*/g, ', ')
+            .replace(/\band\b/gi, ',')
+            .replace(/\bor\b/gi, ',')
+            .split(',')
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .map((part) => part.replace(/[.;:]$/, '').trim())
+            .filter((part, index, array) => array.indexOf(part) === index)
+            .join(', ')
+        }
+
+        const negativePromptCommaList = getNegativePromptCommaList()
 
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
@@ -914,6 +944,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   />
                   <p className="mt-1 text-xs text-gray-400">
                     Compact comma-separated version for quick Suno Style tests.
+                  </p>
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Negative prompt comma list
+                  </span>
+                  <textarea
+                    value={negativePromptCommaList}
+                    readOnly
+                    rows={3}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact avoid-list version for quick copying.
                   </p>
                 </label>
             </label>
@@ -1267,7 +1311,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         >
           {justCopiedCombined ? 'Copied ✓' : 'Copy combined prompt'}
         </button>
-
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(negativePromptCommaList)
+            showButtonFeedback(setJustCopiedNegativeCommaList)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedNegativeCommaList
+            ? 'Negative list copied ✓'
+            : 'Copy negative comma list'}
+        </button>
         <button
           type="button"
           onClick={() => {
