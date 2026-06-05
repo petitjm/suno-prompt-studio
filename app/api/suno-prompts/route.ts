@@ -18,6 +18,8 @@ type SunoPromptRequest = {
   useCreationNotesAsMainDriver?: boolean
   revisionFocus?: string
   sunoResultRating?: string
+  chordGuidanceMode?: string
+  chordGuidanceForStyle?: string
 }
 
 export async function POST(request: Request) {
@@ -44,6 +46,8 @@ export async function POST(request: Request) {
     const useCreationNotesAsMainDriver = Boolean(
       body.useCreationNotesAsMainDriver
     )
+    const chordGuidanceMode = body.chordGuidanceMode?.trim() || 'Lyrics only'
+    const chordGuidanceForStyle = body.chordGuidanceForStyle?.trim() || ''
 
     if (!lyrics) {
       return NextResponse.json(
@@ -95,6 +99,11 @@ Guidance:
 - When revision notes are present, the output should feel like a revised next attempt, not a repeat.
 - revisionSummary should briefly explain what changed and why, especially when creation notes are provided.
 - If no creation notes are provided, revisionSummary should say this is a fresh Suno prompt generation from the current lyrics.
+- If chord guidance is provided, use it only as loose harmonic direction.
+- Do not promise exact chord-following in the generated prompts.
+- If chord guidance mode is "Add chords to Style", include a short harmonic reference in sunoStyleField only when it helps the style.
+- Keep chord guidance concise. Do not overload sunoStyleField with full chord charts.
+- Prefer adding fuller chord detail to arrangementNotes rather than sunoStyleField.
 
 
 Current prompt direction:
@@ -103,6 +112,12 @@ Vocal direction: ${currentVocalDirection || 'Not provided'}
 Arrangement notes: ${currentArrangementNotes || 'Not provided'}
 Intro / solo / outro: ${currentIntroSoloOutro || 'Not provided'}
 Negative prompt: ${currentNegativePrompt || 'Not provided'}
+
+Chord guidance mode:
+${chordGuidanceMode}
+
+Chord guidance for Style:
+${chordGuidanceForStyle || 'No chord guidance provided.'}
 
 Revision focus:
 ${revisionFocus}

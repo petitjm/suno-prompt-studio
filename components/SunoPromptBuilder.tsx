@@ -270,6 +270,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           sunoResultRating,
           keepFromLastVersion,
           changeInNextVersion,
+          chordGuidanceMode,
+          chordGuidanceForStyle,
         }),
     })
 
