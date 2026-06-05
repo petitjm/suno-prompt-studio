@@ -71,69 +71,58 @@ export default function SunoPromptBuilder({
 function getChordGuidanceSummary(structuredChordJson: string) {
   const text = structuredChordJson.trim()
 
-  if (!text || text === '{}') {
-    return ''
-  }
+      if (!text || text === '{}') {
+        return ''
+      }
 
-  try {
-    const parsed = JSON.parse(text) as Record<string, unknown>
+      try {
+        const parsed = JSON.parse(text) as Record<string, unknown>
 
-    const sectionSummaries = Object.entries(parsed)
-      .map(([sectionName, value]) => {
-        if (!value) {
+        const rawText = Object.values(parsed)
+          .map((value) => {
+            if (typeof value === 'string') {
+              return value
+            }
+
+            if (Array.isArray(value)) {
+              return value.join(' ')
+            }
+
+            if (value && typeof value === 'object') {
+              return Object.values(value as Record<string, unknown>).join(' ')
+            }
+
+            return ''
+          })
+          .join(' ')
+
+        const chordMatches =
+          rawText.match(
+            /\b[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\/[A-G](?:#|b)?)?(?:\([^)]+\))?\b/g
+          ) || []
+
+        const chordPalette = Array.from(
+          new Set(
+            chordMatches
+              .map((chord) => chord.trim())
+              .filter(Boolean)
+          )
+        ).slice(0, 10)
+
+        if (chordPalette.length === 0) {
           return ''
         }
 
-        if (typeof value === 'string') {
-          const cleanValue = value.trim()
+        const likelyKey =
+          chordPalette.includes('Em') || chordPalette.some((chord) => chord.startsWith('Em'))
+            ? 'E minor / G major'
+            : 'the song’s main key'
 
-          if (!cleanValue) {
-            return ''
-          }
-
-          return `${sectionName}: ${cleanValue}`
-        }
-
-        if (Array.isArray(value)) {
-          const cleanValue = value
-            .map((item) => String(item).trim())
-            .filter(Boolean)
-            .join(' | ')
-
-          if (!cleanValue) {
-            return ''
-          }
-
-          return `${sectionName}: ${cleanValue}`
-        }
-
-        if (typeof value === 'object') {
-          const cleanValue = Object.values(value as Record<string, unknown>)
-            .map((item) => String(item).trim())
-            .filter(Boolean)
-            .join(' | ')
-
-          if (!cleanValue) {
-            return ''
-          }
-
-          return `${sectionName}: ${cleanValue}`
-        }
-
+        return `${likelyKey} harmonic feel, using ${chordPalette.join(', ')} as the main chord palette`
+      } catch {
         return ''
-      })
-      .filter(Boolean)
-      .slice(0, 6)
-
-    if (sectionSummaries.length === 0) {
-      return ''
+      }
     }
-
-    return sectionSummaries.join('; ')
-  } catch {
-    return ''
-  }
-}
 
   const lyricSummary = useMemo(
     () => getLyricSummary(performanceSheet),
