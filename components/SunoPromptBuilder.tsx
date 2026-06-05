@@ -146,6 +146,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedRevisedStyle, setJustCopiedRevisedStyle] = useState(false)
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
+  const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
@@ -572,6 +573,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ]
           .filter(Boolean)
           .join('\n\n')
+
+          const sunoLyricsAndStylePack = [
+              'SUNO 5.5 ADVANCED INPUTS',
+              '',
+              'LYRICS:',
+              sunoLyricsInput || 'No lyrics provided.',
+              '',
+              'STYLE:',
+              sunoStyleCopyInput || 'No style prompt provided.',
+            ].join('\n')
 
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
@@ -1181,6 +1192,19 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
           {justCopiedNegative ? 'Copied ✓' : 'Copy negative prompt'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoLyricsAndStylePack)
+            showButtonFeedback(setJustCopiedLyricsAndStyle)
+          }}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+        >
+          {justCopiedLyricsAndStyle
+            ? 'Lyrics + style copied ✓'
+            : 'Copy lyrics + style'}
         </button>
 
         <button
