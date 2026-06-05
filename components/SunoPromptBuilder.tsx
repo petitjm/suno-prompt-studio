@@ -150,6 +150,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedStyleAndVoice, setJustCopiedStyleAndVoice] = useState(false)
   const [activeVoicePresetFeedback, setActiveVoicePresetFeedback] = useState('')
   const [justCopiedSunoSettings, setJustCopiedSunoSettings] = useState(false)
+  const [justCopiedStyleCommaList, setJustCopiedStyleCommaList] = useState(false)
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
   const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
   const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
@@ -284,6 +285,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         }
 
     const styleBeforeGeneration = sunoStyleField
+
+    
 
     const nextStylePrompt = data.stylePrompt?.trim() || ''
         const nextSunoStyleField =
@@ -679,6 +682,19 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           setProductionTarget('Radio-ready')
         }
 
+        const getSunoStyleCommaList = () => {
+          return sunoStyleCopyInput
+            .replace(/\n+/g, ', ')
+            .replace(/\.\s+/g, ', ')
+            .replace(/:\s*/g, ', ')
+            .split(',')
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .filter((part, index, array) => array.indexOf(part) === index)
+            .join(', ')
+        }
+
+        const sunoStyleCommaList = getSunoStyleCommaList()
 
 
   return (
@@ -886,6 +902,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               <p className="mt-1 text-xs text-gray-400">
                   Use these as reference notes; they are usually too detailed for Suno&apos;s Style field.
                 </p>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Style comma list
+                  </span>
+                  <textarea
+                    value={sunoStyleCommaList}
+                    readOnly
+                    rows={3}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact comma-separated version for quick Suno Style tests.
+                  </p>
+                </label>
             </label>
 
             <div>
@@ -1298,7 +1328,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         >
           {justCopiedSunoStyle ? 'Style copied ✓' : 'Copy Suno style'}
         </button>
-
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoStyleCommaList)
+            showButtonFeedback(setJustCopiedStyleCommaList)
+          }}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+        >
+          {justCopiedStyleCommaList
+            ? 'Comma style copied ✓'
+            : 'Copy style comma list'}
+        </button>
         <button
           type="button"
           onClick={() => {
