@@ -847,6 +847,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={5}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Paste this into Suno&apos;s Style field. Prompt length and chord guidance are applied here.
+                </p>
             </label>
             {chordGuidanceForStyle && (
               <label className="block">
@@ -871,6 +874,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={7}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Use these as reference notes; they are usually too detailed for Suno&apos;s Style field.
+                </p>
             </label>
 
             <div>
