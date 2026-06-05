@@ -480,6 +480,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const compactSunoStyleInput = sunoStyleField.trim()
 
+        
+
         const detailedSunoStyleInput = [
           stylePrompt,
           vocalDirection,
@@ -564,6 +566,13 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               : 'Use the song’s chord progression as harmonic guidance only. Treat chord names as a loose musical direction rather than a strict arrangement.'
             : ''
 
+         const sunoStyleCopyInput = [
+          compactSunoStyleInput,
+          chordGuidanceForStyle,
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
           '',
@@ -571,7 +580,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           sunoLyricsInput || 'No lyrics provided.',
           '',
           'STYLE:',
-            compactSunoStyleInput || 'No style prompt provided.',
+            sunoStyleCopyInput || 'No style prompt provided.',
             '',
           ...(chordGuidanceForStyle
               ? ['CHORD GUIDANCE FOR STYLE:', chordGuidanceForStyle, '']
@@ -812,7 +821,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 Style field
               </span>
               <textarea
-                value={compactSunoStyleInput}
+                value={sunoStyleCopyInput}
                 readOnly
                 rows={5}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
@@ -1203,7 +1212,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(compactSunoStyleInput)
+            navigator.clipboard.writeText(sunoStyleCopyInput)
             showButtonFeedback(setJustCopiedSunoStyle)
           }}
           className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
