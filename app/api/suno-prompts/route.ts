@@ -21,6 +21,7 @@ type SunoPromptRequest = {
   chordGuidanceMode?: string
   chordGuidanceForStyle?: string
   productionTarget?: string
+  sunoPromptLength?: string
 }
 
 export async function POST(request: Request) {
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
     const currentIntroSoloOutro = body.currentIntroSoloOutro?.trim() || ''
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
     const productionTarget = body.productionTarget?.trim() || 'Radio-ready'
+    const sunoPromptLength = body.sunoPromptLength?.trim() || 'Medium'
     const creationNotes = body.creationNotes?.trim() || ''
     const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
     const changeInNextVersion = body.changeInNextVersion?.trim() || ''
@@ -111,7 +113,11 @@ Guidance:
 - If production target is "Live acoustic", prioritise performable acoustic guitar, natural vocal, and minimal studio effects.
 - If production target is "Cinematic", allow wider emotional build, subtle strings, ambience, and dramatic dynamics.
 - If production target is "Minimal arrangement", keep instrumentation sparse and avoid unnecessary layers.entNotes rather than sunoStyleField.
-
+- Use Suno prompt length to control sunoStyleField only.
+- If Suno prompt length is "Short", keep sunoStyleField very compact, around 12-18 comma-separated tags.
+- If Suno prompt length is "Medium", keep sunoStyleField clear and descriptive, around 18-28 comma-separated tags.
+- If Suno prompt length is "Detailed", allow sunoStyleField to be fuller but still paste-ready and not a production essay.
+- Detailed production notes may remain fuller regardless of Suno prompt length.
 
 
 Current prompt direction:
@@ -129,6 +135,9 @@ ${chordGuidanceForStyle || 'No chord guidance provided.'}
 
 Production target:
 ${productionTarget}
+
+Suno prompt length:
+${sunoPromptLength}
 
 Revision focus:
 ${revisionFocus}

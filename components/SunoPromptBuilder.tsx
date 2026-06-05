@@ -163,6 +163,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justResetDefaults, setJustResetDefaults] = useState(false)
   const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
   const [generatedFromSummary, setGeneratedFromSummary] = useState('')
+  const [sunoPromptLength, setSunoPromptLength] = useState('Medium')
   const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
   const [chordGuidanceMode, setChordGuidanceMode] = useState('Lyrics only')
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
@@ -267,6 +268,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           chordGuidanceMode,
           chordGuidanceForStyle,
           productionTarget,
+          sunoPromptLength,
         }),
     })
 
@@ -561,6 +563,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           `Gender: ${sunoGender}`,
           `Lyrics mode: ${lyricsMode}`,
           `Production target: ${productionTarget}`,
+          `Prompt length: ${sunoPromptLength}`,
           `Chord guidance mode: ${chordGuidanceMode}`,
           'Model: Suno 5.5',
           'Mode: Advanced',
@@ -935,7 +938,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               />
             </label>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               <label className="block">
                 <span className="block text-sm font-medium text-gray-300 mb-1">
                   Gender
@@ -979,6 +982,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     <option value="Live acoustic">Live acoustic</option>
                     <option value="Cinematic">Cinematic</option>
                     <option value="Minimal arrangement">Minimal arrangement</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Prompt length
+                  </span>
+                  <select
+                    value={sunoPromptLength}
+                    onChange={(e) => setSunoPromptLength(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                  >
+                    <option value="Short">Short</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Detailed">Detailed</option>
                   </select>
                 </label>
             </div>
