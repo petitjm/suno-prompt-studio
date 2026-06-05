@@ -98,7 +98,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const chordMatches =
           rawText.match(
-            /\b[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\/[A-G](?:#|b)?)?(?:\([^)]+\))?\b/g
+            /[A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\([^)]+\))?(?:\/[A-G](?:#|b)?)?/g
           ) || []
 
         const chordPalette = Array.from(
