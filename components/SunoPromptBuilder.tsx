@@ -68,6 +68,73 @@ export default function SunoPromptBuilder({
   performanceSheet,
   structuredChordJson,
 }: SunoPromptBuilderProps) {
+function getChordGuidanceSummary(structuredChordJson: string) {
+  const text = structuredChordJson.trim()
+
+  if (!text || text === '{}') {
+    return ''
+  }
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>
+
+    const sectionSummaries = Object.entries(parsed)
+      .map(([sectionName, value]) => {
+        if (!value) {
+          return ''
+        }
+
+        if (typeof value === 'string') {
+          const cleanValue = value.trim()
+
+          if (!cleanValue) {
+            return ''
+          }
+
+          return `${sectionName}: ${cleanValue}`
+        }
+
+        if (Array.isArray(value)) {
+          const cleanValue = value
+            .map((item) => String(item).trim())
+            .filter(Boolean)
+            .join(' | ')
+
+          if (!cleanValue) {
+            return ''
+          }
+
+          return `${sectionName}: ${cleanValue}`
+        }
+
+        if (typeof value === 'object') {
+          const cleanValue = Object.values(value as Record<string, unknown>)
+            .map((item) => String(item).trim())
+            .filter(Boolean)
+            .join(' | ')
+
+          if (!cleanValue) {
+            return ''
+          }
+
+          return `${sectionName}: ${cleanValue}`
+        }
+
+        return ''
+      })
+      .filter(Boolean)
+      .slice(0, 6)
+
+    if (sectionSummaries.length === 0) {
+      return ''
+    }
+
+    return sectionSummaries.join('; ')
+  } catch {
+    return ''
+  }
+}
+
   const lyricSummary = useMemo(
     () => getLyricSummary(performanceSheet),
     [performanceSheet]
@@ -488,7 +555,7 @@ export default function SunoPromptBuilder({
             showVoicePresetFeedback(voicePresetLabels[preset])
         }
 
-        
+        const chordGuidanceSummary = getChordGuidanceSummary(structuredChordJson)
 
         const sunoSettingsSummary = [
           `Voice: ${sunoVoice}`,
@@ -500,7 +567,9 @@ export default function SunoPromptBuilder({
 
         const chordGuidanceForStyle =
           chordGuidanceMode === 'Add chords to Style'
-            ? 'Use the song’s chord progression as harmonic guidance only. Treat chord names as a loose musical direction rather than a strict arrangement.'
+            ? chordGuidanceSummary
+              ? `Harmonic guidance only: ${chordGuidanceSummary}. Treat these chords as a loose musical direction rather than a strict chart.`
+              : 'Use the song’s chord progression as harmonic guidance only. Treat chord names as a loose musical direction rather than a strict arrangement.'
             : ''
 
         const fullSunoPack = [
