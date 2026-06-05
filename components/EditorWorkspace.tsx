@@ -87,7 +87,10 @@ export default function EditorWorkspace({
       activeProject={songEditor.activeProject}
     />
 
-    <SunoPromptBuilder performanceSheet={songEditor.performanceSheet} />
+    <SunoPromptBuilder 
+        performanceSheet={songEditor.performanceSheet}
+        structuredChordJson={chordEditor.chordsText}    
+    />
 
 
       {/* Structured Chord JSON editor and saved chord-version selector */}

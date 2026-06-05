@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 type SunoPromptBuilderProps = {
   performanceSheet: string
+  structuredChordJson: string
 }
 
 const defaultStylePrompt =
@@ -65,6 +66,7 @@ function getLyricSummary(performanceSheet: string) {
 
 export default function SunoPromptBuilder({
   performanceSheet,
+  structuredChordJson,
 }: SunoPromptBuilderProps) {
   const lyricSummary = useMemo(
     () => getLyricSummary(performanceSheet),
