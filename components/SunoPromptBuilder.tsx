@@ -386,6 +386,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedEmotionalArc, setJustCopiedEmotionalArc] = useState(false)
   const [justCopiedPerformanceNotes, setJustCopiedPerformanceNotes] = useState(false)
   const [justCopiedCreativeGuidePack, setJustCopiedCreativeGuidePack] = useState(false) 
+  const [justCopiedQuickPack, setJustCopiedQuickPack] = useState(false)
   const [justCopiedRevisionInputPack, setJustCopiedRevisionInputPack] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
@@ -871,6 +872,25 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           sunoPerformanceNotes,
         ].join('\n')   
         
+        const sunoQuickPack = [
+          'SUNO QUICK PACK',
+          '',
+          'LYRICS:',
+          sunoLyricsInput || 'No lyrics provided.',
+          '',
+          'STYLE:',
+          sunoStyleCopyInput || 'No style prompt provided.',
+          '',
+          'VOICE:',
+          sunoVoiceInput || 'No voice prompt provided.',
+          '',
+          'SETTINGS:',
+          sunoSettingsSummary,
+          '',
+          'NEGATIVE PROMPT:',
+          negativePrompt || 'No negative prompt provided.',
+        ].join('\n')
+
         const sunoRevisionInputPack = [
           'SUNO REVISION INPUT PACK',
           '',
@@ -1293,6 +1313,21 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   />
                   <p className="mt-1 text-xs text-gray-400">
                     Vocal and performance guidance for Suno.
+                  </p>
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Suno quick pack
+                  </span>
+                  <textarea
+                    value={sunoQuickPack}
+                    readOnly
+                    rows={8}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact everyday pack with lyrics, style, voice, settings, and negative prompt only.
                   </p>
                 </label>
               <label className="block">
@@ -1984,6 +2019,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-500"
         >
           {justCopiedFullSunoPack ? 'Full pack copied ✓' : 'Copy full Suno pack'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoQuickPack)
+            showButtonFeedback(setJustCopiedQuickPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedQuickPack ? 'Quick pack copied ✓' : 'Copy Suno quick pack'}
         </button>
         <button
               type="button"
