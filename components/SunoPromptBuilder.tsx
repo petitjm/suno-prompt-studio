@@ -1365,20 +1365,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 </label>
            </div>
         </details>   
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Suno quick comma pack
-                  </span>
-                  <textarea
-                    value={sunoQuickCommaPack}
-                    readOnly
-                    rows={8}
-                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-                  />
-                  <p className="mt-1 text-xs text-gray-400">
-                    Compact everyday pack using comma-list style and negative prompts.
-                  </p>
-                </label>
+        
+        <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-100">
+            Copy Packs
+          </summary>
+
+          <p className="mt-2 mb-4 text-sm text-gray-400">
+            Ready-made copy blocks for Suno testing, quick pasting, and revision workflows.
+          </p>
+
+          <div className="space-y-4">
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
                     Suno quick pack
@@ -1393,6 +1390,22 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     Compact everyday pack with lyrics, style, voice, settings, and negative prompt only.
                   </p>
                 </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Suno quick comma pack
+                  </span>
+                  <textarea
+                    value={sunoQuickCommaPack}
+                    readOnly
+                    rows={8}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact everyday pack using comma-list style and negative prompts.
+                  </p>
+                </label>
+
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
                     Suno revision input pack
@@ -1407,7 +1420,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     Combined revision notes, current prompts, and creative guidance for refining a Suno result.
                   </p>
                 </label>
-
+          </div>
+        </details>
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Chord guidance mode
@@ -1424,6 +1438,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 Suno treats chord text as guidance, not a guaranteed chord chart.
               </p>
             </label>
+
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Style field
@@ -1438,6 +1453,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   Paste this into Suno&apos;s Style field. Prompt length and chord guidance are applied here.
                 </p>
             </label>
+
             {chordGuidanceForStyle && (
               <label className="block">
                 <span className="block text-sm font-medium text-gray-300 mb-1">
