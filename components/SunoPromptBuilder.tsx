@@ -1268,6 +1268,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
             </label>
+        <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-100">
+            Creative Guides
+          </summary>
+
+          <p className="mt-2 mb-4 text-sm text-gray-400">
+            Structure, arrangement, hook, emotional arc, and performance guidance generated from the current song sheet.
+          </p>
+
+          <div className="space-y-4">
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Structure / section guide
@@ -1338,6 +1348,23 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     Vocal and performance guidance for Suno.
                   </p>
                 </label>
+                
+              <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Creative guide pack
+                  </span>
+                  <textarea
+                    value={creativeGuidePack}
+                    readOnly
+                    rows={8}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Combined structure, arrangement, hook, emotional arc, and performance guidance.
+                  </p>
+                </label>
+           </div>
+        </details>   
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
                     Suno quick comma pack
@@ -1366,21 +1393,6 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     Compact everyday pack with lyrics, style, voice, settings, and negative prompt only.
                   </p>
                 </label>
-              <label className="block">
-                  <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Creative guide pack
-                  </span>
-                  <textarea
-                    value={creativeGuidePack}
-                    readOnly
-                    rows={8}
-                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-                  />
-                  <p className="mt-1 text-xs text-gray-400">
-                    Combined structure, arrangement, hook, emotional arc, and performance guidance.
-                  </p>
-                </label>
-            
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
                     Suno revision input pack
