@@ -130,6 +130,48 @@ function getSongStructureGuide(performanceSheet: string) {
   return `Section arrangement guide: ${guidance.join(' ')}`
 }
 
+function getSunoHookFocus(performanceSheet: string) {
+      const lines = performanceSheet
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .filter((line) => !/^\[.+\]$/.test(line))
+        .filter((line) => !/^[A-G](?:#|b)?/.test(line))
+
+      if (lines.length === 0) {
+        return 'Hook focus: No lyric lines detected. Keep the main melodic phrase clear, memorable, and emotionally direct.'
+      }
+
+      const chorusIndex = performanceSheet
+        .split('\n')
+        .findIndex((line) => line.trim().toLowerCase().includes('[chorus]'))
+
+      if (chorusIndex >= 0) {
+        const chorusLines = performanceSheet
+          .split('\n')
+          .slice(chorusIndex + 1)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .filter((line) => !/^\[.+\]$/.test(line))
+          .slice(0, 4)
+
+        if (chorusLines.length > 0) {
+          const hookLine = chorusLines[chorusLines.length - 1]
+          return `Hook focus: Emphasise the emotional payoff around “${hookLine}”. Keep the vocal clear, sincere, and memorable when this idea returns.`
+        }
+      }
+
+      const repeatedLine = lines.find((line, index) => lines.indexOf(line) !== index)
+
+      if (repeatedLine) {
+        return `Hook focus: Emphasise the repeated line “${repeatedLine}” as the main memorable hook. Keep it clear, singable, and emotionally direct.`
+      }
+
+      const likelyHook = lines[Math.min(lines.length - 1, 3)]
+
+      return `Hook focus: Treat “${likelyHook}” as a likely emotional anchor. Keep the delivery natural, memorable, and song-focused.`
+    }
+
 export default function SunoPromptBuilder({
   performanceSheet,
   structuredChordJson,
@@ -195,6 +237,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     [performanceSheet]
   )
 
+  const sunoHookFocus = useMemo(
+      () => getSunoHookFocus(performanceSheet),
+      [performanceSheet]
+    )
+
   const sectionArrangementGuide = useMemo(
       () => getSectionArrangementGuide(performanceSheet),
       [performanceSheet]
@@ -224,6 +271,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [justCopiedStructureGuide, setJustCopiedStructureGuide] = useState(false)
   const [justCopiedSectionArrangement, setJustCopiedSectionArrangement] = useState(false)
+  const [justCopiedHookFocus, setJustCopiedHookFocus] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -353,6 +401,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           sunoPromptLength,
           songStructureGuide,
           sectionArrangementGuide,
+          sunoHookFocus,
         }),
     })
 
@@ -701,6 +750,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           'SECTION ARRANGEMENT GUIDE:',
             sectionArrangementGuide,
             '',
+        'HOOK FOCUS:',
+            sunoHookFocus,
+            '',
           'STYLE:',
             sunoStyleCopyInput || 'No style prompt provided.',
             '',
@@ -830,6 +882,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           'SECTION ARRANGEMENT GUIDE:',
             sectionArrangementGuide,
             '',
+           'HOOK FOCUS:',
+                sunoHookFocus,
+                '',
           'STYLE COMMA LIST:',
           sunoStyleCommaList || 'No style comma list provided.',
           '',
@@ -1012,6 +1067,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     rows={4}
                     className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
                   />
+                  <label className="block">
+                      <span className="block text-sm font-medium text-gray-300 mb-1">
+                        Hook focus
+                      </span>
+                      <textarea
+                        value={sunoHookFocus}
+                        readOnly
+                        rows={3}
+                        className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                      />
+                      <p className="mt-1 text-xs text-gray-400">
+                        Optional hook guidance based on chorus or repeated lyric lines.
+                      </p>
+                    </label>
                   <p className="mt-1 text-xs text-gray-400">
                     Local arrangement guidance based on detected section headings.
                   </p>
@@ -1501,7 +1570,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         >
           {justCopiedSunoLyrics ? 'Lyrics copied ✓' : 'Copy Suno lyrics'}
         </button>
-
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoHookFocus)
+            showButtonFeedback(setJustCopiedHookFocus)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedHookFocus ? 'Hook focus copied ✓' : 'Copy hook focus'}
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -1527,6 +1605,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             ? 'Arrangement guide copied ✓'
             : 'Copy section arrangement'}
         </button>
+
 
         {chordGuidanceForStyle && (
           <button

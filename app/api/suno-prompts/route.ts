@@ -24,6 +24,7 @@ type SunoPromptRequest = {
   sunoPromptLength?: string
   songStructureGuide?: string
   sectionArrangementGuide?: string
+  sunoHookFocus?: string
 }
 
 export async function POST(request: Request) {
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
     const sunoPromptLength = body.sunoPromptLength?.trim() || 'Medium'
     const songStructureGuide = body.songStructureGuide?.trim() || ''
     const sectionArrangementGuide = body.sectionArrangementGuide?.trim() || ''
+    const sunoHookFocus = body.sunoHookFocus?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
     const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
     const changeInNextVersion = body.changeInNextVersion?.trim() || ''
@@ -127,6 +129,7 @@ Guidance:
 - Do not rewrite the lyrics or invent new song sections.
 - If no section headings are detected, suggest a natural verse/chorus shape only in the production guidance.
 - Use the section arrangement guide to shape arrangementNotes, but do not copy it word-for-word unless it is already concise.
+- Use the hook focus to shape vocalDirection, arrangementNotes, and chorus treatment. Do not rewrite the hook lyric.
 
 
 Current prompt direction:
@@ -145,6 +148,9 @@ ${chordGuidanceForStyle || 'No chord guidance provided.'}
 
 Section arrangement guide:
 ${sectionArrangementGuide || 'No section arrangement guide provided.'}
+
+Hook focus:
+${sunoHookFocus || 'No hook focus provided.'}
 
 Production target:
 ${productionTarget}
