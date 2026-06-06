@@ -172,6 +172,70 @@ function getSunoHookFocus(performanceSheet: string) {
       return `Hook focus: Treat “${likelyHook}” as a likely emotional anchor. Keep the delivery natural, memorable, and song-focused.`
     }
 
+    function getSunoEmotionalArc(performanceSheet: string) {
+          const sectionNames = performanceSheet
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => /^\[.+\]$/.test(line))
+            .map((line) => line.replace(/^\[/, '').replace(/\]$/, '').trim())
+            .filter(Boolean)
+
+          if (sectionNames.length === 0) {
+            return 'Emotional arc: Start natural and intimate, then allow the performance to build gradually toward a clear emotional payoff.'
+          }
+
+          const hasIntro = sectionNames.some((section) =>
+            section.toLowerCase().includes('intro')
+          )
+          const hasPreChorus = sectionNames.some((section) =>
+            section.toLowerCase().includes('pre')
+          )
+          const hasChorus = sectionNames.some((section) =>
+            section.toLowerCase().includes('chorus')
+          )
+          const hasBridge = sectionNames.some((section) =>
+            section.toLowerCase().includes('bridge')
+          )
+          const hasFinalChorus = sectionNames.some((section) =>
+            section.toLowerCase().includes('final chorus')
+          )
+          const hasOutro = sectionNames.some((section) =>
+            section.toLowerCase().includes('outro')
+          )
+
+          const arcParts: string[] = []
+
+          if (hasIntro) {
+            arcParts.push('open with a clear mood-setting intro')
+          }
+
+          arcParts.push('start the verses intimate, restrained, and lyric-led')
+
+          if (hasPreChorus) {
+            arcParts.push('let the pre-chorus build anticipation')
+          }
+
+          if (hasChorus) {
+            arcParts.push('lift the chorus with stronger emotional release and hook focus')
+          }
+
+          if (hasBridge) {
+            arcParts.push('use the bridge as a contrasting emotional turn')
+          }
+
+          if (hasFinalChorus) {
+            arcParts.push('make the final chorus wider, more confident, and resolved')
+          } else if (hasChorus) {
+            arcParts.push('let the later chorus feel more open and resolved')
+          }
+
+          if (hasOutro) {
+            arcParts.push('close with space, warmth, and a natural emotional landing')
+          }
+
+          return `Emotional arc: ${arcParts.join(', ')}.`
+        }
+
 export default function SunoPromptBuilder({
   performanceSheet,
   structuredChordJson,
@@ -252,6 +316,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       [performanceSheet]
     )
 
+  const sunoEmotionalArc = useMemo(
+      () => getSunoEmotionalArc(performanceSheet),
+      [performanceSheet]
+    )
+
   const [sunoVoice, setSunoVoice] = useState(
       'MPJ Voice / Persona - natural British low baritone'
     )
@@ -272,6 +341,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedStructureGuide, setJustCopiedStructureGuide] = useState(false)
   const [justCopiedSectionArrangement, setJustCopiedSectionArrangement] = useState(false)
   const [justCopiedHookFocus, setJustCopiedHookFocus] = useState(false)
+  const [justCopiedEmotionalArc, setJustCopiedEmotionalArc] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -402,6 +472,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           songStructureGuide,
           sectionArrangementGuide,
           sunoHookFocus,
+          sunoEmotionalArc,
         }),
     })
 
@@ -753,6 +824,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         'HOOK FOCUS:',
             sunoHookFocus,
             '',
+        'EMOTIONAL ARC:',
+            sunoEmotionalArc,
+            '',
           'STYLE:',
             sunoStyleCopyInput || 'No style prompt provided.',
             '',
@@ -885,6 +959,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
            'HOOK FOCUS:',
                 sunoHookFocus,
                 '',
+        'EMOTIONAL ARC:',
+            sunoEmotionalArc,
+            '',
           'STYLE COMMA LIST:',
           sunoStyleCommaList || 'No style comma list provided.',
           '',
@@ -1057,6 +1134,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                Use this as optional structure guidance for Suno or for prompt revision.
+              </p>
+            </label>
               <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
                     Section arrangement guide
@@ -1067,6 +1148,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     rows={4}
                     className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
                   />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Local arrangement guidance based on detected section headings.
+                  </p>
+                </label>
                   <label className="block">
                       <span className="block text-sm font-medium text-gray-300 mb-1">
                         Hook focus
@@ -1081,14 +1166,23 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                         Optional hook guidance based on chorus or repeated lyric lines.
                       </p>
                     </label>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Local arrangement guidance based on detected section headings.
-                  </p>
-                </label>
-              <p className="mt-1 text-xs text-gray-400">
-                Use this as optional structure guidance for Suno or for prompt revision.
-              </p>
-            </label>
+                  <label className="block">
+                      <span className="block text-sm font-medium text-gray-300 mb-1">
+                        Emotional arc
+                      </span>
+                      <textarea
+                        value={sunoEmotionalArc}
+                        readOnly
+                        rows={3}
+                        className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                      />
+                      <p className="mt-1 text-xs text-gray-400">
+                        Optional performance arc guidance for Suno.
+                      </p>
+                    </label>
+                
+              
+            
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Chord guidance mode
@@ -1579,6 +1673,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
           {justCopiedHookFocus ? 'Hook focus copied ✓' : 'Copy hook focus'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoEmotionalArc)
+            showButtonFeedback(setJustCopiedEmotionalArc)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedEmotionalArc
+            ? 'Emotional arc copied ✓'
+            : 'Copy emotional arc'}
         </button>
         <button
           type="button"
