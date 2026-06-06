@@ -386,6 +386,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedEmotionalArc, setJustCopiedEmotionalArc] = useState(false)
   const [justCopiedPerformanceNotes, setJustCopiedPerformanceNotes] = useState(false)
   const [justCopiedCreativeGuidePack, setJustCopiedCreativeGuidePack] = useState(false) 
+  const [justCopiedRevisionInputPack, setJustCopiedRevisionInputPack] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -868,7 +869,40 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           '',
           'PERFORMANCE NOTES:',
           sunoPerformanceNotes,
-        ].join('\n')    
+        ].join('\n')   
+        
+        const sunoRevisionInputPack = [
+          'SUNO REVISION INPUT PACK',
+          '',
+          'LAST RESULT RATING:',
+          sunoResultRating || 'Not provided',
+          '',
+          'REVISION FOCUS:',
+          revisionFocus || 'Balanced revision',
+          '',
+          'USE CREATION NOTES AS MAIN DRIVER:',
+          useCreationNotesAsMainDriver ? 'Yes' : 'No',
+          '',
+          'CREATION NOTES:',
+          creationNotes.trim() || 'No creation notes provided.',
+          '',
+          'KEEP FROM LAST VERSION:',
+          keepFromLastVersion.trim() || 'Nothing specified.',
+          '',
+          'CHANGE IN NEXT VERSION:',
+          changeInNextVersion.trim() || 'Nothing specified.',
+          '',
+          'CURRENT SUNO STYLE:',
+          sunoStyleCopyInput || 'No style prompt provided.',
+          '',
+          'CURRENT VOICE:',
+          sunoVoiceInput || 'No voice prompt provided.',
+          '',
+          'CURRENT NEGATIVE PROMPT:',
+          negativePrompt || 'No negative prompt provided.',
+          '',
+          creativeGuidePack,
+        ].join('\n')
 
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
@@ -1276,6 +1310,21 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   </p>
                 </label>
             
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Suno revision input pack
+                  </span>
+                  <textarea
+                    value={sunoRevisionInputPack}
+                    readOnly
+                    rows={10}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Combined revision notes, current prompts, and creative guidance for refining a Suno result.
+                  </p>
+                </label>
+
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
                 Chord guidance mode
@@ -1790,6 +1839,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           {justCopiedCreativeGuidePack
             ? 'Creative guide copied ✓'
             : 'Copy creative guide pack'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoRevisionInputPack)
+            showButtonFeedback(setJustCopiedRevisionInputPack)
+          }}
+          className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-500"
+        >
+          {justCopiedRevisionInputPack
+            ? 'Revision input copied ✓'
+            : 'Copy revision input pack'}
         </button>
         <button
           type="button"
