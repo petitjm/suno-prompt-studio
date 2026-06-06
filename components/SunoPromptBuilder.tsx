@@ -64,6 +64,23 @@ function getLyricSummary(performanceSheet: string) {
       return sections.slice(0, 8).join('\n')
     }
 
+function getSongStructureGuide(performanceSheet: string) {
+      const sectionNames = performanceSheet
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => /^\[.+\]$/.test(line))
+        .map((line) => line.replace(/^\[/, '').replace(/\]$/, '').trim())
+        .filter(Boolean)
+
+      if (sectionNames.length === 0) {
+        return 'Structure guide: No section headings detected. Use a natural verse / chorus song shape if appropriate.'
+      }
+
+      const uniqueFlow = sectionNames.join(', ')
+
+      return `Structure guide: ${uniqueFlow}. Keep section contrast clear, with intimate verses, stronger choruses, and a natural emotional build.`
+    }
+
 export default function SunoPromptBuilder({
   performanceSheet,
   structuredChordJson,
@@ -129,6 +146,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     [performanceSheet]
   )
 
+  const songStructureGuide = useMemo(
+      () => getSongStructureGuide(performanceSheet),
+      [performanceSheet]
+    )
+
   const [sunoVoice, setSunoVoice] = useState(
       'MPJ Voice / Persona - natural British low baritone'
     )
@@ -146,6 +168,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedRevisedStyle, setJustCopiedRevisedStyle] = useState(false)
   const [justCopiedFullCommaPack, setJustCopiedFullCommaPack] = useState(false)
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
+  const [justCopiedStructureGuide, setJustCopiedStructureGuide] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -615,6 +638,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           'LYRICS:',
           sunoLyricsInput || 'No lyrics provided.',
           '',
+          'STRUCTURE GUIDE:',
+            songStructureGuide,
+            '',
           'STYLE:',
             sunoStyleCopyInput || 'No style prompt provided.',
             '',
@@ -738,6 +764,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           'LYRICS:',
           sunoLyricsInput || 'No lyrics provided.',
           '',
+          'STRUCTURE GUIDE:',
+            songStructureGuide,
+            '',
           'STYLE COMMA LIST:',
           sunoStyleCommaList || 'No style comma list provided.',
           '',
@@ -899,6 +928,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={8}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Structure / section guide
+              </span>
+              <textarea
+                value={songStructureGuide}
+                readOnly
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Use this as optional structure guidance for Suno or for prompt revision.
+              </p>
             </label>
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
@@ -1380,6 +1423,19 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
           {justCopiedSunoLyrics ? 'Lyrics copied ✓' : 'Copy Suno lyrics'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(songStructureGuide)
+            showButtonFeedback(setJustCopiedStructureGuide)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedStructureGuide
+            ? 'Structure copied ✓'
+            : 'Copy structure guide'}
         </button>
 
         {chordGuidanceForStyle && (
