@@ -26,6 +26,7 @@ type SunoPromptRequest = {
   sectionArrangementGuide?: string
   sunoHookFocus?: string
   sunoEmotionalArc?: string
+  sunoPerformanceNotes?: string
 }
 
 export async function POST(request: Request) {
@@ -50,6 +51,7 @@ export async function POST(request: Request) {
     const sectionArrangementGuide = body.sectionArrangementGuide?.trim() || ''
     const sunoHookFocus = body.sunoHookFocus?.trim() || ''
     const sunoEmotionalArc = body.sunoEmotionalArc?.trim() || ''
+    const sunoPerformanceNotes = body.sunoPerformanceNotes?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
     const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
     const changeInNextVersion = body.changeInNextVersion?.trim() || ''
@@ -133,6 +135,7 @@ Guidance:
 - Use the section arrangement guide to shape arrangementNotes, but do not copy it word-for-word unless it is already concise.
 - Use the hook focus to shape vocalDirection, arrangementNotes, and chorus treatment. Do not rewrite the hook lyric.
 - Use the emotional arc to shape vocal intensity, dynamics, arrangement build, and final chorus treatment.
+- Use the performance notes to shape vocalDirection and production realism. Keep the vocal human, clear, and emotionally believable.
 
 
 Current prompt direction:
@@ -157,6 +160,9 @@ ${sunoHookFocus || 'No hook focus provided.'}
 
 Emotional arc:
 ${sunoEmotionalArc || 'No emotional arc provided.'}
+
+Performance notes:
+${sunoPerformanceNotes || 'No performance notes provided.'}
 
 Production target:
 ${productionTarget}

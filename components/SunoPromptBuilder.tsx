@@ -236,6 +236,43 @@ function getSunoHookFocus(performanceSheet: string) {
           return `Emotional arc: ${arcParts.join(', ')}.`
         }
 
+        function getSunoPerformanceNotes(performanceSheet: string) {
+          const lowerText = performanceSheet.toLowerCase()
+
+          const hasChorus = lowerText.includes('[chorus]')
+          const hasBridge = lowerText.includes('[bridge]')
+          const hasFinalChorus = lowerText.includes('[final chorus]')
+          const hasDuet =
+            lowerText.includes('female harmony') ||
+            lowerText.includes('harmony') ||
+            lowerText.includes('duet')
+
+          const notes = [
+            'Use a natural British low baritone male vocal',
+            'keep diction clear and emotionally sincere',
+            'avoid theatrical over-singing',
+            'keep the performance human, intimate, and believable',
+          ]
+
+          if (hasChorus) {
+            notes.push('let choruses lift with stronger projection and clearer hook emphasis')
+          }
+
+          if (hasBridge) {
+            notes.push('use the bridge for a subtle emotional shift rather than a dramatic reset')
+          }
+
+          if (hasFinalChorus) {
+            notes.push('make the final chorus feel wider, warmer, and more resolved')
+          }
+
+          if (hasDuet) {
+            notes.push('use female harmony as support, not as a replacement for the lead vocal')
+          }
+
+          return `Performance notes: ${notes.join(', ')}.`
+        }
+
 export default function SunoPromptBuilder({
   performanceSheet,
   structuredChordJson,
@@ -321,6 +358,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       [performanceSheet]
     )
 
+  const sunoPerformanceNotes = useMemo(
+      () => getSunoPerformanceNotes(performanceSheet),
+      [performanceSheet]
+    )
+
   const [sunoVoice, setSunoVoice] = useState(
       'MPJ Voice / Persona - natural British low baritone'
     )
@@ -342,6 +384,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedSectionArrangement, setJustCopiedSectionArrangement] = useState(false)
   const [justCopiedHookFocus, setJustCopiedHookFocus] = useState(false)
   const [justCopiedEmotionalArc, setJustCopiedEmotionalArc] = useState(false)
+  const [justCopiedPerformanceNotes, setJustCopiedPerformanceNotes] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -827,6 +870,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         'EMOTIONAL ARC:',
             sunoEmotionalArc,
             '',
+        'PERFORMANCE NOTES:',
+            sunoPerformanceNotes,
+            '',
           'STYLE:',
             sunoStyleCopyInput || 'No style prompt provided.',
             '',
@@ -961,6 +1007,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 '',
         'EMOTIONAL ARC:',
             sunoEmotionalArc,
+            '',
+        'PERFORMANCE NOTES:',
+            sunoPerformanceNotes,
             '',
           'STYLE COMMA LIST:',
           sunoStyleCommaList || 'No style comma list provided.',
@@ -1180,7 +1229,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                         Optional performance arc guidance for Suno.
                       </p>
                     </label>
-                
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Performance notes
+                  </span>
+                  <textarea
+                    value={sunoPerformanceNotes}
+                    readOnly
+                    rows={3}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Vocal and performance guidance for Suno.
+                  </p>
+                </label>
               
             
             <label className="block">
@@ -1685,6 +1747,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           {justCopiedEmotionalArc
             ? 'Emotional arc copied ✓'
             : 'Copy emotional arc'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoPerformanceNotes)
+            showButtonFeedback(setJustCopiedPerformanceNotes)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedPerformanceNotes
+            ? 'Performance notes copied ✓'
+            : 'Copy performance notes'}
         </button>
         <button
           type="button"
