@@ -81,6 +81,55 @@ function getSongStructureGuide(performanceSheet: string) {
       return `Structure guide: ${uniqueFlow}. Keep section contrast clear, with intimate verses, stronger choruses, and a natural emotional build.`
     }
 
+    function getSectionArrangementGuide(performanceSheet: string) {
+          const sectionNames = performanceSheet
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => /^\[.+\]$/.test(line))
+            .map((line) => line.replace(/^\[/, '').replace(/\]$/, '').trim())
+            .filter(Boolean)
+
+          if (sectionNames.length === 0) {
+            return 'Section arrangement guide: No section headings detected. Keep the arrangement natural, song-led, and emotionally progressive.'
+          }
+
+          const guidance = sectionNames.map((sectionName) => {
+            const normalized = sectionName.toLowerCase()
+
+            if (normalized.includes('intro')) {
+              return `${sectionName}: establish the mood with a simple, memorable opening.`
+            }
+
+            if (normalized.includes('verse')) {
+              return `${sectionName}: keep intimate, vocal-led, and uncluttered.`
+            }
+
+            if (normalized.includes('pre')) {
+              return `${sectionName}: gently build tension toward the chorus.`
+            }
+
+            if (normalized.includes('chorus')) {
+              return `${sectionName}: lift emotionally with stronger rhythm, fuller harmony, and clearer hook focus.`
+            }
+
+            if (normalized.includes('bridge')) {
+              return `${sectionName}: create contrast and act as the emotional turn.`
+            }
+
+            if (normalized.includes('solo')) {
+              return `${sectionName}: keep melodic and supportive, not overplayed.`
+            }
+
+            if (normalized.includes('outro')) {
+      return `${sectionName}: resolve naturally and leave emotional space.`
+    }
+
+    return `${sectionName}: support the lyric meaning and maintain the song’s emotional flow.`
+  })
+
+  return `Section arrangement guide: ${guidance.join(' ')}`
+}
+
 export default function SunoPromptBuilder({
   performanceSheet,
   structuredChordJson,
@@ -146,6 +195,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     [performanceSheet]
   )
 
+  const sectionArrangementGuide = useMemo(
+      () => getSectionArrangementGuide(performanceSheet),
+      [performanceSheet]
+    )
+
   const songStructureGuide = useMemo(
       () => getSongStructureGuide(performanceSheet),
       [performanceSheet]
@@ -169,6 +223,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedFullCommaPack, setJustCopiedFullCommaPack] = useState(false)
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [justCopiedStructureGuide, setJustCopiedStructureGuide] = useState(false)
+  const [justCopiedSectionArrangement, setJustCopiedSectionArrangement] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -297,6 +352,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           productionTarget,
           sunoPromptLength,
           songStructureGuide,
+          sectionArrangementGuide,
         }),
     })
 
@@ -642,6 +698,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           'STRUCTURE GUIDE:',
             songStructureGuide,
             '',
+          'SECTION ARRANGEMENT GUIDE:',
+            sectionArrangementGuide,
+            '',
           'STYLE:',
             sunoStyleCopyInput || 'No style prompt provided.',
             '',
@@ -767,6 +826,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           '',
           'STRUCTURE GUIDE:',
             songStructureGuide,
+            '',
+          'SECTION ARRANGEMENT GUIDE:',
+            sectionArrangementGuide,
             '',
           'STYLE COMMA LIST:',
           sunoStyleCommaList || 'No style comma list provided.',
@@ -940,6 +1002,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
+              <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Section arrangement guide
+                  </span>
+                  <textarea
+                    value={sectionArrangementGuide}
+                    readOnly
+                    rows={4}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Local arrangement guidance based on detected section headings.
+                  </p>
+                </label>
               <p className="mt-1 text-xs text-gray-400">
                 Use this as optional structure guidance for Suno or for prompt revision.
               </p>
@@ -1437,6 +1513,19 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           {justCopiedStructureGuide
             ? 'Structure copied ✓'
             : 'Copy structure guide'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sectionArrangementGuide)
+            showButtonFeedback(setJustCopiedSectionArrangement)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedSectionArrangement
+            ? 'Arrangement guide copied ✓'
+            : 'Copy section arrangement'}
         </button>
 
         {chordGuidanceForStyle && (

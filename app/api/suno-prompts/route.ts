@@ -23,6 +23,7 @@ type SunoPromptRequest = {
   productionTarget?: string
   sunoPromptLength?: string
   songStructureGuide?: string
+  sectionArrangementGuide?: string
 }
 
 export async function POST(request: Request) {
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
     const productionTarget = body.productionTarget?.trim() || 'Radio-ready'
     const sunoPromptLength = body.sunoPromptLength?.trim() || 'Medium'
     const songStructureGuide = body.songStructureGuide?.trim() || ''
+    const sectionArrangementGuide = body.sectionArrangementGuide?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
     const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
     const changeInNextVersion = body.changeInNextVersion?.trim() || ''
@@ -124,6 +126,8 @@ Guidance:
 - Preserve clear contrast between verses, choruses, bridges, and final choruses when section headings are provided.
 - Do not rewrite the lyrics or invent new song sections.
 - If no section headings are detected, suggest a natural verse/chorus shape only in the production guidance.
+- Use the section arrangement guide to shape arrangementNotes, but do not copy it word-for-word unless it is already concise.
+
 
 Current prompt direction:
 Style prompt: ${currentStylePrompt || 'Not provided'}
@@ -138,6 +142,9 @@ ${chordGuidanceMode}
 
 Chord guidance for Style:
 ${chordGuidanceForStyle || 'No chord guidance provided.'}
+
+Section arrangement guide:
+${sectionArrangementGuide || 'No section arrangement guide provided.'}
 
 Production target:
 ${productionTarget}
