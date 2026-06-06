@@ -22,6 +22,7 @@ type SunoPromptRequest = {
   chordGuidanceForStyle?: string
   productionTarget?: string
   sunoPromptLength?: string
+  songStructureGuide?: string
 }
 
 export async function POST(request: Request) {
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
     const currentNegativePrompt = body.currentNegativePrompt?.trim() || ''
     const productionTarget = body.productionTarget?.trim() || 'Radio-ready'
     const sunoPromptLength = body.sunoPromptLength?.trim() || 'Medium'
+    const songStructureGuide = body.songStructureGuide?.trim() || ''
     const creationNotes = body.creationNotes?.trim() || ''
     const keepFromLastVersion = body.keepFromLastVersion?.trim() || ''
     const changeInNextVersion = body.changeInNextVersion?.trim() || ''
@@ -118,7 +120,10 @@ Guidance:
 - If Suno prompt length is "Medium", keep sunoStyleField clear and descriptive, around 18-28 comma-separated tags.
 - If Suno prompt length is "Detailed", allow sunoStyleField to be fuller but still paste-ready and not a production essay.
 - Detailed production notes may remain fuller regardless of Suno prompt length.
-
+- Use the song structure guide to shape arrangementNotes and introSoloOutro.
+- Preserve clear contrast between verses, choruses, bridges, and final choruses when section headings are provided.
+- Do not rewrite the lyrics or invent new song sections.
+- If no section headings are detected, suggest a natural verse/chorus shape only in the production guidance.
 
 Current prompt direction:
 Style prompt: ${currentStylePrompt || 'Not provided'}
@@ -126,6 +131,7 @@ Vocal direction: ${currentVocalDirection || 'Not provided'}
 Arrangement notes: ${currentArrangementNotes || 'Not provided'}
 Intro / solo / outro: ${currentIntroSoloOutro || 'Not provided'}
 Negative prompt: ${currentNegativePrompt || 'Not provided'}
+Song structure guide: ${songStructureGuide || 'No song structure guide provided.'}
 
 Chord guidance mode:
 ${chordGuidanceMode}

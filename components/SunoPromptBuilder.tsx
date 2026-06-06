@@ -296,6 +296,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           chordGuidanceForStyle,
           productionTarget,
           sunoPromptLength,
+          songStructureGuide,
         }),
     })
 
