@@ -387,6 +387,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedPerformanceNotes, setJustCopiedPerformanceNotes] = useState(false)
   const [justCopiedCreativeGuidePack, setJustCopiedCreativeGuidePack] = useState(false) 
   const [justCopiedQuickPack, setJustCopiedQuickPack] = useState(false)
+  const [justCopiedQuickCommaPack, setJustCopiedQuickCommaPack] = useState(false)
   const [justCopiedRevisionInputPack, setJustCopiedRevisionInputPack] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
@@ -872,6 +873,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           sunoPerformanceNotes,
         ].join('\n')   
         
+        
+
+
         const sunoQuickPack = [
           'SUNO QUICK PACK',
           '',
@@ -1061,6 +1065,25 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         }
 
         const negativePromptCommaList = getNegativePromptCommaList()
+
+        const sunoQuickCommaPack = [
+          'SUNO QUICK COMMA PACK',
+          '',
+          'LYRICS:',
+          sunoLyricsInput || 'No lyrics provided.',
+          '',
+          'STYLE COMMA LIST:',
+          sunoStyleCommaList || 'No style comma list provided.',
+          '',
+          'VOICE:',
+          sunoVoiceInput || 'No voice prompt provided.',
+          '',
+          'SETTINGS:',
+          sunoSettingsSummary,
+          '',
+          'NEGATIVE COMMA LIST:',
+          negativePromptCommaList || 'No negative comma list provided.',
+        ].join('\n')
 
         const fullSunoCommaPack = [
           'SUNO 5.5 ADVANCED INPUTS - COMMA STYLE',
@@ -1315,7 +1338,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     Vocal and performance guidance for Suno.
                   </p>
                 </label>
-
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Suno quick comma pack
+                  </span>
+                  <textarea
+                    value={sunoQuickCommaPack}
+                    readOnly
+                    rows={8}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact everyday pack using comma-list style and negative prompts.
+                  </p>
+                </label>
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
                     Suno quick pack
@@ -2019,6 +2055,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-500"
         >
           {justCopiedFullSunoPack ? 'Full pack copied ✓' : 'Copy full Suno pack'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoQuickCommaPack)
+            showButtonFeedback(setJustCopiedQuickCommaPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedQuickCommaPack
+            ? 'Quick comma pack copied ✓'
+            : 'Copy quick comma pack'}
         </button>
         <button
           type="button"
