@@ -144,6 +144,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [sunoResultRating, setSunoResultRating] = useState('Good but needs changes')
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
   const [justCopiedRevisedStyle, setJustCopiedRevisedStyle] = useState(false)
+  const [justCopiedFullCommaPack, setJustCopiedFullCommaPack] = useState(false)
   const [justCopiedFullSunoPack, setJustCopiedFullSunoPack] = useState(false)
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
@@ -606,6 +607,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               sunoVoiceInput || 'No voice prompt provided.',
             ].join('\n')
 
+            
+
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
           '',
@@ -697,6 +700,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const sunoStyleCommaList = getSunoStyleCommaList()
 
+
+
         const getNegativePromptCommaList = () => {
           return negativePrompt
             .replace(/^Exclude\s+/i, '')
@@ -726,6 +731,25 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         }
 
         const negativePromptCommaList = getNegativePromptCommaList()
+
+        const fullSunoCommaPack = [
+          'SUNO 5.5 ADVANCED INPUTS - COMMA STYLE',
+          '',
+          'LYRICS:',
+          sunoLyricsInput || 'No lyrics provided.',
+          '',
+          'STYLE COMMA LIST:',
+          sunoStyleCommaList || 'No style comma list provided.',
+          '',
+          'VOICE:',
+          sunoVoiceInput || 'No voice prompt provided.',
+          '',
+          'SETTINGS:',
+          sunoSettingsSummary,
+          '',
+          'NEGATIVE COMMA LIST:',
+          negativePromptCommaList || 'No negative comma list provided.',
+        ].join('\n')
 
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
@@ -1428,6 +1452,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         >
           {justCopiedSunoSettings ? 'Settings copied ✓' : 'Copy Suno settings'}
         </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(fullSunoCommaPack)
+            showButtonFeedback(setJustCopiedFullCommaPack)
+          }}
+          className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-500"
+        >
+          {justCopiedFullCommaPack
+            ? 'Comma pack copied ✓'
+            : 'Copy full comma pack'}
+        </button>
+
         <button
           type="button"
           onClick={() => {
