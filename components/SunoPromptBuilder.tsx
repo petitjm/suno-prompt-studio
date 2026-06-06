@@ -385,6 +385,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedHookFocus, setJustCopiedHookFocus] = useState(false)
   const [justCopiedEmotionalArc, setJustCopiedEmotionalArc] = useState(false)
   const [justCopiedPerformanceNotes, setJustCopiedPerformanceNotes] = useState(false)
+  const [justCopiedCreativeGuidePack, setJustCopiedCreativeGuidePack] = useState(false) 
   const [justCopiedChordGuidance, setJustCopiedChordGuidance] = useState(false)
   const [justCopiedLyricsAndStyle, setJustCopiedLyricsAndStyle] = useState(false)
   const [justCopiedNegativeCommaList, setJustCopiedNegativeCommaList] = useState(false)
@@ -850,7 +851,24 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               sunoVoiceInput || 'No voice prompt provided.',
             ].join('\n')
 
-            
+        const creativeGuidePack = [
+          'CREATIVE GUIDE PACK',
+          '',
+          'STRUCTURE GUIDE:',
+          songStructureGuide,
+          '',
+          'SECTION ARRANGEMENT GUIDE:',
+          sectionArrangementGuide,
+          '',
+          'HOOK FOCUS:',
+          sunoHookFocus,
+          '',
+          'EMOTIONAL ARC:',
+          sunoEmotionalArc,
+          '',
+          'PERFORMANCE NOTES:',
+          sunoPerformanceNotes,
+        ].join('\n')    
 
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
@@ -1243,7 +1261,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     Vocal and performance guidance for Suno.
                   </p>
                 </label>
-              
+              <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Creative guide pack
+                  </span>
+                  <textarea
+                    value={creativeGuidePack}
+                    readOnly
+                    rows={8}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Combined structure, arrangement, hook, emotional arc, and performance guidance.
+                  </p>
+                </label>
             
             <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
@@ -1747,6 +1778,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           {justCopiedEmotionalArc
             ? 'Emotional arc copied ✓'
             : 'Copy emotional arc'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(creativeGuidePack)
+            showButtonFeedback(setJustCopiedCreativeGuidePack)
+          }}
+          className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-500"
+        >
+          {justCopiedCreativeGuidePack
+            ? 'Creative guide copied ✓'
+            : 'Copy creative guide pack'}
         </button>
         <button
           type="button"
