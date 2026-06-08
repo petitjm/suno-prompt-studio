@@ -1190,71 +1190,90 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </p>
             )}
         </div>
-      <div className="grid gap-4">
-        <label className="block">
-          <span className="block text-sm font-medium text-gray-300 mb-1">
-            Suno Style Prompt
-          </span>
-          <textarea
-            value={stylePrompt}
-            onChange={(e) => setStylePrompt(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
-          />
-        </label>
+     
+        
+        
 
-        <label className="block">
-          <span className="block text-sm font-medium text-gray-300 mb-1">
-            Vocal Direction
-          </span>
-          <textarea
-            value={vocalDirection}
-            onChange={(e) => setVocalDirection(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
-          />
-        </label>
 
-        <label className="block">
-          <span className="block text-sm font-medium text-gray-300 mb-1">
-            Arrangement Notes
-          </span>
-          <textarea
-            value={arrangementNotes}
-            onChange={(e) => setArrangementNotes(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
-          />
-        </label>
 
-        <label className="block">
-          <span className="block text-sm font-medium text-gray-300 mb-1">
-            Intro / Solo / Outro Prompt
-          </span>
-          <textarea
-            value={introSoloOutro}
-            onChange={(e) => setIntroSoloOutro(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
-          />
-        </label>
+      
 
-        <label className="block">
-          <span className="block text-sm font-medium text-gray-300 mb-1">
-            Negative Prompt / Avoid
-          </span>
-          <textarea
-            value={negativePrompt}
-            onChange={(e) => setNegativePrompt(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
-          />
-        </label>
-      </div>
-      <div className="mt-5 p-4 rounded bg-gray-800 border border-gray-700">
-          <h3 className="text-sm font-medium text-gray-300 mb-2">
+
+         <div className="grid gap-4">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Suno Style Prompt
+              </span>
+              <textarea
+                value={stylePrompt}
+                onChange={(e) => setStylePrompt(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Vocal Direction
+              </span>
+              <textarea
+                value={vocalDirection}
+                onChange={(e) => setVocalDirection(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Arrangement Notes
+              </span>
+              <textarea
+                value={arrangementNotes}
+                onChange={(e) => setArrangementNotes(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Intro / Solo / Outro Prompt
+              </span>
+              <textarea
+                value={introSoloOutro}
+                onChange={(e) => setIntroSoloOutro(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Negative Prompt / Avoid
+              </span>
+              <textarea
+                value={negativePrompt}
+                onChange={(e) => setNegativePrompt(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+              />
+            </label>
+          </div>
+
+
+      
+      <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Suno Advanced Inputs
-          </h3>
+          </summary>
+
+          <p className="mt-2 mb-4 text-sm text-gray-400">
+            Copy-ready fields for Suno 5.5 Advanced mode, including lyrics, style,
+            voice, settings, chord guidance, and negative prompt options.
+          </p>
+
+          <div className="space-y-4">
 
           <div className="grid gap-4">
             <label className="block">
@@ -1268,6 +1287,247 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
             </label>
+        </div>
+            
+        <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Style field
+              </span>
+              <textarea
+                value={sunoStyleCopyInput}
+                readOnly
+                rows={5}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                  Paste this into Suno&apos;s Style field. Prompt length and chord guidance are applied here.
+                </p>
+          </label>
+
+          <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Style comma list
+                  </span>
+                  <textarea
+                    value={sunoStyleCommaList}
+                    readOnly
+                    rows={3}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact comma-separated version for quick Suno Style tests.
+                  </p>
+           </label>  
+
+           <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Voice field
+              </span>
+              <textarea
+                value={sunoVoiceInput}
+                onChange={(e) => setSunoVoice(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+           </label>
+                        <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Gender
+                </span>
+                <select
+                  value={sunoGender}
+                  onChange={(e) => setSunoGender(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Duet">Duet</option>
+                  <option value="Unspecified">Unspecified</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Lyrics mode
+                </span>
+                <select
+                  value={lyricsMode}
+                  onChange={(e) => setLyricsMode(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  <option value="Manual">Manual</option>
+                  <option value="Auto">Auto</option>
+                </select>
+              </label>
+              <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Production target
+                  </span>
+                  <select
+                    value={productionTarget}
+                    onChange={(e) => setProductionTarget(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                  >
+                    <option value="Natural demo">Natural demo</option>
+                    <option value="Radio-ready">Radio-ready</option>
+                    <option value="Live acoustic">Live acoustic</option>
+                    <option value="Cinematic">Cinematic</option>
+                    <option value="Minimal arrangement">Minimal arrangement</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Prompt length
+                  </span>
+                  <select
+                    value={sunoPromptLength}
+                    onChange={(e) => setSunoPromptLength(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                  >
+                    <option value="Short">Short</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Detailed">Detailed</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Chord guidance mode
+                  </span>
+                  <select
+                    value={chordGuidanceMode}
+                    onChange={(e) => setChordGuidanceMode(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                  >
+                    <option value="Lyrics only">Lyrics only</option>
+                    <option value="Add chords to Style">Add chords to Style</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Suno treats chord text as guidance, not a guaranteed chord chart.
+                  </p>
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Suno settings summary
+              </span>
+              <textarea
+                value={sunoSettingsSummary}
+                readOnly
+                rows={5}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+            </label>
+
+            <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Negative prompt comma list
+                  </span>
+                  <textarea
+                    value={negativePromptCommaList}
+                    readOnly
+                    rows={3}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Compact avoid-list version for quick copying.
+                  </p>
+             </label>
+
+              {chordGuidanceForStyle && (
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Chord guidance for Style
+                </span>
+                <textarea
+                  value={chordGuidanceForStyle}
+                  readOnly
+                  rows={3}
+                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                />
+              </label>
+            )}
+            <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Detailed production notes
+                  </span>
+                  <textarea
+                    value={detailedSunoStyleInput}
+                    readOnly
+                    rows={7}
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                      Use these as reference notes; they are usually too detailed for Suno&apos;s Style field.
+                    </p>
+            </label>
+
+            <div>
+              <h4 className="text-sm font-medium text-gray-300 mb-2">
+                Voice presets
+              </h4>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('mpj-baritone')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'MPJ Baritone applied ✓'
+                      ? 'Applied ✓'
+                      : 'MPJ Baritone'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('intimate-acoustic')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'Intimate Acoustic applied ✓'
+                      ? 'Applied ✓'
+                      : 'Intimate Acoustic'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('country-storyteller')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'Country Storyteller applied ✓'
+                      ? 'Applied ✓'
+                      : 'Country Storyteller'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('duet-guide')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'Duet Guide applied ✓'
+                      ? 'Applied ✓'
+                      : 'Duet Guide'}
+                </button>
+                
+           </div>
+
+
+              {activeVoicePresetFeedback && (
+                  <p className="mt-2 text-xs text-green-300">
+                    {activeVoicePresetFeedback}
+                  </p>
+                )}
+            </div>
+            
+
+            <div className="grid gap-4 md:grid-cols-4">
+ 
+            </div>
+
+
+      </div>
+    </details>
+
+
         <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Creative Guides
@@ -1419,237 +1679,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   <p className="mt-1 text-xs text-gray-400">
                     Combined revision notes, current prompts, and creative guidance for refining a Suno result.
                   </p>
-                </label>
-          </div>
-        </details>
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Chord guidance mode
-              </span>
-              <select
-                value={chordGuidanceMode}
-                onChange={(e) => setChordGuidanceMode(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-              >
-                <option value="Lyrics only">Lyrics only</option>
-                <option value="Add chords to Style">Add chords to Style</option>
-              </select>
-              <p className="mt-1 text-xs text-gray-400">
-                Suno treats chord text as guidance, not a guaranteed chord chart.
-              </p>
-            </label>
+                  </label>
+        
+                </div>
+            </details>
 
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Style field
-              </span>
-              <textarea
-                value={sunoStyleCopyInput}
-                readOnly
-                rows={5}
-                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-              />
-              <p className="mt-1 text-xs text-gray-400">
-                  Paste this into Suno&apos;s Style field. Prompt length and chord guidance are applied here.
-                </p>
-            </label>
+            
 
-            {chordGuidanceForStyle && (
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-300 mb-1">
-                  Chord guidance for Style
-                </span>
-                <textarea
-                  value={chordGuidanceForStyle}
-                  readOnly
-                  rows={3}
-                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-                />
-              </label>
-            )}
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Detailed production notes
-              </span>
-              <textarea
-                value={detailedSunoStyleInput}
-                readOnly
-                rows={7}
-                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-              />
-              <p className="mt-1 text-xs text-gray-400">
-                  Use these as reference notes; they are usually too detailed for Suno&apos;s Style field.
-                </p>
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Style comma list
-                  </span>
-                  <textarea
-                    value={sunoStyleCommaList}
-                    readOnly
-                    rows={3}
-                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-                  />
-                  <p className="mt-1 text-xs text-gray-400">
-                    Compact comma-separated version for quick Suno Style tests.
-                  </p>
-                </label>
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Negative prompt comma list
-                  </span>
-                  <textarea
-                    value={negativePromptCommaList}
-                    readOnly
-                    rows={3}
-                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-                  />
-                  <p className="mt-1 text-xs text-gray-400">
-                    Compact avoid-list version for quick copying.
-                  </p>
-                </label>
-            </label>
-
-            <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2">
-                Voice presets
-              </h4>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('mpj-baritone')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'MPJ Baritone applied ✓'
-                      ? 'Applied ✓'
-                      : 'MPJ Baritone'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('intimate-acoustic')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'Intimate Acoustic applied ✓'
-                      ? 'Applied ✓'
-                      : 'Intimate Acoustic'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('country-storyteller')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'Country Storyteller applied ✓'
-                      ? 'Applied ✓'
-                      : 'Country Storyteller'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('duet-guide')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'Duet Guide applied ✓'
-                      ? 'Applied ✓'
-                      : 'Duet Guide'}
-                </button>
-                
-              </div>
-              {activeVoicePresetFeedback && (
-                  <p className="mt-2 text-xs text-green-300">
-                    {activeVoicePresetFeedback}
-                  </p>
-                )}
-            </div>
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Voice field
-              </span>
-              <textarea
-                value={sunoVoiceInput}
-                onChange={(e) => setSunoVoice(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-              />
-            </label>
-
-            <div className="grid gap-4 md:grid-cols-4">
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-300 mb-1">
-                  Gender
-                </span>
-                <select
-                  value={sunoGender}
-                  onChange={(e) => setSunoGender(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Duet">Duet</option>
-                  <option value="Unspecified">Unspecified</option>
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-300 mb-1">
-                  Lyrics mode
-                </span>
-                <select
-                  value={lyricsMode}
-                  onChange={(e) => setLyricsMode(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-                >
-                  <option value="Manual">Manual</option>
-                  <option value="Auto">Auto</option>
-                </select>
-              </label>
-              <label className="block">
-                  <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Production target
-                  </span>
-                  <select
-                    value={productionTarget}
-                    onChange={(e) => setProductionTarget(e.target.value)}
-                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-                  >
-                    <option value="Natural demo">Natural demo</option>
-                    <option value="Radio-ready">Radio-ready</option>
-                    <option value="Live acoustic">Live acoustic</option>
-                    <option value="Cinematic">Cinematic</option>
-                    <option value="Minimal arrangement">Minimal arrangement</option>
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Prompt length
-                  </span>
-                  <select
-                    value={sunoPromptLength}
-                    onChange={(e) => setSunoPromptLength(e.target.value)}
-                    className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-                  >
-                    <option value="Short">Short</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Detailed">Detailed</option>
-                  </select>
-                </label>
-            </div>
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Suno settings summary
-              </span>
-              <textarea
-                value={sunoSettingsSummary}
-                readOnly
-                rows={5}
-                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-              />
-            </label>
-          </div>
-        </div>
-      
+           
+            
+         
         <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Revision Controls
