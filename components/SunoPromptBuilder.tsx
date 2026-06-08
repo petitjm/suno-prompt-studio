@@ -1265,12 +1265,12 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       
       <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
-            Suno Advanced Inputs
+            Suno Handoff Fields
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
-            Copy-ready fields for Suno 5.5 Advanced mode, including lyrics, style,
-            voice, settings, chord guidance, and negative prompt options.
+            Copy-ready fields for pasting into Suno 5.5 Advanced mode, including lyrics,
+style, voice, settings, chord guidance, and negative prompt options.
           </p>
 
           <div className="space-y-4">
