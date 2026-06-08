@@ -1649,160 +1649,207 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </label>
           </div>
         </div>
-        <div className="mt-5 p-4 rounded bg-gray-800 border border-gray-700">
-          <h3 className="text-sm font-medium text-gray-300 mb-2">
-            Suno Creation Notes
-          </h3>
+      
+        <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-100">
+            Revision Controls
+          </summary>
 
-          <p className="text-xs text-gray-400 mb-2">
-            Paste notes from your Suno generations here so you can refine the next prompt.
+          <p className="mt-2 mb-4 text-sm text-gray-400">
+            Use these when refining a previous Suno result. Add what worked,
+            what failed, and what should change next.
           </p>
-          <label className="block mb-3">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Revision focus
-              </span>
-              <select
-                value={revisionFocus}
-                onChange={(e) => setRevisionFocus(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-              >
-                <option value="Balanced revision">Balanced revision</option>
-                <option value="Fix vocal">Fix vocal</option>
-                <option value="Fix arrangement">Fix arrangement</option>
-                <option value="Fix intro/solo/outro">Fix intro/solo/outro</option>
-                <option value="Make more acoustic">Make more acoustic</option>
-                <option value="Make more commercial">Make more commercial</option>
-              </select>
 
-            </label>
-            <label className="block mb-3">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                Last Suno result
-              </span>
-              <select
-                value={sunoResultRating}
-                onChange={(e) => setSunoResultRating(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-              >
-                <option value="Great">Great</option>
-                <option value="Good but needs changes">Good but needs changes</option>
-                <option value="Poor">Poor</option>
-                <option value="Unusable">Unusable</option>
-              </select>
-            </label>
-            <label className="flex items-start gap-2 mb-3 text-sm text-gray-300">
-              <input
-                type="checkbox"
-                checked={useCreationNotesAsMainDriver}
-                onChange={(e) => setUseCreationNotesAsMainDriver(e.target.checked)}
-                className="mt-1"
+          <div className="space-y-4">
+            <div className="p-4 rounded bg-gray-800 border border-gray-700">
+              <h3 className="text-sm font-medium text-gray-300 mb-2">
+                Suno Creation Notes
+              </h3>
+
+              <p className="text-xs text-gray-400 mb-2">
+                Paste notes from your Suno generations here so you can refine
+                the next prompt.
+              </p>
+
+              <textarea
+                value={creationNotes}
+                onChange={(e) => setCreationNotes(e.target.value)}
+                rows={5}
+                placeholder="Example: Version 1 had a strong chorus but the vocal was too polished. Version 2 had a better voice but the intro was too long."
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
-              <span>
-                Use creation notes as main driver
-                <span className="block text-xs text-gray-400">
-                  Prioritise your listening notes over the existing prompt direction when generating the next version.
-                </span>
-              </span>
-            </label>
-            <div className="grid gap-4 md:grid-cols-2 mb-3">
-              <label className="block">
+
+              <label className="block mt-4 mb-3">
                 <span className="block text-sm font-medium text-gray-300 mb-1">
-                  Keep from last version
+                  Revision focus
                 </span>
-                <textarea
-                  value={keepFromLastVersion}
-                  onChange={(e) => setKeepFromLastVersion(e.target.value)}
-                  rows={3}
-                  placeholder="Example: Keep the chorus lift, acoustic mood, and female harmony."
-                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-                />
+                <select
+                  value={revisionFocus}
+                  onChange={(e) => setRevisionFocus(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  <option value="Balanced revision">Balanced revision</option>
+                  <option value="Fix vocal">Fix vocal</option>
+                  <option value="Fix arrangement">Fix arrangement</option>
+                  <option value="Fix intro/solo/outro">
+                    Fix intro/solo/outro
+                  </option>
+                  <option value="Make more acoustic">
+                    Make more acoustic
+                  </option>
+                  <option value="Make more commercial">
+                    Make more commercial
+                  </option>
+                </select>
               </label>
 
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-300 mb-1">
-                  Change in next version
-                </span>
-                <textarea
-                  value={changeInNextVersion}
-                  onChange={(e) => setChangeInNextVersion(e.target.value)}
-                  rows={3}
-                  placeholder="Example: Make the vocal stronger and the guitar more prominent."
-                  className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              <label className="flex items-start gap-2 mb-3 text-sm text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={useCreationNotesAsMainDriver}
+                  onChange={(e) =>
+                    setUseCreationNotesAsMainDriver(e.target.checked)
+                  }
+                  className="mt-1"
                 />
+                <span>
+                  Use creation notes as main driver
+                  <span className="block text-xs text-gray-400">
+                    Prioritise your listening notes over the existing prompt
+                    direction when generating the next version.
+                  </span>
+                </span>
               </label>
-            </div>
-          <textarea
-            value={creationNotes}
-            onChange={(e) => setCreationNotes(e.target.value)}
-            rows={5}
-            placeholder="Example: Version 1 had a strong chorus but the vocal was too polished. Version 2 had a better voice but the intro was too long."
-            className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-          />
-          {previousSunoStyleField && sunoStyleField && previousSunoStyleField !== sunoStyleField && (
-              <div className="mt-4 p-3 rounded bg-gray-900 border border-gray-700">
-                <h4 className="text-sm font-medium text-gray-300 mb-2">
-                  Last Suno style revision
-                </h4>
 
-                <div className="grid gap-3">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Before</p>
-                    <p className="text-sm text-gray-300">{previousSunoStyleField}</p>
-                  </div>
+              <label className="block mb-3">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
+                  Last Suno result
+                </span>
+                <select
+                  value={sunoResultRating}
+                  onChange={(e) => setSunoResultRating(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white"
+                >
+                  <option value="Great">Great</option>
+                  <option value="Good but needs changes">
+                    Good but needs changes
+                  </option>
+                  <option value="Poor">Poor</option>
+                  <option value="Unusable">Unusable</option>
+                </select>
+              </label>
 
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">After</p>
-                    <p className="text-sm text-green-300">{sunoStyleField}</p>
+              <div className="grid gap-4 md:grid-cols-2 mb-3">
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Keep from last version
+                  </span>
+                  <textarea
+                    value={keepFromLastVersion}
+                    onChange={(e) => setKeepFromLastVersion(e.target.value)}
+                    rows={3}
+                    placeholder="Example: Keep the chorus lift, acoustic mood, and female harmony."
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-300 mb-1">
+                    Change in next version
+                  </span>
+                  <textarea
+                    value={changeInNextVersion}
+                    onChange={(e) => setChangeInNextVersion(e.target.value)}
+                    rows={3}
+                    placeholder="Example: Make the vocal stronger and the guitar more prominent."
+                    className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+                  />
+                </label>
+              </div>
+
+              {previousSunoStyleField &&
+                sunoStyleField &&
+                previousSunoStyleField !== sunoStyleField && (
+                  <div className="mt-4 p-3 rounded bg-gray-900 border border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">
+                      Last Suno style revision
+                    </h4>
+
+                    <div className="grid gap-3">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Before</p>
+                        <p className="text-sm text-gray-300">
+                          {previousSunoStyleField}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">After</p>
+                        <p className="text-sm text-green-300">
+                          {sunoStyleField}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sunoStyleField)
+                        showButtonFeedback(setJustCopiedRevisedStyle)
+                      }}
+                      className="mt-3 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+                    >
+                      {justCopiedRevisedStyle
+                        ? 'Revised style copied ✓'
+                        : 'Copy revised style'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(fullSunoPack)
+                        showButtonFeedback(setJustCopiedRevisedFullPack)
+                      }}
+                      className="mt-3 ml-0 md:ml-3 px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-500"
+                    >
+                      {justCopiedRevisedFullPack
+                        ? 'Revised full pack copied ✓'
+                        : 'Copy revised full pack'}
+                    </button>
                   </div>
-                </div>
+                )}
+
+              <div className="mt-3">
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(sunoStyleField)
-                    showButtonFeedback(setJustCopiedRevisedStyle)
+                    navigator.clipboard.writeText(sunoRevisionBrief)
+                    showButtonFeedback(setJustCopiedRevisionBrief)
                   }}
-                  className="mt-3 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                 >
-                  {justCopiedRevisedStyle ? 'Revised style copied ✓' : 'Copy revised style'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(fullSunoPack)
-                    showButtonFeedback(setJustCopiedRevisedFullPack)
-                  }}
-                  className="mt-3 ml-0 md:ml-3 px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-500"
-                >
-                  {justCopiedRevisedFullPack
-                    ? 'Revised full pack copied ✓'
-                    : 'Copy revised full pack'}
+                  {justCopiedRevisionBrief
+                    ? 'Revision brief copied ✓'
+                    : 'Copy revision brief'}
                 </button>
               </div>
-            )}
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(sunoRevisionBrief)
-                showButtonFeedback(setJustCopiedRevisionBrief)
-              }}
-              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-            >
-              {justCopiedRevisionBrief ? 'Revision brief copied ✓' : 'Copy revision brief'}
-            </button>
-          </div>
-        </div>
-        {lastRevisionContext && (
-          <div className="mt-4 p-3 rounded bg-gray-900 border border-gray-700">
-            <h4 className="text-sm font-medium text-gray-300 mb-2">
-              Revision context used
-            </h4>
+            </div>
 
-            <pre className="whitespace-pre-wrap text-xs text-gray-400 font-sans">
-              {lastRevisionContext}
-            </pre>
+            {lastRevisionContext && (
+              <div className="p-3 rounded bg-gray-900 border border-gray-700">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">
+                  Revision context used
+                </h4>
+
+                <pre className="whitespace-pre-wrap text-xs text-gray-400 font-sans">
+                  {lastRevisionContext}
+                </pre>
+              </div>
+            )}
           </div>
-        )}
+        </details>
+
+
       <div className="mt-5 p-3 rounded bg-gray-800 border border-gray-700">
         <h3 className="text-sm font-medium text-gray-300 mb-2">
           Combined Suno Prompt
