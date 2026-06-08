@@ -1132,8 +1132,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
       <div className="mb-4 p-3 rounded bg-gray-800">
         <h3 className="text-sm font-medium text-gray-300 mb-1">
-          Current lyric direction
+         Song snapshot
         </h3>
+        <p className="mb-2 text-xs text-gray-500">
+          Quick read of the current song sheet used for prompt generation.
+        </p>
         <p className="text-sm text-gray-400">
           {lyricSummary}
         </p>
