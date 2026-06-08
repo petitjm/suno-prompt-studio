@@ -1850,17 +1850,25 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </details>
 
 
-      <div className="mt-5 p-3 rounded bg-gray-800 border border-gray-700">
-        <h3 className="text-sm font-medium text-gray-300 mb-2">
-          Combined Suno Prompt
-        </h3>
-        <textarea
-          value={combinedPrompt}
-          readOnly
-          rows={8}
-          className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
-        />
-      </div>
+      <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-100">
+            Combined Suno Prompt
+          </summary>
+
+          <p className="mt-2 mb-4 text-sm text-gray-400">
+            Full combined prompt assembled from the current style, vocal, arrangement,
+            intro / solo / outro, and negative prompt fields.
+          </p>
+
+          <textarea
+            value={combinedPrompt}
+            readOnly
+            rows={8}
+            className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+          />
+        </details>
+
+
       {generatedFromSummary && (
           <p className="mt-2 text-xs text-gray-400">
             Generated from: {generatedFromSummary}
