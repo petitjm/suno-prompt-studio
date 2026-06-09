@@ -1307,7 +1307,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
 
 
-      
+      <div className="mb-3">
+          <h3 className="text-lg font-semibold text-white">
+            Core Prompt Fields
+          </h3>
+          <p className="text-sm text-gray-400">
+            Main editable prompt fields used to generate and refine your Suno handoff.
+          </p>
+        </div>
 
 
          <div className="grid gap-4">
