@@ -1413,7 +1413,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       
       <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
-            Suno Handoff Fields
+            Suno Handoff Fields — lyrics, style, voice, settings
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
@@ -1624,7 +1624,7 @@ style, voice, settings, chord guidance, and negative prompt options.
 
         <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
-            Creative Guides
+            Creative Guides — structure, hook, arc, performance
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
@@ -1722,7 +1722,7 @@ style, voice, settings, chord guidance, and negative prompt options.
         
         <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
-            Copy Packs
+            Copy Packs — quick, comma, revision
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
@@ -1785,7 +1785,7 @@ style, voice, settings, chord guidance, and negative prompt options.
          
         <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
-            Revision Controls
+            Revision Controls — notes, keep/change, result rating
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
@@ -1985,7 +1985,7 @@ style, voice, settings, chord guidance, and negative prompt options.
 
       <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
-            Combined Suno Prompt
+            Combined Suno Prompt — full generated prompt
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
