@@ -1214,6 +1214,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           <h3 className="text-sm font-medium text-gray-300 mb-2">
             Quick style presets
           </h3>
+          <p className="mb-3 text-xs text-gray-400">
+              Choose a starting production style before generating or refining Suno prompts.
+            </p>
 
           <div className="flex flex-wrap gap-2">
             <button
@@ -1268,6 +1271,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               <h4 className="text-sm font-medium text-gray-300 mb-2">
                 Voice presets
               </h4>
+              <p className="mb-3 text-xs text-gray-400">
+                  Choose the vocal/persona direction and gender setting for the Suno handoff.
+                </p>
 
               <div className="flex flex-wrap gap-2">
                 <button
