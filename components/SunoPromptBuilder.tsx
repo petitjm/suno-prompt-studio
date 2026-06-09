@@ -2034,9 +2034,13 @@ style, voice, settings, chord guidance, and negative prompt options.
 
         <div className="space-y-4">
   <div className="rounded border border-gray-700 bg-gray-900/50 p-4">
-    <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-300">
-      Primary actions
+    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
+  Primary actions
     </h4>
+
+    <p className="mb-3 text-xs text-gray-400">
+      Generate creates new Suno prompts. Reset restores default prompt fields. Clear session removes revision state without changing the current prompts.
+    </p>
     <div className="flex flex-wrap gap-3">
       
       <button
