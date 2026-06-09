@@ -1179,6 +1179,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           </div>
         </div>
 
+
+
+
       <div className="mb-4">
           <h3 className="text-sm font-medium text-gray-300 mb-2">
             Quick style presets
@@ -1233,7 +1236,61 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </div>
      
         
-        
+                    <div>
+              <h4 className="text-sm font-medium text-gray-300 mb-2">
+                Voice presets
+              </h4>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('mpj-baritone')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'MPJ Baritone applied ✓'
+                      ? 'Applied ✓'
+                      : 'MPJ Baritone'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('intimate-acoustic')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'Intimate Acoustic applied ✓'
+                      ? 'Applied ✓'
+                      : 'Intimate Acoustic'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('country-storyteller')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'Country Storyteller applied ✓'
+                      ? 'Applied ✓'
+                      : 'Country Storyteller'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyVoicePreset('duet-guide')}
+                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  {activeVoicePresetFeedback === 'Duet Guide applied ✓'
+                      ? 'Applied ✓'
+                      : 'Duet Guide'}
+                </button>
+                
+           </div>
+
+
+              {activeVoicePresetFeedback && (
+                  <p className="mt-2 text-xs text-green-300">
+                    {activeVoicePresetFeedback}
+                  </p>
+                )}
+            </div>
 
 
 
@@ -1503,61 +1560,7 @@ style, voice, settings, chord guidance, and negative prompt options.
                     </p>
             </label>
 
-            <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2">
-                Voice presets
-              </h4>
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('mpj-baritone')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'MPJ Baritone applied ✓'
-                      ? 'Applied ✓'
-                      : 'MPJ Baritone'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('intimate-acoustic')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'Intimate Acoustic applied ✓'
-                      ? 'Applied ✓'
-                      : 'Intimate Acoustic'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('country-storyteller')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'Country Storyteller applied ✓'
-                      ? 'Applied ✓'
-                      : 'Country Storyteller'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyVoicePreset('duet-guide')}
-                  className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  {activeVoicePresetFeedback === 'Duet Guide applied ✓'
-                      ? 'Applied ✓'
-                      : 'Duet Guide'}
-                </button>
-                
-           </div>
-
-
-              {activeVoicePresetFeedback && (
-                  <p className="mt-2 text-xs text-green-300">
-                    {activeVoicePresetFeedback}
-                  </p>
-                )}
-            </div>
             
 
             <div className="grid gap-4 md:grid-cols-4">
