@@ -741,7 +741,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const compactSunoStyleInput = sunoStyleField.trim()
 
-        
+        const sunoWorkflowHint = !performanceSheet.trim()
+          ? 'Add or load lyrics in the Song Sheet to begin building Suno prompts.'
+          : !generatedFromSummary
+            ? 'Generate Suno prompts, then copy the quick pack or individual Suno fields into Suno 5.5 Advanced mode.'
+            : 'Prompts have been generated. Copy a quick pack into Suno, or open Revision Controls after listening to a Suno result.'
 
         const detailedSunoStyleInput = [
           stylePrompt,
@@ -1179,7 +1183,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           </div>
         </div>
 
-
+        <div className="mb-4 rounded border border-blue-800 bg-blue-950/30 p-3">
+          <h3 className="mb-1 text-sm font-medium text-blue-200">
+            Suggested next step
+          </h3>
+          <p className="text-sm text-blue-100">
+            {sunoWorkflowHint}
+          </p>
+        </div>
 
 
       <div className="mb-4">
