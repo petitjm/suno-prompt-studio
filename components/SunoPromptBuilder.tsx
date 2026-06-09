@@ -2073,9 +2073,13 @@ style, voice, settings, chord guidance, and negative prompt options.
   </div>
 
   <div className="rounded border border-gray-700 bg-gray-900/50 p-4">
-    <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-300">
-      Quick copy
-    </h4>
+    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
+          Quick copy
+        </h4>
+
+        <p className="mb-3 text-xs text-gray-400">
+          Most useful for Suno: Copy Suno quick pack, Copy Suno style, Copy Suno lyrics, and Copy Suno voice.
+        </p>
     <div className="flex flex-wrap gap-3">
       
       <button
