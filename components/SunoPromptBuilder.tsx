@@ -2183,6 +2183,9 @@ style, voice, settings, chord guidance, and negative prompt options.
       {' '}click to expand/collapse
     </span>
     </summary>
+    <p className="mt-3 text-xs text-gray-400">
+          Secondary copy options for revision notes, full packs, creative guides, and detailed reference material.
+        </p>
     <div className="mt-4 flex flex-wrap gap-3">
      
     <button
