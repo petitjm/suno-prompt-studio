@@ -1150,7 +1150,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           <summary className="cursor-pointer text-sm font-medium text-gray-300">
             Song snapshot
             <span className="text-gray-500 text-sm font-normal">
-              {' '}click to open
+              {' '}click to expand/collapse
             </span>
           </summary>
 
@@ -1418,7 +1418,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Suno Handoff Fields — lyrics, style, voice, settings
             <span className="text-gray-500 text-sm font-normal">
-          {' '}click to open
+          {' '}click to expand/collapse
         </span>
           </summary>
 
@@ -1632,7 +1632,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Creative Guides — structure, hook, arc, performance
             <span className="text-gray-500 text-sm font-normal">
-              {' '}click to open
+              {' '}click to expand/collapse
             </span>
           </summary>
 
@@ -1733,7 +1733,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Copy Packs — quick, comma, revision
             <span className="text-gray-500 text-sm font-normal">
-              {' '}click to open
+              {' '}click to expand/collapse
             </span>
           </summary>
 
@@ -1799,7 +1799,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Revision Controls — notes, keep/change, result rating
             <span className="text-gray-500 text-sm font-normal">
-              {' '}click to open
+              {' '}click to expand/collapse
             </span>
           </summary>
 
@@ -2002,7 +2002,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Combined Suno Prompt — full generated prompt
          <span className="text-gray-500 text-sm font-normal">
-          {' '}click to open
+          {' '}click to expand/collapse
         </span>
           </summary>
 
@@ -2170,7 +2170,7 @@ style, voice, settings, chord guidance, and negative prompt options.
     <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-gray-300">
       Detailed copy
       <span className="text-gray-500 text-sm font-normal">
-      {' '}click to open
+      {' '}click to expand/collapse
     </span>
     </summary>
     <div className="mt-4 flex flex-wrap gap-3">
