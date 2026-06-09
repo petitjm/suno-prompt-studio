@@ -1123,6 +1123,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           negativePromptCommaList || 'No negative comma list provided.',
         ].join('\n')
 
+        const coreFieldStatus = [
+          stylePrompt.trim() ? 'Style ✓' : 'Style missing',
+          vocalDirection.trim() ? 'Vocal ✓' : 'Vocal missing',
+          arrangementNotes.trim() ? 'Arrangement ✓' : 'Arrangement missing',
+          introSoloOutro.trim() ? 'Intro/Solo/Outro ✓' : 'Intro/Solo/Outro missing',
+          negativePrompt.trim() ? 'Negative ✓' : 'Negative missing',
+        ].join(' · ')
+
+
+
+
+
   return (
     <section className="mt-6 p-4 rounded bg-gray-900 border border-gray-700 max-w-5xl">
       <div className="mb-4">
@@ -1313,6 +1325,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           </h3>
           <p className="text-sm text-gray-400">
             Main editable prompt fields used to generate and refine your Suno handoff.
+          </p>
+          <p className="mt-2 text-xs text-gray-500">
+            {coreFieldStatus}
           </p>
         </div>
 
