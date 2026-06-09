@@ -1134,17 +1134,19 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </p>
       </div>
 
-      <div className="mb-4 p-3 rounded bg-gray-800">
-        <h3 className="text-sm font-medium text-gray-300 mb-1">
-         Song snapshot
-        </h3>
-        <p className="mb-2 text-xs text-gray-500">
-          Quick read of the current song sheet used for prompt generation.
-        </p>
-        <p className="text-sm text-gray-400">
-          {lyricSummary}
-        </p>
-      </div>
+      <details className="mb-4 rounded bg-gray-800 p-3">
+          <summary className="cursor-pointer text-sm font-medium text-gray-300">
+            Song snapshot
+          </summary>
+
+          <p className="mt-2 mb-2 text-xs text-gray-500">
+            Quick read of the current song sheet used for prompt generation.
+          </p>
+
+          <p className="whitespace-pre-wrap text-sm text-gray-400">
+            {lyricSummary}
+          </p>
+        </details>
       <div className="mb-4 rounded border border-gray-700 bg-gray-900/60 p-3">
           <h3 className="mb-2 text-sm font-medium text-gray-300">
             Suno setup
