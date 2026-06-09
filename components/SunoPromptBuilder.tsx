@@ -1210,7 +1210,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </div>
 
 
-      <div className="mb-4">
+      <div className="mb-5 rounded border border-gray-700 bg-gray-900/40 p-4">
           <h3 className="text-sm font-medium text-gray-300 mb-2">
             Quick style presets
           </h3>
@@ -1264,7 +1264,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </div>
      
         
-                    <div>
+             <div className="mb-5 rounded border border-gray-700 bg-gray-900/40 p-4">
               <h4 className="text-sm font-medium text-gray-300 mb-2">
                 Voice presets
               </h4>
