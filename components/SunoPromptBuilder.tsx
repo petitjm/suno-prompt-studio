@@ -1585,7 +1585,7 @@ style, voice, settings, chord guidance, and negative prompt options.
     </details>
 
 
-        <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
+        <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Creative Guides
           </summary>
@@ -1683,7 +1683,7 @@ style, voice, settings, chord guidance, and negative prompt options.
            </div>
         </details>   
         
-        <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
+        <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Copy Packs
           </summary>
@@ -1746,7 +1746,7 @@ style, voice, settings, chord guidance, and negative prompt options.
            
             
          
-        <details className="rounded border border-gray-700 bg-gray-900/60 p-4">
+        <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
             Revision Controls
           </summary>
