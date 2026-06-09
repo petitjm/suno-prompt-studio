@@ -1328,6 +1328,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Main musical identity: genre, mood, vocal character, instrumentation, and production feel.
+                </p>
             </label>
 
             <label className="block">
@@ -1340,6 +1343,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Describes the lead vocal tone, delivery, accent, emotion, and chorus lift.
+                </p>
             </label>
 
             <label className="block">
@@ -1352,6 +1358,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Controls the song build, instrumentation, dynamics, and production approach.
+                </p>
             </label>
 
             <label className="block">
@@ -1364,6 +1373,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Optional guidance for openings, instrumental breaks, solos, endings, and transitions.
+                </p>
             </label>
 
             <label className="block">
@@ -1376,6 +1388,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                  Describes unwanted sounds, styles, vocal effects, instruments, or production choices.
+                </p>
             </label>
           </div>
 
