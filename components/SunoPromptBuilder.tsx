@@ -1131,6 +1131,13 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           negativePrompt.trim() ? 'Negative ✓' : 'Negative missing',
         ].join(' · ')
 
+        const currentPresetDirection = [
+          stylePrompt.trim() ? `Style: ${stylePrompt.trim().split('\n')[0]}` : 'Style: not set',
+          sunoVoiceInput.trim() ? `Voice: ${sunoVoiceInput.trim().split('\n')[0]}` : 'Voice: not set',
+        ].join(' · ')
+
+
+
 
 
 
@@ -1293,6 +1300,15 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     {activeVoicePresetFeedback}
                   </p>
                 )}
+
+                <div className="mt-3 rounded border border-gray-700 bg-gray-950/50 p-3">
+                  <p className="text-xs text-gray-400">
+                    Current preset direction
+                  </p>
+                  <p className="mt-1 text-sm text-gray-200">
+                    {currentPresetDirection}
+                  </p>
+                </div>
             </div>
 
 
