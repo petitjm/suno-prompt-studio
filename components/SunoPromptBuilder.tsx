@@ -376,6 +376,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [lastRevisionContext, setLastRevisionContext] = useState('')
   const [creationNotes, setCreationNotes] = useState('')
   const [sunoResultRating, setSunoResultRating] = useState('Good but needs changes')
+  const [justUsedGeneratedStyle, setJustUsedGeneratedStyle] = useState(false)
   const [previousSunoStyleField, setPreviousSunoStyleField] = useState('')
   const [justCopiedRevisedStyle, setJustCopiedRevisedStyle] = useState(false)
   const [justCopiedFullCommaPack, setJustCopiedFullCommaPack] = useState(false)
@@ -1314,11 +1315,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   <button
                     type="button"
                     onClick={() => {
-                          setStylePrompt(sunoStyleField)
-                        }}
+                      setStylePrompt(sunoStyleField)
+                      showButtonFeedback(setJustUsedGeneratedStyle)
+                    }}
                     className="mt-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                   >
-                    Use generated Suno style as main style
+                    {justUsedGeneratedStyle
+                      ? 'Generated style applied ✓'
+                      : 'Use generated Suno style as main style'}
                   </button>
                 )}
             </div>
