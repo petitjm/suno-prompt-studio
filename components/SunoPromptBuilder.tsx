@@ -1361,6 +1361,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 {creationNotes.trim() ? 'Ready' : 'Empty'}
               </span>
             </div>
+
+            <div>
+              <span className="text-gray-500">Revision mode:</span>{' '}
+              <span className="text-gray-100">
+                {useCreationNotesAsMainDriver ? 'Notes-led' : 'Balanced'}
+              </span>
+            </div>
+
           </div>
         </div>
 
