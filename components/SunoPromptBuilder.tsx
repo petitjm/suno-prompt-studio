@@ -1376,6 +1376,13 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
             </div>
 
+            <div>
+              <span className="text-gray-500">Revision focus:</span>{' '}
+              <span className="text-gray-100">
+                {revisionFocus}
+              </span>
+            </div>
+
 
           </div>
         </div>
