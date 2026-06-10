@@ -1462,6 +1462,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     </div>
   </div>
 
+
+  
+      {generatedFromSummary && (
+          <div className="mt-3 rounded border border-green-800 bg-green-950/30 p-3">
+            <p className="text-xs text-green-200">
+              Generated from: {generatedFromSummary}
+            </p>
+          </div>
+        )}
+
+
   <div className="mt-5 rounded border border-gray-700 bg-gray-900/50 p-4">
     <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
           Quick copy
@@ -2293,11 +2304,6 @@ style, voice, settings, chord guidance, and negative prompt options.
         </details>
 
 
-      {generatedFromSummary && (
-          <p className="mt-2 text-xs text-gray-400">
-            Generated from: {generatedFromSummary}
-          </p>
-        )}
 
 
 
