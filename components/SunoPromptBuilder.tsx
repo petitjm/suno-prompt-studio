@@ -1321,7 +1321,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
             <div className="mb-5 rounded border border-gray-700 bg-gray-900/60 p-3">
           <h3 className="mb-2 text-sm font-medium text-gray-300">
-            Suno setup
+            Suno status
           </h3>
 
           <div className="grid gap-2 text-xs text-gray-300 sm:grid-cols-2 xl:grid-cols-5">
