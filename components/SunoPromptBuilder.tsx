@@ -903,9 +903,21 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           negativePrompt || 'No negative prompt provided.',
         ].join('\n')
 
+        const sunoStatusSummary = [
+          `Ready for ${lyricsMode} Suno 5.5 handoff`,
+          `using ${sunoGender} vocal`,
+          `${productionTarget} target`,
+          `${sunoPromptLength} prompt length.`,
+          `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
+        ].join(' ')
+
+
         const sunoRevisionInputPack = [
           'SUNO REVISION INPUT PACK',
           '',
+        'SUNO STATUS SUMMARY:',
+            sunoStatusSummary,
+            '',
           'LAST RESULT RATING:',
           sunoResultRating || 'Not provided',
           '',
@@ -1141,13 +1153,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ].join(' · ')
 
 
-        const sunoStatusSummary = [
-          `Ready for ${lyricsMode} Suno 5.5 handoff`,
-          `using ${sunoGender} vocal`,
-          `${productionTarget} target`,
-          `${sunoPromptLength} prompt length.`,
-          `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
-        ].join(' ')
+        
 
 
 
