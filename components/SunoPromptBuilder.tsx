@@ -882,10 +882,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ].join('\n')   
         
         
+        const sunoStatusSummary = [
+          `Ready for ${lyricsMode} Suno 5.5 handoff`,
+          `using ${sunoGender} vocal`,
+          `${productionTarget} target`,
+          `${sunoPromptLength} prompt length.`,
+          `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
+        ].join(' ')
 
 
         const sunoQuickPack = [
           'SUNO QUICK PACK',
+          '',
+          'SUNO STATUS SUMMARY:',
+          sunoStatusSummary,
           '',
           'LYRICS:',
           sunoLyricsInput || 'No lyrics provided.',
@@ -903,13 +913,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           negativePrompt || 'No negative prompt provided.',
         ].join('\n')
 
-        const sunoStatusSummary = [
-          `Ready for ${lyricsMode} Suno 5.5 handoff`,
-          `using ${sunoGender} vocal`,
-          `${productionTarget} target`,
-          `${sunoPromptLength} prompt length.`,
-          `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
-        ].join(' ')
+        
 
 
         const sunoRevisionInputPack = [
@@ -950,6 +954,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const fullSunoPack = [
           'SUNO 5.5 ADVANCED INPUTS',
+          '',
+          'SUNO STATUS SUMMARY:',
+          sunoStatusSummary,
           '',
           'LYRICS:',
           sunoLyricsInput || 'No lyrics provided.',
@@ -1089,6 +1096,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const sunoQuickCommaPack = [
           'SUNO QUICK COMMA PACK',
           '',
+          'SUNO STATUS SUMMARY:',
+          sunoStatusSummary,
+          '',
           'LYRICS:',
           sunoLyricsInput || 'No lyrics provided.',
           '',
@@ -1107,6 +1117,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const fullSunoCommaPack = [
           'SUNO 5.5 ADVANCED INPUTS - COMMA STYLE',
+          '',
+          'SUNO STATUS SUMMARY:',
+          sunoStatusSummary,
           '',
           'LYRICS:',
           sunoLyricsInput || 'No lyrics provided.',
