@@ -1324,7 +1324,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             Suno setup
           </h3>
 
-          <div className="grid gap-2 text-xs text-gray-300 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-2 text-xs text-gray-300 sm:grid-cols-2 xl:grid-cols-5">
             <div>
               <span className="text-gray-500">Voice:</span>{' '}
               <span className="text-gray-100">{sunoVoiceInput || 'Not set'}</span>
@@ -1368,6 +1368,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 {useCreationNotesAsMainDriver ? 'Notes-led' : 'Balanced'}
               </span>
             </div>
+
+            <div>
+              <span className="text-gray-500">Result rating:</span>{' '}
+              <span className="text-gray-100">
+                {sunoResultRating}
+              </span>
+            </div>
+
 
           </div>
         </div>
