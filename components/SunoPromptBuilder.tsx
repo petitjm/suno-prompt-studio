@@ -1170,8 +1170,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ].join(' · ')
 
 
-        const sunoStatusQuickPack = [
-          'SUNO STATUS + QUICK PACK',
+        const sunoHandoffPack = [
+          'SUNO HANDOFF PACK',
           '',
           sunoQuickPack,
         ].join('\n')
@@ -1811,7 +1811,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(sunoStatusQuickPack)
+            navigator.clipboard.writeText(sunoHandoffPack)
             showButtonFeedback(setJustCopiedStatusQuickPack)
           }}
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
