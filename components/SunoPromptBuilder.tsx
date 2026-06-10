@@ -405,6 +405,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedProductionNotes, setJustCopiedProductionNotes] = useState(false)
   const [justCopiedRevisedFullPack, setJustCopiedRevisedFullPack] = useState(false)
   const [justCopiedStatusSummary, setJustCopiedStatusSummary] = useState(false)
+  const [justCopiedStatusQuickPack, setJustCopiedStatusQuickPack] = useState(false)
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
@@ -1169,7 +1170,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ].join(' · ')
 
 
-        
+        const sunoStatusQuickPack = [
+          'SUNO STATUS + QUICK PACK',
+          '',
+          'SUNO STATUS SUMMARY:',
+          sunoStatusSummary,
+          '',
+          sunoQuickPack,
+        ].join('\n')
+
+
+
 
 
 
@@ -1799,6 +1810,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           {justCopiedNegativeCommaList
             ? 'Negative list copied ✓'
             : 'Copy negative comma list'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoStatusQuickPack)
+            showButtonFeedback(setJustCopiedStatusQuickPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedStatusQuickPack
+            ? 'Status quick pack copied ✓'
+            : 'Copy status + quick pack'}
         </button>
         <button
           type="button"
