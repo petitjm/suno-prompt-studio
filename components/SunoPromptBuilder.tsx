@@ -404,6 +404,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedRevisionBrief, setJustCopiedRevisionBrief] = useState(false)
   const [justCopiedProductionNotes, setJustCopiedProductionNotes] = useState(false)
   const [justCopiedRevisedFullPack, setJustCopiedRevisedFullPack] = useState(false)
+  const [justCopiedStatusSummary, setJustCopiedStatusSummary] = useState(false)
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
   const [promptMessage, setPromptMessage] = useState('')
@@ -1337,6 +1338,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           <p className="mb-3 text-xs text-gray-400">
               {sunoStatusSummary}
             </p>
+          <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(sunoStatusSummary)
+                showButtonFeedback(setJustCopiedStatusSummary)
+              }}
+              className="mb-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600 text-xs"
+            >
+              {justCopiedStatusSummary ? 'Status copied ✓' : 'Copy status summary'}
+            </button>
 
 
           <div className="space-y-3">
