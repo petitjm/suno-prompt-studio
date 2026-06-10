@@ -1230,6 +1230,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </h4>
               <p className="mb-3 text-xs text-gray-400">
                   Choose the vocal/persona direction and gender setting for the Suno handoff.
+                  Use Reset MPJ preset to return to the default acoustic MPJ starting point.
                 </p>
 
               <div className="flex flex-wrap gap-2">
@@ -1271,6 +1272,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   {activeVoicePresetFeedback === 'Duet Guide applied ✓'
                       ? 'Applied ✓'
                       : 'Duet Guide'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    applyPreset('mpj-acoustic')
+                    applyVoicePreset('mpj-baritone')
+                  }}
+                  className="px-3 py-2 rounded bg-blue-700 text-white hover:bg-blue-600"
+                >
+                  Reset MPJ preset
                 </button>
                 
            </div>
