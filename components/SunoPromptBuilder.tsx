@@ -1313,6 +1313,21 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   </p>
                 </div>
 
+
+
+            {generatedFromSummary && (
+              <div className="mt-3 rounded border border-gray-700 bg-gray-950/50 p-3">
+                <h4 className="mb-1 text-sm font-medium text-gray-300">
+                  Generated prompt actions
+                </h4>
+
+                <p className="mb-3 text-xs text-gray-400">
+                  Use the generated style, voice, or arrangement guidance as the new working direction.
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+
+
                 {generatedFromSummary && sunoStyleField.trim() && (
                   <button
                     type="button"
@@ -1320,7 +1335,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                       setStylePrompt(sunoStyleField)
                       showButtonFeedback(setJustUsedGeneratedStyle)
                     }}
-                    className="mt-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                   >
                     {justUsedGeneratedStyle
                       ? 'Generated style applied ✓'
@@ -1335,7 +1350,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                       setSunoVoice(vocalDirection)
                       showButtonFeedback(setJustUsedGeneratedVoice)
                     }}
-                    className="mt-3 ml-0 md:ml-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                   >
                     {justUsedGeneratedVoice
                       ? 'Generated voice applied ✓'
@@ -1349,7 +1364,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     onClick={() => {
                       showButtonFeedback(setJustUsedGeneratedArrangement)
                     }}
-                    className="mt-3 ml-0 md:ml-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
                   >
                     {justUsedGeneratedArrangement
                       ? 'Arrangement confirmed ✓'
@@ -1357,7 +1372,12 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   </button>
                 )}
 
+             </div>
             </div>
+            )}
+
+
+         </div>
 
 
 
