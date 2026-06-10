@@ -1540,6 +1540,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         )}
 
 
+        {generatedFromSummary && creationNotes.trim() && (
+          <div className="mt-3 rounded border border-green-800 bg-green-950/30 p-3">
+            <h4 className="mb-1 text-sm font-medium text-green-200">
+              Revision notes ready
+            </h4>
+            <p className="text-xs text-green-100">
+              Your creation notes are ready to guide the next Suno prompt generation. Use Revision Controls to adjust focus, rating, keep, and change instructions.
+            </p>
+          </div>
+        )}
+
+
         {generatedFromSummary && (
               <div className="mt-3 rounded border border-gray-700 bg-gray-950/50 p-3">
                 <h4 className="mb-1 text-sm font-medium text-gray-300">
