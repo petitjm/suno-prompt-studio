@@ -1162,43 +1162,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             {lyricSummary}
           </p>
         </details>
-      <div className="mb-4 rounded border border-gray-700 bg-gray-900/60 p-3">
-          <h3 className="mb-2 text-sm font-medium text-gray-300">
-            Suno setup
-          </h3>
-
-          <div className="grid gap-2 text-xs text-gray-300 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <span className="text-gray-500">Voice:</span>{' '}
-              <span className="text-gray-100">{sunoVoiceInput || 'Not set'}</span>
-            </div>
-
-            <div>
-              <span className="text-gray-500">Gender:</span>{' '}
-              <span className="text-gray-100">{sunoGender}</span>
-            </div>
-
-            <div>
-              <span className="text-gray-500">Lyrics mode:</span>{' '}
-              <span className="text-gray-100">{lyricsMode}</span>
-            </div>
-
-            <div>
-              <span className="text-gray-500">Target:</span>{' '}
-              <span className="text-gray-100">{productionTarget}</span>
-            </div>
-
-            <div>
-              <span className="text-gray-500">Prompt length:</span>{' '}
-              <span className="text-gray-100">{sunoPromptLength}</span>
-            </div>
-
-            <div>
-              <span className="text-gray-500">Chord mode:</span>{' '}
-              <span className="text-gray-100">{chordGuidanceMode}</span>
-            </div>
-          </div>
-        </div>
+      
 
         
 
@@ -1318,6 +1282,47 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   </p>
                 )}
             </div>
+
+
+
+            <div className="mb-5 rounded border border-gray-700 bg-gray-900/60 p-3">
+          <h3 className="mb-2 text-sm font-medium text-gray-300">
+            Suno setup
+          </h3>
+
+          <div className="grid gap-2 text-xs text-gray-300 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <span className="text-gray-500">Voice:</span>{' '}
+              <span className="text-gray-100">{sunoVoiceInput || 'Not set'}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-500">Gender:</span>{' '}
+              <span className="text-gray-100">{sunoGender}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-500">Lyrics mode:</span>{' '}
+              <span className="text-gray-100">{lyricsMode}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-500">Target:</span>{' '}
+              <span className="text-gray-100">{productionTarget}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-500">Prompt length:</span>{' '}
+              <span className="text-gray-100">{sunoPromptLength}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-500">Chord mode:</span>{' '}
+              <span className="text-gray-100">{chordGuidanceMode}</span>
+            </div>
+          </div>
+        </div>
+
 
 
 
