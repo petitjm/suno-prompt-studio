@@ -1462,6 +1462,109 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     </div>
   </div>
 
+  <div className="mt-5 rounded border border-gray-700 bg-gray-900/50 p-4">
+    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
+          Quick copy
+        </h4>
+
+        <p className="mb-3 text-xs text-gray-400">
+          Most useful for Suno: Copy Suno quick pack, Copy Suno style, Copy Suno lyrics, and Copy Suno voice.
+        </p>
+    <div className="flex flex-wrap gap-3">
+      
+      <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoLyricsInput)
+            showButtonFeedback(setJustCopiedSunoLyrics)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedSunoLyrics ? 'Lyrics copied ✓' : 'Copy Suno lyrics'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoStyleCopyInput)
+            showButtonFeedback(setJustCopiedSunoStyle)
+          }}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+        >
+          {justCopiedSunoStyle ? 'Style copied ✓' : 'Copy Suno style'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoStyleCommaList)
+            showButtonFeedback(setJustCopiedStyleCommaList)
+          }}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+        >
+          {justCopiedStyleCommaList
+            ? 'Comma style copied ✓'
+            : 'Copy style comma list'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoVoiceInput)
+            showButtonFeedback(setJustCopiedSunoVoice)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedSunoVoice ? 'Voice copied ✓' : 'Copy Suno voice'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(negativePrompt)
+            showButtonFeedback(setJustCopiedNegative)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedNegative ? 'Copied ✓' : 'Copy negative prompt'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(negativePromptCommaList)
+            showButtonFeedback(setJustCopiedNegativeCommaList)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedNegativeCommaList
+            ? 'Negative list copied ✓'
+            : 'Copy negative comma list'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoQuickPack)
+            showButtonFeedback(setJustCopiedQuickPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedQuickPack ? 'Quick pack copied ✓' : 'Copy Suno quick pack'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoQuickCommaPack)
+            showButtonFeedback(setJustCopiedQuickCommaPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedQuickCommaPack
+            ? 'Quick comma pack copied ✓'
+            : 'Copy quick comma pack'}
+        </button>
+
+
+
+
+      
+    </div>
+  </div>
       
       <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
           <summary className="cursor-pointer text-lg font-semibold text-gray-100">
@@ -2077,109 +2180,7 @@ style, voice, settings, chord guidance, and negative prompt options.
 
 
 
-  <div className="rounded border border-gray-700 bg-gray-900/50 p-4">
-    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
-          Quick copy
-        </h4>
-
-        <p className="mb-3 text-xs text-gray-400">
-          Most useful for Suno: Copy Suno quick pack, Copy Suno style, Copy Suno lyrics, and Copy Suno voice.
-        </p>
-    <div className="flex flex-wrap gap-3">
-      
-      <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoLyricsInput)
-            showButtonFeedback(setJustCopiedSunoLyrics)
-          }}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          {justCopiedSunoLyrics ? 'Lyrics copied ✓' : 'Copy Suno lyrics'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoStyleCopyInput)
-            showButtonFeedback(setJustCopiedSunoStyle)
-          }}
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-        >
-          {justCopiedSunoStyle ? 'Style copied ✓' : 'Copy Suno style'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoStyleCommaList)
-            showButtonFeedback(setJustCopiedStyleCommaList)
-          }}
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-        >
-          {justCopiedStyleCommaList
-            ? 'Comma style copied ✓'
-            : 'Copy style comma list'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoVoiceInput)
-            showButtonFeedback(setJustCopiedSunoVoice)
-          }}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          {justCopiedSunoVoice ? 'Voice copied ✓' : 'Copy Suno voice'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(negativePrompt)
-            showButtonFeedback(setJustCopiedNegative)
-          }}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          {justCopiedNegative ? 'Copied ✓' : 'Copy negative prompt'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(negativePromptCommaList)
-            showButtonFeedback(setJustCopiedNegativeCommaList)
-          }}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          {justCopiedNegativeCommaList
-            ? 'Negative list copied ✓'
-            : 'Copy negative comma list'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoQuickPack)
-            showButtonFeedback(setJustCopiedQuickPack)
-          }}
-          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
-        >
-          {justCopiedQuickPack ? 'Quick pack copied ✓' : 'Copy Suno quick pack'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoQuickCommaPack)
-            showButtonFeedback(setJustCopiedQuickCommaPack)
-          }}
-          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
-        >
-          {justCopiedQuickCommaPack
-            ? 'Quick comma pack copied ✓'
-            : 'Copy quick comma pack'}
-        </button>
-
-
-
-
-      
-    </div>
-  </div>
+  
 
   <details className="rounded border border-gray-700 bg-gray-900/50 p-4">
     <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-gray-300">
