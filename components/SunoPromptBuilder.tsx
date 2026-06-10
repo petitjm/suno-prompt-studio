@@ -414,6 +414,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [generatedFromSummary, setGeneratedFromSummary] = useState('')
   const [sunoPromptLength, setSunoPromptLength] = useState('Medium')
   const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
+  const [justUsedGeneratedArrangement, setJustUsedGeneratedArrangement] = useState(false)
   const [chordGuidanceMode, setChordGuidanceMode] = useState('Lyrics only')
   const [stylePrompt, setStylePrompt] = useState(defaultStylePrompt)
   const [vocalDirection, setVocalDirection] = useState(defaultVocalDirection)
@@ -1339,6 +1340,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     {justUsedGeneratedVoice
                       ? 'Generated voice applied ✓'
                       : 'Use generated vocal direction as voice'}
+                  </button>
+                )}
+
+                {generatedFromSummary && arrangementNotes.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      showButtonFeedback(setJustUsedGeneratedArrangement)
+                    }}
+                    className="mt-3 ml-0 md:ml-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    {justUsedGeneratedArrangement
+                      ? 'Arrangement confirmed ✓'
+                      : 'Confirm generated arrangement'}
                   </button>
                 )}
 
