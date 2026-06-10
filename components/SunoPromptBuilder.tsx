@@ -1200,14 +1200,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           </div>
         </div>
 
-        <div className="mb-4 rounded border border-blue-800 bg-blue-950/30 p-3">
-          <h3 className="mb-1 text-sm font-medium text-blue-200">
-            Suggested next step
-          </h3>
-          <p className="text-sm text-blue-100">
-            {sunoWorkflowHint}
-          </p>
-        </div>
+        
 
 
       <div className="mb-5 rounded border border-gray-700 bg-gray-900/40 p-4">
@@ -1461,6 +1454,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       
     </div>
   </div>
+
+
+  <div className="mt-3 rounded border border-blue-800 bg-blue-950/30 p-3">
+      <h3 className="mb-1 text-sm font-medium text-blue-200">
+        Suggested next step
+      </h3>
+      <p className="text-sm text-blue-100">
+        {sunoWorkflowHint}
+      </p>
+    </div>
 
 
   
