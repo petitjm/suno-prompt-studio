@@ -1418,6 +1418,49 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </label>
           </div>
 
+                  <div className="space-y-4">
+          <div className="rounded border border-gray-700 bg-gray-900/50 p-4">
+            <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
+          Primary actions
+            </h4>
+
+            <p className="mb-3 text-xs text-gray-400">
+              Generate creates new Suno prompts. Reset restores default prompt fields. Clear session removes revision state without changing the current prompts.
+            </p>
+            <div className="flex flex-wrap gap-3">
+      
+      <button
+          type="button"
+          onClick={generateSunoPrompt}
+          disabled={generatingPrompt || !performanceSheet.trim()}
+          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {generatingPrompt
+          ? 'Generating...'
+          : justGeneratedPrompt
+            ? 'Generated ✓'
+            : !performanceSheet.trim()
+              ? 'Add lyrics to generate'
+              : 'Generate Suno prompts'}
+        </button>
+
+        <button
+          type="button"
+          onClick={resetToDefaults}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
+        </button>
+        <button
+          type="button"
+          onClick={clearSunoSession}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
+        </button>
+      
+    </div>
+  </div>
 
       
       <details className="mt-5 rounded border border-gray-700 bg-gray-900/60 p-4">
@@ -2032,49 +2075,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           </p>
         )}
 
-        <div className="space-y-4">
-  <div className="rounded border border-gray-700 bg-gray-900/50 p-4">
-    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
-  Primary actions
-    </h4>
 
-    <p className="mb-3 text-xs text-gray-400">
-      Generate creates new Suno prompts. Reset restores default prompt fields. Clear session removes revision state without changing the current prompts.
-    </p>
-    <div className="flex flex-wrap gap-3">
-      
-      <button
-          type="button"
-          onClick={generateSunoPrompt}
-          disabled={generatingPrompt || !performanceSheet.trim()}
-          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {generatingPrompt
-          ? 'Generating...'
-          : justGeneratedPrompt
-            ? 'Generated ✓'
-            : !performanceSheet.trim()
-              ? 'Add lyrics to generate'
-              : 'Generate Suno prompts'}
-        </button>
-
-        <button
-          type="button"
-          onClick={resetToDefaults}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
-        </button>
-        <button
-          type="button"
-          onClick={clearSunoSession}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
-        </button>
-      
-    </div>
-  </div>
 
   <div className="rounded border border-gray-700 bg-gray-900/50 p-4">
     <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
