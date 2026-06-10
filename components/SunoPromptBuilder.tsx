@@ -1173,9 +1173,6 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const sunoStatusQuickPack = [
           'SUNO STATUS + QUICK PACK',
           '',
-          'SUNO STATUS SUMMARY:',
-          sunoStatusSummary,
-          '',
           sunoQuickPack,
         ].join('\n')
 
