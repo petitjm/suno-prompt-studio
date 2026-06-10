@@ -1315,69 +1315,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
 
 
-            {generatedFromSummary && (
-              <div className="mt-3 rounded border border-gray-700 bg-gray-950/50 p-3">
-                <h4 className="mb-1 text-sm font-medium text-gray-300">
-                  Generated prompt actions
-                </h4>
-
-                <p className="mb-3 text-xs text-gray-400">
-                  Use the generated style, voice, or arrangement guidance as the new working direction.
-                </p>
-
-                <div className="flex flex-wrap gap-3">
-
-
-                {generatedFromSummary && sunoStyleField.trim() && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStylePrompt(sunoStyleField)
-                      showButtonFeedback(setJustUsedGeneratedStyle)
-                    }}
-                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                  >
-                    {justUsedGeneratedStyle
-                      ? 'Generated style applied ✓'
-                      : 'Use generated Suno style as main style'}
-                  </button>
-                )}
-
-                {generatedFromSummary && vocalDirection.trim() && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSunoVoice(vocalDirection)
-                      showButtonFeedback(setJustUsedGeneratedVoice)
-                    }}
-                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                  >
-                    {justUsedGeneratedVoice
-                      ? 'Generated voice applied ✓'
-                      : 'Use generated vocal direction as voice'}
-                  </button>
-                )}
-
-                {generatedFromSummary && arrangementNotes.trim() && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      showButtonFeedback(setJustUsedGeneratedArrangement)
-                    }}
-                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                  >
-                    {justUsedGeneratedArrangement
-                      ? 'Arrangement confirmed ✓'
-                      : 'Confirm generated arrangement'}
-                  </button>
-                )}
-
-             </div>
-            </div>
-            )}
-
-
-         </div>
+            
 
 
 
@@ -1575,6 +1513,74 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </p>
           </div>
         )}
+
+
+        {generatedFromSummary && (
+              <div className="mt-3 rounded border border-gray-700 bg-gray-950/50 p-3">
+                <h4 className="mb-1 text-sm font-medium text-gray-300">
+                  Generated prompt actions
+                </h4>
+
+                <p className="mb-3 text-xs text-gray-400">
+                  Use the generated style, voice, or arrangement guidance as the new working direction.
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+
+
+                {generatedFromSummary && sunoStyleField.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStylePrompt(sunoStyleField)
+                      showButtonFeedback(setJustUsedGeneratedStyle)
+                    }}
+                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    {justUsedGeneratedStyle
+                      ? 'Generated style applied ✓'
+                      : 'Use generated Suno style as main style'}
+                  </button>
+                )}
+
+                {generatedFromSummary && vocalDirection.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSunoVoice(vocalDirection)
+                      showButtonFeedback(setJustUsedGeneratedVoice)
+                    }}
+                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    {justUsedGeneratedVoice
+                      ? 'Generated voice applied ✓'
+                      : 'Use generated vocal direction as voice'}
+                  </button>
+                )}
+
+                {generatedFromSummary && arrangementNotes.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      showButtonFeedback(setJustUsedGeneratedArrangement)
+                    }}
+                    className="px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    {justUsedGeneratedArrangement
+                      ? 'Arrangement confirmed ✓'
+                      : 'Confirm generated arrangement'}
+                  </button>
+                )}
+
+             </div>
+            </div>
+            )}
+
+
+         </div>
+
+
+
 
 
   <div className="mt-5 rounded border border-gray-700 bg-gray-900/50 p-4">
