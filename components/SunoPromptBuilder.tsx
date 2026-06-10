@@ -1309,6 +1309,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                     {currentPresetDirection}
                   </p>
                 </div>
+
+                {generatedFromSummary && sunoStyleField.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                          setStylePrompt(sunoStyleField)
+                        }}
+                    className="mt-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    Use generated Suno style as main style
+                  </button>
+                )}
             </div>
 
 
