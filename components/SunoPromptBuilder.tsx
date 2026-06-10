@@ -998,6 +998,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const sunoRevisionBrief = [
           'SUNO REVISION NOTES',
           '',
+          'Suno status summary:',
+          sunoStatusSummary,
+          '',
           'Current song direction:',
           lyricSummary,
           '',
