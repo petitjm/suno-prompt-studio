@@ -1740,7 +1740,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </h4>
 
         <p className="mb-3 text-xs text-gray-400">
-          Most useful for Suno: Copy status + quick pack, Copy quick pack, Copy Suno style, Copy Suno lyrics, and Copy Suno voice.
+          Most useful for Suno: Copy Suno handoff, Copy quick pack, Copy Suno style, Copy Suno lyrics, and Copy Suno voice.
         </p>
     <div className="flex flex-wrap gap-3">
       
@@ -1817,8 +1817,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
         >
           {justCopiedStatusQuickPack
-            ? 'Status quick pack copied ✓'
-            : 'Copy status + quick pack'}
+          ? 'Suno handoff copied ✓'
+          : 'Copy Suno handoff'}
         </button>
         <button
           type="button"
