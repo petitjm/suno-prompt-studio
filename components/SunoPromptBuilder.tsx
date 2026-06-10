@@ -1383,6 +1383,15 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
             </div>
 
+            <div>
+              <span className="text-gray-500">Keep/change:</span>{' '}
+              <span className="text-gray-100">
+                {keepFromLastVersion.trim() || changeInNextVersion.trim()
+                  ? 'Ready'
+                  : 'Empty'}
+              </span>
+            </div>
+
 
           </div>
         </div>
