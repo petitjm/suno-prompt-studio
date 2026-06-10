@@ -1528,6 +1528,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           </div>
         )}
 
+        {generatedFromSummary && !creationNotes.trim() && (
+          <div className="mt-3 rounded border border-yellow-800 bg-yellow-950/30 p-3">
+            <h4 className="mb-1 text-sm font-medium text-yellow-200">
+              Revision reminder
+            </h4>
+            <p className="text-xs text-yellow-100">
+              After listening to the Suno result, open Revision Controls and add short notes such as: vocal too soft, guitar needs more presence, intro too long, chorus worked well.
+            </p>
+          </div>
+        )}
+
 
         {generatedFromSummary && (
               <div className="mt-3 rounded border border-gray-700 bg-gray-950/50 p-3">
