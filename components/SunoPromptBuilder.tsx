@@ -1140,6 +1140,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ].join(' · ')
 
 
+        const sunoStatusSummary = [
+          `Ready for ${lyricsMode} Suno 5.5 handoff`,
+          `using ${sunoGender} vocal`,
+          `${productionTarget} target`,
+          `${sunoPromptLength} prompt length.`,
+          `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
+        ].join(' ')
+
+
+
+
 
 
 
@@ -1323,6 +1334,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           <h3 className="mb-2 text-sm font-medium text-gray-300">
             Suno status
           </h3>
+          <p className="mb-3 text-xs text-gray-400">
+              {sunoStatusSummary}
+            </p>
+
 
           <div className="space-y-3">
           <div>
