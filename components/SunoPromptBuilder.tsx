@@ -400,6 +400,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedSunoLyrics, setJustCopiedSunoLyrics] = useState(false)
   const [justCopiedSunoStyle, setJustCopiedSunoStyle] = useState(false)
   const [justCopiedSunoVoice, setJustCopiedSunoVoice] = useState(false)
+  const [justUsedGeneratedVoice, setJustUsedGeneratedVoice] = useState(false)
   const [justCopiedRevisionBrief, setJustCopiedRevisionBrief] = useState(false)
   const [justCopiedProductionNotes, setJustCopiedProductionNotes] = useState(false)
   const [justCopiedRevisedFullPack, setJustCopiedRevisedFullPack] = useState(false)
@@ -1325,6 +1326,22 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                       : 'Use generated Suno style as main style'}
                   </button>
                 )}
+
+                {generatedFromSummary && vocalDirection.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSunoVoice(vocalDirection)
+                      showButtonFeedback(setJustUsedGeneratedVoice)
+                    }}
+                    className="mt-3 ml-0 md:ml-3 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    {justUsedGeneratedVoice
+                      ? 'Generated voice applied ✓'
+                      : 'Use generated vocal direction as voice'}
+                  </button>
+                )}
+
             </div>
 
 
