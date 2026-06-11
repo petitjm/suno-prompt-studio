@@ -884,7 +884,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         
         
         const sunoStatusSummary = [
-          `Ready for ${lyricsMode} Suno 5.5 handoff`,
+          `Prepared for ${lyricsMode} Suno 5.5 handoff`,
           `using ${sunoGender} vocal`,
           `${productionTarget} target`,
           `${sunoPromptLength} prompt length.`,
