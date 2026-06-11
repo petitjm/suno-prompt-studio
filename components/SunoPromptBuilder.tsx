@@ -1615,6 +1615,17 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         <button
           type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoStatusSummary)
+            showButtonFeedback(setJustCopiedStatusSummary)
+          }}
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          {justCopiedStatusSummary ? 'Status copied ✓' : 'Copy status summary'}
+        </button>
+
+        <button
+          type="button"
           onClick={resetToDefaults}
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
