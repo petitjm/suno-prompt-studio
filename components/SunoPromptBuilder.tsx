@@ -1743,6 +1743,41 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           Start with Copy Suno handoff for the normal Suno workflow. Use the other copy buttons when you want to paste individual fields separately.
         </p>
     <div className="flex flex-wrap gap-3">
+
+    <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoHandoffPack)
+            showButtonFeedback(setJustCopiedSunoHandoff)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedSunoHandoff
+          ? 'Suno handoff copied ✓'
+          : 'Copy Suno handoff'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoQuickPack)
+            showButtonFeedback(setJustCopiedQuickPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedQuickPack ? 'Quick pack copied ✓' : 'Copy quick pack'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoQuickCommaPack)
+            showButtonFeedback(setJustCopiedQuickCommaPack)
+          }}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+        >
+          {justCopiedQuickCommaPack
+            ? 'Quick comma pack copied ✓'
+            : 'Copy quick comma pack'}
+        </button>
       
       <button
           type="button"
@@ -1808,40 +1843,48 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             ? 'Negative list copied ✓'
             : 'Copy negative comma list'}
         </button>
+        
+        <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(detailedSunoStyleInput)
+                showButtonFeedback(setJustCopiedProductionNotes)
+              }}
+              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              {justCopiedProductionNotes
+                ? 'Production notes copied ✓'
+                : 'Copy production notes'}
+            </button>
+
+            <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoLyricsAndStylePack)
+            showButtonFeedback(setJustCopiedLyricsAndStyle)
+          }}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+        >
+          {justCopiedLyricsAndStyle
+            ? 'Lyrics + style copied ✓'
+            : 'Copy lyrics + style'}
+        </button>
+
+        
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(sunoHandoffPack)
-            showButtonFeedback(setJustCopiedSunoHandoff)
+            navigator.clipboard.writeText(sunoStyleAndVoicePack)
+            showButtonFeedback(setJustCopiedStyleAndVoice)
           }}
-          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
         >
-          {justCopiedSunoHandoff
-          ? 'Suno handoff copied ✓'
-          : 'Copy Suno handoff'}
+          {justCopiedStyleAndVoice
+            ? 'Style + voice copied ✓'
+            : 'Copy style + voice'}
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoQuickPack)
-            showButtonFeedback(setJustCopiedQuickPack)
-          }}
-          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
-        >
-          {justCopiedQuickPack ? 'Quick pack copied ✓' : 'Copy quick pack'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoQuickCommaPack)
-            showButtonFeedback(setJustCopiedQuickCommaPack)
-          }}
-          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
-        >
-          {justCopiedQuickCommaPack
-            ? 'Quick comma pack copied ✓'
-            : 'Copy quick comma pack'}
-        </button>
+
+
       
     </div>
   </div>
@@ -2602,20 +2645,6 @@ style, voice, settings, chord guidance, and negative prompt options.
         
         
 
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoLyricsAndStylePack)
-            showButtonFeedback(setJustCopiedLyricsAndStyle)
-          }}
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-        >
-          {justCopiedLyricsAndStyle
-            ? 'Lyrics + style copied ✓'
-            : 'Copy lyrics + style'}
-        </button>
-
-        
         
         
         
@@ -2642,18 +2671,7 @@ style, voice, settings, chord guidance, and negative prompt options.
 
         
         
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoStyleAndVoicePack)
-            showButtonFeedback(setJustCopiedStyleAndVoice)
-          }}
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-        >
-          {justCopiedStyleAndVoice
-            ? 'Style + voice copied ✓'
-            : 'Copy style + voice'}
-        </button>
+        
 
         
         <button
@@ -2672,18 +2690,7 @@ style, voice, settings, chord guidance, and negative prompt options.
         
         
         
-        <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(detailedSunoStyleInput)
-                showButtonFeedback(setJustCopiedProductionNotes)
-              }}
-              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-            >
-              {justCopiedProductionNotes
-                ? 'Production notes copied ✓'
-                : 'Copy production notes'}
-            </button>
+        
 
         {promptMessage && (
           <p className="mt-3 text-sm text-gray-400">
