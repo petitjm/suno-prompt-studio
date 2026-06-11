@@ -1571,7 +1571,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </h4>
 
             <p className="mb-3 text-xs text-gray-400">
-              Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack. Reset restores default prompt fields. Clear session removes revision state without changing the current prompts.
+              Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack. Reset restores default prompt fields. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
             </p>
             <div className="flex flex-wrap gap-3">
       
