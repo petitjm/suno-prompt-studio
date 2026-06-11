@@ -1754,22 +1754,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </h4>
 
         <p className="mb-3 text-xs text-gray-400">
-          Start with Copy Suno handoff for the normal Suno workflow. Use the other copy buttons when you want to paste individual fields separately.
+          Use these when you want to paste individual Suno fields separately instead of using the main Suno handoff button above.
         </p>
     <div className="flex flex-wrap gap-3">
 
-    <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoHandoffPack)
-            showButtonFeedback(setJustCopiedSunoHandoff)
-          }}
-          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
-        >
-          {justCopiedSunoHandoff
-          ? 'Suno handoff copied ✓'
-          : 'Copy Suno handoff'}
-        </button>
+    
         <button
           type="button"
           onClick={() => {
