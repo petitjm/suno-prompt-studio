@@ -1456,6 +1456,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   : 'Empty'}
               </span>
             </div>
+
+            <div>
+              <span className="text-gray-500">Generation:</span>{' '}
+              <span className="text-gray-100">
+                {generatedFromSummary ? 'Generated' : 'Not generated'}
+              </span>
+            </div>
+
         </div>
     </div>
     </div>
