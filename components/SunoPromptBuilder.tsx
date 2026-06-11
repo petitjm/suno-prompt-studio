@@ -1575,11 +1575,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </p>
             <details className="mb-3 rounded border border-yellow-800 bg-yellow-950/20 p-3">
               <summary className="cursor-pointer text-xs font-medium text-yellow-200">
-                Safety note — reset and clear session
+                Safety note — copy, reset, and clear session
               </summary>
 
               <p className="mt-2 text-xs text-yellow-100">
-                Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
+                Copy Suno handoff only copies the current paste-ready pack to your clipboard. It does not send anything to Suno, save a version, or change the song sheet. Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
               </p>
             </details>
             <div className="flex flex-wrap gap-3">
