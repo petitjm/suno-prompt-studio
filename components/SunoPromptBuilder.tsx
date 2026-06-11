@@ -1573,9 +1573,15 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             <p className="mb-3 text-xs text-gray-400">
               Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack. Reset restores the Suno prompt fields to their defaults without changing the song sheet or saved versions. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
             </p>
-            <p className="mb-3 text-xs text-yellow-300">
-              Note: Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet.
-            </p>
+            <details className="mb-3 rounded border border-yellow-800 bg-yellow-950/20 p-3">
+              <summary className="cursor-pointer text-xs font-medium text-yellow-200">
+                Safety note — reset and clear session
+              </summary>
+
+              <p className="mt-2 text-xs text-yellow-100">
+                Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
+              </p>
+            </details>
             <div className="flex flex-wrap gap-3">
       
       <button
