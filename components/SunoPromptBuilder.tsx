@@ -889,6 +889,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           `${productionTarget} target`,
           `${sunoPromptLength} prompt length.`,
           `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
+          `Generation status is ${generatedFromSummary ? 'Generated' : 'Not generated'}.`,
         ].join(' ')
 
 
