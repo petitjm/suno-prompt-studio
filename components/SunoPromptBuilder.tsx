@@ -1592,6 +1592,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         <button
           type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(sunoHandoffPack)
+            showButtonFeedback(setJustCopiedSunoHandoff)
+          }}
+          disabled={!performanceSheet.trim()}
+          className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {justCopiedSunoHandoff
+            ? 'Suno handoff copied ✓'
+            : 'Copy Suno handoff'}
+        </button>
+
+        <button
+          type="button"
           onClick={resetToDefaults}
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
