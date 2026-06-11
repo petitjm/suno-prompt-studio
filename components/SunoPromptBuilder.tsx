@@ -1740,7 +1740,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </h4>
 
         <p className="mb-3 text-xs text-gray-400">
-          Most useful for Suno: Copy Suno handoff, Copy quick pack, Copy Suno style, Copy Suno lyrics, and Copy Suno voice.
+          Start with Copy Suno handoff for the normal Suno workflow. Use the other copy buttons when you want to paste individual fields separately.
         </p>
     <div className="flex flex-wrap gap-3">
       
