@@ -1185,7 +1185,13 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         ].join('\n')
 
 
-
+        const clearGenerationState = () => {
+          setGeneratedFromSummary('')
+          setLastGeneratedAt('')
+          setPreviousSunoStyleField('')
+          setRevisionSummary('')
+          setLastRevisionContext('')
+        }
 
 
 
@@ -1508,7 +1514,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
               <textarea
                 value={stylePrompt}
-                onChange={(e) => setStylePrompt(e.target.value)}
+                onChange={(e) => {
+                  setStylePrompt(e.target.value)
+                  clearGenerationState()
+                }}
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
@@ -1523,7 +1532,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
               <textarea
                 value={vocalDirection}
-                onChange={(e) => setVocalDirection(e.target.value)}
+                onChange={(e) => {setVocalDirection(e.target.value)
+                clearGenerationState()
+                }}
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
@@ -1538,7 +1549,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
               <textarea
                 value={arrangementNotes}
-                onChange={(e) => setArrangementNotes(e.target.value)}
+                onChange={(e) => {setArrangementNotes(e.target.value)
+                clearGenerationState()
+                }}
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
@@ -1553,7 +1566,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
               <textarea
                 value={introSoloOutro}
-                onChange={(e) => setIntroSoloOutro(e.target.value)}
+                onChange={(e) => {setIntroSoloOutro(e.target.value)
+                clearGenerationState()
+                }}
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
@@ -1568,7 +1583,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </span>
               <textarea
                 value={negativePrompt}
-                onChange={(e) => setNegativePrompt(e.target.value)}
+                onChange={(e) => {setNegativePrompt(e.target.value)
+                clearGenerationState()
+                }}
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
               />
