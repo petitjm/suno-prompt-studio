@@ -433,6 +433,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       setPreviousSunoStyleField('')
       setRevisionSummary('')
       setLastRevisionContext('')
+      setLastGeneratedAt('')
 
       setCreationNotes('')
       setRevisionFocus('Balanced revision')
@@ -479,6 +480,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
   setGeneratedFromSummary('')
+  setLastGeneratedAt('')
   setVocalDirection(defaultVocalDirection)
   setArrangementNotes(defaultArrangementNotes)
   setIntroSoloOutro(defaultIntroSoloOutro)
