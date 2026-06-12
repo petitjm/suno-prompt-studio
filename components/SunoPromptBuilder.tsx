@@ -413,6 +413,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
   const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
+  const [previousGeneratedAt, setPreviousGeneratedAt] = useState('')
   const [lastGeneratedAt, setLastGeneratedAt] = useState('')
   const [hasChangedSinceGeneration, setHasChangedSinceGeneration] = useState(false)
   const [generatedFromSummary, setGeneratedFromSummary] = useState('')
@@ -481,6 +482,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   setStylePrompt(defaultStylePrompt)
   setSunoStyleField(defaultStylePrompt)
   setGeneratedFromSummary('')
+  setPreviousGeneratedAt('')
   setLastGeneratedAt('')
   setHasChangedSinceGeneration(false)
   setVocalDirection(defaultVocalDirection)
@@ -606,6 +608,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     setPromptMessage('Suno prompts generated from the current song sheet.')
     setLastGeneratedAt(new Date().toLocaleString('en-GB'))
     setHasChangedSinceGeneration(false)
+    setPreviousGeneratedAt('')
     showButtonFeedback(setJustGeneratedPrompt)
   } catch (error) {
     const message =
@@ -899,9 +902,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
           generatedFromSummary && lastGeneratedAt
           ? `Generation status is Generated at ${lastGeneratedAt}.`
-          : hasChangedSinceGeneration
-            ? 'Generation status is Draft changed since last generation.'
-            : 'Generation status is Not generated.',
+          : hasChangedSinceGeneration && previousGeneratedAt
+            ? `Generation status is Draft changed since last generation at ${previousGeneratedAt}.`
+            : hasChangedSinceGeneration
+              ? 'Generation status is Draft changed since last generation.'
+              : 'Generation status is Not generated.',
         ].join(' ')
 
 
@@ -1058,6 +1063,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           setCreationNotes('')
           setRevisionFocus('Balanced revision')
           setUseCreationNotesAsMainDriver(false)
+          setPreviousGeneratedAt('')
           setLastGeneratedAt('')
 
           showButtonFeedback(setJustResetDefaults)
@@ -1194,6 +1200,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const clearGenerationState = () => {
           if (generatedFromSummary || lastGeneratedAt) {
             setHasChangedSinceGeneration(true)
+            setPreviousGeneratedAt(lastGeneratedAt)
           }
 
           setGeneratedFromSummary('')
@@ -1491,11 +1498,15 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 </span>
             </div>
             <div>
-              <span className="text-gray-500">Generated at:</span>{' '}
+              <span className="text-gray-500">
+                {hasChangedSinceGeneration ? 'Last generated at:' : 'Generated at:'}
+              </span>{' '}
               <span className="text-gray-100">
                 {generatedFromSummary && lastGeneratedAt
                   ? lastGeneratedAt
-                  : 'Not generated'}
+                  : hasChangedSinceGeneration && previousGeneratedAt
+                    ? previousGeneratedAt
+                    : 'Not generated'}
               </span>
             </div>
 
