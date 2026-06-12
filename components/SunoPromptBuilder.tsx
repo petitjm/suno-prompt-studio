@@ -2137,7 +2137,10 @@ style, voice, settings, chord guidance, and negative prompt options.
               </span>
               <textarea
                 value={sunoVoiceInput}
-                onChange={(e) => setSunoVoice(e.target.value)}
+                onChange={(e) => {
+                  setSunoVoice(e.target.value)
+                  clearGenerationState()
+                }}
                 rows={3}
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
               />
@@ -2148,7 +2151,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                 </span>
                 <select
                   value={sunoGender}
-                  onChange={(e) => setSunoGender(e.target.value)}
+                  onChange={(e) => {
+                      setSunoGender(e.target.value)
+                      clearGenerationState()
+                    }}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                 >
                   <option value="Male">Male</option>
@@ -2164,7 +2170,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                 </span>
                 <select
                   value={lyricsMode}
-                  onChange={(e) => setLyricsMode(e.target.value)}
+                  onChange={(e) => {
+                      setLyricsMode(e.target.value)
+                      clearGenerationState()
+                    }}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                 >
                   <option value="Manual">Manual</option>
@@ -2177,7 +2186,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                   </span>
                   <select
                     value={productionTarget}
-                    onChange={(e) => setProductionTarget(e.target.value)}
+                    onChange={(e) => {
+                      setProductionTarget(e.target.value)
+                      clearGenerationState()
+                    }}
                     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                   >
                     <option value="Natural demo">Natural demo</option>
@@ -2193,7 +2205,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                   </span>
                   <select
                     value={sunoPromptLength}
-                    onChange={(e) => setSunoPromptLength(e.target.value)}
+                    onChange={(e) => {
+                      setSunoPromptLength(e.target.value)
+                      clearGenerationState()
+                    }}
                     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                   >
                     <option value="Short">Short</option>
@@ -2208,7 +2223,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                   </span>
                   <select
                     value={chordGuidanceMode}
-                    onChange={(e) => setChordGuidanceMode(e.target.value)}
+                    onChange={(e) => {
+                      setChordGuidanceMode(e.target.value)
+                      clearGenerationState()
+                    }}
                     className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                   >
                     <option value="Lyrics only">Lyrics only</option>
