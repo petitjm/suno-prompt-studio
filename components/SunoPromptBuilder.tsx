@@ -1471,7 +1471,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             <div>
               <span className="text-gray-500">Generated at:</span>{' '}
               <span className="text-gray-100">
-                {lastGeneratedAt || 'Not generated'}
+                {generatedFromSummary && lastGeneratedAt
+                  ? lastGeneratedAt
+                  : 'Not generated'}
               </span>
             </div>
 
