@@ -2498,7 +2498,10 @@ style, voice, settings, chord guidance, and negative prompt options.
 
               <textarea
                 value={creationNotes}
-                onChange={(e) => setCreationNotes(e.target.value)}
+                onChange={(e) => {
+                  setCreationNotes(e.target.value)
+                  clearGenerationState()
+                }}
                 rows={5}
                 placeholder="Example: Version 1 had a strong chorus but the vocal was too polished. Version 2 had a better voice but the intro was too long."
                 className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
@@ -2510,7 +2513,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                 </span>
                 <select
                   value={revisionFocus}
-                  onChange={(e) => setRevisionFocus(e.target.value)}
+                  onChange={(e) => {
+                      setRevisionFocus(e.target.value)
+                      clearGenerationState()
+                    }}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                 >
                   <option value="Balanced revision">Balanced revision</option>
@@ -2532,9 +2538,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                 <input
                   type="checkbox"
                   checked={useCreationNotesAsMainDriver}
-                  onChange={(e) =>
-                    setUseCreationNotesAsMainDriver(e.target.checked)
-                  }
+                  onChange={(e) => {
+                      setUseCreationNotesAsMainDriver(e.target.checked)
+                      clearGenerationState()
+                    }}
                   className="mt-1"
                 />
                 <span>
@@ -2552,7 +2559,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                 </span>
                 <select
                   value={sunoResultRating}
-                  onChange={(e) => setSunoResultRating(e.target.value)}
+                  onChange={(e) => {
+                      setSunoResultRating(e.target.value)
+                      clearGenerationState()
+                    }}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white"
                 >
                   <option value="Great">Great</option>
@@ -2571,7 +2581,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                   </span>
                   <textarea
                     value={keepFromLastVersion}
-                    onChange={(e) => setKeepFromLastVersion(e.target.value)}
+                    onChange={(e) => {
+                      setKeepFromLastVersion(e.target.value)
+                      clearGenerationState()
+                    }}
                     rows={3}
                     placeholder="Example: Keep the chorus lift, acoustic mood, and female harmony."
                     className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
@@ -2584,7 +2597,10 @@ style, voice, settings, chord guidance, and negative prompt options.
                   </span>
                   <textarea
                     value={changeInNextVersion}
-                    onChange={(e) => setChangeInNextVersion(e.target.value)}
+                    onChange={(e) => {
+                      setChangeInNextVersion(e.target.value)
+                      clearGenerationState()
+                    }}
                     rows={3}
                     placeholder="Example: Make the vocal stronger and the guitar more prominent."
                     className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
