@@ -759,9 +759,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const sunoWorkflowHint = !performanceSheet.trim()
           ? 'Add or load lyrics in the Song Sheet to begin building Suno prompts.'
-          : !generatedFromSummary
-            ? 'Generate Suno prompts, then copy the quick pack or individual Suno fields into Suno 5.5 Advanced mode.'
-            : 'Prompts have been generated. Copy a quick pack into Suno, or open Revision Controls after listening to a Suno result.'
+          : hasChangedSinceGeneration
+            ? 'The Suno handoff has changed since the last generation. Generate again before copying if you want the latest edits reflected.'
+            : !generatedFromSummary
+              ? 'Generate Suno prompts, then copy the Suno handoff into Suno 5.5 Advanced mode.'
+              : 'Prompts have been generated. Copy the Suno handoff into Suno, or open Revision Controls after listening to a Suno result.'
 
         const detailedSunoStyleInput = [
           stylePrompt,
