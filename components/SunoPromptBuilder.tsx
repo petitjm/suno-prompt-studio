@@ -732,6 +732,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             setNegativePrompt(
               'Avoid EDM beats, trap drums, rock guitars, robotic vocals, excessive autotune, choir overload, and melodramatic theatrical delivery.'
             )
+            clearGenerationState()
           }
 
           setGeneratedFromSummary('')
