@@ -413,6 +413,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
   const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
+  const [lastGeneratedAt, setLastGeneratedAt] = useState('')
   const [generatedFromSummary, setGeneratedFromSummary] = useState('')
   const [sunoPromptLength, setSunoPromptLength] = useState('Medium')
   const [justGeneratedPrompt, setJustGeneratedPrompt] = useState(false)
@@ -599,6 +600,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         setGeneratedFromSummary(lyricSummary)
 
     setPromptMessage('Suno prompts generated from the current song sheet.')
+    setLastGeneratedAt(new Date().toLocaleString('en-GB'))
     showButtonFeedback(setJustGeneratedPrompt)
   } catch (error) {
     const message =
@@ -889,7 +891,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           `${productionTarget} target`,
           `${sunoPromptLength} prompt length.`,
           `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
-          `Generation status is ${generatedFromSummary ? 'Generated' : 'Not generated'}.`,
+          generatedFromSummary
+          ? `Generation status is Generated at ${lastGeneratedAt || 'unknown time'}.`
+          : 'Generation status is Not generated.',
         ].join(' ')
 
 
@@ -1046,6 +1050,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           setCreationNotes('')
           setRevisionFocus('Balanced revision')
           setUseCreationNotesAsMainDriver(false)
+          setLastGeneratedAt('')
 
           showButtonFeedback(setJustResetDefaults)
           setChordGuidanceMode('Lyrics only')
@@ -1461,6 +1466,12 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               <span className="text-gray-500">Generation:</span>{' '}
               <span className="text-gray-100">
                 {generatedFromSummary ? 'Generated' : 'Not generated'}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Generated at:</span>{' '}
+              <span className="text-gray-100">
+                {lastGeneratedAt || 'Not generated'}
               </span>
             </div>
 
