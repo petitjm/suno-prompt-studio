@@ -1669,6 +1669,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             <p className="text-xs text-green-200">
               Generated from: {generatedFromSummary}
             </p>
+
+            <p className="mt-1 text-xs text-green-300">
+              Generated at: {lastGeneratedAt || 'Unknown time'}
+            </p>
           </div>
         )}
 
