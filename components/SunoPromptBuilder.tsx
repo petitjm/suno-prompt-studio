@@ -1708,7 +1708,25 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       </p>
     </div>
 
+    {hasChangedSinceGeneration && (
+  <div className="mt-3 rounded border border-yellow-800 bg-yellow-950/30 p-3">
+    <h4 className="mb-1 text-sm font-medium text-yellow-200">
+      Draft changed since last generation
+    </h4>
 
+    <p className="text-xs text-yellow-100">
+      The current Suno handoff has been edited since the last generated prompt.
+      Generate again if you want the status, packs, and guidance to reflect the
+      latest changes.
+    </p>
+
+    {previousGeneratedAt && (
+      <p className="mt-1 text-xs text-yellow-200">
+        Last generated at: {previousGeneratedAt}
+      </p>
+    )}
+  </div>
+)}
   
       {generatedFromSummary && (
           <div className="mt-3 rounded border border-green-800 bg-green-950/30 p-3">
