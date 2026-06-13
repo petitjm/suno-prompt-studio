@@ -1680,6 +1680,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             showButtonFeedback(setJustCopiedSunoHandoff)
           }}
           disabled={!performanceSheet.trim()}
+          title={
+            hasChangedSinceGeneration
+                ? 'Copies the current edited Suno handoff fields.'
+                : 'Copies the current generated Suno handoff pack.'
+            }
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {justCopiedSunoHandoff
