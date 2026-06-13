@@ -911,6 +911,12 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               : 'Generation status is Not generated.',
         ].join(' ')
 
+        const sunoHandoffCopyTitle = hasChangedSinceGeneration
+          ? 'Copies the current edited Suno handoff fields.'
+          : 'Copies the current generated Suno handoff pack.'
+
+
+
 
         const sunoQuickPack = [
           'SUNO QUICK PACK',
@@ -1680,11 +1686,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             showButtonFeedback(setJustCopiedSunoHandoff)
           }}
           disabled={!performanceSheet.trim()}
-          title={
-            hasChangedSinceGeneration
-                ? 'Copies the current edited Suno handoff fields.'
-                : 'Copies the current generated Suno handoff pack.'
-            }
+          title={sunoHandoffCopyTitle}
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {justCopiedSunoHandoff
@@ -2511,11 +2513,7 @@ style, voice, settings, chord guidance, and negative prompt options.
                     navigator.clipboard.writeText(sunoHandoffPack)
                     showButtonFeedback(setJustCopiedSunoHandoff)
                   }}
-                  title={
-                      hasChangedSinceGeneration
-                        ? 'Copies the current edited Suno handoff fields.'
-                        : 'Copies the current generated Suno handoff pack.'
-                    }
+                  title={sunoHandoffCopyTitle}
                   className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
                 >
                   {justCopiedSunoHandoff
