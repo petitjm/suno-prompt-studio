@@ -1216,6 +1216,13 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const sunoHandoffPack = [
           sunoHandoffPackTitle,
           '',
+            'SUNO 5.5 ADVANCED PASTE ORDER:',
+              '1. Paste LYRICS into the Lyrics field.',
+              '2. Paste STYLE into the Style field.',
+              '3. Use VOICE, GENDER, MODE, TARGET, LENGTH, and CHORD MODE as setup guidance.',
+              '4. Use NEGATIVE PROMPT as avoid guidance if Suno needs tighter direction.',
+              '5. Keep the core prompt fields below as reference for arrangement, vocal, and intro / solo / outro decisions.',
+          '',
           sunoQuickPack,
           '',
           'CORE PROMPT FIELDS:',
