@@ -916,6 +916,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               : 'Generation status is Not generated.',
         ].join(' ')
 
+
+        const sunoHandoffPackTitle = hasChangedSinceGeneration
+          ? 'SUNO EDITED HANDOFF PACK'
+          : 'SUNO HANDOFF PACK'
+
+        const sunoHandoffPackDisplayTitle = hasChangedSinceGeneration
+          ? 'Suno edited handoff pack'
+          : 'Suno handoff pack'
+
+
         const sunoHandoffCopyTitle = hasChangedSinceGeneration
           ? 'Copies the current edited Suno handoff fields.'
           : 'Copies the current generated Suno handoff pack.'
@@ -1204,9 +1214,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
 
         const sunoHandoffPack = [
-          hasChangedSinceGeneration
-            ? 'SUNO EDITED HANDOFF PACK'
-            : 'SUNO HANDOFF PACK',
+          sunoHandoffPackTitle,
           '',
           sunoQuickPack,
           '',
@@ -2501,7 +2509,11 @@ style, voice, settings, chord guidance, and negative prompt options.
             </div>
           <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
-                  {hasChangedSinceGeneration ? 'Suno edited handoff pack' : 'Suno handoff pack'}
+                  {sunoHandoffPackTitle
+                  .toLowerCase()
+                  .replace('suno ', 'Suno ')
+                  .replace('handoff', 'handoff')
+                  .replace('pack', 'pack')}
                 </span>
               <textarea
                 value={sunoHandoffPack}
