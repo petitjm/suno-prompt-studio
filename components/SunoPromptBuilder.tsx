@@ -639,6 +639,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           }, 1500)
         }
 
+        const copySunoHandoff = () => {
+          navigator.clipboard.writeText(sunoHandoffPack)
+          showButtonFeedback(setJustCopiedSunoHandoff)
+        }
+
     const showButtonFeedback = (
           setFeedback: React.Dispatch<React.SetStateAction<boolean>>
         ) => {
@@ -1681,10 +1686,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         <button
           type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoHandoffPack)
-            showButtonFeedback(setJustCopiedSunoHandoff)
-          }}
+          onClick={copySunoHandoff}
           disabled={!performanceSheet.trim()}
           title={sunoHandoffCopyTitle}
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2509,10 +2511,7 @@ style, voice, settings, chord guidance, and negative prompt options.
               />
               <button
                   type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(sunoHandoffPack)
-                    showButtonFeedback(setJustCopiedSunoHandoff)
-                  }}
+                  onClick={copySunoHandoff}
                   title={sunoHandoffCopyTitle}
                   className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
                 >
