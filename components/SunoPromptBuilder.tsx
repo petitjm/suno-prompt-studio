@@ -1193,7 +1193,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
 
         const sunoHandoffPack = [
-          'SUNO HANDOFF PACK',
+          hasChangedSinceGeneration
+            ? 'SUNO EDITED HANDOFF PACK'
+            : 'SUNO HANDOFF PACK',
           '',
           sunoQuickPack,
         ].join('\n')
