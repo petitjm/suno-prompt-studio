@@ -2511,6 +2511,11 @@ style, voice, settings, chord guidance, and negative prompt options.
                     navigator.clipboard.writeText(sunoHandoffPack)
                     showButtonFeedback(setJustCopiedSunoHandoff)
                   }}
+                  title={
+                      hasChangedSinceGeneration
+                        ? 'Copies the current edited Suno handoff fields.'
+                        : 'Copies the current generated Suno handoff pack.'
+                    }
                   className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
                 >
                   {justCopiedSunoHandoff
