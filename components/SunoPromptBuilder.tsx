@@ -2478,7 +2478,20 @@ style, voice, settings, chord guidance, and negative prompt options.
           <p className="mt-2 mb-4 text-sm text-gray-400">
             Ready-made copy blocks for Suno testing, quick pasting, and revision workflows.
           </p>
-
+          <label className="block">
+              <span className="block text-sm font-medium text-gray-300 mb-1">
+                Suno handoff pack
+              </span>
+              <textarea
+                value={sunoHandoffPack}
+                readOnly
+                rows={10}
+                className="w-full px-3 py-2 rounded bg-gray-950 text-gray-100 border border-gray-700"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Preview of the main pack copied by the Primary actions “Copy Suno handoff” button.
+              </p>
+            </label>
           <div className="space-y-4">
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
