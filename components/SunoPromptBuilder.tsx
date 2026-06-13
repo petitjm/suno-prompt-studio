@@ -1198,6 +1198,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             : 'SUNO HANDOFF PACK',
           '',
           sunoQuickPack,
+          '',
+          'CORE PROMPT FIELDS:',
+          '',
+          'SUNO STYLE PROMPT:',
+          stylePrompt.trim() || 'No style prompt provided.',
+          '',
+          'VOCAL DIRECTION:',
+          vocalDirection.trim() || 'No vocal direction provided.',
+          '',
+          'ARRANGEMENT NOTES:',
+          arrangementNotes.trim() || 'No arrangement notes provided.',
+          '',
+          'INTRO / SOLO / OUTRO PROMPT:',
+          introSoloOutro.trim() || 'No intro / solo / outro prompt provided.',
         ].join('\n')
 
 
