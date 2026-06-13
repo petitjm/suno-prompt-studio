@@ -2476,7 +2476,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
-            Ready-made copy blocks for Suno testing, quick pasting, and revision workflows.
+            Preview the ready-made copy blocks used for Suno handoff, quick testing, comma-style prompts, and revision workflows.
           </p>
           <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
@@ -2507,7 +2507,7 @@ style, voice, settings, chord guidance, and negative prompt options.
           <div className="space-y-4">
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Suno quick pack
+                    Quick pack
                   </span>
                   <textarea
                     value={sunoQuickPack}
@@ -2522,7 +2522,7 @@ style, voice, settings, chord guidance, and negative prompt options.
 
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Suno quick comma pack
+                    Quick comma pack
                   </span>
                   <textarea
                     value={sunoQuickCommaPack}
@@ -2537,7 +2537,7 @@ style, voice, settings, chord guidance, and negative prompt options.
 
                 <label className="block">
                   <span className="block text-sm font-medium text-gray-300 mb-1">
-                    Suno revision input pack
+                    Revision input pack
                   </span>
                   <textarea
                     value={sunoRevisionInputPack}
