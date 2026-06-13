@@ -1786,8 +1786,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </h4>
 
             <ul className="list-disc space-y-1 pl-5 text-xs text-gray-400">
-              <li>Copy the Suno quick pack for the first test.</li>
-              <li>Use individual copy buttons only if you want to paste fields separately.</li>
+              <li>Copy the Suno handoff for the first test.</li>
+              <li>Use Quick copy only if you want to paste individual fields separately.</li>
               <li>After listening in Suno, open Revision Controls and note what worked or failed.</li>
             </ul>
           </div>
