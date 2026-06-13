@@ -1891,7 +1891,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         </h4>
 
         <p className="mb-3 text-xs text-gray-400">
-          Use these when you want to paste individual Suno fields separately instead of using the main Suno handoff button above.
+          Secondary copy options for pasting individual Suno fields separately. For the normal workflow, use the main Copy Suno handoff button above.
         </p>
     <div className="flex flex-wrap gap-3">
 
