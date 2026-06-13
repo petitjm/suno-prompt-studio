@@ -2476,11 +2476,10 @@ style, voice, settings, chord guidance, and negative prompt options.
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
-            <p className="mt-2 text-sm text-gray-400">
+          </p>
+          <p className="mt-2 text-sm text-gray-400">
               Preview the ready-made copy blocks used for Suno handoff, quick testing, comma-style prompts, and revision workflows. These previews always reflect the current visible fields, including any manual edits made after generation.
             </p>
-            
-          </p>
           <div className="mt-2 rounded border border-gray-700 bg-gray-950 p-2 text-xs text-gray-300">
               Pack preview status:{' '}
               <span className={hasChangedSinceGeneration ? 'text-yellow-300' : 'text-green-300'}>
@@ -2493,8 +2492,8 @@ style, voice, settings, chord guidance, and negative prompt options.
             </div>
           <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
-                Suno handoff pack
-              </span>
+                  {hasChangedSinceGeneration ? 'Suno edited handoff pack' : 'Suno handoff pack'}
+                </span>
               <textarea
                 value={sunoHandoffPack}
                 readOnly
