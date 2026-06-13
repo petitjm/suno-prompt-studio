@@ -1663,13 +1663,13 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             navigator.clipboard.writeText(sunoHandoffPack)
             showButtonFeedback(setJustCopiedSunoHandoff)
           }}
-          disabled={!performanceSheet.trim() || hasChangedSinceGeneration}
+          disabled={!performanceSheet.trim()}
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {justCopiedSunoHandoff
           ? 'Suno handoff copied ✓'
           : hasChangedSinceGeneration
-            ? 'Regenerate before copying handoff'
+            ? 'Copy edited handoff'
             : 'Copy Suno handoff'}
         </button>
 
@@ -1720,8 +1720,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
     <p className="text-xs text-yellow-100">
       The current Suno handoff has been edited since the last generated prompt.
-      Generate again if you want the status, packs, and guidance to reflect the
-      latest changes.
+      Generate again if you want AI-refreshed guidance, or copy the edited handoff if you intentionally changed the fields yourself.
     </p>
 
     {previousGeneratedAt && (
