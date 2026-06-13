@@ -2476,7 +2476,9 @@ style, voice, settings, chord guidance, and negative prompt options.
           </summary>
 
           <p className="mt-2 mb-4 text-sm text-gray-400">
-            Preview the ready-made copy blocks used for Suno handoff, quick testing, comma-style prompts, and revision workflows.
+            <p className="mt-2 text-sm text-gray-400">
+              Preview the ready-made copy blocks used for Suno handoff, quick testing, comma-style prompts, and revision workflows. These previews always reflect the current visible fields, including any manual edits made after generation.
+            </p>
           </p>
           <label className="block">
               <span className="block text-sm font-medium text-gray-300 mb-1">
