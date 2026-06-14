@@ -1700,8 +1700,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </summary>
 
               <p className="mt-2 text-xs text-yellow-100">
-                Copy SunCopy Suno handoff only copies the current paste-ready pack to your clipboard, including the current visible prompt fields and Suno 5.5 paste-order guidance. It does not send anything to Suno, save a version, or change the song sheet. Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.o handoff only copies the current paste-ready pack to your clipboard. It does not send anything to Suno, save a version, or change the song sheet. Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
-              </p>
+              Copy Suno handoff only copies the current paste-ready pack to your clipboard, including Suno 5.5 paste-order guidance and the current visible additional core reference fields. It does not send anything to Suno, save a version, or change the song sheet. Reset affects the visible Suno prompt fields only. It does not delete projects, saved song versions, saved chord versions, or the song sheet. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
+            </p>
             </details>
             <div className="flex flex-wrap gap-3">
       
