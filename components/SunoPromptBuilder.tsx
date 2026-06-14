@@ -2560,7 +2560,7 @@ style, voice, settings, chord guidance, and negative prompt options.
                   : `${sunoHandoffButtonLabel} from preview`}
                 </button>
               <p className="mt-1 text-xs text-gray-400">
-                 Preview of the main pack copied by the Primary actions “Copy Suno handoff” button, including Suno 5.5 Advanced paste-order guidance
+                 Preview of the main pack copied by the Primary actions “Copy Suno handoff” button, including Suno 5.5 Advanced paste-order guidance and additional core reference fields.
               </p>
             </label>
           <div className="space-y-4">
