@@ -550,8 +550,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
     
 
     const nextStylePrompt = data.stylePrompt?.trim() || ''
-        const nextSunoStyleField =
-          data.sunoStyleField?.trim() || data.stylePrompt?.trim() || ''
+    const nextSunoStyleField = data.sunoStyleField?.trim() || data.stylePrompt?.trim() || ''
         const nextVocalDirection = data.vocalDirection?.trim() || ''
         const nextArrangementNotes = data.arrangementNotes?.trim() || ''
         const nextIntroSoloOutro = data.introSoloOutro?.trim() || ''
@@ -916,6 +915,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               : 'Generation status is Not generated.',
         ].join(' ')
 
+        const hasSongLyrics = Boolean(performanceSheet.trim())
 
         const sunoHandoffPackTitle = hasChangedSinceGeneration
           ? 'SUNO EDITED HANDOFF PACK'
@@ -1723,10 +1723,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         <button
           type="button"
           onClick={copySunoHandoff}
-          disabled={!performanceSheet.trim()}
+          disabled={!hasSongLyrics}
           title={sunoHandoffCopyTitle}
           className={
-              !performanceSheet.trim()
+              !hasSongLyrics
                 ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
                 : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
             }
@@ -2556,7 +2556,7 @@ style, voice, settings, chord guidance, and negative prompt options.
               <button
                   type="button"
                   onClick={copySunoHandoff}
-                  disabled={!performanceSheet.trim()}
+                  disabled={!hasSongLyrics}
                   title={sunoHandoffCopyTitle}
                   className={
                       !performanceSheet.trim()
