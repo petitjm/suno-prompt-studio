@@ -1671,7 +1671,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
           Primary actions
             </h4>
-
+            <p className="mb-3 text-xs text-gray-400">
+              Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack, including Suno 5.5 Advanced paste-order guidance, lyrics, style, voice, settings, negative prompt, arrangement notes, and intro / solo / outro guidance. Reset restores the Suno prompt fields to their defaults without changing the song sheet or saved versions. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
+            </p>
             <p className="mb-3 text-xs text-gray-300">
               Current handoff:{' '}
               <span className={hasChangedSinceGeneration ? 'text-yellow-300' : 'text-green-300'}>
