@@ -2552,6 +2552,7 @@ style, voice, settings, chord guidance, and negative prompt options.
               <button
                   type="button"
                   onClick={copySunoHandoff}
+                  disabled={!performanceSheet.trim()}
                   title={sunoHandoffCopyTitle}
                   className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
                 >
