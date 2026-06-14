@@ -1799,7 +1799,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         {generatedFromSummary && (
           <div className="mt-3 rounded border border-gray-700 bg-gray-900/50 p-3">
             <h4 className="mb-2 text-sm font-medium text-gray-300">
-              Post-generation checklist
+              Suno next steps
             </h4>
 
             <ul className="list-disc space-y-1 pl-5 text-xs text-gray-400">
