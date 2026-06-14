@@ -1803,7 +1803,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </h4>
 
             <ul className="list-disc space-y-1 pl-5 text-xs text-gray-400">
-              <li>Copy the Suno handoff for the first test.</li>
+              <li>Click Copy Suno handoff, then paste the Lyrics and Style sections into Suno 5.5 Advanced mode.</li>
               <li>Use Quick copy only if you want to paste individual fields separately.</li>
               <li>After listening in Suno, open Revision Controls and note what worked or failed.</li>
             </ul>
