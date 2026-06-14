@@ -2553,8 +2553,8 @@ style, voice, settings, chord guidance, and negative prompt options.
                   className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
                 >
                   {justCopiedSunoHandoff
-                    ? 'Suno handoff copied ✓'
-                    : 'Copy handoff preview'}
+                  ? 'Suno handoff copied ✓'
+                  : `${sunoHandoffButtonLabel} from preview`}
                 </button>
               <p className="mt-1 text-xs text-gray-400">
                  Preview of the main pack copied by the Primary actions “Copy Suno handoff” button, including Suno 5.5 Advanced paste-order guidance
