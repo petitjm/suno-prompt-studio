@@ -921,6 +921,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           ? 'SUNO EDITED HANDOFF PACK'
           : 'SUNO HANDOFF PACK'
 
+          const sunoHandoffCopiedLabel = 'Suno handoff copied ✓'
+
           const sunoHandoffButtonLabel = hasChangedSinceGeneration
            ? 'Copy edited handoff'
            : 'Copy Suno handoff'
@@ -1725,7 +1727,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {justCopiedSunoHandoff
-          ? 'Suno handoff copied ✓'
+          ? sunoHandoffCopiedLabel
           : sunoHandoffButtonLabel}
         </button>
 
@@ -2553,7 +2555,7 @@ style, voice, settings, chord guidance, and negative prompt options.
                   className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600"
                 >
                   {justCopiedSunoHandoff
-                  ? 'Suno handoff copied ✓'
+                  ? sunoHandoffCopiedLabel
                   : `${sunoHandoffButtonLabel} from preview`}
                 </button>
               <p className="mt-1 text-xs text-gray-400">
