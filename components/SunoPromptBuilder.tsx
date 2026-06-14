@@ -921,6 +921,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           ? 'SUNO EDITED HANDOFF PACK'
           : 'SUNO HANDOFF PACK'
 
+          const sunoHandoffButtonLabel = hasChangedSinceGeneration
+           ? 'Copy edited handoff'
+           : 'Copy Suno handoff'
+
+
         const sunoHandoffPackDisplayTitle = hasChangedSinceGeneration
           ? 'Suno edited handoff pack'
           : 'Suno handoff pack'
@@ -1721,9 +1726,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         >
           {justCopiedSunoHandoff
           ? 'Suno handoff copied ✓'
-          : hasChangedSinceGeneration
-            ? 'Copy edited handoff'
-            : 'Copy Suno handoff'}
+          : sunoHandoffButtonLabel}
         </button>
 
         <button
@@ -1804,7 +1807,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
             <ul className="list-disc space-y-1 pl-5 text-xs text-gray-400">
               <li>
-                  Click {hasChangedSinceGeneration ? 'Copy edited handoff' : 'Copy Suno handoff'}, then paste the Lyrics and Style sections into Suno 5.5 Advanced mode.
+                  Click {sunoHandoffButtonLabel}, then paste the Lyrics and Style sections into Suno 5.5 Advanced mode.
                 </li>
               <li>Use Quick copy only if you want to paste individual fields separately.</li>
               <li>After listening in Suno, open Revision Controls and note what worked, what failed, and what should change next.</li>
