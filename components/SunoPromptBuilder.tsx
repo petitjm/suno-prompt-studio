@@ -917,6 +917,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const hasSongLyrics = Boolean(performanceSheet.trim())
 
+        const sunoHandoffButtonClassName = !hasSongLyrics
+          ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
+          : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
+
         const sunoHandoffPackTitle = hasChangedSinceGeneration
           ? 'SUNO EDITED HANDOFF PACK'
           : 'SUNO HANDOFF PACK'
@@ -1725,11 +1729,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           onClick={copySunoHandoff}
           disabled={!hasSongLyrics}
           title={sunoHandoffCopyTitle}
-          className={
-              !hasSongLyrics
-                ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
-                : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
-            }
+          className={sunoHandoffButtonClassName}
         >
           {justCopiedSunoHandoff
           ? sunoHandoffCopiedLabel
@@ -2558,11 +2558,7 @@ style, voice, settings, chord guidance, and negative prompt options.
                   onClick={copySunoHandoff}
                   disabled={!hasSongLyrics}
                   title={sunoHandoffCopyTitle}
-                  className={
-                      !performanceSheet.trim()
-                        ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
-                        : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
-                    }
+                  className={sunoHandoffButtonClassName}
                 >
                   {justCopiedSunoHandoff
                   ? sunoHandoffCopiedLabel
