@@ -955,6 +955,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                 ? 'Regenerate Suno prompts'
                 : 'Generate Suno prompts'
 
+            const sunoHandoffStateClassName = !hasSongLyrics
+              ? 'text-gray-400'
+              : hasChangedSinceGeneration
+                ? 'text-yellow-300'
+                : generatedFromSummary
+                  ? 'text-green-300'
+                  : 'text-blue-300'
+
             const sunoHandoffStateLabel = !hasSongLyrics
                 ? 'No lyrics loaded'
                 : hasChangedSinceGeneration
@@ -1729,7 +1737,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             <div className="mb-3 space-y-1 text-xs">
               <p className="text-gray-300">
                 Current handoff:{' '}
-                <span className={hasChangedSinceGeneration ? 'text-yellow-300' : 'text-green-300'}>
+                <span className={sunoHandoffStateClassName}>
                   {sunoHandoffPackDisplayTitle}
                 </span>
                 <span className="text-gray-500">
@@ -2569,7 +2577,7 @@ style, voice, settings, chord guidance, and negative prompt options.
             </p>
           <div className="mt-2 rounded border border-gray-700 bg-gray-950 p-2 text-xs text-gray-300">
               Pack preview status:{' '}
-                <span className={hasChangedSinceGeneration ? 'text-yellow-300' : 'text-green-300'}>
+                <span className={sunoHandoffStateClassName}>
                   {sunoHandoffStateLabel}
                 </span>
             </div>
