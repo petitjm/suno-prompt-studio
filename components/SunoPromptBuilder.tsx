@@ -1274,6 +1274,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const sunoHandoffPack = [
           sunoHandoffPackTitle,
+          `Handoff state: ${sunoHandoffStateLabel}`,
           '',
           'SUNO 5.5 ADVANCED PASTE ORDER:',
           'Best target: paste LYRICS and STYLE into Suno 5.5 Advanced mode.',
