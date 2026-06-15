@@ -1723,9 +1723,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           ? 'Generating...'
           : justGeneratedPrompt
             ? 'Generated ✓'
-            : !performanceSheet.trim()
+            : !hasSongLyrics
               ? 'Add lyrics to generate'
-              : 'Generate Suno prompts'}
+              : generatedFromSummary || hasChangedSinceGeneration
+                ? 'Regenerate Suno prompts'
+                : 'Generate Suno prompts'}
         </button>
 
         <button
