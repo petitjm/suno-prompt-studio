@@ -937,9 +937,11 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           : 'Suno handoff pack'
 
 
-        const sunoHandoffCopyTitle = hasChangedSinceGeneration
-          ? 'Copies the current edited Suno handoff fields.'
-          : 'Copies the current generated Suno handoff pack.'
+        const sunoHandoffCopyTitle = !hasSongLyrics
+          ? 'Add lyrics before copying a Suno handoff.'
+          : hasChangedSinceGeneration
+            ? 'Copies the current edited Suno handoff fields.'
+            : 'Copies the current generated Suno handoff pack.'
 
 
 
