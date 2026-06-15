@@ -927,6 +927,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
           const sunoHandoffCopiedLabel = 'Suno handoff copied ✓'
 
+          const sunoGenerateButtonLabel = generatingPrompt
+          ? 'Generating...'
+          : justGeneratedPrompt
+            ? 'Generated ✓'
+            : !hasSongLyrics
+              ? 'Add lyrics to generate'
+              : generatedFromSummary || hasChangedSinceGeneration
+                ? 'Regenerate Suno prompts'
+                : 'Generate Suno prompts'
+
           const sunoHandoffButtonLabel = !hasSongLyrics
           ? 'Add lyrics to copy handoff'
           : hasChangedSinceGeneration
@@ -1726,15 +1736,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             }
           className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {generatingPrompt
-          ? 'Generating...'
-          : justGeneratedPrompt
-            ? 'Generated ✓'
-            : !hasSongLyrics
-              ? 'Add lyrics to generate'
-              : generatedFromSummary || hasChangedSinceGeneration
-                ? 'Regenerate Suno prompts'
-                : 'Generate Suno prompts'}
+          {sunoGenerateButtonLabel}
         </button>
 
         <button
