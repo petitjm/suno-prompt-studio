@@ -917,6 +917,8 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const hasSongLyrics = Boolean(performanceSheet.trim())
 
+        const canGenerateSunoPrompts = hasSongLyrics && !generatingPrompt
+
         const sunoHandoffButtonClassName = !hasSongLyrics
           ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
           : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
@@ -927,10 +929,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
           const sunoHandoffCopiedLabel = 'Suno handoff copied ✓'
 
-          const sunoGenerateButtonClassName =
-              generatingPrompt || !hasSongLyrics
-                ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
-                : 'px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500'
+          const sunoGenerateButtonClassName = !canGenerateSunoPrompts
+            ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
+            : 'px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500'
 
           const sunoGenerateButtonTitle = !hasSongLyrics
           ? 'Add lyrics before generating Suno prompts.'
@@ -1738,7 +1739,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       <button
           type="button"
           onClick={generateSunoPrompt}
-          disabled={generatingPrompt || !performanceSheet.trim()}
+          disabled={!canGenerateSunoPrompts}
           title={sunoGenerateButtonTitle}
           className={sunoGenerateButtonClassName}
         >
