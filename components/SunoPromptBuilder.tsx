@@ -1736,14 +1736,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </p>
             <div className="mb-3 space-y-1 text-xs">
               <p className="text-gray-300">
-                Current handoff:{' '}
-                <span className={sunoHandoffStateClassName}>
-                  {sunoHandoffPackDisplayTitle}
-                </span>
-                <span className="text-gray-500">
-                  {' '}— {sunoHandoffStateLabel}
-                </span>
-              </p>
+                  Current handoff:{' '}
+                  <span className={sunoHandoffStateClassName}>
+                    {sunoHandoffPackDisplayTitle}
+                  </span>
+                  <span className={sunoHandoffStateClassName}>
+                    {' '}— {sunoHandoffStateLabel}
+                  </span>
+                </p>
 
               <p className="text-gray-500">
                 Copying only places the handoff on your clipboard. It does not send anything to Suno.
