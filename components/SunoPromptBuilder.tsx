@@ -919,7 +919,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const canGenerateSunoPrompts = hasSongLyrics && !generatingPrompt
 
-        const sunoHandoffButtonClassName = !hasSongLyrics
+        const canCopySunoHandoff = hasSongLyrics
+
+        const sunoHandoffButtonClassName = !canCopySunoHandoff
           ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
           : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
 
@@ -1749,7 +1751,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         <button
           type="button"
           onClick={copySunoHandoff}
-          disabled={!hasSongLyrics}
+          disabled={!canCopySunoHandoff}
           title={sunoHandoffCopyTitle}
           className={sunoHandoffButtonClassName}
         >
@@ -2578,7 +2580,7 @@ style, voice, settings, chord guidance, and negative prompt options.
               <button
                   type="button"
                   onClick={copySunoHandoff}
-                  disabled={!hasSongLyrics}
+                  disabled={!canCopySunoHandoff}
                   title={sunoHandoffCopyTitle}
                   className={sunoHandoffButtonClassName}
                 >
