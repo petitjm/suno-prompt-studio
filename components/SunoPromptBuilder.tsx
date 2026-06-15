@@ -2582,12 +2582,8 @@ style, voice, settings, chord guidance, and negative prompt options.
                 </span>
             </div>
           <label className="block">
-              <span className="block text-sm font-medium text-gray-300 mb-1">
-                  {sunoHandoffPackTitle
-                  .toLowerCase()
-                  .replace('suno ', 'Suno ')
-                  .replace('handoff', 'handoff')
-                  .replace('pack', 'pack')}
+              <span className={`block text-sm font-medium mb-1 ${sunoHandoffStateClassName}`}>
+                  {sunoHandoffPackDisplayTitle}
                 </span>
               <textarea
                 value={sunoHandoffPack}
