@@ -915,7 +915,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               : 'Generation status is Not generated.',
         ].join(' ')
 
+
+        // Important: call trim() here. Checking performanceSheet.trim would only test that the function exists.
         const hasSongLyrics = Boolean(performanceSheet.trim())
+                
 
         const canGenerateSunoPrompts = hasSongLyrics && !generatingPrompt
 
