@@ -1779,6 +1779,7 @@ const sunoStatusSummary = [
             navigator.clipboard.writeText(sunoStatusSummary)
             showButtonFeedback(setJustCopiedStatusSummary)
           }}
+          title="Copies the current Suno status summary, including handoff state and generated time."
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
           {justCopiedStatusSummary ? 'Status copied ✓' : 'Copy status summary'}
