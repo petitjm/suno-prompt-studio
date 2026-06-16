@@ -405,6 +405,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedProductionNotes, setJustCopiedProductionNotes] = useState(false)
   const [justCopiedRevisedFullPack, setJustCopiedRevisedFullPack] = useState(false)
   const [justCopiedStatusSummary, setJustCopiedStatusSummary] = useState(false)
+  const [justCopiedStatusSummaryPreview, setJustCopiedStatusSummaryPreview] = useState(false)
   const [justCopiedSunoHandoff, setJustCopiedSunoHandoff] = useState(false)
   const [activePresetFeedback, setActivePresetFeedback] = useState('')
   const [generatingPrompt, setGeneratingPrompt] = useState(false)
@@ -998,6 +999,12 @@ const copySunoStatusSummary = () => {
   navigator.clipboard.writeText(sunoStatusSummary)
   showButtonFeedback(setJustCopiedStatusSummary)
 }
+
+const copySunoStatusSummaryPreview = () => {
+  navigator.clipboard.writeText(sunoStatusSummary)
+  showButtonFeedback(setJustCopiedStatusSummaryPreview)
+}
+
 
 
         const sunoQuickPack = [
@@ -1624,13 +1631,13 @@ const copySunoStatusSummary = () => {
             </div>
             <button
               type="button"
-              onClick={copySunoStatusSummary}
+              onClick={copySunoStatusSummaryPreview}
               title={sunoStatusSummaryCopyTitle}
               className="mt-2 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
             >
-              {justCopiedStatusSummary
-                ? sunoStatusSummaryCopiedLabel
-                : sunoStatusSummaryButtonLabel}
+              {justCopiedStatusSummaryPreview
+              ? sunoStatusSummaryCopiedLabel
+              : sunoStatusSummaryButtonLabel}
             </button>
         </div>
     </div>
