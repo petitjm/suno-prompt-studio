@@ -1605,15 +1605,12 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </div>
 
             <div>
-              <span className="text-gray-500">Generation:</span>{' '}
-              <span className="text-gray-100">
-                  {generatedFromSummary
-                    ? 'Generated'
-                    : hasChangedSinceGeneration
-                      ? 'Draft changed'
-                      : 'Not generated'}
-                </span>
+              <span className="text-gray-500">Handoff state:</span>{' '}
+              <span className={sunoHandoffStateClassName}>
+                {sunoHandoffStateLabel}
+              </span>
             </div>
+
             <div>
               <span className="text-gray-500">
                 {hasChangedSinceGeneration ? 'Last generated at:' : 'Generated at:'}
