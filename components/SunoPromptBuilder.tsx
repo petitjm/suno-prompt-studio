@@ -991,6 +991,8 @@ const sunoStatusSummary = [
 const sunoStatusSummaryCopyTitle =
   'Copies the current Suno status summary, including handoff state and generated time.'
 
+  const sunoStatusSummaryPreviewButtonLabel = 'Copy status preview'
+
 const sunoStatusSummaryButtonLabel = 'Copy status summary'
 const sunoStatusSummaryCopiedLabel = 'Status copied ✓'
 
@@ -1637,7 +1639,7 @@ const copySunoStatusSummaryPreview = () => {
             >
               {justCopiedStatusSummaryPreview
               ? sunoStatusSummaryCopiedLabel
-              : sunoStatusSummaryButtonLabel}
+              : sunoStatusSummaryPreviewButtonLabel}
             </button>
         </div>
     </div>
