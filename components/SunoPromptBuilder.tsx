@@ -968,8 +968,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                       ? 'Last generated at'
                       : 'Generated at'
 
-              const sunoHandoffGeneratedAtText = `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`
-
+             
             const sunoHandoffStateLabel = !hasSongLyrics
                 ? 'No lyrics loaded'
                 : hasChangedSinceGeneration
@@ -998,13 +997,16 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           : 'Suno handoff pack'
 
 
+          const sunoHandoffGeneratedAtText = `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`
+
+
         const sunoHandoffCopyTitle = !hasSongLyrics
           ? 'Add lyrics before copying a Suno handoff.'
           : hasChangedSinceGeneration
-            ? `Copies the current edited Suno handoff fields. ${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}.`
-            : `Copies the current generated Suno handoff pack. ${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}.`
+            ? `Copies the current edited Suno handoff fields. ${sunoHandoffGeneratedAtText}.`
+            : `Copies the current generated Suno handoff pack. ${sunoHandoffGeneratedAtText}.`
 
-
+ 
 
 
         const sunoQuickPack = [
