@@ -1755,8 +1755,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </p>
 
               <p className="text-gray-500">
-                {sunoHandoffGeneratedAtTitle}: {sunoHandoffGeneratedAtLabel}
-              </p>
+                  <span className="text-gray-400">{sunoHandoffGeneratedAtTitle}:</span>{' '}
+                  {sunoHandoffGeneratedAtLabel}
+                </p>
 
               <p className="text-gray-500">
                 Copying only places the handoff on your clipboard. It does not send anything to Suno.
@@ -2597,8 +2598,9 @@ style, voice, settings, chord guidance, and negative prompt options.
               </div>
 
               <div className="mt-1 text-gray-500">
-                {sunoHandoffGeneratedAtTitle}: {sunoHandoffGeneratedAtLabel}
-              </div>
+                  <span className="text-gray-400">{sunoHandoffGeneratedAtTitle}:</span>{' '}
+                  {sunoHandoffGeneratedAtLabel}
+                </div>
             </div>
           <label className="block">
               <span className={`block text-sm font-medium mb-1 ${sunoHandoffStateClassName}`}>
