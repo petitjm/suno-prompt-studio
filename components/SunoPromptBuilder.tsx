@@ -892,122 +892,100 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           'PERFORMANCE NOTES:',
           sunoPerformanceNotes,
         ].join('\n')   
-        
-        
-        const sunoStatusSummary = [
-          `Prepared for ${lyricsMode} Suno 5.5 handoff`,
-          `using ${sunoGender} vocal`,
-          `${productionTarget} target`,
-          `${sunoPromptLength} prompt length.`,
-          `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
-          generatedFromSummary && lastGeneratedAt
-          ? `Generation status is Generated at ${lastGeneratedAt}.`
-          : hasChangedSinceGeneration && previousGeneratedAt
-            ? `Generation status is Draft changed since last generation at ${previousGeneratedAt}.`
-            : hasChangedSinceGeneration
-              ? 'Generation status is Draft changed since last generation.'
-              : 'Generation status is Not generated.',
-        ].join(' ')
+// Important: call trim() here. Checking performanceSheet.trim would only test that the function exists.
+const hasSongLyrics = Boolean(performanceSheet.trim())
 
+const canGenerateSunoPrompts = hasSongLyrics && !generatingPrompt
+const canCopySunoHandoff = hasSongLyrics
 
-        // Important: call trim() here. Checking performanceSheet.trim would only test that the function exists.
-        const hasSongLyrics = Boolean(performanceSheet.trim())
-                
+const sunoHandoffStateLabel = !hasSongLyrics
+  ? 'No lyrics loaded'
+  : hasChangedSinceGeneration
+    ? 'Edited handoff'
+    : generatedFromSummary
+      ? 'Generated handoff'
+      : 'Draft handoff'
 
-        const canGenerateSunoPrompts = hasSongLyrics && !generatingPrompt
+const sunoHandoffStateClassName = !hasSongLyrics
+  ? 'text-gray-400'
+  : hasChangedSinceGeneration
+    ? 'text-yellow-300'
+    : generatedFromSummary
+      ? 'text-green-300'
+      : 'text-blue-300'
 
-        const canCopySunoHandoff = hasSongLyrics
+const sunoHandoffGeneratedAtLabel =
+  lastGeneratedAt || previousGeneratedAt || 'Not generated'
 
-        const sunoHandoffButtonClassName = !canCopySunoHandoff
-          ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
-          : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
+const sunoHandoffGeneratedAtTitle = hasChangedSinceGeneration
+  ? 'Last generated at'
+  : 'Generated at'
 
-        const sunoHandoffPackTitle = hasChangedSinceGeneration
-          ? 'SUNO EDITED HANDOFF PACK'
-          : 'SUNO HANDOFF PACK'
+const sunoHandoffGeneratedAtText = `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`
 
-          const sunoHandoffCopiedLabel = 'Suno handoff copied ✓'
+const sunoHandoffPackTitle = hasChangedSinceGeneration
+  ? 'SUNO EDITED HANDOFF PACK'
+  : 'SUNO HANDOFF PACK'
 
-          const sunoGenerateButtonClassName = !canGenerateSunoPrompts
-            ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
-            : 'px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500'
+const sunoHandoffPackDisplayTitle = hasChangedSinceGeneration
+  ? 'Suno edited handoff pack'
+  : 'Suno handoff pack'
 
-          const sunoGenerateButtonTitle = !hasSongLyrics
-          ? 'Add lyrics before generating Suno prompts.'
-          : generatedFromSummary || hasChangedSinceGeneration
-            ? 'Regenerates Suno prompts using the current visible lyrics, settings, notes, and prompt fields.'
-            : 'Generates Suno prompts from the current song sheet.'
+const sunoHandoffCopiedLabel = 'Suno handoff copied ✓'
 
+const sunoHandoffButtonLabel = !hasSongLyrics
+  ? 'Add lyrics to copy handoff'
+  : hasChangedSinceGeneration
+    ? 'Copy edited handoff'
+    : 'Copy Suno handoff'
 
-          const sunoGenerateButtonLabel = generatingPrompt
-          ? 'Generating...'
-          : justGeneratedPrompt
-            ? 'Generated ✓'
-            : !hasSongLyrics
-              ? 'Add lyrics to generate'
-              : generatedFromSummary || hasChangedSinceGeneration
-                ? 'Regenerate Suno prompts'
-                : 'Generate Suno prompts'
+const sunoHandoffCopyTitle = !hasSongLyrics
+  ? 'Add lyrics before copying a Suno handoff.'
+  : hasChangedSinceGeneration
+    ? `Copies the current edited Suno handoff fields. ${sunoHandoffGeneratedAtText}.`
+    : `Copies the current generated Suno handoff pack. ${sunoHandoffGeneratedAtText}.`
 
-            const sunoHandoffStateClassName = !hasSongLyrics
-              ? 'text-gray-400'
-              : hasChangedSinceGeneration
-                ? 'text-yellow-300'
-                : generatedFromSummary
-                  ? 'text-green-300'
-                  : 'text-blue-300'
+const sunoHandoffButtonClassName = !canCopySunoHandoff
+  ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
+  : 'px-4 py-2 rounded bg-green-700 text-white hover:bg-green-600'
 
-                  
+const sunoGenerateButtonClassName = !canGenerateSunoPrompts
+  ? 'px-4 py-2 rounded bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
+  : 'px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500'
 
-           
+const sunoGenerateButtonTitle = !hasSongLyrics
+  ? 'Add lyrics before generating Suno prompts.'
+  : generatedFromSummary || hasChangedSinceGeneration
+    ? 'Regenerates Suno prompts using the current visible lyrics, settings, notes, and prompt fields.'
+    : 'Generates Suno prompts from the current song sheet.'
 
-            const sunoHandoffGeneratedAtLabel =
-              lastGeneratedAt || previousGeneratedAt || 'Not generated'
+const sunoGenerateButtonLabel = generatingPrompt
+  ? 'Generating...'
+  : justGeneratedPrompt
+    ? 'Generated ✓'
+    : !hasSongLyrics
+      ? 'Add lyrics to generate'
+      : generatedFromSummary || hasChangedSinceGeneration
+        ? 'Regenerate Suno prompts'
+        : 'Generate Suno prompts'
 
-              const sunoHandoffGeneratedAtTitle = hasChangedSinceGeneration
-                      ? 'Last generated at'
-                      : 'Generated at'
+const sunoWorkflowHint = !hasSongLyrics
+  ? 'Add or load lyrics in the Song Sheet to begin building Suno prompts.'
+  : hasChangedSinceGeneration
+    ? `The Suno handoff has changed since the last generation. ${sunoHandoffButtonLabel}, or regenerate if you want AI-refreshed guidance.`
+    : !generatedFromSummary
+      ? `Generate Suno prompts, then ${sunoHandoffButtonLabel} into Suno 5.5 Advanced mode.`
+      : `Prompts have been generated. ${sunoHandoffButtonLabel} into Suno, or open Revision Controls after listening to a Suno result.`
 
-             
-            const sunoHandoffStateLabel = !hasSongLyrics
-                ? 'No lyrics loaded'
-                : hasChangedSinceGeneration
-                ? 'Edited handoff'
-                : generatedFromSummary
-                    ? 'Generated handoff'
-                    : 'Draft handoff'
-
-          const sunoHandoffButtonLabel = !hasSongLyrics
-          ? 'Add lyrics to copy handoff'
-          : hasChangedSinceGeneration
-            ? 'Copy edited handoff'
-            : 'Copy Suno handoff'
-
-            const sunoWorkflowHint = !hasSongLyrics
-          ? 'Add or load lyrics in the Song Sheet to begin building Suno prompts.'
-          : hasChangedSinceGeneration
-            ? `The Suno handoff has changed since the last generation. ${sunoHandoffButtonLabel}, or regenerate if you want AI-refreshed guidance.`
-            : !generatedFromSummary
-              ? `Generate Suno prompts, then ${sunoHandoffButtonLabel} into Suno 5.5 Advanced mode.`
-              : `Prompts have been generated. ${sunoHandoffButtonLabel} into Suno, or open Revision Controls after listening to a Suno result.`
-
-
-        const sunoHandoffPackDisplayTitle = hasChangedSinceGeneration
-          ? 'Suno edited handoff pack'
-          : 'Suno handoff pack'
-
-
-          const sunoHandoffGeneratedAtText = `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`
-
-
-        const sunoHandoffCopyTitle = !hasSongLyrics
-          ? 'Add lyrics before copying a Suno handoff.'
-          : hasChangedSinceGeneration
-            ? `Copies the current edited Suno handoff fields. ${sunoHandoffGeneratedAtText}.`
-            : `Copies the current generated Suno handoff pack. ${sunoHandoffGeneratedAtText}.`
-
- 
-
+const sunoStatusSummary = [
+  `Prepared for ${lyricsMode} Suno 5.5 handoff`,
+  `using ${sunoGender} vocal`,
+  `${productionTarget} target`,
+  `${sunoPromptLength} prompt length.`,
+  `Revision notes are ${creationNotes.trim() ? 'Ready' : 'Empty'}.`,
+  `Handoff state is ${sunoHandoffStateLabel}.`,
+  sunoHandoffGeneratedAtText,
+].join(' ')
 
         const sunoQuickPack = [
           'SUNO QUICK PACK',
