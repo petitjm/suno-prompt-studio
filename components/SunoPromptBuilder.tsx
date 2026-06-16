@@ -988,6 +988,10 @@ const sunoStatusSummary = [
   sunoHandoffGeneratedAtText,
 ].join(' ')
 
+const sunoStatusSummaryPreviewCopyTitle =
+  'Copies the status summary shown in this preview, including handoff state and generated time.'
+
+
 const sunoStatusSummaryCopyTitle =
   'Copies the current Suno status summary, including handoff state and generated time.'
 
@@ -1634,7 +1638,7 @@ const copySunoStatusSummaryPreview = () => {
             <button
               type="button"
               onClick={copySunoStatusSummaryPreview}
-              title={sunoStatusSummaryCopyTitle}
+              title={sunoStatusSummaryPreviewCopyTitle}
               className="mt-2 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
             >
               {justCopiedStatusSummaryPreview
