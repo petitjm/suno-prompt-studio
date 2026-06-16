@@ -761,13 +761,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 
         const compactSunoStyleInput = sunoStyleField.trim()
 
-        const sunoWorkflowHint = !performanceSheet.trim()
-          ? 'Add or load lyrics in the Song Sheet to begin building Suno prompts.'
-          : hasChangedSinceGeneration
-            ? 'The Suno handoff has changed since the last generation. Generate again before copying if you want the latest edits reflected.'
-            : !generatedFromSummary
-              ? 'Generate Suno prompts, then copy the Suno handoff into Suno 5.5 Advanced mode.'
-              : 'Prompts have been generated. Copy the Suno handoff into Suno, or open Revision Controls after listening to a Suno result.'
+        
 
         const detailedSunoStyleInput = [
           stylePrompt,
@@ -983,6 +977,14 @@ function getChordGuidanceSummary(structuredChordJson: string) {
           : hasChangedSinceGeneration
             ? 'Copy edited handoff'
             : 'Copy Suno handoff'
+
+            const sunoWorkflowHint = !hasSongLyrics
+          ? 'Add or load lyrics in the Song Sheet to begin building Suno prompts.'
+          : hasChangedSinceGeneration
+            ? `The Suno handoff has changed since the last generation. ${sunoHandoffButtonLabel}, or regenerate if you want AI-refreshed guidance.`
+            : !generatedFromSummary
+              ? `Generate Suno prompts, then ${sunoHandoffButtonLabel} into Suno 5.5 Advanced mode.`
+              : `Prompts have been generated. ${sunoHandoffButtonLabel} into Suno, or open Revision Controls after listening to a Suno result.`
 
 
         const sunoHandoffPackDisplayTitle = hasChangedSinceGeneration
