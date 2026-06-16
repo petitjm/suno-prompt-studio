@@ -1739,16 +1739,20 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             <p className="mb-3 text-xs text-gray-400">
               Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack, including Suno 5.5 Advanced paste-order guidance, lyrics, style, voice, settings, negative prompt, and additional core reference fields for arrangement, vocal, and intro / solo / outro guidance. Reset restores the Suno prompt fields to their defaults without changing the song sheet or saved versions. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
             </p>
-            <div className="mb-3 space-y-1 text-xs">
+           <div className="mb-3 space-y-1 text-xs">
               <p className="text-gray-300">
-                  Current handoff:{' '}
-                  <span className={sunoHandoffStateClassName}>
-                    {sunoHandoffPackDisplayTitle}
-                  </span>
-                  <span className={sunoHandoffStateClassName}>
-                    {' '}— {sunoHandoffStateLabel}
-                  </span>
-                </p>
+                Current handoff:{' '}
+                <span className={sunoHandoffStateClassName}>
+                  {sunoHandoffPackDisplayTitle}
+                </span>
+                <span className={sunoHandoffStateClassName}>
+                  {' '}— {sunoHandoffStateLabel}
+                </span>
+              </p>
+
+              <p className="text-gray-500">
+                Generated at: {sunoHandoffGeneratedAtLabel}
+              </p>
 
               <p className="text-gray-500">
                 Copying only places the handoff on your clipboard. It does not send anything to Suno.
