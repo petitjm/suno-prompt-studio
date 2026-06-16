@@ -987,6 +987,12 @@ const sunoStatusSummary = [
   sunoHandoffGeneratedAtText,
 ].join(' ')
 
+const copySunoStatusSummary = () => {
+  navigator.clipboard.writeText(sunoStatusSummary)
+  showButtonFeedback(setJustCopiedStatusSummary)
+}
+
+
         const sunoQuickPack = [
           'SUNO QUICK PACK',
           '',
@@ -1775,10 +1781,7 @@ const sunoStatusSummary = [
 
         <button
           type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(sunoStatusSummary)
-            showButtonFeedback(setJustCopiedStatusSummary)
-          }}
+          onClick={copySunoStatusSummary}
           title="Copies the current Suno status summary, including handoff state and generated time."
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
