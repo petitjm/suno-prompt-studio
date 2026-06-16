@@ -2601,8 +2601,7 @@ style, voice, settings, chord guidance, and negative prompt options.
               </div>
 
               <div className="mt-1 text-gray-500">
-                  <span className="text-gray-400">{sunoHandoffGeneratedAtTitle}:</span>{' '}
-                  {sunoHandoffGeneratedAtLabel}
+                  {sunoHandoffGeneratedAtText}
                 </div>
             </div>
           <label className="block">
