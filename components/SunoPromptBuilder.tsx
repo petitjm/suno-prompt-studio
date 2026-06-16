@@ -963,6 +963,10 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   ? 'text-green-300'
                   : 'text-blue-300'
 
+                  const sunoHandoffGeneratedAtTitle = hasChangedSinceGeneration
+                      ? 'Last generated at'
+                      : 'Generated at'
+
             const sunoHandoffGeneratedAtLabel =
               lastGeneratedAt || previousGeneratedAt || 'Not generated'
 
@@ -1278,7 +1282,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const sunoHandoffPack = [
           sunoHandoffPackTitle,
           `Handoff state: ${sunoHandoffStateLabel}`,
-          `Generated at: ${sunoHandoffGeneratedAtLabel}`,
+          `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`,
           '',
           'SUNO 5.5 ADVANCED PASTE ORDER:',
           'Best target: paste LYRICS and STYLE into Suno 5.5 Advanced mode.',
@@ -1751,7 +1755,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
               </p>
 
               <p className="text-gray-500">
-                Generated at: {sunoHandoffGeneratedAtLabel}
+                {sunoHandoffGeneratedAtTitle}: {sunoHandoffGeneratedAtLabel}
               </p>
 
               <p className="text-gray-500">
@@ -2593,7 +2597,7 @@ style, voice, settings, chord guidance, and negative prompt options.
               </div>
 
               <div className="mt-1 text-gray-500">
-                Generated at: {sunoHandoffGeneratedAtLabel}
+                {sunoHandoffGeneratedAtTitle}: {sunoHandoffGeneratedAtLabel}
               </div>
             </div>
           <label className="block">
