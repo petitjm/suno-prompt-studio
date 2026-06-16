@@ -957,12 +957,18 @@ function getChordGuidanceSummary(structuredChordJson: string) {
                   ? 'text-green-300'
                   : 'text-blue-300'
 
-                  const sunoHandoffGeneratedAtTitle = hasChangedSinceGeneration
-                      ? 'Last generated at'
-                      : 'Generated at'
+                  
+
+           
 
             const sunoHandoffGeneratedAtLabel =
               lastGeneratedAt || previousGeneratedAt || 'Not generated'
+
+              const sunoHandoffGeneratedAtTitle = hasChangedSinceGeneration
+                      ? 'Last generated at'
+                      : 'Generated at'
+
+              const sunoHandoffGeneratedAtText = `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`
 
             const sunoHandoffStateLabel = !hasSongLyrics
                 ? 'No lyrics loaded'
@@ -1284,7 +1290,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
         const sunoHandoffPack = [
           sunoHandoffPackTitle,
           `Handoff state: ${sunoHandoffStateLabel}`,
-          `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`,
+          sunoHandoffGeneratedAtText,
           '',
           'SUNO 5.5 ADVANCED PASTE ORDER:',
           'Best target: paste LYRICS and STYLE into Suno 5.5 Advanced mode.',
