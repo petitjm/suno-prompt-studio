@@ -1620,9 +1620,9 @@ function getChordGuidanceSummary(structuredChordJson: string) {
             </div>
 
             <div>
-              <span className="text-gray-500">{sunoHandoffGeneratedAtTitle}:</span>{' '}
+              <span className="text-gray-500">Generated time:</span>{' '}
               <span className="text-gray-100">
-                {sunoHandoffGeneratedAtLabel}
+                {sunoHandoffGeneratedAtText}
               </span>
             </div>
 
