@@ -987,6 +987,10 @@ const sunoStatusSummary = [
   sunoHandoffGeneratedAtText,
 ].join(' ')
 
+const sunoStatusSummaryButtonLabel = 'Copy status summary'
+const sunoStatusSummaryCopiedLabel = 'Status copied ✓'
+
+
 const copySunoStatusSummary = () => {
   navigator.clipboard.writeText(sunoStatusSummary)
   showButtonFeedback(setJustCopiedStatusSummary)
@@ -1785,7 +1789,9 @@ const copySunoStatusSummary = () => {
           title="Copies the current Suno status summary, including handoff state and generated time."
           className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
         >
-          {justCopiedStatusSummary ? 'Status copied ✓' : 'Copy status summary'}
+          {justCopiedStatusSummary
+          ? sunoStatusSummaryCopiedLabel
+          : sunoStatusSummaryButtonLabel}
         </button>
 
         <button
