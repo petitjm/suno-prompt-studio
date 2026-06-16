@@ -1622,7 +1622,16 @@ const copySunoStatusSummary = () => {
                 {sunoStatusSummary}
               </p>
             </div>
-
+            <button
+              type="button"
+              onClick={copySunoStatusSummary}
+              title={sunoStatusSummaryCopyTitle}
+              className="mt-2 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              {justCopiedStatusSummary
+                ? sunoStatusSummaryCopiedLabel
+                : sunoStatusSummaryButtonLabel}
+            </button>
         </div>
     </div>
     </div>
