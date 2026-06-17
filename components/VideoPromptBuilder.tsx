@@ -106,6 +106,7 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
   const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState('')
   const [results, setResults] = useState<VideoResult[]>([])
+  const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
 
   const hasLyrics = lyrics.trim().length > 0
@@ -167,6 +168,15 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
       setGenerating(false)
     }
   }
+
+  const copyVideoField = (value: string, fieldKey: string) => {
+      navigator.clipboard.writeText(value)
+      setJustCopiedField(fieldKey)
+
+      window.setTimeout(() => {
+        setJustCopiedField('')
+      }, 1800)
+    }
 
   const copyVideoPack = (result: VideoResult, index: number) => {
     navigator.clipboard.writeText(buildVideoPack(result))
@@ -369,6 +379,15 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
                     rows={5}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                  <button
+                      type="button"
+                      onClick={() => copyVideoField(buildMasterPrompt(result), `${result.dna_id}-master-${index}`)}
+                      className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                    >
+                      {justCopiedField === `${result.dna_id}-master-${index}`
+                        ? 'Master prompt copied ✓'
+                        : 'Copy master prompt'}
+                    </button>
                 </label>
 
                 <label className="block">
@@ -381,6 +400,15 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
                     rows={4}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                  <button
+                      type="button"
+                      onClick={() => copyVideoField(buildShortPrompt(result), `${result.dna_id}-short-${index}`)}
+                      className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                    >
+                      {justCopiedField === `${result.dna_id}-short-${index}`
+                        ? 'Short prompt copied ✓'
+                        : 'Copy short prompt'}
+                    </button>
                   <p className="mt-1 text-xs text-gray-500">
                     Shortened prompt for OpenArt fields with tighter character limits.
                   </p>
@@ -396,6 +424,15 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
                     rows={3}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                  <button
+                      type="button"
+                      onClick={() => copyVideoField(openArtNegativePrompt, `${result.dna_id}-negative-${index}`)}
+                      className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                    >
+                      {justCopiedField === `${result.dna_id}-negative-${index}`
+                        ? 'Negative prompt copied ✓'
+                        : 'Copy negative prompt'}
+                    </button>
                   <p className="mt-1 text-xs text-gray-500">
                     Use this to reduce video artifacts, inconsistent character details, and lip-sync issues.
                   </p>
