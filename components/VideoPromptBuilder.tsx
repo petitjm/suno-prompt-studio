@@ -68,9 +68,14 @@ const buildShortPrompt = (result: VideoResult) =>
     .join(' ')
     .slice(0, 700)
 
-    const buildSceneChainPack = (result: VideoResult) =>
+    const buildSceneChainPack = (
+      result: VideoResult,
+      songTitle: string,
+      songVersionTitle: string
+    ) =>
       [
         `OPENART SCENE CHAIN PACK - ${result.dna_name}`,
+        buildSongReference(songTitle, songVersionTitle),
         '',
         'GLOBAL STYLE TO KEEP CONSISTENT ACROSS ALL SCENES:',
         result.global_style,
@@ -90,9 +95,25 @@ const buildShortPrompt = (result: VideoResult) =>
       ].join('\n')
 
 
-const buildVideoPack = (result: VideoResult) =>
+const buildSongReference = (songTitle: string, songVersionTitle: string) =>
   [
+    songTitle.trim()
+      ? `Song title: ${songTitle.trim()}`
+      : 'Song title: Not selected',
+    songVersionTitle.trim()
+      ? `Song version: ${songVersionTitle.trim()}`
+      : 'Song version: Untitled saved version',
+  ].join('\n')
+
+
+const buildVideoPack = (
+      result: VideoResult,
+      songTitle: string,
+      songVersionTitle: string
+    ) =>
+      [
     `VIDEO PROMPT PACK - ${result.dna_name}`,
+    buildSongReference(songTitle, songVersionTitle),
     '',
     'GLOBAL STYLE:',
     result.global_style,
@@ -204,8 +225,9 @@ export default function VideoPromptBuilder({
   }
 
   const copyVideoField = (title: string, value: string, fieldKey: string) => {
-      navigator.clipboard.writeText([title, value].join('\n'))
-      setJustCopiedField(fieldKey)
+      navigator.clipboard.writeText(
+          [title, buildSongReference(songTitle, songVersionTitle), '', value].join('\n')
+        )
 
       window.setTimeout(() => {
         setJustCopiedField('')
@@ -213,7 +235,9 @@ export default function VideoPromptBuilder({
     }
 
   const copyVideoPack = (result: VideoResult, index: number) => {
-    navigator.clipboard.writeText(buildVideoPack(result))
+    navigator.clipboard.writeText(
+      buildVideoPack(result, songTitle, songVersionTitle)
+    )
     setJustCopiedIndex(index)
 
     window.setTimeout(() => {
@@ -391,7 +415,7 @@ export default function VideoPromptBuilder({
                   onClick={() =>
                     copyVideoField(
                       'OPENART SCENE CHAIN PACK:',
-                      buildSceneChainPack(result),
+                      buildSceneChainPack(result, songTitle, songVersionTitle),
                       `${result.dna_id}-scene-chain-${index}`
                     )
                   }
