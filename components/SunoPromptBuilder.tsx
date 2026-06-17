@@ -1648,7 +1648,7 @@ const copySunoStatusSummaryPreview = () => {
               type="button"
               onClick={copySunoStatusSummaryPreview}
               title={sunoStatusSummaryPreviewCopyTitle}
-              className="mt-2 px-3 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+              className="mt-2 rounded border border-gray-700 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-800"
             >
               {justCopiedStatusSummaryPreview
               ? sunoStatusSummaryCopiedLabel
