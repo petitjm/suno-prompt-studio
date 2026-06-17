@@ -1825,7 +1825,7 @@ const copySunoStatusSummaryPreview = () => {
           type="button"
           onClick={copySunoStatusSummary}
           title={sunoStatusSummaryCopyTitle}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+          className="rounded border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
         >
           {justCopiedStatusSummary
           ? sunoStatusSummaryCopiedLabel
