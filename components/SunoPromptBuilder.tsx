@@ -452,6 +452,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
       setNegativePrompt(defaultNegativePrompt)
       setChordGuidanceMode('Lyrics only')
       setProductionTarget('Radio-ready')
+      setClearSunoSessionMessage('')
     }, [performanceSheet])
 
   const combinedPrompt = useMemo(() => {
