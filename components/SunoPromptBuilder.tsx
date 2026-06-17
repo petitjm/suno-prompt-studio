@@ -1835,14 +1835,14 @@ const copySunoStatusSummaryPreview = () => {
         <button
           type="button"
           onClick={resetToDefaults}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+          className="rounded border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
         >
           {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
         </button>
         <button
           type="button"
           onClick={clearSunoSession}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+          className="rounded border border-yellow-800 px-4 py-2 text-sm text-yellow-200 hover:bg-yellow-950/40"
         >
           {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
         </button>
