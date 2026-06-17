@@ -1632,14 +1632,18 @@ const copySunoStatusSummaryPreview = () => {
               <span className="text-gray-500">{sunoHandoffGeneratedAtText}</span>
             </div>
 
-            <div className="mt-3 rounded border border-gray-700 bg-gray-950 p-2">
-              <p className="mb-1 text-xs font-medium text-gray-400">
+           <details className="mt-3 rounded border border-gray-700 bg-gray-950 p-2">
+              <summary className="cursor-pointer text-xs font-medium text-gray-400">
                 Status summary preview
-              </p>
-              <p className="text-xs text-gray-300">
+                <span className="text-gray-600 font-normal">
+                  {' '}click to expand/collapse
+                </span>
+              </summary>
+
+              <p className="mt-2 text-xs text-gray-300">
                 {sunoStatusSummary}
               </p>
-            </div>
+            </details>
             <button
               type="button"
               onClick={copySunoStatusSummaryPreview}
