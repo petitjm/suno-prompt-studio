@@ -999,7 +999,10 @@ const sunoStatusSummary = [
 
 
 
+const sunoResetDefaultsButtonLabel = 'Reset prompt defaults'
+const sunoResetDefaultsCopiedLabel = 'Defaults restored ✓'
 
+const sunoClearSessionButtonLabel = 'Clear Suno session'
   
 
 const sunoStatusSummaryButtonLabel = 'Copy status summary'
@@ -1845,7 +1848,9 @@ const copySunoStatusSummaryPreview = () => {
           title={sunoResetDefaultsTitle}
           className="rounded border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
         >
-          {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
+          {justResetDefaults
+          ? sunoResetDefaultsCopiedLabel
+          : sunoResetDefaultsButtonLabel}
         </button>
         <button
           type="button"
@@ -1853,7 +1858,7 @@ const copySunoStatusSummaryPreview = () => {
           title={sunoClearSessionTitle}
           className="rounded border border-yellow-800 px-4 py-2 text-sm text-yellow-200 hover:bg-yellow-950/40"
         >
-          {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
+          {sunoClearSessionButtonLabel}
         </button>
       
     </div>
