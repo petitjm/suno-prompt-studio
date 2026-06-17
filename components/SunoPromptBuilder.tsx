@@ -1172,6 +1172,7 @@ const copySunoStatusSummaryPreview = () => {
         ].join('\n')
 
         const clearSunoSession = () => {
+            // Clear session state only. Do not reset core prompt defaults here.
           setPromptMessage('')
           setGeneratedFromSummary('')
           setPreviousSunoStyleField('')
