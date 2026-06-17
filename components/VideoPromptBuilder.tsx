@@ -26,6 +26,23 @@ const splitMoods = (value: string) =>
     .map((mood) => mood.trim())
     .filter(Boolean)
 
+const buildMasterPrompt = (result: VideoResult) =>
+  [
+    result.global_style,
+    result.character_prompt,
+    result.video_concept,
+    'Create a cinematic music video sequence with consistent character, emotional continuity, natural camera movement, realistic lighting, and scene-to-scene visual coherence.',
+  ].join(' ')
+
+const buildShortPrompt = (result: VideoResult) =>
+  [
+    result.global_style,
+    result.character_prompt,
+    result.video_concept,
+  ]
+    .join(' ')
+    .slice(0, 700)
+
 const buildVideoPack = (result: VideoResult) =>
   [
     `VIDEO PROMPT PACK - ${result.dna_name}`,
@@ -38,6 +55,12 @@ const buildVideoPack = (result: VideoResult) =>
     '',
     'VIDEO CONCEPT:',
     result.video_concept,
+    '',
+    'MASTER OPENART PROMPT:',
+    buildMasterPrompt(result),
+    '',
+    'SHORT OPENART PROMPT:',
+    buildShortPrompt(result),
     '',
     'SCENE PROMPTS:',
     ...result.scene_prompts.flatMap((scene, index) => [
@@ -309,6 +332,33 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
                     rows={4}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">
+                    Master OpenArt prompt
+                  </span>
+                  <textarea
+                    value={buildMasterPrompt(result)}
+                    readOnly
+                    rows={5}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">
+                    Short OpenArt prompt
+                  </span>
+                  <textarea
+                    value={buildShortPrompt(result)}
+                    readOnly
+                    rows={4}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Shortened prompt for OpenArt fields with tighter character limits.
+                  </p>
                 </label>
 
                 <div>
