@@ -413,6 +413,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedCombined, setJustCopiedCombined] = useState(false)
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
+  const [justClearedSunoSession, setJustClearedSunoSession] = useState(false)
   const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
   const [previousGeneratedAt, setPreviousGeneratedAt] = useState('')
   const [lastGeneratedAt, setLastGeneratedAt] = useState('')
@@ -1002,6 +1003,7 @@ const sunoStatusSummary = [
 const sunoResetDefaultsButtonLabel = 'Reset prompt defaults'
 const sunoResetDefaultsCopiedLabel = 'Defaults restored ✓'
 
+const sunoClearSessionCopiedLabel = 'Cleared ✓'
 const sunoClearSessionButtonLabel = 'Clear Suno session'
   
 
@@ -1184,9 +1186,10 @@ const copySunoStatusSummaryPreview = () => {
           setPreviousGeneratedAt('')
           setLastGeneratedAt('')
 
-          showButtonFeedback(setJustResetDefaults)
+          
           setChordGuidanceMode('Lyrics only')
           setProductionTarget('Radio-ready')
+          showButtonFeedback(setJustClearedSunoSession)
         }
 
         const getSunoStyleCommaList = () => {
@@ -1352,6 +1355,7 @@ const copySunoStatusSummaryPreview = () => {
           setPreviousSunoStyleField('')
           setRevisionSummary('')
           setLastRevisionContext('')
+          
         }
 
 
@@ -1858,7 +1862,9 @@ const copySunoStatusSummaryPreview = () => {
           title={sunoClearSessionTitle}
           className="rounded border border-yellow-800 px-4 py-2 text-sm text-yellow-200 hover:bg-yellow-950/40"
         >
-          {sunoClearSessionButtonLabel}
+          {justClearedSunoSession
+          ? sunoClearSessionCopiedLabel
+          : sunoClearSessionButtonLabel}
         </button>
       
     </div>
