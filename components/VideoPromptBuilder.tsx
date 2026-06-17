@@ -455,6 +455,21 @@ const getVideoSceneFieldKey = (
                     rows={3}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyVideoField(
+                        'GLOBAL STYLE:',
+                        result.global_style,
+                        getVideoFieldKey(result, index, 'global-style')
+                      )
+                    }
+                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                  >
+                    {justCopiedField === getVideoFieldKey(result, index, 'global-style')
+                      ? 'Global style copied ✓'
+                      : 'Copy global style'}
+                  </button>
                 </label>
 
                 <label className="block">
@@ -467,6 +482,21 @@ const getVideoSceneFieldKey = (
                     rows={3}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyVideoField(
+                        'CHARACTER PROMPT:',
+                        result.character_prompt,
+                        getVideoFieldKey(result, index, 'character')
+                      )
+                    }
+                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                  >
+                    {justCopiedField === getVideoFieldKey(result, index, 'character')
+                      ? 'Character prompt copied ✓'
+                      : 'Copy character prompt'}
+                  </button>
                 </label>
 
                 <label className="block">
