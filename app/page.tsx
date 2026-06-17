@@ -108,6 +108,7 @@ import {
 } from '@/lib/chords'
 
 
+import VideoPromptBuilder from '@/components/VideoPromptBuilder'
 
 
 
@@ -2564,10 +2565,10 @@ return (
             )}
 
             {mode === 'video' && (
-                <div>
-                  <h1 className="text-xl mb-4">Video Generator</h1>
-                  <p className="text-gray-400">OpenArt / prompt generation tools go here.</p>
-                </div>
+              <div className="space-y-4">
+                <h1 className="text-xl mb-4">Video Generator</h1>
+                <VideoPromptBuilder lyrics={performanceSheet} />
+              </div>
             )}
 
         </div>
