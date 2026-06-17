@@ -445,20 +445,37 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
 
                   <div className="space-y-3">
                     {result.scene_prompts.map((scene, sceneIndex) => (
-                      <label
-                        key={`${result.dna_id}-${scene.section}-${sceneIndex}`}
-                        className="block"
-                      >
-                        <span className="mb-1 block text-xs font-medium text-gray-400">
-                          {scene.section}
-                        </span>
-                        <textarea
-                          value={scene.prompt}
-                          readOnly
-                          rows={3}
-                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                        />
-                      </label>
+                      <div
+  key={`${result.dna_id}-${scene.section}-${sceneIndex}`}
+  className="block"
+>
+  <label className="block">
+    <span className="mb-1 block text-xs font-medium text-gray-400">
+      {scene.section}
+    </span>
+    <textarea
+      value={scene.prompt}
+      readOnly
+      rows={3}
+      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+    />
+  </label>
+
+        <button
+        type="button"
+        onClick={() =>
+            copyVideoField(
+            scene.prompt,
+            `${result.dna_id}-scene-${sceneIndex}-${index}`
+            )
+        }
+        className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+        >
+        {justCopiedField === `${result.dna_id}-scene-${sceneIndex}-${index}`
+            ? 'Scene prompt copied ✓'
+            : 'Copy scene prompt'}
+        </button>
+    </div>
                     ))}
                   </div>
                 </div>
