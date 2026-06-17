@@ -65,6 +65,28 @@ const buildShortPrompt = (result: VideoResult) =>
     .join(' ')
     .slice(0, 700)
 
+    const buildSceneChainPack = (result: VideoResult) =>
+      [
+        `OPENART SCENE CHAIN PACK - ${result.dna_name}`,
+        '',
+        'GLOBAL STYLE TO KEEP CONSISTENT ACROSS ALL SCENES:',
+        result.global_style,
+        '',
+        'CHARACTER CONSISTENCY PROMPT:',
+        result.character_prompt,
+        '',
+        'SCENE CHAINING INSTRUCTION:',
+        'Keep the same main character, clothing style, emotional tone, lighting style, and cinematic visual language across every scene. Each scene should feel like part of the same continuous music video.',
+        '',
+        'SCENES:',
+        ...result.scene_prompts.flatMap((scene, index) => [
+          '',
+          `${index + 1}. ${scene.section}`,
+          scene.prompt,
+        ]),
+      ].join('\n')
+
+
 const buildVideoPack = (result: VideoResult) =>
   [
     `VIDEO PROMPT PACK - ${result.dna_name}`,
@@ -329,6 +351,21 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
                   className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
                 >
                   {justCopiedIndex === index ? 'Video pack copied ✓' : 'Copy video pack'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    copyVideoField(
+                      'OPENART SCENE CHAIN PACK:',
+                      buildSceneChainPack(result),
+                      `${result.dna_id}-scene-chain-${index}`
+                    )
+                  }
+                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                >
+                  {justCopiedField === `${result.dna_id}-scene-chain-${index}`
+                    ? 'Scene chain copied ✓'
+                    : 'Copy scene chain'}
                 </button>
               </div>
 
