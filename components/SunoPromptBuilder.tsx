@@ -1783,9 +1783,6 @@ const copySunoStatusSummaryPreview = () => {
                   {sunoHandoffGeneratedAtText}
                 </p>
 
-              <p className="text-gray-500">
-                Copying only places the handoff on your clipboard. It does not send anything to Suno.
-              </p>
             </div>
             <details className="mb-3 rounded border border-yellow-800 bg-yellow-950/20 p-3">
               <summary className="cursor-pointer text-xs font-medium text-yellow-200">
