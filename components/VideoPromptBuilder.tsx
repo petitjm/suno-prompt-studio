@@ -26,6 +26,28 @@ const splitMoods = (value: string) =>
     .map((mood) => mood.trim())
     .filter(Boolean)
 
+    const openArtNegativePrompt = [
+      'low quality',
+      'blurry',
+      'distorted face',
+      'deformed hands',
+      'extra fingers',
+      'bad anatomy',
+      'warped body',
+      'flickering',
+      'inconsistent character',
+      'changing face',
+      'changing clothing',
+      'text artifacts',
+      'watermark',
+      'logo',
+      'overexposed',
+      'underexposed',
+      'jittery camera',
+      'unnatural mouth movement',
+      'poor lip sync',
+    ].join(', ')
+
 const buildMasterPrompt = (result: VideoResult) =>
   [
     result.global_style,
@@ -59,8 +81,11 @@ const buildVideoPack = (result: VideoResult) =>
     'MASTER OPENART PROMPT:',
     buildMasterPrompt(result),
     '',
-    'SHORT OPENART PROMPT:',
+   'SHORT OPENART PROMPT:',
     buildShortPrompt(result),
+    '',
+    'OPENART NEGATIVE PROMPT:',
+    openArtNegativePrompt,
     '',
     'SCENE PROMPTS:',
     ...result.scene_prompts.flatMap((scene, index) => [
@@ -358,6 +383,21 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     Shortened prompt for OpenArt fields with tighter character limits.
+                  </p>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">
+                    OpenArt negative prompt
+                  </span>
+                  <textarea
+                    value={openArtNegativePrompt}
+                    readOnly
+                    rows={3}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Use this to reduce video artifacts, inconsistent character details, and lip-sync issues.
                   </p>
                 </label>
 
