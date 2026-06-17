@@ -1877,10 +1877,19 @@ const copySunoStatusSummaryPreview = () => {
     </div>
 
     {clearSunoSessionMessage && (
-          <p className="mt-3 rounded border border-yellow-800 bg-yellow-950/30 p-2 text-xs text-yellow-100">
-            {clearSunoSessionMessage}
-          </p>
-        )}
+      <div className="mt-3 flex items-start justify-between gap-3 rounded border border-yellow-800 bg-yellow-950/30 p-2 text-xs text-yellow-100">
+        <p>{clearSunoSessionMessage}</p>
+
+        <button
+          type="button"
+          onClick={() => setClearSunoSessionMessage('')}
+          className="shrink-0 text-yellow-300 hover:text-yellow-100"
+          title="Dismiss clear session message"
+        >
+          Dismiss
+        </button>
+      </div>
+    )}
 
   </div>
 
