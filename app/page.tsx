@@ -678,6 +678,10 @@ const [versionsLoading, setVersionsLoading] = useState(false)
 const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
 const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
 
+const activeSongVersion = songVersions.find(
+      (version) => version.id === activeSongVersionId
+    )
+
 const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>(null)
 const [compareLeftText, setCompareLeftText] = useState('')
 const [compareRightText, setCompareRightText] = useState('')
@@ -2567,7 +2571,14 @@ return (
             {mode === 'video' && (
               <div className="space-y-4">
                 <h1 className="text-xl mb-4">Video Generator</h1>
-                <VideoPromptBuilder lyrics={performanceSheet} />
+                <VideoPromptBuilder
+                  lyrics={performanceSheet}
+                  songTitle={activeProject?.title || ''}
+                  songVersionTitle={
+                    activeSongVersion?.title || songVersionTitle || ''
+                  }
+                  songVersionId={activeSongVersionId}
+                />
               </div>
             )}
 

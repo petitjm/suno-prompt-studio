@@ -17,8 +17,11 @@ type VideoResult = {
 }
 
 type VideoPromptBuilderProps = {
-  lyrics: string
-}
+      lyrics: string
+      songTitle: string
+      songVersionTitle: string
+      songVersionId: string | null
+    }
 
 const splitMoods = (value: string) =>
   value
@@ -117,7 +120,13 @@ const buildVideoPack = (result: VideoResult) =>
     ]),
   ].join('\n')
 
-export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) {
+export default function VideoPromptBuilder({
+      lyrics,
+      songTitle,
+      songVersionTitle,
+      songVersionId,
+    }: VideoPromptBuilderProps) {
+
   const [genre, setGenre] = useState('')
   const [moodsText, setMoodsText] = useState('')
   const [theme, setTheme] = useState('')
@@ -132,6 +141,9 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
 
   const hasLyrics = lyrics.trim().length > 0
+
+  const hasSavedSongVersion = Boolean(songVersionId)
+  const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
 
   const videoRequestSummary = useMemo(() => {
     return [
@@ -218,6 +230,24 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
         <p className="mt-1 text-sm text-gray-400">
           Generate OpenArt-ready music video prompts from the current song sheet.
         </p>
+        <div className="mt-3 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
+              <div>
+                Song:{' '}
+                <span className="text-gray-100">
+                  {songTitle || 'Not selected'}
+                </span>
+              </div>
+              <div className="mt-1">
+                Version:{' '}
+                <span className={hasSavedSongVersion ? 'text-green-300' : 'text-yellow-300'}>
+                  {hasSavedSongVersion
+                    ? songVersionTitle || 'Untitled saved version'
+                    : 'Save the current song version before generating video prompts'}
+                </span>
+              </div>
+            </div>
+
+
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -307,23 +337,27 @@ export default function VideoPromptBuilder({ lyrics }: VideoPromptBuilderProps) 
         <button
           type="button"
           onClick={generateVideoPrompts}
-          disabled={generating || !hasLyrics}
+          disabled={!canGenerateVideoPrompts}
           className={
-            generating || !hasLyrics
+            !canGenerateVideoPrompts
               ? 'rounded border border-gray-600 bg-gray-700 px-4 py-2 text-gray-400 cursor-not-allowed'
               : 'rounded bg-purple-700 px-4 py-2 text-white hover:bg-purple-600'
           }
           title={
-            hasLyrics
-              ? 'Generate OpenArt-ready music video prompts from the current song sheet.'
-              : 'Add or load lyrics before generating video prompts.'
-          }
+              !hasLyrics
+                ? 'Add or load lyrics before generating video prompts.'
+                : !hasSavedSongVersion
+                  ? 'Save the current song version before generating video prompts, so the video output can identify the song and version.'
+                  : 'Generate OpenArt-ready music video prompts from the saved song version.'
+            }
         >
           {generating
-            ? 'Generating video prompts...'
-            : hasLyrics
-              ? 'Generate video prompts'
-              : 'Add lyrics to generate video'}
+          ? 'Generating video prompts...'
+          : !hasLyrics
+            ? 'Add lyrics to generate video'
+            : !hasSavedSongVersion
+              ? 'Save song version before video'
+              : 'Generate video prompts'}
         </button>
       </div>
 
