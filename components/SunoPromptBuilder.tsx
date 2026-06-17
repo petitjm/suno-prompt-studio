@@ -413,6 +413,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   const [justCopiedCombined, setJustCopiedCombined] = useState(false)
   const [justCopiedNegative, setJustCopiedNegative] = useState(false)
   const [justResetDefaults, setJustResetDefaults] = useState(false)
+  const [clearSunoSessionMessage, setClearSunoSessionMessage] = useState('')
   const [justClearedSunoSession, setJustClearedSunoSession] = useState(false)
   const [sunoStyleField, setSunoStyleField] = useState(defaultStylePrompt)
   const [previousGeneratedAt, setPreviousGeneratedAt] = useState('')
@@ -472,6 +473,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
   ])
 
   const resetToDefaults = () => {
+  setClearSunoSessionMessage('')
   setCreationNotes('')
   setKeepFromLastVersion('')
   setChangeInNextVersion('')
@@ -497,6 +499,7 @@ function getChordGuidanceSummary(structuredChordJson: string) {
 }
 
   const generateSunoPrompt = async () => {
+      setClearSunoSessionMessage('')
   if (!performanceSheet.trim()) {
     setPromptMessage('Add lyrics to the Song Sheet before generating Suno prompts.')
     return
@@ -1190,6 +1193,9 @@ const copySunoStatusSummaryPreview = () => {
           
           setChordGuidanceMode('Lyrics only')
           setProductionTarget('Radio-ready')
+          setClearSunoSessionMessage(
+              'Suno session cleared. Song sheet and core prompt defaults were not changed.'
+            )
           showButtonFeedback(setJustClearedSunoSession)
         }
 
@@ -1869,6 +1875,13 @@ const copySunoStatusSummaryPreview = () => {
         </button>
       
     </div>
+
+    {clearSunoSessionMessage && (
+          <p className="mt-3 rounded border border-yellow-800 bg-yellow-950/30 p-2 text-xs text-yellow-100">
+            {clearSunoSessionMessage}
+          </p>
+        )}
+
   </div>
 
 
