@@ -226,13 +226,28 @@ export default function VideoPromptBuilder({
 
   const copyVideoField = (title: string, value: string, fieldKey: string) => {
       navigator.clipboard.writeText(
-          [title, buildSongReference(songTitle, songVersionTitle), '', value].join('\n')
-        )
+        [title, buildSongReference(songTitle, songVersionTitle), '', value].join('\n')
+      )
+
+      setJustCopiedField(fieldKey)
 
       window.setTimeout(() => {
         setJustCopiedField('')
       }, 1800)
     }
+
+    const getVideoFieldKey = (
+  result: VideoResult,
+  index: number,
+  fieldName: string
+) => `${result.dna_id}-${index}-${fieldName}`
+
+const getVideoSceneFieldKey = (
+  result: VideoResult,
+  resultIndex: number,
+  sceneIndex: number
+) => `${result.dna_id}-${resultIndex}-scene-${sceneIndex}`
+
 
   const copyVideoPack = (result: VideoResult, index: number) => {
     navigator.clipboard.writeText(
@@ -410,18 +425,20 @@ export default function VideoPromptBuilder({
                 >
                   {justCopiedIndex === index ? 'Video pack copied ✓' : 'Copy video pack'}
                 </button>
+
+
                 <button
                   type="button"
                   onClick={() =>
                     copyVideoField(
                       'OPENART SCENE CHAIN PACK:',
                       buildSceneChainPack(result, songTitle, songVersionTitle),
-                      `${result.dna_id}-scene-chain-${index}`
+                      getVideoFieldKey(result, index, 'scene-chain')
                     )
                   }
                   className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
                 >
-                  {justCopiedField === `${result.dna_id}-scene-chain-${index}`
+                  {justCopiedField === getVideoFieldKey(result, index, 'scene-chain')
                     ? 'Scene chain copied ✓'
                     : 'Copy scene chain'}
                 </button>
@@ -479,11 +496,11 @@ export default function VideoPromptBuilder({
                       onClick={() => copyVideoField(
                           'MASTER OPENART PROMPT:',
                           buildMasterPrompt(result),
-                          `${result.dna_id}-master-${index}`
+                          getVideoFieldKey(result, index, 'master')
                         )}
                       className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
                     >
-                      {justCopiedField === `${result.dna_id}-master-${index}`
+                      {justCopiedField === getVideoFieldKey(result, index, 'master')
                         ? 'Master prompt copied ✓'
                         : 'Copy master prompt'}
                     </button>
@@ -501,14 +518,16 @@ export default function VideoPromptBuilder({
                   />
                   <button
                       type="button"
-                      onClick={() => copyVideoField(
+                      onClick={() =>
+                        copyVideoField(
                           'SHORT OPENART PROMPT:',
                           buildShortPrompt(result),
-                          `${result.dna_id}-short-${index}`
-                        )}
+                          getVideoFieldKey(result, index, 'short')
+                        )
+                      }
                       className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
                     >
-                      {justCopiedField === `${result.dna_id}-short-${index}`
+                      {justCopiedField === getVideoFieldKey(result, index, 'short')
                         ? 'Short prompt copied ✓'
                         : 'Copy short prompt'}
                     </button>
@@ -529,14 +548,16 @@ export default function VideoPromptBuilder({
                   />
                   <button
                       type="button"
-                      onClick={() => copyVideoField(
+                      onClick={() =>
+                        copyVideoField(
                           'OPENART NEGATIVE PROMPT:',
                           openArtNegativePrompt,
-                          `${result.dna_id}-negative-${index}`
-                        )}
+                          getVideoFieldKey(result, index, 'negative')
+                        )
+                      }
                       className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
                     >
-                      {justCopiedField === `${result.dna_id}-negative-${index}`
+                      {justCopiedField === getVideoFieldKey(result, index, 'negative')
                         ? 'Negative prompt copied ✓'
                         : 'Copy negative prompt'}
                     </button>
@@ -569,17 +590,17 @@ export default function VideoPromptBuilder({
   </label>
 
         <button
-        type="button"
-        onClick={() =>
+          type="button"
+          onClick={() =>
             copyVideoField(
               `SCENE PROMPT - ${scene.section}:`,
               scene.prompt,
-              `${result.dna_id}-scene-${sceneIndex}-${index}`
+              getVideoSceneFieldKey(result, index, sceneIndex)
             )
-        }
-        className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+          }
+          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
         >
-        {justCopiedField === `${result.dna_id}-scene-${sceneIndex}-${index}`
+          {justCopiedField === getVideoSceneFieldKey(result, index, sceneIndex)
             ? 'Scene prompt copied ✓'
             : 'Copy scene prompt'}
         </button>
