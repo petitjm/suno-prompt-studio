@@ -1835,6 +1835,7 @@ const copySunoStatusSummaryPreview = () => {
         <button
           type="button"
           onClick={resetToDefaults}
+          title="Restores the visible Suno prompt fields to their defaults without changing the song sheet or saved versions."
           className="rounded border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
         >
           {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
@@ -1842,6 +1843,7 @@ const copySunoStatusSummaryPreview = () => {
         <button
           type="button"
           onClick={clearSunoSession}
+          title="Clears revision notes, revision history, generation messages, and session state without changing the song sheet."
           className="rounded border border-yellow-800 px-4 py-2 text-sm text-yellow-200 hover:bg-yellow-950/40"
         >
           {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
