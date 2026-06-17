@@ -924,6 +924,13 @@ const sunoHandoffGeneratedAtTitle = hasChangedSinceGeneration
 
 const sunoHandoffGeneratedAtText = `${sunoHandoffGeneratedAtTitle}: ${sunoHandoffGeneratedAtLabel}`
 
+const sunoResetDefaultsTitle =
+  'Restores the visible Suno prompt fields to their defaults without changing the song sheet or saved versions.'
+
+const sunoClearSessionTitle =
+  'Clears revision notes, revision history, generation messages, and session state without changing the song sheet.'
+
+
 const sunoHandoffPackTitle = hasChangedSinceGeneration
   ? 'SUNO EDITED HANDOFF PACK'
   : 'SUNO HANDOFF PACK'
@@ -1835,7 +1842,7 @@ const copySunoStatusSummaryPreview = () => {
         <button
           type="button"
           onClick={resetToDefaults}
-          title="Restores the visible Suno prompt fields to their defaults without changing the song sheet or saved versions."
+          title={sunoResetDefaultsTitle}
           className="rounded border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
         >
           {justResetDefaults ? 'Restored ✓' : 'Reset prompt defaults'}
@@ -1843,7 +1850,7 @@ const copySunoStatusSummaryPreview = () => {
         <button
           type="button"
           onClick={clearSunoSession}
-          title="Clears revision notes, revision history, generation messages, and session state without changing the song sheet."
+          title={sunoClearSessionTitle}
           className="rounded border border-yellow-800 px-4 py-2 text-sm text-yellow-200 hover:bg-yellow-950/40"
         >
           {justResetDefaults ? 'Cleared ✓' : 'Clear Suno session'}
