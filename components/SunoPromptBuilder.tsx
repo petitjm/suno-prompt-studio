@@ -1785,7 +1785,7 @@ const copySunoStatusSummaryPreview = () => {
           Primary actions
             </h4>
             <p className="mb-3 text-xs text-gray-400">
-              Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack, including Suno 5.5 Advanced paste-order guidance, lyrics, style, voice, settings, negative prompt, and additional core reference fields for arrangement, vocal, and intro / solo / outro guidance. Reset restores the Suno prompt fields to their defaults without changing the song sheet or saved versions. Clear session removes revision notes, revision history, and generation messages without changing the song sheet.
+              Generate creates new Suno prompts. Copy Suno handoff copies the main paste-ready pack, including Suno 5.5 Advanced paste-order guidance, lyrics, style, voice, settings, negative prompt, and additional core reference fields for arrangement, vocal, and intro / solo / outro guidance. Reset restores the Suno prompt fields to their defaults without changing the song sheet or saved versions. Clear session removes revision notes, revision history, generation messages, and handoff session state without changing the song sheet or resetting the core prompt defaults.
             </p>
            <div className="mb-3 space-y-1 text-xs">
               <p className="text-gray-300">
