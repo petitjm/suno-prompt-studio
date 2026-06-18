@@ -295,6 +295,76 @@ const buildSongReference = (
       ].join('\n')
     }
 
+    function buildCharacterConsistencyPromptPack({
+            songTitle,
+            songVersionTitle,
+            generatedAt,
+            characterPrompt,
+            globalStyle,
+            negativePrompt,
+        }: {
+            songTitle: string
+            songVersionTitle: string
+            generatedAt: string
+            characterPrompt: string
+            globalStyle: string
+            negativePrompt: string
+        }) {
+            return [
+            'OPENART MPJ CHARACTER CONSISTENCY PROMPT:',
+            `Song title: ${songTitle || 'Untitled song'}`,
+            `Song version: ${songVersionTitle || 'Untitled version'}`,
+            `Generated at: ${generatedAt}`,
+            '',
+            'Purpose:',
+            'Use this prompt to keep the main MPJ performer visually consistent across OpenArt images, video scenes, lip-sync clips, and image-to-video generations.',
+            '',
+            'Core character identity:',
+            'MPJ is a British male singer-songwriter and acoustic performer with a natural, grounded presence. He has the emotional feel of a low baritone storyteller, combining folk, country, and cinematic acoustic influences. He should feel real, mature, expressive, and believable rather than glossy or artificial.',
+            '',
+            'Character prompt:',
+            characterPrompt || 'British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.',
+            '',
+            'Visual continuity rules:',
+            [
+                'Keep the same face, age, build, hair style, and general facial character across every scene.',
+                'Keep clothing consistent unless a scene specifically requires a change.',
+                'Use natural facial expressions with subtle emotional variation.',
+                'Avoid making the performer look like a different person between shots.',
+                'Avoid exaggerated fashion styling, celebrity glamour, or fantasy-costume changes.',
+                'Preserve a believable UK singer-songwriter feel.',
+            ].join('\n'),
+            '',
+            'Performance continuity:',
+            [
+                'The performer should look comfortable with an acoustic guitar and microphone.',
+                'Body language should be intimate, heartfelt, and musically focused.',
+                'For lip-sync scenes, keep mouth movement natural and emotionally connected to the lyric.',
+                'For image-to-video scenes, use gentle cinematic movement rather than dramatic action.',
+            ].join('\n'),
+            '',
+            'Global visual style:',
+            globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
+            '',
+            'Reusable character prompt for OpenArt:',
+            [
+                characterPrompt || 'British male singer-songwriter acoustic performer',
+                'consistent face across all scenes',
+                'natural realistic human features',
+                'mature grounded emotional expression',
+                'authentic UK singer-songwriter identity',
+                'acoustic folk country cinematic style',
+                'subtle performance presence',
+                'realistic skin texture',
+                'cinematic natural lighting',
+                'no text',
+                'no logos',
+            ].join(', '),
+            '',
+            'Negative prompt:',
+            negativePrompt || 'text, captions, typography, logos, watermark, distorted face, inconsistent face, different person, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality',
+            ].join('\n')
+        }
 
     const buildVideoPack = (
       result: VideoResult,
@@ -730,6 +800,29 @@ const getVideoSceneFieldKey = (
                   disabled={!canGenerateVideoPrompts}
                 >
                   {justCopiedField === 'coverImagePrompt' ? 'Copied ✓' : 'Copy cover image prompt'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      buildCharacterConsistencyPromptPack({
+                        songTitle,
+                        songVersionTitle,
+                        generatedAt: videoGeneratedAt,
+                        characterPrompt: result.character_prompt,
+                        globalStyle: result.global_style,
+                        negativePrompt: openArtNegativePrompt,
+                      }),
+                    )
+                    setJustCopiedField('characterConsistencyPrompt')
+                    window.setTimeout(() => setJustCopiedField(''), 1500)
+                  }}
+                  disabled={!canGenerateVideoPrompts}
+                >
+                  {justCopiedField === 'characterConsistencyPrompt'
+                    ? 'Copied ✓'
+                    : 'Copy MPJ character consistency prompt'}
                 </button>
 
 
