@@ -108,6 +108,46 @@ const buildShortPrompt = (result: VideoResult) =>
           ].join('\n')
 
 
+        const buildSocialTeaserPack = (
+              result: VideoResult,
+              songTitle: string,
+              songVersionTitle: string,
+              generatedAt: string
+            ) =>
+              [
+                `OPENART SOCIAL TEASER PACK - ${result.dna_name}`,
+                buildSongReference(songTitle, songVersionTitle, generatedAt),
+                '',
+                'FORMAT:',
+                'Create a short-form vertical music video teaser suitable for YouTube Shorts, TikTok, Instagram Reels, or social media promotion.',
+                '',
+                'DURATION:',
+                '10 to 20 seconds.',
+                '',
+                'HOOK MOMENT:',
+                'Open with the strongest emotional or visual moment from the song. Make the first two seconds visually clear, intriguing, and memorable.',
+                '',
+                'VISUAL CONCEPT:',
+                result.video_concept,
+                '',
+                'MAIN CHARACTER:',
+                result.character_prompt,
+                '',
+                'VISUAL STYLE:',
+                result.global_style,
+                '',
+                'EDITING DIRECTION:',
+                'Use cinematic vertical framing, slow emotional movement, one clear focal image, subtle performance energy, and a strong final visual beat. Avoid over-cutting. Keep the character consistent.',
+                '',
+                'TEXT OVERLAY SUGGESTION:',
+                songTitle.trim()
+                  ? `"${songTitle.trim()}"`
+                  : 'Use the song title as a short overlay.',
+                '',
+                'NEGATIVE PROMPT:',
+                openArtNegativePrompt,
+              ].join('\n')
+
         const buildStoryboardPack = (
           result: VideoResult,
           songTitle: string,
@@ -566,6 +606,33 @@ const getVideoSceneFieldKey = (
                   {justCopiedField === getVideoFieldKey(result, index, 'storyboard')
                     ? 'Storyboard copied ✓'
                     : 'Copy storyboard'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fieldKey = getVideoFieldKey(result, index, 'social-teaser')
+
+                    navigator.clipboard.writeText(
+                      buildSocialTeaserPack(
+                        result,
+                        songTitle,
+                        songVersionTitle,
+                        videoGeneratedAt
+                      )
+                    )
+
+                    setJustCopiedField(fieldKey)
+
+                    window.setTimeout(() => {
+                      setJustCopiedField('')
+                    }, 1800)
+                  }}
+                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                >
+                  {justCopiedField === getVideoFieldKey(result, index, 'social-teaser')
+                    ? 'Social teaser copied ✓'
+                    : 'Copy social teaser'}
                 </button>
 
               </div>
