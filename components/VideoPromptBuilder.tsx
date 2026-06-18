@@ -70,14 +70,21 @@ const buildShortPrompt = (result: VideoResult) =>
 
     const buildLipSyncPrompt = (result: VideoResult) =>
       [
+        'CHARACTER:',
         result.character_prompt,
-        'Music video lip-sync performance shot.',
-        'The main character is singing directly to camera with natural mouth movement, believable emotion, and clear vocal phrasing.',
+        '',
+        'LIP-SYNC PERFORMANCE:',
+        'Music video lip-sync performance shot. The main character is singing directly to camera with natural mouth movement, believable emotion, and clear vocal phrasing.',
+        '',
+        'VOCAL / PERFORMANCE FEEL:',
         'British male singer-songwriter energy, low baritone performance feel, intimate but cinematic delivery.',
-        'Keep the same face, wardrobe, lighting, colour grade, and visual style as the main video.',
-        'Subtle acoustic performance body language, expressive eyes, natural head movement, realistic timing, no exaggerated acting.',
+        '',
+        'CONTINUITY:',
+        'Keep the same face, wardrobe, lighting, colour grade, and visual style as the main video. Subtle acoustic performance body language, expressive eyes, natural head movement, realistic timing, no exaggerated acting.',
+        '',
+        'VISUAL STYLE:',
         result.global_style,
-      ].join(' ')
+      ].join('\n')
 
     const buildSceneChainPack = (
       result: VideoResult,
