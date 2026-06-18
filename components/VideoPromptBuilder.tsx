@@ -23,6 +23,8 @@ type VideoPromptBuilderProps = {
       songVersionId: string | null
     }
 
+   
+
 const splitMoods = (value: string) =>
   value
     .split(',')
@@ -148,6 +150,8 @@ const buildShortPrompt = (result: VideoResult) =>
                 openArtNegativePrompt,
               ].join('\n')
 
+
+
         const buildStoryboardPack = (
           result: VideoResult,
           songTitle: string,
@@ -221,6 +225,76 @@ const buildSongReference = (
       ? `Generated at: ${generatedAt}`
       : 'Generated at: Not generated in this session',
   ].join('\n')
+
+   function buildCoverImagePromptPack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      videoConcept,
+      globalStyle,
+      characterPrompt,
+      masterOpenArtPrompt,
+      negativePrompt,
+    }: {
+      songTitle: string
+      songVersionTitle: string
+      generatedAt: string
+      videoConcept: string
+      globalStyle: string
+      characterPrompt: string
+      masterOpenArtPrompt: string
+      negativePrompt: string
+    }) {
+      return [
+        'OPENART COVER IMAGE PROMPT:',
+        `Song title: ${songTitle || 'Untitled song'}`,
+        `Song version: ${songVersionTitle || 'Untitled version'}`,
+        `Generated at: ${generatedAt}`,
+        '',
+        'Purpose:',
+        'Create a still cover image / hero frame for the music video before image-to-video animation.',
+        '',
+        'Cover image direction:',
+        'A cinematic square cover-art image, suitable for a song release thumbnail, OpenArt image generation, and a first frame for image-to-video. The image should feel emotionally immediate, musical, atmospheric, and visually strong at small thumbnail size.',
+        '',
+        'Composition:',
+        'Square 1:1 cover-art composition. Strong central subject. Clear emotional focal point. Cinematic lighting. Shallow depth of field. No text, no logos, no typography, no watermark.',
+        '',
+        'Optional portrait version:',
+        'Also suitable as a 9:16 vertical hero frame for short-form teaser video, keeping the same subject, mood, lighting, clothing, and environment.',
+        '',
+        'MPJ character consistency:',
+        characterPrompt || 'British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.',
+        '',
+        'Video concept:',
+        videoConcept || 'Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.',
+        '',
+        'Global visual style:',
+        globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
+        '',
+        'Master OpenArt direction:',
+        masterOpenArtPrompt || 'Create a cinematic, emotionally expressive music-video still image with a grounded British singer-songwriter feel.',
+        '',
+        'Image-generation prompt:',
+        [
+          characterPrompt || 'British male singer-songwriter performer',
+          videoConcept || 'emotional cinematic music video atmosphere',
+          globalStyle || 'warm cinematic acoustic folk-country visual style',
+          'square album-cover composition',
+          'hero frame for image-to-video',
+          'natural expressive face',
+          'cinematic lighting',
+          'high-detail realistic image',
+          'emotional storytelling',
+          'no text',
+          'no logos',
+        ].join(', '),
+        '',
+        'Negative prompt:',
+        negativePrompt || 'text, captions, typography, logos, watermark, distorted face, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality',
+      ].join('\n')
+    }
+
 
     const buildVideoPack = (
       result: VideoResult,
@@ -634,6 +708,30 @@ const getVideoSceneFieldKey = (
                     ? 'Social teaser copied ✓'
                     : 'Copy social teaser'}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      buildCoverImagePromptPack({
+                          songTitle,
+                          songVersionTitle,
+                          generatedAt: videoGeneratedAt,
+                          videoConcept: result.video_concept,
+                          globalStyle: result.global_style,
+                          characterPrompt: result.character_prompt,
+                          masterOpenArtPrompt:  buildMasterPrompt(result),
+                          negativePrompt: openArtNegativePrompt,
+                        }),
+                    )
+                    setJustCopiedField('coverImagePrompt')
+                        window.setTimeout(() => setJustCopiedField(''), 1500)
+                     }}
+                  disabled={!canGenerateVideoPrompts}
+                >
+                  {justCopiedField === 'coverImagePrompt' ? 'Copied ✓' : 'Copy cover image prompt'}
+                </button>
+
 
               </div>
 
