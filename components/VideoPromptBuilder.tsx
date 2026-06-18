@@ -257,6 +257,81 @@ const buildSongReference = (
       })
     }
 
+
+    function buildOpenArtReleasePromoPack({
+          songTitle,
+          songVersionTitle,
+          generatedAt,
+          videoConcept,
+          globalStyle,
+          characterPrompt,
+          masterOpenArtPrompt,
+          negativePrompt,
+        }: {
+          songTitle: string
+          songVersionTitle: string
+          generatedAt: string
+          videoConcept: string
+          globalStyle: string
+          characterPrompt: string
+          masterOpenArtPrompt: string
+          negativePrompt: string
+        }) {
+          const displayTitle = songTitle || 'Untitled song'
+          const displayVersion = songVersionTitle || 'Untitled version'
+
+          return [
+            'OPENART RELEASE PROMO PACK:',
+            `Song title: ${displayTitle}`,
+            `Song version: ${displayVersion}`,
+            `Generated at: ${generatedAt}`,
+            '',
+            'Purpose:',
+            'Use this pack to promote the finished song/video across YouTube, Shorts, Reels, TikTok, Facebook, Instagram, and release posts.',
+            '',
+            'YouTube description draft:',
+            [
+              `${displayTitle} is an original MPJ song brought to life with a cinematic OpenArt video treatment.`,
+              '',
+              'This version focuses on emotional storytelling, acoustic singer-songwriter performance, and a grounded British folk/country/cinematic visual identity.',
+              '',
+              `Video concept: ${videoConcept || 'A cinematic acoustic music video built around emotional realism and singer-songwriter performance.'}`,
+              '',
+              'Created as part of the MPJ music workflow using Suno for song production and OpenArt for visual storytelling.',
+            ].join('\n'),
+            '',
+            'Short social caption:',
+            `${displayTitle} — a cinematic acoustic MPJ song brought to life with OpenArt visuals. Honest, heartfelt, and built around the story in the lyric.`,
+            '',
+            'Teaser caption:',
+            `A first look at the video world for ${displayTitle}.`,
+            '',
+            'Hashtags:',
+            '#MPJ #OriginalSong #SingerSongwriter #AcousticMusic #FolkCountry #MusicVideo #OpenArt #AIMusicVideo #BritishSongwriter #NewMusic',
+            '',
+            'Thumbnail / cover-frame direction:',
+            [
+              'Create a strong cinematic thumbnail frame with the MPJ performer as the emotional focal point.',
+              'The image should read clearly at small size, with strong lighting, natural realism, and no text.',
+              'Use a square 1:1 version for cover art and a 16:9 version for YouTube thumbnail framing.',
+            ].join('\n'),
+            '',
+            'MPJ character consistency:',
+            characterPrompt || 'British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.',
+            '',
+            'Global visual style:',
+            globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
+            '',
+            'Master OpenArt prompt reference:',
+            masterOpenArtPrompt || 'Create a cinematic, emotionally expressive music-video still or scene with a grounded British singer-songwriter feel.',
+            '',
+            'Negative prompt:',
+            negativePrompt || 'text, captions, typography, logos, watermark, distorted face, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality',
+          ].join('\n')
+        }
+
+
+
     function buildLyricsVisualBeatPack({
       songTitle,
       songVersionTitle,
@@ -926,7 +1001,33 @@ const getVideoSceneFieldKey = (
                   {justCopiedField === 'lyricsVisualBeatSheet'
                     ? 'Copied ✓'
                     : 'Copy lyrics-to-visual beat sheet'}
-</button>
+            </button>
+
+
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  buildOpenArtReleasePromoPack({
+                    songTitle,
+                    songVersionTitle,
+                    generatedAt: videoGeneratedAt,
+                    videoConcept: result.video_concept,
+                    globalStyle: result.global_style,
+                    characterPrompt: result.character_prompt,
+                    masterOpenArtPrompt: buildMasterPrompt(result),
+                    negativePrompt: openArtNegativePrompt,
+                  }),
+                )
+                setJustCopiedField('openArtReleasePromoPack')
+                window.setTimeout(() => setJustCopiedField(''), 1500)
+              }}
+              disabled={!canGenerateVideoPrompts}
+            >
+              {justCopiedField === 'openArtReleasePromoPack'
+                ? 'Copied ✓'
+                : 'Copy OpenArt release promo pack'}
+            </button>
 
 
               </div>
