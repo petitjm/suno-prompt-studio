@@ -227,6 +227,101 @@ const buildSongReference = (
   ].join('\n')
 
 
+  function buildOpenArtProductionChecklistPack({
+              songTitle,
+              songVersionTitle,
+              generatedAt,
+              videoConcept,
+              globalStyle,
+            }: {
+              songTitle: string
+              songVersionTitle: string
+              generatedAt: string
+              videoConcept: string
+              globalStyle: string
+            }) {
+              const displayTitle = songTitle || 'Untitled song'
+              const displayVersion = songVersionTitle || 'Untitled version'
+
+              return [
+                'OPENART PRODUCTION CHECKLIST:',
+                `Song title: ${displayTitle}`,
+                `Song version: ${displayVersion}`,
+                `Generated at: ${generatedAt}`,
+                '',
+                'Purpose:',
+                'Use this checklist to move from generated video prompts into a finished OpenArt music-video workflow.',
+                '',
+                'Video concept:',
+                videoConcept || 'Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.',
+                '',
+                'Global visual style:',
+                globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
+                '',
+                'Step 1 — Cover image / hero frame:',
+                [
+                  'Use the cover image prompt first.',
+                  'Generate a strong square 1:1 still image.',
+                  'Choose the frame with the clearest emotional focus and most consistent MPJ character.',
+                  'Avoid images with text, logos, distorted face, or artificial-looking hands.',
+                ].join('\n'),
+                '',
+                'Step 2 — Character consistency:',
+                [
+                  'Use the MPJ character consistency prompt before generating scene images.',
+                  'Keep the same face, age, build, clothing feel, and singer-songwriter identity.',
+                  'Reject images where the performer looks like a different person.',
+                ].join('\n'),
+                '',
+                'Step 3 — Scene chain:',
+                [
+                  'Use the scene chain pack to create the main visual sequence.',
+                  'Generate each scene as a still image first.',
+                  'Keep lighting, mood, clothing, and character identity consistent across scenes.',
+                  'Save the best still frame for each scene before animating.',
+                ].join('\n'),
+                '',
+                'Step 4 — Image-to-video:',
+                [
+                  'Use the image-to-video prompt on the selected still frames.',
+                  'Use gentle cinematic camera movement.',
+                  'Avoid excessive motion, face warping, or dramatic action that distracts from the song.',
+                  'Check each clip for stable face, hands, guitar, and mouth shape.',
+                ].join('\n'),
+                '',
+                'Step 5 — Lip-sync:',
+                [
+                  'Use the lip-sync prompt for direct vocal performance moments.',
+                  'Keep the mouth movement natural and emotionally connected to the lyric.',
+                  'Use close or medium shots where the face is stable and expressive.',
+                  'Reject clips with exaggerated mouth movement or mismatched emotion.',
+                ].join('\n'),
+                '',
+                'Step 6 — Storyboard / edit:',
+                [
+                  'Use the storyboard pack to plan the final order.',
+                  'Let verses feel intimate and observational.',
+                  'Let choruses feel wider and more emotionally open.',
+                  'Use instrumental sections for atmosphere, memory, movement, or landscape.',
+                ].join('\n'),
+                '',
+                'Step 7 — Social teaser:',
+                [
+                  'Use the social teaser pack for Shorts, Reels, TikTok, and Facebook preview clips.',
+                  'Pick the most emotionally immediate visual moment.',
+                  'Keep the teaser short, clear, and visually strong without text overlays if possible.',
+                ].join('\n'),
+                '',
+                'Step 8 — Release promo:',
+                [
+                  'Use the OpenArt release promo pack after the final video is assembled.',
+                  'Prepare YouTube description, social caption, teaser caption, hashtags, and thumbnail direction.',
+                  'Keep all wording aligned with the MPJ identity: British singer-songwriter, acoustic, heartfelt, cinematic.',
+                ].join('\n'),
+              ].join('\n')
+            }
+
+
   function splitLyricsIntoVisualSections(lyrics: string) {
       const sections = lyrics
         .split(/\n\s*\n/g)
@@ -1029,6 +1124,27 @@ const getVideoSceneFieldKey = (
                 : 'Copy OpenArt release promo pack'}
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  buildOpenArtProductionChecklistPack({
+                    songTitle,
+                    songVersionTitle,
+                    generatedAt: videoGeneratedAt,
+                    videoConcept: result.video_concept,
+                    globalStyle: result.global_style,
+                  }),
+                )
+                setJustCopiedField('openArtProductionChecklist')
+                window.setTimeout(() => setJustCopiedField(''), 1500)
+              }}
+              disabled={!canGenerateVideoPrompts}
+            >
+              {justCopiedField === 'openArtProductionChecklist'
+                ? 'Copied ✓'
+                : 'Copy OpenArt production checklist'}
+            </button>
 
               </div>
 
