@@ -68,6 +68,17 @@ const buildShortPrompt = (result: VideoResult) =>
     .join(' ')
     .slice(0, 700)
 
+    const buildLipSyncPrompt = (result: VideoResult) =>
+      [
+        result.character_prompt,
+        'Music video lip-sync performance shot.',
+        'The main character is singing directly to camera with natural mouth movement, believable emotion, and clear vocal phrasing.',
+        'British male singer-songwriter energy, low baritone performance feel, intimate but cinematic delivery.',
+        'Keep the same face, wardrobe, lighting, colour grade, and visual style as the main video.',
+        'Subtle acoustic performance body language, expressive eyes, natural head movement, realistic timing, no exaggerated acting.',
+        result.global_style,
+      ].join(' ')
+
     const buildSceneChainPack = (
       result: VideoResult,
       songTitle: string,
@@ -129,6 +140,9 @@ const buildVideoPack = (
     '',
    'SHORT OPENART PROMPT:',
     buildShortPrompt(result),
+    '',
+    'OPENART LIP-SYNC PROMPT:',
+    buildLipSyncPrompt(result),
     '',
     'OPENART NEGATIVE PROMPT:',
     openArtNegativePrompt,
@@ -563,6 +577,36 @@ const getVideoSceneFieldKey = (
                     </button>
                   <p className="mt-1 text-xs text-gray-500">
                     Shortened prompt for OpenArt fields with tighter character limits.
+                  </p>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">
+                    OpenArt lip-sync prompt
+                  </span>
+                  <textarea
+                    value={buildLipSyncPrompt(result)}
+                    readOnly
+                    rows={5}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyVideoField(
+                        'OPENART LIP-SYNC PROMPT:',
+                        buildLipSyncPrompt(result),
+                        getVideoFieldKey(result, index, 'lip-sync')
+                      )
+                    }
+                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                  >
+                    {justCopiedField === getVideoFieldKey(result, index, 'lip-sync')
+                      ? 'Lip-sync prompt copied ✓'
+                      : 'Copy lip-sync prompt'}
+                  </button>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Use this for OpenArt shots where MPJ is singing directly to camera.
                   </p>
                 </label>
 
