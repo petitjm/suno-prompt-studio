@@ -226,6 +226,86 @@ const buildSongReference = (
       : 'Generated at: Not generated in this session',
   ].join('\n')
 
+
+  function splitLyricsIntoVisualSections(lyrics: string) {
+      const sections = lyrics
+        .split(/\n\s*\n/g)
+        .map((section) => section.trim())
+        .filter(Boolean)
+
+      if (sections.length === 0) {
+        return ['No lyric sections available.']
+      }
+
+      return sections.map((section, index) => {
+        const lines = section
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+
+        const headingMatch = lines[0]?.match(/^\[.*\]$/)
+        const heading = headingMatch ? lines[0] : `Section ${index + 1}`
+        const lyricLines = headingMatch ? lines.slice(1) : lines
+
+        return [
+          `${heading}:`,
+          lyricLines.join('\n'),
+          '',
+          'Suggested visual beat:',
+          'Create a cinematic visual moment that reflects the emotional meaning of this lyric section. Keep the MPJ performer visually consistent, use natural music-video pacing, and avoid literal overacting.',
+        ].join('\n')
+      })
+    }
+
+    function buildLyricsVisualBeatPack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      lyrics,
+      videoConcept,
+      globalStyle,
+    }: {
+      songTitle: string
+      songVersionTitle: string
+      generatedAt: string
+      lyrics: string
+      videoConcept: string
+      globalStyle: string
+    }) {
+      const visualSections = splitLyricsIntoVisualSections(lyrics)
+
+      return [
+        'OPENART LYRICS-TO-VISUAL BEAT SHEET:',
+        `Song title: ${songTitle || 'Untitled song'}`,
+        `Song version: ${songVersionTitle || 'Untitled version'}`,
+        `Generated at: ${generatedAt}`,
+        '',
+        'Purpose:',
+        'Use this as a scene-planning guide for turning the saved song lyrics into OpenArt video scenes, storyboard frames, image-to-video prompts, and lip-sync moments.',
+        '',
+        'Video concept:',
+        videoConcept || 'Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.',
+        '',
+        'Global visual style:',
+        globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
+        '',
+        'Visual pacing rules:',
+        [
+          'Each lyric section should become one clear visual beat or short scene.',
+          'Keep the MPJ performer visually consistent across all sections.',
+          'Use emotional symbolism, setting, lighting, and performance detail rather than literal illustration of every line.',
+          'Let verses feel intimate and observational.',
+          'Let choruses feel wider, stronger, and more emotionally open.',
+          'Use gentle cinematic camera movement suitable for OpenArt image-to-video.',
+          'Avoid text overlays, captions, logos, and typography.',
+        ].join('\n'),
+        '',
+        'Lyrics-to-visual section map:',
+        visualSections.join('\n\n---\n\n'),
+      ].join('\n')
+    }
+
+
    function buildCoverImagePromptPack({
       songTitle,
       songVersionTitle,
@@ -824,6 +904,29 @@ const getVideoSceneFieldKey = (
                     ? 'Copied ✓'
                     : 'Copy MPJ character consistency prompt'}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      buildLyricsVisualBeatPack({
+                        songTitle,
+                        songVersionTitle,
+                        generatedAt: videoGeneratedAt,
+                        lyrics,
+                        videoConcept: result.video_concept,
+                        globalStyle: result.global_style,
+                      }),
+                    )
+                    setJustCopiedField('lyricsVisualBeatSheet')
+                    window.setTimeout(() => setJustCopiedField(''), 1500)
+                  }}
+                  disabled={!canGenerateVideoPrompts}
+                >
+                  {justCopiedField === 'lyricsVisualBeatSheet'
+                    ? 'Copied ✓'
+                    : 'Copy lyrics-to-visual beat sheet'}
+</button>
 
 
               </div>
