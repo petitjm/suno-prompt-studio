@@ -578,6 +578,21 @@ const getVideoSceneFieldKey = (
                     rows={4}
                     className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyVideoField(
+                        'VIDEO CONCEPT:',
+                        result.video_concept,
+                        getVideoFieldKey(result, index, 'video-concept')
+                      )
+                    }
+                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                  >
+                    {justCopiedField === getVideoFieldKey(result, index, 'video-concept')
+                      ? 'Video concept copied ✓'
+                      : 'Copy video concept'}
+                  </button>
                 </label>
 
                 <label className="block">
