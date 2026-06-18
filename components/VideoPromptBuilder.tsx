@@ -108,6 +108,35 @@ const buildShortPrompt = (result: VideoResult) =>
           ].join('\n')
 
 
+        const buildStoryboardPack = (
+          result: VideoResult,
+          songTitle: string,
+          songVersionTitle: string,
+          generatedAt: string
+        ) =>
+          [
+            `OPENART STORYBOARD - ${result.dna_name}`,
+            buildSongReference(songTitle, songVersionTitle, generatedAt),
+            '',
+            'VIDEO CONCEPT:',
+            result.video_concept,
+            '',
+            'VISUAL STYLE:',
+            result.global_style,
+            '',
+            'MAIN CHARACTER:',
+            result.character_prompt,
+            '',
+            'STORYBOARD BEATS:',
+            ...result.scene_prompts.flatMap((scene, index) => [
+              '',
+              `${index + 1}. ${scene.section}`,
+              `Visual beat: ${scene.prompt}`,
+              'Camera direction: cinematic music video framing, natural motion, emotionally connected to the lyric section.',
+              'Continuity note: keep the same character, colour grade, lighting mood, and visual world.',
+            ]),
+          ].join('\n')
+
      const buildSceneChainPack = (
       result: VideoResult,
       songTitle: string,
@@ -511,6 +540,34 @@ const getVideoSceneFieldKey = (
                     ? 'Scene chain copied ✓'
                     : 'Copy scene chain'}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fieldKey = getVideoFieldKey(result, index, 'storyboard')
+
+                    navigator.clipboard.writeText(
+                      buildStoryboardPack(
+                        result,
+                        songTitle,
+                        songVersionTitle,
+                        videoGeneratedAt
+                      )
+                    )
+
+                    setJustCopiedField(fieldKey)
+
+                    window.setTimeout(() => {
+                      setJustCopiedField('')
+                    }, 1800)
+                  }}
+                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                >
+                  {justCopiedField === getVideoFieldKey(result, index, 'storyboard')
+                    ? 'Storyboard copied ✓'
+                    : 'Copy storyboard'}
+                </button>
+
               </div>
 
               <div className="space-y-4">
