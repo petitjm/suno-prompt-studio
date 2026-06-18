@@ -86,14 +86,15 @@ const buildShortPrompt = (result: VideoResult) =>
         result.global_style,
       ].join('\n')
 
-    const buildSceneChainPack = (
+     const buildSceneChainPack = (
       result: VideoResult,
       songTitle: string,
-      songVersionTitle: string
+      songVersionTitle: string,
+      generatedAt: string
     ) =>
       [
         `OPENART SCENE CHAIN PACK - ${result.dna_name}`,
-        buildSongReference(songTitle, songVersionTitle),
+        buildSongReference(songTitle, songVersionTitle, generatedAt),
         '',
         'GLOBAL STYLE TO KEEP CONSISTENT ACROSS ALL SCENES:',
         result.global_style,
@@ -113,7 +114,11 @@ const buildShortPrompt = (result: VideoResult) =>
       ].join('\n')
 
 
-const buildSongReference = (songTitle: string, songVersionTitle: string) =>
+const buildSongReference = (
+  songTitle: string,
+  songVersionTitle: string,
+  generatedAt = ''
+) =>
   [
     songTitle.trim()
       ? `Song title: ${songTitle.trim()}`
@@ -121,17 +126,20 @@ const buildSongReference = (songTitle: string, songVersionTitle: string) =>
     songVersionTitle.trim()
       ? `Song version: ${songVersionTitle.trim()}`
       : 'Song version: Untitled saved version',
+    generatedAt
+      ? `Generated at: ${generatedAt}`
+      : 'Generated at: Not generated in this session',
   ].join('\n')
 
-
-const buildVideoPack = (
+    const buildVideoPack = (
       result: VideoResult,
       songTitle: string,
-      songVersionTitle: string
+      songVersionTitle: string,
+      generatedAt: string
     ) =>
       [
     `VIDEO PROMPT PACK - ${result.dna_name}`,
-    buildSongReference(songTitle, songVersionTitle),
+    buildSongReference(songTitle, songVersionTitle, generatedAt),
     '',
     'GLOBAL STYLE:',
     result.global_style,
@@ -179,6 +187,9 @@ export default function VideoPromptBuilder({
   const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState('')
   const [results, setResults] = useState<VideoResult[]>([])
+
+  const [videoGeneratedAt, setVideoGeneratedAt] = useState('')
+
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
 
@@ -207,6 +218,7 @@ export default function VideoPromptBuilder({
     setGenerating(true)
     setMessage('')
     setResults([])
+    setVideoGeneratedAt('')
 
     try {
       const response = await fetch('/api/video', {
@@ -231,13 +243,16 @@ export default function VideoPromptBuilder({
         throw new Error(data.error || 'Failed to generate video prompts.')
       }
 
-      if (Array.isArray(data.versions)) {
-        setResults(data.versions)
-      } else {
-        setResults([data])
-      }
+      const generatedAt = new Date().toLocaleString()
 
-      setMessage('Video prompts generated.')
+        if (Array.isArray(data.versions)) {
+          setResults(data.versions)
+        } else {
+          setResults([data])
+        }
+
+        setVideoGeneratedAt(generatedAt)
+        setMessage(`Video prompts generated at ${generatedAt}.`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to generate video prompts.')
     } finally {
@@ -247,7 +262,7 @@ export default function VideoPromptBuilder({
 
   const copyVideoField = (title: string, value: string, fieldKey: string) => {
       navigator.clipboard.writeText(
-        [title, buildSongReference(songTitle, songVersionTitle), '', value].join('\n')
+        [title, buildSongReference(songTitle, songVersionTitle, videoGeneratedAt), '', value].join('\n')
       )
 
       setJustCopiedField(fieldKey)
@@ -272,7 +287,7 @@ const getVideoSceneFieldKey = (
 
   const copyVideoPack = (result: VideoResult, index: number) => {
     navigator.clipboard.writeText(
-      buildVideoPack(result, songTitle, songVersionTitle)
+      buildVideoPack(result, songTitle, songVersionTitle, videoGeneratedAt)
     )
     setJustCopiedIndex(index)
 
@@ -307,6 +322,14 @@ const getVideoSceneFieldKey = (
               </div>
             </div>
 
+            {videoGeneratedAt && (
+              <div className="mt-3 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
+                Generated at:{' '}
+                <span className="text-green-300">
+                  {videoGeneratedAt}
+                </span>
+              </div>
+            )}
 
       </div>
 
@@ -453,7 +476,7 @@ const getVideoSceneFieldKey = (
                   onClick={() =>
                     copyVideoField(
                       'OPENART SCENE CHAIN PACK:',
-                      buildSceneChainPack(result, songTitle, songVersionTitle),
+                      buildSceneChainPack(result, songTitle, songVersionTitle, videoGeneratedAt),
                       getVideoFieldKey(result, index, 'scene-chain')
                     )
                   }
