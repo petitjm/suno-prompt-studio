@@ -86,6 +86,28 @@ const buildShortPrompt = (result: VideoResult) =>
         result.global_style,
       ].join('\n')
 
+      const buildImageToVideoPrompt = (result: VideoResult) =>
+          [
+            'IMAGE-TO-VIDEO DIRECTION:',
+            'Animate the supplied image as a cinematic music video shot. Preserve the original character identity, composition, wardrobe, lighting, and colour grade.',
+            '',
+            'MOTION:',
+            'Use slow natural camera movement, subtle parallax, gentle environmental motion, realistic facial expression, and emotionally restrained performance energy.',
+            '',
+            'CONTINUITY:',
+            'Keep the same face, clothing, visual style, and emotional tone as the full video. Avoid sudden changes in character, background, lighting, or camera angle.',
+            '',
+            'VIDEO CONCEPT:',
+            result.video_concept,
+            '',
+            'CHARACTER:',
+            result.character_prompt,
+            '',
+            'VISUAL STYLE:',
+            result.global_style,
+          ].join('\n')
+
+
      const buildSceneChainPack = (
       result: VideoResult,
       songTitle: string,
@@ -156,8 +178,11 @@ const buildSongReference = (
    'SHORT OPENART PROMPT:',
     buildShortPrompt(result),
     '',
-    'OPENART LIP-SYNC PROMPT:',
+   'OPENART LIP-SYNC PROMPT:',
     buildLipSyncPrompt(result),
+    '',
+    'OPENART IMAGE-TO-VIDEO PROMPT:',
+    buildImageToVideoPrompt(result),
     '',
     'OPENART NEGATIVE PROMPT:',
     openArtNegativePrompt,
@@ -637,6 +662,36 @@ const getVideoSceneFieldKey = (
                   </button>
                   <p className="mt-1 text-xs text-gray-500">
                     Use this for OpenArt shots where MPJ is singing directly to camera.
+                  </p>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">
+                    OpenArt image-to-video prompt
+                  </span>
+                  <textarea
+                    value={buildImageToVideoPrompt(result)}
+                    readOnly
+                    rows={6}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyVideoField(
+                        'OPENART IMAGE-TO-VIDEO PROMPT:',
+                        buildImageToVideoPrompt(result),
+                        getVideoFieldKey(result, index, 'image-to-video')
+                      )
+                    }
+                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                  >
+                    {justCopiedField === getVideoFieldKey(result, index, 'image-to-video')
+                      ? 'Image-to-video prompt copied ✓'
+                      : 'Copy image-to-video prompt'}
+                  </button>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Use this when animating a cover image, still frame, or generated character image in OpenArt.
                   </p>
                 </label>
 
