@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 
 type VideoScenePrompt = {
   section: string
@@ -341,6 +341,10 @@ const buildSongReference = (
         const headingMatch = lines[0]?.match(/^\[.*\]$/)
         const heading = headingMatch ? lines[0] : `Section ${index + 1}`
         const lyricLines = headingMatch ? lines.slice(1) : lines
+
+        
+
+
 
         return [
           `${heading}:`,
@@ -767,10 +771,65 @@ export default function VideoPromptBuilder({
 
   const [videoGeneratedAt, setVideoGeneratedAt] = useState('')
 
+  const videoPromptStorageKey = songVersionId
+    ? `video-prompts:${songVersionId}`
+    : ''
   const workflowPackButtonClass =
     'min-h-11 rounded-md border border-purple-500 px-4 py-2 text-left text-sm font-medium leading-snug text-purple-100 transition hover:bg-purple-500/10 disabled:cursor-not-allowed disabled:opacity-50'
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+      if (!videoPromptStorageKey) {
+        return
+      }
+
+      const saved = window.sessionStorage.getItem(videoPromptStorageKey)
+
+      if (!saved) {
+        return
+      }
+
+      try {
+        const parsed = JSON.parse(saved) as {
+          results?: VideoResult[]
+          videoGeneratedAt?: string
+        }
+
+        if (Array.isArray(parsed.results)) {
+          setResults(parsed.results)
+        }
+
+        if (typeof parsed.videoGeneratedAt === 'string') {
+          setVideoGeneratedAt(parsed.videoGeneratedAt)
+        }
+      } catch {
+        window.sessionStorage.removeItem(videoPromptStorageKey)
+      }
+    }, [videoPromptStorageKey])
+
+
+
+    useEffect(() => {
+        if (!videoPromptStorageKey) {
+        return
+        }
+
+        if (results.length === 0 && !videoGeneratedAt) {
+        window.sessionStorage.removeItem(videoPromptStorageKey)
+        return
+        }
+
+        window.sessionStorage.setItem(
+        videoPromptStorageKey,
+        JSON.stringify({
+            results,
+            videoGeneratedAt,
+        }),
+        )
+    }, [results, videoGeneratedAt, videoPromptStorageKey])
+
+
 
   const hasLyrics = lyrics.trim().length > 0
 
