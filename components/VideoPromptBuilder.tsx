@@ -910,6 +910,21 @@ const videoCopyButtonClass =
     }
   }
 
+
+  const clearGeneratedVideoPrompts = () => {
+      setResults([])
+      setVideoGeneratedAt('')
+      setJustCopiedField('')
+      setJustCopiedIndex(null)
+
+      if (videoPromptStorageKey) {
+        window.sessionStorage.removeItem(videoPromptStorageKey)
+      }
+    }
+
+
+
+
   const copyVideoField = (title: string, value: string, fieldKey: string) => {
       navigator.clipboard.writeText(
         [title, buildSongReference(songTitle, songVersionTitle, videoGeneratedAt), '', value].join('\n')
@@ -1092,6 +1107,17 @@ const getVideoSceneFieldKey = (
               ? 'Save song version before video'
               : 'Generate video prompts'}
         </button>
+
+        <button
+          type="button"
+          onClick={clearGeneratedVideoPrompts}
+          disabled={results.length === 0 && !videoGeneratedAt}
+          className={workflowPackButtonClass}
+        >
+          Clear generated video prompts
+        </button>
+
+
       </div>
 
       {message && (
