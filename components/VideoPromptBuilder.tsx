@@ -767,6 +767,8 @@ export default function VideoPromptBuilder({
 
   const [videoGeneratedAt, setVideoGeneratedAt] = useState('')
 
+  const workflowPackButtonClass =
+    'min-h-11 rounded-md border border-purple-500 px-4 py-2 text-left text-sm font-medium leading-snug text-purple-100 transition hover:bg-purple-500/10 disabled:cursor-not-allowed disabled:opacity-50'
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
 
@@ -1119,21 +1121,22 @@ const getVideoSceneFieldKey = (
                 </button>
 
 
-                <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
-                  <div className="mb-2">
-                    <h4 className="text-sm font-semibold text-slate-100">
-                      OpenArt workflow packs
-                    </h4>
-                    <p className="text-xs text-slate-400">
-                      Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion.
-                    </p>
-                  </div>
+        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
+            <div className="mb-3">
+            <h4 className="text-sm font-semibold text-slate-100">
+                OpenArt workflow packs
+            </h4>
+            <p className="mt-1 text-xs text-slate-400">
+                Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion.
+            </p>
+            </div>
 
-                  <div className="flex flex-wrap gap-2">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 
 
                 <button
                   type="button"
+                  className={workflowPackButtonClass}
                   onClick={() => {
                     navigator.clipboard.writeText(
                       buildCoverImagePromptPack({
@@ -1157,6 +1160,7 @@ const getVideoSceneFieldKey = (
 
                 <button
                   type="button"
+                  className={workflowPackButtonClass}
                   onClick={() => {
                     navigator.clipboard.writeText(
                       buildCharacterConsistencyPromptPack({
@@ -1180,6 +1184,7 @@ const getVideoSceneFieldKey = (
 
                 <button
                   type="button"
+                  className={workflowPackButtonClass}
                   onClick={() => {
                     navigator.clipboard.writeText(
                       buildLyricsVisualBeatPack({
@@ -1205,6 +1210,7 @@ const getVideoSceneFieldKey = (
 
             <button
               type="button"
+              className={workflowPackButtonClass}
               onClick={() => {
                 navigator.clipboard.writeText(
                   buildOpenArtReleasePromoPack({
@@ -1230,6 +1236,7 @@ const getVideoSceneFieldKey = (
 
             <button
               type="button"
+              className={workflowPackButtonClass}
               onClick={() => {
                 navigator.clipboard.writeText(
                   buildOpenArtProductionChecklistPack({
@@ -1252,6 +1259,7 @@ const getVideoSceneFieldKey = (
 
             <button
               type="button"
+              className={workflowPackButtonClass}
               onClick={() => {
                 navigator.clipboard.writeText(
                   buildFullOpenArtCreativeBundlePack({
