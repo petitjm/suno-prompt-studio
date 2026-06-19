@@ -1105,8 +1105,10 @@ const getVideoSceneFieldKey = (
             ? 'Add lyrics to generate video'
             : !hasSavedSongVersion
               ? 'Save song version before video'
-              : 'Generate video prompts'}
-        </button>
+              : results.length > 0
+                ? 'Regenerate video prompts'
+                : 'Generate video prompts'}
+                </button>
 
         <button
           type="button"
