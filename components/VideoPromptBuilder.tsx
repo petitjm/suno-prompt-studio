@@ -658,6 +658,95 @@ const buildSongReference = (
     ]),
   ].join('\n')
 
+  function buildFullOpenArtCreativeBundlePack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      lyrics,
+      videoConcept,
+      globalStyle,
+      characterPrompt,
+      masterOpenArtPrompt,
+      negativePrompt,
+    }: {
+      songTitle: string
+      songVersionTitle: string
+      generatedAt: string
+      lyrics: string
+      videoConcept: string
+      globalStyle: string
+      characterPrompt: string
+      masterOpenArtPrompt: string
+      negativePrompt: string
+    }) {
+      return [
+        'FULL OPENART CREATIVE BUNDLE:',
+        `Song title: ${songTitle || 'Untitled song'}`,
+        `Song version: ${songVersionTitle || 'Untitled version'}`,
+        `Generated at: ${generatedAt}`,
+        '',
+        'This bundle combines the main OpenArt creative workflow outputs for cover art, character consistency, lyric-to-visual mapping, production planning, and release promotion.',
+        '',
+        '============================================================',
+        '',
+        buildCoverImagePromptPack({
+          songTitle,
+          songVersionTitle,
+          generatedAt,
+          videoConcept,
+          globalStyle,
+          characterPrompt,
+          masterOpenArtPrompt,
+          negativePrompt,
+        }),
+        '',
+        '============================================================',
+        '',
+        buildCharacterConsistencyPromptPack({
+          songTitle,
+          songVersionTitle,
+          generatedAt,
+          characterPrompt,
+          globalStyle,
+          negativePrompt,
+        }),
+        '',
+        '============================================================',
+        '',
+        buildLyricsVisualBeatPack({
+          songTitle,
+          songVersionTitle,
+          generatedAt,
+          lyrics,
+          videoConcept,
+          globalStyle,
+        }),
+        '',
+        '============================================================',
+        '',
+        buildOpenArtProductionChecklistPack({
+          songTitle,
+          songVersionTitle,
+          generatedAt,
+          videoConcept,
+          globalStyle,
+        }),
+        '',
+        '============================================================',
+        '',
+        buildOpenArtReleasePromoPack({
+          songTitle,
+          songVersionTitle,
+          generatedAt,
+          videoConcept,
+          globalStyle,
+          characterPrompt,
+          masterOpenArtPrompt,
+          negativePrompt,
+        }),
+      ].join('\n')
+    }
+
 export default function VideoPromptBuilder({
       lyrics,
       songTitle,
@@ -1098,6 +1187,31 @@ const getVideoSceneFieldKey = (
                     : 'Copy lyrics-to-visual beat sheet'}
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  buildFullOpenArtCreativeBundlePack({
+                    songTitle,
+                    songVersionTitle,
+                    generatedAt: videoGeneratedAt,
+                    lyrics,
+                    videoConcept: result.video_concept,
+                    globalStyle: result.global_style,
+                    characterPrompt: result.character_prompt,
+                    masterOpenArtPrompt: buildMasterPrompt(result),
+                    negativePrompt: openArtNegativePrompt,
+                  }),
+                )
+                setJustCopiedField('fullOpenArtCreativeBundle')
+                window.setTimeout(() => setJustCopiedField(''), 1500)
+              }}
+              disabled={!canGenerateVideoPrompts}
+            >
+              {justCopiedField === 'fullOpenArtCreativeBundle'
+                ? 'Copied ✓'
+                : 'Copy full OpenArt creative bundle'}
+            </button>
 
             <button
               type="button"
