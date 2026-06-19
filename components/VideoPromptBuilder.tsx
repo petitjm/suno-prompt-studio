@@ -1118,6 +1118,20 @@ const getVideoSceneFieldKey = (
                     : 'Copy social teaser'}
                 </button>
 
+
+                <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
+                  <div className="mb-2">
+                    <h4 className="text-sm font-semibold text-slate-100">
+                      OpenArt workflow packs
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1187,31 +1201,7 @@ const getVideoSceneFieldKey = (
                     : 'Copy lyrics-to-visual beat sheet'}
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  buildFullOpenArtCreativeBundlePack({
-                    songTitle,
-                    songVersionTitle,
-                    generatedAt: videoGeneratedAt,
-                    lyrics,
-                    videoConcept: result.video_concept,
-                    globalStyle: result.global_style,
-                    characterPrompt: result.character_prompt,
-                    masterOpenArtPrompt: buildMasterPrompt(result),
-                    negativePrompt: openArtNegativePrompt,
-                  }),
-                )
-                setJustCopiedField('fullOpenArtCreativeBundle')
-                window.setTimeout(() => setJustCopiedField(''), 1500)
-              }}
-              disabled={!canGenerateVideoPrompts}
-            >
-              {justCopiedField === 'fullOpenArtCreativeBundle'
-                ? 'Copied ✓'
-                : 'Copy full OpenArt creative bundle'}
-            </button>
+            
 
             <button
               type="button"
@@ -1260,7 +1250,36 @@ const getVideoSceneFieldKey = (
                 : 'Copy OpenArt production checklist'}
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  buildFullOpenArtCreativeBundlePack({
+                    songTitle,
+                    songVersionTitle,
+                    generatedAt: videoGeneratedAt,
+                    lyrics,
+                    videoConcept: result.video_concept,
+                    globalStyle: result.global_style,
+                    characterPrompt: result.character_prompt,
+                    masterOpenArtPrompt: buildMasterPrompt(result),
+                    negativePrompt: openArtNegativePrompt,
+                  }),
+                )
+                setJustCopiedField('fullOpenArtCreativeBundle')
+                window.setTimeout(() => setJustCopiedField(''), 1500)
+              }}
+              disabled={!canGenerateVideoPrompts}
+            >
+              {justCopiedField === 'fullOpenArtCreativeBundle'
+                ? 'Copied ✓'
+                : 'Copy full OpenArt creative bundle'}
+            </button>
+
               </div>
+        </div>
+
+        </div>
 
               <div className="space-y-4">
                 <label className="block">
