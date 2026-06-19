@@ -774,8 +774,12 @@ export default function VideoPromptBuilder({
   const videoPromptStorageKey = songVersionId
     ? `video-prompts:${songVersionId}`
     : ''
-  const workflowPackButtonClass =
-    'min-h-11 rounded-md border border-purple-500 px-4 py-2 text-left text-sm font-medium leading-snug text-purple-100 transition hover:bg-purple-500/10 disabled:cursor-not-allowed disabled:opacity-50'
+
+const videoCopyButtonClass =
+  'rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40'
+    
+  const workflowPackButtonClass = videoCopyButtonClass
+
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
 
