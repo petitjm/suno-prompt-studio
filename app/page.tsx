@@ -688,6 +688,48 @@ const [compareRightText, setCompareRightText] = useState('')
 const [compareMessage, setCompareMessage] = useState('')
 const [comparingNow, setComparingNow] = useState(false)
 const writeScrollTopRef = React.useRef(0)
+const videoScrollTopRef = React.useRef(0)
+const sheetScrollTopRef = React.useRef(0)
+
+const handleWorkspaceScroll = () => {
+  const currentScrollTop = performanceScrollRef.current?.scrollTop || 0
+
+  if (mode === 'write') {
+    writeScrollTopRef.current = currentScrollTop
+  }
+
+  if (mode === 'sheet') {
+    sheetScrollTopRef.current = currentScrollTop
+  }
+
+  if (mode === 'video') {
+    videoScrollTopRef.current = currentScrollTop
+  }
+}
+
+
+
+const saveCurrentModeScroll = () => {
+  const currentScrollTop = performanceScrollRef.current?.scrollTop || 0
+
+  if (mode === 'write') {
+    writeScrollTopRef.current = currentScrollTop
+  }
+
+  if (mode === 'sheet') {
+    sheetScrollTopRef.current = currentScrollTop
+  }
+
+  if (mode === 'video') {
+    videoScrollTopRef.current = currentScrollTop
+  }
+}
+
+const handleModeChange = (nextMode: AppMode) => {
+  handleWorkspaceScroll()
+  setMode(nextMode)
+}
+
 const [flashLeftPanel, setFlashLeftPanel] = useState(false)
 const [flashRightPanel, setFlashRightPanel] = useState(false)
 const [rewriteDone, setRewriteDone] = useState(false)
@@ -721,14 +763,38 @@ React.useEffect(() => {
 }, [commercialPolishMode, rewriteConstraint])
 
 React.useEffect(() => {
-  if (mode !== 'write') return
+  let nextScrollTop = 0
 
-  requestAnimationFrame(() => {
+  if (mode === 'write') {
+    nextScrollTop = writeScrollTopRef.current
+  }
+
+  if (mode === 'sheet') {
+    nextScrollTop = sheetScrollTopRef.current
+  }
+
+  if (mode === 'video') {
+    nextScrollTop = videoScrollTopRef.current
+  }
+
+  const restoreScroll = () => {
     performanceScrollRef.current?.scrollTo({
-      top: writeScrollTopRef.current,
+      top: nextScrollTop,
       behavior: 'auto',
     })
-  })
+  }
+
+  const frameId = window.requestAnimationFrame(restoreScroll)
+  const firstTimer = window.setTimeout(restoreScroll, 50)
+  const secondTimer = window.setTimeout(restoreScroll, 250)
+  const thirdTimer = window.setTimeout(restoreScroll, 600)
+
+  return () => {
+    window.cancelAnimationFrame(frameId)
+    window.clearTimeout(firstTimer)
+    window.clearTimeout(secondTimer)
+    window.clearTimeout(thirdTimer)
+  }
 }, [mode])
 
 const [compareUpdateMessage, setCompareUpdateMessage] = useState('')
@@ -2159,12 +2225,12 @@ return (
         </button>
 
         <div className="flex flex-col gap-2">
-          <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => setMode('write')} />
-          <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => setMode('chords')} />
-          <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => setMode('sheet')} />
-          <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => setMode('rehearse')} />
-          <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => setMode('perform')} />
-          <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => setMode('video')} />
+          <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('write')} />
+          <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('chords')} />
+          <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('sheet')} />
+          <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('rehearse')} />
+          <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('perform')} />
+          <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('video')} />
         </div>
       </div>
 
@@ -2185,7 +2251,11 @@ return (
     </div>
   </div>
 
-        <div ref={performanceScrollRef} className="flex-1 min-h-0 overflow-auto p-6">
+        <div
+          ref={performanceScrollRef}
+          onScroll={handleWorkspaceScroll}
+          className="min-h-0 flex-1 overflow-y-auto px-6 py-4"
+        >
 
 
 

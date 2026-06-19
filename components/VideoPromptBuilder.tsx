@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 
 type VideoScenePrompt = {
   section: string
@@ -775,9 +775,16 @@ export default function VideoPromptBuilder({
     ? `video-prompts:${songVersionId}`
     : ''
 
+
+
+
+
 const videoCopyButtonClass =
   'rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40'
-    
+ 
+  
+
+
   const workflowPackButtonClass = videoCopyButtonClass
 
   const [justCopiedField, setJustCopiedField] = useState('')
@@ -832,6 +839,7 @@ const videoCopyButtonClass =
         }),
         )
     }, [results, videoGeneratedAt, videoPromptStorageKey])
+
 
 
 
