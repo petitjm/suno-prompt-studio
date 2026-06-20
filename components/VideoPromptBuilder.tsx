@@ -771,6 +771,9 @@ export default function VideoPromptBuilder({
 
   const [videoGeneratedAt, setVideoGeneratedAt] = useState('')
 
+  const [videoPromptStatus, setVideoPromptStatus] = useState('')
+
+
   const videoPromptStorageKey = songVersionId
     ? `video-prompts:${songVersionId}`
     : ''
@@ -789,7 +792,16 @@ const videoCopyButtonClass =
 
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
-  const [videoPromptStatus, setVideoPromptStatus] = useState('')
+
+
+
+  useEffect(() => {
+      setJustCopiedField('')
+      setJustCopiedIndex(null)
+      setVideoPromptStatus('')
+    }, [songVersionId])
+
+
 
   useEffect(() => {
       if (!videoPromptStorageKey) {
