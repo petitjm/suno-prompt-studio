@@ -789,6 +789,7 @@ const videoCopyButtonClass =
 
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
+  const [videoPromptStatus, setVideoPromptStatus] = useState('')
 
   useEffect(() => {
       if (!videoPromptStorageKey) {
@@ -809,6 +810,10 @@ const videoCopyButtonClass =
 
         if (Array.isArray(parsed.results)) {
           setResults(parsed.results)
+
+          if (parsed.results.length > 0) {
+            setVideoPromptStatus('Restored generated video prompts from this browser session.')
+          }
         }
 
         if (typeof parsed.videoGeneratedAt === 'string') {
@@ -893,16 +898,22 @@ const videoCopyButtonClass =
         throw new Error(data.error || 'Failed to generate video prompts.')
       }
 
+          const hadExistingResults = results.length > 0
       const generatedAt = new Date().toLocaleString()
 
-        if (Array.isArray(data.versions)) {
-          setResults(data.versions)
-        } else {
-          setResults([data])
-        }
+      if (Array.isArray(data.versions)) {
+        setResults(data.versions)
+      } else {
+        setResults([data])
+      }
 
-        setVideoGeneratedAt(generatedAt)
-        setMessage(`Video prompts generated at ${generatedAt}.`)
+      setVideoGeneratedAt(generatedAt)
+      setMessage(`Video prompts generated at ${generatedAt}.`)
+      setVideoPromptStatus(
+        hadExistingResults
+          ? 'Regenerated video prompts and replaced the previous output.'
+          : 'Generated new video prompts.',
+      )
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to generate video prompts.')
     } finally {
@@ -911,18 +922,18 @@ const videoCopyButtonClass =
   }
 
   const handleGenerateVideoPromptsClick = () => {
-      if (results.length > 0) {
-        const confirmed = window.confirm(
-          'Regenerate video prompts? This will replace the current generated video prompt output.',
-        )
+    if (results.length > 0) {
+      const confirmed = window.confirm(
+        'Regenerate video prompts? This will replace the current generated video prompt output.',
+      )
 
-        if (!confirmed) {
-          return
-        }
+      if (!confirmed) {
+        return
       }
-
-      generateVideoPrompts()
     }
+
+    generateVideoPrompts()
+  }
 
 
   const clearGeneratedVideoPrompts = () => {
@@ -934,6 +945,8 @@ const videoCopyButtonClass =
       if (videoPromptStorageKey) {
         window.sessionStorage.removeItem(videoPromptStorageKey)
       }
+
+      setVideoPromptStatus('Cleared generated video prompts.')
     }
 
 
@@ -1132,9 +1145,15 @@ const getVideoSceneFieldKey = (
         >
           Clear generated video prompts
         </button>
-
+        
 
       </div>
+
+     {videoPromptStatus && (
+          <p className="mt-2 text-xs text-slate-400">
+            {videoPromptStatus}
+          </p>
+        )}
 
       {message && (
         <p className="mt-3 rounded border border-gray-700 bg-gray-950 p-2 text-xs text-gray-300">
