@@ -910,6 +910,20 @@ const videoCopyButtonClass =
     }
   }
 
+  const handleGenerateVideoPromptsClick = () => {
+      if (results.length > 0) {
+        const confirmed = window.confirm(
+          'Regenerate video prompts? This will replace the current generated video prompt output.',
+        )
+
+        if (!confirmed) {
+          return
+        }
+      }
+
+      generateVideoPrompts()
+    }
+
 
   const clearGeneratedVideoPrompts = () => {
       setResults([])
@@ -1084,7 +1098,7 @@ const getVideoSceneFieldKey = (
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={generateVideoPrompts}
+          onClick={handleGenerateVideoPromptsClick}
           disabled={!canGenerateVideoPrompts}
           className={
             !canGenerateVideoPrompts
