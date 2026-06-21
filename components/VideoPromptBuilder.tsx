@@ -805,12 +805,16 @@ const videoCopyButtonClass =
 
   useEffect(() => {
       if (!videoPromptStorageKey) {
+        setResults([])
+        setVideoGeneratedAt('')
         return
       }
 
       const saved = window.sessionStorage.getItem(videoPromptStorageKey)
 
       if (!saved) {
+        setResults([])
+        setVideoGeneratedAt('')
         return
       }
 
@@ -826,35 +830,40 @@ const videoCopyButtonClass =
           if (parsed.results.length > 0) {
             setVideoPromptStatus('Restored generated video prompts from this browser session.')
           }
+        } else {
+          setResults([])
         }
 
         if (typeof parsed.videoGeneratedAt === 'string') {
           setVideoGeneratedAt(parsed.videoGeneratedAt)
+        } else {
+          setVideoGeneratedAt('')
         }
       } catch {
         window.sessionStorage.removeItem(videoPromptStorageKey)
+        setResults([])
+        setVideoGeneratedAt('')
       }
     }, [videoPromptStorageKey])
 
 
 
     useEffect(() => {
-        if (!videoPromptStorageKey) {
+      if (!videoPromptStorageKey) {
         return
-        }
+      }
 
-        if (results.length === 0 && !videoGeneratedAt) {
-        window.sessionStorage.removeItem(videoPromptStorageKey)
+      if (results.length === 0 && !videoGeneratedAt) {
         return
-        }
+      }
 
-        window.sessionStorage.setItem(
+      window.sessionStorage.setItem(
         videoPromptStorageKey,
         JSON.stringify({
-            results,
-            videoGeneratedAt,
+          results,
+          videoGeneratedAt,
         }),
-        )
+      )
     }, [results, videoGeneratedAt, videoPromptStorageKey])
 
 
