@@ -1018,6 +1018,19 @@ const getVideoSceneFieldKey = (
         <p className="mt-1 text-sm text-gray-400">
           Generate OpenArt-ready music video prompts from the current song sheet.
         </p>
+
+        <div className="mt-3 rounded border border-gray-700 bg-gray-900/70 px-3 py-2 text-xs text-gray-300">
+          {hasSavedSongVersion ? (
+            <span>
+              Video prompts are linked to this saved song version and will be restored during this browser session.
+            </span>
+          ) : (
+            <span className="text-amber-300">
+              Save or load a song version before generating video prompts. This keeps copied prompts tied to the correct song and version.
+            </span>
+          )}
+        </div>
+
         <div className="mt-3 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
               <div>
                 Song:{' '}
