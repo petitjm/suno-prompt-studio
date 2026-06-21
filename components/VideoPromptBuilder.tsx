@@ -227,6 +227,55 @@ const buildSongReference = (
   ].join('\n')
 
 
+  function buildVideoPromptSessionSummary({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      status,
+      resultCount,
+      hasSavedSongVersion,
+    }: {
+      songTitle: string
+      songVersionTitle: string
+      generatedAt: string
+      status: string
+      resultCount: number
+      hasSavedSongVersion: boolean
+    }) {
+      return [
+        'VIDEO PROMPT SESSION SUMMARY:',
+        `Song title: ${songTitle || 'Untitled song'}`,
+        `Song version: ${songVersionTitle || 'Untitled version'}`,
+        `Generated at: ${generatedAt || 'Not generated yet'}`,
+        `Saved song version linked: ${hasSavedSongVersion ? 'Yes' : 'No'}`,
+        `Generated video prompt versions: ${resultCount}`,
+        '',
+        'Current status:',
+        status || 'No current video prompt status message.',
+        '',
+        'Available OpenArt workflow packs:',
+        [
+          'Copy video pack',
+          'Copy scene chain',
+          'Copy storyboard',
+          'Copy social teaser',
+          'Copy global style',
+          'Copy character prompt',
+          'Copy cover image prompt',
+          'Copy MPJ character consistency prompt',
+          'Copy lyrics-to-visual beat sheet',
+          'Copy OpenArt production checklist',
+          'Copy OpenArt release promo pack',
+          'Copy full OpenArt creative bundle',
+        ].join('\n'),
+        '',
+        'Recommended next step:',
+        resultCount > 0
+          ? 'Choose the best generated version, copy the cover image prompt first, then use the character consistency prompt before creating scene images.'
+          : 'Generate video prompts from a saved song version before copying OpenArt workflow packs.',
+      ].join('\n')
+    }
+
   function buildOpenArtProductionChecklistPack({
               songTitle,
               songVersionTitle,
@@ -1170,6 +1219,29 @@ const getVideoSceneFieldKey = (
                 ? 'Regenerate video prompts'
                 : 'Generate video prompts'}
                 </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(
+              buildVideoPromptSessionSummary({
+                songTitle,
+                songVersionTitle,
+                generatedAt: videoGeneratedAt,
+                status: videoPromptStatus,
+                resultCount: results.length,
+                hasSavedSongVersion,
+              }),
+            )
+            setJustCopiedField('videoPromptSessionSummary')
+            window.setTimeout(() => setJustCopiedField(''), 1500)
+          }}
+          className={workflowPackButtonClass}
+        >
+          {justCopiedField === 'videoPromptSessionSummary'
+            ? 'Copied ✓'
+            : 'Copy video prompt session summary'}
+        </button>
 
         <button
           type="button"
