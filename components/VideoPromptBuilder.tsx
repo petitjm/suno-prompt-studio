@@ -922,6 +922,8 @@ const videoCopyButtonClass =
 
   const hasSavedSongVersion = Boolean(songVersionId)
   const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
+  const hasGeneratedVideoPrompts = results.length > 0
+
 
   const videoRequestSummary = useMemo(() => {
     return [
@@ -1364,8 +1366,10 @@ const getVideoSceneFieldKey = (
             <h4 className="text-sm font-semibold text-slate-100">
                 OpenArt workflow packs
             </h4>
-            <p className="mt-1 text-xs text-slate-400">
-                Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion.
+           <p className="mt-1 text-xs text-slate-400">
+              {hasGeneratedVideoPrompts
+                ? 'Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion.'
+                : 'Generate video prompts first to unlock the OpenArt workflow packs.'}
             </p>
             </div>
 
@@ -1391,7 +1395,7 @@ const getVideoSceneFieldKey = (
                     setJustCopiedField('coverImagePrompt')
                         window.setTimeout(() => setJustCopiedField(''), 1500)
                      }}
-                  disabled={!canGenerateVideoPrompts}
+                  disabled={!hasGeneratedVideoPrompts}
                 >
                   {justCopiedField === 'coverImagePrompt' ? 'Copied ✓' : 'Copy cover image prompt'}
                 </button>
@@ -1413,7 +1417,7 @@ const getVideoSceneFieldKey = (
                     setJustCopiedField('characterConsistencyPrompt')
                     window.setTimeout(() => setJustCopiedField(''), 1500)
                   }}
-                  disabled={!canGenerateVideoPrompts}
+                  disabled={!hasGeneratedVideoPrompts}
                 >
                   {justCopiedField === 'characterConsistencyPrompt'
                     ? 'Copied ✓'
@@ -1437,7 +1441,7 @@ const getVideoSceneFieldKey = (
                     setJustCopiedField('lyricsVisualBeatSheet')
                     window.setTimeout(() => setJustCopiedField(''), 1500)
                   }}
-                  disabled={!canGenerateVideoPrompts}
+                  disabled={!hasGeneratedVideoPrompts}
                 >
                   {justCopiedField === 'lyricsVisualBeatSheet'
                     ? 'Copied ✓'
@@ -1465,7 +1469,7 @@ const getVideoSceneFieldKey = (
                 setJustCopiedField('openArtReleasePromoPack')
                 window.setTimeout(() => setJustCopiedField(''), 1500)
               }}
-              disabled={!canGenerateVideoPrompts}
+              disabled={!hasGeneratedVideoPrompts}
             >
               {justCopiedField === 'openArtReleasePromoPack'
                 ? 'Copied ✓'
@@ -1488,7 +1492,7 @@ const getVideoSceneFieldKey = (
                 setJustCopiedField('openArtProductionChecklist')
                 window.setTimeout(() => setJustCopiedField(''), 1500)
               }}
-              disabled={!canGenerateVideoPrompts}
+              disabled={!hasGeneratedVideoPrompts}
             >
               {justCopiedField === 'openArtProductionChecklist'
                 ? 'Copied ✓'
@@ -1515,7 +1519,7 @@ const getVideoSceneFieldKey = (
                 setJustCopiedField('fullOpenArtCreativeBundle')
                 window.setTimeout(() => setJustCopiedField(''), 1500)
               }}
-              disabled={!canGenerateVideoPrompts}
+              disabled={!hasGeneratedVideoPrompts}
             >
               {justCopiedField === 'fullOpenArtCreativeBundle'
                 ? 'Copied ✓'
