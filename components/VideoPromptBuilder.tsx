@@ -891,7 +891,9 @@ export default function VideoPromptBuilder({
     : ''
 
 
-
+    const [videoVersionTitle, setVideoVersionTitle] = useState('')
+    const [savingVideoVersion, setSavingVideoVersion] = useState(false)
+    const [videoVersionMessage, setVideoVersionMessage] = useState('')
 
 
 const videoCopyButtonClass =
@@ -991,9 +993,72 @@ const secondaryVideoButtonClass =
 
   const hasSavedSongVersion = Boolean(songVersionId)
   const hasProject = Boolean(projectId)
+ 
   const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
   const hasGeneratedVideoPrompts = results.length > 0
   const canClearGeneratedVideoPrompts = results.length > 0 || Boolean(videoGeneratedAt)
+   const canSaveVideoVersion = hasProject && hasSavedSongVersion && hasGeneratedVideoPrompts && !savingVideoVersion
+
+  const saveVideoPromptVersion = async () => {
+  if (!projectId) {
+    setVideoVersionMessage('Choose a project before saving a video prompt version.')
+    return
+  }
+
+  if (!songVersionId) {
+    setVideoVersionMessage('Save or load a song version before saving video prompts.')
+    return
+  }
+
+  if (results.length === 0) {
+    setVideoVersionMessage('Generate video prompts before saving a video prompt version.')
+    return
+  }
+
+  try {
+    setSavingVideoVersion(true)
+    setVideoVersionMessage('Saving video prompt version...')
+
+    const title =
+      videoVersionTitle.trim() ||
+      `Video prompts - ${songVersionTitle || 'Untitled version'}`
+
+    const response = await fetch('/api/video-versions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        projectId,
+        songVersionId,
+        title,
+        videoData: {
+          songTitle,
+          songVersionTitle,
+          generatedAt: videoGeneratedAt,
+          status: videoPromptStatus,
+          results,
+        },
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to save video prompt version.')
+    }
+
+    setVideoVersionMessage(`Saved video prompt version: ${title}`)
+  } catch (error) {
+    setVideoVersionMessage(
+      error instanceof Error
+        ? error.message
+        : 'Failed to save video prompt version.',
+    )
+  } finally {
+    setSavingVideoVersion(false)
+  }
+}
 
 
   const videoRequestSummary = useMemo(() => {
@@ -1376,6 +1441,40 @@ const getVideoSceneFieldKey = (
           {message}
         </p>
       )}
+
+      <div className="mt-4 rounded border border-gray-700 bg-gray-900/70 p-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-gray-300">
+              Video version title
+            </span>
+            <input
+              type="text"
+              value={videoVersionTitle}
+              onChange={(event) => setVideoVersionTitle(event.target.value)}
+              placeholder="Video prompt version title, e.g. OpenArt cinematic pass 1"
+              className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
+            />
+          </label>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={saveVideoPromptVersion}
+              disabled={!canSaveVideoVersion}
+              className={secondaryVideoButtonClass}
+            >
+              {savingVideoVersion ? 'Saving video version...' : 'Save video prompt version'}
+            </button>
+          </div>
+
+          {videoVersionMessage && (
+            <p className="mt-2 text-xs text-gray-400">
+              {videoVersionMessage}
+            </p>
+          )}
+        </div>
+
+
 
       {results.length > 0 && (
         <div className="mt-5 space-y-4">
