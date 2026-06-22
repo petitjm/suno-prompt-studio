@@ -227,6 +227,67 @@ const buildSongReference = (
   ].join('\n')
 
 
+  function buildVideoPageHandoffSummary({
+      songTitle,
+      songVersionTitle,
+      songVersionId,
+      generatedAt,
+      status,
+      resultCount,
+      hasLyrics,
+      hasSavedSongVersion,
+      hasGeneratedVideoPrompts,
+      canClearGeneratedVideoPrompts,
+    }: {
+      songTitle: string
+      songVersionTitle: string
+      songVersionId?: string | null
+      generatedAt: string
+      status: string
+      resultCount: number
+      hasLyrics: boolean
+      hasSavedSongVersion: boolean
+      hasGeneratedVideoPrompts: boolean
+      canClearGeneratedVideoPrompts: boolean
+    }) {
+      return [
+        'VIDEO PAGE HANDOFF SUMMARY:',
+        `Song title: ${songTitle || 'Untitled song'}`,
+        `Song version: ${songVersionTitle || 'Untitled version'}`,
+        `Song version ID: ${songVersionId || 'None'}`,
+        `Generated at: ${generatedAt || 'Not generated yet'}`,
+        '',
+        'Current state:',
+        `Has lyrics: ${hasLyrics ? 'Yes' : 'No'}`,
+        `Has saved song version: ${hasSavedSongVersion ? 'Yes' : 'No'}`,
+        `Has generated video prompts: ${hasGeneratedVideoPrompts ? 'Yes' : 'No'}`,
+        `Can clear generated video prompts: ${canClearGeneratedVideoPrompts ? 'Yes' : 'No'}`,
+        `Generated result count: ${resultCount}`,
+        '',
+        'Current status:',
+        status || 'No current video prompt status message.',
+        '',
+        'Implemented Video workflow features:',
+        [
+          'Video prompts require a saved song version before generation.',
+          'Generated Video prompts persist across mode changes using session storage.',
+          'Generated Video prompts are scoped to the selected saved song version.',
+          'Clear generated video prompts removes the visible output and session cache.',
+          'Generate button changes to Regenerate when output exists.',
+          'Regeneration requires confirmation before replacing current output.',
+          'OpenArt workflow packs are hidden until generated prompts exist.',
+          'An empty-state panel explains how to unlock OpenArt workflow packs.',
+          'Video action buttons use primary/secondary styling.',
+        ].join('\n'),
+        '',
+        'Recommended next development step:',
+        hasGeneratedVideoPrompts
+          ? 'Continue improving generated output quality, save/load video prompt versions, or add release-pack persistence.'
+          : 'Generate video prompts first, then test OpenArt workflow packs and copied prompt outputs.',
+      ].join('\n')
+    }
+
+
   function buildVideoPromptSessionSummary({
       songTitle,
       songVersionTitle,
@@ -1224,6 +1285,33 @@ const getVideoSceneFieldKey = (
                 ? 'Regenerate video prompts'
                 : 'Generate video prompts'}
                 </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(
+              buildVideoPageHandoffSummary({
+                songTitle,
+                songVersionTitle,
+                songVersionId,
+                generatedAt: videoGeneratedAt,
+                status: videoPromptStatus,
+                resultCount: results.length,
+                hasLyrics,
+                hasSavedSongVersion,
+                hasGeneratedVideoPrompts,
+                canClearGeneratedVideoPrompts,
+              }),
+            )
+            setJustCopiedField('videoPageHandoffSummary')
+            window.setTimeout(() => setJustCopiedField(''), 1500)
+          }}
+          className={secondaryVideoButtonClass}
+        >
+          {justCopiedField === 'videoPageHandoffSummary'
+            ? 'Copied ✓'
+            : 'Copy Video page handoff summary'}
+        </button>
 
         <button
           type="button"
