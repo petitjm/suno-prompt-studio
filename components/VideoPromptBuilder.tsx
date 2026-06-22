@@ -1263,6 +1263,20 @@ const getVideoSceneFieldKey = (
           </p>
         )}
 
+        {!hasGeneratedVideoPrompts && (
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
+            <h4 className="text-sm font-semibold text-slate-100">
+              OpenArt workflow packs
+            </h4>
+            <p className="mt-1 text-xs text-slate-400">
+              Generate video prompts first to unlock reusable OpenArt packs for cover art, character consistency, visual planning, production, and release promotion.
+            </p>
+            <div className="mt-3 rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
+              The OpenArt copy packs will appear here after video prompts have been generated for this saved song version.
+            </div>
+          </div>
+        )}
+
       {message && (
         <p className="mt-3 rounded border border-gray-700 bg-gray-950 p-2 text-xs text-gray-300">
           {message}
@@ -1373,7 +1387,8 @@ const getVideoSceneFieldKey = (
             </p>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {hasGeneratedVideoPrompts ? (
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 
 
                 <button
@@ -1525,8 +1540,13 @@ const getVideoSceneFieldKey = (
                 ? 'Copied ✓'
                 : 'Copy full OpenArt creative bundle'}
             </button>
-
               </div>
+        ) : (
+          <div className="rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
+                The OpenArt copy packs will appear here after video prompts have been generated for this saved song version.
+              </div>
+            )}
+              
         </div>
 
         </div>
