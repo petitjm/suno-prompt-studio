@@ -832,7 +832,7 @@ export default function VideoPromptBuilder({
 
 
 const videoCopyButtonClass =
-  'rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40'
+  'rounded border border-purple-700 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent'
  
   
 
@@ -923,6 +923,7 @@ const videoCopyButtonClass =
   const hasSavedSongVersion = Boolean(songVersionId)
   const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
   const hasGeneratedVideoPrompts = results.length > 0
+  const canClearGeneratedVideoPrompts = results.length > 0 || Boolean(videoGeneratedAt)
 
 
   const videoRequestSummary = useMemo(() => {
@@ -1248,7 +1249,7 @@ const getVideoSceneFieldKey = (
         <button
           type="button"
           onClick={clearGeneratedVideoPrompts}
-          disabled={results.length === 0 && !videoGeneratedAt}
+          disabled={!canClearGeneratedVideoPrompts}
           className={workflowPackButtonClass}
         >
           Clear generated video prompts
