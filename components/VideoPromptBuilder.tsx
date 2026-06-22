@@ -839,6 +839,12 @@ const videoCopyButtonClass =
 
   const workflowPackButtonClass = videoCopyButtonClass
 
+  const primaryVideoButtonClass =
+  'rounded bg-purple-700 px-4 py-2 text-sm font-medium text-white hover:bg-purple-600 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400'
+
+const secondaryVideoButtonClass =
+  'rounded border border-purple-700 px-4 py-2 text-sm font-medium text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent'
+
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
 
@@ -1199,11 +1205,7 @@ const getVideoSceneFieldKey = (
           type="button"
           onClick={handleGenerateVideoPromptsClick}
           disabled={!canGenerateVideoPrompts}
-          className={
-            !canGenerateVideoPrompts
-              ? 'rounded border border-gray-600 bg-gray-700 px-4 py-2 text-gray-400 cursor-not-allowed'
-              : 'rounded bg-purple-700 px-4 py-2 text-white hover:bg-purple-600'
-          }
+          className={primaryVideoButtonClass}
           title={
               !hasLyrics
                 ? 'Add or load lyrics before generating video prompts.'
@@ -1239,7 +1241,7 @@ const getVideoSceneFieldKey = (
             setJustCopiedField('videoPromptSessionSummary')
             window.setTimeout(() => setJustCopiedField(''), 1500)
           }}
-          className={workflowPackButtonClass}
+          className={secondaryVideoButtonClass}
         >
           {justCopiedField === 'videoPromptSessionSummary'
             ? 'Copied ✓'
@@ -1250,7 +1252,7 @@ const getVideoSceneFieldKey = (
           type="button"
           onClick={clearGeneratedVideoPrompts}
           disabled={!canClearGeneratedVideoPrompts}
-          className={workflowPackButtonClass}
+          className={secondaryVideoButtonClass}
         >
           Clear generated video prompts
         </button>
