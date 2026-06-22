@@ -20,6 +20,7 @@ type VideoPromptBuilderProps = {
       lyrics: string
       songTitle: string
       songVersionTitle: string
+        projectId?: string | null
       songVersionId: string | null
     }
 
@@ -862,11 +863,12 @@ const buildSongReference = (
     }
 
 export default function VideoPromptBuilder({
-      lyrics,
-      songTitle,
-      songVersionTitle,
-      songVersionId,
-    }: VideoPromptBuilderProps) {
+  lyrics,
+  songTitle,
+  songVersionTitle,
+  projectId,
+  songVersionId,
+}: VideoPromptBuilderProps) {
 
   const [genre, setGenre] = useState('')
   const [moodsText, setMoodsText] = useState('')
@@ -988,6 +990,7 @@ const secondaryVideoButtonClass =
   const hasLyrics = lyrics.trim().length > 0
 
   const hasSavedSongVersion = Boolean(songVersionId)
+  const hasProject = Boolean(projectId)
   const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
   const hasGeneratedVideoPrompts = results.length > 0
   const canClearGeneratedVideoPrompts = results.length > 0 || Boolean(videoGeneratedAt)

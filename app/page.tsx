@@ -2647,6 +2647,7 @@ return (
                   songVersionTitle={
                     activeSongVersion?.title || songVersionTitle || ''
                   }
+                  projectId={activeProject?.id || null}
                   songVersionId={activeSongVersionId}
                 />
               </div>
