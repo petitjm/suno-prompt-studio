@@ -24,7 +24,20 @@ type VideoPromptBuilderProps = {
       songVersionId: string | null
     }
 
-   
+  type SavedVideoVersion = {
+      id: string
+      project_id: string
+      song_version_id: string | null
+      title: string | null
+      video_data: {
+        songTitle?: string
+        songVersionTitle?: string
+        generatedAt?: string
+        status?: string
+        results?: VideoResult[]
+      } | null
+      created_at?: string
+    } 
 
 const splitMoods = (value: string) =>
   value
@@ -895,6 +908,9 @@ export default function VideoPromptBuilder({
     const [savingVideoVersion, setSavingVideoVersion] = useState(false)
     const [videoVersionMessage, setVideoVersionMessage] = useState('')
 
+    const [savedVideoVersions, setSavedVideoVersions] = useState<SavedVideoVersion[]>([])
+    const [loadingVideoVersions, setLoadingVideoVersions] = useState(false)
+
 
 const videoCopyButtonClass =
   'rounded border border-purple-700 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent'
@@ -912,6 +928,11 @@ const secondaryVideoButtonClass =
 
   const [justCopiedField, setJustCopiedField] = useState('')
   const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
+
+
+  useEffect(() => {
+      loadSavedVideoVersions()
+    }, [projectId, songVersionId])
 
 
 
@@ -999,6 +1020,46 @@ const secondaryVideoButtonClass =
   const canClearGeneratedVideoPrompts = results.length > 0 || Boolean(videoGeneratedAt)
    const canSaveVideoVersion = hasProject && hasSavedSongVersion && hasGeneratedVideoPrompts && !savingVideoVersion
 
+   const loadSavedVideoVersions = async () => {
+      if (!projectId || !songVersionId) {
+        setSavedVideoVersions([])
+        return
+      }
+
+      try {
+        setLoadingVideoVersions(true)
+
+        const params = new URLSearchParams({
+          projectId,
+          songVersionId,
+        })
+
+        params.set('t', String(Date.now()))
+
+        const response = await fetch(`/api/video-versions?${params.toString()}`, {
+          cache: 'no-store',
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load saved video prompt versions.')
+        }
+
+        setSavedVideoVersions(Array.isArray(data.videoVersions) ? data.videoVersions : [])
+      } catch (error) {
+        setSavedVideoVersions([])
+        setVideoVersionMessage(
+          error instanceof Error
+            ? error.message
+            : 'Failed to load saved video prompt versions.',
+        )
+      } finally {
+        setLoadingVideoVersions(false)
+      }
+    }
+
+
   const saveVideoPromptVersion = async () => {
   if (!projectId) {
     setVideoVersionMessage('Choose a project before saving a video prompt version.')
@@ -1049,6 +1110,7 @@ const secondaryVideoButtonClass =
     }
 
     setVideoVersionMessage(`Saved video prompt version: ${title}`)
+    await loadSavedVideoVersions()
   } catch (error) {
     setVideoVersionMessage(
       error instanceof Error
@@ -1443,6 +1505,23 @@ const getVideoSceneFieldKey = (
       )}
 
       <div className="mt-4 rounded border border-gray-700 bg-gray-900/70 p-3">
+      <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
+  <div>
+    <span className="font-medium text-gray-200">
+      Most recent saved video version:
+    </span>{' '}
+    {savedVideoVersions[0]?.title || 'None saved yet'}
+  </div>
+  <div className="mt-1 text-gray-500">
+    Saved video prompt versions for this song version: {savedVideoVersions.length}
+  </div>
+</div>
+        <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
+  <span className="font-medium text-gray-200">
+    Current saved song version:
+  </span>{' '}
+  {songVersionTitle || 'Untitled version'}
+</div>
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-gray-300">
               Video version title
@@ -1472,6 +1551,12 @@ const getVideoSceneFieldKey = (
               {videoVersionMessage}
             </p>
           )}
+          <p className="mt-2 text-xs text-gray-500">
+              {loadingVideoVersions
+                ? 'Loading saved video prompt versions...'
+                : `Saved video prompt versions for this song version: ${savedVideoVersions.length}`}
+            </p>
+
         </div>
 
 

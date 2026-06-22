@@ -10,6 +10,8 @@ const readJsonSafe = async (req: NextRequest) => {
   }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { searchParams } = new URL(req.url)
