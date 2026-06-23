@@ -1149,15 +1149,14 @@ const loadSavedVideoPromptVersion = () => {
         return
       }
 
-      setResults(savedResults)
-      setVideoGeneratedAt(videoData.generatedAt || '')
-      setVideoPromptStatus(
-        `Loaded saved video prompt version: ${selected.title || 'Untitled video prompt version'}`,
-      )
-      setVideoVersionMessage(
-        `Loaded saved video prompt version: ${selected.title || 'Untitled video prompt version'}`,
-      )
-    }
+      const loadedTitle = selected.title || 'Untitled video prompt version'
+
+        setResults(savedResults)
+        setVideoGeneratedAt(videoData.generatedAt || '')
+        setVideoVersionTitle(loadedTitle)
+        setVideoPromptStatus(`Loaded saved video prompt version: ${loadedTitle}`)
+        setVideoVersionMessage(`Loaded saved video prompt version: ${loadedTitle}`)
+         }
 
 
   const videoRequestSummary = useMemo(() => {
