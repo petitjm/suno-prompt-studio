@@ -910,6 +910,7 @@ export default function VideoPromptBuilder({
 
     const [savedVideoVersions, setSavedVideoVersions] = useState<SavedVideoVersion[]>([])
     const [loadingVideoVersions, setLoadingVideoVersions] = useState(false)
+    const [selectedSavedVideoVersionId, setSelectedSavedVideoVersionId] = useState('')
 
 
 const videoCopyButtonClass =
@@ -940,6 +941,7 @@ const secondaryVideoButtonClass =
       setJustCopiedField('')
       setJustCopiedIndex(null)
       setVideoPromptStatus('')
+      setSelectedSavedVideoVersionId('')
     }, [songVersionId])
 
 
@@ -1123,6 +1125,41 @@ const secondaryVideoButtonClass =
 }
 
 
+const loadSavedVideoPromptVersion = () => {
+      const selected = savedVideoVersions.find(
+        (version) => version.id === selectedSavedVideoVersionId,
+      )
+
+      if (!selected) {
+        setVideoVersionMessage('Choose a saved video prompt version to load.')
+        return
+      }
+
+      const videoData = selected.video_data
+
+      if (!videoData) {
+        setVideoVersionMessage('Saved video prompt version has no video data.')
+        return
+      }
+
+      const savedResults = Array.isArray(videoData.results) ? videoData.results : []
+
+      if (savedResults.length === 0) {
+        setVideoVersionMessage('Saved video prompt version has no generated results.')
+        return
+      }
+
+      setResults(savedResults)
+      setVideoGeneratedAt(videoData.generatedAt || '')
+      setVideoPromptStatus(
+        `Loaded saved video prompt version: ${selected.title || 'Untitled video prompt version'}`,
+      )
+      setVideoVersionMessage(
+        `Loaded saved video prompt version: ${selected.title || 'Untitled video prompt version'}`,
+      )
+    }
+
+
   const videoRequestSummary = useMemo(() => {
     return [
       genre.trim() ? `Genre: ${genre.trim()}` : 'Genre: not set',
@@ -1211,12 +1248,15 @@ const secondaryVideoButtonClass =
       setVideoGeneratedAt('')
       setJustCopiedField('')
       setJustCopiedIndex(null)
+      setVideoVersionTitle('')
+      setSelectedSavedVideoVersionId('')
 
       if (videoPromptStorageKey) {
         window.sessionStorage.removeItem(videoPromptStorageKey)
       }
 
       setVideoPromptStatus('Cleared generated video prompts.')
+      setVideoVersionMessage('Cleared generated video prompts. Saved video versions are still available to load.')
     }
 
 
@@ -1522,6 +1562,42 @@ const getVideoSceneFieldKey = (
   </span>{' '}
   {songVersionTitle || 'Untitled version'}
 </div>
+
+<div className="mb-3">
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-gray-300">
+          Load saved video version
+        </span>
+        <select
+          value={selectedSavedVideoVersionId}
+          onChange={(event) => setSelectedSavedVideoVersionId(event.target.value)}
+          disabled={savedVideoVersions.length === 0}
+          className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+        >
+          <option value="">
+            {savedVideoVersions.length === 0
+              ? 'No saved video versions yet'
+              : 'Choose saved video version'}
+          </option>
+          {savedVideoVersions.map((version, index) => (
+            <option key={version.id} value={version.id}>
+              {version.title || `Untitled video version ${index + 1}`}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <button
+        type="button"
+        onClick={loadSavedVideoPromptVersion}
+        disabled={!selectedSavedVideoVersionId}
+        className={`${secondaryVideoButtonClass} mt-2`}
+      >
+        Load saved video version
+      </button>
+    </div>
+
+
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-gray-300">
               Video version title
