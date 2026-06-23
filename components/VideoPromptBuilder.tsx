@@ -1048,7 +1048,19 @@ const secondaryVideoButtonClass =
           throw new Error(data.error || 'Failed to load saved video prompt versions.')
         }
 
-        setSavedVideoVersions(Array.isArray(data.videoVersions) ? data.videoVersions : [])
+        const loadedVersions = Array.isArray(data.videoVersions) ? data.videoVersions : []
+
+            setSavedVideoVersions(loadedVersions)
+
+            const shouldAutoLoadMostRecent =
+              loadedVersions.length > 0 && results.length === 0 && !videoGeneratedAt
+
+            if (shouldAutoLoadMostRecent) {
+              applySavedVideoPromptVersion(
+                loadedVersions[0],
+                'Loaded most recent saved video prompt version',
+              )
+            }
       } catch (error) {
         setSavedVideoVersions([])
         setVideoVersionMessage(
@@ -1126,37 +1138,47 @@ const secondaryVideoButtonClass =
 
 
 const loadSavedVideoPromptVersion = () => {
-      const selected = savedVideoVersions.find(
-        (version) => version.id === selectedSavedVideoVersionId,
-      )
+  const selected = savedVideoVersions.find(
+    (version) => version.id === selectedSavedVideoVersionId,
+  )
 
-      if (!selected) {
-        setVideoVersionMessage('Choose a saved video prompt version to load.')
-        return
-      }
+  if (!selected) {
+    setVideoVersionMessage('Choose a saved video prompt version to load.')
+    return
+  }
 
-      const videoData = selected.video_data
+  applySavedVideoPromptVersion(selected)
+}
+
+const applySavedVideoPromptVersion = (
+      savedVersion: SavedVideoVersion,
+      statusPrefix = 'Loaded saved video prompt version',
+    ) => {
+      const videoData = savedVersion.video_data
 
       if (!videoData) {
         setVideoVersionMessage('Saved video prompt version has no video data.')
-        return
+        return false
       }
 
       const savedResults = Array.isArray(videoData.results) ? videoData.results : []
 
       if (savedResults.length === 0) {
         setVideoVersionMessage('Saved video prompt version has no generated results.')
-        return
+        return false
       }
 
-      const loadedTitle = selected.title || 'Untitled video prompt version'
+      const loadedTitle = savedVersion.title || 'Untitled video prompt version'
 
-        setResults(savedResults)
-        setVideoGeneratedAt(videoData.generatedAt || '')
-        setVideoVersionTitle(loadedTitle)
-        setVideoPromptStatus(`Loaded saved video prompt version: ${loadedTitle}`)
-        setVideoVersionMessage(`Loaded saved video prompt version: ${loadedTitle}`)
-         }
+      setResults(savedResults)
+      setVideoGeneratedAt(videoData.generatedAt || '')
+      setVideoVersionTitle(loadedTitle)
+      setSelectedSavedVideoVersionId(savedVersion.id)
+      setVideoPromptStatus(`${statusPrefix}: ${loadedTitle}`)
+      setVideoVersionMessage(`${statusPrefix}: ${loadedTitle}`)
+
+      return true
+    }
 
 
   const videoRequestSummary = useMemo(() => {
