@@ -911,7 +911,10 @@ export default function VideoPromptBuilder({
     const [savedVideoVersions, setSavedVideoVersions] = useState<SavedVideoVersion[]>([])
     const [loadingVideoVersions, setLoadingVideoVersions] = useState(false)
     const [selectedSavedVideoVersionId, setSelectedSavedVideoVersionId] = useState('')
-
+    const [currentVideoDisplayTitle, setCurrentVideoDisplayTitle] = useState('')
+    const [currentVideoDisplaySource, setCurrentVideoDisplaySource] = useState<
+      'saved' | 'generated' | ''
+    >('')
 
 const videoCopyButtonClass =
   'rounded border border-purple-700 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent'
@@ -1170,12 +1173,12 @@ const applySavedVideoPromptVersion = (
 
       const loadedTitle = savedVersion.title || 'Untitled video prompt version'
 
-      setResults(savedResults)
-      setVideoGeneratedAt(videoData.generatedAt || '')
-      setVideoVersionTitle(loadedTitle)
-      setSelectedSavedVideoVersionId(savedVersion.id)
-      setVideoPromptStatus(`${statusPrefix}: ${loadedTitle}`)
-      setVideoVersionMessage(`${statusPrefix}: ${loadedTitle}`)
+         setVideoVersionTitle(loadedTitle)
+         setCurrentVideoDisplayTitle(loadedTitle)
+         setCurrentVideoDisplaySource('saved')
+         setSelectedSavedVideoVersionId(savedVersion.id)
+         setVideoPromptStatus(`${statusPrefix}: ${loadedTitle}`)
+         setVideoVersionMessage(`${statusPrefix}: ${loadedTitle}`)
 
       return true
     }
@@ -1235,8 +1238,10 @@ const applySavedVideoPromptVersion = (
         setResults([data])
       }
 
-     setVideoGeneratedAt(generatedAt)
+        setVideoGeneratedAt(generatedAt)
         setSelectedSavedVideoVersionId('')
+        setCurrentVideoDisplayTitle('Unsaved generated video prompts')
+        setCurrentVideoDisplaySource('generated')
 
         if (!videoVersionTitle.trim()) {
           setVideoVersionTitle(`Video prompts - ${songVersionTitle || 'Untitled version'}`)
@@ -1278,6 +1283,8 @@ const applySavedVideoPromptVersion = (
       setJustCopiedIndex(null)
       setVideoVersionTitle('')
       setSelectedSavedVideoVersionId('')
+      setCurrentVideoDisplayTitle('')
+      setCurrentVideoDisplaySource('')
 
       if (videoPromptStorageKey) {
         window.sessionStorage.removeItem(videoPromptStorageKey)
@@ -1579,7 +1586,19 @@ const getVideoSceneFieldKey = (
       Most recent saved video version:
     </span>{' '}
     {savedVideoVersions[0]?.title || 'None saved yet'}
+    <div className="mt-2 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
+      <span className="font-medium text-gray-200">
+        Current video display:
+      </span>{' '}
+      {currentVideoDisplayTitle || 'None loaded'}
+      {currentVideoDisplaySource && (
+        <span className="ml-2 text-gray-500">
+          ({currentVideoDisplaySource === 'saved' ? 'saved version' : 'not saved yet'})
+        </span>
+      )}
+    </div>
   </div>
+
   <div className="mt-1 text-gray-500">
     Saved video prompt versions for this song version: {savedVideoVersions.length}
   </div>
