@@ -1235,13 +1235,20 @@ const applySavedVideoPromptVersion = (
         setResults([data])
       }
 
-      setVideoGeneratedAt(generatedAt)
-      setMessage(`Video prompts generated at ${generatedAt}.`)
-      setVideoPromptStatus(
-        hadExistingResults
-          ? 'Regenerated video prompts and replaced the previous output.'
-          : 'Generated new video prompts.',
-      )
+     setVideoGeneratedAt(generatedAt)
+        setSelectedSavedVideoVersionId('')
+
+        if (!videoVersionTitle.trim()) {
+          setVideoVersionTitle(`Video prompts - ${songVersionTitle || 'Untitled version'}`)
+        }
+
+        setMessage(`Video prompts generated at ${generatedAt}.`)
+        setVideoPromptStatus(
+          hadExistingResults
+            ? 'Regenerated video prompts and replaced the previous output.'
+            : 'Generated new video prompts.',
+        )
+      
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to generate video prompts.')
     } finally {
