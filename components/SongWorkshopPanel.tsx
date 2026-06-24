@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 
 
@@ -8,6 +8,7 @@ type SongWorkshopPanelProps = {
   lyrics: string
   songTitle: string
   songVersionTitle: string
+  onUseDraft?: (draft: string) => void
 }
 
 
@@ -17,9 +18,11 @@ export default function SongWorkshopPanel({
   lyrics,
   songTitle,
   songVersionTitle,
+  onUseDraft,
 }: SongWorkshopPanelProps) {
   const hasLyrics = lyrics.trim().length > 0
 
+  const skipNextLyricsClearRef = useRef(false)
 
   useEffect(() => {
       setAnalysisMessage('')
@@ -180,7 +183,31 @@ export default function SongWorkshopPanel({
       }
     }
 
+    const useDraftInEditor = () => {
+  if (!draftResult?.lyric) {
+    setDraftMessage('Create a cohesive draft before using it in the editor.')
+    return
+  }
+
+  if (!onUseDraft) {
+    setDraftMessage('The editor is not available for this draft.')
+    return
+  }
+
+  skipNextLyricsClearRef.current = true
+  onUseDraft(draftResult.lyric)
+  setDraftMessage('Cohesive draft sent to editor.')
+}
+
+
+
   return (
+
+  
+      
+
+
+
     <section className="rounded border border-gray-800 bg-gray-950/70 p-4">
       <div className="mb-4">
         <h1 className="text-xl mb-2">Song Workshop</h1>
@@ -289,14 +316,25 @@ export default function SongWorkshopPanel({
         Cohesive draft
       </h2>
 
-      <button
-        type="button"
-        onClick={copyCohesiveDraft}
-        disabled={!draftResult.lyric}
-        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
-      >
-        {justCopiedDraft ? 'Copied ✓' : 'Copy draft'}
-      </button>
+      <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={useDraftInEditor}
+            disabled={!draftResult.lyric || !onUseDraft}
+            className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-gray-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+          >
+            Use draft in editor
+          </button>
+
+          <button
+            type="button"
+            onClick={copyCohesiveDraft}
+            disabled={!draftResult.lyric}
+            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
+          >
+            {justCopiedDraft ? 'Copied ✓' : 'Copy draft'}
+          </button>
+        </div>
     </div>
 
     <pre className="mt-3 whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">

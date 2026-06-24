@@ -2549,13 +2549,17 @@ return (
 
 
 
-          {mode === 'develop' && (
+          <div className={mode === 'develop' ? 'block' : 'hidden'}>
               <SongWorkshopPanel
                 lyrics={performanceSheet}
                 songTitle={activeProject?.title || ''}
                 songVersionTitle={activeSongVersion?.title || songVersionTitle || ''}
+                onUseDraft={(draft) => {
+                  setPerformanceSheet(draft)
+                  handleModeChange('write')
+                }}
               />
-            )}
+            </div>
 
 
           {mode === 'chords' && (
