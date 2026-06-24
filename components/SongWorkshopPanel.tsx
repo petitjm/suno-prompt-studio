@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 
 
@@ -19,6 +19,18 @@ export default function SongWorkshopPanel({
   songVersionTitle,
 }: SongWorkshopPanelProps) {
   const hasLyrics = lyrics.trim().length > 0
+
+
+  useEffect(() => {
+      setAnalysisMessage('')
+      setAnalysisResult(null)
+      setDraftMessage('')
+      setDraftResult(null)
+      setJustCopiedDraft(false)
+    }, [lyrics])
+
+
+  const [justCopiedDraft, setJustCopiedDraft] = useState(false)
 
   const [drafting, setDrafting] = useState(false)
     const [draftMessage, setDraftMessage] = useState('')
@@ -42,6 +54,26 @@ export default function SongWorkshopPanel({
     suggestedShape?: string[]
     nextStep?: string
   } | null>(null)
+
+
+  const copyCohesiveDraft = async () => {
+      if (!draftResult?.lyric) {
+        setDraftMessage('Create a cohesive draft before copying.')
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(draftResult.lyric)
+        setJustCopiedDraft(true)
+        setDraftMessage('Cohesive draft copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedDraft(false)
+        }, 1500)
+      } catch {
+        setDraftMessage('Could not copy cohesive draft.')
+      }
+    }
 
 
   const createCohesiveDraft = async () => {
@@ -252,9 +284,20 @@ export default function SongWorkshopPanel({
 
 {draftResult && (
   <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
-    <h2 className="text-sm font-semibold text-gray-200">
-      Cohesive draft
-    </h2>
+   <div className="flex flex-wrap items-center justify-between gap-2">
+      <h2 className="text-sm font-semibold text-gray-200">
+        Cohesive draft
+      </h2>
+
+      <button
+        type="button"
+        onClick={copyCohesiveDraft}
+        disabled={!draftResult.lyric}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedDraft ? 'Copied ✓' : 'Copy draft'}
+      </button>
+    </div>
 
     <pre className="mt-3 whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
       {draftResult.lyric}
