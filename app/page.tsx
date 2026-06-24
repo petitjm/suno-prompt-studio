@@ -1,5 +1,8 @@
 'use client'
 
+
+import SongWorkshopPanel from '@/components/SongWorkshopPanel'
+
 import type {
   Project,
   FormState,
@@ -2547,27 +2550,11 @@ return (
 
 
           {mode === 'develop' && (
-              <section className="rounded border border-gray-800 bg-gray-950/70 p-4">
-                <div className="mb-4">
-                  <h1 className="text-xl mb-2">Song Workshop</h1>
-                  <p className="text-sm text-gray-400">
-                    Develop rough ideas, disconnected verses, choruses, titles, and phrases
-                    into a clearer song direction before sending anything to Suno, Chords,
-                    Rehearse, Perform, or Video.
-                  </p>
-                </div>
-
-                <div className="rounded border border-gray-800 bg-gray-900/70 p-4">
-                  <h2 className="text-sm font-semibold text-gray-200">
-                    Develop mode coming next
-                  </h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    This section will analyse the current song, identify the core theme,
-                    suggest a structure, and help create a cohesive draft while preserving
-                    your original intent.
-                  </p>
-                </div>
-              </section>
+              <SongWorkshopPanel
+                lyrics={performanceSheet}
+                songTitle={activeProject?.title || ''}
+                songVersionTitle={activeSongVersion?.title || songVersionTitle || ''}
+              />
             )}
 
 

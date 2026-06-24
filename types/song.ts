@@ -100,8 +100,9 @@ export type ChordRewriteMode =
   | 'baritone_key'
   | 'capo_friendly'
 
-  export type AppMode =
+export type AppMode =
   | 'write'
+  | 'develop'
   | 'chords'
   | 'sheet'
   | 'rehearse'
