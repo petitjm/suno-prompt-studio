@@ -897,7 +897,7 @@ export default function VideoPromptBuilder({
   const [videoGeneratedAt, setVideoGeneratedAt] = useState('')
 
   const [videoPromptStatus, setVideoPromptStatus] = useState('')
-
+  const clearVideoMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const videoPromptStorageKey = songVersionId
     ? `video-prompts:${songVersionId}`
@@ -935,15 +935,25 @@ const secondaryVideoButtonClass =
 
 
   useEffect(() => {
+      return () => {
+        if (clearVideoMessageTimerRef.current) {
+          clearTimeout(clearVideoMessageTimerRef.current)
+        }
+      }
+    }, [])
+
+
+  useEffect(() => {
       loadSavedVideoVersions()
     }, [projectId, songVersionId])
 
 
 
-  useEffect(() => {
+     useEffect(() => {
       setJustCopiedField('')
       setJustCopiedIndex(null)
       setVideoPromptStatus('')
+      setVideoVersionMessage('')
       setSelectedSavedVideoVersionId('')
     }, [songVersionId])
 
@@ -1022,7 +1032,14 @@ const secondaryVideoButtonClass =
  
   const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
   const hasGeneratedVideoPrompts = results.length > 0
-  const canClearGeneratedVideoPrompts = results.length > 0 || Boolean(videoGeneratedAt)
+  const canClearGeneratedVideoPrompts =
+  results.length > 0 ||
+  Boolean(videoGeneratedAt) ||
+  Boolean(currentVideoDisplayTitle) ||
+  Boolean(currentVideoDisplaySource) ||
+  Boolean(selectedSavedVideoVersionId) ||
+  Boolean(videoVersionTitle)
+
    const canSaveVideoVersion = hasProject && hasSavedSongVersion && hasGeneratedVideoPrompts && !savingVideoVersion
 
    const loadSavedVideoVersions = async () => {
@@ -1140,6 +1157,21 @@ const secondaryVideoButtonClass =
 }
 
 
+    const showTemporaryVideoMessage = (message: string) => {
+      if (clearVideoMessageTimerRef.current) {
+        clearTimeout(clearVideoMessageTimerRef.current)
+      }
+
+      setVideoPromptStatus(message)
+      setVideoVersionMessage(message)
+
+      clearVideoMessageTimerRef.current = setTimeout(() => {
+        setVideoPromptStatus('')
+        setVideoVersionMessage('')
+        clearVideoMessageTimerRef.current = null
+      }, 2500)
+    }
+
 const loadSavedVideoPromptVersion = () => {
   const selected = savedVideoVersions.find(
     (version) => version.id === selectedSavedVideoVersionId,
@@ -1157,6 +1189,12 @@ const applySavedVideoPromptVersion = (
       savedVersion: SavedVideoVersion,
       statusPrefix = 'Loaded saved video prompt version',
     ) => {
+        if (clearVideoMessageTimerRef.current) {
+              clearTimeout(clearVideoMessageTimerRef.current)
+              clearVideoMessageTimerRef.current = null
+            }
+
+            setVideoVersionMessage('')
       const videoData = savedVersion.video_data
 
       if (!videoData) {
@@ -1178,7 +1216,7 @@ const applySavedVideoPromptVersion = (
          setCurrentVideoDisplaySource('saved')
          setSelectedSavedVideoVersionId(savedVersion.id)
          setVideoPromptStatus(`${statusPrefix}: ${loadedTitle}`)
-         setVideoVersionMessage(`${statusPrefix}: ${loadedTitle}`)
+         setVideoVersionMessage('')
 
       return true
     }
@@ -1290,8 +1328,10 @@ const applySavedVideoPromptVersion = (
         window.sessionStorage.removeItem(videoPromptStorageKey)
       }
 
-      setVideoPromptStatus('Cleared generated video prompts.')
-      setVideoVersionMessage('Cleared generated video prompts. Saved video versions are still available to load.')
+      setVideoPromptStatus('')
+      showTemporaryVideoMessage(
+          'Cleared generated video prompts. Saved video versions are still available to load.',
+        )
     }
 
 
@@ -1580,35 +1620,55 @@ const getVideoSceneFieldKey = (
       )}
 
       <div className="mt-4 rounded border border-gray-700 bg-gray-900/70 p-3">
-      <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
-  <div>
-    <span className="font-medium text-gray-200">
-      Most recent saved video version:
-    </span>{' '}
-    {savedVideoVersions[0]?.title || 'None saved yet'}
-    <div className="mt-2 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
-      <span className="font-medium text-gray-200">
-        Current video display:
-      </span>{' '}
-      {currentVideoDisplayTitle || 'None loaded'}
-      {currentVideoDisplaySource && (
-        <span className="ml-2 text-gray-500">
-          ({currentVideoDisplaySource === 'saved' ? 'saved version' : 'not saved yet'})
-        </span>
-      )}
-    </div>
-  </div>
 
-  <div className="mt-1 text-gray-500">
-    Saved video prompt versions for this song version: {savedVideoVersions.length}
-  </div>
+      <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-3 text-xs text-gray-300">
+          <div className="font-medium text-gray-200">
+            Video version status
+          </div>
+
+          <div className="mt-2 grid gap-1 text-gray-400">
+            <div>
+              <span className="text-gray-300">Saved song version:</span>{' '}
+              {songVersionTitle || 'Untitled version'}
+            </div>
+
+            <div>
+              <span className="text-gray-300">Current video display:</span>{' '}
+              {currentVideoDisplayTitle || 'None loaded'}
+              {currentVideoDisplaySource && (
+                <span className="ml-1 text-gray-500">
+                  {currentVideoDisplaySource === 'saved'
+                    ? '(saved)'
+                    : '(not saved yet)'}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <span className="text-gray-300">Most recent saved video:</span>{' '}
+              {savedVideoVersions[0]?.title || 'None saved yet'}
+            </div>
+
+            <div>
+              <span className="text-gray-300">Saved video versions:</span>{' '}
+              {savedVideoVersions.length}
+            </div>
+          </div>
+        </div>
+
+
+      <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
+ 
+        {loadingVideoVersions && (
+          <p className="mt-2 text-xs text-gray-500">
+            Loading saved video prompt versions...
+          </p>
+        )}
+ 
 </div>
-        <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
-  <span className="font-medium text-gray-200">
-    Current saved song version:
-  </span>{' '}
-  {songVersionTitle || 'Untitled version'}
-</div>
+        
+
+
 
 <div className="mb-3">
       <label className="block">
