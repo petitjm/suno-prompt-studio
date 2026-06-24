@@ -2225,8 +2225,15 @@ return (
         </button>
 
         <div className="flex flex-col gap-2">
-          <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('write')} />
-          <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('chords')} />
+          <div className="flex flex-col gap-2">
+              <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('write')} />
+              <SidebarItem icon="🧭" label="Develop" active={mode === 'develop'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('develop')} />
+              <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('chords')} />
+              <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('sheet')} />
+              <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('rehearse')} />
+              <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('perform')} />
+              <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('video')} />
+</div>
           <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('sheet')} />
           <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('rehearse')} />
           <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('perform')} />
@@ -2536,6 +2543,33 @@ return (
                )}
             </div>
           )}
+
+
+
+          {mode === 'develop' && (
+              <section className="rounded border border-gray-800 bg-gray-950/70 p-4">
+                <div className="mb-4">
+                  <h1 className="text-xl mb-2">Song Workshop</h1>
+                  <p className="text-sm text-gray-400">
+                    Develop rough ideas, disconnected verses, choruses, titles, and phrases
+                    into a clearer song direction before sending anything to Suno, Chords,
+                    Rehearse, Perform, or Video.
+                  </p>
+                </div>
+
+                <div className="rounded border border-gray-800 bg-gray-900/70 p-4">
+                  <h2 className="text-sm font-semibold text-gray-200">
+                    Develop mode coming next
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-400">
+                    This section will analyse the current song, identify the core theme,
+                    suggest a structure, and help create a cohesive draft while preserving
+                    your original intent.
+                  </p>
+                </div>
+              </section>
+            )}
+
 
           {mode === 'chords' && (
             <div>
