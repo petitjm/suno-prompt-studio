@@ -1656,14 +1656,26 @@ const getVideoSceneFieldKey = (
           </div>
         </div>
 
+      <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-3 text-xs text-gray-300">
+          <div className="font-medium text-gray-200">
+            Video version status
+          </div>
+
+          <div className="mt-2 grid gap-1 text-gray-400">
+
+          </div>
+        </div>
+
 
       <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
  
-        {loadingVideoVersions && (
+       
+         {loadingVideoVersions && (
           <p className="mt-2 text-xs text-gray-500">
             Loading saved video prompt versions...
           </p>
         )}
+     
  
 </div>
         
