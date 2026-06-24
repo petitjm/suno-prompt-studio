@@ -20,6 +20,18 @@ export default function SongWorkshopPanel({
 }: SongWorkshopPanelProps) {
   const hasLyrics = lyrics.trim().length > 0
 
+  const [drafting, setDrafting] = useState(false)
+    const [draftMessage, setDraftMessage] = useState('')
+    const [draftResult, setDraftResult] = useState<{
+      title?: string
+      versionTitle?: string
+      lyric?: string
+      whatWasKept?: string[]
+      whatChanged?: string[]
+      nextStep?: string
+    } | null>(null)
+
+
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisMessage, setAnalysisMessage] = useState('')
   const [analysisResult, setAnalysisResult] = useState<{
@@ -30,6 +42,69 @@ export default function SongWorkshopPanel({
     suggestedShape?: string[]
     nextStep?: string
   } | null>(null)
+
+
+  const createCohesiveDraft = async () => {
+      if (!hasLyrics) {
+        setDraftMessage('Add lyrics or fragments before creating a cohesive draft.')
+        return
+      }
+
+      try {
+        setDrafting(true)
+        setDraftMessage('Creating cohesive draft...')
+        setDraftResult(null)
+
+        const response = await fetch('/api/song-workshop/draft', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lyrics,
+            songTitle,
+            songVersionTitle,
+          }),
+        })
+
+        const responseText = await response.text()
+
+        let data: {
+          error?: string
+          draft?: {
+            title?: string
+            versionTitle?: string
+            lyric?: string
+            whatWasKept?: string[]
+            whatChanged?: string[]
+            nextStep?: string
+          }
+        } = {}
+
+        try {
+          data = responseText ? JSON.parse(responseText) : {}
+        } catch {
+          throw new Error(
+            `Song Workshop draft API did not return JSON. Status: ${response.status}`,
+          )
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create cohesive draft.')
+        }
+
+        setDraftResult(data.draft || null)
+        setDraftMessage('Cohesive draft created.')
+      } catch (error) {
+        setDraftMessage(
+          error instanceof Error
+            ? error.message
+            : 'Failed to create cohesive draft.',
+        )
+      } finally {
+        setDrafting(false)
+      }
+    }
 
   const analyzeSongIdea = async () => {
       if (!hasLyrics) {
@@ -169,7 +244,52 @@ export default function SongWorkshopPanel({
                       </ul>
                     </div>
                   )}
+                  {draftMessage && (
+  <p className="mt-3 text-xs text-gray-400">
+    {draftMessage}
+  </p>
+)}
 
+{draftResult && (
+  <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
+    <h2 className="text-sm font-semibold text-gray-200">
+      Cohesive draft
+    </h2>
+
+    <pre className="mt-3 whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
+      {draftResult.lyric}
+    </pre>
+
+    {draftResult.whatWasKept && (
+      <div className="mt-4 text-sm text-gray-400">
+        <div className="font-medium text-gray-300">What was kept:</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {draftResult.whatWasKept.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {draftResult.whatChanged && (
+      <div className="mt-4 text-sm text-gray-400">
+        <div className="font-medium text-gray-300">What changed:</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {draftResult.whatChanged.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {draftResult.nextStep && (
+      <div className="mt-4 text-sm text-gray-400">
+        <span className="font-medium text-gray-300">Recommended next step:</span>{' '}
+        {draftResult.nextStep}
+      </div>
+    )}
+  </div>
+)}
                   <div>
                     <span className="font-medium text-gray-300">Recommended next step:</span>{' '}
                     {analysisResult.nextStep}
@@ -177,13 +297,14 @@ export default function SongWorkshopPanel({
                 </div>
               </div>
             )}
-          <button
-            type="button"
-            disabled={!hasLyrics}
-            className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
-          >
-            Create cohesive draft
-          </button>
+         <button
+          type="button"
+          onClick={createCohesiveDraft}
+          disabled={!hasLyrics || drafting}
+          className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+        >
+          {drafting ? 'Creating cohesive draft...' : 'Create cohesive draft'}
+        </button>
         </div>
       </div>
     </section>
