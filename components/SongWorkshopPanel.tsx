@@ -47,6 +47,7 @@ const sourceLyricsIsTruncated =
       setDraftMessage('')
       setDraftResult(null)
       setJustCopiedDraft(false)
+      setJustCopiedAnalysis(false)
     }, [lyrics])
 
     
@@ -78,6 +79,7 @@ const sourceLyricsIsTruncated =
     nextStep?: string
   } | null>(null)
 
+  const [justCopiedAnalysis, setJustCopiedAnalysis] = useState(false)
 
   const copyCohesiveDraft = async () => {
       if (!draftResult?.lyric) {
@@ -204,6 +206,60 @@ const sourceLyricsIsTruncated =
         setAnalyzing(false)
       }
     }
+
+
+    const buildAnalysisCopyText = () => {
+      if (!analysisResult) {
+        return ''
+      }
+
+      return [
+        'SONG WORKSHOP ANALYSIS',
+        '',
+        `Project: ${songTitle || 'Untitled project'}`,
+        `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+        '',
+        'Core theme:',
+        analysisResult.coreTheme || '',
+        '',
+        'Emotional centre:',
+        analysisResult.emotionalCentre || '',
+        '',
+        'How the fragments connect:',
+        analysisResult.fragmentConnection || '',
+        '',
+        'Main weakness:',
+        analysisResult.mainWeakness || '',
+        '',
+        'Suggested song shape:',
+        ...(analysisResult.suggestedShape || []).map((item) => `- ${item}`),
+        '',
+        'Recommended next step:',
+        analysisResult.nextStep || '',
+      ].join('\n')
+    }
+
+    const copySongAnalysis = async () => {
+      const copyText = buildAnalysisCopyText()
+
+      if (!copyText) {
+        setAnalysisMessage('Analyze the song idea before copying.')
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(copyText)
+        setJustCopiedAnalysis(true)
+        setAnalysisMessage('Song analysis copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedAnalysis(false)
+        }, 1500)
+      } catch {
+        setAnalysisMessage('Could not copy song analysis.')
+      }
+    }
+
 
     const useDraftInEditor = () => {
   if (!draftResult?.lyric) {
@@ -354,111 +410,60 @@ const sourceLyricsIsTruncated =
               </p>
             )}
 
-            {analysisResult && (
-              <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
-                <h2 className="text-sm font-semibold text-gray-200">
-                  Song idea analysis
-                </h2>
-
-                <div className="mt-3 grid gap-3 text-sm text-gray-400">
-                  <div>
-                    <span className="font-medium text-gray-300">Core theme:</span>{' '}
-                    {analysisResult.coreTheme}
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-gray-300">Emotional centre:</span>{' '}
-                    {analysisResult.emotionalCentre}
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-gray-300">How the fragments connect:</span>{' '}
-                    {analysisResult.fragmentConnection}
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-gray-300">Main weakness:</span>{' '}
-                    {analysisResult.mainWeakness}
-                  </div>
-
-                  {analysisResult.suggestedShape && (
-                    <div>
-                      <div className="font-medium text-gray-300">Suggested song shape:</div>
-                      <ul className="mt-2 list-disc space-y-1 pl-5">
-                        {analysisResult.suggestedShape.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {draftMessage && (
-  <p className="mt-3 text-xs text-gray-400">
-    {draftMessage}
-  </p>
-)}
-
-{draftResult && (
+{analysisResult && (
   <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
-   <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="text-sm font-semibold text-gray-200">
-        Cohesive draft
+        Song idea analysis
       </h2>
 
-      <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={useDraftInEditor}
-            disabled={!draftResult.lyric || !onUseDraft}
-            className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-gray-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
-          >
-            Use draft in editor
-          </button>
-
-          <button
-            type="button"
-            onClick={copyCohesiveDraft}
-            disabled={!draftResult.lyric}
-            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
-          >
-            {justCopiedDraft ? 'Copied ✓' : 'Copy draft'}
-          </button>
-        </div>
+      <button
+        type="button"
+        onClick={copySongAnalysis}
+        disabled={!analysisResult}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedAnalysis ? 'Copied ✓' : 'Copy analysis'}
+      </button>
     </div>
 
-    <pre className="mt-3 whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
-      {draftResult.lyric}
-    </pre>
-
-    {draftResult.whatWasKept && (
-      <div className="mt-4 text-sm text-gray-400">
-        <div className="font-medium text-gray-300">What was kept:</div>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          {draftResult.whatWasKept.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+    <div className="mt-3 grid gap-3 text-sm text-gray-400">
+      <div>
+        <span className="font-medium text-gray-300">Core theme:</span>{' '}
+        {analysisResult.coreTheme}
       </div>
-    )}
 
-    {draftResult.whatChanged && (
-      <div className="mt-4 text-sm text-gray-400">
-        <div className="font-medium text-gray-300">What changed:</div>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          {draftResult.whatChanged.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+      <div>
+        <span className="font-medium text-gray-300">Emotional centre:</span>{' '}
+        {analysisResult.emotionalCentre}
       </div>
-    )}
 
-    {draftResult.nextStep && (
-      <div className="mt-4 text-sm text-gray-400">
-        <span className="font-medium text-gray-300">Recommended next step:</span>{' '}
-        {draftResult.nextStep}
+      <div>
+        <span className="font-medium text-gray-300">
+          How the fragments connect:
+        </span>{' '}
+        {analysisResult.fragmentConnection}
       </div>
-    )}
-  </div>
-)}
+
+      <div>
+        <span className="font-medium text-gray-300">Main weakness:</span>{' '}
+        {analysisResult.mainWeakness}
+      </div>
+
+      {analysisResult.suggestedShape && (
+        <div>
+          <div className="font-medium text-gray-300">
+            Suggested song shape:
+          </div>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {analysisResult.suggestedShape.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+     
                   <div>
                     <span className="font-medium text-gray-300">Recommended next step:</span>{' '}
                     {analysisResult.nextStep}
