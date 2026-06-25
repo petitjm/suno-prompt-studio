@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   const lyrics = String(body.lyrics || '').trim()
   const songTitle = String(body.songTitle || '').trim()
   const songVersionTitle = String(body.songVersionTitle || '').trim()
+  const workshopNotes = String(body.workshopNotes || '').trim()
 
   if (!lyrics) {
     return NextResponse.json(
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
     context: {
       songTitle,
       songVersionTitle,
+      workshopNotes,
     },
   }
 

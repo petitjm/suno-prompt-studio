@@ -45,7 +45,9 @@ export default function SongWorkshopPanel({
       whatChanged?: string[]
       nextStep?: string
     } | null>(null)
+    
 
+    const [workshopNotes, setWorkshopNotes] = useState('')
 
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisMessage, setAnalysisMessage] = useState('')
@@ -96,11 +98,12 @@ export default function SongWorkshopPanel({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            lyrics,
-            songTitle,
-            songVersionTitle,
-          }),
-        })
+              lyrics,
+              songTitle,
+              songVersionTitle,
+              workshopNotes,
+            }),
+                    })
 
         const responseText = await response.text()
 
@@ -158,10 +161,11 @@ export default function SongWorkshopPanel({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            lyrics,
-            songTitle,
-            songVersionTitle,
-          }),
+              lyrics,
+              songTitle,
+              songVersionTitle,
+              workshopNotes,
+            }),
         })
 
         const data = await response.json()
@@ -240,6 +244,26 @@ export default function SongWorkshopPanel({
           </div>
         </div>
       </div>
+
+      <div className="mb-4 rounded border border-gray-800 bg-gray-900/70 p-4">
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-200">
+              Workshop notes
+            </span>
+            <span className="mt-1 block text-sm text-gray-400">
+              Optional creative direction for the song: theme, emotional intent, genre,
+              voice, structure, what to preserve, or what feels wrong.
+            </span>
+
+            <textarea
+              value={workshopNotes}
+              onChange={(event) => setWorkshopNotes(event.target.value)}
+              placeholder="Example: Connect the disconnected verses through chance and fortune. Keep the voice plain-spoken, emotional, and suitable for a British male acoustic singer-songwriter."
+              className="mt-3 min-h-28 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
+            />
+          </label>
+        </div>
+
 
       <div className="rounded border border-gray-800 bg-gray-900/70 p-4">
         <h2 className="text-sm font-semibold text-gray-200">
