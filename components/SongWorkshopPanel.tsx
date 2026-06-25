@@ -9,6 +9,7 @@ type SongWorkshopPanelProps = {
   songTitle: string
   songVersionTitle: string
   onUseDraft?: (draft: string) => void
+  onEditLyrics?: () => void
 }
 
 
@@ -19,8 +20,12 @@ export default function SongWorkshopPanel({
   songTitle,
   songVersionTitle,
   onUseDraft,
+  onEditLyrics,
 }: SongWorkshopPanelProps) {
   const hasLyrics = lyrics.trim().length > 0
+  const lyricsPreview = hasLyrics
+      ? lyrics.trim().slice(0, 700)
+      : ''
 
   const skipNextLyricsClearRef = useRef(false)
 
@@ -244,6 +249,41 @@ export default function SongWorkshopPanel({
           </div>
         </div>
       </div>
+
+      <div className="mb-4 rounded border border-gray-800 bg-gray-900/70 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-200">
+                Source lyrics from Write
+              </h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Song Workshop uses the current lyrics/fragments from the Write editor.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onEditLyrics}
+              disabled={!onEditLyrics}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              Edit lyrics in Write
+            </button>
+          </div>
+
+          {hasLyrics ? (
+            <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-3 text-xs text-gray-400">
+              {lyricsPreview}
+              {lyrics.trim().length > lyricsPreview.length ? '\n\n…' : ''}
+            </pre>
+          ) : (
+            <p className="mt-3 rounded border border-gray-800 bg-gray-950 p-3 text-sm text-gray-500">
+              No lyrics or fragments available yet. Add rough ideas in Write, then return
+              to Develop.
+            </p>
+          )}
+        </div>
+
 
       <div className="mb-4 rounded border border-gray-800 bg-gray-900/70 p-4">
           <label className="block">
