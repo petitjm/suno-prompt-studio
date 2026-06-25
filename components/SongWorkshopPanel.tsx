@@ -22,14 +22,26 @@ export default function SongWorkshopPanel({
   onUseDraft,
   onEditLyrics,
 }: SongWorkshopPanelProps) {
-  const hasLyrics = lyrics.trim().length > 0
-  const lyricsPreview = hasLyrics
-      ? lyrics.trim().slice(0, 700)
-      : ''
+  
+const [showFullSourceLyrics, setShowFullSourceLyrics] = useState(false)
 
+
+
+const hasLyrics = lyrics.trim().length > 0
+  const trimmedLyrics = lyrics.trim()
+
+  const sourceLyricsPreview =
+  hasLyrics && !showFullSourceLyrics
+    ? trimmedLyrics.slice(0, 700)
+    : trimmedLyrics
+
+const sourceLyricsIsTruncated =
+  hasLyrics && trimmedLyrics.length > sourceLyricsPreview.length
+  
   const skipNextLyricsClearRef = useRef(false)
 
   useEffect(() => {
+      setShowFullSourceLyrics(false)
       setAnalysisMessage('')
       setAnalysisResult(null)
       setDraftMessage('')
@@ -37,6 +49,7 @@ export default function SongWorkshopPanel({
       setJustCopiedDraft(false)
     }, [lyrics])
 
+    
 
   const [justCopiedDraft, setJustCopiedDraft] = useState(false)
 
@@ -270,18 +283,29 @@ export default function SongWorkshopPanel({
               Edit lyrics in Write
             </button>
           </div>
+            {hasLyrics ? (
+              <>
+                <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-3 text-xs text-gray-400">
+                  {sourceLyricsPreview}
+                  {sourceLyricsIsTruncated ? '\n\n…' : ''}
+                </pre>
 
-          {hasLyrics ? (
-            <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-3 text-xs text-gray-400">
-              {lyricsPreview}
-              {lyrics.trim().length > lyricsPreview.length ? '\n\n…' : ''}
-            </pre>
-          ) : (
-            <p className="mt-3 rounded border border-gray-800 bg-gray-950 p-3 text-sm text-gray-500">
-              No lyrics or fragments available yet. Add rough ideas in Write, then return
-              to Develop.
-            </p>
-          )}
+                {trimmedLyrics.length > 700 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullSourceLyrics((current) => !current)}
+                    className="mt-2 rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900"
+                  >
+                    {showFullSourceLyrics ? 'Show less' : 'Show full source lyrics'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="mt-3 rounded border border-gray-800 bg-gray-950 p-3 text-sm text-gray-500">
+                No lyrics or fragments available yet. Add rough ideas in Write, then return
+                to Develop.
+              </p>
+            )}
         </div>
 
 
