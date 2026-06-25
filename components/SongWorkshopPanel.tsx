@@ -7,6 +7,7 @@ type SongWorkshopPanelProps = {
   songTitle: string
   songVersionTitle: string
   onUseDraft?: (draft: string) => void
+  onSendDraftToCompare?: (draft: string) => void
   onEditLyrics?: () => void
 }
 
@@ -33,6 +34,7 @@ export default function SongWorkshopPanel({
   songTitle,
   songVersionTitle,
   onUseDraft,
+  onSendDraftToCompare,
   onEditLyrics,
 }: SongWorkshopPanelProps) {
   const [showFullSourceLyrics, setShowFullSourceLyrics] = useState(false)
@@ -319,6 +321,22 @@ export default function SongWorkshopPanel({
       setDraftMessage('Could not copy cohesive draft.')
     }
   }
+
+  const sendDraftToCompare = () => {
+      if (!draftResult?.lyric) {
+        setDraftMessage('Create a cohesive draft before sending it to compare.')
+        return
+      }
+
+      if (!onSendDraftToCompare) {
+        setDraftMessage('The compare panel is not available for this draft.')
+        return
+      }
+
+      onSendDraftToCompare(draftResult.lyric)
+      setDraftMessage('Cohesive draft sent to compare.')
+    }
+
 
   const useDraftInEditor = () => {
     if (!draftResult?.lyric) {
@@ -617,6 +635,16 @@ export default function SongWorkshopPanel({
               </h2>
 
               <div className="flex flex-wrap gap-2">
+
+              <button
+                  type="button"
+                  onClick={sendDraftToCompare}
+                  disabled={!draftResult.lyric || !onSendDraftToCompare}
+                  className="rounded bg-blue-700 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                >
+                  Send draft to compare
+                </button>
+
                 <button
                   type="button"
                   onClick={useDraftInEditor}

@@ -2558,6 +2558,10 @@ return (
                     setPerformanceSheet(draft)
                     handleModeChange('write')
                   }}
+                  onSendDraftToCompare={(draft) => {
+                      console.log('Workshop draft for compare:', draft)
+                      handleModeChange('write')
+                    }}
                   onEditLyrics={() => handleModeChange('write')}
                 />
             </div>
