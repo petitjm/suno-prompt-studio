@@ -2559,8 +2559,31 @@ return (
                     handleModeChange('write')
                   }}
                   onSendDraftToCompare={(draft) => {
-                      console.log('Workshop draft for compare:', draft)
+                      setCompareLeftText(performanceSheet)
+                      setCompareRightText(draft)
+                      setCompareLeftTitle('Current Write lyrics')
+                      setCompareRightTitle('Song Workshop draft')
+                      setLastRewriteTargetLabel('Song Workshop draft')
+                      setCompareUpdateMessage(
+                        'Song Workshop draft sent to compare. Original is on the left. Workshop draft is on the right.',
+                      )
+                      setFlashLeftPanel(true)
+                      setFlashRightPanel(true)
                       handleModeChange('write')
+
+                      window.setTimeout(() => {
+                        setFlashLeftPanel(false)
+                        setFlashRightPanel(false)
+                      }, 600)
+
+                      window.setTimeout(() => {
+                        document
+                          .getElementById('rewrite-compare-preview')
+                          ?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                      }, 150)
                     }}
                   onEditLyrics={() => handleModeChange('write')}
                 />
