@@ -1472,21 +1472,225 @@ if (!userEmail) {
 }
 
 const getDiffLines = (left: string, right: string) => {
-  const leftLines = left.split('\n')
-  const rightLines = right.split('\n')
-  const max = Math.max(leftLines.length, rightLines.length)
+  type DiffRow = { left: string; right: string; changed: boolean }
+  type SongBlock = {
+    key: string
+    heading: string
+    lines: string[]
+  }
 
-  const rows = []
+  const normaliseLineForDiff = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}' ]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim()
 
-  for (let i = 0; i < max; i++) {
-    const l = leftLines[i] || ''
-    const r = rightLines[i] || ''
+  const normaliseHeading = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/^\s*\[/, '')
+      .replace(/\]\s*$/, '')
+      .replace(/[^\p{L}\p{N} ]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim()
 
-    rows.push({
-      left: l,
-      right: r,
-      changed: l !== r,
-    })
+  const getSectionBase = (line: string) => {
+    const normalised = normaliseHeading(line)
+
+    if (/^verse\s*\d*$/.test(normalised)) return 'verse'
+    if (/^chorus\s*\d*$/.test(normalised)) return 'chorus'
+    if (/^bridge\s*\d*$/.test(normalised)) return 'bridge'
+    if (/^pre\s*chorus\s*\d*$/.test(normalised)) return 'prechorus'
+    if (/^prechorus\s*\d*$/.test(normalised)) return 'prechorus'
+    if (/^intro\s*\d*$/.test(normalised)) return 'intro'
+    if (/^outro\s*\d*$/.test(normalised)) return 'outro'
+    if (/^final\s*chorus\s*\d*$/.test(normalised)) return 'finalchorus'
+
+    return ''
+  }
+
+  const getExplicitSectionNumber = (line: string) => {
+    const match = normaliseHeading(line).match(/(\d+)$/)
+    return match ? Number(match[1]) : null
+  }
+
+  const isSongSectionHeading = (line: string) => Boolean(getSectionBase(line))
+
+  const splitIntoBlocks = (text: string) => {
+    const lines = text.split('\n')
+    const counts: Record<string, number> = {}
+    const blocks: SongBlock[] = []
+
+    let currentBlock: SongBlock = {
+      key: 'preamble',
+      heading: '',
+      lines: [],
+    }
+
+    const finishCurrentBlock = () => {
+      if (currentBlock.heading || currentBlock.lines.some((line) => line.trim())) {
+        blocks.push(currentBlock)
+      }
+    }
+
+    for (const line of lines) {
+      const base = getSectionBase(line)
+
+      if (base) {
+        finishCurrentBlock()
+
+        const explicitNumber = getExplicitSectionNumber(line)
+
+        counts[base] = explicitNumber || (counts[base] || 0) + 1
+
+        currentBlock = {
+          key: `${base}-${counts[base]}`,
+          heading: line,
+          lines: [],
+        }
+
+        continue
+      }
+
+      currentBlock.lines.push(line)
+    }
+
+    finishCurrentBlock()
+
+    return blocks
+  }
+
+  const wordsForLine = (value: string) =>
+    normaliseLineForDiff(value)
+      .split(' ')
+      .filter(Boolean)
+
+  const lineSimilarity = (leftLine: string, rightLine: string) => {
+    const leftNormalised = normaliseLineForDiff(leftLine)
+    const rightNormalised = normaliseLineForDiff(rightLine)
+
+    if (!leftNormalised && !rightNormalised) return 1
+    if (!leftNormalised || !rightNormalised) return 0
+    if (leftNormalised === rightNormalised) return 1
+
+    const leftWords = new Set(wordsForLine(leftLine))
+    const rightWords = new Set(wordsForLine(rightLine))
+
+    if (!leftWords.size || !rightWords.size) return 0
+
+    const shared = [...leftWords].filter((word) => rightWords.has(word)).length
+
+    return shared / Math.max(1, Math.min(leftWords.size, rightWords.size))
+  }
+
+  const alignLines = (leftLines: string[], rightLines: string[]) => {
+    const rows: DiffRow[] = []
+
+    let leftIndex = 0
+    let rightIndex = 0
+
+    while (leftIndex < leftLines.length || rightIndex < rightLines.length) {
+      const leftLine = leftLines[leftIndex] || ''
+      const rightLine = rightLines[rightIndex] || ''
+
+      if (leftIndex >= leftLines.length) {
+        rows.push({ left: '', right: rightLine, changed: true })
+        rightIndex++
+        continue
+      }
+
+      if (rightIndex >= rightLines.length) {
+        rows.push({ left: leftLine, right: '', changed: true })
+        leftIndex++
+        continue
+      }
+
+      const directSimilarity = lineSimilarity(leftLine, rightLine)
+
+      if (directSimilarity >= 0.3) {
+        rows.push({
+          left: leftLine,
+          right: rightLine,
+          changed:
+            normaliseLineForDiff(leftLine) !== normaliseLineForDiff(rightLine),
+        })
+
+        leftIndex++
+        rightIndex++
+        continue
+      }
+
+      const nextLeftSimilarity =
+        leftIndex + 1 < leftLines.length
+          ? lineSimilarity(leftLines[leftIndex + 1], rightLine)
+          : 0
+
+      const nextRightSimilarity =
+        rightIndex + 1 < rightLines.length
+          ? lineSimilarity(leftLine, rightLines[rightIndex + 1])
+          : 0
+
+      if (nextLeftSimilarity > nextRightSimilarity && nextLeftSimilarity >= 0.3) {
+        rows.push({ left: leftLine, right: '', changed: true })
+        leftIndex++
+        continue
+      }
+
+      if (nextRightSimilarity >= 0.3) {
+        rows.push({ left: '', right: rightLine, changed: true })
+        rightIndex++
+        continue
+      }
+
+      rows.push({
+        left: leftLine,
+        right: rightLine,
+        changed:
+          normaliseLineForDiff(leftLine) !== normaliseLineForDiff(rightLine),
+      })
+
+      leftIndex++
+      rightIndex++
+    }
+
+    return rows
+  }
+
+  const leftBlocks = splitIntoBlocks(left)
+  const rightBlocks = splitIntoBlocks(right)
+
+  const leftBlocksByKey = new Map(leftBlocks.map((block) => [block.key, block]))
+  const rightBlocksByKey = new Map(rightBlocks.map((block) => [block.key, block]))
+
+  const orderedKeys = [
+    ...leftBlocks.map((block) => block.key),
+    ...rightBlocks
+      .map((block) => block.key)
+      .filter((key) => !leftBlocksByKey.has(key)),
+  ]
+
+  const rows: DiffRow[] = []
+
+  for (const key of orderedKeys) {
+    const leftBlock = leftBlocksByKey.get(key) || null
+    const rightBlock = rightBlocksByKey.get(key) || null
+
+    if (!leftBlock && !rightBlock) continue
+
+    if (key !== 'preamble') {
+      rows.push({
+        left: leftBlock?.heading || '',
+        right: rightBlock?.heading || '',
+        changed:
+          normaliseHeading(leftBlock?.heading || '') !==
+          normaliseHeading(rightBlock?.heading || ''),
+      })
+    }
+
+    rows.push(
+      ...alignLines(leftBlock?.lines || [], rightBlock?.lines || []),
+    )
   }
 
   return rows
@@ -1494,20 +1698,118 @@ const getDiffLines = (left: string, right: string) => {
 
 
 const getWordDiffParts = (left: string, right: string) => {
-  const leftWords = left.split(/(\s+)/)
-  const rightWords = right.split(/(\s+)/)
-  const max = Math.max(leftWords.length, rightWords.length)
+  type DiffToken = {
+    text: string
+    comparable: string
+    highlightable: boolean
+  }
 
-  const leftParts = []
-  const rightParts = []
+  const tokeniseForDiff = (value: string): DiffToken[] => {
+    const matches = value.match(/\p{L}+|\p{N}+|\s+|[^\s\p{L}\p{N}]+/gu) || []
 
-  for (let i = 0; i < max; i++) {
-    const l = leftWords[i] || ''
-    const r = rightWords[i] || ''
-    const changed = l !== r
+    return matches.map((text) => {
+      const comparable = /[\p{L}\p{N}]/u.test(text)
+        ? text.toLowerCase()
+        : text
 
-    leftParts.push({ text: l, changed })
-    rightParts.push({ text: r, changed })
+      return {
+        text,
+        comparable,
+        highlightable: /[\p{L}\p{N}]/u.test(text),
+      }
+    })
+  }
+
+  const leftTokens = tokeniseForDiff(left)
+  const rightTokens = tokeniseForDiff(right)
+
+  const plainResult = {
+    leftParts: leftTokens.map((token) => ({
+      text: token.text,
+      changed: false,
+    })),
+    rightParts: rightTokens.map((token) => ({
+      text: token.text,
+      changed: false,
+    })),
+  }
+
+  if (!left.trim() || !right.trim()) {
+    return plainResult
+  }
+
+  const table = Array.from({ length: leftTokens.length + 1 }, () =>
+    Array(rightTokens.length + 1).fill(0),
+  )
+
+  for (let leftIndex = leftTokens.length - 1; leftIndex >= 0; leftIndex--) {
+    for (let rightIndex = rightTokens.length - 1; rightIndex >= 0; rightIndex--) {
+      if (
+        leftTokens[leftIndex].comparable === rightTokens[rightIndex].comparable
+      ) {
+        table[leftIndex][rightIndex] =
+          table[leftIndex + 1][rightIndex + 1] + 1
+      } else {
+        table[leftIndex][rightIndex] = Math.max(
+          table[leftIndex + 1][rightIndex],
+          table[leftIndex][rightIndex + 1],
+        )
+      }
+    }
+  }
+
+  const leftParts: { text: string; changed: boolean }[] = []
+  const rightParts: { text: string; changed: boolean }[] = []
+
+  let leftIndex = 0
+  let rightIndex = 0
+
+  while (leftIndex < leftTokens.length && rightIndex < rightTokens.length) {
+    const leftToken = leftTokens[leftIndex]
+    const rightToken = rightTokens[rightIndex]
+
+    if (leftToken.comparable === rightToken.comparable) {
+      leftParts.push({ text: leftToken.text, changed: false })
+      rightParts.push({ text: rightToken.text, changed: false })
+      leftIndex++
+      rightIndex++
+    } else if (
+      table[leftIndex + 1][rightIndex] >= table[leftIndex][rightIndex + 1]
+    ) {
+      leftParts.push({
+        text: leftToken.text,
+        changed: leftToken.highlightable,
+      })
+      leftIndex++
+    } else {
+      rightParts.push({
+        text: rightToken.text,
+        changed: rightToken.highlightable,
+      })
+      rightIndex++
+    }
+  }
+
+  while (leftIndex < leftTokens.length) {
+    const leftToken = leftTokens[leftIndex]
+
+    leftParts.push({
+      text: leftToken.text,
+      changed: leftToken.highlightable,
+    })
+
+    leftIndex++
+  }
+
+  while (rightIndex < rightTokens.length) {
+    const rightToken = rightTokens[rightIndex]
+
+    rightParts.push({
+      text: rightToken.text,
+      changed: rightToken.highlightable,
+    })
+
+    rightIndex++
   }
 
   return { leftParts, rightParts }
