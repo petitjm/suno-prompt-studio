@@ -2550,20 +2550,62 @@ return (
         </button>
 
         <div className="flex flex-col gap-2">
-          <div className="flex flex-col gap-2">
-              <SidebarItem icon="✍️" label="Write" active={mode === 'write'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('write')} />
-              <SidebarItem icon="🧭" label="Develop" active={mode === 'develop'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('develop')} />
-              <SidebarItem icon="🎸" label="Chords" active={mode === 'chords'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('chords')} />
-              <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('sheet')} />
-              <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('rehearse')} />
-              <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('perform')} />
-              <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('video')} />
-</div>
-          <SidebarItem icon="📄" label="Sheet" active={mode === 'sheet'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('sheet')} />
-          <SidebarItem icon="🎧" label="Rehearse" active={mode === 'rehearse'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('rehearse')} />
-          <SidebarItem icon="🎤" label="Perform" active={mode === 'perform'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('perform')} />
-          <SidebarItem icon="🎬" label="Video" active={mode === 'video'} collapsed={sidebarCollapsed} onClick={() => handleModeChange('video')} />
-        </div>
+              <SidebarItem
+                icon="✍️"
+                label="Write"
+                active={mode === 'write'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('write')}
+              />
+
+              <SidebarItem
+                icon="🧭"
+                label="Develop"
+                active={mode === 'develop'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('develop')}
+              />
+
+              <SidebarItem
+                icon="🎸"
+                label="Chords"
+                active={mode === 'chords'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('chords')}
+              />
+
+              <SidebarItem
+                icon="📄"
+                label="Sheet"
+                active={mode === 'sheet'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('sheet')}
+              />
+
+              <SidebarItem
+                icon="🎧"
+                label="Rehearse"
+                active={mode === 'rehearse'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('rehearse')}
+              />
+
+              <SidebarItem
+                icon="🎤"
+                label="Perform"
+                active={mode === 'perform'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('perform')}
+              />
+
+              <SidebarItem
+                icon="🎬"
+                label="Video"
+                active={mode === 'video'}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleModeChange('video')}
+              />
+            </div>
       </div>
 
 <div className="flex-1 min-w-0 flex flex-col">
