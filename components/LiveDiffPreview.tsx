@@ -31,79 +31,94 @@ export default function LiveDiffPreview({
   previewRightRef,
   editedDiffRows,
   highlightedLines,
-  syncPreviewScroll,
   scrollCompareEditorsToLine,
   getWordDiffParts,
 }: LiveDiffPreviewProps) {
   return (
     <div className="mt-4">
-      <h4 className="text-sm text-gray-400 mb-2">Live Difference Preview</h4>
+      <h4 className="mb-2 text-sm text-gray-400">
+        Live Difference Preview
+      </h4>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
-        <div
-          ref={previewLeftRef}
-          onScroll={() => syncPreviewScroll('left')}
-          className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
-        >
-          {editedDiffRows.map((row, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                if (row.changed) scrollCompareEditorsToLine(i)
-              }}
-              title={row.changed ? 'Click to jump editors to this line' : undefined}
-              className={`px-1 ${
-                row.changed
-                  ? 'bg-yellow-900/40 cursor-pointer hover:bg-yellow-800/50'
-                  : ''
-              } ${
-                highlightedLines.includes(i)
-                  ? 'bg-green-500/20 shadow-[0_0_8px_rgba(34,197,94,0.5)] rounded'
-                  : ''
-              }`}
-            >
-              {getWordDiffParts(row.left, row.right).leftParts.map((part, j) => (
-                <span
-                  key={j}
-                  className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
+      <div
+        ref={previewLeftRef}
+        className="max-h-[460px] overflow-y-auto rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100"
+      >
+        <div className="grid grid-cols-[1fr_3rem_1fr] gap-4">
+          {editedDiffRows.map((row, index) => {
+            const wordDiff = getWordDiffParts(row.left, row.right)
+            const isHighlighted = highlightedLines.includes(index)
+
+            return (
+              <React.Fragment key={index}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (row.changed) {
+                      scrollCompareEditorsToLine(index)
+                    }
+                  }}
+                  title={
+                    row.changed
+                      ? 'Click to jump editors to this line'
+                      : undefined
+                  }
+                  className={`min-h-7 whitespace-pre-wrap border-l px-2 text-left ${
+                    row.changed
+                      ? 'border-yellow-700/50 cursor-pointer hover:bg-yellow-900/10'
+                      : 'border-transparent'
+                  } ${
+                    isHighlighted
+                      ? 'bg-green-500/20 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
+                      : ''
+                  }`}
                 >
-                  {part.text}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
+                  {row.left || ' '}
+                </button>
 
-        <div className="hidden md:block w-[112px]" />
+                <div />
 
-        <div
-          ref={previewRightRef}
-          onScroll={() => syncPreviewScroll('right')}
-          className="bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto"
-        >
-          {editedDiffRows.map((row, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                if (row.changed) scrollCompareEditorsToLine(i)
-              }}
-              title={row.changed ? 'Click to jump editors to this line' : undefined}
-              className={
-                row.changed
-                  ? 'bg-yellow-900/40 px-1 rounded cursor-pointer hover:bg-yellow-800/50'
-                  : 'px-1'
-              }
-            >
-              {getWordDiffParts(row.left, row.right).rightParts.map((part, j) => (
-                <span
-                  key={j}
-                  className={part.changed ? 'bg-yellow-700/60 rounded px-0.5' : ''}
+                <button
+                  
+                  type="button"
+                  onClick={() => {
+                    if (row.changed) {
+                      scrollCompareEditorsToLine(index)
+                    }
+                  }}
+                  title={
+                    row.changed
+                      ? 'Click to jump editors to this line'
+                      : undefined
+                  }
+                  className={`min-h-7 whitespace-pre-wrap border-l px-2 text-left ${
+                    row.changed
+                      ? 'border-yellow-700/50 cursor-pointer hover:bg-yellow-900/10'
+                      : 'border-transparent'
+                  } ${
+                    isHighlighted
+                      ? 'bg-green-500/20 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
+                      : ''
+                  }`}
                 >
-                  {part.text}
-                </span>
-              ))}
-            </div>
-          ))}
+                  {wordDiff.rightParts.length > 0
+                    ? wordDiff.rightParts.map((part, partIndex) => (
+                        <span
+                          key={partIndex}
+                          className={
+                            part.changed && part.text.trim()
+                              ? 'rounded bg-yellow-700/40 px-0.5'
+                              : ''
+                          }
+                        >
+                          {part.text}
+                        </span>
+                      ))
+                    : ' '}
+                </button>
+              </React.Fragment>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -1724,19 +1724,39 @@ const getWordDiffParts = (left: string, right: string) => {
   const rightTokens = tokeniseForDiff(right)
 
   const plainResult = {
-    leftParts: leftTokens.map((token) => ({
-      text: token.text,
-      changed: false,
-    })),
-    rightParts: rightTokens.map((token) => ({
-      text: token.text,
-      changed: false,
-    })),
-  }
+      leftParts: leftTokens.map((token) => ({
+        text: token.text,
+        changed: false,
+      })),
+      rightParts: rightTokens.map((token) => ({
+        text: token.text,
+        changed: false,
+      })),
+    }
 
-  if (!left.trim() || !right.trim()) {
-    return plainResult
-  }
+    if (!left.trim() && right.trim()) {
+      return {
+        leftParts: plainResult.leftParts,
+        rightParts: rightTokens.map((token) => ({
+          text: token.text,
+          changed: token.highlightable,
+        })),
+      }
+    }
+
+    if (left.trim() && !right.trim()) {
+      return {
+        leftParts: leftTokens.map((token) => ({
+          text: token.text,
+          changed: token.highlightable,
+        })),
+        rightParts: plainResult.rightParts,
+      }
+    }
+
+    if (!left.trim() && !right.trim()) {
+      return plainResult
+    }
 
   const table = Array.from({ length: leftTokens.length + 1 }, () =>
     Array(rightTokens.length + 1).fill(0),
