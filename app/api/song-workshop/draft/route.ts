@@ -1,3 +1,5 @@
+
+import { buildSongWorkshopDraftPrompt } from '@/lib/songWorkshopPrompts'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -70,12 +72,23 @@ export async function POST(req: NextRequest) {
           ? 'This draft was created using the current Song Workshop analysis as additional context.'
           : 'This draft was created directly from the lyrics, workshop notes, and creative controls without a prior analysis pass.'
 
+
+    const modelPrompt = buildSongWorkshopDraftPrompt({
+      lyrics,
+      songTitle,
+      songVersionTitle,
+      workshopNotes,
+      workshopControls,
+      analysisResult,
+    })
+
   const draft = {
     title: songTitle || 'Spin the Wheel Again',
     versionTitle: songVersionTitle || 'Cohesive workshop draft',
     workshopNotes,
     workshopControls,
     analysisContext: analysisResult,
+    modelPrompt,
     lyric: `{title: Spin the Wheel Again}
 {artist: Michael Petitjean}
 

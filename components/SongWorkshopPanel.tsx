@@ -30,6 +30,7 @@ type DraftResult = {
   whatChanged?: string[]
   nextStep?: string
   analysisContext?: AnalysisResult | null
+  modelPrompt?: string
 }
 
 export default function SongWorkshopPanel({
@@ -730,6 +731,19 @@ export default function SongWorkshopPanel({
                 </ul>
               </div>
             )}
+
+
+        {draftResult.modelPrompt && (
+          <details className="mt-4 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
+            <summary className="cursor-pointer font-medium text-gray-300">
+              View model prompt
+            </summary>
+
+            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-gray-400">
+              {draftResult.modelPrompt}
+            </pre>
+          </details>
+        )}
 
 
             {draftResult.whatChanged && (
