@@ -29,6 +29,7 @@ type DraftResult = {
   workshopControlNotes?: string[]
   whatChanged?: string[]
   nextStep?: string
+  analysisContext?: AnalysisResult | null
 }
 
 export default function SongWorkshopPanel({
@@ -205,12 +206,13 @@ export default function SongWorkshopPanel({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+       body: JSON.stringify({
           lyrics,
           songTitle,
           songVersionTitle,
           workshopNotes,
           workshopControls,
+          analysisResult,
         }),
       })
 

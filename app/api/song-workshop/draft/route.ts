@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   const songVersionTitle = String(body.songVersionTitle || '').trim()
   const workshopNotes = String(body.workshopNotes || '').trim()
   const workshopControls = body.workshopControls || {}
+  const analysisResult = body.analysisResult || null
 
   const developmentFocus = String(
     workshopControls.developmentFocus || 'connect-fragments',
@@ -65,11 +66,16 @@ export async function POST(req: NextRequest) {
       ? 'Lines are shaped with performance flow, clear phrasing, and singable movement in mind.'
       : 'The draft prioritises lyric meaning first, with singability left open for later refinement.'
 
+      const analysisApproach = analysisResult
+          ? 'This draft was created using the current Song Workshop analysis as additional context.'
+          : 'This draft was created directly from the lyrics, workshop notes, and creative controls without a prior analysis pass.'
+
   const draft = {
     title: songTitle || 'Spin the Wheel Again',
     versionTitle: songVersionTitle || 'Cohesive workshop draft',
     workshopNotes,
     workshopControls,
+    analysisContext: analysisResult,
     lyric: `{title: Spin the Wheel Again}
 {artist: Michael Petitjean}
 
@@ -151,6 +157,7 @@ I'm bound to love in the end`,
       revisionApproach,
       preservationApproach,
       performanceApproach,
+      analysisApproach,
     ],
     whatChanged: [
       'The gambling image became the opening metaphor rather than the whole song.',
