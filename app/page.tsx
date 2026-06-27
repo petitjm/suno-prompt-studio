@@ -1731,8 +1731,17 @@ const getDiffLines = (left: string, right: string) => {
       rightIndex--
     }
 
-    return rows
-  }
+     return rows.filter((row) => {
+    const leftIsBlank = !row.left.trim()
+    const rightIsBlank = !row.right.trim()
+
+    if (leftIsBlank && rightIsBlank) {
+      return false
+    }
+
+    return true
+  })
+}
 
   const leftBlocks = splitIntoBlocks(left)
   const rightBlocks = splitIntoBlocks(right)
