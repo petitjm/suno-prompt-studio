@@ -23,12 +23,47 @@ export async function POST(req: NextRequest) {
   const workshopNotes = String(body.workshopNotes || '').trim()
   const workshopControls = body.workshopControls || {}
 
+  const developmentFocus = String(
+    workshopControls.developmentFocus || 'connect-fragments',
+  )
+  const changeIntensity = Number(workshopControls.changeIntensity || 3)
+  const preserveOriginal = Number(workshopControls.preserveOriginal || 4)
+  const emotionalDirectness = Number(workshopControls.emotionalDirectness || 3)
+  const singability = Number(workshopControls.singability || 4)
+
   if (!lyrics) {
     return NextResponse.json(
       { error: 'Lyrics or song fragments are required.' },
       { status: 400 },
     )
   }
+
+  const controlSummary = [
+    `Development focus: ${developmentFocus}`,
+    `Change intensity: ${changeIntensity}/5`,
+    `Preserve original phrases: ${preserveOriginal}/5`,
+    `Emotional directness: ${emotionalDirectness}/5`,
+    `Singability: ${singability}/5`,
+  ]
+
+  const revisionApproach =
+    changeIntensity >= 4
+      ? 'This draft takes a bolder restructuring approach while keeping the central chance-and-fortune idea.'
+      : changeIntensity <= 2
+        ? 'This draft keeps close to the original structure and makes only light connective changes.'
+        : 'This draft balances preservation with clearer structure and emotional progression.'
+
+  const preservationApproach =
+    preserveOriginal >= 4
+      ? 'Original images and phrases are deliberately preserved where possible.'
+      : preserveOriginal <= 2
+        ? 'The original idea is preserved, but the wording is allowed to move more freely.'
+        : 'Key original phrases are kept, while weaker connecting lines are reshaped.'
+
+  const performanceApproach =
+    singability >= 4
+      ? 'Lines are shaped with performance flow, clear phrasing, and singable movement in mind.'
+      : 'The draft prioritises lyric meaning first, with singability left open for later refinement.'
 
   const draft = {
     title: songTitle || 'Spin the Wheel Again',
@@ -110,6 +145,12 @@ I'm bound to love in the end`,
       'The trench scene.',
       'The train goodbye scene.',
       'The repeated “again and again” feeling.',
+    ],
+    workshopControlNotes: [
+      ...controlSummary,
+      revisionApproach,
+      preservationApproach,
+      performanceApproach,
     ],
     whatChanged: [
       'The gambling image became the opening metaphor rather than the whole song.',

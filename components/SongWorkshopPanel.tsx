@@ -25,6 +25,7 @@ type DraftResult = {
   versionTitle?: string
   lyric?: string
   whatWasKept?: string[]
+  workshopControlNotes?: string[]
   whatChanged?: string[]
   nextStep?: string
 }
@@ -681,6 +682,20 @@ export default function SongWorkshopPanel({
                 </ul>
               </div>
             )}
+
+            {draftResult.workshopControlNotes && (
+              <div className="mt-4 text-sm text-gray-400">
+                <div className="font-medium text-gray-300">
+                  Workshop control notes:
+                </div>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  {draftResult.workshopControlNotes.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
 
             {draftResult.whatChanged && (
               <div className="mt-4 text-sm text-gray-400">
