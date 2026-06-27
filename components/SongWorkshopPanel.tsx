@@ -80,21 +80,38 @@ export default function SongWorkshopPanel({
     singability,
   }
 
-  useEffect(() => {
-    setShowFullSourceLyrics(false)
-
-    if (skipNextLyricsClearRef.current) {
-      skipNextLyricsClearRef.current = false
-      return
+  const clearWorkshopOutput = () => {
+      setAnalysisMessage('')
+      setAnalysisResult(null)
+      setDraftMessage('')
+      setDraftResult(null)
+      setJustCopiedDraft(false)
+      setJustCopiedAnalysis(false)
     }
 
-    setAnalysisMessage('')
-    setAnalysisResult(null)
-    setDraftMessage('')
-    setDraftResult(null)
-    setJustCopiedDraft(false)
-    setJustCopiedAnalysis(false)
-  }, [lyrics])
+
+  useEffect(() => {
+      setShowFullSourceLyrics(false)
+
+      if (skipNextLyricsClearRef.current) {
+        skipNextLyricsClearRef.current = false
+        return
+      }
+
+      clearWorkshopOutput()
+    }, [lyrics])
+
+    useEffect(() => {
+      clearWorkshopOutput()
+    }, [
+      workshopNotes,
+      developmentFocus,
+      changeIntensity,
+      preserveOriginal,
+      emotionalDirectness,
+      singability,
+      ])
+
 
   const renderWorkshopSlider = ({
     label,
