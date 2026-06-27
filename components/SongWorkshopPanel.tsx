@@ -16,6 +16,7 @@ type AnalysisResult = {
   emotionalCentre?: string
   fragmentConnection?: string
   mainWeakness?: string
+  controlNotes?: string[]
   suggestedShape?: string[]
   nextStep?: string
 }
@@ -600,6 +601,21 @@ export default function SongWorkshopPanel({
                 </span>{' '}
                 {analysisResult.mainWeakness}
               </div>
+
+
+              {analysisResult.controlNotes && (
+  <div>
+    <div className="font-medium text-gray-300">
+      Workshop controls:
+    </div>
+    <ul className="mt-2 list-disc space-y-1 pl-5">
+      {analysisResult.controlNotes.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  </div>
+)}
+
 
               {analysisResult.suggestedShape && (
                 <div>

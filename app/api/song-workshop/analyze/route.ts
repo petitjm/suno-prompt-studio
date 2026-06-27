@@ -22,6 +22,21 @@ export async function POST(req: NextRequest) {
   const songVersionTitle = String(body.songVersionTitle || '').trim()
   const workshopNotes = String(body.workshopNotes || '').trim()
   const workshopControls = body.workshopControls || {}
+  const developmentFocus = String(
+      workshopControls.developmentFocus || 'connect-fragments',
+    )
+    const changeIntensity = Number(workshopControls.changeIntensity || 3)
+    const preserveOriginal = Number(workshopControls.preserveOriginal || 4)
+    const emotionalDirectness = Number(workshopControls.emotionalDirectness || 3)
+    const singability = Number(workshopControls.singability || 4)
+
+    const controlNotes = [
+      `Development focus: ${developmentFocus}`,
+      `Change intensity: ${changeIntensity}/5`,
+      `Preserve original phrases: ${preserveOriginal}/5`,
+      `Emotional directness: ${emotionalDirectness}/5`,
+      `Singability: ${singability}/5`,
+    ]
 
   if (!lyrics) {
     return NextResponse.json(
@@ -39,6 +54,7 @@ export async function POST(req: NextRequest) {
       'The fragments can connect if each verse becomes a different form of chance: gambling, survival, separation, love, or fate. The chorus should carry the larger idea rather than staying only in casino imagery.',
     mainWeakness:
       'The verses currently feel disconnected because the chorus does not yet fully explain why these different scenes belong together.',
+        controlNotes,
     suggestedShape: [
       'Verse 1: literal chance — gambling, debt, the wheel, Lady Luck.',
       'Chorus: the repeated human impulse to try again.',
