@@ -1,3 +1,5 @@
+
+import { buildSongWorkshopAnalysisPrompt } from '@/lib/songWorkshopPrompts'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -45,6 +47,16 @@ export async function POST(req: NextRequest) {
     )
   }
 
+
+  const modelPrompt = buildSongWorkshopAnalysisPrompt({
+      lyrics,
+      songTitle,
+      songVersionTitle,
+      workshopNotes,
+      workshopControls,
+    })
+
+
   const analysis = {
     coreTheme:
       'The song is exploring how chance, fortune, fate, risk, and emotional survival can shape a life.',
@@ -55,6 +67,7 @@ export async function POST(req: NextRequest) {
     mainWeakness:
       'The verses currently feel disconnected because the chorus does not yet fully explain why these different scenes belong together.',
         controlNotes,
+        modelPrompt,
     suggestedShape: [
       'Verse 1: literal chance — gambling, debt, the wheel, Lady Luck.',
       'Chorus: the repeated human impulse to try again.',

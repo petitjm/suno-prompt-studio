@@ -17,6 +17,7 @@ type AnalysisResult = {
   fragmentConnection?: string
   mainWeakness?: string
   controlNotes?: string[]
+  modelPrompt?: string
   suggestedShape?: string[]
   nextStep?: string
 }
@@ -624,17 +625,34 @@ export default function SongWorkshopPanel({
 
 
               {analysisResult.controlNotes && (
-  <div>
-    <div className="font-medium text-gray-300">
-      Workshop controls:
-    </div>
-    <ul className="mt-2 list-disc space-y-1 pl-5">
-      {analysisResult.controlNotes.map((item) => (
-        <li key={item}>{item}</li>
-      ))}
-    </ul>
-  </div>
-)}
+                  <div>
+                    <div className="font-medium text-gray-300">
+                      Workshop controls:
+                    </div>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                      {analysisResult.controlNotes.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+
+
+
+
+        {analysisResult.modelPrompt && (
+          <details className="mt-2 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
+            <summary className="cursor-pointer font-medium text-gray-300">
+              View analysis model prompt
+            </summary>
+
+            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-gray-400">
+              {analysisResult.modelPrompt}
+            </pre>
+          </details>
+        )}
+
 
 
               {analysisResult.suggestedShape && (
