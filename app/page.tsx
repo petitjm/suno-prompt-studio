@@ -225,6 +225,7 @@ export default function Page() {
   const compareRightRef = React.useRef<HTMLTextAreaElement | null>(null)
   const previewLeftRef = React.useRef<HTMLDivElement | null>(null)
   const previewRightRef = React.useRef<HTMLDivElement | null>(null)
+  const suppressCompareScrollSyncRef = React.useRef(false)
 
   const syncPreviewScroll = (source: 'left' | 'right') => {
   const src = source === 'left' ? previewLeftRef.current : previewRightRef.current
@@ -233,12 +234,16 @@ export default function Page() {
   tgt.scrollTop = src.scrollTop
 }
 
-const syncCompareScroll = (source: 'left' | 'right') => {
-  const src = source === 'left' ? compareLeftRef.current : compareRightRef.current
-  const tgt = source === 'left' ? compareRightRef.current : compareLeftRef.current
-  if (!src || !tgt) return
-  tgt.scrollTop = src.scrollTop
-}
+    const syncCompareScroll = (source: 'left' | 'right') => {
+      if (suppressCompareScrollSyncRef.current) return
+
+      const src = source === 'left' ? compareLeftRef.current : compareRightRef.current
+      const tgt = source === 'left' ? compareRightRef.current : compareLeftRef.current
+
+      if (!src || !tgt) return
+
+      tgt.scrollTop = src.scrollTop
+    }
 
 const [rewriteVoice, setRewriteVoice] = useState('british-natural') 
 const [rewriteTarget, setRewriteTarget] = useState<'left' | 'right' | 'main'>('right')
@@ -1472,22 +1477,35 @@ if (!userEmail) {
 }
 
 const getDiffLines = (left: string, right: string) => {
-  type DiffRow = { left: string; right: string; changed: boolean }
+  type DiffRow = {
+    left: string
+    right: string
+    changed: boolean
+    leftLineIndex: number | null
+    rightLineIndex: number | null
+  }
+
+  type SongLine = {
+    text: string
+    lineIndex: number
+  }
+
   type SongBlock = {
     key: string
     heading: string
-    lines: string[]
+    headingLineIndex: number | null
+    lines: SongLine[]
   }
 
   const normaliseLineForDiff = (value: string) =>
-    value
+    String(value)
       .toLowerCase()
       .replace(/[^\p{L}\p{N}' ]/gu, '')
       .replace(/\s+/g, ' ')
       .trim()
 
   const normaliseHeading = (value: string) =>
-    value
+    String(value)
       .toLowerCase()
       .replace(/^\s*\[/, '')
       .replace(/\]\s*$/, '')
@@ -1498,6 +1516,7 @@ const getDiffLines = (left: string, right: string) => {
   const getSectionBase = (line: string) => {
     const normalised = normaliseHeading(line)
 
+    if (/^final\s*chorus\s*\d*$/.test(normalised)) return 'finalchorus'
     if (/^verse\s*\d*$/.test(normalised)) return 'verse'
     if (/^chorus\s*\d*$/.test(normalised)) return 'chorus'
     if (/^bridge\s*\d*$/.test(normalised)) return 'bridge'
@@ -1505,7 +1524,6 @@ const getDiffLines = (left: string, right: string) => {
     if (/^prechorus\s*\d*$/.test(normalised)) return 'prechorus'
     if (/^intro\s*\d*$/.test(normalised)) return 'intro'
     if (/^outro\s*\d*$/.test(normalised)) return 'outro'
-    if (/^final\s*chorus\s*\d*$/.test(normalised)) return 'finalchorus'
 
     return ''
   }
@@ -1515,8 +1533,6 @@ const getDiffLines = (left: string, right: string) => {
     return match ? Number(match[1]) : null
   }
 
-  const isSongSectionHeading = (line: string) => Boolean(getSectionBase(line))
-
   const splitIntoBlocks = (text: string) => {
     const lines = text.split('\n')
     const counts: Record<string, number> = {}
@@ -1525,35 +1541,43 @@ const getDiffLines = (left: string, right: string) => {
     let currentBlock: SongBlock = {
       key: 'preamble',
       heading: '',
+      headingLineIndex: null,
       lines: [],
     }
 
     const finishCurrentBlock = () => {
-      if (currentBlock.heading || currentBlock.lines.some((line) => line.trim())) {
+      if (
+        currentBlock.heading ||
+        currentBlock.lines.some((line) => line.text.trim())
+      ) {
         blocks.push(currentBlock)
       }
     }
 
-    for (const line of lines) {
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const line = lines[lineIndex]
       const base = getSectionBase(line)
 
       if (base) {
         finishCurrentBlock()
 
         const explicitNumber = getExplicitSectionNumber(line)
-
         counts[base] = explicitNumber || (counts[base] || 0) + 1
 
         currentBlock = {
           key: `${base}-${counts[base]}`,
           heading: line,
+          headingLineIndex: lineIndex,
           lines: [],
         }
 
         continue
       }
 
-      currentBlock.lines.push(line)
+      currentBlock.lines.push({
+        text: line,
+        lineIndex,
+      })
     }
 
     finishCurrentBlock()
@@ -1584,74 +1608,127 @@ const getDiffLines = (left: string, right: string) => {
     return shared / Math.max(1, Math.min(leftWords.size, rightWords.size))
   }
 
-  const alignLines = (leftLines: string[], rightLines: string[]) => {
+  const alignLines = (leftLines: SongLine[], rightLines: SongLine[]) => {
     const rows: DiffRow[] = []
+    const gapPenalty = -0.35
 
-    let leftIndex = 0
-    let rightIndex = 0
+    const scoreLines = (leftLine: string, rightLine: string) => {
+      const leftNormalised = normaliseLineForDiff(leftLine)
+      const rightNormalised = normaliseLineForDiff(rightLine)
 
-    while (leftIndex < leftLines.length || rightIndex < rightLines.length) {
-      const leftLine = leftLines[leftIndex] || ''
-      const rightLine = rightLines[rightIndex] || ''
+      if (!leftNormalised && !rightNormalised) return 2
+      if (!leftNormalised || !rightNormalised) return -1
+      if (leftNormalised === rightNormalised) return 4
 
-      if (leftIndex >= leftLines.length) {
-        rows.push({ left: '', right: rightLine, changed: true })
-        rightIndex++
-        continue
+      const similarity = lineSimilarity(leftLine, rightLine)
+
+      if (similarity >= 0.65) return 2.5 + similarity
+      if (similarity >= 0.35) return 1 + similarity
+      if (similarity >= 0.2) return similarity
+
+      return -1
+    }
+
+    const scores = Array.from({ length: leftLines.length + 1 }, () =>
+      Array(rightLines.length + 1).fill(0),
+    )
+
+    for (let leftIndex = 1; leftIndex <= leftLines.length; leftIndex++) {
+      scores[leftIndex][0] = leftIndex * gapPenalty
+    }
+
+    for (let rightIndex = 1; rightIndex <= rightLines.length; rightIndex++) {
+      scores[0][rightIndex] = rightIndex * gapPenalty
+    }
+
+    for (let leftIndex = 1; leftIndex <= leftLines.length; leftIndex++) {
+      for (let rightIndex = 1; rightIndex <= rightLines.length; rightIndex++) {
+        const leftLine = leftLines[leftIndex - 1]?.text || ''
+        const rightLine = rightLines[rightIndex - 1]?.text || ''
+
+        const diagonal =
+          scores[leftIndex - 1][rightIndex - 1] +
+          scoreLines(leftLine, rightLine)
+
+        const deleteLeft = scores[leftIndex - 1][rightIndex] + gapPenalty
+        const insertRight = scores[leftIndex][rightIndex - 1] + gapPenalty
+
+        scores[leftIndex][rightIndex] = Math.max(
+          diagonal,
+          deleteLeft,
+          insertRight,
+        )
       }
+    }
 
-      if (rightIndex >= rightLines.length) {
-        rows.push({ left: leftLine, right: '', changed: true })
-        leftIndex++
-        continue
-      }
+    let leftIndex = leftLines.length
+    let rightIndex = rightLines.length
 
-      const directSimilarity = lineSimilarity(leftLine, rightLine)
+    while (leftIndex > 0 || rightIndex > 0) {
+      const leftLine = leftLines[leftIndex - 1]?.text || ''
+      const rightLine = rightLines[rightIndex - 1]?.text || ''
+      const leftOriginalIndex = leftLines[leftIndex - 1]?.lineIndex ?? null
+      const rightOriginalIndex = rightLines[rightIndex - 1]?.lineIndex ?? null
 
-      if (directSimilarity >= 0.3) {
-        rows.push({
+      const diagonalScore =
+        leftIndex > 0 && rightIndex > 0
+          ? scores[leftIndex - 1][rightIndex - 1] +
+            scoreLines(leftLine, rightLine)
+          : Number.NEGATIVE_INFINITY
+
+      const deleteScore =
+        leftIndex > 0
+          ? scores[leftIndex - 1][rightIndex] + gapPenalty
+          : Number.NEGATIVE_INFINITY
+
+      const insertScore =
+        rightIndex > 0
+          ? scores[leftIndex][rightIndex - 1] + gapPenalty
+          : Number.NEGATIVE_INFINITY
+
+      if (
+        leftIndex > 0 &&
+        rightIndex > 0 &&
+        diagonalScore >= deleteScore &&
+        diagonalScore >= insertScore &&
+        scoreLines(leftLine, rightLine) > 0
+      ) {
+        rows.unshift({
           left: leftLine,
           right: rightLine,
           changed:
             normaliseLineForDiff(leftLine) !== normaliseLineForDiff(rightLine),
+          leftLineIndex: leftOriginalIndex,
+          rightLineIndex: rightOriginalIndex,
         })
 
-        leftIndex++
-        rightIndex++
+        leftIndex--
+        rightIndex--
         continue
       }
 
-      const nextLeftSimilarity =
-        leftIndex + 1 < leftLines.length
-          ? lineSimilarity(leftLines[leftIndex + 1], rightLine)
-          : 0
+      if (leftIndex > 0 && deleteScore >= insertScore) {
+        rows.unshift({
+          left: leftLine,
+          right: '',
+          changed: true,
+          leftLineIndex: leftOriginalIndex,
+          rightLineIndex: null,
+        })
 
-      const nextRightSimilarity =
-        rightIndex + 1 < rightLines.length
-          ? lineSimilarity(leftLine, rightLines[rightIndex + 1])
-          : 0
-
-      if (nextLeftSimilarity > nextRightSimilarity && nextLeftSimilarity >= 0.3) {
-        rows.push({ left: leftLine, right: '', changed: true })
-        leftIndex++
+        leftIndex--
         continue
       }
 
-      if (nextRightSimilarity >= 0.3) {
-        rows.push({ left: '', right: rightLine, changed: true })
-        rightIndex++
-        continue
-      }
-
-      rows.push({
-        left: leftLine,
+      rows.unshift({
+        left: '',
         right: rightLine,
-        changed:
-          normaliseLineForDiff(leftLine) !== normaliseLineForDiff(rightLine),
+        changed: true,
+        leftLineIndex: null,
+        rightLineIndex: rightOriginalIndex,
       })
 
-      leftIndex++
-      rightIndex++
+      rightIndex--
     }
 
     return rows
@@ -1685,12 +1762,12 @@ const getDiffLines = (left: string, right: string) => {
         changed:
           normaliseHeading(leftBlock?.heading || '') !==
           normaliseHeading(rightBlock?.heading || ''),
+        leftLineIndex: leftBlock?.headingLineIndex ?? null,
+        rightLineIndex: rightBlock?.headingLineIndex ?? null,
       })
     }
 
-    rows.push(
-      ...alignLines(leftBlock?.lines || [], rightBlock?.lines || []),
-    )
+    rows.push(...alignLines(leftBlock?.lines || [], rightBlock?.lines || []))
   }
 
   return rows
@@ -1835,12 +1912,19 @@ const getWordDiffParts = (left: string, right: string) => {
   return { leftParts, rightParts }
 }
 
-const scrollCompareEditorsToLine = (lineIndex: number) => {
-  const jumpToLine = (el: HTMLTextAreaElement | null) => {
-    if (!el) return
+    const scrollCompareEditorsToLine = (
+      leftLineIndex: number | null,
+      rightLineIndex: number | null = null,
+    ) => {
+  suppressCompareScrollSyncRef.current = true
+      const jumpToLine = (
+        el: HTMLTextAreaElement | null,
+        lineIndex: number | null,
+      ) => {
+        if (!el || lineIndex === null) return
 
-    const lines = el.value.split('\n')
-    const safeLineIndex = Math.max(0, Math.min(lineIndex, lines.length - 1))
+        const lines = el.value.split('\n')
+        const safeLineIndex = Math.max(0, Math.min(lineIndex, lines.length - 1))
 
     const start = lines
       .slice(0, safeLineIndex)
@@ -1870,8 +1954,12 @@ const scrollCompareEditorsToLine = (lineIndex: number) => {
     }, 800)
   }
 
-  jumpToLine(compareLeftRef.current)
-  jumpToLine(compareRightRef.current)
+  jumpToLine(compareLeftRef.current, leftLineIndex)
+  jumpToLine(compareRightRef.current, rightLineIndex)
+
+    window.setTimeout(() => {
+    suppressCompareScrollSyncRef.current = false
+  }, 250)
 }
 
 

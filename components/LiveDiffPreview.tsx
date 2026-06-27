@@ -11,6 +11,8 @@ type DiffRow = {
   left: string
   right: string
   changed: boolean
+  leftLineIndex?: number | null
+  rightLineIndex?: number | null
 }
 
 type LiveDiffPreviewProps = {
@@ -19,7 +21,10 @@ type LiveDiffPreviewProps = {
   editedDiffRows: DiffRow[]
   highlightedLines: number[]
   syncPreviewScroll: (source: 'left' | 'right') => void
-  scrollCompareEditorsToLine: (lineIndex: number) => void
+  scrollCompareEditorsToLine: (
+  leftLineIndex: number | null,
+  rightLineIndex?: number | null,
+) => void
   getWordDiffParts: (left: string, right: string) => {
     leftParts: WordDiffPart[]
     rightParts: WordDiffPart[]
@@ -76,11 +81,14 @@ export default function LiveDiffPreview({
               <React.Fragment key={index}>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (row.changed) {
-                      scrollCompareEditorsToLine(index)
-                    }
-                  }}
+                 onClick={() => {
+                  if (row.changed) {
+                    scrollCompareEditorsToLine(
+                      row.leftLineIndex ?? null,
+                      row.rightLineIndex ?? null,
+                    )
+                  }
+                }}
                   title={
                     row.changed
                       ? 'Click to jump editors to this line'
@@ -111,10 +119,13 @@ export default function LiveDiffPreview({
                   
                   type="button"
                   onClick={() => {
-                    if (row.changed) {
-                      scrollCompareEditorsToLine(index)
-                    }
-                  }}
+                      if (row.changed) {
+                        scrollCompareEditorsToLine(
+                          row.leftLineIndex ?? null,
+                          row.rightLineIndex ?? null,
+                        )
+                      }
+                    }}
                   title={
                     row.changed
                       ? 'Click to jump editors to this line'
