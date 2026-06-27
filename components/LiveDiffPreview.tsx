@@ -47,7 +47,19 @@ const getRowStatus = (row: DiffRow) => {
   return ''
 }
 
+const getRowLineReference = (row: DiffRow) => {
+  const leftLine =
+    typeof row.leftLineIndex === 'number' ? `L${row.leftLineIndex + 1}` : ''
 
+  const rightLine =
+    typeof row.rightLineIndex === 'number' ? `R${row.rightLineIndex + 1}` : ''
+
+  if (leftLine && rightLine) {
+    return `${leftLine} → ${rightLine}`
+  }
+
+  return leftLine || rightLine
+}
 
 export default function LiveDiffPreview({
   previewLeftRef,
@@ -71,11 +83,12 @@ export default function LiveDiffPreview({
         ref={previewLeftRef}
         className="max-h-[460px] overflow-y-auto rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100"
       >
-        <div className="grid grid-cols-[1fr_5.5rem_1fr] gap-3">
+        <div className="grid grid-cols-[1fr_7rem_1fr] gap-3">
           {editedDiffRows.map((row, index) => {
             const wordDiff = getWordDiffParts(row.left, row.right)
             const isHighlighted = highlightedLines.includes(index)
             const rowStatus = getRowStatus(row)
+            const rowLineReference = getRowLineReference(row)
 
             return (
               <React.Fragment key={index}>
@@ -111,6 +124,11 @@ export default function LiveDiffPreview({
                       {rowStatus && (
                         <span className="whitespace-nowrap rounded border border-gray-700 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gray-400">
                           {rowStatus}
+                          {rowLineReference ? (
+                            <span className="ml-1 text-gray-500 normal-case">
+                              {rowLineReference}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </div>
