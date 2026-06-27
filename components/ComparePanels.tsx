@@ -91,6 +91,24 @@ export default function ComparePanels({
 }: ComparePanelsProps) {
 
 
+const leftLineNumbersRef = React.useRef<HTMLDivElement | null>(null)
+const rightLineNumbersRef = React.useRef<HTMLDivElement | null>(null)
+
+const getLineNumbers = (value: string) =>
+  value.split('\n').map((_, index) => index + 1)
+
+const renderLineNumbers = (value: string) => (
+  <>
+    {getLineNumbers(value).map((lineNumber) => (
+      <div key={lineNumber}>{lineNumber}</div>
+    ))}
+  </>
+)
+
+
+
+
+
 
 return (
   <div id="rewrite-compare-preview">
@@ -160,23 +178,39 @@ return (
           </button>
         </div>
 
-        <textarea
-          ref={compareLeftRef}
-          value={compareLeftText}
-          onChange={(e) => {
-              setCompareLeftText(e.target.value)
-              setCompareUpdateMessage('')
-            }}
-          onScroll={() => syncCompareScroll('left')}
-          readOnly={lockCompareLeft}
-          className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
-            lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
-          } ${
-            flashLeftPanel
-              ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-              : ''
-          }`}
-        />
+        <div
+      className={`flex rounded bg-gray-900 transition-all duration-300 ease-out ${
+        lockCompareLeft ? 'opacity-70 cursor-not-allowed' : ''
+      } ${
+        flashLeftPanel
+          ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+          : ''
+      }`}
+    >
+      <div
+        ref={leftLineNumbersRef}
+        aria-hidden="true"
+        className="max-h-[400px] min-h-[300px] overflow-hidden border-r border-gray-800 px-2 py-4 text-right font-mono text-sm leading-7 text-gray-500 select-none"
+      >
+        {renderLineNumbers(compareLeftText)}
+      </div>
+
+      <textarea
+        ref={compareLeftRef}
+        value={compareLeftText}
+        onChange={(e) => setCompareLeftText(e.target.value)}
+        onScroll={(event) => {
+          if (leftLineNumbersRef.current) {
+            leftLineNumbersRef.current.scrollTop = event.currentTarget.scrollTop
+          }
+
+          syncCompareScroll('left')
+        }}
+        readOnly={lockCompareLeft}
+         wrap="off"
+      className="min-h-[300px] max-h-[400px] flex-1 resize-y overflow-auto rounded-r bg-transparent p-4 pl-3 font-mono text-sm leading-7 text-gray-100 outline-none whitespace-pre"
+    />
+    </div>
       </div>
 
       <div className="w-[112px] flex flex-col justify-center items-center gap-2 pt-8">
@@ -276,23 +310,39 @@ return (
           </button>
         </div>
 
-        <textarea
-          ref={compareRightRef}
-          value={compareRightText}
-          onChange={(e) => {
-              setCompareRightText(e.target.value)
-              setCompareUpdateMessage('')
-            }}
-          onScroll={() => syncCompareScroll('right')}
-          readOnly={lockCompareRight}
-          className={`w-full bg-gray-900 rounded p-4 font-mono text-sm leading-7 text-gray-100 min-h-[300px] max-h-[400px] overflow-y-auto transition-all duration-300 ease-out ${
-            lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
-          } ${
-            flashRightPanel
-              ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-              : ''
-          }`}
-        />
+        <div
+      className={`flex rounded bg-gray-900 transition-all duration-300 ease-out ${
+        lockCompareRight ? 'opacity-70 cursor-not-allowed' : ''
+      } ${
+        flashRightPanel
+          ? 'ring-2 ring-green-400/60 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+          : ''
+      }`}
+    >
+      <div
+        ref={rightLineNumbersRef}
+        aria-hidden="true"
+        className="max-h-[400px] min-h-[300px] overflow-hidden border-r border-gray-800 px-2 py-4 text-right font-mono text-sm leading-7 text-gray-500 select-none"
+      >
+        {renderLineNumbers(compareRightText)}
+      </div>
+
+      <textarea
+        ref={compareRightRef}
+        value={compareRightText}
+        onChange={(e) => setCompareRightText(e.target.value)}
+        onScroll={(event) => {
+          if (rightLineNumbersRef.current) {
+            rightLineNumbersRef.current.scrollTop = event.currentTarget.scrollTop
+          }
+
+          syncCompareScroll('right')
+        }}
+        readOnly={lockCompareRight}
+         wrap="off"
+      className="min-h-[300px] max-h-[400px] flex-1 resize-y overflow-auto rounded-r bg-transparent p-4 pl-3 font-mono text-sm leading-7 text-gray-100 outline-none whitespace-pre"
+    />
+    </div>
       </div>
     </div>
    </div>
