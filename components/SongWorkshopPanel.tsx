@@ -60,6 +60,8 @@ export default function SongWorkshopPanel({
   const [justCopiedWorkshopPacket, setJustCopiedWorkshopPacket] = useState(false)
   const [justCopiedDraftLyricOnly, setJustCopiedDraftLyricOnly] = useState(false)
 
+  const [runningFullWorkshop, setRunningFullWorkshop] = useState(false)
+
   const [drafting, setDrafting] = useState(false)
   const [draftMessage, setDraftMessage] = useState('')
   const [draftResult, setDraftResult] = useState<DraftResult | null>(null)
@@ -95,6 +97,7 @@ export default function SongWorkshopPanel({
       setJustCopiedDraftPrompt(false)
       setJustCopiedDraft(false)
       setJustCopiedAnalysis(false)
+      setRunningFullWorkshop(false)
     }
 
 
@@ -161,7 +164,7 @@ export default function SongWorkshopPanel({
   const analyzeSongIdea = async () => {
     if (!hasLyrics) {
       setAnalysisMessage('Add lyrics or fragments before analysing the song idea.')
-      return
+      return null
     }
 
     try {
@@ -203,6 +206,7 @@ export default function SongWorkshopPanel({
       }
 
       setAnalysisResult(data.analysis || null)
+      return data.analysis as AnalysisResult
       setAnalysisMessage('Song idea analysis complete.')
     } catch (error) {
       setAnalysisMessage(
@@ -215,7 +219,9 @@ export default function SongWorkshopPanel({
     }
   }
 
-  const createCohesiveDraft = async () => {
+  const createCohesiveDraft = async (
+          analysisOverride?: AnalysisResult | null,
+        ) => {
     if (!hasLyrics) {
       setDraftMessage('Add lyrics or fragments before creating a cohesive draft.')
       return
@@ -237,7 +243,7 @@ export default function SongWorkshopPanel({
           songVersionTitle,
           workshopNotes,
           workshopControls,
-          analysisResult,
+          analysisResult: analysisOverride ?? analysisResult,
         }),
       })
 
@@ -426,7 +432,34 @@ export default function SongWorkshopPanel({
       }
     }
 
+    const runFullWorkshopPass = async () => {
+      if (!lyrics.trim()) {
+        setAnalysisMessage('Add lyrics or fragments before running the workshop pass.')
+        return
+      }
 
+      setRunningFullWorkshop(true)
+      setAnalysisMessage('Step 1 of 2: analyzing song idea...')
+      setDraftMessage('Waiting for fresh analysis...')
+
+      try {
+        const freshAnalysis = await analyzeSongIdea()
+
+        if (!freshAnalysis) {
+          setDraftMessage('Draft not created because analysis did not complete.')
+          return
+        }
+
+        setAnalysisMessage('Step 1 of 2 complete: song idea analyzed.')
+        setDraftMessage('Step 2 of 2: creating cohesive draft...')
+
+        await createCohesiveDraft(freshAnalysis)
+
+        setDraftMessage('Full workshop pass complete: analysis and draft created.')
+      } finally {
+        setRunningFullWorkshop(false)
+      }
+    }
 
 
 const buildDraftCopyText = () => {
@@ -782,7 +815,7 @@ const buildDraftCopyText = () => {
           <button
             type="button"
             onClick={analyzeSongIdea}
-            disabled={!hasLyrics || analyzing}
+            disabled={analyzing || runningFullWorkshop || !hasLyrics}
             className="rounded bg-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
           >
             {analyzing ? 'Analysing song idea...' : 'Analyze song idea'}
@@ -790,12 +823,23 @@ const buildDraftCopyText = () => {
 
           <button
             type="button"
-            onClick={createCohesiveDraft}
-            disabled={!hasLyrics || drafting}
+            onClick={() => createCohesiveDraft()}
+            disabled={drafting || runningFullWorkshop || !hasLyrics}
             className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
           >
             {drafting ? 'Creating cohesive draft...' : 'Create cohesive draft'}
           </button>
+
+          <button
+              type="button"
+              onClick={runFullWorkshopPass}
+              disabled={analyzing || drafting || runningFullWorkshop || !lyrics.trim()}
+              className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
+            >
+              {runningFullWorkshop ? 'Analyzing, then drafting...' : 'Analyze + draft'}
+            </button>
+
+
 
           <button
               type="button"
