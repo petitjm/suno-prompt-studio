@@ -57,6 +57,7 @@ export default function SongWorkshopPanel({
   const [justCopiedAnalysis, setJustCopiedAnalysis] = useState(false)
   const [justCopiedAnalysisPrompt, setJustCopiedAnalysisPrompt] = useState(false)
   const [justCopiedDraftPrompt, setJustCopiedDraftPrompt] = useState(false)
+  const [justCopiedWorkshopPacket, setJustCopiedWorkshopPacket] = useState(false)
 
   const [drafting, setDrafting] = useState(false)
   const [draftMessage, setDraftMessage] = useState('')
@@ -271,6 +272,75 @@ export default function SongWorkshopPanel({
     }
   }
 
+
+  const buildWorkshopPacketCopyText = () => {
+      if (!analysisResult && !draftResult) {
+        return ''
+      }
+
+      return [
+        'SONG WORKSHOP PACKET',
+        '',
+        `Project: ${songTitle || 'Untitled project'}`,
+        `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+        '',
+        'Workshop controls:',
+        `- Development focus: ${developmentFocus}`,
+        `- Change intensity: ${changeIntensity}/5`,
+        `- Preserve original phrases: ${preserveOriginal}/5`,
+        `- Emotional directness: ${emotionalDirectness}/5`,
+        `- Singability: ${singability}/5`,
+        '',
+        'Workshop notes:',
+        workshopNotes || 'No workshop notes provided.',
+        '',
+        analysisResult
+          ? [
+              'ANALYSIS',
+              '',
+              'Core theme:',
+              analysisResult.coreTheme || '',
+              '',
+              'Emotional centre:',
+              analysisResult.emotionalCentre || '',
+              '',
+              'How the fragments connect:',
+              analysisResult.fragmentConnection || '',
+              '',
+              'Main weakness:',
+              analysisResult.mainWeakness || '',
+              '',
+              'Suggested song shape:',
+              ...(analysisResult.suggestedShape || []).map((item) => `- ${item}`),
+              '',
+              'Analysis next step:',
+              analysisResult.nextStep || '',
+            ].join('\n')
+          : 'ANALYSIS\n\nNo analysis created in this pass.',
+        '',
+        draftResult
+          ? [
+              'COHESIVE DRAFT',
+              '',
+              draftResult.lyric || '',
+              '',
+              'What was kept:',
+              ...(draftResult.whatWasKept || []).map((item) => `- ${item}`),
+              '',
+              'Workshop control notes:',
+              ...(draftResult.workshopControlNotes || []).map((item) => `- ${item}`),
+              '',
+              'What changed:',
+              ...(draftResult.whatChanged || []).map((item) => `- ${item}`),
+              '',
+              'Draft next step:',
+              draftResult.nextStep || '',
+            ].join('\n')
+          : 'COHESIVE DRAFT\n\nNo draft created in this pass.',
+      ].join('\n')
+    }
+
+
   const buildAnalysisCopyText = () => {
     if (!analysisResult) {
       return ''
@@ -308,6 +378,28 @@ export default function SongWorkshopPanel({
       analysisResult.nextStep || '',
     ].join('\n')
   }
+
+  const copyWorkshopPacket = async () => {
+      const copyText = buildWorkshopPacketCopyText()
+
+      if (!copyText) {
+        setDraftMessage('Create an analysis or draft before copying a workshop packet.')
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(copyText)
+        setJustCopiedWorkshopPacket(true)
+        setDraftMessage('Workshop packet copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedWorkshopPacket(false)
+        }, 1500)
+      } catch {
+        setDraftMessage('Could not copy workshop packet.')
+      }
+    }
+
 
 
   const copyModelPrompt = async ({
@@ -623,6 +715,16 @@ export default function SongWorkshopPanel({
           >
             {drafting ? 'Creating cohesive draft...' : 'Create cohesive draft'}
           </button>
+
+          <button
+              type="button"
+              onClick={copyWorkshopPacket}
+              disabled={!analysisResult && !draftResult}
+              className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedWorkshopPacket ? 'Copied ✓' : 'Copy workshop packet'}
+            </button>
+
         </div>
 
         {analysisMessage && (
