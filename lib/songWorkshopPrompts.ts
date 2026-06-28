@@ -15,6 +15,23 @@ type BuildSongWorkshopDraftPromptInput = {
   analysisResult?: unknown
 }
 
+export const getDevelopmentFocusLabel = (value?: string) => {
+  switch (value) {
+    case 'connect-fragments':
+      return 'Connect disconnected fragments into one coherent song'
+    case 'strengthen-chorus':
+      return 'Strengthen the chorus and central hook'
+    case 'tighten-structure':
+      return 'Tighten the song structure and section flow'
+    case 'increase-emotion':
+      return 'Increase emotional impact and directness'
+    case 'improve-singability':
+      return 'Improve singability, phrasing, and performance flow'
+    default:
+      return 'Connect disconnected fragments into one coherent song'
+  }
+}
+
 export const buildSongWorkshopDraftPrompt = ({
   lyrics,
   songTitle,
@@ -25,6 +42,7 @@ export const buildSongWorkshopDraftPrompt = ({
 }: BuildSongWorkshopDraftPromptInput) => {
   const developmentFocus =
     workshopControls.developmentFocus || 'connect-fragments'
+    const developmentFocusLabel = getDevelopmentFocusLabel(developmentFocus)
 
   const changeIntensity = workshopControls.changeIntensity || 3
   const preserveOriginal = workshopControls.preserveOriginal || 4
@@ -41,7 +59,7 @@ Song title: ${songTitle || 'Untitled project'}
 Song version: ${songVersionTitle || 'Unsaved or untitled version'}
 
 DEVELOPMENT FOCUS:
-${developmentFocus}
+${developmentFocusLabel}
 
 CREATIVE CONTROLS:
 - Change intensity: ${changeIntensity}/5
@@ -107,6 +125,7 @@ export const buildSongWorkshopAnalysisPrompt = ({
 }: BuildSongWorkshopAnalysisPromptInput) => {
   const developmentFocus =
     workshopControls.developmentFocus || 'connect-fragments'
+    const developmentFocusLabel = getDevelopmentFocusLabel(developmentFocus)
 
   const changeIntensity = workshopControls.changeIntensity || 3
   const preserveOriginal = workshopControls.preserveOriginal || 4
@@ -123,7 +142,7 @@ Song title: ${songTitle || 'Untitled project'}
 Song version: ${songVersionTitle || 'Unsaved or untitled version'}
 
 DEVELOPMENT FOCUS:
-${developmentFocus}
+${developmentFocusLabel}
 
 CREATIVE CONTROLS:
 - Change intensity: ${changeIntensity}/5

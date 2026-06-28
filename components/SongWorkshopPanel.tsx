@@ -286,7 +286,7 @@ export default function SongWorkshopPanel({
         `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
         '',
         'Workshop controls:',
-        `- Development focus: ${developmentFocus}`,
+        `- Development focus: ${getDevelopmentFocusCopyLabel(developmentFocus)}`,
         `- Change intensity: ${changeIntensity}/5`,
         `- Preserve original phrases: ${preserveOriginal}/5`,
         `- Emotional directness: ${emotionalDirectness}/5`,
@@ -341,6 +341,32 @@ export default function SongWorkshopPanel({
       ].join('\n')
     }
 
+    const getDevelopmentFocusCopyLabel = (value: string) => {
+      switch (value) {
+        case 'connect-fragments':
+          return 'Connect disconnected fragments into one coherent song'
+        case 'strengthen-chorus':
+          return 'Strengthen the chorus and central hook'
+        case 'tighten-structure':
+          return 'Tighten the song structure and section flow'
+        case 'increase-emotion':
+          return 'Increase emotional impact and directness'
+        case 'improve-singability':
+          return 'Improve singability, phrasing, and performance flow'
+        default:
+          return 'Connect disconnected fragments into one coherent song'
+      }
+    }
+
+
+    const normaliseWorkshopControlNote = (note: string) => {
+      if (!note.startsWith('Development focus:')) {
+        return note
+      }
+
+      return `Development focus: ${getDevelopmentFocusCopyLabel(developmentFocus)}`
+    }
+
 
   const buildAnalysisCopyText = () => {
     if (!analysisResult) {
@@ -354,7 +380,7 @@ export default function SongWorkshopPanel({
       `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
       '',
       'Workshop controls:',
-      `- Development focus: ${developmentFocus}`,
+      `- Development focus: ${getDevelopmentFocusCopyLabel(developmentFocus)}`,
       `- Change intensity: ${changeIntensity}/5`,
       `- Preserve original phrases: ${preserveOriginal}/5`,
       `- Emotional directness: ${emotionalDirectness}/5`,
@@ -838,8 +864,8 @@ const buildDraftCopyText = () => {
                     </div>
                     <ul className="mt-2 list-disc space-y-1 pl-5">
                       {analysisResult.controlNotes.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
+                          <li key={item}>{normaliseWorkshopControlNote(item)}</li>
+                        ))}
                     </ul>
                   </div>
                 )}
@@ -974,9 +1000,9 @@ const buildDraftCopyText = () => {
                 <div className="font-medium text-gray-300">
                   Workshop control notes:
                 </div>
-                <ul className="mt-2 list-disc space-y-1 pl-5">
+               <ul className="mt-2 list-disc space-y-1 pl-5">
                   {draftResult.workshopControlNotes.map((item) => (
-                    <li key={item}>{item}</li>
+                    <li key={item}>{normaliseWorkshopControlNote(item)}</li>
                   ))}
                 </ul>
               </div>

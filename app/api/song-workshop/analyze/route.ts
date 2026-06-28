@@ -1,5 +1,5 @@
 
-import { buildSongWorkshopAnalysisPrompt } from '@/lib/songWorkshopPrompts'
+import { buildSongWorkshopAnalysisPrompt, getDevelopmentFocusLabel } from '@/lib/songWorkshopPrompts'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -27,13 +27,14 @@ export async function POST(req: NextRequest) {
   const developmentFocus = String(
       workshopControls.developmentFocus || 'connect-fragments',
     )
+    const developmentFocusLabel = getDevelopmentFocusLabel(developmentFocus)
     const changeIntensity = Number(workshopControls.changeIntensity || 3)
     const preserveOriginal = Number(workshopControls.preserveOriginal || 4)
     const emotionalDirectness = Number(workshopControls.emotionalDirectness || 3)
     const singability = Number(workshopControls.singability || 4)
 
     const controlNotes = [
-      `Development focus: ${developmentFocus}`,
+      `Development focus: ${developmentFocusLabel}`,
       `Change intensity: ${changeIntensity}/5`,
       `Preserve original phrases: ${preserveOriginal}/5`,
       `Emotional directness: ${emotionalDirectness}/5`,
