@@ -55,6 +55,8 @@ export default function SongWorkshopPanel({
   const [analysisMessage, setAnalysisMessage] = useState('')
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [justCopiedAnalysis, setJustCopiedAnalysis] = useState(false)
+  const [justCopiedAnalysisPrompt, setJustCopiedAnalysisPrompt] = useState(false)
+  const [justCopiedDraftPrompt, setJustCopiedDraftPrompt] = useState(false)
 
   const [drafting, setDrafting] = useState(false)
   const [draftMessage, setDraftMessage] = useState('')
@@ -87,6 +89,8 @@ export default function SongWorkshopPanel({
       setAnalysisResult(null)
       setDraftMessage('')
       setDraftResult(null)
+      setJustCopiedAnalysisPrompt(false)
+      setJustCopiedDraftPrompt(false)
       setJustCopiedDraft(false)
       setJustCopiedAnalysis(false)
     }
@@ -304,6 +308,52 @@ export default function SongWorkshopPanel({
       analysisResult.nextStep || '',
     ].join('\n')
   }
+
+
+  const copyModelPrompt = async ({
+      prompt,
+      type,
+    }: {
+      prompt?: string
+      type: 'analysis' | 'draft'
+    }) => {
+      if (!prompt) {
+        if (type === 'analysis') {
+          setAnalysisMessage('No analysis model prompt available to copy.')
+        } else {
+          setDraftMessage('No draft model prompt available to copy.')
+        }
+
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(prompt)
+
+        if (type === 'analysis') {
+          setJustCopiedAnalysisPrompt(true)
+          setAnalysisMessage('Analysis model prompt copied.')
+
+          window.setTimeout(() => {
+            setJustCopiedAnalysisPrompt(false)
+          }, 1500)
+        } else {
+          setJustCopiedDraftPrompt(true)
+          setDraftMessage('Draft model prompt copied.')
+
+          window.setTimeout(() => {
+            setJustCopiedDraftPrompt(false)
+          }, 1500)
+        }
+      } catch {
+        if (type === 'analysis') {
+          setAnalysisMessage('Could not copy analysis model prompt.')
+        } else {
+          setDraftMessage('Could not copy draft model prompt.')
+        }
+      }
+    }
+
 
   const copySongAnalysis = async () => {
     const copyText = buildAnalysisCopyText()
@@ -647,6 +697,21 @@ export default function SongWorkshopPanel({
               View analysis model prompt
             </summary>
 
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  copyModelPrompt({
+                    prompt: analysisResult.modelPrompt,
+                    type: 'analysis',
+                  })
+                }
+                className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+              >
+                {justCopiedAnalysisPrompt ? 'Copied ✓' : 'Copy prompt'}
+              </button>
+            </div>
+
             <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-gray-400">
               {analysisResult.modelPrompt}
             </pre>
@@ -754,8 +819,23 @@ export default function SongWorkshopPanel({
         {draftResult.modelPrompt && (
           <details className="mt-4 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
             <summary className="cursor-pointer font-medium text-gray-300">
-              View model prompt
+              View draft model prompt
             </summary>
+
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  copyModelPrompt({
+                    prompt: draftResult.modelPrompt,
+                    type: 'draft',
+                  })
+                }
+                className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+              >
+                {justCopiedDraftPrompt ? 'Copied ✓' : 'Copy prompt'}
+              </button>
+            </div>
 
             <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-gray-400">
               {draftResult.modelPrompt}
