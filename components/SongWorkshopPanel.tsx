@@ -58,6 +58,7 @@ export default function SongWorkshopPanel({
   const [justCopiedAnalysisPrompt, setJustCopiedAnalysisPrompt] = useState(false)
   const [justCopiedDraftPrompt, setJustCopiedDraftPrompt] = useState(false)
   const [justCopiedWorkshopPacket, setJustCopiedWorkshopPacket] = useState(false)
+  const [justCopiedDraftLyricOnly, setJustCopiedDraftLyricOnly] = useState(false)
 
   const [drafting, setDrafting] = useState(false)
   const [draftMessage, setDraftMessage] = useState('')
@@ -379,6 +380,58 @@ export default function SongWorkshopPanel({
     ].join('\n')
   }
 
+
+  const copyDraftLyricOnly = async () => {
+      if (!draftResult?.lyric) {
+        setDraftMessage('Create a cohesive draft before copying the lyric.')
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(draftResult.lyric)
+        setJustCopiedDraftLyricOnly(true)
+        setDraftMessage('Draft lyric copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedDraftLyricOnly(false)
+        }, 1500)
+      } catch {
+        setDraftMessage('Could not copy draft lyric.')
+      }
+    }
+
+
+
+
+const buildDraftCopyText = () => {
+  if (!draftResult) {
+    return ''
+  }
+
+  return [
+    'SONG WORKSHOP DRAFT',
+    '',
+    `Project: ${songTitle || 'Untitled project'}`,
+    `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+    '',
+    'Draft lyric:',
+    draftResult.lyric || '',
+    '',
+    'What was kept:',
+    ...(draftResult.whatWasKept || []).map((item) => `- ${item}`),
+    '',
+    'Workshop control notes:',
+    ...(draftResult.workshopControlNotes || []).map((item) => `- ${item}`),
+    '',
+    'What changed:',
+    ...(draftResult.whatChanged || []).map((item) => `- ${item}`),
+    '',
+    'Recommended next step:',
+    draftResult.nextStep || '',
+  ].join('\n')
+}
+
+
   const copyWorkshopPacket = async () => {
       const copyText = buildWorkshopPacketCopyText()
 
@@ -468,24 +521,26 @@ export default function SongWorkshopPanel({
     }
   }
 
-  const copyCohesiveDraft = async () => {
-    if (!draftResult?.lyric) {
-      setDraftMessage('Create a cohesive draft before copying.')
-      return
-    }
+  const copyDraft = async () => {
+      const copyText = buildDraftCopyText()
 
-    try {
-      await navigator.clipboard.writeText(draftResult.lyric)
-      setJustCopiedDraft(true)
-      setDraftMessage('Cohesive draft copied.')
+      if (!copyText) {
+        setDraftMessage('Create a cohesive draft before copying the draft.')
+        return
+      }
 
-      window.setTimeout(() => {
-        setJustCopiedDraft(false)
-      }, 1500)
-    } catch {
-      setDraftMessage('Could not copy cohesive draft.')
+      try {
+        await navigator.clipboard.writeText(copyText)
+        setJustCopiedDraft(true)
+        setDraftMessage('Full draft copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedDraft(false)
+        }, 1500)
+      } catch {
+        setDraftMessage('Could not copy draft.')
+      }
     }
-  }
 
   const sendDraftToCompare = () => {
       if (!draftResult?.lyric) {
@@ -878,7 +933,17 @@ export default function SongWorkshopPanel({
 
                 <button
                   type="button"
-                  onClick={copyCohesiveDraft}
+                  onClick={copyDraftLyricOnly}
+                  disabled={!draftResult?.lyric}
+                  className="rounded border border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  {justCopiedDraftLyricOnly ? 'Copied ✓' : 'Copy lyric only'}
+                </button>
+
+
+                <button
+                  type="button"
+                  onClick={copyDraft}
                   disabled={!draftResult.lyric}
                   className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
                 >
