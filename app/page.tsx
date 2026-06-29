@@ -3019,33 +3019,38 @@ return (
                     setPerformanceSheet(draft)
                     handleModeChange('write')
                   }}
-                  onSendDraftToCompare={(draft, label) => {
-                      setCompareLeftText(performanceSheet)
-                      setCompareRightText(draft)
-                      setCompareLeftTitle('Current Write lyrics')
-                      setCompareRightTitle(label || 'Song Workshop draft')
-                     setLastRewriteTargetLabel(label || 'Song Workshop draft')
-                      setCompareUpdateMessage(
-                        'Song Workshop draft sent to compare. Original is on the left. Workshop draft is on the right.',
-                      )
-                      setFlashLeftPanel(true)
-                      setFlashRightPanel(true)
-                      handleModeChange('write')
 
-                      window.setTimeout(() => {
-                        setFlashLeftPanel(false)
-                        setFlashRightPanel(false)
-                      }, 600)
+                 
 
-                      window.setTimeout(() => {
-                        document
-                          .getElementById('rewrite-compare-preview')
-                          ?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start',
-                          })
-                      }, 150)
-                    }}
+                 onSendDraftToCompare={(draft, label) => {
+                  const compareLabel = label || 'Song Workshop draft'
+
+                  setCompareLeftText(performanceSheet)
+                  setCompareRightText(draft)
+                  setCompareLeftTitle('Current Write lyrics')
+                  setCompareRightTitle(compareLabel)
+                  setLastRewriteTargetLabel(compareLabel)
+                  setCompareUpdateMessage(
+                    `${compareLabel} sent to compare. Original is on the left. Workshop draft is on the right.`,
+                  )
+                  setFlashLeftPanel(true)
+                  setFlashRightPanel(true)
+                  handleModeChange('write')
+
+                  window.setTimeout(() => {
+                    setFlashLeftPanel(false)
+                    setFlashRightPanel(false)
+                  }, 600)
+
+                  window.setTimeout(() => {
+                    document
+                      .getElementById('rewrite-compare-preview')
+                      ?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                  }, 150)
+                }}
                   onEditLyrics={() => handleModeChange('write')}
                 />
             </div>
