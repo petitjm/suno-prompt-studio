@@ -61,6 +61,7 @@ export default function SongWorkshopPanel({
   const [justCopiedDraftPrompt, setJustCopiedDraftPrompt] = useState(false)
   const [justCopiedWorkshopPacket, setJustCopiedWorkshopPacket] = useState(false)
   const [justCopiedDraftLyricOnly, setJustCopiedDraftLyricOnly] = useState(false)
+  const [lastWorkshopAction, setLastWorkshopAction] = useState('')
 
   const [runningFullWorkshop, setRunningFullWorkshop] = useState(false)
 
@@ -100,6 +101,7 @@ export default function SongWorkshopPanel({
       setJustCopiedDraft(false)
       setJustCopiedAnalysis(false)
       setRunningFullWorkshop(false)
+      setLastWorkshopAction('')
     }
 
 
@@ -168,8 +170,9 @@ export default function SongWorkshopPanel({
       setAnalysisMessage('Add lyrics or fragments before analysing the song idea.')
       return null
     }
-
+    
     try {
+        setLastWorkshopAction('Analyze song idea')
       setAnalyzing(true)
       setAnalysisMessage('Analysing song idea...')
       setAnalysisResult(null)
@@ -222,14 +225,27 @@ export default function SongWorkshopPanel({
   }
 
   const createCohesiveDraft = async (
-          analysisOverride?: AnalysisResult | null,
-        ) => {
+      analysisOverride?: AnalysisResult | null,
+      source: 'manual' | 'full-workshop' = 'manual',
+    ) => {
     if (!hasLyrics) {
       setDraftMessage('Add lyrics or fragments before creating a cohesive draft.')
       return
     }
 
     try {
+        if (source === 'full-workshop') {
+              setLastWorkshopAction('Analyze + draft')
+            } else {
+              setLastWorkshopAction(
+                analysisOverride
+                  ? 'Create cohesive draft using fresh analysis'
+                  : analysisResult
+                    ? 'Create cohesive draft using existing analysis'
+                    : 'Create cohesive draft without analysis',
+              )
+            }
+
       setDrafting(true)
       setDraftMessage('Creating cohesive draft...')
       setDraftResult(null)
@@ -508,6 +524,7 @@ const workshopStatusSummary = getWorkshopStatusSummary()
       }
 
       setRunningFullWorkshop(true)
+      setLastWorkshopAction('Analyze + draft')
       setAnalysisMessage('Step 1 of 2: analyzing song idea...')
       setDraftMessage('Waiting for fresh analysis...')
 
@@ -522,7 +539,8 @@ const workshopStatusSummary = getWorkshopStatusSummary()
         setAnalysisMessage('Step 1 of 2 complete: song idea analyzed.')
         setDraftMessage('Step 2 of 2: creating cohesive draft...')
 
-        await createCohesiveDraft(freshAnalysis)
+        setLastWorkshopAction('Analyze + draft')
+        await createCohesiveDraft(freshAnalysis, 'full-workshop')
 
         setDraftMessage('Full workshop pass complete: analysis and draft created.')
       } finally {
@@ -746,6 +764,11 @@ const buildDraftCopyText = () => {
           <div className="font-medium text-gray-300">
             Workshop status
           </div>
+
+          <div className="mt-1 text-[11px] uppercase tracking-wide text-purple-300">
+              Last action: {lastWorkshopAction || 'None yet'}
+            </div>
+
 
           <div className="mt-2 space-y-1">
             <div>{workshopStatusSummary.analysisStatus}</div>
