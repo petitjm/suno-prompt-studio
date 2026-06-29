@@ -295,6 +295,19 @@ export default function SongWorkshopPanel({
   return date.toLocaleString()
 }
 
+const getDraftAnalysisStatus = (draft: DraftResult) => {
+  if (!draft.analysisContext) {
+    return 'Draft created without a prior analysis pass.'
+  }
+
+  const generatedAt = formatGeneratedAt(draft.analysisContext.generatedAt)
+
+  if (!generatedAt) {
+    return 'Draft created using the current Song Workshop analysis.'
+  }
+
+  return `Draft created using analysis generated at: ${generatedAt}`
+}
 
   const buildWorkshopPacketCopyText = () => {
       if (!analysisResult && !draftResult) {
@@ -352,6 +365,8 @@ export default function SongWorkshopPanel({
               draftResult.generatedAt
                   ? `Generated at: ${formatGeneratedAt(draftResult.generatedAt)}`
                   : '',
+                '',
+                getDraftAnalysisStatus(draftResult),
                 '',
               draftResult.lyric || '',
               '',
@@ -497,6 +512,8 @@ const buildDraftCopyText = () => {
     draftResult.generatedAt
       ? `Generated at: ${formatGeneratedAt(draftResult.generatedAt)}`
       : '',
+    '',
+    getDraftAnalysisStatus(draftResult),
     '',
     `Project: ${songTitle || 'Untitled project'}`,
     `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
@@ -1018,6 +1035,10 @@ const buildDraftCopyText = () => {
                     Generated at: {formatGeneratedAt(draftResult.generatedAt)}
                   </div>
                 )}
+
+        <div className="text-xs text-gray-500">
+          {getDraftAnalysisStatus(draftResult)}
+        </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-gray-200">
