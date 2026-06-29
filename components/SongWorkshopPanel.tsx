@@ -325,6 +325,22 @@ const getDraftAnalysisStatus = (draft: DraftResult) => {
   return `Draft created using analysis generated at: ${generatedAt}`
 }
 
+
+const getDraftSourceBadge = (draft: DraftResult) => {
+  const action = getWorkshopActionCopyLabel()
+
+  if (action === 'Analyze + draft') {
+    return 'Analyze + draft'
+  }
+
+  if (!draft.analysisContext) {
+    return 'No analysis'
+  }
+
+  return 'Used analysis'
+}
+
+
 const getWorkshopStatusSummary = () => {
   const analysisStatus = analyzing
     ? 'Analysis is running...'
@@ -1142,9 +1158,15 @@ const buildDraftCopyText = () => {
   
 
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-gray-200">
-                Cohesive draft
-              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-100">
+                    Cohesive draft
+                  </h3>
+
+                  <span className="rounded-full border border-purple-500/40 bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-200">
+                    {getDraftSourceBadge(draftResult)}
+                  </span>
+                </div>
               
               <div className="flex flex-wrap gap-2">
 
