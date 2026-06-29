@@ -12,6 +12,7 @@ type SongWorkshopPanelProps = {
 }
 
 type AnalysisResult = {
+    generatedAt?: string
   coreTheme?: string
   emotionalCentre?: string
   fragmentConnection?: string
@@ -23,6 +24,7 @@ type AnalysisResult = {
 }
 
 type DraftResult = {
+    generatedAt?: string
   title?: string
   versionTitle?: string
   lyric?: string
@@ -279,6 +281,20 @@ export default function SongWorkshopPanel({
     }
   }
 
+  const formatGeneratedAt = (value?: string) => {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return date.toLocaleString()
+}
+
 
   const buildWorkshopPacketCopyText = () => {
       if (!analysisResult && !draftResult) {
@@ -305,6 +321,10 @@ export default function SongWorkshopPanel({
           ? [
               'ANALYSIS',
               '',
+              analysisResult.generatedAt
+              ? `Generated at: ${formatGeneratedAt(analysisResult.generatedAt)}`
+              : '',
+            '',
               'Core theme:',
               analysisResult.coreTheme || '',
               '',
@@ -329,6 +349,10 @@ export default function SongWorkshopPanel({
           ? [
               'COHESIVE DRAFT',
               '',
+              draftResult.generatedAt
+                  ? `Generated at: ${formatGeneratedAt(draftResult.generatedAt)}`
+                  : '',
+                '',
               draftResult.lyric || '',
               '',
               'What was kept:',
@@ -469,6 +493,10 @@ const buildDraftCopyText = () => {
 
   return [
     'SONG WORKSHOP DRAFT',
+    '',
+    draftResult.generatedAt
+      ? `Generated at: ${formatGeneratedAt(draftResult.generatedAt)}`
+      : '',
     '',
     `Project: ${songTitle || 'Untitled project'}`,
     `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
@@ -857,6 +885,7 @@ const buildDraftCopyText = () => {
         )}
 
         {analysisResult && (
+           
           <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-gray-200">
@@ -872,6 +901,13 @@ const buildDraftCopyText = () => {
                 {justCopiedAnalysis ? 'Copied ✓' : 'Copy analysis'}
               </button>
             </div>
+
+             {analysisResult.generatedAt && (
+          <div className="text-xs text-gray-500">
+            Generated at: {formatGeneratedAt(analysisResult.generatedAt)}
+          </div>
+        )}
+
 
             <div className="mt-3 grid gap-3 text-sm text-gray-400">
               <div>
@@ -976,11 +1012,18 @@ const buildDraftCopyText = () => {
 
         {draftResult && (
           <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
+
+          {draftResult.generatedAt && (
+                  <div className="text-xs text-gray-500">
+                    Generated at: {formatGeneratedAt(draftResult.generatedAt)}
+                  </div>
+                )}
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-gray-200">
                 Cohesive draft
               </h2>
-
+              
               <div className="flex flex-wrap gap-2">
 
               <button

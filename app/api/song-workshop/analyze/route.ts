@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
 
 
   const analysis = {
+      generatedAt: new Date().toISOString(),
     coreTheme:
       'The song is exploring how chance, fortune, fate, risk, and emotional survival can shape a life.',
     emotionalCentre:

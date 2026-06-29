@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
     })
 
   const draft = {
+      generatedAt: new Date().toISOString(),
     title: songTitle || 'Spin the Wheel Again',
     versionTitle: songVersionTitle || 'Cohesive workshop draft',
     workshopNotes,
