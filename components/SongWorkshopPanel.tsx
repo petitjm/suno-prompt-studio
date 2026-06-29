@@ -352,6 +352,14 @@ const getDraftSourceBadge = (draft: DraftResult) => {
 }
 
 
+const clearWorkshopResultsManually = () => {
+  clearWorkshopOutput()
+  setShowFullSourceLyrics(false)
+}
+
+
+
+
 const getWorkshopStatusSummary = () => {
   const analysisStatus = analyzing
     ? 'Analysis is running...'
@@ -1032,6 +1040,25 @@ const buildDraftCopyText = () => {
               className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
             >
               {justCopiedWorkshopPacket ? 'Copied ✓' : 'Copy workshop packet'}
+            </button>
+
+            <button
+              type="button"
+              onClick={clearWorkshopResultsManually}
+              disabled={
+                analyzing ||
+                drafting ||
+                runningFullWorkshop ||
+                (!analysisResult &&
+                  !draftResult &&
+                  !analysisMessage &&
+                  !draftMessage &&
+                  !lastWorkshopAction &&
+                  workshopActionHistory.length === 0)
+              }
+              className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              Clear results
             </button>
 
         </div>
