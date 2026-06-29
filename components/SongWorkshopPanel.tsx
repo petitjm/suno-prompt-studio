@@ -61,6 +61,7 @@ export default function SongWorkshopPanel({
   const [justCopiedDraftPrompt, setJustCopiedDraftPrompt] = useState(false)
   const [justCopiedWorkshopPacket, setJustCopiedWorkshopPacket] = useState(false)
   const [justCopiedDraftLyricOnly, setJustCopiedDraftLyricOnly] = useState(false)
+  const [justCopiedStatusSummary, setJustCopiedStatusSummary] = useState(false)
   const [lastWorkshopAction, setLastWorkshopAction] = useState('')
   const [workshopActionHistory, setWorkshopActionHistory] = useState<string[]>([])
 
@@ -394,6 +395,28 @@ const getWorkshopActionCopyLabel = () => {
 
 const workshopStatusSummary = getWorkshopStatusSummary()
 
+const buildWorkshopStatusCopyText = () => {
+      const status = getWorkshopStatusSummary()
+
+      return [
+        'SONG WORKSHOP STATUS',
+        '',
+        `Project: ${songTitle || 'Untitled project'}`,
+        `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+        `Last action: ${lastWorkshopAction || 'None yet'}`,
+        '',
+        status.analysisStatus,
+        status.draftStatus,
+        status.draftSourceStatus,
+        '',
+        'Recent actions:',
+        ...(workshopActionHistory.length > 0
+          ? workshopActionHistory.map((action) => `- ${action}`)
+          : ['No recent actions recorded.']),
+      ].join('\n')
+    }
+
+
 
   const buildWorkshopPacketCopyText = () => {
       if (!analysisResult && !draftResult) {
@@ -541,6 +564,20 @@ const workshopStatusSummary = getWorkshopStatusSummary()
       analysisResult.nextStep || '',
     ].join('\n')
   }
+
+  const copyWorkshopStatusSummary = async () => {
+      try {
+        await navigator.clipboard.writeText(buildWorkshopStatusCopyText())
+        setJustCopiedStatusSummary(true)
+        setDraftMessage('Workshop status copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedStatusSummary(false)
+        }, 1500)
+      } catch {
+        setDraftMessage('Could not copy workshop status.')
+      }
+    }
 
 
   const copyDraftLyricOnly = async () => {
@@ -829,9 +866,19 @@ const buildDraftCopyText = () => {
       </div>
 
       <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-3 text-xs text-gray-400">
-          <div className="font-medium text-gray-300">
-            Workshop status
-          </div>
+          <div className="flex items-center justify-between gap-3">
+              <div className="font-medium text-gray-300">
+                Workshop status
+              </div>
+
+              <button
+                type="button"
+                onClick={copyWorkshopStatusSummary}
+                className="rounded border border-gray-700 px-2 py-1 text-[11px] font-medium text-gray-300 hover:bg-gray-800"
+              >
+                {justCopiedStatusSummary ? 'Copied ✓' : 'Copy status'}
+              </button>
+            </div>
 
           <div className="mt-1 text-[11px] uppercase tracking-wide text-purple-300">
               Last action: {lastWorkshopAction || 'None yet'}
