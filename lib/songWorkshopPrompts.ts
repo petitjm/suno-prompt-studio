@@ -15,6 +15,24 @@ type BuildSongWorkshopDraftPromptInput = {
   analysisResult?: unknown
 }
 
+const getAnalysisContextForDraftPrompt = (analysisResult?: unknown) => {
+  if (
+    !analysisResult ||
+    typeof analysisResult !== 'object' ||
+    Array.isArray(analysisResult)
+  ) {
+    return analysisResult
+  }
+
+  const {
+    modelPrompt,
+    context,
+    ...analysisContext
+  } = analysisResult as Record<string, unknown>
+
+  return analysisContext
+}
+
 export const getDevelopmentFocusLabel = (value?: string) => {
   switch (value) {
     case 'connect-fragments':
@@ -73,7 +91,7 @@ ${workshopNotes || 'No extra workshop notes provided.'}
 CURRENT ANALYSIS:
 ${
   analysisResult
-    ? JSON.stringify(analysisResult, null, 2)
+    ? JSON.stringify(getAnalysisContextForDraftPrompt(analysisResult), null, 2)
     : 'No prior analysis was provided. Work directly from the lyrics and controls.'
 }
 

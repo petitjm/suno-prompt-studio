@@ -36,6 +36,8 @@ type DraftResult = {
   modelPrompt?: string
 }
 
+
+
 export default function SongWorkshopPanel({
   lyrics,
   songTitle,
@@ -71,6 +73,7 @@ export default function SongWorkshopPanel({
   const [draftMessage, setDraftMessage] = useState('')
   const [draftResult, setDraftResult] = useState<DraftResult | null>(null)
   const [justCopiedDraft, setJustCopiedDraft] = useState(false)
+  const [justCopiedPromptPack, setJustCopiedPromptPack] = useState(false)
 
   const skipNextLyricsClearRef = useRef(false)
 
@@ -395,6 +398,48 @@ const getWorkshopActionCopyLabel = () => {
 
 const workshopStatusSummary = getWorkshopStatusSummary()
 
+
+const buildWorkshopPromptPackCopyText = () => {
+  const analysisPrompt = analysisResult?.modelPrompt || ''
+  const draftPrompt = draftResult?.modelPrompt || ''
+
+  if (!analysisPrompt && !draftPrompt) {
+    return ''
+  }
+
+  return [
+  'SONG WORKSHOP PROMPT PACK',
+  '',
+  `Project: ${songTitle || 'Untitled project'}`,
+  `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+  `Workshop action: ${getWorkshopActionCopyLabel()}`,
+  '',
+  'Use this pack by copying one prompt section at a time.',
+  '',
+  '============================================================',
+  'START ANALYSIS MODEL PROMPT',
+  '============================================================',
+  '',
+  analysisPrompt || 'No analysis model prompt available.',
+  '',
+  '============================================================',
+  'END ANALYSIS MODEL PROMPT',
+  '============================================================',
+  '',
+  '',
+  '============================================================',
+  'START DRAFT MODEL PROMPT',
+  '============================================================',
+  '',
+  draftPrompt || 'No draft model prompt available.',
+  '',
+  '============================================================',
+  'END DRAFT MODEL PROMPT',
+  '============================================================',
+].join('\n')
+}
+
+
 const buildWorkshopStatusCopyText = () => {
       const status = getWorkshopStatusSummary()
 
@@ -587,6 +632,28 @@ const buildWorkshopStatusCopyText = () => {
         }, 1500)
       } catch {
         setDraftMessage('Could not copy workshop status.')
+      }
+    }
+
+
+    const copyWorkshopPromptPack = async () => {
+      const copyText = buildWorkshopPromptPackCopyText()
+
+      if (!copyText) {
+        setDraftMessage('Create an analysis or draft before copying a prompt pack.')
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(copyText)
+        setJustCopiedPromptPack(true)
+        setDraftMessage('Workshop prompt pack copied.')
+
+        window.setTimeout(() => {
+          setJustCopiedPromptPack(false)
+        }, 1500)
+      } catch {
+        setDraftMessage('Could not copy workshop prompt pack.')
       }
     }
 
@@ -1102,6 +1169,15 @@ const buildDraftCopyText = () => {
               className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
             >
               {justCopiedWorkshopPacket ? 'Copied ✓' : 'Copy workshop packet'}
+            </button>
+
+            <button
+              type="button"
+              onClick={copyWorkshopPromptPack}
+              disabled={!analysisResult?.modelPrompt && !draftResult?.modelPrompt}
+              className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedPromptPack ? 'Copied ✓' : 'Copy prompt pack'}
             </button>
 
             <button
