@@ -472,9 +472,13 @@ const workshopStatusSummary = getWorkshopStatusSummary()
 
     return [
       'SONG WORKSHOP ANALYSIS',
-      '',
-      `Project: ${songTitle || 'Untitled project'}`,
-      `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+        '',
+        `Project: ${songTitle || 'Untitled project'}`,
+        `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+        `Workshop action: ${getWorkshopActionCopyLabel()}`,
+        analysisResult.generatedAt
+          ? `Generated at: ${formatGeneratedAt(analysisResult.generatedAt)}`
+          : '',
       '',
       'Workshop controls:',
       `- Development focus: ${getDevelopmentFocusCopyLabel(developmentFocus)}`,
