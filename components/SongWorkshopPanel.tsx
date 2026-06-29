@@ -1132,6 +1132,12 @@ const buildDraftCopyText = () => {
           intent.
         </p>
 
+        <div className="mt-4 space-y-3">
+          <div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              Create
+            </div>
+
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -1142,6 +1148,7 @@ const buildDraftCopyText = () => {
             {analyzing ? 'Analysing song idea...' : 'Analyze song idea'}
           </button>
 
+          
           <button
             type="button"
             onClick={() => createCohesiveDraft()}
@@ -1160,7 +1167,15 @@ const buildDraftCopyText = () => {
               {runningFullWorkshop ? 'Analyzing, then drafting...' : 'Analyze + draft'}
             </button>
 
+           </div>
+              </div>
 
+              <div>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Copy
+                </div>
+
+                <div className="flex flex-wrap gap-2">
 
           <button
               type="button"
@@ -1208,6 +1223,16 @@ const buildDraftCopyText = () => {
               {justCopiedDraftPrompt ? 'Copied ✓' : 'Copy draft prompt'}
             </button>
 
+               </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                      Utility
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+
 
             <button
               type="button"
@@ -1228,7 +1253,11 @@ const buildDraftCopyText = () => {
               Clear results
             </button>
 
-        </div>
+                </div>
+                      </div>
+                    </div>
+
+       
 
         {analysisMessage && (
           <p className="mt-3 text-xs text-gray-400">{analysisMessage}</p>
