@@ -438,9 +438,13 @@ const buildWorkshopStatusCopyText = () => {
         `- Singability: ${singability}/5`,
         '',
         'Workshop notes:',
-        workshopNotes || 'No workshop notes provided.',
-        '',
-        analysisResult
+            workshopNotes || 'No workshop notes provided.',
+            '',
+            'SOURCE LYRICS / FRAGMENTS',
+            '',
+            lyrics || 'No source lyrics provided.',
+            '',
+            analysisResult
           ? [
               'ANALYSIS',
               '',
