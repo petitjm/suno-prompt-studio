@@ -7,7 +7,7 @@ type SongWorkshopPanelProps = {
   songTitle: string
   songVersionTitle: string
   onUseDraft?: (draft: string) => void
-  onSendDraftToCompare?: (draft: string) => void
+  onSendDraftToCompare?: (draft: string, label?: string) => void
   onEditLyrics?: () => void
 }
 
@@ -737,6 +737,28 @@ const buildDraftCopyText = () => {
     setDraftMessage('Cohesive draft sent to editor.')
   }
 
+
+  const getDraftCompareLabel = (draft: DraftResult) => {
+  const generatedAt = formatGeneratedAt(draft.generatedAt)
+  const action = getWorkshopActionCopyLabel()
+
+  if (generatedAt && action && action !== 'None recorded') {
+    return `Song Workshop draft — ${action} — ${generatedAt}`
+  }
+
+  if (generatedAt) {
+    return `Song Workshop draft — ${generatedAt}`
+  }
+
+  return 'Song Workshop draft'
+}
+
+
+
+
+
+
+
   return (
     <section className="rounded border border-gray-800 bg-gray-950/70 p-4">
       <div className="mb-4">
@@ -1116,6 +1138,9 @@ const buildDraftCopyText = () => {
           {getDraftAnalysisStatus(draftResult)}
         </div>
 
+
+  
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-gray-200">
                 Cohesive draft
@@ -1125,7 +1150,14 @@ const buildDraftCopyText = () => {
 
               <button
                   type="button"
-                  onClick={sendDraftToCompare}
+                  onClick={() => {
+                      if (draftResult.lyric) {
+                        onSendDraftToCompare?.(
+                          draftResult.lyric,
+                          getDraftCompareLabel(draftResult),
+                        )
+                      }
+                    }}
                   disabled={!draftResult.lyric || !onSendDraftToCompare}
                   className="rounded bg-blue-700 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                 >

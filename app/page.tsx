@@ -3019,12 +3019,12 @@ return (
                     setPerformanceSheet(draft)
                     handleModeChange('write')
                   }}
-                  onSendDraftToCompare={(draft) => {
+                  onSendDraftToCompare={(draft, label) => {
                       setCompareLeftText(performanceSheet)
                       setCompareRightText(draft)
                       setCompareLeftTitle('Current Write lyrics')
-                      setCompareRightTitle('Song Workshop draft')
-                      setLastRewriteTargetLabel('Song Workshop draft')
+                      setCompareRightTitle(label || 'Song Workshop draft')
+                     setLastRewriteTargetLabel(label || 'Song Workshop draft')
                       setCompareUpdateMessage(
                         'Song Workshop draft sent to compare. Original is on the left. Workshop draft is on the right.',
                       )
