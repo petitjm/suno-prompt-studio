@@ -309,6 +309,36 @@ const getDraftAnalysisStatus = (draft: DraftResult) => {
   return `Draft created using analysis generated at: ${generatedAt}`
 }
 
+const getWorkshopStatusSummary = () => {
+  const analysisStatus = analyzing
+    ? 'Analysis is running...'
+    : analysisResult?.generatedAt
+      ? `Analysis generated at ${formatGeneratedAt(analysisResult.generatedAt)}`
+      : 'No analysis generated'
+
+  const draftStatus = drafting
+    ? 'Draft is running...'
+    : draftResult?.generatedAt
+      ? `Draft generated at ${formatGeneratedAt(draftResult.generatedAt)}`
+      : 'No draft generated'
+
+  const draftSourceStatus = runningFullWorkshop
+    ? 'Running full workshop pass: analysis first, then draft.'
+    : draftResult
+      ? getDraftAnalysisStatus(draftResult)
+      : 'No draft source yet'
+
+  return {
+    analysisStatus,
+    draftStatus,
+    draftSourceStatus,
+  }
+}
+
+
+const workshopStatusSummary = getWorkshopStatusSummary()
+
+
   const buildWorkshopPacketCopyText = () => {
       if (!analysisResult && !draftResult) {
         return ''
@@ -711,6 +741,18 @@ const buildDraftCopyText = () => {
           </div>
         </div>
       </div>
+
+      <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-3 text-xs text-gray-400">
+          <div className="font-medium text-gray-300">
+            Workshop status
+          </div>
+
+          <div className="mt-2 space-y-1">
+            <div>{workshopStatusSummary.analysisStatus}</div>
+            <div>{workshopStatusSummary.draftStatus}</div>
+            <div>{workshopStatusSummary.draftSourceStatus}</div>
+          </div>
+        </div>
 
       <div className="mb-4 rounded border border-gray-800 bg-gray-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
