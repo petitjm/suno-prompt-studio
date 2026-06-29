@@ -1182,6 +1182,35 @@ const buildDraftCopyText = () => {
 
             <button
               type="button"
+              onClick={() =>
+                copyModelPrompt({
+                  prompt: analysisResult?.modelPrompt,
+                  type: 'analysis',
+                })
+              }
+              disabled={!analysisResult?.modelPrompt}
+              className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedAnalysisPrompt ? 'Copied ✓' : 'Copy analysis prompt'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                copyModelPrompt({
+                  prompt: draftResult?.modelPrompt,
+                  type: 'draft',
+                })
+              }
+              disabled={!draftResult?.modelPrompt}
+              className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedDraftPrompt ? 'Copied ✓' : 'Copy draft prompt'}
+            </button>
+
+
+            <button
+              type="button"
               onClick={clearWorkshopResultsManually}
               disabled={
                 analyzing ||
