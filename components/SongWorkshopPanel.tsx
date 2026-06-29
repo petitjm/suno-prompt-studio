@@ -352,6 +352,11 @@ const getWorkshopStatusSummary = () => {
 }
 
 
+const getWorkshopActionCopyLabel = () => {
+  return lastWorkshopAction || 'None recorded'
+}
+
+
 const workshopStatusSummary = getWorkshopStatusSummary()
 
 
@@ -360,11 +365,12 @@ const workshopStatusSummary = getWorkshopStatusSummary()
         return ''
       }
 
-      return [
-        'SONG WORKSHOP PACKET',
-        '',
-        `Project: ${songTitle || 'Untitled project'}`,
-        `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+        return [
+          'SONG WORKSHOP PACKET',
+          '',
+          `Project: ${songTitle || 'Untitled project'}`,
+          `Song version: ${songVersionTitle || 'Unsaved or untitled version'}`,
+          `Workshop action: ${getWorkshopActionCopyLabel()}`,
         '',
         'Workshop controls:',
         `- Development focus: ${getDevelopmentFocusCopyLabel(developmentFocus)}`,
@@ -555,8 +561,9 @@ const buildDraftCopyText = () => {
   }
 
   return [
-    'SONG WORKSHOP DRAFT',
-    '',
+  'SONG WORKSHOP DRAFT',
+  '',
+  `Workshop action: ${getWorkshopActionCopyLabel()}`,
     draftResult.generatedAt
       ? `Generated at: ${formatGeneratedAt(draftResult.generatedAt)}`
       : '',
