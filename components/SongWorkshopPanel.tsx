@@ -1457,7 +1457,15 @@ const buildDraftCopyText = () => {
           {getDraftAnalysisStatus(draftResult)}
         </div>
 
+        <div className="rounded border border-gray-800 bg-gray-900/60 p-2 text-xs text-gray-400">
+          <div className="font-medium text-gray-300">
+            Compare label
+          </div>
 
+          <div className="mt-1">
+            {getDraftCompareLabel(draftResult)}
+          </div>
+        </div>
   
 
             <div className="flex flex-wrap items-center justify-between gap-2">
