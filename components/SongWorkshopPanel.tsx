@@ -66,6 +66,7 @@ export default function SongWorkshopPanel({
   const [justCopiedStatusSummary, setJustCopiedStatusSummary] = useState(false)
   const [lastWorkshopAction, setLastWorkshopAction] = useState('')
   const [workshopActionHistory, setWorkshopActionHistory] = useState<string[]>([])
+  const [lastSentCompareLabel, setLastSentCompareLabel] = useState('')
 
   const [runningFullWorkshop, setRunningFullWorkshop] = useState(false)
 
@@ -108,6 +109,7 @@ export default function SongWorkshopPanel({
       setRunningFullWorkshop(false)
       setLastWorkshopAction('')
       setWorkshopActionHistory([])
+      setLastSentCompareLabel('')
     }
 
 
@@ -1481,18 +1483,29 @@ const buildDraftCopyText = () => {
                   </span>
                 </div>
               
+                {lastSentCompareLabel && (
+                  <div className="rounded border border-green-700/40 bg-green-900/20 p-2 text-xs text-green-200">
+                    Sent to compare as: {lastSentCompareLabel}
+                  </div>
+                )}
+
+
               <div className="flex flex-wrap gap-2">
 
               <button
                   type="button"
                   onClick={() => {
-                      if (draftResult.lyric) {
-                        onSendDraftToCompare?.(
-                          draftResult.lyric,
-                          getDraftCompareLabel(draftResult),
-                        )
-                      }
-                    }}
+                  if (draftResult.lyric) {
+                    const compareLabel = getDraftCompareLabel(draftResult)
+
+                    setLastSentCompareLabel(compareLabel)
+
+                    onSendDraftToCompare?.(
+                      draftResult.lyric,
+                      compareLabel,
+                    )
+                  }
+                }}
                   disabled={!draftResult.lyric || !onSendDraftToCompare}
                   className="rounded bg-blue-700 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                 >
