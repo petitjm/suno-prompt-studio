@@ -567,6 +567,7 @@ const buildWorkshopStatusCopyText = () => {
                   : '',
                 '',
                 getDraftAnalysisStatus(draftResult),
+                `Compare label: ${getDraftCompareLabel(draftResult)}`,
                 '',
               draftResult.lyric || '',
               '',
@@ -759,6 +760,7 @@ const buildDraftCopyText = () => {
   'SONG WORKSHOP DRAFT',
   '',
   `Workshop action: ${getWorkshopActionCopyLabel()}`,
+  `Compare label: ${getDraftCompareLabel(draftResult)}`,
     draftResult.generatedAt
       ? `Generated at: ${formatGeneratedAt(draftResult.generatedAt)}`
       : '',
