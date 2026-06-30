@@ -390,6 +390,43 @@ const getWorkshopStatusSummary = () => {
   }
 }
 
+const getCurrentWorkshopPassType = () => {
+  if (analysisResult && draftResult) {
+    return 'Analysis + draft'
+  }
+
+  if (analysisResult) {
+    return 'Analysis only'
+  }
+
+  if (draftResult) {
+    return 'Draft only'
+  }
+
+  return 'Empty'
+}
+
+const getCurrentWorkshopPassDescription = () => {
+  if (analysisResult && draftResult) {
+    return draftResult.analysisContext
+      ? 'This pass contains an analysis and a draft created from analysis context.'
+      : 'This pass contains an analysis and a draft, but the draft was not created from analysis context.'
+  }
+
+  if (analysisResult) {
+    return 'This pass contains analysis only. Create a draft to complete the workshop pass.'
+  }
+
+  if (draftResult) {
+    return draftResult.analysisContext
+      ? 'This pass contains a draft created from analysis context.'
+      : 'This pass contains a draft created without a prior analysis pass.'
+  }
+
+  return 'No workshop results yet.'
+}
+
+
 
 const getWorkshopActionCopyLabel = () => {
   return lastWorkshopAction || 'None recorded'
@@ -965,6 +1002,20 @@ const buildDraftCopyText = () => {
           <div className="mt-1 text-[11px] uppercase tracking-wide text-purple-300">
               Last action: {lastWorkshopAction || 'None yet'}
             </div>
+
+            <div className="mt-2 rounded border border-gray-800 bg-gray-900/60 p-2">
+  <div className="text-[11px] uppercase tracking-wide text-gray-500">
+    Current pass
+  </div>
+
+  <div className="mt-1 font-medium text-gray-300">
+    {getCurrentWorkshopPassType()}
+  </div>
+
+  <div className="mt-1 text-gray-500">
+        {getCurrentWorkshopPassDescription()}
+      </div>
+    </div>
 
             {workshopActionHistory.length > 0 && (
               <div className="mt-2 border-t border-gray-800 pt-2">
