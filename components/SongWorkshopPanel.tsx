@@ -933,19 +933,19 @@ const buildDraftCopyText = () => {
   }
 
 
-  const getDraftCompareLabel = (draft: DraftResult) => {
+ const getDraftCompareLabel = (draft: DraftResult) => {
   const generatedAt = formatGeneratedAt(draft.generatedAt)
   const action = getWorkshopActionCopyLabel()
+  const passType = getCurrentWorkshopPassType()
 
-  if (generatedAt && action && action !== 'None recorded') {
-    return `Song Workshop draft — ${action} — ${generatedAt}`
-  }
+  const labelParts = [
+    'Song Workshop draft',
+    passType !== 'Empty' ? passType : '',
+    action && action !== 'None recorded' ? action : '',
+    generatedAt,
+  ].filter(Boolean)
 
-  if (generatedAt) {
-    return `Song Workshop draft — ${generatedAt}`
-  }
-
-  return 'Song Workshop draft'
+  return labelParts.join(' — ')
 }
 
 
