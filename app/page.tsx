@@ -262,6 +262,7 @@ const lastFollowedSectionIdRef = React.useRef<string | null>(null)
     const [savingCompareRight, setSavingCompareRight] = useState(false)
     const [lockCompareLeft, setLockCompareLeft] = useState(false)
     const [lockCompareRight, setLockCompareRight] = useState(false)
+    const pendingCompareScrollRef = React.useRef(false)
   const previewBars = React.useMemo(() => {
   if (!chords) return []
 
@@ -581,7 +582,25 @@ const scrollPerformanceToBarIndex = (
   })
 }
 
+const scrollToComparePreviewWhenReady = (attempt = 0) => {
+  const comparePreview = document.getElementById('rewrite-compare-preview')
 
+      if (comparePreview) {
+        comparePreview.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+        return
+      }
+
+      if (attempt >= 10) {
+        return
+      }
+
+      window.setTimeout(() => {
+        scrollToComparePreviewWhenReady(attempt + 1)
+      }, 100)
+    }
 
   const startPreviewPlayback = async () => {
     await Tone.start()
@@ -756,7 +775,48 @@ const [applyingLeft, setApplyingLeft] = useState(false)
 const [applyingRight, setApplyingRight] = useState(false)
 
 
+useEffect(() => {
+  if (mode !== 'write' || !pendingCompareScrollRef.current) {
+    return
+  }
 
+  pendingCompareScrollRef.current = false
+
+  const scrollToCompareEditors = (attempt = 0) => {
+    const compareTarget =
+      compareLeftRef.current ||
+      compareRightRef.current ||
+      document.getElementById('rewrite-compare-preview')
+
+    if (compareTarget) {
+      compareTarget.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+      return
+    }
+
+    if (attempt >= 20) {
+      return
+    }
+
+    window.setTimeout(() => {
+      scrollToCompareEditors(attempt + 1)
+    }, 100)
+  }
+
+  requestAnimationFrame(() => {
+    scrollToCompareEditors()
+
+    window.setTimeout(() => {
+      scrollToCompareEditors()
+    }, 250)
+
+    window.setTimeout(() => {
+      scrollToCompareEditors()
+    }, 600)
+  })
+}, [mode, compareLeftText, compareRightText])
 
 React.useEffect(() => {
   if (rewriteInstruction.toLowerCase().includes('hook')) {
@@ -3035,6 +3095,7 @@ return (
                   )
                   setFlashLeftPanel(true)
                   setFlashRightPanel(true)
+                  pendingCompareScrollRef.current = true
                   handleModeChange('write')
 
                   window.setTimeout(() => {
@@ -3042,14 +3103,6 @@ return (
                     setFlashRightPanel(false)
                   }, 600)
 
-                  window.setTimeout(() => {
-                    document
-                      .getElementById('rewrite-compare-preview')
-                      ?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start',
-                      })
-                  }, 150)
                 }}
                   onEditLyrics={() => handleModeChange('write')}
                 />
