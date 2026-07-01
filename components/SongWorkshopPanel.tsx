@@ -67,6 +67,7 @@ export default function SongWorkshopPanel({
   const [lastWorkshopAction, setLastWorkshopAction] = useState('')
   const [workshopActionHistory, setWorkshopActionHistory] = useState<string[]>([])
   const [lastSentCompareLabel, setLastSentCompareLabel] = useState('')
+  const [lastClickedWorkshopButton, setLastClickedWorkshopButton] = useState('')
 
   const [runningFullWorkshop, setRunningFullWorkshop] = useState(false)
 
@@ -110,6 +111,7 @@ export default function SongWorkshopPanel({
       setLastWorkshopAction('')
       setWorkshopActionHistory([])
       setLastSentCompareLabel('')
+      setLastClickedWorkshopButton('')
     }
 
 
@@ -189,6 +191,7 @@ export default function SongWorkshopPanel({
     }
     
     try {
+        showWorkshopButtonFeedback('analyze')
         recordWorkshopAction('Analyze song idea')
       setAnalyzing(true)
       setAnalysisMessage('Analysing song idea...')
@@ -263,6 +266,7 @@ export default function SongWorkshopPanel({
               )
             }
 
+        showWorkshopButtonFeedback('draft')
         setLastSentCompareLabel('')
 
       setDrafting(true)
@@ -363,6 +367,7 @@ const getDraftSourceBadge = (draft: DraftResult) => {
 const clearWorkshopResultsManually = () => {
   clearWorkshopOutput()
   setShowFullSourceLyrics(false)
+  showWorkshopButtonFeedback('clear')
 }
 
 
@@ -729,6 +734,7 @@ const buildWorkshopStatusCopyText = () => {
         return
       }
 
+      showWorkshopButtonFeedback('full-workshop')
       setRunningFullWorkshop(true)
       setLastSentCompareLabel('')
       recordWorkshopAction('Analyze + draft')
@@ -955,6 +961,16 @@ const buildDraftCopyText = () => {
   return labelParts.join(' — ')
 }
 
+
+const showWorkshopButtonFeedback = (buttonName: string) => {
+  setLastClickedWorkshopButton(buttonName)
+
+  window.setTimeout(() => {
+    setLastClickedWorkshopButton((current) =>
+      current === buttonName ? '' : current,
+    )
+  }, 1500)
+}
 
 
 
@@ -1207,7 +1223,11 @@ const buildDraftCopyText = () => {
             disabled={analyzing || runningFullWorkshop || !hasLyrics}
             className="rounded bg-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
           >
-            {analyzing ? 'Analysing song idea...' : 'Analyze song idea'}
+            {analyzing
+              ? 'Analyzing...'
+              : lastClickedWorkshopButton === 'analyze'
+                ? 'Started ✓'
+                : 'Analyze song idea'}
           </button>
 
           
@@ -1217,7 +1237,11 @@ const buildDraftCopyText = () => {
             disabled={drafting || runningFullWorkshop || !hasLyrics}
             className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
           >
-            {drafting ? 'Creating cohesive draft...' : 'Create cohesive draft'}
+            {drafting
+              ? 'Creating draft...'
+              : lastClickedWorkshopButton === 'draft'
+                ? 'Started ✓'
+                : 'Create cohesive draft'}
           </button>
 
           <button
@@ -1226,7 +1250,11 @@ const buildDraftCopyText = () => {
               disabled={analyzing || drafting || runningFullWorkshop || !lyrics.trim()}
               className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
             >
-              {runningFullWorkshop ? 'Analyzing, then drafting...' : 'Analyze + draft'}
+              {runningFullWorkshop
+                  ? 'Analyzing, then drafting...'
+                  : lastClickedWorkshopButton === 'full-workshop'
+                    ? 'Started ✓'
+                    : 'Analyze + draft'}
             </button>
 
            </div>
@@ -1312,7 +1340,7 @@ const buildDraftCopyText = () => {
               }
               className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
             >
-              Clear results
+              {lastClickedWorkshopButton === 'clear' ? 'Cleared ✓' : 'Clear results'}
             </button>
 
                 </div>
