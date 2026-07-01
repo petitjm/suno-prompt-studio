@@ -208,6 +208,7 @@ export default function Page() {
   const [justExtractedAndRemovedChords, setJustExtractedAndRemovedChords] = useState(false)
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
+  const [generatingChords, setGeneratingChords] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1382,6 +1383,66 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   setChordExtractionMessage('')
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
 }
+
+
+const generateChords = async () => {
+  if (!performanceSheet.trim()) {
+    setChordExtractionMessage('Add lyrics before generating chords.')
+    return
+  }
+
+  setGeneratingChords(true)
+  setChordExtractionMessage('Generating chords...')
+  setProjectMessage('')
+
+  try {
+    const res = await fetch('/api/chords', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lyrics: performanceSheet,
+        songTitle: activeProject?.title || '',
+        songVersionTitle:
+          activeSongVersion?.title || songVersionTitle || '',
+      }),
+    })
+
+    const data = await readJsonSafe(res)
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to generate chords.')
+    }
+
+    const generatedChords = data.chords || data.result || data
+
+    if (
+      !generatedChords ||
+      typeof generatedChords !== 'object' ||
+      Array.isArray(generatedChords)
+    ) {
+      throw new Error('Chord generation did not return a valid chord object.')
+    }
+
+    setChords(generatedChords)
+    setChordsText(JSON.stringify(generatedChords, null, 2))
+    setChordExtractionMessage('Chords generated. Review and save when ready.')
+
+    if (!chordVersionTitle.trim()) {
+      setChordVersionTitle('Generated chord draft')
+    }
+  } catch (error) {
+    setChordExtractionMessage(
+      error instanceof Error
+        ? error.message
+        : 'Failed to generate chords.',
+    )
+  } finally {
+    setGeneratingChords(false)
+  }
+}
+
+
+
 
 const saveChords = async () => {
   try {
@@ -3245,18 +3306,29 @@ return (
             Chord JSON
           </h2>
 
-          <button
-            type="button"
-            onClick={saveChords}
-            disabled={!activeProject || savingChords || !chordsText.trim()}
-            className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
-          >
-            {savingChords
-              ? 'Saving...'
-              : justSavedChords
-                ? 'Saved ✓'
-                : 'Save chords'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => generateChords()}
+              disabled={generatingChords || !performanceSheet.trim()}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {generatingChords ? 'Generating...' : 'Generate chords'}
+            </button>
+
+            <button
+              type="button"
+              onClick={saveChords}
+              disabled={!activeProject || savingChords || !chordsText.trim()}
+              className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
+            >
+              {savingChords
+                ? 'Saving...'
+                : justSavedChords
+                  ? 'Saved ✓'
+                  : 'Save chords'}
+            </button>
+          </div>
         </div>
 
         <input
