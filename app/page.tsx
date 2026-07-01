@@ -3331,6 +3331,19 @@ return (
           </div>
         </div>
 
+        {chordExtractionMessage && (
+          <div className="mt-3 rounded border border-yellow-700/40 bg-yellow-900/20 p-3 text-sm text-yellow-200">
+            {chordExtractionMessage}
+          </div>
+        )}
+
+        {projectMessage && (
+          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
+            {projectMessage}
+          </div>
+        )}
+
+
         <input
           value={chordVersionTitle}
           onChange={(event) => setChordVersionTitle(event.target.value)}
@@ -3345,17 +3358,7 @@ return (
           className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
         />
 
-        {chordExtractionMessage && (
-          <div className="mt-3 rounded border border-yellow-700/40 bg-yellow-900/20 p-3 text-sm text-yellow-200">
-            {chordExtractionMessage}
-          </div>
-        )}
-
-        {projectMessage && (
-          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
-            {projectMessage}
-          </div>
-        )}
+        
       </div>
     </div>
   </div>
