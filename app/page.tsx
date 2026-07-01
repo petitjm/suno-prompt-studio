@@ -212,6 +212,7 @@ export default function Page() {
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
+  const [justClearedChords, setJustClearedChords] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1363,6 +1364,12 @@ const deleteProject = async () => {
   }
 }
 
+
+const hasChordEditorContent = () => {
+  return Boolean(chordsText.trim())
+}
+
+
 const scrollToStructuredChordJson = () => {
   window.setTimeout(() => {
     structuredChordJsonRef.current?.scrollIntoView({
@@ -1645,7 +1652,19 @@ const generateChords = async () => {
   }
 }
 
+const clearChordEditor = () => {
+  setChords(null)
+  setChordsText('')
+  setChordVersionTitle('')
+  setActiveChordVersionId(null)
+  setChordExtractionMessage('Chord editor cleared.')
+  setProjectMessage('')
+  setJustClearedChords(true)
 
+  window.setTimeout(() => {
+    setJustClearedChords(false)
+  }, 1500)
+}
 
 
 const saveChords = async () => {
@@ -3591,6 +3610,15 @@ return (
               {justCopiedChordJson ? 'Copied ✓' : 'Copy JSON'}
             </button>
 
+            <button
+              type="button"
+              onClick={() => clearChordEditor()}
+              disabled={generatingChords || savingChords || !hasChordEditorContent()}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justClearedChords ? 'Cleared ✓' : 'Clear editor'}
+           </button>
+
 
 
             <button
@@ -3623,34 +3651,52 @@ return (
 
         <input
           value={chordVersionTitle}
-          onChange={(event) => setChordVersionTitle(event.target.value)}
+          onChange={(event) => {
+              setChordVersionTitle(event.target.value)
+              setChordExtractionMessage('')
+              setProjectMessage('')
+            }}
           placeholder="Chord version title"
           className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
         />
 
         <textarea
-          value={chordsText}
-         onChange={(event) => {
-          const nextValue = event.target.value
-          setChordsText(nextValue)
+  value={chordsText}
+  onChange={(event) => {
+    const nextValue = event.target.value
 
-          try {
-            const parsed = JSON.parse(nextValue)
+    setChordsText(nextValue)
+    setChordExtractionMessage('')
+    setProjectMessage('')
 
-            if (
-              parsed &&
-              typeof parsed === 'object' &&
-              !Array.isArray(parsed)
-            ) {
-              setChords(parsed)
-            }
-          } catch {
-            // Keep the last valid chord summary while the user is editing invalid JSON.
-          }
-        }}
-          placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
-          className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
-        />
+    if (!nextValue.trim()) {
+  setChords(null)
+  setActiveChordVersionId(null)
+  setChordVersionTitle('')
+  return
+}
+
+    try {
+      const parsed = JSON.parse(nextValue)
+
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed)
+      ) {
+        setChords(parsed)
+
+        if (Object.keys(parsed).length === 0) {
+          setActiveChordVersionId(null)
+        }
+      }
+    } catch {
+      // Keep the last valid chord summary while the user is editing invalid JSON.
+    }
+  }}
+  placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
+  className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+/>
 
         
       </div>
