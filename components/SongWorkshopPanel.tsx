@@ -263,6 +263,8 @@ export default function SongWorkshopPanel({
               )
             }
 
+        setLastSentCompareLabel('')
+
       setDrafting(true)
       setDraftMessage('Creating cohesive draft...')
       setDraftResult(null)
@@ -728,6 +730,7 @@ const buildWorkshopStatusCopyText = () => {
       }
 
       setRunningFullWorkshop(true)
+      setLastSentCompareLabel('')
       recordWorkshopAction('Analyze + draft')
       setAnalysisMessage('Step 1 of 2: analyzing song idea...')
       setDraftMessage('Waiting for fresh analysis...')
