@@ -209,6 +209,8 @@ export default function Page() {
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
   const [generatingChords, setGeneratingChords] = useState(false)
+  const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
+  const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1384,6 +1386,47 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
 }
 
+const copyChordJson = async () => {
+  if (!chordsText.trim()) {
+    setChordExtractionMessage('No chord JSON available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(chordsText)
+    setJustCopiedChordJson(true)
+    setChordExtractionMessage('Chord JSON copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedChordJson(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy chord JSON.')
+  }
+}
+
+const copyChordSummary = async () => {
+  const copyText = buildChordSummaryCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No chord summary available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedChordSummary(true)
+    setChordExtractionMessage('Chord summary copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedChordSummary(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy chord summary.')
+  }
+}
+
+
 const getChordSummaryRows = (value: unknown): { label: string; value: string }[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return []
@@ -1431,6 +1474,28 @@ const getChordSummaryRows = (value: unknown): { label: string; value: string }[]
 }
 
 const chordSummaryRows = getChordSummaryRows(chords)
+
+const buildChordSummaryCopyText = () => {
+  const rows = getChordSummaryRows(chords)
+
+  if (rows.length === 0) {
+    return ''
+  }
+
+  return [
+    'CHORD SUMMARY',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    '',
+    ...rows.flatMap((row) => [
+      row.label,
+      row.value,
+      '',
+    ]),
+  ].join('\n')
+}
 
 
 
@@ -3338,8 +3403,19 @@ return (
           </p>
         </div>
 
-        <div className="text-xs text-gray-500">
-          {chordSummaryRows.length} sections
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-xs text-gray-500">
+            {chordSummaryRows.length} sections
+          </div>
+
+          <button
+            type="button"
+            onClick={() => copyChordSummary()}
+            disabled={chordSummaryRows.length === 0}
+            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+          >
+            {justCopiedChordSummary ? 'Copied ✓' : 'Copy summary'}
+          </button>
         </div>
       </div>
 
@@ -3405,6 +3481,18 @@ return (
             >
               {generatingChords ? 'Generating...' : 'Generate chords'}
             </button>
+
+
+            <button
+              type="button"
+              onClick={() => copyChordJson()}
+              disabled={!chordsText.trim()}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedChordJson ? 'Copied ✓' : 'Copy JSON'}
+            </button>
+
+
 
             <button
               type="button"
