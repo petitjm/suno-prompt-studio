@@ -211,6 +211,7 @@ export default function Page() {
   const [generatingChords, setGeneratingChords] = useState(false)
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
+  const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1405,6 +1406,29 @@ const copyChordJson = async () => {
   }
 }
 
+
+const copyChordPacket = async () => {
+  const copyText = buildChordPacketCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No chord data available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedChordPacket(true)
+    setChordExtractionMessage('Chord packet copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedChordPacket(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy chord packet.')
+  }
+}
+
+
 const copyChordSummary = async () => {
   const copyText = buildChordSummaryCopyText()
 
@@ -1474,6 +1498,71 @@ const getChordSummaryRows = (value: unknown): { label: string; value: string }[]
 }
 
 const chordSummaryRows = getChordSummaryRows(chords)
+
+const getUsableChordDataFromEditor = () => {
+  if (!chordsText.trim()) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(chordsText)
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      Object.keys(parsed).length > 0
+    ) {
+      return parsed
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+
+const hasUsableChordData = () => {
+  return getUsableChordDataFromEditor() !== null
+}
+
+const buildChordPacketCopyText = () => {
+  const chordData = getUsableChordDataFromEditor()
+
+  if (!chordData) {
+    return ''
+  }
+
+  const rows = getChordSummaryRows(chordData)
+
+  return [
+    'CHORD WORKSHOP PACKET',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    '',
+    'CHORD SUMMARY',
+    '',
+    ...(rows.length > 0
+      ? rows.flatMap((row) => [
+          row.label,
+          row.value,
+          '',
+        ])
+      : ['No chord summary available.', '']),
+    '',
+    'CHORD JSON',
+    '',
+    chordsText.trim() || 'No chord JSON available.',
+    '',
+    'SOURCE LYRICS',
+    '',
+    performanceSheet || 'No source lyrics available.',
+  ].join('\n')
+}
+
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
@@ -3416,6 +3505,16 @@ return (
           >
             {justCopiedChordSummary ? 'Copied ✓' : 'Copy summary'}
           </button>
+
+          <button
+              type="button"
+              onClick={() => copyChordPacket()}
+              disabled={!hasUsableChordData()}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedChordPacket ? 'Copied ✓' : 'Copy packet'}
+            </button>
+
         </div>
       </div>
 
