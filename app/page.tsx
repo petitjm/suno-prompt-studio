@@ -701,6 +701,7 @@ const [justSavedChords, setJustSavedChords] = useState(false)
 const compareLeftSong = songVersions.find((v) => v.id === compareLeftSongId) || null
 const compareRightSong = songVersions.find((v) => v.id === compareRightSongId) || null
 
+
 const [versionsLoading, setVersionsLoading] = useState(false)
 const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(null)
 const [activeChordVersionId, setActiveChordVersionId] = useState<string | null>(null)
@@ -3110,11 +3111,130 @@ return (
 
 
           {mode === 'chords' && (
-            <div>
-              <h1 className="text-xl mb-4">Chords</h1>
-              <p className="text-gray-400">Generate and refine harmonic structure.</p>
-            </div>
-          )}
+  <div className="space-y-6">
+    <div>
+      <h1 className="text-xl font-semibold text-gray-100">
+        Chords Workshop
+      </h1>
+      <p className="mt-2 text-sm text-gray-400">
+        Generate, inspect, edit, and save harmonic structure for the current song.
+      </p>
+    </div>
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Current song context
+      </h2>
+
+      <div className="mt-3 grid gap-3 text-sm text-gray-300 md:grid-cols-2">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Project
+          </div>
+          <div className="mt-1">
+            {activeProject?.title || 'No project selected'}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Song version
+          </div>
+          <div className="mt-1">
+            {activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Active chord version
+          </div>
+          <div className="mt-1">
+            {chordVersionTitle || 'No chord version selected'}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Saved chord versions
+          </div>
+          <div className="mt-1">
+            {chordVersions.length}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-950 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Source lyrics
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => handleModeChange('write')}
+            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+          >
+            Edit lyrics
+          </button>
+        </div>
+
+        <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100">
+          {performanceSheet || 'No lyrics available yet.'}
+        </pre>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Chord JSON
+          </h2>
+
+          <button
+            type="button"
+            onClick={saveChords}
+            disabled={!activeProject || savingChords || !chordsText.trim()}
+            className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
+          >
+            {savingChords
+              ? 'Saving...'
+              : justSavedChords
+                ? 'Saved ✓'
+                : 'Save chords'}
+          </button>
+        </div>
+
+        <input
+          value={chordVersionTitle}
+          onChange={(event) => setChordVersionTitle(event.target.value)}
+          placeholder="Chord version title"
+          className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
+        />
+
+        <textarea
+          value={chordsText}
+          onChange={(event) => setChordsText(event.target.value)}
+          placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
+          className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+        />
+
+        {chordExtractionMessage && (
+          <div className="mt-3 rounded border border-yellow-700/40 bg-yellow-900/20 p-3 text-sm text-yellow-200">
+            {chordExtractionMessage}
+          </div>
+        )}
+
+        {projectMessage && (
+          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
+            {projectMessage}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
           {mode === 'sheet' && (
             <SongSheet
