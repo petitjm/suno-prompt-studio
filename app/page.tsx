@@ -1384,6 +1384,56 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
 }
 
+const getChordSummaryRows = (value: unknown): { label: string; value: string }[] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+
+  return Object.entries(value as Record<string, unknown>)
+    .flatMap(([key, entry]) => {
+      if (typeof entry === 'string') {
+        return [
+          {
+            label: key,
+            value: entry,
+          },
+        ]
+      }
+
+      if (Array.isArray(entry)) {
+        return [
+          {
+            label: key,
+            value: entry
+              .map((item) =>
+                typeof item === 'string' ? item : JSON.stringify(item),
+              )
+              .join('\n'),
+          },
+        ]
+      }
+
+      if (entry && typeof entry === 'object') {
+        return Object.entries(entry as Record<string, unknown>).map(
+          ([nestedKey, nestedValue]) => ({
+            label: `${key}.${nestedKey}`,
+            value:
+              typeof nestedValue === 'string'
+                ? nestedValue
+                : JSON.stringify(nestedValue),
+          }),
+        )
+      }
+
+      return []
+    })
+    .filter((row) => row.value.trim())
+}
+
+const chordSummaryRows = getChordSummaryRows(chords)
+
+
+
 
 const generateChords = async () => {
   if (!performanceSheet.trim()) {
@@ -3277,6 +3327,46 @@ return (
       )}
     </div>
 
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Chord summary
+          </h2>
+          <p className="mt-1 text-sm text-gray-400">
+            A readable view of the currently loaded or generated chord data.
+          </p>
+        </div>
+
+        <div className="text-xs text-gray-500">
+          {chordSummaryRows.length} sections
+        </div>
+      </div>
+
+      {chordSummaryRows.length > 0 ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          {chordSummaryRows.map((row) => (
+            <div
+              key={`${row.label}-${row.value}`}
+              className="rounded border border-gray-800 bg-gray-900 p-3"
+            >
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                {row.label}
+              </div>
+
+              <pre className="mt-2 whitespace-pre-wrap font-mono text-sm leading-6 text-gray-100">
+                {row.value}
+              </pre>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
+          No chord data loaded yet. Generate chords, load a saved version, or paste valid chord JSON.
+        </div>
+      )}
+    </div>
+
 
 
     <div className="grid gap-4 lg:grid-cols-2">
@@ -3353,7 +3443,24 @@ return (
 
         <textarea
           value={chordsText}
-          onChange={(event) => setChordsText(event.target.value)}
+         onChange={(event) => {
+          const nextValue = event.target.value
+          setChordsText(nextValue)
+
+          try {
+            const parsed = JSON.parse(nextValue)
+
+            if (
+              parsed &&
+              typeof parsed === 'object' &&
+              !Array.isArray(parsed)
+            ) {
+              setChords(parsed)
+            }
+          } catch {
+            // Keep the last valid chord summary while the user is editing invalid JSON.
+          }
+        }}
           placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
           className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
         />
