@@ -1368,6 +1368,20 @@ const scrollToStructuredChordJson = () => {
   }, 150)
 }
 
+const loadChordVersionIntoEditor = (versionId: string) => {
+  const selected = chordVersions.find((version) => version.id === versionId)
+
+  if (!selected) {
+    return
+  }
+
+  setActiveChordVersionId(selected.id)
+  setChordVersionTitle(selected.title || 'Untitled chord version')
+  setChords(selected.chord_data || null)
+  setChordsText(JSON.stringify(selected.chord_data || {}, null, 2))
+  setChordExtractionMessage('')
+  setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
+}
 
 const saveChords = async () => {
   try {
@@ -3164,6 +3178,45 @@ return (
         </div>
       </div>
     </div>
+
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Saved chord versions
+          </h2>
+          <p className="mt-1 text-sm text-gray-400">
+            Load a saved harmonic version into the editor.
+          </p>
+        </div>
+
+        <div className="text-xs text-gray-500">
+          {chordVersions.length} saved
+        </div>
+      </div>
+
+      {chordVersions.length > 0 ? (
+        <select
+          value={activeChordVersionId || ''}
+          onChange={(event) => loadChordVersionIntoEditor(event.target.value)}
+          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
+        >
+          <option value="">Select a saved chord version</option>
+          {chordVersions.map((version) => (
+            <option key={version.id} value={version.id}>
+              {version.title || 'Untitled chord version'}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
+          No saved chord versions yet.
+        </div>
+      )}
+    </div>
+
+
 
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded border border-gray-800 bg-gray-950 p-4">
