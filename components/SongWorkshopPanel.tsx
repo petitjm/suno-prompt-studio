@@ -68,6 +68,10 @@ export default function SongWorkshopPanel({
   const [workshopActionHistory, setWorkshopActionHistory] = useState<string[]>([])
   const [lastSentCompareLabel, setLastSentCompareLabel] = useState('')
   const [lastClickedWorkshopButton, setLastClickedWorkshopButton] = useState('')
+  const [showAnalyzeComplete, setShowAnalyzeComplete] = useState(false)
+  const [showDraftComplete, setShowDraftComplete] = useState(false)
+  const [showFullWorkshopComplete, setShowFullWorkshopComplete] = useState(false)
+  const [showClearComplete, setShowClearComplete] = useState(false)
 
   const [runningFullWorkshop, setRunningFullWorkshop] = useState(false)
 
@@ -112,6 +116,10 @@ export default function SongWorkshopPanel({
       setWorkshopActionHistory([])
       setLastSentCompareLabel('')
       setLastClickedWorkshopButton('')
+      setShowAnalyzeComplete(false)
+      setShowDraftComplete(false)
+      setShowFullWorkshopComplete(false)
+      setShowClearComplete(false)
     }
 
 
@@ -184,65 +192,86 @@ export default function SongWorkshopPanel({
       ].slice(0, 5))
     }
 
-  const analyzeSongIdea = async () => {
-    if (!hasLyrics) {
-      setAnalysisMessage('Add lyrics or fragments before analysing the song idea.')
-      return null
-    }
-    
+const analyzeSongIdea = async (
+  source: 'manual' | 'full-workshop' = 'manual',
+) => {
+  if (!hasLyrics) {
+    setAnalysisMessage('Add lyrics or fragments before analysing the song idea.')
+    return null
+  }
+
+  let shouldShowAnalyzeComplete = false
+
+  if (source === 'manual') {
+    recordWorkshopAction('Analyze song idea')
+  }
+
+  setAnalyzing(true)
+  setAnalysisMessage('Analysing song idea...')
+  setAnalysisResult(null)
+
+  try {
+    const response = await fetch('/api/song-workshop/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics,
+        songTitle,
+        songVersionTitle,
+        workshopNotes,
+        workshopControls,
+      }),
+    })
+
+    const responseText = await response.text()
+
+    let data: {
+      error?: string
+      analysis?: AnalysisResult
+    } = {}
+
     try {
-        showWorkshopButtonFeedback('analyze')
-        recordWorkshopAction('Analyze song idea')
-      setAnalyzing(true)
-      setAnalysisMessage('Analysing song idea...')
-      setAnalysisResult(null)
-
-      const response = await fetch('/api/song-workshop/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          lyrics,
-          songTitle,
-          songVersionTitle,
-          workshopNotes,
-          workshopControls,
-        }),
-      })
-
-      const responseText = await response.text()
-
-      let data: {
-        error?: string
-        analysis?: AnalysisResult
-      } = {}
-
-      try {
-        data = responseText ? JSON.parse(responseText) : {}
-      } catch {
-        throw new Error(
-          `Song Workshop API did not return JSON. Status: ${response.status}`,
-        )
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyse song idea.')
-      }
-
-      setAnalysisResult(data.analysis || null)
-      return data.analysis as AnalysisResult
-      setAnalysisMessage('Song idea analysis complete.')
-    } catch (error) {
-      setAnalysisMessage(
-        error instanceof Error
-          ? error.message
-          : 'Failed to analyse song idea.',
+      data = responseText ? JSON.parse(responseText) : {}
+    } catch {
+      throw new Error(
+        `Song Workshop API did not return JSON. Status: ${response.status}`,
       )
-    } finally {
-      setAnalyzing(false)
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to analyse song idea.')
+    }
+
+    setAnalysisResult(data.analysis || null)
+    setAnalysisMessage('Song idea analysis complete.')
+
+    shouldShowAnalyzeComplete = source === 'manual'
+
+    return data.analysis || null
+  } catch (error) {
+    setAnalysisMessage(
+      error instanceof Error
+        ? error.message
+        : 'Failed to analyse song idea.',
+    )
+
+    return null
+  } finally {
+    setAnalyzing(false)
+
+    if (shouldShowAnalyzeComplete) {
+      window.setTimeout(() => {
+        setShowAnalyzeComplete(true)
+
+        window.setTimeout(() => {
+          setShowAnalyzeComplete(false)
+        }, 2500)
+      }, 0)
     }
   }
+}
 
   const createCohesiveDraft = async (
       analysisOverride?: AnalysisResult | null,
@@ -266,10 +295,10 @@ export default function SongWorkshopPanel({
               )
             }
 
-        showWorkshopButtonFeedback('draft')
-        setLastSentCompareLabel('')
+        
 
-      setDrafting(true)
+        setLastSentCompareLabel('')
+        setDrafting(true)
       setDraftMessage('Creating cohesive draft...')
       setDraftResult(null)
 
@@ -309,12 +338,20 @@ export default function SongWorkshopPanel({
 
       setDraftResult(data.draft || null)
       setDraftMessage('Cohesive draft created.')
+      if (source === 'full-workshop') {
+      showTemporaryFeedback(setShowFullWorkshopComplete)
+    } else {
+      showTemporaryFeedback(setShowDraftComplete)
+    }
     } catch (error) {
       setDraftMessage(
         error instanceof Error
           ? error.message
           : 'Failed to create cohesive draft.',
       )
+      showWorkshopButtonComplete(
+          source === 'full-workshop' ? 'full-workshop-complete' : 'draft-complete',
+        )
     } finally {
       setDrafting(false)
     }
@@ -367,7 +404,7 @@ const getDraftSourceBadge = (draft: DraftResult) => {
 const clearWorkshopResultsManually = () => {
   clearWorkshopOutput()
   setShowFullSourceLyrics(false)
-  showWorkshopButtonFeedback('clear')
+  showTemporaryFeedback(setShowClearComplete)
 }
 
 
@@ -734,7 +771,7 @@ const buildWorkshopStatusCopyText = () => {
         return
       }
 
-      showWorkshopButtonFeedback('full-workshop')
+      
       setRunningFullWorkshop(true)
       setLastSentCompareLabel('')
       recordWorkshopAction('Analyze + draft')
@@ -742,7 +779,7 @@ const buildWorkshopStatusCopyText = () => {
       setDraftMessage('Waiting for fresh analysis...')
 
       try {
-        const freshAnalysis = await analyzeSongIdea()
+        const freshAnalysis = await analyzeSongIdea('full-workshop')
 
         if (!freshAnalysis) {
           setDraftMessage('Draft not created because analysis did not complete.')
@@ -961,6 +998,16 @@ const buildDraftCopyText = () => {
   return labelParts.join(' — ')
 }
 
+const showTemporaryFeedback = (
+  setter: React.Dispatch<React.SetStateAction<boolean>>,
+) => {
+  setter(true)
+
+  window.setTimeout(() => {
+    setter(false)
+  }, 2500)
+}
+
 
 const showWorkshopButtonFeedback = (buttonName: string) => {
   setLastClickedWorkshopButton(buttonName)
@@ -972,6 +1019,16 @@ const showWorkshopButtonFeedback = (buttonName: string) => {
   }, 1500)
 }
 
+
+const showWorkshopButtonComplete = (buttonName: string) => {
+  setLastClickedWorkshopButton(buttonName)
+
+  window.setTimeout(() => {
+    setLastClickedWorkshopButton((current) =>
+      current === buttonName ? '' : current,
+    )
+  }, 2500)
+}
 
 
 
@@ -1219,14 +1276,14 @@ const showWorkshopButtonFeedback = (buttonName: string) => {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={analyzeSongIdea}
+            onClick={() => analyzeSongIdea()}
             disabled={analyzing || runningFullWorkshop || !hasLyrics}
             className="rounded bg-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
           >
-            {analyzing
-              ? 'Analyzing...'
-              : lastClickedWorkshopButton === 'analyze'
-                ? 'Started ✓'
+            {showAnalyzeComplete
+              ? 'Analyzed ✓'
+              : analyzing
+                ? 'Analyzing...'
                 : 'Analyze song idea'}
           </button>
 
@@ -1237,10 +1294,10 @@ const showWorkshopButtonFeedback = (buttonName: string) => {
             disabled={drafting || runningFullWorkshop || !hasLyrics}
             className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
           >
-            {drafting
-              ? 'Creating draft...'
-              : lastClickedWorkshopButton === 'draft'
-                ? 'Started ✓'
+           {showDraftComplete
+              ? 'Draft created ✓'
+              : drafting
+                ? 'Creating draft...'
                 : 'Create cohesive draft'}
           </button>
 
@@ -1250,10 +1307,10 @@ const showWorkshopButtonFeedback = (buttonName: string) => {
               disabled={analyzing || drafting || runningFullWorkshop || !lyrics.trim()}
               className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
             >
-              {runningFullWorkshop
-                  ? 'Analyzing, then drafting...'
-                  : lastClickedWorkshopButton === 'full-workshop'
-                    ? 'Started ✓'
+              {showFullWorkshopComplete
+                  ? 'Workshop complete ✓'
+                  : runningFullWorkshop
+                    ? 'Analyzing, then drafting...'
                     : 'Analyze + draft'}
             </button>
 
@@ -1340,7 +1397,7 @@ const showWorkshopButtonFeedback = (buttonName: string) => {
               }
               className="rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
             >
-              {lastClickedWorkshopButton === 'clear' ? 'Cleared ✓' : 'Clear results'}
+              {showClearComplete ? 'Cleared ✓' : 'Clear results'}
             </button>
 
                 </div>
