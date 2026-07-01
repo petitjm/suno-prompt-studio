@@ -1303,7 +1303,7 @@ const showWorkshopButtonComplete = (buttonName: string) => {
 
           <button
               type="button"
-              onClick={runFullWorkshopPass}
+              onClick={() => runFullWorkshopPass()}
               disabled={analyzing || drafting || runningFullWorkshop || !lyrics.trim()}
               className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
             >
@@ -1383,7 +1383,7 @@ const showWorkshopButtonComplete = (buttonName: string) => {
 
             <button
               type="button"
-              onClick={clearWorkshopResultsManually}
+              onClick={() => clearWorkshopResultsManually()}
               disabled={
                 analyzing ||
                 drafting ||
