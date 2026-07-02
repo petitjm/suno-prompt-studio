@@ -1577,6 +1577,28 @@ const getTransposeLabel = () => {
     : `${chordTransposeSemitones} semitone${chordTransposeSemitones === -1 ? '' : 's'}`
 }
 
+const getTransposedKeyLabel = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return ''
+  }
+
+  const record = chordData as Record<string, unknown>
+  const keyValue = getStringValue(record.key)
+
+  if (!keyValue) {
+    return ''
+  }
+
+  if (chordTransposeSemitones === 0) {
+    return keyValue
+  }
+
+  return `${keyValue} → ${transposeChordSymbol(keyValue, chordTransposeSemitones)}`
+}
+
+
 const transposePlacedSongSheetLine = (
   line: PlacedSongSheetLine,
 ): PlacedSongSheetLine => {
@@ -1588,6 +1610,8 @@ const transposePlacedSongSheetLine = (
     })),
   }
 }
+
+
 
 
 const copyChordSummary = async () => {
@@ -1706,7 +1730,11 @@ const buildChordPacketCopyText = () => {
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
     `Editor status: ${chordEditorStatus.label}`,
-    `Editor status detail: ${chordEditorStatus.detail}`,
+    `Transpose: ${getTransposeLabel()}`,
+    getTransposedKeyLabel()
+      ? `Displayed key: ${getTransposedKeyLabel()}`
+      : '',
+    '',
     '',
     'CHORD SUMMARY',
     '',
@@ -4082,8 +4110,11 @@ return (
         Performance songsheet preview
       </div>
       <p className="mt-1 text-sm text-gray-500">
-        Chords placed above the lyric position where the change happens.
-      </p>
+          Chords placed above the lyric position where the change happens.
+          {getTransposedKeyLabel()
+            ? ` Displayed key: ${getTransposedKeyLabel()}.`
+            : ''}
+        </p>
     </div>
 
     <div className="flex flex-wrap items-center justify-end gap-2">
