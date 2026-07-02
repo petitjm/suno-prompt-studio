@@ -1554,6 +1554,8 @@ const buildChordPacketCopyText = () => {
     `Project: ${activeProject?.title || 'Untitled project'}`,
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    `Editor status: ${chordEditorStatus.label}`,
+    `Editor status detail: ${chordEditorStatus.detail}`,
     '',
     'CHORD SUMMARY',
     '',
@@ -1616,6 +1618,8 @@ const buildChordSummaryCopyText = () => {
     `Project: ${activeProject?.title || 'Untitled project'}`,
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    `Editor status: ${chordEditorStatus.label}`,
+    `Editor status detail: ${chordEditorStatus.detail}`,
     '',
     ...rows.flatMap((row) => [
       row.label,
