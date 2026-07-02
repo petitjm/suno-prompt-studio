@@ -214,6 +214,7 @@ export default function Page() {
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
   const [justCopiedChordPracticePack, setJustCopiedChordPracticePack] = useState(false)
   const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
+  const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
@@ -1375,6 +1376,29 @@ const hasChordEditorContent = () => {
 }
 
 
+const getChordDataFromEditorJson = () => {
+  if (!chordsText.trim()) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(chordsText)
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+
 const scrollToStructuredChordJson = () => {
   window.setTimeout(() => {
     structuredChordJsonRef.current?.scrollIntoView({
@@ -1482,6 +1506,28 @@ const copyChordSheet = async () => {
     setChordExtractionMessage('Could not copy chord sheet.')
   }
 }
+
+const copyPlacedSongSheet = async () => {
+  const copyText = buildPlacedSongSheetCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No placed chord songsheet available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedPlacedSongSheet(true)
+    setChordExtractionMessage('Performance songsheet copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedPlacedSongSheet(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy performance songsheet.')
+  }
+}
+
 
 
 const copyChordSummary = async () => {
@@ -1848,7 +1894,7 @@ const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
 }
 
 const buildPlacedSongSheetCopyText = () => {
-  const chordData = getUsableChordDataFromEditor()
+  const chordData = getChordDataFromEditorJson()
 
   if (!chordData) {
     return ''
@@ -3907,6 +3953,9 @@ return (
             {justCopiedChordSummary ? 'Copied ✓' : 'Copy summary'}
           </button>
 
+
+
+
           <button
               type="button"
               onClick={() => copyChordSheet()}
@@ -3962,57 +4011,65 @@ return (
       )}
     </div>
 
-
-    <div className="rounded border border-gray-800 bg-gray-950 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-            Performance songsheet preview
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
-            Chords placed above the lyric position where the change happens.
-          </p>
-        </div>
+   <div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Performance songsheet preview
       </div>
-
-      <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100">
-        {placedSongSheetPreview ||
-          'No placed chord songsheet yet. Add songSheetLines to the chord JSON to preview chord-over-lyric placement.'}
-      </pre>
-
-      {!placedSongSheetPreview && (
-        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs text-gray-500">
-          Expected JSON field: songSheetLines. Each line can include section, lyric, and chords with chord plus charIndex.
-        </div>
-      )}
+      <p className="mt-1 text-sm text-gray-500">
+        Chords placed above the lyric position where the change happens.
+      </p>
     </div>
 
+    <button
+      type="button"
+      onClick={() => copyPlacedSongSheet()}
+      disabled={!placedSongSheetPreview}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedPlacedSongSheet ? 'Copied ✓' : 'Copy songsheet'}
+    </button>
+  </div>
 
-    <div className="rounded border border-gray-800 bg-gray-950 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-            Chord sheet preview
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
-            Musician-facing chord-only output. This is what Copy chord sheet will copy.
-          </p>
-        </div>
+  <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100">
+    {placedSongSheetPreview ||
+      'No performance songsheet preview yet. Generate or paste chord JSON that includes placed chord positions. The next step is to make Generate chords create this automatically.'}
+  </pre>
 
-        <button
-          type="button"
-          onClick={() => copyChordSheet()}
-          disabled={!hasUsableChordData()}
-          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-        >
-          {justCopiedChordSheet ? 'Copied ✓' : 'Copy chord sheet'}
-        </button>
-      </div>
-
-      <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
-        {chordSheetPreview || 'No usable chord sheet preview yet. Paste, generate, or load valid chord JSON.'}
-      </pre>
+  {!placedSongSheetPreview && (
+    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs text-gray-500">
+      This preview needs chord placement data. For now, the test JSON works manually. Next we will update Generate chords so this is created for you.
     </div>
+  )}
+</div>
+
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Chord sheet preview
+      </div>
+      <p className="mt-1 text-sm text-gray-500">
+        Musician-facing chord-only output. This is what Copy chord sheet will copy.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => copyChordSheet()}
+      disabled={!hasUsableChordData()}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedChordSheet ? 'Copied ✓' : 'Copy chord sheet'}
+    </button>
+  </div>
+
+  <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+    {chordSheetPreview ||
+      'No usable chord sheet preview yet. Paste, generate, or load valid chord JSON.'}
+  </pre>
+</div>
 
 
 
