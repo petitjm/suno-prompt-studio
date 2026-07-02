@@ -1552,7 +1552,7 @@ const getChordSummaryRows = (value: unknown): { label: string; value: string }[]
     .filter((row) => row.value.trim())
 }
 
-const chordSummaryRows = getChordSummaryRows(chords)
+
 
 
 
@@ -1738,8 +1738,9 @@ const getChordEditorStatus = () => {
   }
 }
 
-
+const chordSummaryRows = getChordSummaryRows(chords)
 const chordEditorStatus = getChordEditorStatus()
+const chordSheetPreview = buildChordSheetCopyText()
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
@@ -3767,6 +3768,33 @@ return (
           No chord data loaded yet. Generate chords, load a saved version, or paste valid chord JSON.
         </div>
       )}
+    </div>
+
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Chord sheet preview
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Musician-facing chord-only output. This is what Copy chord sheet will copy.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => copyChordSheet()}
+          disabled={!hasUsableChordData()}
+          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+        >
+          {justCopiedChordSheet ? 'Copied ✓' : 'Copy chord sheet'}
+        </button>
+      </div>
+
+      <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+        {chordSheetPreview || 'No usable chord sheet preview yet. Paste, generate, or load valid chord JSON.'}
+      </pre>
     </div>
 
 
