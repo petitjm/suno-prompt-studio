@@ -1714,6 +1714,197 @@ const buildChordSheetCopyText = () => {
 }
 
 
+type PlacedChord = {
+  chord: string
+  charIndex: number
+}
+
+type PlacedSongSheetLine = {
+  section: string
+  lyric: string
+  chords: PlacedChord[]
+}
+
+const getStringValue = (value: unknown) => {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+const getNumberValue = (value: unknown) => {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+const getPlacedSongSheetLines = (value: unknown): PlacedSongSheetLine[] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+
+  const record = value as Record<string, unknown>
+
+  const candidateLines =
+    record.songSheetLines ||
+    record.songsheetLines ||
+    record.performanceSongSheetLines ||
+    record.performanceSheetLines ||
+    record.lines
+
+  if (!Array.isArray(candidateLines)) {
+    return []
+  }
+
+  return candidateLines
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        return null
+      }
+
+      const lineRecord = entry as Record<string, unknown>
+      const lyric =
+        getStringValue(lineRecord.lyric) ||
+        getStringValue(lineRecord.text) ||
+        getStringValue(lineRecord.line)
+
+      const section = getStringValue(lineRecord.section)
+
+      const rawChords = Array.isArray(lineRecord.chords)
+        ? lineRecord.chords
+        : []
+
+      const chords = rawChords
+        .map((rawChord) => {
+          if (
+            !rawChord ||
+            typeof rawChord !== 'object' ||
+            Array.isArray(rawChord)
+          ) {
+            return null
+          }
+
+          const chordRecord = rawChord as Record<string, unknown>
+          const chord = getStringValue(chordRecord.chord)
+
+          const rawIndex =
+            getNumberValue(chordRecord.charIndex) ??
+            getNumberValue(chordRecord.index) ??
+            getNumberValue(chordRecord.position)
+
+          if (!chord || rawIndex === null) {
+            return null
+          }
+
+          return {
+            chord,
+            charIndex: Math.max(0, Math.floor(rawIndex)),
+          }
+        })
+        .filter((chord): chord is PlacedChord => Boolean(chord))
+
+      if (!lyric && chords.length === 0) {
+        return null
+      }
+
+      return {
+        section,
+        lyric,
+        chords,
+      }
+    })
+    .filter((line): line is PlacedSongSheetLine => Boolean(line))
+}
+
+
+const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
+  const lyric = line.lyric
+  const baseLength = Math.max(lyric.length, 1)
+  const chordCharacters = Array.from({ length: baseLength }, () => ' ')
+
+  const sortedChords = [...line.chords].sort(
+    (left, right) => left.charIndex - right.charIndex,
+  )
+
+  sortedChords.forEach((placement) => {
+    let startIndex = Math.min(placement.charIndex, chordCharacters.length)
+
+    while (
+      chordCharacters
+        .slice(startIndex, startIndex + placement.chord.length)
+        .some((character) => character !== ' ')
+    ) {
+      startIndex += 1
+    }
+
+    while (chordCharacters.length < startIndex + placement.chord.length) {
+      chordCharacters.push(' ')
+    }
+
+    placement.chord.split('').forEach((character, characterIndex) => {
+      chordCharacters[startIndex + characterIndex] = character
+    })
+  })
+
+  return [
+    chordCharacters.join('').trimEnd(),
+    lyric,
+  ]
+}
+
+const buildPlacedSongSheetCopyText = () => {
+  const chordData = getUsableChordDataFromEditor()
+
+  if (!chordData) {
+    return ''
+  }
+
+  const lines = getPlacedSongSheetLines(chordData)
+
+  if (lines.length === 0) {
+    return ''
+  }
+
+  let currentSection = ''
+
+  const renderedLines = lines.flatMap((line) => {
+    const output: string[] = []
+
+    if (line.section && line.section !== currentSection) {
+      currentSection = line.section
+      output.push('')
+      output.push(`[${line.section}]`)
+      output.push('')
+    }
+
+    const [chordLine, lyricLine] = renderPlacedSongSheetLine(line)
+
+    if (chordLine) {
+      output.push(chordLine)
+    }
+
+    output.push(lyricLine)
+    output.push('')
+
+    return output
+  })
+
+  return [
+    'PERFORMANCE SONGSHEET',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    `Editor status: ${chordEditorStatus.label}`,
+    '',
+    ...renderedLines,
+  ]
+    .filter((line, index, linesToFilter) => {
+      if (line !== '') {
+        return true
+      }
+
+      return linesToFilter[index - 1] !== ''
+    })
+    .join('\n')
+}
+
+
 const getChordEditorStatus = () => {
   const usableChordData = hasUsableChordData()
   const summaryRows = getChordSummaryRows(getUsableChordDataFromEditor() || chords)
@@ -1741,6 +1932,7 @@ const getChordEditorStatus = () => {
 const chordSummaryRows = getChordSummaryRows(chords)
 const chordEditorStatus = getChordEditorStatus()
 const chordSheetPreview = buildChordSheetCopyText()
+const placedSongSheetPreview = buildPlacedSongSheetCopyText()
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
@@ -3766,6 +3958,31 @@ return (
       ) : (
         <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
           No chord data loaded yet. Generate chords, load a saved version, or paste valid chord JSON.
+        </div>
+      )}
+    </div>
+
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Performance songsheet preview
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Chords placed above the lyric position where the change happens.
+          </p>
+        </div>
+      </div>
+
+      <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100">
+        {placedSongSheetPreview ||
+          'No placed chord songsheet yet. Add songSheetLines to the chord JSON to preview chord-over-lyric placement.'}
+      </pre>
+
+      {!placedSongSheetPreview && (
+        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs text-gray-500">
+          Expected JSON field: songSheetLines. Each line can include section, lyric, and chords with chord plus charIndex.
         </div>
       )}
     </div>
