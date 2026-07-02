@@ -1981,6 +1981,30 @@ const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
   ]
 }
 
+
+const getOriginalKeyLabel = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return ''
+  }
+
+  const record = chordData as Record<string, unknown>
+
+  return getStringValue(record.key)
+}
+
+const getDisplayedKeyLabel = () => {
+  const originalKey = getOriginalKeyLabel()
+
+  if (!originalKey) {
+    return ''
+  }
+
+  return transposeChordSymbol(originalKey, chordTransposeSemitones)
+}
+
+
 const buildPlacedSongSheetCopyText = () => {
   const chordData = getChordDataFromEditorJson()
 
@@ -2027,7 +2051,10 @@ const buildPlacedSongSheetCopyText = () => {
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
     `Editor status: ${chordEditorStatus.label}`,
+    getOriginalKeyLabel() ? `Original key: ${getOriginalKeyLabel()}` : '',
+    getDisplayedKeyLabel() ? `Displayed key: ${getDisplayedKeyLabel()}` : '',
     `Transpose: ${getTransposeLabel()}`,
+    '',
     '',
     ...renderedLines,
   ]
@@ -4111,8 +4138,8 @@ return (
       </div>
       <p className="mt-1 text-sm text-gray-500">
           Chords placed above the lyric position where the change happens.
-          {getTransposedKeyLabel()
-            ? ` Displayed key: ${getTransposedKeyLabel()}.`
+          {getOriginalKeyLabel() && getDisplayedKeyLabel()
+            ? ` Original key: ${getOriginalKeyLabel()}. Displayed key: ${getDisplayedKeyLabel()}.`
             : ''}
         </p>
     </div>
