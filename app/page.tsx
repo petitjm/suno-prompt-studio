@@ -213,6 +213,7 @@ export default function Page() {
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
   const [justCopiedChordPracticePack, setJustCopiedChordPracticePack] = useState(false)
+  const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
@@ -1461,6 +1462,27 @@ const copyChordPracticePack = async () => {
   }
 }
 
+const copyChordSheet = async () => {
+  const copyText = buildChordSheetCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No usable chord sheet available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedChordSheet(true)
+    setChordExtractionMessage('Chord sheet copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedChordSheet(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy chord sheet.')
+  }
+}
+
 
 const copyChordSummary = async () => {
   const copyText = buildChordSummaryCopyText()
@@ -1632,6 +1654,63 @@ const buildChordPracticePackCopyText = () => {
     '',
     performanceSheet || 'No source lyrics available.',
   ].join('\n')
+}
+
+const buildChordSheetCopyText = () => {
+  const chordData = getUsableChordDataFromEditor()
+
+  if (!chordData) {
+    return ''
+  }
+
+  const rows = getChordSummaryRows(chordData)
+
+  if (rows.length === 0) {
+    return ''
+  }
+
+  const getMetaValue = (keys: string[]) => {
+    const record = chordData as Record<string, unknown>
+
+    for (const key of keys) {
+      const value = record[key]
+
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim()
+      }
+    }
+
+    return ''
+  }
+
+  const keyValue = getMetaValue(['key', 'songKey'])
+  const capoValue = getMetaValue(['capo'])
+  const tuningValue = getMetaValue(['tuning'])
+
+  return [
+    'CHORD SHEET',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    keyValue ? `Key: ${keyValue}` : '',
+    capoValue ? `Capo: ${capoValue}` : '',
+    tuningValue ? `Tuning: ${tuningValue}` : '',
+    '',
+    ...rows.flatMap((row) => [
+      `[${row.label}]`,
+      row.value,
+      '',
+    ]),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
 }
 
 
@@ -3633,6 +3712,15 @@ return (
             className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
           >
             {justCopiedChordSummary ? 'Copied ✓' : 'Copy summary'}
+          </button>
+
+          <button
+              type="button"
+              onClick={() => copyChordSheet()}
+              disabled={!hasUsableChordData()}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedChordSheet ? 'Copied ✓' : 'Copy chord sheet'}
           </button>
 
 
