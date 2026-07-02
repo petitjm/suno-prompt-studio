@@ -216,6 +216,7 @@ export default function Page() {
   const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
+  const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1530,6 +1531,65 @@ const copyPlacedSongSheet = async () => {
 
 
 
+const sharpNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+const flatToSharpNoteMap: Record<string, string> = {
+  Db: 'C#',
+  Eb: 'D#',
+  Gb: 'F#',
+  Ab: 'G#',
+  Bb: 'A#',
+}
+
+const transposeRootNote = (root: string, semitones: number) => {
+  const normalizedRoot = flatToSharpNoteMap[root] || root
+  const noteIndex = sharpNotes.indexOf(normalizedRoot)
+
+  if (noteIndex === -1) {
+    return root
+  }
+
+  const transposedIndex = (noteIndex + semitones + 1200) % 12
+
+  return sharpNotes[transposedIndex]
+}
+
+const transposeChordSymbol = (chord: string, semitones: number) => {
+  if (semitones === 0) {
+    return chord
+  }
+
+  return chord.replace(
+    /(^|\/)([A-G](?:#|b)?)/g,
+    (_match, prefix: string, root: string) => {
+      return `${prefix}${transposeRootNote(root, semitones)}`
+    },
+  )
+}
+
+const getTransposeLabel = () => {
+  if (chordTransposeSemitones === 0) {
+    return 'Original key'
+  }
+
+  return chordTransposeSemitones > 0
+    ? `+${chordTransposeSemitones} semitone${chordTransposeSemitones === 1 ? '' : 's'}`
+    : `${chordTransposeSemitones} semitone${chordTransposeSemitones === -1 ? '' : 's'}`
+}
+
+const transposePlacedSongSheetLine = (
+  line: PlacedSongSheetLine,
+): PlacedSongSheetLine => {
+  return {
+    ...line,
+    chords: line.chords.map((placement) => ({
+      ...placement,
+      chord: transposeChordSymbol(placement.chord, chordTransposeSemitones),
+    })),
+  }
+}
+
+
 const copyChordSummary = async () => {
   const copyText = buildChordSummaryCopyText()
 
@@ -1918,7 +1978,9 @@ const buildPlacedSongSheetCopyText = () => {
       output.push('')
     }
 
-    const [chordLine, lyricLine] = renderPlacedSongSheetLine(line)
+    const [chordLine, lyricLine] = renderPlacedSongSheetLine(
+      transposePlacedSongSheetLine(line),
+    )
 
     if (chordLine) {
       output.push(chordLine)
@@ -1937,6 +1999,7 @@ const buildPlacedSongSheetCopyText = () => {
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
     `Editor status: ${chordEditorStatus.label}`,
+    `Transpose: ${getTransposeLabel()}`,
     '',
     ...renderedLines,
   ]
@@ -2071,6 +2134,7 @@ const clearChordEditor = () => {
   setChordExtractionMessage('Chord editor cleared.')
   setProjectMessage('')
   setJustClearedChords(true)
+  setChordTransposeSemitones(0)
 
   window.setTimeout(() => {
     setJustClearedChords(false)
@@ -4022,15 +4086,48 @@ return (
       </p>
     </div>
 
-    <button
-      type="button"
-      onClick={() => copyPlacedSongSheet()}
-      disabled={!placedSongSheetPreview}
-      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-    >
-      {justCopiedPlacedSongSheet ? 'Copied ✓' : 'Copy songsheet'}
-    </button>
+    <div className="flex flex-wrap items-center justify-end gap-2">
+  <button
+    type="button"
+    onClick={() => setChordTransposeSemitones((value) => value - 1)}
+    disabled={!placedSongSheetPreview}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+  >
+    Transpose −
+  </button>
+
+  <div className="min-w-[110px] text-center text-xs text-gray-400">
+    {getTransposeLabel()}
   </div>
+
+  <button
+    type="button"
+    onClick={() => setChordTransposeSemitones((value) => value + 1)}
+    disabled={!placedSongSheetPreview}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+  >
+    Transpose +
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setChordTransposeSemitones(0)}
+    disabled={!placedSongSheetPreview || chordTransposeSemitones === 0}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+  >
+    Reset
+  </button>
+
+  <button
+    type="button"
+    onClick={() => copyPlacedSongSheet()}
+    disabled={!placedSongSheetPreview}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+  >
+    {justCopiedPlacedSongSheet ? 'Copied ✓' : 'Copy songsheet'}
+  </button>
+ </div>
+</div>
 
   <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100">
     {placedSongSheetPreview ||
