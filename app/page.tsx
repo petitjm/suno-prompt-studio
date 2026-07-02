@@ -1365,6 +1365,9 @@ const deleteProject = async () => {
 }
 
 
+
+
+
 const hasChordEditorContent = () => {
   return Boolean(chordsText.trim())
 }
@@ -1506,6 +1509,8 @@ const getChordSummaryRows = (value: unknown): { label: string; value: string }[]
 
 const chordSummaryRows = getChordSummaryRows(chords)
 
+
+
 const getUsableChordDataFromEditor = () => {
   if (!chordsText.trim()) {
     return null
@@ -1570,6 +1575,33 @@ const buildChordPacketCopyText = () => {
   ].join('\n')
 }
 
+
+const getChordEditorStatus = () => {
+  const usableChordData = hasUsableChordData()
+  const summaryRows = getChordSummaryRows(getUsableChordDataFromEditor() || chords)
+
+  if (!chordsText.trim()) {
+    return {
+      label: 'Empty editor',
+      detail: 'No chord JSON is currently in the editor.',
+    }
+  }
+
+  if (!usableChordData) {
+    return {
+      label: 'Invalid or incomplete JSON',
+      detail: 'The editor has text, but it is not valid usable chord JSON yet.',
+    }
+  }
+
+  return {
+    label: activeChordVersionId ? 'Saved chord version loaded' : 'Unsaved chord draft',
+    detail: `${summaryRows.length} chord section${summaryRows.length === 1 ? '' : 's'} available.`,
+  }
+}
+
+
+const chordEditorStatus = getChordEditorStatus()
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
@@ -3499,6 +3531,21 @@ return (
         </div>
       )}
     </div>
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Chord editor status
+      </div>
+
+      <div className="mt-2 text-gray-300">
+        {chordEditorStatus.label}
+      </div>
+
+      <div className="mt-1 text-sm text-gray-500">
+        {chordEditorStatus.detail}
+      </div>
+    </div>
+
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
