@@ -2,6 +2,38 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createClient } from '@/lib/supabase/server'
 
+function parseModelJson(text: string) {
+  const trimmed = text.trim()
+
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    // Continue to fallback extraction below.
+  }
+
+  const withoutCodeFence = trimmed
+    .replace(/^```(?:json)?/i, '')
+    .replace(/```$/i, '')
+    .trim()
+
+  try {
+    return JSON.parse(withoutCodeFence)
+  } catch {
+    // Continue to object extraction below.
+  }
+
+  const firstBrace = trimmed.indexOf('{')
+  const lastBrace = trimmed.lastIndexOf('}')
+
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const jsonCandidate = trimmed.slice(firstBrace, lastBrace + 1)
+    return JSON.parse(jsonCandidate)
+  }
+
+  throw new Error('Could not parse JSON from model response.')
+}
+
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 })
@@ -130,17 +162,17 @@ Requirements:
     const text = completion.choices[0].message.content || '{}'
 
     let chordData
-    try {
-      chordData = JSON.parse(text)
-    } catch {
-      return NextResponse.json(
-        {
-          error: 'Invalid JSON from model',
-          raw: text,
-        },
-        { status: 500 }
-      )
-    }
+        try {
+          chordData = parseModelJson(text)
+        } catch {
+          return NextResponse.json(
+            {
+              error: 'Invalid JSON from model',
+              raw: text,
+            },
+            { status: 500 }
+          )
+}
 
     if (body.project_id) {
       const supabase = await createClient()
