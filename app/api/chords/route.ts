@@ -51,32 +51,75 @@ export async function POST(req: Request) {
     const body = await req.json()
     const artistDNA = await getArtistDNAString()
 
-    const prompt = `
-You are a professional songwriter and acoustic arranger.
+    const lyrics = typeof body.lyrics === 'string' ? body.lyrics : ''
+const songTitle = typeof body.songTitle === 'string' ? body.songTitle : ''
+const songVersionTitle =
+  typeof body.songVersionTitle === 'string' ? body.songVersionTitle : ''
 
-Create chord progressions for this song idea:
+const prompt = `
+You are a professional songwriter, acoustic arranger, and live performance songsheet editor.
+
+Create playable acoustic-guitar chords and a performance songsheet for these lyrics.
+
+Song title: ${songTitle || 'Untitled song'}
+Song version: ${songVersionTitle || 'Untitled version'}
 
 Genre: ${body.genre || ''}
 Mood: ${Array.isArray(body.moods) ? body.moods.join(', ') : ''}
 Theme: ${body.theme || ''}
 Hook: ${body.hook || ''}
 
+Lyrics:
+${lyrics}
+
 ${artistDNA}
 
-Return ONLY valid JSON (no explanation, no text before or after):
+Return ONLY valid JSON. Do not include explanation, markdown, comments, or text before or after the JSON.
+
+The JSON must use this shape:
 
 {
   "key": "",
   "capo": "",
+  "tuning": "",
+  "genre": "",
+  "performanceFeel": "",
   "verse": "",
   "chorus": "",
   "bridge": "",
-  "notes": ""
+  "notes": "",
+  "songSheetLines": [
+    {
+      "section": "Verse 1",
+      "lyric": "Actual lyric line here",
+      "chords": [
+        {
+          "chord": "G",
+          "charIndex": 0
+        }
+      ]
+    }
+  ]
 }
 
 Requirements:
-- Make it playable for acoustic guitar.
+- Make the chords playable for acoustic guitar.
 - Use the artist DNA where helpful, especially for vocal range, style, harmonic richness, and live-performance suitability.
+- Think like a songwriter and live acoustic performer.
+- The output should help the performer remember phrasing, rhythm, melody feel, and chord timing.
+- The placed chord positions are more important than a generic chord progression summary.
+- songSheetLines must preserve the actual lyric lines in order.
+- Each lyric line should appear once.
+- Do not invent new lyrics.
+- Do not omit lyric lines.
+- Put chords only where chord changes happen.
+- charIndex is zero-based.
+- charIndex means the chord should appear above that character in the lyric line.
+- Place chords above the syllable or word where the change should happen for natural performance phrasing.
+- Do not place every chord at the start of the line unless the change truly happens there.
+- Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose chord rhythm and phrasing.
+- Keep placements practical for a singer-guitarist reading a songsheet.
+- If a lyric line has no chord change, include the line with an empty chords array.
 `
 
     const completion = await openai.chat.completions.create({
