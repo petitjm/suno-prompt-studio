@@ -212,6 +212,7 @@ export default function Page() {
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
+  const [justCopiedChordPracticePack, setJustCopiedChordPracticePack] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
@@ -1439,6 +1440,28 @@ const copyChordPacket = async () => {
 }
 
 
+const copyChordPracticePack = async () => {
+  const copyText = buildChordPracticePackCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No usable chord data available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedChordPracticePack(true)
+    setChordExtractionMessage('Chord practice pack copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedChordPracticePack(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy chord practice pack.')
+  }
+}
+
+
 const copyChordSummary = async () => {
   const copyText = buildChordSummaryCopyText()
 
@@ -1570,6 +1593,40 @@ const buildChordPacketCopyText = () => {
     'CHORD JSON',
     '',
     chordsText.trim() || 'No chord JSON available.',
+    '',
+    'SOURCE LYRICS',
+    '',
+    performanceSheet || 'No source lyrics available.',
+  ].join('\n')
+}
+
+
+const buildChordPracticePackCopyText = () => {
+  const chordData = getUsableChordDataFromEditor()
+
+  if (!chordData) {
+    return ''
+  }
+
+  const rows = getChordSummaryRows(chordData)
+
+  return [
+    'CHORD PRACTICE PACK',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    `Editor status: ${chordEditorStatus.label}`,
+    '',
+    'CHORD SUMMARY',
+    '',
+    ...(rows.length > 0
+      ? rows.flatMap((row) => [
+          row.label,
+          row.value,
+          '',
+        ])
+      : ['No chord summary available.', '']),
     '',
     'SOURCE LYRICS',
     '',
@@ -3567,6 +3624,8 @@ return (
             {chordSummaryRows.length} sections
           </div>
 
+          
+
           <button
             type="button"
             onClick={() => copyChordSummary()}
@@ -3574,6 +3633,16 @@ return (
             className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
           >
             {justCopiedChordSummary ? 'Copied ✓' : 'Copy summary'}
+          </button>
+
+
+          <button
+              type="button"
+              onClick={() => copyChordPracticePack()}
+              disabled={!hasUsableChordData()}
+              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {justCopiedChordPracticePack ? 'Copied ✓' : 'Copy practice pack'}
           </button>
 
           <button
