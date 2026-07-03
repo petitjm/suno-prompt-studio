@@ -217,6 +217,10 @@ export default function Page() {
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
+  const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
+      chordsText: string
+      chordVersionTitle: string
+    } | null>(null)
   
   const structuredChordJsonRef = React.useRef<HTMLDivElement | null>(null)
   const [rewriteConstraint, setRewriteConstraint] = useState('default')
@@ -1508,6 +1512,113 @@ const copyChordSheet = async () => {
   }
 }
 
+const resetOrUndoChordTranspose = () => {
+  if (chordTransposeSemitones !== 0) {
+    setChordTransposeSemitones(0)
+    setChordExtractionMessage('Transpose preview reset.')
+    setProjectMessage('')
+    return
+  }
+
+  if (!lastAppliedTransposeSnapshot) {
+    return
+  }
+
+  const restoredText = lastAppliedTransposeSnapshot.chordsText
+
+  setChordsText(restoredText)
+  setChordVersionTitle(lastAppliedTransposeSnapshot.chordVersionTitle)
+  setActiveChordVersionId(null)
+  setChordTransposeSemitones(0)
+  setLastAppliedTransposeSnapshot(null)
+  setChordExtractionMessage('Applied transpose undone. Review and save when ready.')
+  setProjectMessage('')
+
+  try {
+    const parsed = JSON.parse(restoredText)
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+    ) {
+      setChords(parsed)
+    }
+  } catch {
+    setChords(null)
+  }
+}
+
+
+const applyTransposeToChordEditor = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (
+    !chordData ||
+    typeof chordData !== 'object' ||
+    Array.isArray(chordData) ||
+    chordTransposeSemitones === 0
+  ) {
+    return
+  }
+
+  setLastAppliedTransposeSnapshot({
+      chordsText,
+      chordVersionTitle,
+    })
+
+  const record = chordData as Record<string, unknown>
+  const nextRecord: Record<string, unknown> = { ...record }
+
+  const originalKey = getStringValue(record.key)
+
+  if (originalKey) {
+    nextRecord.key = transposeChordSymbol(originalKey, chordTransposeSemitones)
+  }
+
+  ;['verse', 'chorus', 'bridge', 'intro', 'outro', 'preChorus'].forEach(
+    (sectionKey) => {
+      const value = nextRecord[sectionKey]
+
+      if (typeof value === 'string') {
+        nextRecord[sectionKey] = transposeChordProgressionText(
+          value,
+          chordTransposeSemitones,
+        )
+      }
+    },
+  )
+
+  const lines = getPlacedSongSheetLines(record)
+
+  if (lines.length > 0) {
+    nextRecord.songSheetLines = lines.map((line) => ({
+      ...line,
+      chords: line.chords.map((placement) => ({
+        ...placement,
+        chord: transposeChordSymbol(
+          placement.chord,
+          chordTransposeSemitones,
+        ),
+      })),
+    }))
+  }
+
+  const nextText = JSON.stringify(nextRecord, null, 2)
+
+  setChords(nextRecord)
+  setChordsText(nextText)
+  setActiveChordVersionId(null)
+  setChordVersionTitle(
+    chordVersionTitle.trim()
+      ? `${chordVersionTitle.trim()} transposed`
+      : 'Transposed chord draft',
+  )
+  setChordTransposeSemitones(0)
+  setChordExtractionMessage('Transpose applied to chord editor. Review and save as a new chord version.')
+  setProjectMessage('')
+}
+
 const copyPlacedSongSheet = async () => {
   const copyText = buildPlacedSongSheetCopyText()
 
@@ -1611,7 +1722,16 @@ const transposePlacedSongSheetLine = (
   }
 }
 
+const transposeChordProgressionText = (value: string, semitones: number) => {
+  if (semitones === 0) {
+    return value
+  }
 
+  return value.replace(
+    /\b([A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\/[A-G](?:#|b)?)?)\b/g,
+    (match) => transposeChordSymbol(match, semitones),
+  )
+}
 
 
 const copyChordSummary = async () => {
@@ -2190,6 +2310,7 @@ const clearChordEditor = () => {
   setProjectMessage('')
   setJustClearedChords(true)
   setChordTransposeSemitones(0)
+  setLastAppliedTransposeSnapshot(null)
 
   window.setTimeout(() => {
     setJustClearedChords(false)
@@ -4168,13 +4289,30 @@ return (
   </button>
 
   <button
-    type="button"
-    onClick={() => setChordTransposeSemitones(0)}
-    disabled={!placedSongSheetPreview || chordTransposeSemitones === 0}
-    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-  >
-    Reset
-  </button>
+      type="button"
+      onClick={() => resetOrUndoChordTranspose()}
+      disabled={
+        !placedSongSheetPreview ||
+        (chordTransposeSemitones === 0 && !lastAppliedTransposeSnapshot)
+      }
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {chordTransposeSemitones !== 0
+        ? 'Reset'
+        : lastAppliedTransposeSnapshot
+          ? 'Undo apply'
+          : 'Reset'}
+    </button>
+
+  <button
+  type="button"
+  onClick={() => applyTransposeToChordEditor()}
+  disabled={!placedSongSheetPreview || chordTransposeSemitones === 0}
+  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+>
+  Apply transpose
+</button>
+
 
   <button
     type="button"
