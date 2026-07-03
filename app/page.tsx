@@ -1989,6 +1989,60 @@ const getNumberValue = (value: unknown) => {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+
+const getPlacedSongSheetQuality = () => {
+  const chordData = getChordDataFromEditorJson()
+  const lines = getPlacedSongSheetLines(chordData)
+
+  if (lines.length === 0) {
+    return {
+      label: 'No placed songsheet',
+      detail: 'No chord-over-lyric placement data is available yet.',
+      totalLines: 0,
+      linesWithChords: 0,
+      linesWithoutChords: 0,
+      totalChords: 0,
+      zeroIndexChords: 0,
+      warning: '',
+    }
+  }
+
+  const totalChords = lines.reduce(
+    (count, line) => count + line.chords.length,
+    0,
+  )
+
+  const zeroIndexChords = lines.reduce(
+    (count, line) =>
+      count +
+      line.chords.filter((placement) => placement.charIndex === 0).length,
+    0,
+  )
+
+  const linesWithChords = lines.filter((line) => line.chords.length > 0).length
+  const linesWithoutChords = lines.length - linesWithChords
+
+  const zeroIndexRatio =
+    totalChords > 0 ? Math.round((zeroIndexChords / totalChords) * 100) : 0
+
+  const warning =
+    totalChords > 0 && zeroIndexRatio >= 80
+      ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
+      : ''
+
+  return {
+    label: warning ? 'Needs review' : 'Placed songsheet ready',
+    detail: `${linesWithChords} of ${lines.length} lyric line${lines.length === 1 ? '' : 's'} include chord placements.`,
+    totalLines: lines.length,
+    linesWithChords,
+    linesWithoutChords,
+    totalChords,
+    zeroIndexChords,
+    warning,
+  }
+}
+
+
 const getPlacedSongSheetLines = (value: unknown): PlacedSongSheetLine[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return []
@@ -2219,6 +2273,7 @@ const chordSummaryRows = getChordSummaryRows(chords)
 const chordEditorStatus = getChordEditorStatus()
 const chordSheetPreview = buildChordSheetCopyText()
 const placedSongSheetPreview = buildPlacedSongSheetCopyText()
+const placedSongSheetQuality = getPlacedSongSheetQuality()
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
@@ -4255,6 +4310,42 @@ return (
         </div>
       )}
     </div>
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Performance songsheet quality
+      </div>
+
+      <div className="mt-2 text-gray-300">
+        {placedSongSheetQuality.label}
+      </div>
+
+      <div className="mt-1 text-sm text-gray-500">
+        {placedSongSheetQuality.detail}
+      </div>
+
+      <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          Lines: {placedSongSheetQuality.totalLines}
+        </div>
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          Lines with chords: {placedSongSheetQuality.linesWithChords}
+        </div>
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          Total chords: {placedSongSheetQuality.totalChords}
+        </div>
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          Start-of-line chords: {placedSongSheetQuality.zeroIndexChords}
+        </div>
+      </div>
+
+      {placedSongSheetQuality.warning && (
+        <div className="mt-3 rounded border border-yellow-900/60 bg-yellow-950/30 p-3 text-sm text-yellow-200">
+          {placedSongSheetQuality.warning}
+        </div>
+      )}
+    </div>
+
 
    <div className="rounded border border-gray-800 bg-gray-950 p-4">
   <div className="flex items-center justify-between gap-3">
