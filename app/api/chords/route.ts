@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createClient } from '@/lib/supabase/server'
 
+
+
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+})
+
 function parseModelJson(text: string) {
   const trimmed = text.trim()
 
@@ -34,9 +41,6 @@ function parseModelJson(text: string) {
 }
 
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-})
 
 async function getArtistDNAString() {
   try {
@@ -144,7 +148,7 @@ Requirements:
 - Each lyric line should appear once.
 - Do not invent new lyrics.
 - Do not omit lyric lines.
-- Put chords only where chord changes happen.
+- Put chords only where chord changes happen, and place each chord above the lyric syllable or word where the singer should feel the change.
 - charIndex is zero-based.
 - charIndex means the chord should appear above that character in the lyric line.
 - Place chords above the syllable or word where the change should happen for natural performance phrasing.
@@ -152,7 +156,16 @@ Requirements:
 - Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose chord rhythm and phrasing.
 - Keep placements practical for a singer-guitarist reading a songsheet.
 - If a lyric line has no chord change, include the line with an empty chords array.
+- Review the songSheetLines before final output.
+- Avoid placing most chords at charIndex 0.
+- At least half of the chord placements should normally fall after character 0 unless the song genuinely changes chords only at line starts.
+- Spread chord placements across the lyric line according to natural vocal phrasing.
+- Prefer fewer meaningful chord placements over too many mechanical placements.
+- Make sure every charIndex points to a valid character position in that lyric line.
+- If the lyric line is "Hold on through the stormy weather" and the chord changes on "through", charIndex should point near the "t" in "through", not automatically to 0.
+- Return the final checked JSON only.
 `
+
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-5',
@@ -162,16 +175,16 @@ Requirements:
     const text = completion.choices[0].message.content || '{}'
 
     let chordData
-        try {
-          chordData = parseModelJson(text)
-        } catch {
-          return NextResponse.json(
-            {
-              error: 'Invalid JSON from model',
-              raw: text,
-            },
-            { status: 500 }
-          )
+try {
+  chordData = parseModelJson(text)
+} catch {
+  return NextResponse.json(
+    {
+      error: 'Invalid JSON from model',
+      raw: text,
+    },
+    { status: 500 }
+  )
 }
 
     if (body.project_id) {
