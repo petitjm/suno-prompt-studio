@@ -2003,6 +2003,7 @@ const getPlacedSongSheetQuality = () => {
       linesWithoutChords: 0,
       totalChords: 0,
       zeroIndexChords: 0,
+      outOfRangeChords: 0,
       warning: '',
     }
   }
@@ -2019,16 +2020,31 @@ const getPlacedSongSheetQuality = () => {
     0,
   )
 
+  const outOfRangeChords = lines.reduce(
+  (count, line) =>
+    count +
+    line.chords.filter(
+      (placement) => placement.charIndex >= line.lyric.length,
+    ).length,
+  0,
+)
+
   const linesWithChords = lines.filter((line) => line.chords.length > 0).length
   const linesWithoutChords = lines.length - linesWithChords
 
   const zeroIndexRatio =
     totalChords > 0 ? Math.round((zeroIndexChords / totalChords) * 100) : 0
 
-  const warning =
-    totalChords > 0 && zeroIndexRatio >= 80
-      ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
-      : ''
+  const warnings = [
+      totalChords > 0 && zeroIndexRatio >= 80
+        ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
+        : '',
+      outOfRangeChords > 0
+        ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} point beyond the end of the lyric line.`
+        : '',
+    ].filter(Boolean)
+
+    const warning = warnings.join(' ')
 
   return {
     label: warning ? 'Needs review' : 'Placed songsheet ready',
@@ -2038,7 +2054,9 @@ const getPlacedSongSheetQuality = () => {
     linesWithoutChords,
     totalChords,
     zeroIndexChords,
-    warning,
+    outOfRangeChords: 0,
+  
+    
   }
 }
 
@@ -4324,7 +4342,7 @@ return (
         {placedSongSheetQuality.detail}
       </div>
 
-      <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded border border-gray-800 bg-gray-900 p-3">
           Lines: {placedSongSheetQuality.totalLines}
         </div>
@@ -4336,6 +4354,9 @@ return (
         </div>
         <div className="rounded border border-gray-800 bg-gray-900 p-3">
           Start-of-line chords: {placedSongSheetQuality.zeroIndexChords}
+        </div>
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          Out-of-range chords: {placedSongSheetQuality.outOfRangeChords}
         </div>
       </div>
 
