@@ -2004,6 +2004,7 @@ const getPlacedSongSheetQuality = () => {
       totalChords: 0,
       zeroIndexChords: 0,
       outOfRangeChords: 0,
+      placementIssues: [],
       warning: '',
     }
   }
@@ -2020,14 +2021,22 @@ const getPlacedSongSheetQuality = () => {
     0,
   )
 
-  const outOfRangeChords = lines.reduce(
-  (count, line) =>
-    count +
-    line.chords.filter(
-      (placement) => placement.charIndex >= line.lyric.length,
-    ).length,
-  0,
-)
+  const placementIssues = lines.flatMap((line, lineIndex) => {
+    const maxIndex = Math.max(0, line.lyric.length - 1)
+
+    return line.chords
+      .filter((placement) => placement.charIndex > maxIndex)
+      .map((placement) => ({
+        lineNumber: lineIndex + 1,
+        section: line.section || 'Unsectioned',
+        lyric: line.lyric,
+        chord: placement.chord,
+        charIndex: placement.charIndex,
+        maxIndex,
+      }))
+  })
+
+  const outOfRangeChords = placementIssues.length
 
   const linesWithChords = lines.filter((line) => line.chords.length > 0).length
   const linesWithoutChords = lines.length - linesWithChords
@@ -2036,15 +2045,15 @@ const getPlacedSongSheetQuality = () => {
     totalChords > 0 ? Math.round((zeroIndexChords / totalChords) * 100) : 0
 
   const warnings = [
-      totalChords > 0 && zeroIndexRatio >= 80
-        ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
-        : '',
-      outOfRangeChords > 0
-        ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} point beyond the end of the lyric line.`
-        : '',
-    ].filter(Boolean)
+    totalChords > 0 && zeroIndexRatio >= 80
+      ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
+      : '',
+    outOfRangeChords > 0
+      ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} point beyond the end of the lyric line.`
+      : '',
+  ].filter(Boolean)
 
-    const warning = warnings.join(' ')
+  const warning = warnings.join(' ')
 
   return {
     label: warning ? 'Needs review' : 'Placed songsheet ready',
@@ -2054,9 +2063,9 @@ const getPlacedSongSheetQuality = () => {
     linesWithoutChords,
     totalChords,
     zeroIndexChords,
-    outOfRangeChords: 0,
-  
-    
+    outOfRangeChords,
+    placementIssues,
+    warning,
   }
 }
 
@@ -4356,7 +4365,7 @@ return (
           Start-of-line chords: {placedSongSheetQuality.zeroIndexChords}
         </div>
         <div className="rounded border border-gray-800 bg-gray-900 p-3">
-          Out-of-range chords: {placedSongSheetQuality.outOfRangeChords}
+          Out-of-range chords: {placedSongSheetQuality.outOfRangeChords ?? 0}
         </div>
       </div>
 
@@ -4365,6 +4374,38 @@ return (
           {placedSongSheetQuality.warning}
         </div>
       )}
+      {placedSongSheetQuality.placementIssues.length > 0 && (
+  <div className="mt-3 rounded border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
+    <div className="font-medium">
+      Placement issues
+    </div>
+
+    <div className="mt-2 space-y-2">
+      {placedSongSheetQuality.placementIssues.slice(0, 5).map((issue) => (
+        <div
+          key={`${issue.lineNumber}-${issue.chord}-${issue.charIndex}`}
+          className="rounded border border-red-900/50 bg-red-950/30 p-2"
+        >
+          <div>
+            Line {issue.lineNumber} · {issue.section} · chord {issue.chord}
+          </div>
+          <div className="mt-1 text-xs text-red-300">
+            charIndex {issue.charIndex} is beyond max index {issue.maxIndex}
+          </div>
+          <div className="mt-1 text-xs text-red-300">
+            {issue.lyric}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {placedSongSheetQuality.placementIssues.length > 5 && (
+          <div className="mt-2 text-xs text-red-300">
+            Showing first 5 of {placedSongSheetQuality.placementIssues.length} issues.
+          </div>
+        )}
+      </div>
+    )}
     </div>
 
 
