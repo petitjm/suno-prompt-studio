@@ -1423,6 +1423,8 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   setActiveChordVersionId(selected.id)
   setChordVersionTitle(selected.title || 'Untitled chord version')
   setChords(selected.chord_data || null)
+  setLastAppliedTransposeSnapshot(null)
+  setChordTransposeSemitones(0)
   setChordsText(JSON.stringify(selected.chord_data || {}, null, 2))
   setChordExtractionMessage('')
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
@@ -2285,6 +2287,8 @@ const generateChords = async () => {
 
     setChords(generatedChords)
     setChordsText(JSON.stringify(generatedChords, null, 2))
+    setLastAppliedTransposeSnapshot(null)
+    setChordTransposeSemitones(0)
     setChordExtractionMessage('Chords generated. Review and save when ready.')
 
     if (!chordVersionTitle.trim()) {
@@ -2423,6 +2427,7 @@ if (suspiciousChordText) {
       savedVersion?.title || chordTitleToSave
 
     setChordVersionTitle(savedChordTitle)
+    setLastAppliedTransposeSnapshot(null)
     setProjectMessage(`Saved chord version: ${savedChordTitle}`)
     setJustSavedChords(true)
 
@@ -4466,18 +4471,19 @@ return (
         <textarea
   value={chordsText}
   onChange={(event) => {
-    const nextValue = event.target.value
+        const nextValue = event.target.value
 
-    setChordsText(nextValue)
-    setChordExtractionMessage('')
-    setProjectMessage('')
+        setChordsText(nextValue)
+        setLastAppliedTransposeSnapshot(null)
+        setChordExtractionMessage('')
+        setProjectMessage('')
 
-    if (!nextValue.trim()) {
-  setChords(null)
-  setActiveChordVersionId(null)
-  setChordVersionTitle('')
-  return
-}
+        if (!nextValue.trim()) {
+      setChords(null)
+      setActiveChordVersionId(null)
+      setChordVersionTitle('')
+      return
+    }
 
     try {
       const parsed = JSON.parse(nextValue)
