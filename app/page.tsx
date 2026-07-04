@@ -2024,7 +2024,7 @@ const fixOutOfRangeChordPlacements = () => {
   setChordsText(JSON.stringify(nextRecord, null, 2))
   setActiveChordVersionId(null)
   setLastAppliedTransposeSnapshot(null)
-  setChordExtractionMessage('Out-of-range chord placements fixed. Review and save when ready.')
+  setChordExtractionMessage('After-lyric chord placements moved to the final lyric character. Review the phrasing before saving.')
   setProjectMessage('')
 }
 
@@ -2088,8 +2088,8 @@ const getPlacedSongSheetQuality = () => {
       ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
       : '',
     outOfRangeChords > 0
-      ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} point beyond the end of the lyric line.`
-      : '',
+  ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} occur after the final lyric character on a line. This may be intentional as a turnaround, held chord, pickup, breath, or instrumental movement. Review against the intended performance.`
+  : '',
   ].filter(Boolean)
 
   const warning = warnings.join(' ')
@@ -4389,7 +4389,7 @@ return (
             disabled={placedSongSheetQuality.outOfRangeChords === 0}
             className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
           >
-            Fix placement issues
+            Move after-lyric chords inside line
           </button>
         </div>
 
@@ -4415,7 +4415,7 @@ return (
           Start-of-line chords: {placedSongSheetQuality.zeroIndexChords}
         </div>
         <div className="rounded border border-gray-800 bg-gray-900 p-3">
-          Out-of-range chords: {placedSongSheetQuality.outOfRangeChords ?? 0}
+          After-lyric chords: {placedSongSheetQuality.outOfRangeChords ?? 0}
         </div>
       </div>
 
@@ -4427,7 +4427,7 @@ return (
       {placedSongSheetQuality.placementIssues.length > 0 && (
   <div className="mt-3 rounded border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
     <div className="font-medium">
-      Placement issues
+      Placement review items
     </div>
 
     <div className="mt-2 space-y-2">
@@ -4440,7 +4440,7 @@ return (
             Line {issue.lineNumber} · {issue.section} · chord {issue.chord}
           </div>
           <div className="mt-1 text-xs text-red-300">
-            charIndex {issue.charIndex} is beyond max index {issue.maxIndex}
+            charIndex {issue.charIndex} falls after the final lyric character index {issue.maxIndex}
           </div>
           <div className="mt-1 text-xs text-red-300">
             {issue.lyric}
