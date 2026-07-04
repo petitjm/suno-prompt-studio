@@ -2028,6 +2028,38 @@ const fixOutOfRangeChordPlacements = () => {
   setProjectMessage('')
 }
 
+const getPerformanceIntentRows = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+
+  const record = value as Record<string, unknown>
+
+  const fields = [
+    ['Tempo', record.tempoBpm ? `${record.tempoBpm} BPM` : ''],
+    ['Time signature', record.timeSignature],
+    ['Groove', record.groove],
+    ['Performance feel', record.performanceFeel],
+    ['Phrasing notes', record.phrasingNotes],
+    ['Vocal delivery', record.vocalDelivery],
+    ['Guitar pattern', record.guitarPattern],
+  ]
+
+  return fields
+    .map(([label, rawValue]) => {
+      const value =
+        typeof rawValue === 'string' || typeof rawValue === 'number'
+          ? String(rawValue).trim()
+          : ''
+
+      return {
+        label: String(label),
+        value,
+      }
+    })
+    .filter((row) => row.value)
+}
+
 
 const getPlacedSongSheetQuality = () => {
   const chordData = getChordDataFromEditorJson()
@@ -2340,6 +2372,10 @@ const chordEditorStatus = getChordEditorStatus()
 const chordSheetPreview = buildChordSheetCopyText()
 const placedSongSheetPreview = buildPlacedSongSheetCopyText()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
+const performanceIntentRows = getPerformanceIntentRows(
+  getChordDataFromEditorJson(),
+)
+
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
@@ -3233,27 +3269,6 @@ const chordRegex =
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const extractChordsAndRemoveFromRewriteSource = () => {
   const extracted = extractEmbeddedChordsToJson(sourceForDetection)
 
@@ -3758,6 +3773,9 @@ const rewriteVoiceLabel =
                 : rewriteConstraint === 'simplify'
                   ? 'Simplify lyrics'
                   : 'Default'
+
+
+
 
 
 
@@ -4376,6 +4394,36 @@ return (
         </div>
       )}
     </div>
+
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+    Performance intent
+  </div>
+
+  {performanceIntentRows.length > 0 ? (
+    <div className="mt-3 space-y-3">
+      {performanceIntentRows.map((row) => (
+        <div
+          key={row.label}
+          className="rounded border border-gray-800 bg-gray-900 p-3"
+        >
+          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            {row.label}
+          </div>
+          <div className="mt-1 text-sm leading-6 text-gray-200">
+            {row.value}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p className="mt-2 text-sm text-gray-500">
+      No performance intent yet. Generate chords to include tempo, groove, phrasing, vocal delivery, and guitar pattern.
+    </p>
+  )}
+</div>
+
+
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
       <div className="flex items-center justify-between gap-3">
