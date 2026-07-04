@@ -119,7 +119,13 @@ The JSON must use this shape:
   "capo": "",
   "tuning": "",
   "genre": "",
+  "tempoBpm": 82,
+  "timeSignature": "4/4",
+  "groove": "",
   "performanceFeel": "",
+  "phrasingNotes": "",
+  "vocalDelivery": "",
+  "guitarPattern": "",
   "verse": "",
   "chorus": "",
   "bridge": "",
@@ -143,7 +149,7 @@ Requirements:
 - Use the artist DNA where helpful, especially for vocal range, style, harmonic richness, and live-performance suitability.
 - Think like a songwriter and live acoustic performer.
 - The output should help the performer remember phrasing, rhythm, melody feel, and chord timing.
-- The placed chord positions are more important than a generic chord progression summary.
+- The placed chord positions must reflect the intended performance feel, tempo, groove, phrasing, breath points, and instrumental movement. They are more important than a generic chord progression summary.
 - songSheetLines must preserve the actual lyric lines in order.
 - Each lyric line should appear once.
 - Do not invent new lyrics.
@@ -164,6 +170,15 @@ Requirements:
 - Make sure every charIndex points to a valid character position in that lyric line.
 - If the lyric line is "Hold on through the stormy weather" and the chord changes on "through", charIndex should point near the "t" in "through", not automatically to 0.
 - Return the final checked JSON only.
+Performance intent requirements:
+- Include tempoBpm as a realistic number for the song style.
+- Include timeSignature, usually "4/4" unless another feel is clearly better.
+- Include groove, describing the rhythmic feel, for example "laid-back fingerpicked 8th-note feel" or "steady brushed country ballad pulse".
+- Include phrasingNotes describing how the vocal should sit against the guitar rhythm.
+- Include vocalDelivery describing the emotional and rhythmic delivery.
+- Include guitarPattern describing the likely accompaniment pattern.
+- Use these performance intent fields to guide songSheetLines chord placement.
+- If a chord occurs after the final sung word on a line, describe its purpose through the performance feel or notes, such as turnaround, held chord, pickup, breath, or instrumental response.
 `
 
 
