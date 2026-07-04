@@ -1989,6 +1989,45 @@ const getNumberValue = (value: unknown) => {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+const fixOutOfRangeChordPlacements = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return
+  }
+
+  const record = chordData as Record<string, unknown>
+  const lines = getPlacedSongSheetLines(record)
+
+  if (lines.length === 0) {
+    return
+  }
+
+  const fixedLines = lines.map((line) => {
+    const maxIndex = Math.max(0, line.lyric.length - 1)
+
+    return {
+      ...line,
+      chords: line.chords.map((placement) => ({
+        ...placement,
+        charIndex: Math.min(placement.charIndex, maxIndex),
+      })),
+    }
+  })
+
+  const nextRecord = {
+    ...record,
+    songSheetLines: fixedLines,
+  }
+
+  setChords(nextRecord)
+  setChordsText(JSON.stringify(nextRecord, null, 2))
+  setActiveChordVersionId(null)
+  setLastAppliedTransposeSnapshot(null)
+  setChordExtractionMessage('Out-of-range chord placements fixed. Review and save when ready.')
+  setProjectMessage('')
+}
+
 
 const getPlacedSongSheetQuality = () => {
   const chordData = getChordDataFromEditorJson()
@@ -4339,9 +4378,20 @@ return (
     </div>
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
-      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-        Performance songsheet quality
-      </div>
+      <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            Performance songsheet quality
+          </div>
+
+          <button
+            type="button"
+            onClick={() => fixOutOfRangeChordPlacements()}
+            disabled={placedSongSheetQuality.outOfRangeChords === 0}
+            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+          >
+            Fix placement issues
+          </button>
+        </div>
 
       <div className="mt-2 text-gray-300">
         {placedSongSheetQuality.label}
