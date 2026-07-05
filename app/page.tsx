@@ -2060,6 +2060,91 @@ const getPerformanceIntentRows = (value: unknown) => {
     .filter((row) => row.value)
 }
 
+const getChordRoot = (chord: string) => {
+  const match = chord.trim().match(/^([A-G](?:#|b)?)/)
+
+  return match ? match[1] : ''
+}
+
+const getSongSheetChordRoots = (value: unknown) => {
+  const lines = getPlacedSongSheetLines(value)
+
+  return Array.from(
+    new Set(
+      lines
+        .flatMap((line) => line.chords.map((placement) => placement.chord))
+        .map(getChordRoot)
+        .filter(Boolean),
+    ),
+  )
+}
+
+const normalizeChordSymbol = (value: string) => {
+  return value.trim().replace(/\s+/g, '')
+}
+
+const getSongSheetChordSymbols = (value: unknown) => {
+  const lines = getPlacedSongSheetLines(value)
+
+  return Array.from(
+    new Set(
+      lines
+        .flatMap((line) => line.chords.map((placement) => placement.chord))
+        .map(normalizeChordSymbol)
+        .filter(Boolean),
+    ),
+  )
+}
+
+
+const getKeyChordConsistency = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      label: 'No key check available',
+      detail: 'No chord JSON is available.',
+      warning: '',
+    }
+  }
+
+  const record = value as Record<string, unknown>
+  const keyValue = getStringValue(record.key)
+  const chordSymbols = getSongSheetChordSymbols(record)
+
+  if (!keyValue || chordSymbols.length === 0) {
+    return {
+      label: 'No key check available',
+      detail: 'Key or placed songsheet chords are missing.',
+      warning: '',
+    }
+  }
+
+  const normalizedKey = normalizeChordSymbol(keyValue)
+  const keyRoot = getChordRoot(normalizedKey)
+  const chordRoots = Array.from(
+    new Set(chordSymbols.map(getChordRoot).filter(Boolean)),
+  )
+
+  const exactKeyChordAppears = chordSymbols.includes(normalizedKey)
+  const keyRootAppears = chordRoots.includes(keyRoot)
+
+  if (!exactKeyChordAppears) {
+    return {
+      label: 'Key metadata may not match chord symbols',
+      detail: `Key metadata is ${keyValue}, but the placed songsheet chords are: ${chordSymbols.join(', ')}.`,
+      warning: keyRootAppears
+        ? 'The key root appears in the chords, but the exact key chord does not. Changing the key field only changes metadata; use transpose controls to change actual chord symbols.'
+        : 'The key root does not appear in the placed songsheet chords. Changing the key field only changes metadata; use transpose controls to change actual chord symbols.',
+    }
+  }
+
+  return {
+    label: 'Key metadata appears consistent with songsheet chords',
+    detail: `Key metadata is ${keyValue}. The placed songsheet includes ${normalizedKey}.`,
+    warning: '',
+  }
+}
+
+
 
 const getPlacedSongSheetQuality = () => {
   const chordData = getChordDataFromEditorJson()
@@ -2120,9 +2205,9 @@ const getPlacedSongSheetQuality = () => {
       ? 'Most chords are placed at the start of the line. The songsheet may need more natural phrasing placement.'
       : '',
     outOfRangeChords > 0
-  ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} occur after the final lyric character on a line. This may be intentional as a turnaround, held chord, pickup, breath, or instrumental movement. Review against the intended performance.`
-  : '',
-  ].filter(Boolean)
+      ? `${outOfRangeChords} chord placement${outOfRangeChords === 1 ? '' : 's'} occur after the final lyric character on a line. This may be intentional as a turnaround, held chord, pickup, breath, or instrumental movement. Review against the intended performance.`
+      : '',
+      ].filter(Boolean)
 
   const warning = warnings.join(' ')
 
@@ -2375,6 +2460,8 @@ const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
 )
+
+const keyChordConsistency = getKeyChordConsistency(getChordDataFromEditorJson())
 
 
 const buildChordSummaryCopyText = () => {
@@ -4423,7 +4510,25 @@ return (
   )}
 </div>
 
+<div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    Key and chord consistency
+  </div>
 
+  <div className="mt-1 text-sm text-gray-200">
+    {keyChordConsistency.label}
+  </div>
+
+  <div className="mt-1 text-xs leading-5 text-gray-500">
+    {keyChordConsistency.detail}
+  </div>
+
+  {keyChordConsistency.warning && (
+    <div className="mt-2 rounded border border-yellow-900/60 bg-yellow-950/30 p-2 text-xs text-yellow-200">
+      {keyChordConsistency.warning}
+    </div>
+  )}
+</div>
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -4513,12 +4618,12 @@ return (
       <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
         Performance songsheet preview
       </div>
-      <p className="mt-1 text-sm text-gray-500">
-          Chords placed above the lyric position where the change happens.
-          {getOriginalKeyLabel() && getDisplayedKeyLabel()
-            ? ` Original key: ${getOriginalKeyLabel()}. Displayed key: ${getDisplayedKeyLabel()}.`
-            : ''}
-        </p>
+     <p className="mt-1 text-sm text-gray-500">
+      Chords placed above the lyric position where the change happens.
+      {getOriginalKeyLabel()
+        ? ` Key metadata: ${getOriginalKeyLabel()}. Use transpose controls to change actual chord symbols.`
+        : ''}
+    </p>
     </div>
 
     <div className="flex flex-wrap items-center justify-end gap-2">
