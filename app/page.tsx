@@ -1611,11 +1611,15 @@ const applyTransposeToChordEditor = () => {
   setChords(nextRecord)
   setChordsText(nextText)
   setActiveChordVersionId(null)
-  setChordVersionTitle(
-    chordVersionTitle.trim()
-      ? `${chordVersionTitle.trim()} transposed`
-      : 'Transposed chord draft',
-  )
+  const baseTransposeTitle = chordVersionTitle
+      .trim()
+      .replace(/\s+transposed(?:\s+transposed)*$/i, '')
+
+    setChordVersionTitle(
+      baseTransposeTitle
+        ? `${baseTransposeTitle} transposed`
+        : 'Transposed chord draft',
+    )
   setChordTransposeSemitones(0)
   setChordExtractionMessage('Transpose applied to chord editor. Review and save as a new chord version.')
   setProjectMessage('')
@@ -1679,6 +1683,27 @@ const transposeChordSymbol = (chord: string, semitones: number) => {
     },
   )
 }
+
+
+const getSongsheetTransposeCopyRows = () => {
+  const originalKey = getOriginalKeyLabel()
+  const displayedKey = getDisplayedKeyLabel()
+  const transposeLabel = getTransposeLabel()
+
+  if (chordTransposeSemitones === 0) {
+    return [
+      originalKey ? `Key: ${originalKey}` : '',
+      'Transpose: None',
+    ].filter(Boolean)
+  }
+
+  return [
+    originalKey ? `Original key: ${originalKey}` : '',
+    displayedKey ? `Displayed key: ${displayedKey}` : '',
+    `Transpose: ${transposeLabel}`,
+  ].filter(Boolean)
+}
+
 
 const getTransposeLabel = () => {
   if (chordTransposeSemitones === 0) {
@@ -2373,11 +2398,13 @@ const buildPlacedSongSheetCopyText = () => {
 
   const lines = getPlacedSongSheetLines(chordData)
 
-  if (lines.length === 0) {
-    return ''
-  }
+    if (lines.length === 0) {
+      return ''
+    }
 
-  let currentSection = ''
+    const intentRows = getPerformanceIntentRows(chordData)
+
+    let currentSection = ''
 
   const renderedLines = lines.flatMap((line) => {
     const output: string[] = []
@@ -2404,19 +2431,24 @@ const buildPlacedSongSheetCopyText = () => {
   })
 
   return [
-    'PERFORMANCE SONGSHEET',
-    '',
-    `Project: ${activeProject?.title || 'Untitled project'}`,
-    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
-    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
-    `Editor status: ${chordEditorStatus.label}`,
-    getOriginalKeyLabel() ? `Original key: ${getOriginalKeyLabel()}` : '',
-    getDisplayedKeyLabel() ? `Displayed key: ${getDisplayedKeyLabel()}` : '',
-    `Transpose: ${getTransposeLabel()}`,
-    '',
-    '',
-    ...renderedLines,
-  ]
+      'PERFORMANCE SONGSHEET',
+      '',
+      `Project: ${activeProject?.title || 'Untitled project'}`,
+      `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+      `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+      `Editor status: ${chordEditorStatus.label}`,
+      ...getSongsheetTransposeCopyRows(),
+      '',
+      ...(intentRows.length > 0
+        ? [
+            'PERFORMANCE INTENT',
+            '',
+            ...intentRows.map((row) => `${row.label}: ${row.value}`),
+            '',
+          ]
+        : []),
+      ...renderedLines,
+    ]
     .filter((line, index, linesToFilter) => {
       if (line !== '') {
         return true
