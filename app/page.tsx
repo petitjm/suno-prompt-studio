@@ -2025,6 +2025,7 @@ const buildPerformanceDesignNotesCopyText = () => {
   const intentRows = getPerformanceIntentRows(chordData)
   const quality = getPlacedSongSheetQuality()
   const keyCheck = getKeyChordConsistency(chordData)
+  const audioReadinessText = buildAudioGuideReadinessCopyText()
 
   if (!chordData || intentRows.length === 0) {
     return ''
@@ -2054,6 +2055,17 @@ const buildPerformanceDesignNotesCopyText = () => {
     keyCheck.detail,
     keyCheck.warning ? `Review note: ${keyCheck.warning}` : '',
     '',
+    ...(audioReadinessText
+      ? [
+          'AUDIO GUIDE READINESS',
+          '',
+          audioReadinessText
+            .replace(/^AUDIO GUIDE READINESS\s*/i, '')
+            .trim(),
+          '',
+        ]
+      : []),
+    '',
     'PERFORMER NOTES',
     '',
     '- Use these notes to remember the intended feel before rehearsing.',
@@ -2070,6 +2082,7 @@ const buildCompactPerformanceDesignNotesCopyText = () => {
   const chordData = getChordDataFromEditorJson()
   const quality = getPlacedSongSheetQuality()
   const keyCheck = getKeyChordConsistency(chordData)
+  const audioReadinessText = buildAudioGuideReadinessCopyText()
 
   if (!chordData) {
     return ''
@@ -2088,6 +2101,17 @@ const buildCompactPerformanceDesignNotesCopyText = () => {
     keyCheck.label,
     keyCheck.detail,
     keyCheck.warning ? `Review note: ${keyCheck.warning}` : '',
+    '',
+    ...(audioReadinessText
+      ? [
+          'AUDIO GUIDE READINESS',
+          '',
+          audioReadinessText
+            .replace(/^AUDIO GUIDE READINESS\s*/i, '')
+            .trim(),
+          '',
+        ]
+      : []),
     '',
     'PERFORMER NOTES',
     '',
@@ -3043,6 +3067,32 @@ const buildCompactPlacedSongSheetCopyText = () => {
     })
     .join('\n')
 }
+
+const buildAudioGuideReadinessCopyText = () => {
+  const readiness = getAudioGuideReadiness()
+
+  return [
+    'AUDIO GUIDE READINESS',
+    '',
+    readiness.label,
+    readiness.detail,
+    '',
+    ...readiness.checks.flatMap((check) => [
+      `${check.passed ? 'Available' : 'Needs attention'}: ${check.label}`,
+      check.detail,
+      '',
+    ]),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
 
 const getAudioGuideReadiness = () => {
   const chordData = getChordDataFromEditorJson()
