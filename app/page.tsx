@@ -1454,6 +1454,8 @@ const copyChordJson = async () => {
   }
 }
 
+
+
 const copyGuideTrackPlan = async () => {
   const copyText = buildGuideTrackPlanCopyText()
 
@@ -3042,6 +3044,81 @@ const buildCompactPlacedSongSheetCopyText = () => {
     .join('\n')
 }
 
+const getAudioGuideReadiness = () => {
+  const chordData = getChordDataFromEditorJson()
+  const intentRows = getPerformanceIntentRows(chordData)
+  const guideTrackPlanRows = getGuideTrackPlanRows(chordData)
+  const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(chordData)
+  const placedLines = getPlacedSongSheetLines(chordData)
+
+  const hasTempo = intentRows.some((row) => row.label === 'Tempo')
+  const hasGroove = intentRows.some((row) => row.label === 'Groove')
+  const hasPerformanceIntent = intentRows.length > 0
+  const hasGuideTrackPlan = guideTrackPlanRows.length > 0
+  const hasSectionPlan = guideTrackSectionPlanRows.length > 0
+  const hasPlacedSongsheet = placedLines.length > 0
+
+  const checks = [
+    {
+      label: 'Performance intent',
+      passed: hasPerformanceIntent,
+      detail: hasPerformanceIntent
+        ? 'Tempo, feel, phrasing, or delivery information is available.'
+        : 'Generate chords with performance intent.',
+    },
+    {
+      label: 'Tempo',
+      passed: hasTempo,
+      detail: hasTempo
+        ? 'Tempo is available for guide-track timing.'
+        : 'Tempo is missing.',
+    },
+    {
+      label: 'Groove',
+      passed: hasGroove,
+      detail: hasGroove
+        ? 'Groove is available for rhythmic feel.'
+        : 'Groove is missing.',
+    },
+    {
+      label: 'Placed songsheet',
+      passed: hasPlacedSongsheet,
+      detail: hasPlacedSongsheet
+        ? `${placedLines.length} songsheet line${placedLines.length === 1 ? '' : 's'} available.`
+        : 'Chord-over-lyric placement data is missing.',
+    },
+    {
+      label: 'Guide track plan',
+      passed: hasGuideTrackPlan,
+      detail: hasGuideTrackPlan
+        ? 'Structured guide-track plan is available.'
+        : 'Using fallback guide plan from performance intent if available.',
+    },
+    {
+      label: 'Section plan',
+      passed: hasSectionPlan,
+      detail: hasSectionPlan
+        ? `${guideTrackSectionPlanRows.length} section plan item${guideTrackSectionPlanRows.length === 1 ? '' : 's'} available.`
+        : 'Section-by-section guide-track plan is missing.',
+    },
+  ]
+
+  const passedCount = checks.filter((check) => check.passed).length
+
+  const label =
+    passedCount >= 5
+      ? 'Ready for audio guide'
+      : passedCount >= 3
+        ? 'Partly ready'
+        : 'Not ready yet'
+
+  return {
+    label,
+    detail: `${passedCount} of ${checks.length} audio guide ingredients are available.`,
+    checks,
+  }
+}
+
 const getChordEditorStatus = () => {
   const usableChordData = hasUsableChordData()
   const summaryRows = getChordSummaryRows(getUsableChordDataFromEditor() || chords)
@@ -3074,6 +3151,7 @@ const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
 const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
 const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const guideTrackPlanPreview = buildGuideTrackPlanCopyText()
+const audioGuideReadiness = getAudioGuideReadiness()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -5166,9 +5244,20 @@ return (
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
   <div className="flex items-center justify-between gap-3">
-      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-        Guide track plan
-      </div>
+      <div className="flex items-center justify-between gap-3">
+  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+    Guide track plan
+  </div>
+
+  <button
+    type="button"
+    onClick={() => copyGuideTrackPlan()}
+    disabled={!guideTrackPlanPreview}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+  >
+    {justCopiedGuideTrackPlan ? 'Copied ✓' : 'Copy guide plan'}
+  </button>
+</div>
 
       <button
         type="button"
@@ -5239,6 +5328,47 @@ return (
     </p>
   )}
 </div>
+
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+    Audio guide readiness
+  </div>
+
+  <div className="mt-2 text-gray-300">
+    {audioGuideReadiness.label}
+  </div>
+
+  <div className="mt-1 text-sm text-gray-500">
+    {audioGuideReadiness.detail}
+  </div>
+
+  <div className="mt-3 grid gap-2 lg:grid-cols-2">
+    {audioGuideReadiness.checks.map((check) => (
+      <div
+        key={check.label}
+        className="rounded border border-gray-800 bg-gray-900 p-3"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-medium text-gray-200">
+            {check.label}
+          </div>
+          <div
+            className={`text-xs ${
+              check.passed ? 'text-green-300' : 'text-yellow-300'
+            }`}
+          >
+            {check.passed ? 'Available' : 'Needs attention'}
+          </div>
+        </div>
+
+        <div className="mt-1 text-xs leading-5 text-gray-500">
+          {check.detail}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
 
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
