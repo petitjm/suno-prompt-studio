@@ -216,6 +216,7 @@ export default function Page() {
   const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justCopiedPerformanceIntent, setJustCopiedPerformanceIntent] = useState(false)
+  const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
@@ -1762,6 +1763,28 @@ const transposeChordProgressionText = (value: string, semitones: number) => {
 }
 
 
+const copyAudioGuidePrompt = async () => {
+  const copyText = buildAudioGuidePromptCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No performance songsheet available for an audio guide prompt.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioGuidePrompt(true)
+    setChordExtractionMessage('Audio guide prompt copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioGuidePrompt(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy audio guide prompt.')
+  }
+}
+
+
 const copyPerformanceIntent = async () => {
   const copyText = buildPerformanceIntentCopyText()
 
@@ -1979,6 +2002,48 @@ const buildChordPracticePackCopyText = () => {
     performanceSheet || 'No source lyrics available.',
   ].join('\n')
 }
+
+
+const buildAudioGuidePromptCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const intentRows = getPerformanceIntentRows(chordData)
+  const songsheetText = buildPlacedSongSheetCopyText()
+
+  if (!chordData || !songsheetText) {
+    return ''
+  }
+
+  return [
+    'AUDIO GUIDE PROMPT',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    '',
+    'Purpose:',
+    'Create a simple performance guide track, not a finished production. The goal is to preserve the intended tempo, groove, phrasing, chord timing, and vocal entry points so the songwriter can remember how the song should be performed.',
+    '',
+    'Guide track requirements:',
+    '- Simple acoustic guitar only, unless the performance intent clearly suggests a light metronome or foot-tap pulse.',
+    '- Keep the arrangement sparse and readable.',
+    '- Emphasize chord change timing and phrasing over production quality.',
+    '- Use the chord-over-lyric songsheet as the main timing reference.',
+    '- Respect any after-lyric chords as possible turnarounds, held chords, pickups, breaths, or instrumental responses.',
+    '- If vocal melody is included, use a simple guide melody only; do not over-sing.',
+    '- Avoid full-band production.',
+    '',
+    ...(intentRows.length > 0
+      ? [
+          'PERFORMANCE INTENT',
+          '',
+          ...intentRows.map((row) => `${row.label}: ${row.value}`),
+          '',
+        ]
+      : []),
+    songsheetText,
+  ].join('\n')
+}
+
 
 const buildChordSheetCopyText = () => {
   const chordData = getUsableChordDataFromEditor()
@@ -4758,6 +4823,15 @@ return (
   className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
 >
   Apply transpose
+</button>
+
+<button
+  type="button"
+  onClick={() => copyAudioGuidePrompt()}
+  disabled={!placedSongSheetPreview}
+  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+>
+  {justCopiedAudioGuidePrompt ? 'Copied ✓' : 'Copy audio guide prompt'}
 </button>
 
 
