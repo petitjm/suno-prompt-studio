@@ -217,6 +217,7 @@ export default function Page() {
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justCopiedPerformanceIntent, setJustCopiedPerformanceIntent] = useState(false)
   const [justCopiedPerformanceDesignNotes, setJustCopiedPerformanceDesignNotes] = useState(false)
+  const [justCopiedGuideTrackPlan, setJustCopiedGuideTrackPlan] = useState(false)
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
@@ -1450,6 +1451,27 @@ const copyChordJson = async () => {
     }, 1500)
   } catch {
     setChordExtractionMessage('Could not copy chord JSON.')
+  }
+}
+
+const copyGuideTrackPlan = async () => {
+  const copyText = buildGuideTrackPlanCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No guide track plan available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedGuideTrackPlan(true)
+    setChordExtractionMessage('Guide track plan copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedGuideTrackPlan(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy guide track plan.')
   }
 }
 
@@ -3016,6 +3038,7 @@ const placedSongSheetPreview = buildPlacedSongSheetCopyText()
 const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
 const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
 const fullPerformancePackPreview = buildFullPerformancePackCopyText()
+const guideTrackPlanPreview = buildGuideTrackPlanCopyText()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -5107,9 +5130,20 @@ return (
 
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
-  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-    Guide track plan
-  </div>
+  <div className="flex items-center justify-between gap-3">
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Guide track plan
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyGuideTrackPlan()}
+        disabled={!guideTrackPlanPreview}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedGuideTrackPlan ? 'Copied ✓' : 'Copy guide plan'}
+      </button>
+    </div>
 
   {guideTrackPlanRows.length > 0 || guideTrackSectionPlanRows.length > 0 ? (
     <div className="mt-3 space-y-4">
