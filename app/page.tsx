@@ -221,6 +221,7 @@ export default function Page() {
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
+  const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
@@ -1790,6 +1791,28 @@ const transposeChordProgressionText = (value: string, semitones: number) => {
 }
 
 
+const copyAudioPreviewSpec = async () => {
+  const copyText = buildAudioPreviewSpecCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No audio preview spec available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewSpec(true)
+    setChordExtractionMessage('Audio preview spec copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewSpec(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy audio preview spec.')
+  }
+}
+
+
 const copyAudioGuidePrompt = async () => {
   const copyText = buildAudioGuidePromptCopyText()
 
@@ -2358,6 +2381,62 @@ const buildCompactAudioGuidePromptCopyText = () => {
     songsheetText,
   ].join('\n')
 }
+
+const buildAudioPreviewSpecCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return ''
+  }
+
+  const record = chordData as Record<string, unknown>
+  const intentRows = getPerformanceIntentRows(record)
+  const guideTrackPlanRows = getGuideTrackPlanRows(record)
+  const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(record)
+  const songsheetLines = getPlacedSongSheetLines(record)
+  const readiness = getAudioGuideReadiness()
+
+  if (intentRows.length === 0 && songsheetLines.length === 0) {
+    return ''
+  }
+
+  const spec = {
+    type: 'audio-preview-spec',
+    version: 1,
+    project: activeProject?.title || 'Untitled project',
+    songVersion: activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version',
+    chordVersion: chordVersionTitle || 'Unsaved or untitled chord version',
+    generatedAt: new Date().toISOString(),
+    key: getDisplayedKeyLabel() || getOriginalKeyLabel() || '',
+    transposeSemitones: chordTransposeSemitones,
+    readiness: {
+      label: readiness.label,
+      detail: readiness.detail,
+      checks: readiness.checks,
+    },
+    performanceIntent: Object.fromEntries(
+      intentRows.map((row) => [row.label, row.value]),
+    ),
+    guideTrackPlan: {
+      rows: Object.fromEntries(
+        guideTrackPlanRows.map((row) => [row.label, row.value]),
+      ),
+      sectionPlan: guideTrackSectionPlanRows,
+    },
+    songsheetLines: songsheetLines.map((line) =>
+      transposePlacedSongSheetLine(line),
+    ),
+    notes: [
+      'This is a machine-readable planning spec for a future simple audio guide track.',
+      'It is not a finished production request.',
+      'Chord placement should be treated as performance intent and reviewed against phrasing.',
+    ],
+  }
+
+  return JSON.stringify(spec, null, 2)
+}
+
+
 
 const buildAudioGuideSummaryCopyText = () => {
   const chordData = getChordDataFromEditorJson()
@@ -3271,6 +3350,7 @@ const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
 const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const guideTrackPlanPreview = buildGuideTrackPlanCopyText()
 const audioGuideSummaryPreview = buildAudioGuideSummaryCopyText()
+const audioPreviewSpecPreview = buildAudioPreviewSpecCopyText()
 const audioGuideReadiness = getAudioGuideReadiness()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
@@ -5450,19 +5530,30 @@ return (
 </div>
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
-  <div className="flex items-center justify-between gap-3">
+ <div className="flex items-center justify-between gap-3">
   <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
     Audio guide readiness
   </div>
 
-  <button
-    type="button"
-    onClick={() => copyAudioGuideSummary()}
-    disabled={!audioGuideSummaryPreview}
-    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-  >
-    {justCopiedAudioGuideSummary ? 'Copied ✓' : 'Copy audio summary'}
-  </button>
+  <div className="flex flex-wrap items-center justify-end gap-2">
+    <button
+      type="button"
+      onClick={() => copyAudioGuideSummary()}
+      disabled={!audioGuideSummaryPreview}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedAudioGuideSummary ? 'Copied ✓' : 'Copy audio summary'}
+    </button>
+
+    <button
+      type="button"
+      onClick={() => copyAudioPreviewSpec()}
+      disabled={!audioPreviewSpecPreview}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedAudioPreviewSpec ? 'Copied ✓' : 'Copy preview spec'}
+    </button>
+  </div>
 </div>
 
   <div className="mt-2 text-gray-300">
