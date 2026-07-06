@@ -2376,6 +2376,102 @@ const getPerformanceIntentRows = (value: unknown) => {
     .filter((row) => row.value)
 }
 
+const getGuideTrackPlanRows = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+
+  const record = value as Record<string, unknown>
+  const guideTrackPlan = record.guideTrackPlan
+
+  if (
+    !guideTrackPlan ||
+    typeof guideTrackPlan !== 'object' ||
+    Array.isArray(guideTrackPlan)
+  ) {
+    return []
+  }
+
+  const plan = guideTrackPlan as Record<string, unknown>
+
+  const fields = [
+    ['Purpose', plan.purpose],
+    ['Count-in', plan.countIn],
+    ['Instrumentation', plan.instrumentation],
+    ['Guitar tone', plan.guitarTone],
+    ['Rhythm reference', plan.rhythmReference],
+    ['Vocal guide style', plan.vocalGuideStyle],
+  ]
+
+  return fields
+    .map(([label, rawValue]) => {
+      const value =
+        typeof rawValue === 'string' || typeof rawValue === 'number'
+          ? String(rawValue).trim()
+          : ''
+
+      return {
+        label: String(label),
+        value,
+      }
+    })
+    .filter((row) => row.value)
+}
+
+const getGuideTrackSectionPlanRows = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+
+  const record = value as Record<string, unknown>
+  const guideTrackPlan = record.guideTrackPlan
+
+  if (
+    !guideTrackPlan ||
+    typeof guideTrackPlan !== 'object' ||
+    Array.isArray(guideTrackPlan)
+  ) {
+    return []
+  }
+
+  const plan = guideTrackPlan as Record<string, unknown>
+  const sectionPlan = plan.sectionPlan
+
+  if (!Array.isArray(sectionPlan)) {
+    return []
+  }
+
+  return sectionPlan
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        return null
+      }
+
+      const section = entry as Record<string, unknown>
+
+      return {
+        section: getStringValue(section.section) || 'Untitled section',
+        feel: getStringValue(section.feel),
+        guitarApproach: getStringValue(section.guitarApproach),
+        vocalApproach: getStringValue(section.vocalApproach),
+        dynamicShape: getStringValue(section.dynamicShape),
+        notes: getStringValue(section.notes),
+      }
+    })
+    .filter((row): row is {
+      section: string
+      feel: string
+      guitarApproach: string
+      vocalApproach: string
+      dynamicShape: string
+      notes: string
+    } => Boolean(row))
+}
+
+
+
+
+
 const getChordRoot = (chord: string) => {
   const match = chord.trim().match(/^([A-G](?:#|b)?)/)
 
@@ -2834,6 +2930,10 @@ const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
 const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
+  getChordDataFromEditorJson(),
+)
+const guideTrackPlanRows = getGuideTrackPlanRows(getChordDataFromEditorJson())
+const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(
   getChordDataFromEditorJson(),
 )
 
@@ -4916,6 +5016,73 @@ return (
     </div>
   )}
 </div>
+
+
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+    Guide track plan
+  </div>
+
+  {guideTrackPlanRows.length > 0 || guideTrackSectionPlanRows.length > 0 ? (
+    <div className="mt-3 space-y-4">
+      {guideTrackPlanRows.length > 0 && (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {guideTrackPlanRows.map((row) => (
+            <div
+              key={row.label}
+              className="rounded border border-gray-800 bg-gray-900 p-3"
+            >
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                {row.label}
+              </div>
+              <div className="mt-1 text-sm leading-6 text-gray-200">
+                {row.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {guideTrackSectionPlanRows.length > 0 && (
+        <div className="space-y-3">
+          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            Section plan
+          </div>
+
+          {guideTrackSectionPlanRows.map((row, index) => (
+            <div
+              key={`${row.section}-${index}`}
+              className="rounded border border-gray-800 bg-gray-900 p-3"
+            >
+              <div className="font-medium text-gray-200">
+                {row.section}
+              </div>
+
+              <div className="mt-2 space-y-1 text-sm leading-6 text-gray-400">
+                {row.feel && <div>Feel: {row.feel}</div>}
+                {row.guitarApproach && (
+                  <div>Guitar: {row.guitarApproach}</div>
+                )}
+                {row.vocalApproach && (
+                  <div>Vocal: {row.vocalApproach}</div>
+                )}
+                {row.dynamicShape && (
+                  <div>Dynamics: {row.dynamicShape}</div>
+                )}
+                {row.notes && <div>Notes: {row.notes}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : (
+    <p className="mt-2 text-sm text-gray-500">
+      No guide track plan yet. Generate chords to include a structured plan for a future audio guide.
+    </p>
+  )}
+</div>
+
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
   <div className="flex items-center justify-between gap-3">
