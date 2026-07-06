@@ -216,6 +216,7 @@ export default function Page() {
   const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justCopiedPerformanceIntent, setJustCopiedPerformanceIntent] = useState(false)
+  const [justCopiedPerformanceDesignNotes, setJustCopiedPerformanceDesignNotes] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
@@ -1785,6 +1786,28 @@ const copyAudioGuidePrompt = async () => {
 }
 
 
+const copyPerformanceDesignNotes = async () => {
+  const copyText = buildPerformanceDesignNotesCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No performance design notes available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedPerformanceDesignNotes(true)
+    setChordExtractionMessage('Performance design notes copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedPerformanceDesignNotes(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy performance design notes.')
+  }
+}
+
+
 const copyPerformanceIntent = async () => {
   const copyText = buildPerformanceIntentCopyText()
 
@@ -1947,6 +1970,52 @@ const buildChordPacketCopyText = () => {
     '',
     performanceSheet || 'No source lyrics available.',
   ].join('\n')
+}
+
+
+const buildPerformanceDesignNotesCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const intentRows = getPerformanceIntentRows(chordData)
+  const quality = getPlacedSongSheetQuality()
+  const keyCheck = getKeyChordConsistency(chordData)
+
+  if (!chordData || intentRows.length === 0) {
+    return ''
+  }
+
+  return [
+    'PERFORMANCE DESIGN NOTES',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    '',
+    'PERFORMANCE INTENT',
+    '',
+    ...intentRows.map((row) => `${row.label}: ${row.value}`),
+    '',
+    'SONGSHEET REVIEW',
+    '',
+    `Placement status: ${quality.label}`,
+    quality.detail,
+    `After-lyric chords: ${quality.outOfRangeChords ?? 0}`,
+    quality.warning ? `Review note: ${quality.warning}` : '',
+    '',
+    'KEY / CHORD CHECK',
+    '',
+    keyCheck.label,
+    keyCheck.detail,
+    keyCheck.warning ? `Review note: ${keyCheck.warning}` : '',
+    '',
+    'PERFORMER NOTES',
+    '',
+    '- Use these notes to remember the intended feel before rehearsing.',
+    '- Treat chord-over-lyric placement as a performance proposal, not a fixed rule.',
+    '- Review after-lyric chords as possible turnarounds, held chords, pickups, breaths, or instrumental responses.',
+    '- If the rhythm or melody is uncertain, capture a quick audio snippet before changing the design.',
+  ]
+    .filter((line) => line !== '')
+    .join('\n')
 }
 
 
@@ -2597,6 +2666,7 @@ const chordEditorStatus = getChordEditorStatus()
 const chordSheetPreview = buildChordSheetCopyText()
 const placedSongSheetPreview = buildPlacedSongSheetCopyText()
 const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
+const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -4681,6 +4751,34 @@ return (
     </div>
   )}
 </div>
+
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Performance design notes
+      </div>
+      <p className="mt-1 text-sm text-gray-500">
+        Human-readable notes for remembering how the song is intended to be performed.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => copyPerformanceDesignNotes()}
+      disabled={!performanceDesignNotesPreview}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedPerformanceDesignNotes ? 'Copied ✓' : 'Copy design notes'}
+    </button>
+  </div>
+
+  <pre className="mt-4 max-h-[360px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+    {performanceDesignNotesPreview ||
+      'No performance design notes yet. Generate chords with performance intent to create this summary.'}
+  </pre>
+</div>
+
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
       <div className="flex items-center justify-between gap-3">
