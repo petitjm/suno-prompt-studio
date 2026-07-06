@@ -2064,6 +2064,41 @@ const buildPerformanceDesignNotesCopyText = () => {
 }
 
 
+const buildCompactPerformanceDesignNotesCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const quality = getPlacedSongSheetQuality()
+  const keyCheck = getKeyChordConsistency(chordData)
+
+  if (!chordData) {
+    return ''
+  }
+
+  return [
+    'SONGSHEET REVIEW',
+    '',
+    `Placement status: ${quality.label}`,
+    quality.detail,
+    `After-lyric chords: ${quality.outOfRangeChords ?? 0}`,
+    quality.warning ? `Review note: ${quality.warning}` : '',
+    '',
+    'KEY / CHORD CHECK',
+    '',
+    keyCheck.label,
+    keyCheck.detail,
+    keyCheck.warning ? `Review note: ${keyCheck.warning}` : '',
+    '',
+    'PERFORMER NOTES',
+    '',
+    '- Use these notes to remember the intended feel before rehearsing.',
+    '- Treat chord-over-lyric placement as a performance proposal, not a fixed rule.',
+    '- Review after-lyric chords as possible turnarounds, held chords, pickups, breaths, or instrumental responses.',
+    '- If the rhythm or melody is uncertain, capture a quick audio snippet before changing the design.',
+  ]
+    .filter((line) => line !== '')
+    .join('\n')
+}
+
+
 const buildPerformanceIntentCopyText = () => {
   const chordData = getChordDataFromEditorJson()
   const rows = getPerformanceIntentRows(chordData)
@@ -2085,7 +2120,7 @@ const buildPerformanceIntentCopyText = () => {
 
 const buildFullPerformancePackCopyText = () => {
   const songsheetText = buildCompactPlacedSongSheetCopyText()
-  const designNotesText = buildPerformanceDesignNotesCopyText()
+  const designNotesText = buildCompactPerformanceDesignNotesCopyText()
   const guideTrackPlanText = buildGuideTrackPlanCopyText()
   const audioGuidePromptText = buildCompactAudioGuidePromptCopyText()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
