@@ -126,6 +126,24 @@ The JSON must use this shape:
   "phrasingNotes": "",
   "vocalDelivery": "",
   "guitarPattern": "",
+  "guideTrackPlan": {
+  "purpose": "",
+  "countIn": "",
+  "instrumentation": "",
+  "guitarTone": "",
+  "rhythmReference": "",
+  "vocalGuideStyle": "",
+  "sectionPlan": [
+    {
+          "section": "Verse 1",
+          "feel": "",
+          "guitarApproach": "",
+          "vocalApproach": "",
+          "dynamicShape": "",
+          "notes": ""
+        }
+      ]
+    },
   "verse": "",
   "chorus": "",
   "bridge": "",
@@ -177,8 +195,18 @@ Performance intent requirements:
 - Include phrasingNotes describing how the vocal should sit against the guitar rhythm.
 - Include vocalDelivery describing the emotional and rhythmic delivery.
 - Include guitarPattern describing the likely accompaniment pattern.
+- Make guideTrackPlan specific enough that a simple audio-preview feature could use it later.
 - Use these performance intent fields to guide songSheetLines chord placement.
 - If a chord occurs after the final sung word on a line, describe its purpose through the performance feel or notes, such as turnaround, held chord, pickup, breath, or instrumental response.
+Guide track plan requirements:
+- Include guideTrackPlan as a practical plan for a future simple audio guide track.
+- The guide track is not a finished production.
+- It should help the songwriter remember tempo, groove, phrasing, chord timing, vocal entry points, and dynamic shape.
+- Keep instrumentation sparse, usually acoustic guitar plus optional light count-in, foot tap, or metronome.
+- Do not suggest full-band production unless the song clearly requires it.
+- Use sectionPlan to describe how each major section should feel and develop.
+- Include vocalGuideStyle as a simple guide vocal or melody reference, not a polished lead vocal.
+- Include rhythmReference to describe the pulse clearly enough that it could later drive audio preview generation.
 `
 
 
