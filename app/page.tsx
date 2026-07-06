@@ -2064,10 +2064,20 @@ const buildPerformanceIntentCopyText = () => {
 const buildFullPerformancePackCopyText = () => {
   const songsheetText = buildCompactPlacedSongSheetCopyText()
   const designNotesText = buildPerformanceDesignNotesCopyText()
+  const guideTrackPlanText = buildGuideTrackPlanCopyText()
   const audioGuidePromptText = buildCompactAudioGuidePromptCopyText()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
-  if (!songsheetText && !designNotesText && !audioGuidePromptText) {
+  const compactGuideTrackPlanText = guideTrackPlanText
+    .replace(/^GUIDE TRACK PLAN\s*/i, '')
+    .trim()
+
+  if (
+    !songsheetText &&
+    !designNotesText &&
+    !compactGuideTrackPlanText &&
+    !audioGuidePromptText
+  ) {
     return ''
   }
 
@@ -2107,6 +2117,16 @@ const buildFullPerformancePackCopyText = () => {
           '============================================================',
           '',
           designNotesText,
+          '',
+        ]
+      : []),
+    ...(compactGuideTrackPlanText
+      ? [
+          '============================================================',
+          'GUIDE TRACK PLAN',
+          '============================================================',
+          '',
+          compactGuideTrackPlanText,
           '',
         ]
       : []),
@@ -2159,7 +2179,7 @@ const buildChordPracticePackCopyText = () => {
 const buildCompactAudioGuidePromptCopyText = () => {
   const chordData = getChordDataFromEditorJson()
   const intentRows = getPerformanceIntentRows(chordData)
-
+  
   if (!chordData) {
     return ''
   }
@@ -2187,9 +2207,10 @@ const buildCompactAudioGuidePromptCopyText = () => {
 }
 
 
-const buildAudioGuidePromptCopyText = () => {
+  const buildAudioGuidePromptCopyText = () => {
   const chordData = getChordDataFromEditorJson()
   const intentRows = getPerformanceIntentRows(chordData)
+  const guideTrackPlanText = buildGuideTrackPlanCopyText()
   const songsheetText = buildPlacedSongSheetCopyText()
 
   if (!chordData || !songsheetText) {
@@ -2223,9 +2244,76 @@ const buildAudioGuidePromptCopyText = () => {
           '',
         ]
       : []),
+      ...(guideTrackPlanText
+      ? [
+          '',
+          guideTrackPlanText,
+        ]
+      : []),
     songsheetText,
   ].join('\n')
 }
+
+const buildGuideTrackPlanCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const planRows = getGuideTrackPlanRows(chordData)
+  const sectionRows = getGuideTrackSectionPlanRows(chordData)
+  const intentRows = getPerformanceIntentRows(chordData)
+
+  if (planRows.length === 0 && sectionRows.length === 0) {
+    if (intentRows.length === 0) {
+      return ''
+    }
+
+    return [
+      'GUIDE TRACK PLAN',
+      '',
+      'Source: Performance intent fallback',
+      'Purpose: Create a simple guide track that preserves tempo, groove, phrasing, chord timing, and vocal entry points.',
+      'Instrumentation: Sparse acoustic guitar guide with optional light count-in, foot tap, or metronome.',
+      'Vocal guide style: Simple guide melody or understated vocal reference only; not a polished lead vocal.',
+      '',
+      'PERFORMANCE INTENT REFERENCE',
+      '',
+      ...intentRows.map((row) => `${row.label}: ${row.value}`),
+    ].join('\n')
+  }
+
+  return [
+    'GUIDE TRACK PLAN',
+    '',
+    ...(planRows.length > 0
+      ? [
+          ...planRows.map((row) => `${row.label}: ${row.value}`),
+          '',
+        ]
+      : []),
+    ...(sectionRows.length > 0
+      ? [
+          'SECTION PLAN',
+          '',
+          ...sectionRows.flatMap((row) => [
+            row.section,
+            row.feel ? `Feel: ${row.feel}` : '',
+            row.guitarApproach ? `Guitar: ${row.guitarApproach}` : '',
+            row.vocalApproach ? `Vocal: ${row.vocalApproach}` : '',
+            row.dynamicShape ? `Dynamics: ${row.dynamicShape}` : '',
+            row.notes ? `Notes: ${row.notes}` : '',
+            '',
+          ]),
+        ]
+      : []),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
 
 
 const buildChordSheetCopyText = () => {
