@@ -217,6 +217,7 @@ export default function Page() {
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justCopiedPerformanceIntent, setJustCopiedPerformanceIntent] = useState(false)
   const [justCopiedPerformanceDesignNotes, setJustCopiedPerformanceDesignNotes] = useState(false)
+  const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
@@ -1830,6 +1831,28 @@ const copyPerformanceIntent = async () => {
 }
 
 
+const copyFullPerformancePack = async () => {
+  const copyText = buildFullPerformancePackCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No full performance pack available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedFullPerformancePack(true)
+    setChordExtractionMessage('Full performance pack copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedFullPerformancePack(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy full performance pack.')
+  }
+}
+
+
 const copyChordSummary = async () => {
   const copyText = buildChordSummaryCopyText()
 
@@ -2035,6 +2058,55 @@ const buildPerformanceIntentCopyText = () => {
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
     '',
     ...rows.map((row) => `${row.label}: ${row.value}`),
+  ].join('\n')
+}
+
+const buildFullPerformancePackCopyText = () => {
+  const songsheetText = buildPlacedSongSheetCopyText()
+  const designNotesText = buildPerformanceDesignNotesCopyText()
+  const audioGuidePromptText = buildAudioGuidePromptCopyText()
+
+  if (!songsheetText && !designNotesText && !audioGuidePromptText) {
+    return ''
+  }
+
+  return [
+    'FULL PERFORMANCE PACK',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    ...(songsheetText
+      ? [
+          '============================================================',
+          'PERFORMANCE SONGSHEET',
+          '============================================================',
+          '',
+          songsheetText,
+          '',
+        ]
+      : []),
+    ...(designNotesText
+      ? [
+          '============================================================',
+          'PERFORMANCE DESIGN NOTES',
+          '============================================================',
+          '',
+          designNotesText,
+          '',
+        ]
+      : []),
+    ...(audioGuidePromptText
+      ? [
+          '============================================================',
+          'AUDIO GUIDE PROMPT',
+          '============================================================',
+          '',
+          audioGuidePromptText,
+        ]
+      : []),
   ].join('\n')
 }
 
@@ -2667,6 +2739,7 @@ const chordSheetPreview = buildChordSheetCopyText()
 const placedSongSheetPreview = buildPlacedSongSheetCopyText()
 const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
 const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
+const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -4982,6 +5055,33 @@ return (
   <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
     {audioGuidePromptPreview ||
       'No audio guide prompt yet. Generate or paste chord JSON with performance songsheet placement data.'}
+  </pre>
+</div>
+
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Full performance pack
+      </div>
+      <p className="mt-1 text-sm text-gray-500">
+        Combined copy of songsheet, design notes, and audio guide prompt for rehearsal or archiving.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => copyFullPerformancePack()}
+      disabled={!fullPerformancePackPreview}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedFullPerformancePack ? 'Copied ✓' : 'Copy full pack'}
+    </button>
+  </div>
+
+  <pre className="mt-4 max-h-[360px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+    {fullPerformancePackPreview ||
+      'No full performance pack yet. Generate chords with performance songsheet placement data to create this bundle.'}
   </pre>
 </div>
 
