@@ -2596,6 +2596,7 @@ const chordSummaryRows = getChordSummaryRows(chords)
 const chordEditorStatus = getChordEditorStatus()
 const chordSheetPreview = buildChordSheetCopyText()
 const placedSongSheetPreview = buildPlacedSongSheetCopyText()
+const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -4857,6 +4858,35 @@ return (
     </div>
   )}
 </div>
+
+
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Audio guide prompt preview
+      </div>
+      <p className="mt-1 text-sm text-gray-500">
+        A sparse guide-track prompt designed to preserve tempo, groove, phrasing, and chord timing.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => copyAudioGuidePrompt()}
+      disabled={!audioGuidePromptPreview}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      {justCopiedAudioGuidePrompt ? 'Copied ✓' : 'Copy audio guide prompt'}
+    </button>
+  </div>
+
+  <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+    {audioGuidePromptPreview ||
+      'No audio guide prompt yet. Generate or paste chord JSON with performance songsheet placement data.'}
+  </pre>
+</div>
+
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
   <div className="flex items-center justify-between gap-3">
