@@ -2062,9 +2062,10 @@ const buildPerformanceIntentCopyText = () => {
 }
 
 const buildFullPerformancePackCopyText = () => {
-  const songsheetText = buildPlacedSongSheetCopyText()
+  const songsheetText = buildCompactPlacedSongSheetCopyText()
   const designNotesText = buildPerformanceDesignNotesCopyText()
-  const audioGuidePromptText = buildAudioGuidePromptCopyText()
+  const audioGuidePromptText = buildCompactAudioGuidePromptCopyText()
+  const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   if (!songsheetText && !designNotesText && !audioGuidePromptText) {
     return ''
@@ -2077,7 +2078,18 @@ const buildFullPerformancePackCopyText = () => {
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
     `Generated at: ${new Date().toLocaleString()}`,
+    ...getSongsheetTransposeCopyRows(),
     '',
+    ...(intentRows.length > 0
+      ? [
+          '============================================================',
+          'PERFORMANCE INTENT',
+          '============================================================',
+          '',
+          ...intentRows.map((row) => `${row.label}: ${row.value}`),
+          '',
+        ]
+      : []),
     ...(songsheetText
       ? [
           '============================================================',
@@ -2141,6 +2153,36 @@ const buildChordPracticePackCopyText = () => {
     'SOURCE LYRICS',
     '',
     performanceSheet || 'No source lyrics available.',
+  ].join('\n')
+}
+
+const buildCompactAudioGuidePromptCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const intentRows = getPerformanceIntentRows(chordData)
+
+  if (!chordData) {
+    return ''
+  }
+
+  return [
+    'Purpose:',
+    'Create a simple performance guide track, not a finished production. The goal is to preserve the intended tempo, groove, phrasing, chord timing, and vocal entry points so the songwriter can remember how the song should be performed.',
+    '',
+    'Guide track requirements:',
+    '- Simple acoustic guitar only, unless the performance intent clearly suggests a light metronome or foot-tap pulse.',
+    '- Keep the arrangement sparse and readable.',
+    '- Emphasize chord change timing and phrasing over production quality.',
+    '- Use the chord-over-lyric songsheet as the main timing reference.',
+    '- Respect any after-lyric chords as possible turnarounds, held chords, pickups, breaths, or instrumental responses.',
+    '- If vocal melody is included, use a simple guide melody only; do not over-sing.',
+    '- Avoid full-band production.',
+    '',
+    ...(intentRows.length > 0
+      ? [
+          'Performance intent reference:',
+          ...intentRows.map((row) => `${row.label}: ${row.value}`),
+        ]
+      : []),
   ].join('\n')
 }
 
@@ -2708,6 +2750,56 @@ const buildPlacedSongSheetCopyText = () => {
     .join('\n')
 }
 
+
+const buildCompactPlacedSongSheetCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData) {
+    return ''
+  }
+
+  const lines = getPlacedSongSheetLines(chordData)
+
+  if (lines.length === 0) {
+    return ''
+  }
+
+  let currentSection = ''
+
+  const renderedLines = lines.flatMap((line) => {
+    const output: string[] = []
+
+    if (line.section && line.section !== currentSection) {
+      currentSection = line.section
+      output.push('')
+      output.push(`[${line.section}]`)
+      output.push('')
+    }
+
+    const [chordLine, lyricLine] = renderPlacedSongSheetLine(
+      transposePlacedSongSheetLine(line),
+    )
+
+    if (chordLine) {
+      output.push(chordLine)
+    }
+
+    output.push(lyricLine)
+    output.push('')
+
+    return output
+  })
+
+  return renderedLines
+    .filter((line, index, linesToFilter) => {
+      if (line !== '') {
+        return true
+      }
+
+      return linesToFilter[index - 1] !== ''
+    })
+    .join('\n')
+}
 
 const getChordEditorStatus = () => {
   const usableChordData = hasUsableChordData()
