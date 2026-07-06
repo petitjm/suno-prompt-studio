@@ -220,6 +220,7 @@ export default function Page() {
   const [justCopiedGuideTrackPlan, setJustCopiedGuideTrackPlan] = useState(false)
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
+  const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
@@ -1810,6 +1811,27 @@ const copyAudioGuidePrompt = async () => {
   }
 }
 
+const copyAudioGuideSummary = async () => {
+  const copyText = buildAudioGuideSummaryCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No audio guide summary available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioGuideSummary(true)
+    setChordExtractionMessage('Audio guide summary copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioGuideSummary(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy audio guide summary.')
+  }
+}
+
 
 const copyPerformanceDesignNotes = async () => {
   const copyText = buildPerformanceDesignNotesCopyText()
@@ -2336,6 +2358,53 @@ const buildCompactAudioGuidePromptCopyText = () => {
     songsheetText,
   ].join('\n')
 }
+
+const buildAudioGuideSummaryCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const intentRows = getPerformanceIntentRows(chordData)
+  const readiness = getAudioGuideReadiness()
+  const guideTrackPlanText = buildGuideTrackPlanCopyText()
+
+  if (!chordData || intentRows.length === 0) {
+    return ''
+  }
+
+  return [
+    'AUDIO GUIDE SUMMARY',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    '',
+    'READINESS',
+    '',
+    readiness.label,
+    readiness.detail,
+    '',
+    'PERFORMANCE INTENT',
+    '',
+    ...intentRows.map((row) => `${row.label}: ${row.value}`),
+    '',
+    ...(guideTrackPlanText
+      ? [
+          'GUIDE TRACK PLAN',
+          '',
+          guideTrackPlanText
+            .replace(/^GUIDE TRACK PLAN\s*/i, '')
+            .trim(),
+        ]
+      : []),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
 
 const buildGuideTrackPlanCopyText = () => {
   const chordData = getChordDataFromEditorJson()
@@ -3201,6 +3270,7 @@ const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
 const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
 const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const guideTrackPlanPreview = buildGuideTrackPlanCopyText()
+const audioGuideSummaryPreview = buildAudioGuideSummaryCopyText()
 const audioGuideReadiness = getAudioGuideReadiness()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
@@ -5380,9 +5450,20 @@ return (
 </div>
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="flex items-center justify-between gap-3">
   <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
     Audio guide readiness
   </div>
+
+  <button
+    type="button"
+    onClick={() => copyAudioGuideSummary()}
+    disabled={!audioGuideSummaryPreview}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+  >
+    {justCopiedAudioGuideSummary ? 'Copied ✓' : 'Copy audio summary'}
+  </button>
+</div>
 
   <div className="mt-2 text-gray-300">
     {audioGuideReadiness.label}
