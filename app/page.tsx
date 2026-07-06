@@ -215,6 +215,7 @@ export default function Page() {
   const [justCopiedChordPracticePack, setJustCopiedChordPracticePack] = useState(false)
   const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
+  const [justCopiedPerformanceIntent, setJustCopiedPerformanceIntent] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
@@ -1761,6 +1762,28 @@ const transposeChordProgressionText = (value: string, semitones: number) => {
 }
 
 
+const copyPerformanceIntent = async () => {
+  const copyText = buildPerformanceIntentCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No performance intent available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedPerformanceIntent(true)
+    setChordExtractionMessage('Performance intent copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedPerformanceIntent(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy performance intent.')
+  }
+}
+
+
 const copyChordSummary = async () => {
   const copyText = buildChordSummaryCopyText()
 
@@ -1900,6 +1923,26 @@ const buildChordPacketCopyText = () => {
     'SOURCE LYRICS',
     '',
     performanceSheet || 'No source lyrics available.',
+  ].join('\n')
+}
+
+
+const buildPerformanceIntentCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+  const rows = getPerformanceIntentRows(chordData)
+
+  if (rows.length === 0) {
+    return ''
+  }
+
+  return [
+    'PERFORMANCE INTENT',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    '',
+    ...rows.map((row) => `${row.label}: ${row.value}`),
   ].join('\n')
 }
 
@@ -4515,9 +4558,20 @@ return (
     </div>
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
-  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-    Performance intent
-  </div>
+  <div className="flex items-center justify-between gap-3">
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Performance intent
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyPerformanceIntent()}
+        disabled={performanceIntentRows.length === 0}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedPerformanceIntent ? 'Copied ✓' : 'Copy intent'}
+      </button>
+    </div>
 
   {performanceIntentRows.length > 0 ? (
     <div className="mt-3 space-y-3">
