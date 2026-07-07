@@ -213,6 +213,11 @@ export default function Page() {
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
+  const resetAudioPreviewRequestState = () => {
+      setAudioPreviewMessage('')
+      setAudioPreviewResponse('')
+      setAudioPreviewPlan(null)
+    }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
@@ -1437,6 +1442,8 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   setLastAppliedTransposeSnapshot(null)
   setChordTransposeSemitones(0)
   setChordsText(JSON.stringify(selected.chord_data || {}, null, 2))
+  resetAudioPreviewRequestState()
+  resetAudioPreviewRequestState()
   setChordExtractionMessage('')
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
 }
@@ -1551,6 +1558,7 @@ const copyChordSheet = async () => {
 const resetOrUndoChordTranspose = () => {
   if (chordTransposeSemitones !== 0) {
     setChordTransposeSemitones(0)
+    resetAudioPreviewRequestState()
     setChordExtractionMessage('Transpose preview reset.')
     setProjectMessage('')
     return
@@ -1564,6 +1572,7 @@ const resetOrUndoChordTranspose = () => {
 
   setChordsText(restoredText)
   setChordVersionTitle(lastAppliedTransposeSnapshot.chordVersionTitle)
+  resetAudioPreviewRequestState()
   setActiveChordVersionId(null)
   setChordTransposeSemitones(0)
   setLastAppliedTransposeSnapshot(null)
@@ -2765,6 +2774,7 @@ const fixOutOfRangeChordPlacements = () => {
 
   setChords(nextRecord)
   setChordsText(JSON.stringify(nextRecord, null, 2))
+  resetAudioPreviewRequestState()
   setActiveChordVersionId(null)
   setLastAppliedTransposeSnapshot(null)
   setChordExtractionMessage('After-lyric chord placements moved to the final lyric character. Review the phrasing before saving.')
@@ -6194,6 +6204,7 @@ return (
         const nextValue = event.target.value
 
         setChordsText(nextValue)
+        resetAudioPreviewRequestState()
         setLastAppliedTransposeSnapshot(null)
         setChordExtractionMessage('')
         setProjectMessage('')
