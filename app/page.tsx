@@ -212,6 +212,7 @@ export default function Page() {
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
+  const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
@@ -1805,6 +1806,7 @@ const requestAudioPreview = async () => {
   setRequestingAudioPreview(true)
   setAudioPreviewMessage('Sending audio preview spec...')
   setAudioPreviewResponse('')
+  setAudioPreviewPlan(null)
 
   try {
     const parsedSpec = JSON.parse(previewSpec)
@@ -1834,11 +1836,38 @@ const requestAudioPreview = async () => {
         : 'Audio preview request completed.',
     )
     setAudioPreviewResponse(JSON.stringify(result, null, 2))
+
+        if (
+          result.previewPlan &&
+          typeof result.previewPlan === 'object' &&
+          !Array.isArray(result.previewPlan)
+        ) {
+          setAudioPreviewPlan(result.previewPlan as Record<string, unknown>)
+        }
   } catch {
     setAudioPreviewMessage('Could not send audio preview spec.')
   } finally {
     setRequestingAudioPreview(false)
   }
+}
+
+
+const getPreviewPlanValue = (key: string) => {
+  if (!audioPreviewPlan) {
+    return ''
+  }
+
+  const value = audioPreviewPlan[key]
+
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (typeof value === 'number') {
+    return String(value)
+  }
+
+  return ''
 }
 
 
@@ -5686,6 +5715,36 @@ return (
             <div className="mt-1 text-xs leading-5 text-gray-500">
               {audioPreviewMessage}
             </div>
+
+            {audioPreviewPlan ? (
+              <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                {[
+                  ['Render mode', getPreviewPlanValue('renderMode')],
+                  ['Render status', getPreviewPlanValue('renderStatus')],
+                  ['Key', getPreviewPlanValue('key')],
+                  ['Tempo', getPreviewPlanValue('tempo')],
+                  ['Instrumentation', getPreviewPlanValue('instrumentation')],
+                  ['Count-in', getPreviewPlanValue('countIn')],
+                  ['Songsheet lines', getPreviewPlanValue('songsheetLineCount')],
+                  ['Section plans', getPreviewPlanValue('sectionPlanCount')],
+                ]
+                  .filter((row) => row[1])
+                  .map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded border border-gray-800 bg-gray-950 p-2"
+                    >
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        {label}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : null}
+
 
             {audioPreviewResponse ? (
               <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
