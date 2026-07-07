@@ -45,24 +45,65 @@ export async function POST(req: Request) {
       )
     }
 
-    const response = {
-      status: 'ready',
-      message:
-        'Audio preview spec received. Audio generation is not connected yet.',
-      previewRequest: {
-        project: body.project || 'Untitled project',
-        songVersion: body.songVersion || 'Untitled song version',
-        chordVersion: body.chordVersion || 'Untitled chord version',
-        key: body.key || '',
-        transposeSemitones: body.transposeSemitones ?? 0,
-        readiness: body.readiness || null,
-        performanceIntent: body.performanceIntent || {},
-        guideTrackPlan: body.guideTrackPlan || {},
-        songsheetLineCount: body.songsheetLines.length,
-      },
-      nextStep:
-        'Connect this route to an audio generation service or local guide-track renderer.',
-    }
+    const performanceIntent = body.performanceIntent || {}
+const guideTrackPlan = body.guideTrackPlan || {}
+const guideRows = guideTrackPlan.rows || {}
+const sectionPlan = Array.isArray(guideTrackPlan.sectionPlan)
+  ? guideTrackPlan.sectionPlan
+  : []
+
+const tempo =
+  performanceIntent.Tempo ||
+  performanceIntent.tempo ||
+  guideRows.Tempo ||
+  guideRows.tempo ||
+  ''
+
+const groove =
+  performanceIntent.Groove ||
+  performanceIntent.groove ||
+  guideRows['Rhythm reference'] ||
+  guideRows.rhythmReference ||
+  ''
+
+const instrumentation =
+  guideRows.Instrumentation ||
+  guideRows.instrumentation ||
+  'Sparse acoustic guitar guide'
+
+const countIn =
+  guideRows['Count-in'] ||
+  guideRows.countIn ||
+  'Simple count-in before first section'
+
+const response = {
+  status: 'ready',
+  message:
+    'Audio preview spec received. Audio generation is not connected yet.',
+  previewPlan: {
+    project: body.project || 'Untitled project',
+    songVersion: body.songVersion || 'Untitled song version',
+    chordVersion: body.chordVersion || 'Untitled chord version',
+    key: body.key || '',
+    transposeSemitones: body.transposeSemitones ?? 0,
+    tempo,
+    groove,
+    instrumentation,
+    countIn,
+    readiness: body.readiness || null,
+    renderMode: 'guide-track-plan-only',
+    renderStatus: 'not-connected',
+    songsheetLineCount: body.songsheetLines.length,
+    sectionPlanCount: sectionPlan.length,
+  },
+  renderNotes: [
+    'This response confirms the spec can be converted into an audio-preview request.',
+    'No audio file is generated yet.',
+    'The next implementation step is connecting this plan to a guide-track renderer.',
+  ],
+  nextStep:
+    'Connect this route to an audio generation service or local guide-track renderer.',
+}
 
     return NextResponse.json(response)
   } catch {
