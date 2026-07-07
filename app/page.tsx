@@ -209,6 +209,9 @@ export default function Page() {
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
   const [generatingChords, setGeneratingChords] = useState(false)
+  const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
+  const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
+  const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false)
@@ -1788,6 +1791,54 @@ const transposeChordProgressionText = (value: string, semitones: number) => {
     /\b([A-G](?:#|b)?(?:m|maj|min|dim|aug|sus|add)?\d*(?:\/[A-G](?:#|b)?)?)\b/g,
     (match) => transposeChordSymbol(match, semitones),
   )
+}
+
+
+const requestAudioPreview = async () => {
+  const previewSpec = buildAudioPreviewSpecCopyText()
+
+  if (!previewSpec) {
+    setAudioPreviewMessage('No audio preview spec available.')
+    return
+  }
+
+  setRequestingAudioPreview(true)
+  setAudioPreviewMessage('Sending audio preview spec...')
+  setAudioPreviewResponse('')
+
+  try {
+    const parsedSpec = JSON.parse(previewSpec)
+
+    const response = await fetch('/api/audio-preview', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(parsedSpec),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setAudioPreviewMessage(
+        typeof result.error === 'string'
+          ? result.error
+          : 'Audio preview request failed.',
+      )
+      return
+    }
+
+    setAudioPreviewMessage(
+      typeof result.message === 'string'
+        ? result.message
+        : 'Audio preview request completed.',
+    )
+    setAudioPreviewResponse(JSON.stringify(result, null, 2))
+  } catch {
+    setAudioPreviewMessage('Could not send audio preview spec.')
+  } finally {
+    setRequestingAudioPreview(false)
+  }
 }
 
 
@@ -5582,6 +5633,16 @@ return (
     >
       {justCopiedAudioPreviewSpec ? 'Copied ✓' : 'Copy preview spec'}
     </button>
+
+    <button
+      type="button"
+      onClick={() => requestAudioPreview()}
+      disabled={!audioPreviewSpecPreview || requestingAudioPreview}
+      className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+    >
+      {requestingAudioPreview ? 'Requesting...' : 'Request preview'}
+    </button>
+
   </div>
 </div>
 
@@ -5615,6 +5676,24 @@ return (
       <div className="mt-1 text-xs leading-5 text-gray-500">
         {audioPreviewSpecStatus.detail}
       </div>
+
+      {audioPreviewMessage ? (
+          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+            <div className="text-sm font-medium text-gray-200">
+              Audio preview request
+            </div>
+
+            <div className="mt-1 text-xs leading-5 text-gray-500">
+              {audioPreviewMessage}
+            </div>
+
+            {audioPreviewResponse ? (
+              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+                {audioPreviewResponse}
+              </pre>
+            ) : null}
+          </div>
+        ) : null}
     </div>
 
     {audioPreviewSpecPreview ? (
