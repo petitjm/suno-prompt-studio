@@ -2437,6 +2437,34 @@ const buildAudioPreviewSpecCopyText = () => {
 }
 
 
+const getAudioPreviewSpecStatus = () => {
+  const previewSpec = buildAudioPreviewSpecCopyText()
+
+  if (!previewSpec) {
+    return {
+      label: 'No preview spec available',
+      detail: 'Generate or load chord data with performance intent or songsheet lines.',
+      isValid: false,
+    }
+  }
+
+  try {
+    JSON.parse(previewSpec)
+
+    return {
+      label: 'Preview spec JSON is valid',
+      detail: 'The audio preview spec can be copied as machine-readable JSON.',
+      isValid: true,
+    }
+  } catch {
+    return {
+      label: 'Preview spec JSON is invalid',
+      detail: 'The generated preview spec could not be parsed as JSON.',
+      isValid: false,
+    }
+  }
+}
+
 
 const buildAudioGuideSummaryCopyText = () => {
   const chordData = getChordDataFromEditorJson()
@@ -3351,6 +3379,7 @@ const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const guideTrackPlanPreview = buildGuideTrackPlanCopyText()
 const audioGuideSummaryPreview = buildAudioGuideSummaryCopyText()
 const audioPreviewSpecPreview = buildAudioPreviewSpecCopyText()
+const audioPreviewSpecStatus = getAudioPreviewSpecStatus()
 const audioGuideReadiness = getAudioGuideReadiness()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
@@ -5563,6 +5592,30 @@ return (
   <div className="mt-1 text-sm text-gray-500">
     {audioGuideReadiness.detail}
   </div>
+
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-medium text-gray-200">
+          Audio preview spec
+        </div>
+
+        <div
+          className={`text-xs ${
+            audioPreviewSpecStatus.isValid ? 'text-green-300' : 'text-yellow-300'
+          }`}
+        >
+          {audioPreviewSpecStatus.isValid ? 'Valid JSON' : 'Not ready'}
+        </div>
+      </div>
+
+      <div className="mt-1 text-xs leading-5 text-gray-500">
+        {audioPreviewSpecStatus.label}
+      </div>
+
+      <div className="mt-1 text-xs leading-5 text-gray-500">
+        {audioPreviewSpecStatus.detail}
+      </div>
+    </div>
 
   <div className="mt-3 grid gap-2 lg:grid-cols-2">
     {audioGuideReadiness.checks.map((check) => (
