@@ -5617,6 +5617,19 @@ return (
       </div>
     </div>
 
+    {audioPreviewSpecPreview ? (
+      <details className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+        <summary className="cursor-pointer text-sm font-medium text-gray-200">
+          Preview audio spec JSON
+        </summary>
+
+        <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+          {audioPreviewSpecPreview}
+        </pre>
+      </details>
+    ) : null}
+
+
   <div className="mt-3 grid gap-2 lg:grid-cols-2">
     {audioGuideReadiness.checks.map((check) => (
       <div
