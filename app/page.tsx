@@ -213,10 +213,12 @@ export default function Page() {
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
+  const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('') 
   const resetAudioPreviewRequestState = () => {
       setAudioPreviewMessage('')
       setAudioPreviewResponse('')
       setAudioPreviewPlan(null)
+      setAudioPreviewRenderPrompt('')
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -1816,6 +1818,7 @@ const requestAudioPreview = async () => {
   setAudioPreviewMessage('Sending audio preview spec...')
   setAudioPreviewResponse('')
   setAudioPreviewPlan(null)
+  setAudioPreviewRenderPrompt('')
 
   try {
     const parsedSpec = JSON.parse(previewSpec)
@@ -1852,6 +1855,9 @@ const requestAudioPreview = async () => {
           !Array.isArray(result.previewPlan)
         ) {
           setAudioPreviewPlan(result.previewPlan as Record<string, unknown>)
+        }
+        if (typeof result.renderPrompt === 'string') {
+          setAudioPreviewRenderPrompt(result.renderPrompt)
         }
   } catch {
     setAudioPreviewMessage('Could not send audio preview spec.')
@@ -5753,6 +5759,18 @@ return (
             </div>
           ))}
       </div>
+    ) : null}
+
+    {audioPreviewRenderPrompt ? (
+      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <summary className="cursor-pointer text-xs font-medium text-gray-300">
+          Show audio render prompt
+        </summary>
+
+        <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+          {audioPreviewRenderPrompt}
+        </pre>
+      </details>
     ) : null}
 
     {audioPreviewResponse ? (
