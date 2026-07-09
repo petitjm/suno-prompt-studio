@@ -76,6 +76,40 @@ const countIn =
   guideRows.countIn ||
   'Simple count-in before first section'
 
+  const vocalGuideStyle =
+  guideRows['Vocal guide style'] ||
+  guideRows.vocalGuideStyle ||
+  performanceIntent['Vocal delivery'] ||
+  performanceIntent.vocalDelivery ||
+  'Simple understated guide vocal or melody reference only'
+
+const renderPrompt = [
+  'Create a simple audio guide preview, not a finished production.',
+  '',
+  `Project: ${body.project || 'Untitled project'}`,
+  `Song version: ${body.songVersion || 'Untitled song version'}`,
+  `Chord version: ${body.chordVersion || 'Untitled chord version'}`,
+  body.key ? `Key: ${body.key}` : '',
+  `Transpose: ${body.transposeSemitones ?? 0} semitones`,
+  tempo ? `Tempo: ${tempo}` : '',
+  groove ? `Groove: ${groove}` : '',
+  `Instrumentation: ${instrumentation}`,
+  `Count-in: ${countIn}`,
+  `Vocal guide style: ${vocalGuideStyle}`,
+  '',
+  'Rendering priorities:',
+  '- Preserve chord timing and section feel.',
+  '- Keep the arrangement sparse and easy to follow.',
+  '- Prioritize rehearsal usefulness over production quality.',
+  '- Use acoustic guitar as the main timing and harmony reference.',
+  '- Avoid full-band production unless explicitly requested later.',
+  '',
+  `Songsheet lines: ${body.songsheetLines.length}`,
+  `Section plan items: ${sectionPlan.length}`,
+]
+  .filter(Boolean)
+  .join('\n')
+
 const response = {
   status: 'ready',
   message:
@@ -96,6 +130,7 @@ const response = {
     songsheetLineCount: body.songsheetLines.length,
     sectionPlanCount: sectionPlan.length,
   },
+  renderPrompt,
   renderNotes: [
     'This response confirms the spec can be converted into an audio-preview request.',
     'No audio file is generated yet.',
