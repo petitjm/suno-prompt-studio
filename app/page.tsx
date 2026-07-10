@@ -2696,6 +2696,90 @@ const getAudioPreviewSpecStatus = () => {
   }
 }
 
+const getChordWorkflowStatus = () => {
+  const chordData = getChordDataFromEditorJson()
+  const intentRows = getPerformanceIntentRows(chordData)
+  const placedLines = getPlacedSongSheetLines(chordData)
+  const guideTrackPlanRows = getGuideTrackPlanRows(chordData)
+  const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(chordData)
+
+  const hasChordDraft =
+    Boolean(chordData) &&
+    typeof chordData === 'object' &&
+    !Array.isArray(chordData) &&
+    Object.keys(chordData as Record<string, unknown>).length > 0
+
+  const hasPerformanceIntent = intentRows.length > 0
+  const hasPlacedSongsheet = placedLines.length > 0
+  const hasGuideTrackPlan = guideTrackPlanRows.length > 0
+  const hasSectionPlan = guideTrackSectionPlanRows.length > 0
+  const hasPreviewRequest = Boolean(audioPreviewPlan || audioPreviewRenderPrompt)
+
+  const steps = [
+    {
+      label: 'Basic chord draft',
+      complete: hasChordDraft,
+      detail: hasChordDraft
+        ? 'Chord draft data is available.'
+        : 'Start with Generate basic draft.',
+    },
+    {
+      label: 'Performance intent',
+      complete: hasPerformanceIntent,
+      detail: hasPerformanceIntent
+        ? 'Tempo, groove, feel, or delivery information is available.'
+        : 'Generate a basic draft or full chord draft.',
+    },
+    {
+      label: 'Placed songsheet',
+      complete: hasPlacedSongsheet,
+      detail: hasPlacedSongsheet
+        ? `${placedLines.length} placed songsheet line${placedLines.length === 1 ? '' : 's'} available.`
+        : 'Use Generate placed songsheet after a chord draft exists.',
+    },
+    {
+      label: 'Guide track plan',
+      complete: hasGuideTrackPlan,
+      detail: hasGuideTrackPlan
+        ? 'Guide track plan rows are available.'
+        : 'Use Generate guide plan after a chord draft exists.',
+    },
+    {
+      label: 'Section plan',
+      complete: hasSectionPlan,
+      detail: hasSectionPlan
+        ? `${guideTrackSectionPlanRows.length} section plan item${guideTrackSectionPlanRows.length === 1 ? '' : 's'} available.`
+        : 'Generate guide plan to add section-level audio planning.',
+    },
+    {
+      label: 'Preview requested',
+      complete: hasPreviewRequest,
+      detail: hasPreviewRequest
+        ? 'Audio preview route has returned a preview plan.'
+        : 'Request preview after the audio guide ingredients are ready.',
+    },
+  ]
+
+  const completeCount = steps.filter((step) => step.complete).length
+
+  const label =
+    completeCount === steps.length
+      ? 'Workflow complete'
+      : completeCount >= 4
+        ? 'Ready for preview'
+        : completeCount >= 2
+          ? 'In progress'
+          : hasChordDraft
+            ? 'Draft started'
+            : 'Not started'
+
+  return {
+    label,
+    detail: `${completeCount} of ${steps.length} workflow steps are complete.`,
+    steps,
+  }
+}
+
 
 const buildAudioGuideSummaryCopyText = () => {
   const chordData = getChordDataFromEditorJson()
@@ -3613,6 +3697,7 @@ const audioGuideSummaryPreview = buildAudioGuideSummaryCopyText()
 const audioPreviewSpecPreview = buildAudioPreviewSpecCopyText()
 const audioPreviewSpecStatus = getAudioPreviewSpecStatus()
 const audioGuideReadiness = getAudioGuideReadiness()
+const chordWorkflowStatus = getChordWorkflowStatus()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -6498,7 +6583,46 @@ return (
   </pre>
 </div>
 
+<div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+    Chord workflow status
+  </div>
 
+  <div className="mt-2 text-gray-300">
+    {chordWorkflowStatus.label}
+  </div>
+
+  <div className="mt-1 text-sm text-gray-500">
+    {chordWorkflowStatus.detail}
+  </div>
+
+  <div className="mt-3 grid gap-2 lg:grid-cols-3">
+    {chordWorkflowStatus.steps.map((step) => (
+      <div
+        key={step.label}
+        className="rounded border border-gray-800 bg-gray-900 p-3"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-medium text-gray-200">
+            {step.label}
+          </div>
+
+          <div
+            className={`text-xs ${
+              step.complete ? 'text-green-300' : 'text-yellow-300'
+            }`}
+          >
+            {step.complete ? 'Done' : 'Next'}
+          </div>
+        </div>
+
+        <div className="mt-1 text-xs leading-5 text-gray-500">
+          {step.detail}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded border border-gray-800 bg-gray-950 p-4">
