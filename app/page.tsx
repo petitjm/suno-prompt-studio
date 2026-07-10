@@ -6833,14 +6833,22 @@ return (
             Chord JSON
           </h2>
 
+
+
           <div className="flex flex-wrap gap-2">
+
+          <div className="mb-3 rounded border border-blue-900 bg-blue-950/30 px-3 py-2 text-xs leading-5 text-blue-200">
+              Recommended workflow: use Generate basic draft, then Generate placed songsheet, then Generate guide plan. 
+              Generate full draft is an advanced all-in-one option and may take longer.
+            </div>
+
             <button
               type="button"
               onClick={() => generateChords()}
               disabled={generatingChords || !performanceSheet.trim()}
-              className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+              className="rounded border border-gray-800 px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-600"
             >
-              {generatingChords ? 'Generating...' : 'Generate chords'}
+              {generatingChords ? 'Generating full draft...' : 'Generate full draft'}
             </button>
 
             <button
