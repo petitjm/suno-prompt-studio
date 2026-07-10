@@ -2714,15 +2714,32 @@ const getChordWorkflowStatus = () => {
   const hasGuideTrackPlan = guideTrackPlanRows.length > 0
   const hasSectionPlan = guideTrackSectionPlanRows.length > 0
   const hasPreviewRequest = Boolean(audioPreviewPlan || audioPreviewRenderPrompt)
-
+    const activeProcess =
+    generatingChords
+      ? 'Generating full chord draft...'
+      : generatingBasicChords
+        ? 'Generating basic chord draft...'
+        : generatingPlacedSongsheet
+          ? 'Generating placed songsheet...'
+          : generatingGuideTrackPlan
+            ? 'Generating guide track plan...'
+            : requestingAudioPreview
+              ? 'Requesting audio preview plan...'
+              : ''
   const steps = [
     {
       label: 'Basic chord draft',
       complete: hasChordDraft,
-      detail: hasChordDraft
-        ? 'Chord draft data is available.'
-        : 'Start with Generate basic draft.',
-    },
+      working: generatingBasicChords || generatingChords,
+      detail:
+        generatingBasicChords
+          ? 'Generating basic chord draft...'
+          : generatingChords
+            ? 'Generating full chord draft...'
+            : hasChordDraft
+              ? 'Chord draft data is available.'
+              : 'Start with Generate basic draft.',
+        },
     {
       label: 'Performance intent',
       complete: hasPerformanceIntent,
@@ -2730,20 +2747,26 @@ const getChordWorkflowStatus = () => {
         ? 'Tempo, groove, feel, or delivery information is available.'
         : 'Generate a basic draft or full chord draft.',
     },
-    {
-      label: 'Placed songsheet',
-      complete: hasPlacedSongsheet,
-      detail: hasPlacedSongsheet
-        ? `${placedLines.length} placed songsheet line${placedLines.length === 1 ? '' : 's'} available.`
-        : 'Use Generate placed songsheet after a chord draft exists.',
-    },
-    {
-      label: 'Guide track plan',
-      complete: hasGuideTrackPlan,
-      detail: hasGuideTrackPlan
-        ? 'Guide track plan rows are available.'
-        : 'Use Generate guide plan after a chord draft exists.',
-    },
+       {
+          label: 'Placed songsheet',
+          complete: hasPlacedSongsheet,
+          working: generatingPlacedSongsheet,
+          detail: generatingPlacedSongsheet
+            ? 'Generating placed songsheet...'
+            : hasPlacedSongsheet
+              ? `${placedLines.length} placed songsheet line${placedLines.length === 1 ? '' : 's'} available.`
+              : 'Use Generate placed songsheet after a chord draft exists.',
+        },
+         {
+          label: 'Guide track plan',
+          complete: hasGuideTrackPlan,
+          working: generatingGuideTrackPlan,
+          detail: generatingGuideTrackPlan
+            ? 'Generating guide track plan...'
+            : hasGuideTrackPlan
+              ? 'Guide track plan rows are available.'
+              : 'Use Generate guide plan after a chord draft exists.',
+          },
     {
       label: 'Section plan',
       complete: hasSectionPlan,
@@ -2751,13 +2774,16 @@ const getChordWorkflowStatus = () => {
         ? `${guideTrackSectionPlanRows.length} section plan item${guideTrackSectionPlanRows.length === 1 ? '' : 's'} available.`
         : 'Generate guide plan to add section-level audio planning.',
     },
-    {
-      label: 'Preview requested',
-      complete: hasPreviewRequest,
-      detail: hasPreviewRequest
-        ? 'Audio preview route has returned a preview plan.'
-        : 'Request preview after the audio guide ingredients are ready.',
-    },
+       {
+          label: 'Preview requested',
+          complete: hasPreviewRequest,
+          working: requestingAudioPreview,
+          detail: requestingAudioPreview
+            ? 'Requesting audio preview plan...'
+            : hasPreviewRequest
+              ? 'Audio preview route has returned a preview plan.'
+              : 'Request preview after the audio guide ingredients are ready.',
+        },
   ]
 
   const completeCount = steps.filter((step) => step.complete).length
@@ -2773,9 +2799,10 @@ const getChordWorkflowStatus = () => {
             ? 'Draft started'
             : 'Not started'
 
-  return {
-    label,
-    detail: `${completeCount} of ${steps.length} workflow steps are complete.`,
+    return {
+    label: activeProcess ? 'Working...' : label,
+    detail: activeProcess || `${completeCount} of ${steps.length} workflow steps are complete.`,
+    activeProcess,
     steps,
   }
 }
@@ -6588,13 +6615,23 @@ return (
     Chord workflow status
   </div>
 
-  <div className="mt-2 text-gray-300">
-    {chordWorkflowStatus.label}
-  </div>
+  <div
+      className={`mt-2 ${
+        chordWorkflowStatus.activeProcess ? 'text-blue-300' : 'text-gray-300'
+      }`}
+    >
+      {chordWorkflowStatus.label}
+    </div>
 
   <div className="mt-1 text-sm text-gray-500">
     {chordWorkflowStatus.detail}
   </div>
+
+  {chordWorkflowStatus.activeProcess ? (
+      <div className="mt-3 rounded border border-blue-900 bg-blue-950/40 px-3 py-2 text-sm text-blue-200">
+        {chordWorkflowStatus.activeProcess}
+      </div>
+    ) : null}
 
   <div className="mt-3 grid gap-2 lg:grid-cols-3">
     {chordWorkflowStatus.steps.map((step) => (
@@ -6608,12 +6645,16 @@ return (
           </div>
 
           <div
-            className={`text-xs ${
-              step.complete ? 'text-green-300' : 'text-yellow-300'
-            }`}
-          >
-            {step.complete ? 'Done' : 'Next'}
-          </div>
+              className={`text-xs ${
+                step.working
+                  ? 'text-blue-300'
+                  : step.complete
+                    ? 'text-green-300'
+                    : 'text-yellow-300'
+              }`}
+            >
+              {step.working ? 'Working' : step.complete ? 'Done' : 'Next'}
+            </div>
         </div>
 
         <div className="mt-1 text-xs leading-5 text-gray-500">
