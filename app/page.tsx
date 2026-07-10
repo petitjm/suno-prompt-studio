@@ -2768,7 +2768,7 @@ const getNextChordWorkflowAction = () => {
 
   if (!hasChordDraft) {
     return {
-      label: 'Run next: basic draft',
+      label: 'Next: generate basic draft',
       disabled: false,
       action: () => {
         void generateBasicChords()
@@ -2778,7 +2778,7 @@ const getNextChordWorkflowAction = () => {
 
   if (!hasPlacedSongsheet) {
     return {
-      label: 'Run next: placed songsheet',
+      label: 'Next: generate placed songsheet',
       disabled: false,
       action: () => {
         void generatePlacedSongsheet()
@@ -2788,7 +2788,7 @@ const getNextChordWorkflowAction = () => {
 
   if (!hasGuideTrackPlan || !hasSectionPlan) {
     return {
-      label: 'Run next: guide plan',
+      label: 'Next: generate guide plan',
       disabled: false,
       action: () => {
         void generateGuideTrackPlan()
@@ -2798,7 +2798,7 @@ const getNextChordWorkflowAction = () => {
 
   if (!hasPreviewRequest) {
     return {
-      label: 'Run next: request preview',
+      label: 'Next: request preview',
       disabled: false,
       action: () => {
         void requestAudioPreview()
@@ -6750,7 +6750,7 @@ return (
     type="button"
     onClick={() => nextChordWorkflowAction.action?.()}
     disabled={nextChordWorkflowAction.disabled}
-    className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+    className="rounded border border-blue-600 bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-transparent disabled:text-gray-500"
   >
     {nextChordWorkflowAction.label}
   </button>
@@ -6837,8 +6837,8 @@ return (
 
           <div className="flex flex-wrap gap-2">
 
-          <div className="mb-3 rounded border border-blue-900 bg-blue-950/30 px-3 py-2 text-xs leading-5 text-blue-200">
-              Recommended workflow: use Generate basic draft, then Generate placed songsheet, then Generate guide plan. 
+          <div className="mb-3 rounded border border-gray-800 bg-gray-900 px-3 py-2 text-xs leading-5 text-gray-400">
+              Manual generation controls. The recommended path is the Chord workflow status button above.
               Generate full draft is an advanced all-in-one option and may take longer.
             </div>
 
