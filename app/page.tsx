@@ -210,6 +210,7 @@ export default function Page() {
   const [chordsText, setChordsText] = useState('{}')
   const [generatingChords, setGeneratingChords] = useState(false)
   const [generatingBasicChords, setGeneratingBasicChords] = useState(false)
+  const [generatingPlacedSongsheet, setGeneratingPlacedSongsheet] = useState(false)
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
@@ -3647,6 +3648,70 @@ const buildChordSummaryCopyText = () => {
   ].join('\n')
 }
 
+const generatePlacedSongsheet = async () => {
+  if (!performanceSheet.trim()) {
+    setChordExtractionMessage('Add lyrics before generating a placed songsheet.')
+    return
+  }
+
+  const chordData = getUsableChordDataFromEditor()
+
+  if (!chordData) {
+    setChordExtractionMessage(
+      'Generate or load a chord draft before generating a placed songsheet.',
+    )
+    return
+  }
+
+  setGeneratingPlacedSongsheet(true)
+  setChordExtractionMessage('Generating placed songsheet...')
+  setProjectMessage('')
+
+  try {
+    const response = await fetch('/api/chords/songsheet', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics: performanceSheet,
+        chordData,
+        songTitle: activeProject?.title || '',
+        songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setChordExtractionMessage(
+        typeof result.error === 'string'
+          ? result.error
+          : 'Could not generate placed songsheet.',
+      )
+      return
+    }
+
+    setChords(result)
+    setChordsText(JSON.stringify(result, null, 2))
+    setActiveChordVersionId(null)
+    setChordVersionTitle((currentTitle) =>
+      currentTitle.trim()
+        ? `${currentTitle.trim()} with songsheet`
+        : 'Chord draft with songsheet',
+    )
+    setChordTransposeSemitones(0)
+    setLastAppliedTransposeSnapshot(null)
+    resetAudioPreviewRequestState()
+    setChordExtractionMessage('Placed songsheet generated.')
+  } catch {
+    setChordExtractionMessage('Could not generate placed songsheet.')
+  } finally {
+    setGeneratingPlacedSongsheet(false)
+  }
+}
+
+
 const generateBasicChords = async () => {
   if (!performanceSheet.trim()) {
     setChordExtractionMessage('Add lyrics before generating a basic chord draft.')
@@ -6413,6 +6478,23 @@ return (
               className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
             >
               {generatingBasicChords ? 'Generating basic...' : 'Generate basic draft'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => generatePlacedSongsheet()}
+              disabled={
+                generatingPlacedSongsheet ||
+                generatingBasicChords ||
+                generatingChords ||
+                !performanceSheet.trim() ||
+                !hasUsableChordData()
+              }
+              className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {generatingPlacedSongsheet
+                ? 'Generating songsheet...'
+                : 'Generate placed songsheet'}
             </button>
 
             <button
