@@ -2,7 +2,40 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createClient } from '@/lib/supabase/server'
 
+const CHORD_GENERATION_TIMEOUT_MS = 300_000
 
+function isTimeoutError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
+
+  return (
+    error.name === 'AbortError' ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('aborted')
+  )
+}
+
+function isQuotaError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const record = error as {
+    status?: number
+    code?: string
+    type?: string
+  }
+
+  return (
+    record.status === 429 ||
+    record.code === 'insufficient_quota' ||
+    record.type === 'insufficient_quota'
+  )
+}
 
 
 const openai = new OpenAI({
@@ -210,10 +243,29 @@ Guide track plan requirements:
 `
 
 
-    const completion = await openai.chat.completions.create({
+    
+
+const controller = new AbortController()
+
+const timeoutId = setTimeout(() => {
+  controller.abort()
+}, CHORD_GENERATION_TIMEOUT_MS)
+
+let completion
+
+try {
+  completion = await openai.chat.completions.create(
+    {
       model: 'gpt-5',
       messages: [{ role: 'user', content: prompt }],
-    })
+    },
+    {
+      signal: controller.signal,
+    },
+  )
+} finally {
+  clearTimeout(timeoutId)
+}
 
     const text = completion.choices[0].message.content || '{}'
 
@@ -256,11 +308,32 @@ try {
     }
 
     return NextResponse.json(chordData)
-  } catch (err: any) {
-    console.error('Chords route failure:', err)
+  } catch (error) {
+  console.error('Chords route failure:', error)
+
+  if (isQuotaError(error)) {
     return NextResponse.json(
-      { error: err?.message || 'Chord generation failed' },
-      { status: 500 }
+      {
+        error:
+          'OpenAI API quota has been exceeded. Please check your API billing/usage, then try generating chords again.',
+      },
+      { status: 429 },
     )
   }
+
+  if (isTimeoutError(error)) {
+    return NextResponse.json(
+      {
+        error:
+          'Chord generation timed out after 5 minutes. Please try again, or shorten the lyrics/prompt context and regenerate.',
+      },
+      { status: 504 },
+    )
+  }
+
+  return NextResponse.json(
+    { error: 'Could not generate chords.' },
+    { status: 500 },
+  )
+}
 }

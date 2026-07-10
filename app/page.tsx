@@ -238,6 +238,7 @@ export default function Page() {
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
   const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
+  const [justCopiedAudioRenderSteps, setJustCopiedAudioRenderSteps] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
@@ -1404,6 +1405,16 @@ const hasChordEditorContent = () => {
 }
 
 
+const getChordVersionCopyTitle = () => {
+  const title = chordVersionTitle.trim()
+
+  if (!title) {
+    return 'Unsaved or untitled chord version'
+  }
+
+  return title.replace(/\s+transposed(?:\s+transposed)+$/i, ' transposed')
+}
+
 const getChordDataFromEditorJson = () => {
   if (!chordsText.trim()) {
     return null
@@ -1933,6 +1944,48 @@ const getRenderStepValue = (
   return ''
 }
 
+const buildAudioRenderStepsCopyText = () => {
+  if (audioPreviewRenderSteps.length === 0) {
+    return ''
+  }
+
+  return [
+    'AUDIO RENDER STEPS',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    '',
+    ...audioPreviewRenderSteps.flatMap((step, index) => {
+      const stepNumber = getRenderStepValue(step, 'step') || String(index + 1)
+      const section = getRenderStepValue(step, 'section') || `Section ${stepNumber}`
+      const goal = getRenderStepValue(step, 'goal')
+      const guitarInstruction = getRenderStepValue(step, 'guitarInstruction')
+      const vocalInstruction = getRenderStepValue(step, 'vocalInstruction')
+      const dynamicInstruction = getRenderStepValue(step, 'dynamicInstruction')
+      const notes = getRenderStepValue(step, 'notes')
+
+      return [
+        `STEP ${stepNumber}: ${section}`,
+        goal ? `Goal: ${goal}` : '',
+        guitarInstruction ? `Guitar: ${guitarInstruction}` : '',
+        vocalInstruction ? `Vocal: ${vocalInstruction}` : '',
+        dynamicInstruction ? `Dynamics: ${dynamicInstruction}` : '',
+        notes ? `Notes: ${notes}` : '',
+        '',
+      ]
+    }),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
 
 const copyAudioPreviewSpec = async () => {
   const copyText = buildAudioPreviewSpecCopyText()
@@ -1952,6 +2005,27 @@ const copyAudioPreviewSpec = async () => {
     }, 1500)
   } catch {
     setChordExtractionMessage('Could not copy audio preview spec.')
+  }
+}
+
+const copyAudioRenderSteps = async () => {
+  const copyText = buildAudioRenderStepsCopyText()
+
+  if (!copyText) {
+    setAudioPreviewMessage('No audio render steps available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioRenderSteps(true)
+    setAudioPreviewMessage('Audio render steps copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioRenderSteps(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewMessage('Could not copy audio render steps.')
   }
 }
 
@@ -5825,6 +5899,18 @@ return (
         <summary className="cursor-pointer text-xs font-medium text-gray-300">
           Show render steps
         </summary>
+
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => copyAudioRenderSteps()}
+            disabled={audioPreviewRenderSteps.length === 0}
+            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+          >
+            {justCopiedAudioRenderSteps ? 'Copied ✓' : 'Copy render steps'}
+          </button>
+        </div>
+
 
         <div className="mt-3 grid gap-3">
           {audioPreviewRenderSteps.map((step, index) => {
