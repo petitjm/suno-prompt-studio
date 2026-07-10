@@ -211,6 +211,7 @@ export default function Page() {
   const [generatingChords, setGeneratingChords] = useState(false)
   const [generatingBasicChords, setGeneratingBasicChords] = useState(false)
   const [generatingPlacedSongsheet, setGeneratingPlacedSongsheet] = useState(false)
+  const [generatingGuideTrackPlan, setGeneratingGuideTrackPlan] = useState(false)
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
@@ -3648,6 +3649,71 @@ const buildChordSummaryCopyText = () => {
   ].join('\n')
 }
 
+const generateGuideTrackPlan = async () => {
+  if (!performanceSheet.trim()) {
+    setChordExtractionMessage('Add lyrics before generating a guide track plan.')
+    return
+  }
+
+  const chordData = getUsableChordDataFromEditor()
+
+  if (!chordData) {
+    setChordExtractionMessage(
+      'Generate or load a chord draft before generating a guide track plan.',
+    )
+    return
+  }
+
+  setGeneratingGuideTrackPlan(true)
+  setChordExtractionMessage('Generating guide track plan...')
+  setProjectMessage('')
+
+  try {
+    const response = await fetch('/api/chords/guide-track', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics: performanceSheet,
+        chordData,
+        songTitle: activeProject?.title || '',
+        songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setChordExtractionMessage(
+        typeof result.error === 'string'
+          ? result.error
+          : 'Could not generate guide track plan.',
+      )
+      return
+    }
+
+    setChords(result)
+    setChordsText(JSON.stringify(result, null, 2))
+    setActiveChordVersionId(null)
+    setChordVersionTitle((currentTitle) =>
+      currentTitle.trim()
+        ? `${currentTitle.trim()} with guide plan`
+        : 'Chord draft with guide plan',
+    )
+    setChordTransposeSemitones(0)
+    setLastAppliedTransposeSnapshot(null)
+    resetAudioPreviewRequestState()
+    setChordExtractionMessage('Guide track plan generated.')
+  } catch {
+    setChordExtractionMessage('Could not generate guide track plan.')
+  } finally {
+    setGeneratingGuideTrackPlan(false)
+  }
+}
+
+
+
 const generatePlacedSongsheet = async () => {
   if (!performanceSheet.trim()) {
     setChordExtractionMessage('Add lyrics before generating a placed songsheet.')
@@ -6496,6 +6562,25 @@ return (
                 ? 'Generating songsheet...'
                 : 'Generate placed songsheet'}
             </button>
+
+            <button
+              type="button"
+              onClick={() => generateGuideTrackPlan()}
+              disabled={
+                generatingGuideTrackPlan ||
+                generatingPlacedSongsheet ||
+                generatingBasicChords ||
+                generatingChords ||
+                !performanceSheet.trim() ||
+                !hasUsableChordData()
+              }
+              className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {generatingGuideTrackPlan
+                ? 'Generating guide plan...'
+                : 'Generate guide plan'}
+            </button>
+
 
             <button
               type="button"
