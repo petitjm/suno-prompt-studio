@@ -20,6 +20,56 @@ type AudioPreviewSpec = {
   songsheetLines?: unknown[]
 }
 
+type GuideTrackSectionPlanItem = {
+  section?: string
+  feel?: string
+  guitarApproach?: string
+  vocalApproach?: string
+  dynamicShape?: string
+  notes?: string
+}
+
+function normalizeSectionPlanItem(
+  item: unknown,
+  index: number,
+): GuideTrackSectionPlanItem {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return {
+      section: `Section ${index + 1}`,
+    }
+  }
+
+  const record = item as Record<string, unknown>
+
+  return {
+    section:
+      typeof record.section === 'string' && record.section.trim()
+        ? record.section.trim()
+        : `Section ${index + 1}`,
+    feel:
+      typeof record.feel === 'string'
+        ? record.feel.trim()
+        : '',
+    guitarApproach:
+      typeof record.guitarApproach === 'string'
+        ? record.guitarApproach.trim()
+        : '',
+    vocalApproach:
+      typeof record.vocalApproach === 'string'
+        ? record.vocalApproach.trim()
+        : '',
+    dynamicShape:
+      typeof record.dynamicShape === 'string'
+        ? record.dynamicShape.trim()
+        : '',
+    notes:
+      typeof record.notes === 'string'
+        ? record.notes.trim()
+        : '',
+  }
+}
+
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as AudioPreviewSpec
@@ -51,6 +101,24 @@ const guideRows = guideTrackPlan.rows || {}
 const sectionPlan = Array.isArray(guideTrackPlan.sectionPlan)
   ? guideTrackPlan.sectionPlan
   : []
+  const normalizedSectionPlan = sectionPlan.map((item, index) =>
+  normalizeSectionPlanItem(item, index),
+)
+
+const renderSteps = normalizedSectionPlan.map((item, index) => ({
+  step: index + 1,
+  section: item.section || `Section ${index + 1}`,
+  goal: item.feel || 'Preserve the section feel from the songsheet.',
+  guitarInstruction:
+    item.guitarApproach ||
+    'Use sparse acoustic guitar as the main timing and harmony reference.',
+  vocalInstruction:
+    item.vocalApproach ||
+    'Use a simple guide melody or understated vocal reference only.',
+  dynamicInstruction:
+    item.dynamicShape || 'Keep dynamics clear and rehearsal-focused.',
+  notes: item.notes || '',
+}))
 
 const tempo =
   performanceIntent.Tempo ||
@@ -127,10 +195,12 @@ const response = {
     readiness: body.readiness || null,
     renderMode: 'guide-track-plan-only',
     renderStatus: 'not-connected',
+    renderStepCount: renderSteps.length,
     songsheetLineCount: body.songsheetLines.length,
     sectionPlanCount: sectionPlan.length,
   },
   renderPrompt,
+  renderSteps,
   renderNotes: [
     'This response confirms the spec can be converted into an audio-preview request.',
     'No audio file is generated yet.',
