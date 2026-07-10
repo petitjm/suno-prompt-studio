@@ -1407,7 +1407,7 @@ const hasChordEditorContent = () => {
 }
 
 
-const getChordVersionCopyTitle = () => {c
+const getChordVersionCopyTitle = () => {
   const title = chordVersionTitle.trim()
 
   if (!title) {
