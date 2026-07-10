@@ -2696,6 +2696,95 @@ const getAudioPreviewSpecStatus = () => {
   }
 }
 
+const getNextChordWorkflowAction = () => {
+  const chordData = getChordDataFromEditorJson()
+  const placedLines = getPlacedSongSheetLines(chordData)
+  const guideTrackPlanRows = getGuideTrackPlanRows(chordData)
+  const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(chordData)
+
+  const hasChordDraft =
+    Boolean(chordData) &&
+    typeof chordData === 'object' &&
+    !Array.isArray(chordData) &&
+    Object.keys(chordData as Record<string, unknown>).length > 0
+
+  const hasPlacedSongsheet = placedLines.length > 0
+  const hasGuideTrackPlan = guideTrackPlanRows.length > 0
+  const hasSectionPlan = guideTrackSectionPlanRows.length > 0
+  const hasPreviewRequest = Boolean(audioPreviewPlan || audioPreviewRenderPrompt)
+
+  const isBusy =
+    generatingChords ||
+    generatingBasicChords ||
+    generatingPlacedSongsheet ||
+    generatingGuideTrackPlan ||
+    requestingAudioPreview
+
+  if (!performanceSheet.trim()) {
+    return {
+      label: 'Add lyrics first',
+      disabled: true,
+      action: null as (() => void) | null,
+    }
+  }
+
+  if (isBusy) {
+    return {
+      label: 'Working...',
+      disabled: true,
+      action: null as (() => void) | null,
+    }
+  }
+
+  if (!hasChordDraft) {
+    return {
+      label: 'Run next: basic draft',
+      disabled: false,
+      action: () => {
+        void generateBasicChords()
+      },
+    }
+  }
+
+  if (!hasPlacedSongsheet) {
+    return {
+      label: 'Run next: placed songsheet',
+      disabled: false,
+      action: () => {
+        void generatePlacedSongsheet()
+      },
+    }
+  }
+
+  if (!hasGuideTrackPlan || !hasSectionPlan) {
+    return {
+      label: 'Run next: guide plan',
+      disabled: false,
+      action: () => {
+        void generateGuideTrackPlan()
+      },
+    }
+  }
+
+  if (!hasPreviewRequest) {
+    return {
+      label: 'Run next: request preview',
+      disabled: false,
+      action: () => {
+        void requestAudioPreview()
+      },
+    }
+  }
+
+  return {
+    label: 'Workflow complete',
+    disabled: true,
+    action: null as (() => void) | null,
+  }
+}
+
+
+
 const getChordWorkflowStatus = () => {
   const chordData = getChordDataFromEditorJson()
   const intentRows = getPerformanceIntentRows(chordData)
@@ -3725,6 +3814,7 @@ const audioPreviewSpecPreview = buildAudioPreviewSpecCopyText()
 const audioPreviewSpecStatus = getAudioPreviewSpecStatus()
 const audioGuideReadiness = getAudioGuideReadiness()
 const chordWorkflowStatus = getChordWorkflowStatus()
+const nextChordWorkflowAction = getNextChordWorkflowAction()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
@@ -6611,9 +6701,20 @@ return (
 </div>
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
+ <div className="flex flex-wrap items-center justify-between gap-3">
   <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
     Chord workflow status
   </div>
+
+  <button
+    type="button"
+    onClick={() => nextChordWorkflowAction.action?.()}
+    disabled={nextChordWorkflowAction.disabled}
+    className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+  >
+    {nextChordWorkflowAction.label}
+  </button>
+</div>
 
   <div
       className={`mt-2 ${
