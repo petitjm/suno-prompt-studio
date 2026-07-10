@@ -1408,6 +1408,36 @@ const hasChordEditorContent = () => {
   return Boolean(chordsText.trim())
 }
 
+const getCleanChordDraftTitleBase = (title: string) => {
+  const cleaned = title
+    .trim()
+    .replace(/\s+with songsheet with guide plan$/i, '')
+    .replace(/\s+with songsheet and guide plan$/i, '')
+    .replace(/\s+with guide plan$/i, '')
+    .replace(/\s+with songsheet$/i, '')
+    .replace(/\s+transposed(?:\s+transposed)+$/i, ' transposed')
+    .trim()
+
+  return cleaned || 'Chord draft'
+}
+
+const getStagedChordVersionTitle = (
+  currentTitle: string,
+  stage: 'basic' | 'songsheet' | 'guide-plan',
+) => {
+  const baseTitle = getCleanChordDraftTitleBase(currentTitle)
+
+  if (stage === 'basic') {
+    return 'Basic chord draft'
+  }
+
+  if (stage === 'songsheet') {
+    return `${baseTitle} with songsheet`
+  }
+
+  return `${baseTitle} with songsheet and guide plan`
+}
+
 
 const getChordVersionCopyTitle = () => {
   const title = chordVersionTitle.trim()
@@ -3898,11 +3928,16 @@ const generateGuideTrackPlan = async () => {
     setChords(result)
     setChordsText(JSON.stringify(result, null, 2))
     setActiveChordVersionId(null)
-    setChordVersionTitle((currentTitle) =>
-      currentTitle.trim()
-        ? `${currentTitle.trim()} with guide plan`
-        : 'Chord draft with guide plan',
-    )
+    setChordVersionTitle((currentTitle) => {
+      const baseTitle = currentTitle
+        .trim()
+        .replace(/\s+with songsheet and guide plan$/i, '')
+        .replace(/\s+with guide plan$/i, '')
+        .replace(/\s+with songsheet$/i, '')
+        .trim()
+
+      return `${baseTitle || 'Basic chord draft'} with songsheet and guide plan`
+    })
     setChordTransposeSemitones(0)
     setLastAppliedTransposeSnapshot(null)
     resetAudioPreviewRequestState()
@@ -3963,11 +3998,16 @@ const generatePlacedSongsheet = async () => {
     setChords(result)
     setChordsText(JSON.stringify(result, null, 2))
     setActiveChordVersionId(null)
-    setChordVersionTitle((currentTitle) =>
-      currentTitle.trim()
-        ? `${currentTitle.trim()} with songsheet`
-        : 'Chord draft with songsheet',
-    )
+    setChordVersionTitle((currentTitle) => {
+  const baseTitle = currentTitle
+    .trim()
+    .replace(/\s+with songsheet and guide plan$/i, '')
+    .replace(/\s+with guide plan$/i, '')
+    .replace(/\s+with songsheet$/i, '')
+    .trim()
+
+  return `${baseTitle || 'Basic chord draft'} with songsheet`
+})
     setChordTransposeSemitones(0)
     setLastAppliedTransposeSnapshot(null)
     resetAudioPreviewRequestState()
