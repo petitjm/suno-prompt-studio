@@ -213,12 +213,16 @@ export default function Page() {
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
-  const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('') 
+  const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
+  const [audioPreviewRenderSteps, setAudioPreviewRenderSteps] = useState<
+      Record<string, unknown>[]
+    >([])
   const resetAudioPreviewRequestState = () => {
       setAudioPreviewMessage('')
       setAudioPreviewResponse('')
       setAudioPreviewPlan(null)
       setAudioPreviewRenderPrompt('')
+      setAudioPreviewRenderSteps([])
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -1837,6 +1841,7 @@ const requestAudioPreview = async () => {
   setAudioPreviewResponse('')
   setAudioPreviewPlan(null)
   setAudioPreviewRenderPrompt('')
+  setAudioPreviewRenderSteps([])
 
   try {
     const parsedSpec = JSON.parse(previewSpec)
@@ -1877,6 +1882,14 @@ const requestAudioPreview = async () => {
         if (typeof result.renderPrompt === 'string') {
           setAudioPreviewRenderPrompt(result.renderPrompt)
         }
+        if (Array.isArray(result.renderSteps)) {
+          setAudioPreviewRenderSteps(
+            result.renderSteps.filter(
+              (item: unknown) =>
+                item && typeof item === 'object' && !Array.isArray(item),
+            ) as Record<string, unknown>[],
+          )
+        }
   } catch {
     setAudioPreviewMessage('Could not send audio preview spec.')
   } finally {
@@ -1891,6 +1904,23 @@ const getPreviewPlanValue = (key: string) => {
   }
 
   const value = audioPreviewPlan[key]
+
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (typeof value === 'number') {
+    return String(value)
+  }
+
+  return ''
+}
+
+const getRenderStepValue = (
+  step: Record<string, unknown>,
+  key: string,
+) => {
+  const value = step[key]
 
   if (typeof value === 'string') {
     return value
@@ -5788,6 +5818,51 @@ return (
           ))}
       </div>
     ) : null}
+
+
+    {audioPreviewRenderSteps.length > 0 ? (
+      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <summary className="cursor-pointer text-xs font-medium text-gray-300">
+          Show render steps
+        </summary>
+
+        <div className="mt-3 grid gap-3">
+          {audioPreviewRenderSteps.map((step, index) => {
+            const stepNumber = getRenderStepValue(step, 'step') || String(index + 1)
+            const section = getRenderStepValue(step, 'section') || `Section ${stepNumber}`
+            const goal = getRenderStepValue(step, 'goal')
+            const guitarInstruction = getRenderStepValue(step, 'guitarInstruction')
+            const vocalInstruction = getRenderStepValue(step, 'vocalInstruction')
+            const dynamicInstruction = getRenderStepValue(step, 'dynamicInstruction')
+            const notes = getRenderStepValue(step, 'notes')
+
+            return (
+              <div
+                key={`${stepNumber}-${section}`}
+                className="rounded border border-gray-800 bg-gray-900 p-3"
+              >
+                <div className="text-xs uppercase tracking-wide text-gray-500">
+                  Step {stepNumber}
+                </div>
+
+                <div className="mt-1 text-sm font-medium text-gray-200">
+                  {section}
+                </div>
+
+                <div className="mt-2 grid gap-2 text-xs leading-5 text-gray-500">
+                  {goal ? <div><span className="text-gray-400">Goal:</span> {goal}</div> : null}
+                  {guitarInstruction ? <div><span className="text-gray-400">Guitar:</span> {guitarInstruction}</div> : null}
+                  {vocalInstruction ? <div><span className="text-gray-400">Vocal:</span> {vocalInstruction}</div> : null}
+                  {dynamicInstruction ? <div><span className="text-gray-400">Dynamics:</span> {dynamicInstruction}</div> : null}
+                  {notes ? <div><span className="text-gray-400">Notes:</span> {notes}</div> : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+  </details>
+) : null}
+
 
     {audioPreviewRenderPrompt ? (
       <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
