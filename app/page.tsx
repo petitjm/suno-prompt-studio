@@ -2380,6 +2380,16 @@ const buildFullPerformancePackCopyText = () => {
           audioGuidePromptText,
         ]
       : []),
+      ...(audioPreviewRenderPrompt
+      ? [
+          '',
+          '============================================================',
+          'AUDIO RENDER PROMPT',
+          '============================================================',
+          '',
+          audioPreviewRenderPrompt,
+        ]
+      : []),
   ].join('\n')
 }
 
