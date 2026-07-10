@@ -233,6 +233,7 @@ export default function Page() {
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
+  const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
@@ -1469,7 +1470,24 @@ const copyChordJson = async () => {
   }
 }
 
+const copyAudioRenderPrompt = async () => {
+  if (!audioPreviewRenderPrompt) {
+    setAudioPreviewMessage('No audio render prompt available to copy.')
+    return
+  }
 
+  try {
+    await navigator.clipboard.writeText(audioPreviewRenderPrompt)
+    setJustCopiedAudioRenderPrompt(true)
+    setAudioPreviewMessage('Audio render prompt copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioRenderPrompt(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewMessage('Could not copy audio render prompt.')
+  }
+}
 
 const copyGuideTrackPlan = async () => {
   const copyText = buildGuideTrackPlanCopyText()
@@ -5766,6 +5784,17 @@ return (
         <summary className="cursor-pointer text-xs font-medium text-gray-300">
           Show audio render prompt
         </summary>
+
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => copyAudioRenderPrompt()}
+            disabled={!audioPreviewRenderPrompt}
+            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+          >
+            {justCopiedAudioRenderPrompt ? 'Copied ✓' : 'Copy render prompt'}
+          </button>
+        </div>
 
         <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
           {audioPreviewRenderPrompt}
