@@ -209,6 +209,7 @@ export default function Page() {
   const [chordVersionTitle, setChordVersionTitle] = useState('')
   const [chordsText, setChordsText] = useState('{}')
   const [generatingChords, setGeneratingChords] = useState(false)
+  const [generatingBasicChords, setGeneratingBasicChords] = useState(false)
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
@@ -241,6 +242,7 @@ export default function Page() {
   const [justCopiedAudioRenderSteps, setJustCopiedAudioRenderSteps] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
+
   const [lastAppliedTransposeSnapshot, setLastAppliedTransposeSnapshot] = useState<{
       chordsText: string
       chordVersionTitle: string
@@ -1405,7 +1407,7 @@ const hasChordEditorContent = () => {
 }
 
 
-const getChordVersionCopyTitle = () => {
+const getChordVersionCopyTitle = () => {c
   const title = chordVersionTitle.trim()
 
   if (!title) {
@@ -3645,6 +3647,54 @@ const buildChordSummaryCopyText = () => {
   ].join('\n')
 }
 
+const generateBasicChords = async () => {
+  if (!performanceSheet.trim()) {
+    setChordExtractionMessage('Add lyrics before generating a basic chord draft.')
+    return
+  }
+
+  setGeneratingBasicChords(true)
+  setChordExtractionMessage('Generating basic chord draft...')
+  setProjectMessage('')
+
+  try {
+    const response = await fetch('/api/chords/basic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lyrics: performanceSheet,
+        songTitle: activeProject?.title || '',
+        songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setChordExtractionMessage(
+        typeof result.error === 'string'
+          ? result.error
+          : 'Could not generate basic chord draft.',
+      )
+      return
+    }
+
+    setChords(result)
+    setChordsText(JSON.stringify(result, null, 2))
+    setChordVersionTitle('Basic chord draft')
+    setActiveChordVersionId(null)
+    setChordTransposeSemitones(0)
+    setLastAppliedTransposeSnapshot(null)
+    resetAudioPreviewRequestState()
+    setChordExtractionMessage('Basic chord draft generated.')
+  } catch {
+    setChordExtractionMessage('Could not generate basic chord draft.')
+  } finally {
+    setGeneratingBasicChords(false)
+  }
+}
 
 
 
@@ -6356,6 +6406,14 @@ return (
               {generatingChords ? 'Generating...' : 'Generate chords'}
             </button>
 
+            <button
+              type="button"
+              onClick={() => generateBasicChords()}
+              disabled={generatingBasicChords || generatingChords || !performanceSheet.trim()}
+              className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+            >
+              {generatingBasicChords ? 'Generating basic...' : 'Generate basic draft'}
+            </button>
 
             <button
               type="button"
