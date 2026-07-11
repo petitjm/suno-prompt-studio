@@ -3375,6 +3375,66 @@ const normalizeLyricMatchText = (value: string) => {
     .trim()
 }
 
+
+const getSongsheetServerValidation = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return {
+      hasValidation: false,
+      sourceLineCount: 0,
+      acceptedLineCount: 0,
+      rejectedLineCount: 0,
+      rejectedLines: [] as string[],
+    }
+  }
+
+  const record = chordData as Record<string, unknown>
+  const validation = record.songsheetValidation
+
+  if (!validation || typeof validation !== 'object' || Array.isArray(validation)) {
+    return {
+      hasValidation: false,
+      sourceLineCount: 0,
+      acceptedLineCount: 0,
+      rejectedLineCount: 0,
+      rejectedLines: [] as string[],
+    }
+  }
+
+  const validationRecord = validation as Record<string, unknown>
+
+  const sourceLineCount =
+    typeof validationRecord.sourceLineCount === 'number'
+      ? validationRecord.sourceLineCount
+      : 0
+
+  const acceptedLineCount =
+    typeof validationRecord.acceptedLineCount === 'number'
+      ? validationRecord.acceptedLineCount
+      : 0
+
+  const rejectedLineCount =
+    typeof validationRecord.rejectedLineCount === 'number'
+      ? validationRecord.rejectedLineCount
+      : 0
+
+  const rejectedLines = Array.isArray(validationRecord.rejectedLines)
+    ? validationRecord.rejectedLines.filter(
+        (line): line is string => typeof line === 'string',
+      )
+    : []
+
+  return {
+    hasValidation: true,
+    sourceLineCount,
+    acceptedLineCount,
+    rejectedLineCount,
+    rejectedLines,
+  }
+}
+
+
 const getPlacedSongsheetSourceMatch = () => {
    if (generatingBasicChords || generatingChords) {
   return {
@@ -3930,6 +3990,7 @@ const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
+const songsheetServerValidation = getSongsheetServerValidation()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
 )
@@ -6673,6 +6734,54 @@ return (
           ? 'Review'
           : 'OK'}
     </div>
+
+    {songsheetServerValidation.hasValidation ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="flex items-center justify-between gap-3">
+      <div className="text-sm font-medium text-gray-200">
+        Server validation
+      </div>
+
+      <div
+        className={`text-xs ${
+          songsheetServerValidation.rejectedLineCount > 0
+            ? 'text-yellow-300'
+            : 'text-green-300'
+        }`}
+      >
+        {songsheetServerValidation.rejectedLineCount > 0
+          ? 'Rejected lines'
+          : 'Accepted'}
+      </div>
+    </div>
+
+    <div className="mt-1 text-xs leading-5 text-gray-500">
+      Source lines: {songsheetServerValidation.sourceLineCount}
+    </div>
+
+    <div className="mt-1 text-xs leading-5 text-gray-500">
+      Accepted placed lines: {songsheetServerValidation.acceptedLineCount}
+    </div>
+
+    <div className="mt-1 text-xs leading-5 text-gray-500">
+      Rejected rewritten lines: {songsheetServerValidation.rejectedLineCount}
+    </div>
+
+    {songsheetServerValidation.rejectedLines.length > 0 ? (
+      <div className="mt-3 grid gap-2">
+        {songsheetServerValidation.rejectedLines.map((line, index) => (
+          <div
+            key={`${line}-${index}`}
+            className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
+          >
+            {line}
+          </div>
+        ))}
+      </div>
+    ) : null}
+  </div>
+) : null}
+
   </div>
 
   <div className="mt-1 text-xs leading-5 text-gray-500">
