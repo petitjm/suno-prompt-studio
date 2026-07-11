@@ -3365,7 +3365,66 @@ const getKeyChordConsistency = (value: unknown) => {
   }
 }
 
+const normalizeLyricMatchText = (value: string) => {
+  return value
+    .toLowerCase()
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^\w\s']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
+const getPlacedSongsheetSourceMatch = () => {
+  const chordData = getChordDataFromEditorJson()
+  const placedLines = getPlacedSongSheetLines(chordData)
+
+  const sourceLines = performanceSheet
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const normalizedSourceLines = new Set(
+    sourceLines.map((line) => normalizeLyricMatchText(line)).filter(Boolean),
+  )
+
+  const lyricLines = placedLines.filter((line) => line.lyric.trim())
+
+  const unmatchedLines = lyricLines.filter((line) => {
+    const normalizedLyric = normalizeLyricMatchText(line.lyric)
+
+    if (!normalizedLyric) {
+      return false
+    }
+
+    return !normalizedSourceLines.has(normalizedLyric)
+  })
+
+  const checkedCount = lyricLines.length
+  const unmatchedCount = unmatchedLines.length
+
+  const label =
+    checkedCount === 0
+      ? 'No placed lyric lines to check'
+      : unmatchedCount === 0
+        ? 'Songsheet lyrics match source'
+        : 'Songsheet may contain rewritten lines'
+
+  const detail =
+    checkedCount === 0
+      ? 'Generate a placed songsheet to check source lyric matching.'
+      : unmatchedCount === 0
+        ? `${checkedCount} placed lyric line${checkedCount === 1 ? '' : 's'} match the source lyrics.`
+        : `${unmatchedCount} of ${checkedCount} placed lyric line${checkedCount === 1 ? '' : 's'} were not found in the source lyrics.`
+
+  return {
+    label,
+    detail,
+    checkedCount,
+    unmatchedCount,
+    unmatchedLines: unmatchedLines.slice(0, 8),
+  }
+}
 
 const getPlacedSongSheetQuality = () => {
   const chordData = getChordDataFromEditorJson()
@@ -3846,6 +3905,7 @@ const audioGuideReadiness = getAudioGuideReadiness()
 const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
+const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
 )
@@ -6504,6 +6564,10 @@ return (
         {placedSongSheetQuality.detail}
       </div>
 
+
+
+
+
       <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded border border-gray-800 bg-gray-900 p-3">
           Lines: {placedSongSheetQuality.totalLines}
@@ -6548,6 +6612,9 @@ return (
           <div className="mt-1 text-xs text-red-300">
             {issue.lyric}
           </div>
+
+
+
         </div>
       ))}
     </div>
@@ -6560,6 +6627,50 @@ return (
       </div>
     )}
     </div>
+
+    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+  <div className="flex items-center justify-between gap-3">
+    <div className="text-sm font-medium text-gray-200">
+      Source lyric match
+    </div>
+
+    <div
+      className={`text-xs ${
+        placedSongsheetSourceMatch.unmatchedCount > 0
+          ? 'text-yellow-300'
+          : 'text-green-300'
+      }`}
+    >
+      {placedSongsheetSourceMatch.unmatchedCount > 0 ? 'Review' : 'OK'}
+    </div>
+  </div>
+
+  <div className="mt-1 text-xs leading-5 text-gray-500">
+    {placedSongsheetSourceMatch.label}
+  </div>
+
+  <div className="mt-1 text-xs leading-5 text-gray-500">
+    {placedSongsheetSourceMatch.detail}
+  </div>
+
+  {placedSongsheetSourceMatch.unmatchedLines.length > 0 ? (
+    <div className="mt-3 grid gap-2">
+      {placedSongsheetSourceMatch.unmatchedLines.map((line, index) => (
+        <div
+          key={`${line.section}-${line.lyric}-${index}`}
+          className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
+        >
+          <div className="font-medium">
+            {line.section || 'Unknown section'}
+          </div>
+          <div className="mt-1 text-yellow-200">
+            {line.lyric}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : null}
+</div>
 
 
    <div className="rounded border border-gray-800 bg-gray-950 p-4">
