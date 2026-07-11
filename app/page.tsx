@@ -3376,17 +3376,29 @@ const normalizeLyricMatchText = (value: string) => {
 }
 
 const getPlacedSongsheetSourceMatch = () => {
-    if (generatingPlacedSongsheet) {
-      return {
-        label: 'Checking after generation',
-        detail:
-          'A new placed songsheet is being generated. Source lyric matching will update when it completes.',
-        checkedCount: 0,
-        unmatchedCount: 0,
-        unmatchedLines: [],
-        isChecking: true,
-      }
-    }
+   if (generatingBasicChords || generatingChords) {
+  return {
+    label: 'Waiting for chord draft',
+    detail:
+      'A new chord draft is being generated. Source lyric matching will update after a placed songsheet exists.',
+    checkedCount: 0,
+    unmatchedCount: 0,
+    unmatchedLines: [],
+    isChecking: true,
+  }
+}
+
+if (generatingPlacedSongsheet) {
+  return {
+    label: 'Checking after generation',
+    detail:
+      'A new placed songsheet is being generated. Source lyric matching will update when it completes.',
+    checkedCount: 0,
+    unmatchedCount: 0,
+    unmatchedLines: [],
+    isChecking: true,
+  }
+}
   const chordData = getChordDataFromEditorJson()
   const placedLines = getPlacedSongSheetLines(chordData)
 

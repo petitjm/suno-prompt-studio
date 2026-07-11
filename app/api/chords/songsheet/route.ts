@@ -66,6 +66,122 @@ function parseModelJson(text: string) {
   throw new Error('Could not parse JSON from model response.')
 }
 
+type SongsheetChordPlacement = {
+  chord: string
+  charIndex: number
+}
+
+type SongsheetLine = {
+  section: string
+  lyric: string
+  chords: SongsheetChordPlacement[]
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function normalizeMatchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^\w\s']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function validateSongSheetLines(
+  value: unknown,
+  sourceLyricLines: string[],
+): {
+  lines: SongsheetLine[]
+  rejectedLines: string[]
+} {
+  if (!Array.isArray(value)) {
+    return {
+      lines: [],
+      rejectedLines: [],
+    }
+  }
+
+  const exactSourceLines = new Set(sourceLyricLines)
+  const normalizedSourceLineMap = new Map(
+    sourceLyricLines.map((line: string) => [normalizeMatchText(line), line]),
+  )
+
+  const rejectedLines: string[] = []
+
+  const lines = value.flatMap((item): SongsheetLine[] => {
+    if (!isRecord(item)) {
+      return []
+    }
+
+    const rawLyric = typeof item.lyric === 'string' ? item.lyric.trim() : ''
+    const section = typeof item.section === 'string' ? item.section.trim() : ''
+
+    if (!rawLyric) {
+      return [
+        {
+          section,
+          lyric: '',
+          chords: [],
+        },
+      ]
+    }
+
+    const exactLyric = exactSourceLines.has(rawLyric)
+      ? rawLyric
+      : normalizedSourceLineMap.get(normalizeMatchText(rawLyric))
+
+    if (!exactLyric) {
+      rejectedLines.push(rawLyric)
+      return []
+    }
+
+    const chords = Array.isArray(item.chords)
+      ? item.chords.flatMap((chordItem): SongsheetChordPlacement[] => {
+          if (!isRecord(chordItem)) {
+            return []
+          }
+
+          const chord =
+            typeof chordItem.chord === 'string' ? chordItem.chord.trim() : ''
+
+          const charIndex =
+            typeof chordItem.charIndex === 'number' &&
+            Number.isFinite(chordItem.charIndex)
+              ? chordItem.charIndex
+              : 0
+
+          if (!chord) {
+            return []
+          }
+
+          return [
+            {
+              chord,
+              charIndex: Math.max(0, Math.floor(charIndex)),
+            },
+          ]
+        })
+      : []
+
+    return [
+      {
+        section,
+        lyric: exactLyric,
+        chords,
+      },
+    ]
+  })
+
+  return {
+    lines,
+    rejectedLines,
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -174,16 +290,40 @@ Requirements:
     }
 
     const text = completion.choices[0]?.message?.content || ''
-    const songsheetData = parseModelJson(text)
+        const songsheetData = parseModelJson(text)
 
-    return NextResponse.json({
-      ...chordData,
-      ...songsheetData,
-      draftType:
-        typeof chordData.draftType === 'string'
-          ? chordData.draftType
-          : 'chord-draft-with-songsheet',
-    })
+        const songsheetRecord = isRecord(songsheetData) ? songsheetData : {}
+        const validation = validateSongSheetLines(
+          songsheetRecord.songSheetLines,
+          sourceLyricLines,
+        )
+
+        return NextResponse.json({
+          ...chordData,
+          ...songsheetRecord,
+          songSheetLines: validation.lines,
+          songsheetValidation: {
+            sourceLineCount: sourceLyricLines.length,
+            acceptedLineCount: validation.lines.length,
+            rejectedLineCount: validation.rejectedLines.length,
+            rejectedLines: validation.rejectedLines.slice(0, 12),
+          },
+          songsheetNotes: [
+            typeof songsheetRecord.songsheetNotes === 'string'
+              ? songsheetRecord.songsheetNotes
+              : '',
+            validation.rejectedLines.length > 0
+              ? `${validation.rejectedLines.length} generated songsheet line${validation.rejectedLines.length === 1 ? '' : 's'} rejected because they did not match the source lyrics.`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n\n'),
+          draftType:
+            typeof chordData.draftType === 'string'
+              ? chordData.draftType
+              : 'chord-draft-with-songsheet',
+        })
+
   } catch (error) {
     console.error('Songsheet route failure:', error)
 
