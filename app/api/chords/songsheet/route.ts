@@ -94,6 +94,15 @@ export async function POST(req: Request) {
       )
     }
 
+   const sourceLyricLines = lyrics
+      .split('\n')
+      .map((line: string) => line.trim())
+      .filter(Boolean)
+
+    const numberedSourceLyricLines = sourceLyricLines
+      .map((line: string, index: number) => `${index + 1}. ${line}`)
+      .join('\n')
+
     const prompt = `
 You are helping a singer-songwriter turn a chord draft into a practical chord-over-lyric songsheet.
 
@@ -102,8 +111,8 @@ Return JSON only. No markdown. No commentary.
 Song title: ${songTitle || 'Untitled song'}
 Song version: ${songVersionTitle || 'Untitled version'}
 
-Lyrics:
-${lyrics}
+Source lyric lines:
+${numberedSourceLyricLines}
 
 Existing chord data:
 ${JSON.stringify(chordData, null, 2)}
@@ -125,14 +134,20 @@ Return this exact JSON shape:
 }
 
 Requirements:
-- Preserve the actual lyric lines from the supplied lyrics.
-- Do not rewrite the lyrics.
+Requirements:
+- Use only the exact lyric text from the numbered source lyric lines above.
+- Do not rewrite, modernise, correct, improve, shorten, expand, reorder, or paraphrase any lyric line.
+- Every songSheetLines[].lyric value must exactly match one of the numbered source lyric lines.
+- If a source line is a section label or metadata line, include it with an empty chords array.
+- Preserve the source lyric order.
+- Place chords above the word or syllable where the chord should change.
 - Place chords above the word or syllable where the chord should change.
 - Use zero-based charIndex positions within each lyric line.
 - Do not put every chord at charIndex 0.
 - Header/section label lines may have no chords.
 - If a chord belongs after the lyric line as a turnaround or held chord, place it near the end of the line and explain briefly in songsheetNotes.
 - Use the existing chord data as the harmonic source.
+- Before returning JSON, check every lyric value against the numbered source lyric lines. If it does not exactly match, replace it with the closest exact source line.
 - Keep the result practical for acoustic guitar performance.
 `.trim()
 

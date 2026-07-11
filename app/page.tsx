@@ -3376,6 +3376,17 @@ const normalizeLyricMatchText = (value: string) => {
 }
 
 const getPlacedSongsheetSourceMatch = () => {
+    if (generatingPlacedSongsheet) {
+      return {
+        label: 'Checking after generation',
+        detail:
+          'A new placed songsheet is being generated. Source lyric matching will update when it completes.',
+        checkedCount: 0,
+        unmatchedCount: 0,
+        unmatchedLines: [],
+        isChecking: true,
+      }
+    }
   const chordData = getChordDataFromEditorJson()
   const placedLines = getPlacedSongSheetLines(chordData)
 
@@ -3423,6 +3434,7 @@ const getPlacedSongsheetSourceMatch = () => {
     checkedCount,
     unmatchedCount,
     unmatchedLines: unmatchedLines.slice(0, 8),
+    isChecking: false,
   }
 }
 
@@ -6636,12 +6648,18 @@ return (
 
     <div
       className={`text-xs ${
-        placedSongsheetSourceMatch.unmatchedCount > 0
-          ? 'text-yellow-300'
-          : 'text-green-300'
+        placedSongsheetSourceMatch.isChecking
+          ? 'text-blue-300'
+          : placedSongsheetSourceMatch.unmatchedCount > 0
+            ? 'text-yellow-300'
+            : 'text-green-300'
       }`}
     >
-      {placedSongsheetSourceMatch.unmatchedCount > 0 ? 'Review' : 'OK'}
+      {placedSongsheetSourceMatch.isChecking
+        ? 'Checking'
+        : placedSongsheetSourceMatch.unmatchedCount > 0
+          ? 'Review'
+          : 'OK'}
     </div>
   </div>
 
