@@ -2726,6 +2726,62 @@ const getAudioPreviewSpecStatus = () => {
   }
 }
 
+const getCompactChordContext = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const record = value as Record<string, unknown>
+
+  const compactKeys = [
+    'draftType',
+    'key',
+    'capo',
+    'tuning',
+    'genre',
+    'tempoBpm',
+    'timeSignature',
+    'groove',
+    'performanceFeel',
+    'vocalDelivery',
+    'guitarPattern',
+    'intro',
+    'verse',
+    'preChorus',
+    'chorus',
+    'bridge',
+    'outro',
+    'notes',
+    'songsheetNotes',
+  ]
+
+  return Object.fromEntries(
+    compactKeys
+      .map((key) => [key, record[key]])
+      .filter(([, entryValue]) => {
+        if (typeof entryValue === 'string') {
+          return entryValue.trim()
+        }
+
+        if (typeof entryValue === 'number') {
+          return Number.isFinite(entryValue)
+        }
+
+        return Boolean(entryValue)
+      }),
+  )
+}
+
+
+const getCompactSongSheetContext = (value: unknown) => {
+  return getPlacedSongSheetLines(value).map((line) => ({
+    section: line.section,
+    lyric: line.lyric,
+    chords: line.chords,
+  }))
+}
+
+
 const getNextChordWorkflowAction = () => {
   const chordData = getChordDataFromEditorJson()
   const placedLines = getPlacedSongSheetLines(chordData)
@@ -4034,6 +4090,9 @@ const generateGuideTrackPlan = async () => {
 
   const chordData = getUsableChordDataFromEditor()
 
+  const compactChordContext = getCompactChordContext(chordData)
+  const compactSongSheetContext = getCompactSongSheetContext(chordData)
+
   if (!chordData) {
     setChordExtractionMessage(
       'Generate or load a chord draft before generating a guide track plan.',
@@ -4052,11 +4111,14 @@ const generateGuideTrackPlan = async () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        lyrics: performanceSheet,
-        chordData,
-        songTitle: activeProject?.title || '',
-        songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
-      }),
+          lyrics: performanceSheet,
+          chordData: {
+            ...(compactChordContext || {}),
+            songSheetLines: compactSongSheetContext,
+          },
+          songTitle: activeProject?.title || '',
+          songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
+        }),
     })
 
     const result = await response.json()
@@ -4122,11 +4184,11 @@ const generatePlacedSongsheet = async () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        lyrics: performanceSheet,
-        chordData,
-        songTitle: activeProject?.title || '',
-        songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
-      }),
+          lyrics: performanceSheet,
+          chordData: getCompactChordContext(chordData) || chordData,
+          songTitle: activeProject?.title || '',
+          songVersionTitle: activeSongVersion?.title || songVersionTitle || '',
+        }),
     })
 
     const result = await response.json()
