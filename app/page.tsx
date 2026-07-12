@@ -2936,6 +2936,14 @@ const getChordWorkflowStatus = () => {
   const hasGuideTrackPlan = guideTrackPlanRows.length > 0
   const hasSectionPlan = guideTrackSectionPlanRows.length > 0
   const hasPreviewRequest = Boolean(audioPreviewPlan || audioPreviewRenderPrompt)
+  const sourceMatch = getPlacedSongsheetSourceMatch()
+    const serverValidation = getSongsheetServerValidation()
+    const sourceCoverage = getPlacedSongsheetSourceCoverage()
+
+    const hasSongsheetReviewWarnings =
+      sourceMatch.unmatchedCount > 0 ||
+      serverValidation.rejectedLineCount > 0 ||
+      sourceCoverage.missingLineCount > 0
     const activeProcess =
     generatingChords
       ? 'Generating full chord draft...'
@@ -2969,16 +2977,20 @@ const getChordWorkflowStatus = () => {
         ? 'Tempo, groove, feel, or delivery information is available.'
         : 'Generate a basic draft or full chord draft.',
     },
-       {
+       
+          {
           label: 'Placed songsheet',
-          complete: hasPlacedSongsheet,
-          working: generatingPlacedSongsheet,
-          detail: generatingPlacedSongsheet
-            ? 'Generating placed songsheet...'
-            : hasPlacedSongsheet
-              ? `${placedLines.length} placed songsheet line${placedLines.length === 1 ? '' : 's'} available.`
-              : 'Use Generate placed songsheet after a chord draft exists.',
-        },
+              complete: hasPlacedSongsheet && !hasSongsheetReviewWarnings,
+              working: generatingPlacedSongsheet,
+              review: hasPlacedSongsheet && hasSongsheetReviewWarnings,
+              detail: generatingPlacedSongsheet
+                ? 'Generating placed songsheet...'
+                : hasPlacedSongsheet && hasSongsheetReviewWarnings
+                  ? 'Placed songsheet exists, but lyric match, validation, or coverage needs review.'
+                  : hasPlacedSongsheet
+                    ? `${placedLines.length} placed songsheet line${placedLines.length === 1 ? '' : 's'} available.`
+                    : 'Use Generate placed songsheet after a chord draft exists.',
+            },
          {
           label: 'Guide track plan',
           complete: hasGuideTrackPlan,
@@ -7293,16 +7305,24 @@ return (
           </div>
 
           <div
-              className={`text-xs ${
-                step.working
-                  ? 'text-blue-300'
-                  : step.complete
-                    ? 'text-green-300'
-                    : 'text-yellow-300'
-              }`}
-            >
-              {step.working ? 'Working' : step.complete ? 'Done' : 'Next'}
-            </div>
+          className={`text-xs ${
+            step.working
+              ? 'text-blue-300'
+              : step.review
+                ? 'text-yellow-300'
+                : step.complete
+                  ? 'text-green-300'
+                  : 'text-yellow-300'
+          }`}
+        >
+          {step.working
+            ? 'Working'
+            : step.review
+              ? 'Review'
+              : step.complete
+                ? 'Done'
+                : 'Next'}
+        </div>
         </div>
 
         <div className="mt-1 text-xs leading-5 text-gray-500">
