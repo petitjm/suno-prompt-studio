@@ -259,16 +259,16 @@ Return this exact JSON shape:
 
 {
   "songSheetLines": [
-    {
-      "section": "Verse 1",
-      "lyric": "Actual lyric line from the supplied lyrics",
-      "chords": [
-        { "chord": "Em", "charIndex": 0 },
-        { "chord": "C", "charIndex": 12 }
-      ]
-    }
-  ],
-  "songsheetNotes": ""
+      {
+        "section": "Verse 1",
+        "lyric": "Actual lyric line from the supplied lyrics",
+        "chords": [
+          { "chord": "Em", "charIndex": 0 },
+          { "chord": "C", "charIndex": 12 }
+        ]
+      }
+    ],
+"songsheetNotes": "One or two short notes only."
 }
 
 Requirements:
@@ -287,6 +287,11 @@ Requirements:
 - Use the existing chord data as the harmonic source.
 - Before returning JSON, check every lyric value against the numbered source lyric lines. If it does not exactly match, replace it with the closest exact source line.
 - Keep the result practical for acoustic guitar performance.
+- Keep songsheetNotes under 60 words.
+- Do not explain every section.
+- Do not repeat the full chord progression in songsheetNotes.
+- Do not include performance arrangement notes here.
+- The UI will validate source lyric coverage separately, so keep the response compact.
 `.trim()
 
     const startedAt = Date.now()
@@ -335,15 +340,15 @@ Requirements:
             rejectedLines: validation.rejectedLines.slice(0, 12),
           },
           songsheetNotes: [
-            typeof songsheetRecord.songsheetNotes === 'string'
-              ? songsheetRecord.songsheetNotes
-              : '',
-            validation.rejectedLines.length > 0
-              ? `${validation.rejectedLines.length} generated songsheet line${validation.rejectedLines.length === 1 ? '' : 's'} rejected because they did not match the source lyrics.`
-              : '',
-          ]
-            .filter(Boolean)
-            .join('\n\n'),
+              typeof songsheetRecord.songsheetNotes === 'string'
+                ? songsheetRecord.songsheetNotes.trim().slice(0, 500)
+                : '',
+              validation.rejectedLines.length > 0
+                ? `${validation.rejectedLines.length} generated songsheet line${validation.rejectedLines.length === 1 ? '' : 's'} rejected because they did not match the source lyrics.`
+                : '',
+            ]
+              .filter(Boolean)
+              .join('\n\n'),
           draftType:
             typeof chordData.draftType === 'string'
               ? chordData.draftType
