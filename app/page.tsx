@@ -2020,6 +2020,61 @@ const buildAudioRenderStepsCopyText = () => {
     .join('\n')
 }
 
+const buildSongsheetReviewCopyText = () => {
+  const quality = getPlacedSongSheetQuality()
+  const sourceMatch = getPlacedSongsheetSourceMatch()
+  const serverValidation = getSongsheetServerValidation()
+  const sourceCoverage = getPlacedSongsheetSourceCoverage()
+
+  return [
+    'SONGSHEET REVIEW',
+    '',
+    `Placement status: ${quality.label}`,
+    quality.detail,
+    `After-lyric chords: ${quality.outOfRangeChords ?? 0}`,
+    quality.warning ? `Review note: ${quality.warning}` : '',
+    '',
+    'SOURCE LYRIC MATCH',
+    '',
+    sourceMatch.label,
+    sourceMatch.detail,
+    sourceMatch.unmatchedCount > 0
+      ? `Unmatched placed lines: ${sourceMatch.unmatchedCount}`
+      : '',
+    ...sourceMatch.unmatchedLines.flatMap((line) => [
+      `- ${line.section || 'Unknown section'}: ${line.lyric}`,
+    ]),
+    '',
+    ...(serverValidation.hasValidation
+      ? [
+          'SERVER VALIDATION',
+          '',
+          `Source lines: ${serverValidation.sourceLineCount}`,
+          `Accepted placed lines: ${serverValidation.acceptedLineCount}`,
+          `Rejected rewritten lines: ${serverValidation.rejectedLineCount}`,
+          ...serverValidation.rejectedLines.map((line) => `- ${line}`),
+          '',
+        ]
+      : []),
+    'SOURCE LYRIC COVERAGE',
+    '',
+    sourceCoverage.label,
+    sourceCoverage.detail,
+    sourceCoverage.missingLineCount > 0
+      ? `Missing source lines: ${sourceCoverage.missingLineCount}`
+      : '',
+    ...sourceCoverage.missingLines.map((line) => `- ${line}`),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
 
 const copyAudioPreviewSpec = async () => {
   const copyText = buildAudioPreviewSpecCopyText()
@@ -2321,6 +2376,7 @@ const buildPerformanceDesignNotesCopyText = () => {
   const intentRows = getPerformanceIntentRows(chordData)
   const quality = getPlacedSongSheetQuality()
   const keyCheck = getKeyChordConsistency(chordData)
+  const songsheetReviewText = buildSongsheetReviewCopyText()
   const audioReadinessText = buildAudioGuideReadinessCopyText()
 
   if (!chordData || intentRows.length === 0) {
@@ -2338,12 +2394,7 @@ const buildPerformanceDesignNotesCopyText = () => {
     '',
     ...intentRows.map((row) => `${row.label}: ${row.value}`),
     '',
-    'SONGSHEET REVIEW',
-    '',
-    `Placement status: ${quality.label}`,
-    quality.detail,
-    `After-lyric chords: ${quality.outOfRangeChords ?? 0}`,
-    quality.warning ? `Review note: ${quality.warning}` : '',
+    songsheetReviewText,
     '',
     'KEY / CHORD CHECK',
     '',
@@ -2375,6 +2426,7 @@ const buildPerformanceDesignNotesCopyText = () => {
 
 
 const buildCompactPerformanceDesignNotesCopyText = () => {
+  const songsheetReviewText = buildSongsheetReviewCopyText()
   const chordData = getChordDataFromEditorJson()
   const quality = getPlacedSongSheetQuality()
   const keyCheck = getKeyChordConsistency(chordData)
@@ -2385,12 +2437,7 @@ const buildCompactPerformanceDesignNotesCopyText = () => {
   }
 
   return [
-    'SONGSHEET REVIEW',
-    '',
-    `Placement status: ${quality.label}`,
-    quality.detail,
-    `After-lyric chords: ${quality.outOfRangeChords ?? 0}`,
-    quality.warning ? `Review note: ${quality.warning}` : '',
+    songsheetReviewText,
     '',
     'KEY / CHORD CHECK',
     '',
