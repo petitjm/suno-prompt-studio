@@ -3431,6 +3431,58 @@ const normalizeLyricMatchText = (value: string) => {
     .trim()
 }
 
+const getPlacedSongsheetSourceCoverage = () => {
+  const chordData = getChordDataFromEditorJson()
+  const placedLines = getPlacedSongSheetLines(chordData)
+
+  const sourceLines = performanceSheet
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const placedLyricSet = new Set(
+    placedLines
+      .map((line) => normalizeLyricMatchText(line.lyric))
+      .filter(Boolean),
+  )
+
+  const missingLines = sourceLines.filter((line) => {
+    const normalizedLine = normalizeLyricMatchText(line)
+
+    if (!normalizedLine) {
+      return false
+    }
+
+    return !placedLyricSet.has(normalizedLine)
+  })
+
+  const sourceLineCount = sourceLines.length
+  const coveredLineCount = Math.max(0, sourceLineCount - missingLines.length)
+
+  const label =
+    sourceLineCount === 0
+      ? 'No source lyrics to check'
+      : missingLines.length === 0
+        ? 'Placed songsheet covers source lyrics'
+        : 'Placed songsheet may be incomplete'
+
+  const detail =
+    sourceLineCount === 0
+      ? 'Add lyrics before checking songsheet coverage.'
+      : `${coveredLineCount} of ${sourceLineCount} source lyric line${
+          sourceLineCount === 1 ? '' : 's'
+        } are covered by the placed songsheet.`
+
+  return {
+    label,
+    detail,
+    sourceLineCount,
+    coveredLineCount,
+    missingLineCount: missingLines.length,
+    missingLines: missingLines.slice(0, 10),
+  }
+}
+
 
 const getSongsheetServerValidation = () => {
   const chordData = getChordDataFromEditorJson()
@@ -4047,6 +4099,7 @@ const nextChordWorkflowAction = getNextChordWorkflowAction()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const songsheetServerValidation = getSongsheetServerValidation()
+const placedSongsheetSourceCoverage = getPlacedSongsheetSourceCoverage()
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
 )
@@ -6816,6 +6869,47 @@ return (
           : 'Accepted'}
       </div>
     </div>
+
+    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+  <div className="flex items-center justify-between gap-3">
+    <div className="text-sm font-medium text-gray-200">
+      Source lyric coverage
+    </div>
+
+    <div
+      className={`text-xs ${
+        placedSongsheetSourceCoverage.missingLineCount > 0
+          ? 'text-yellow-300'
+          : 'text-green-300'
+      }`}
+    >
+      {placedSongsheetSourceCoverage.missingLineCount > 0
+        ? 'Incomplete'
+        : 'Covered'}
+    </div>
+  </div>
+
+  <div className="mt-1 text-xs leading-5 text-gray-500">
+    {placedSongsheetSourceCoverage.label}
+  </div>
+
+  <div className="mt-1 text-xs leading-5 text-gray-500">
+    {placedSongsheetSourceCoverage.detail}
+  </div>
+
+  {placedSongsheetSourceCoverage.missingLines.length > 0 ? (
+    <div className="mt-3 grid gap-2">
+      {placedSongsheetSourceCoverage.missingLines.map((line, index) => (
+        <div
+          key={`${line}-${index}`}
+          className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
+        >
+          {line}
+        </div>
+      ))}
+    </div>
+  ) : null}
+</div>
 
     <div className="mt-1 text-xs leading-5 text-gray-500">
       Source lines: {songsheetServerValidation.sourceLineCount}
