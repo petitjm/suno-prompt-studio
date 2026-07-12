@@ -176,12 +176,55 @@ Requirements:
       clearTimeout(timeoutId)
     }
 
+    function getOpenAIUsageMeta(
+  routeName: string,
+  model: string,
+  startedAt: number,
+  completion: unknown,
+) {
+  const durationSeconds = Number(((Date.now() - startedAt) / 1000).toFixed(1))
+
+  const usage =
+    completion &&
+    typeof completion === 'object' &&
+    'usage' in completion
+      ? (completion as {
+          usage?: {
+            prompt_tokens?: number
+            completion_tokens?: number
+            total_tokens?: number
+          }
+        }).usage
+      : undefined
+
+  return {
+    route: routeName,
+    model,
+    durationSeconds,
+    inputTokens: usage?.prompt_tokens ?? null,
+    outputTokens: usage?.completion_tokens ?? null,
+    totalTokens: usage?.total_tokens ?? null,
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+
     logOpenAIUsage(`chords/basic model=${BASIC_CHORD_MODEL}`, startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
     const chordData = parseModelJson(text)
 
-    return NextResponse.json(chordData)
+    return NextResponse.json({
+      ...(chordData && typeof chordData === 'object' && !Array.isArray(chordData)
+        ? chordData
+        : {}),
+      generationMeta: getOpenAIUsageMeta(
+        'chords/basic',
+        BASIC_CHORD_MODEL,
+        startedAt,
+        completion,
+      ),
+    })
   } catch (error) {
     console.error('Basic chords route failure:', error)
 

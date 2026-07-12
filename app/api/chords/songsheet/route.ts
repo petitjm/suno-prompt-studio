@@ -477,6 +477,39 @@ Requirements:
       clearTimeout(timeoutId)
     }
 
+    function getOpenAIUsageMeta(
+  routeName: string,
+  model: string,
+  startedAt: number,
+  completion: unknown,
+) {
+  const durationSeconds = Number(((Date.now() - startedAt) / 1000).toFixed(1))
+
+  const usage =
+    completion &&
+    typeof completion === 'object' &&
+    'usage' in completion
+      ? (completion as {
+          usage?: {
+            prompt_tokens?: number
+            completion_tokens?: number
+            total_tokens?: number
+          }
+        }).usage
+      : undefined
+
+  return {
+    route: routeName,
+    model,
+    durationSeconds,
+    inputTokens: usage?.prompt_tokens ?? null,
+    outputTokens: usage?.completion_tokens ?? null,
+    totalTokens: usage?.total_tokens ?? null,
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+
     logOpenAIUsage(`chords/songsheet model=${SONGSHEET_MODEL}`, startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
@@ -499,6 +532,12 @@ Requirements:
         return NextResponse.json({
           ...chordData,
           ...cleanSongsheetRecord,
+          generationMeta: getOpenAIUsageMeta(
+            'chords/songsheet',
+            SONGSHEET_MODEL,
+            startedAt,
+            completion,
+          ),
           songSheetLines: validation.lines,
           songsheetValidation: {
             sourceLineCount: sourceLyricLines.length,
