@@ -2845,6 +2845,14 @@ const getNextChordWorkflowAction = () => {
   const hasGuideTrackPlan = guideTrackPlanRows.length > 0
   const hasSectionPlan = guideTrackSectionPlanRows.length > 0
   const hasPreviewRequest = Boolean(audioPreviewPlan || audioPreviewRenderPrompt)
+  const sourceMatch = getPlacedSongsheetSourceMatch()
+const serverValidation = getSongsheetServerValidation()
+const sourceCoverage = getPlacedSongsheetSourceCoverage()
+
+const hasSongsheetReviewWarnings =
+  sourceMatch.unmatchedCount > 0 ||
+  serverValidation.rejectedLineCount > 0 ||
+  sourceCoverage.missingLineCount > 0
 
   const isBusy =
     generatingChords ||
@@ -2890,14 +2898,16 @@ const getNextChordWorkflowAction = () => {
   }
 
   if (!hasGuideTrackPlan || !hasSectionPlan) {
-    return {
-      label: 'Next: generate guide plan',
-      disabled: false,
-      action: () => {
-        void generateGuideTrackPlan()
-      },
+      return {
+        label: hasSongsheetReviewWarnings
+          ? 'Next: generate guide plan anyway'
+          : 'Next: generate guide plan',
+        disabled: false,
+        action: () => {
+          void generateGuideTrackPlan()
+        },
+      }
     }
-  }
 
   if (!hasPreviewRequest) {
     return {
@@ -7274,6 +7284,13 @@ return (
     {nextChordWorkflowAction.label}
   </button>
 </div>
+
+{nextChordWorkflowAction.label.includes('anyway') ? (
+  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
+    The placed songsheet has review warnings. You can continue to the guide plan, but check lyric match, validation, and coverage before treating the songsheet as final.
+  </div>
+) : null}
+
 
   <div
       className={`mt-2 ${
