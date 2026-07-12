@@ -109,6 +109,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
+function isSourceLyricContentLine(line: string) {
+  const trimmed = line.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  if (/^\[[^\]]+\]$/.test(trimmed)) {
+    return false
+  }
+
+  if (/^\{[^}]+:[^}]*\}$/.test(trimmed)) {
+    return false
+  }
+
+  if (
+    /^(intro|verse|verse\s+\d+|chorus|pre-chorus|prechorus|bridge|outro|tag|breakdown|final chorus)$/i.test(
+      trimmed,
+    )
+  ) {
+    return false
+  }
+
+  return true
+}
+
+
 function normalizeMatchText(value: string) {
   return value
     .toLowerCase()
@@ -369,7 +396,7 @@ export async function POST(req: Request) {
    const sourceLyricLines = lyrics
       .split('\n')
       .map((line: string) => line.trim())
-      .filter(Boolean)
+      .filter(isSourceLyricContentLine)
 
     const numberedSourceLyricLines = sourceLyricLines
       .map((line: string, index: number) => `${index + 1}. ${line}`)
@@ -383,7 +410,7 @@ Return JSON only. No markdown. No commentary.
 Song title: ${songTitle || 'Untitled song'}
 Song version: ${songVersionTitle || 'Untitled version'}
 
-Source lyric lines:
+Source sung lyric lines:
 ${numberedSourceLyricLines}
 
 Existing chord data:
@@ -408,10 +435,10 @@ Return this exact JSON shape:
 Requirements:
 - Do not return lyric text.
 - Keep JSON compact. Use no extra fields beyond section, lineNumber, chords, and songsheetNotes.
-- Use lineNumber to refer to the numbered source lyric lines.
+- Use lineNumber to refer to the numbered source sung lyric lines.
 - lineNumber must be the 1-based number from the source lyric list.
 - Preserve source lyric order.
-- Include each source lyric line once unless it is intentionally skipped because it is blank.
+- Include each source sung lyric line once.
 - Place chords above the word or syllable where the chord should change, using zero-based charIndex positions within that source lyric line.
 - Use compact chord tuples: ["ChordName", charIndex]. Do not use {"chord":"...","charIndex":...} objects.
 - Do not put every chord at charIndex 0.
