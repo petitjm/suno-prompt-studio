@@ -7,6 +7,27 @@ const openai = new OpenAI({
 
 const GUIDE_TRACK_TIMEOUT_MS = 180_000
 
+function logOpenAIUsage(routeName: string, startedAt: number, completion: unknown) {
+  const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
+
+  const usage =
+    completion &&
+    typeof completion === 'object' &&
+    'usage' in completion
+      ? (completion as {
+          usage?: {
+            prompt_tokens?: number
+            completion_tokens?: number
+            total_tokens?: number
+          }
+        }).usage
+      : undefined
+
+  console.log(
+    `[${routeName}] duration=${durationSeconds}s input=${usage?.prompt_tokens ?? 'unknown'} output=${usage?.completion_tokens ?? 'unknown'} total=${usage?.total_tokens ?? 'unknown'}`,
+  )
+}
+
 function isTimeoutError(error: unknown) {
   if (!(error instanceof Error)) {
     return false
@@ -145,6 +166,8 @@ Requirements:
 - Make the plan suitable for a British male low baritone acoustic singer-songwriter performance.
 `.trim()
 
+    const startedAt = Date.now()
+
     const controller = new AbortController()
 
     const timeoutId = setTimeout(() => {
@@ -166,6 +189,8 @@ Requirements:
     } finally {
       clearTimeout(timeoutId)
     }
+
+    logOpenAIUsage('chords/guide-track', startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
     const guideTrackData = parseModelJson(text)

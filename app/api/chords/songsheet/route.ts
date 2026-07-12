@@ -7,6 +7,27 @@ const openai = new OpenAI({
 
 const SONGSHEET_TIMEOUT_MS = 240_000
 
+function logOpenAIUsage(routeName: string, startedAt: number, completion: unknown) {
+  const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
+
+  const usage =
+    completion &&
+    typeof completion === 'object' &&
+    'usage' in completion
+      ? (completion as {
+          usage?: {
+            prompt_tokens?: number
+            completion_tokens?: number
+            total_tokens?: number
+          }
+        }).usage
+      : undefined
+
+  console.log(
+    `[${routeName}] duration=${durationSeconds}s input=${usage?.prompt_tokens ?? 'unknown'} output=${usage?.completion_tokens ?? 'unknown'} total=${usage?.total_tokens ?? 'unknown'}`,
+  )
+}
+
 function isTimeoutError(error: unknown) {
   if (!(error instanceof Error)) {
     return false
@@ -267,6 +288,8 @@ Requirements:
 - Keep the result practical for acoustic guitar performance.
 `.trim()
 
+    const startedAt = Date.now()
+
     const controller = new AbortController()
 
     const timeoutId = setTimeout(() => {
@@ -288,6 +311,8 @@ Requirements:
     } finally {
       clearTimeout(timeoutId)
     }
+
+    logOpenAIUsage('chords/songsheet', startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
         const songsheetData = parseModelJson(text)
