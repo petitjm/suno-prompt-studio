@@ -99,6 +99,12 @@ type SongsheetLine = {
   chords: SongsheetChordPlacement[]
 }
 
+type SongsheetLineRef = {
+  section: string
+  lineNumber: number
+  chords: SongsheetChordPlacement[]
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
@@ -113,6 +119,39 @@ function normalizeMatchText(value: string) {
     .trim()
 }
 
+function getChordPlacements(value: unknown): SongsheetChordPlacement[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.flatMap((chordItem): SongsheetChordPlacement[] => {
+    if (!isRecord(chordItem)) {
+      return []
+    }
+
+    const chord =
+      typeof chordItem.chord === 'string' ? chordItem.chord.trim() : ''
+
+    const charIndex =
+      typeof chordItem.charIndex === 'number' &&
+      Number.isFinite(chordItem.charIndex)
+        ? chordItem.charIndex
+        : 0
+
+    if (!chord) {
+      return []
+    }
+
+    return [
+      {
+        chord,
+        charIndex: Math.max(0, Math.floor(charIndex)),
+      },
+    ]
+  })
+}
+
+
 function validateSongSheetLines(
   value: unknown,
   sourceLyricLines: string[],
@@ -126,6 +165,57 @@ function validateSongSheetLines(
       rejectedLines: [],
     }
   }
+
+
+  function expandSongSheetLineRefs(
+      value: unknown,
+      sourceLyricLines: string[],
+    ): {
+      lines: SongsheetLine[]
+      rejectedLines: string[]
+    } {
+      if (!Array.isArray(value)) {
+        return {
+          lines: [],
+          rejectedLines: [],
+        }
+      }
+
+      const rejectedLines: string[] = []
+
+      const lines = value.flatMap((item): SongsheetLine[] => {
+        if (!isRecord(item)) {
+          return []
+        }
+
+        const section = typeof item.section === 'string' ? item.section.trim() : ''
+
+        const lineNumber =
+          typeof item.lineNumber === 'number' && Number.isFinite(item.lineNumber)
+            ? Math.floor(item.lineNumber)
+            : 0
+
+        const lyric = sourceLyricLines[lineNumber - 1]
+
+        if (!lyric) {
+          rejectedLines.push(`Invalid lineNumber: ${lineNumber}`)
+          return []
+        }
+
+        return [
+          {
+            section,
+            lyric,
+            chords: getChordPlacements(item.chords),
+          },
+        ]
+      })
+
+      return {
+        lines,
+        rejectedLines,
+      }
+    }
 
   const exactSourceLines = new Set(sourceLyricLines)
   const normalizedSourceLineMap = new Map(
@@ -161,39 +251,63 @@ function validateSongSheetLines(
       return []
     }
 
-    const chords = Array.isArray(item.chords)
-      ? item.chords.flatMap((chordItem): SongsheetChordPlacement[] => {
-          if (!isRecord(chordItem)) {
-            return []
-          }
+    const chords = getChordPlacements(item.chords)
 
-          const chord =
-            typeof chordItem.chord === 'string' ? chordItem.chord.trim() : ''
+        return [
+          {
+            section,
+            lyric: exactLyric,
+            chords,
+          },
+        ]
+      })
 
-          const charIndex =
-            typeof chordItem.charIndex === 'number' &&
-            Number.isFinite(chordItem.charIndex)
-              ? chordItem.charIndex
-              : 0
+      return {
+        lines,
+        rejectedLines,
+      }
+    }
 
-          if (!chord) {
-            return []
-          }
+    function expandSongSheetLineRefs(
+  value: unknown,
+  sourceLyricLines: string[],
+): {
+  lines: SongsheetLine[]
+  rejectedLines: string[]
+} {
+  if (!Array.isArray(value)) {
+    return {
+      lines: [],
+      rejectedLines: [],
+    }
+  }
 
-          return [
-            {
-              chord,
-              charIndex: Math.max(0, Math.floor(charIndex)),
-            },
-          ]
-        })
-      : []
+  const rejectedLines: string[] = []
+
+  const lines = value.flatMap((item): SongsheetLine[] => {
+    if (!isRecord(item)) {
+      return []
+    }
+
+    const section = typeof item.section === 'string' ? item.section.trim() : ''
+
+    const lineNumber =
+      typeof item.lineNumber === 'number' && Number.isFinite(item.lineNumber)
+        ? Math.floor(item.lineNumber)
+        : 0
+
+    const lyric = sourceLyricLines[lineNumber - 1]
+
+    if (!lyric) {
+      rejectedLines.push(`Invalid lineNumber: ${lineNumber}`)
+      return []
+    }
 
     return [
       {
         section,
-        lyric: exactLyric,
-        chords,
+        lyric,
+        chords: getChordPlacements(item.chords),
       },
     ]
   })
@@ -257,41 +371,37 @@ ${JSON.stringify(chordData, null, 2)}
 
 Return this exact JSON shape:
 
-{
-  "songSheetLines": [
-      {
-        "section": "Verse 1",
-        "lyric": "Actual lyric line from the supplied lyrics",
-        "chords": [
-          { "chord": "Em", "charIndex": 0 },
-          { "chord": "C", "charIndex": 12 }
-        ]
-      }
-    ],
-"songsheetNotes": "One or two short notes only."
-}
+    {
+      "songSheetLineRefs": [
+        {
+          "section": "Verse 1",
+          "lineNumber": 1,
+          "chords": [
+            { "chord": "Em", "charIndex": 0 },
+            { "chord": "C", "charIndex": 12 }
+          ]
+        }
+      ],
+      "songsheetNotes": "One or two short notes only."
+    }
 
 Requirements:
-Requirements:
-- Use only the exact lyric text from the numbered source lyric lines above.
-- Do not rewrite, modernise, correct, improve, shorten, expand, reorder, or paraphrase any lyric line.
-- Every songSheetLines[].lyric value must exactly match one of the numbered source lyric lines.
-- If a source line is a section label or metadata line, include it with an empty chords array.
-- Preserve the source lyric order.
-- Place chords above the word or syllable where the chord should change.
-- Place chords above the word or syllable where the chord should change.
-- Use zero-based charIndex positions within each lyric line.
+- Do not return lyric text.
+- Use lineNumber to refer to the numbered source lyric lines.
+- lineNumber must be the 1-based number from the source lyric list.
+- Preserve source lyric order.
+- Include each source lyric line once unless it is intentionally skipped because it is blank.
+- Place chords above the word or syllable where the chord should change, using zero-based charIndex positions within that source lyric line.
 - Do not put every chord at charIndex 0.
 - Header/section label lines may have no chords.
 - If a chord belongs after the lyric line as a turnaround or held chord, place it near the end of the line and explain briefly in songsheetNotes.
 - Use the existing chord data as the harmonic source.
-- Before returning JSON, check every lyric value against the numbered source lyric lines. If it does not exactly match, replace it with the closest exact source line.
 - Keep the result practical for acoustic guitar performance.
 - Keep songsheetNotes under 60 words.
 - Do not explain every section.
 - Do not repeat the full chord progression in songsheetNotes.
 - Do not include performance arrangement notes here.
-- The UI will validate source lyric coverage separately, so keep the response compact.
+- The server will expand lineNumber back into exact lyric text, so the response must stay compact.
 `.trim()
 
     const startedAt = Date.now()
@@ -323,15 +433,23 @@ Requirements:
     const text = completion.choices[0]?.message?.content || ''
         const songsheetData = parseModelJson(text)
 
-        const songsheetRecord = isRecord(songsheetData) ? songsheetData : {}
-        const validation = validateSongSheetLines(
-          songsheetRecord.songSheetLines,
-          sourceLyricLines,
-        )
+     const songsheetRecord = isRecord(songsheetData) ? songsheetData : {}
+
+        const validation = Array.isArray(songsheetRecord.songSheetLineRefs)
+          ? expandSongSheetLineRefs(
+              songsheetRecord.songSheetLineRefs,
+              sourceLyricLines,
+            )
+          : validateSongSheetLines(
+              songsheetRecord.songSheetLines,
+              sourceLyricLines,
+    )
+
+        const { songSheetLineRefs, ...cleanSongsheetRecord } = songsheetRecord
 
         return NextResponse.json({
           ...chordData,
-          ...songsheetRecord,
+          ...cleanSongsheetRecord,
           songSheetLines: validation.lines,
           songsheetValidation: {
             sourceLineCount: sourceLyricLines.length,
@@ -340,15 +458,15 @@ Requirements:
             rejectedLines: validation.rejectedLines.slice(0, 12),
           },
           songsheetNotes: [
-              typeof songsheetRecord.songsheetNotes === 'string'
-                ? songsheetRecord.songsheetNotes.trim().slice(0, 500)
-                : '',
-              validation.rejectedLines.length > 0
-                ? `${validation.rejectedLines.length} generated songsheet line${validation.rejectedLines.length === 1 ? '' : 's'} rejected because they did not match the source lyrics.`
-                : '',
-            ]
-              .filter(Boolean)
-              .join('\n\n'),
+            typeof songsheetRecord.songsheetNotes === 'string'
+              ? songsheetRecord.songsheetNotes.trim().slice(0, 500)
+              : '',
+            validation.rejectedLines.length > 0
+              ? `${validation.rejectedLines.length} generated songsheet line${validation.rejectedLines.length === 1 ? '' : 's'} rejected because they did not match the source lyrics.`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n\n'),
           draftType:
             typeof chordData.draftType === 'string'
               ? chordData.draftType
