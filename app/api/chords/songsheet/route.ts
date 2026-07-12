@@ -6,6 +6,7 @@ const openai = new OpenAI({
 })
 
 const SONGSHEET_TIMEOUT_MS = 240_000
+const SONGSHEET_MODEL = process.env.OPENAI_SONGSHEET_MODEL || 'gpt-5'
 
 function logOpenAIUsage(routeName: string, startedAt: number, completion: unknown) {
   const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
@@ -301,7 +302,7 @@ Requirements:
     try {
       completion = await openai.chat.completions.create(
         {
-          model: 'gpt-5',
+          model: SONGSHEET_MODEL,
           messages: [{ role: 'user', content: prompt }],
         },
         {
@@ -312,7 +313,7 @@ Requirements:
       clearTimeout(timeoutId)
     }
 
-    logOpenAIUsage('chords/songsheet', startedAt, completion)
+    logOpenAIUsage(`chords/songsheet model=${SONGSHEET_MODEL}`, startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
         const songsheetData = parseModelJson(text)

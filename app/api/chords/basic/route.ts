@@ -6,6 +6,7 @@ const openai = new OpenAI({
 })
 
 const BASIC_CHORD_TIMEOUT_MS = 180_000
+const BASIC_CHORD_MODEL = process.env.OPENAI_BASIC_CHORD_MODEL || 'gpt-5'
 
 function logOpenAIUsage(routeName: string, startedAt: number, completion: unknown) {
   const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
@@ -164,7 +165,7 @@ Requirements:
     try {
       completion = await openai.chat.completions.create(
         {
-          model: 'gpt-5',
+          model: BASIC_CHORD_MODEL,
           messages: [{ role: 'user', content: prompt }],
         },
         {
@@ -175,7 +176,7 @@ Requirements:
       clearTimeout(timeoutId)
     }
 
-    logOpenAIUsage('chords/basic', startedAt, completion)
+    logOpenAIUsage(`chords/basic model=${BASIC_CHORD_MODEL}`, startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
     const chordData = parseModelJson(text)

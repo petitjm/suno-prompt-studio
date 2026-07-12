@@ -6,6 +6,7 @@ const openai = new OpenAI({
 })
 
 const GUIDE_TRACK_TIMEOUT_MS = 180_000
+const GUIDE_TRACK_MODEL = process.env.OPENAI_GUIDE_TRACK_MODEL || 'gpt-5'
 
 function logOpenAIUsage(routeName: string, startedAt: number, completion: unknown) {
   const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
@@ -179,7 +180,7 @@ Requirements:
     try {
       completion = await openai.chat.completions.create(
         {
-          model: 'gpt-5',
+          model: GUIDE_TRACK_MODEL,
           messages: [{ role: 'user', content: prompt }],
         },
         {
@@ -190,7 +191,7 @@ Requirements:
       clearTimeout(timeoutId)
     }
 
-    logOpenAIUsage('chords/guide-track', startedAt, completion)
+    logOpenAIUsage(`chords/guide-track model=${GUIDE_TRACK_MODEL}`, startedAt, completion)
 
     const text = completion.choices[0]?.message?.content || ''
     const guideTrackData = parseModelJson(text)
