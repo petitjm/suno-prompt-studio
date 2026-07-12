@@ -3468,6 +3468,30 @@ const getKeyChordConsistency = (value: unknown) => {
   }
 }
 
+
+const isSourceLyricContentLine = (line: string) => {
+  const trimmed = line.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  if (/^\[[^\]]+\]$/.test(trimmed)) {
+    return false
+  }
+
+  if (/^\{[^}]+:[^}]*\}$/.test(trimmed)) {
+    return false
+  }
+
+  if (/^(intro|verse|verse\s+\d+|chorus|pre-chorus|prechorus|bridge|outro|tag|breakdown|final chorus)$/i.test(trimmed)) {
+    return false
+  }
+
+  return true
+}
+
+
 const normalizeLyricMatchText = (value: string) => {
   return value
     .toLowerCase()
@@ -3508,9 +3532,9 @@ const getPlacedSongsheetSourceCoverage = () => {
   const placedLines = getPlacedSongSheetLines(chordData)
 
   const sourceLines = performanceSheet
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(isSourceLyricContentLine)
 
   const placedLyricSet = new Set(
     placedLines
@@ -3644,9 +3668,9 @@ if (generatingPlacedSongsheet) {
   const placedLines = getPlacedSongSheetLines(chordData)
 
   const sourceLines = performanceSheet
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(isSourceLyricContentLine)
 
   const normalizedSourceLines = new Set(
     sourceLines.map((line) => normalizeLyricMatchText(line)).filter(Boolean),
