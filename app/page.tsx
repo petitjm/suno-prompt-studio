@@ -3432,6 +3432,31 @@ const normalizeLyricMatchText = (value: string) => {
 }
 
 const getPlacedSongsheetSourceCoverage = () => {
+    if (generatingBasicChords || generatingChords) {
+      return {
+        label: 'Waiting for chord draft',
+        detail:
+          'A new chord draft is being generated. Source lyric coverage will update after a placed songsheet exists.',
+        sourceLineCount: 0,
+        coveredLineCount: 0,
+        missingLineCount: 0,
+        missingLines: [],
+        isChecking: true,
+      }
+    }
+
+    if (generatingPlacedSongsheet) {
+      return {
+        label: 'Checking after generation',
+        detail:
+          'A new placed songsheet is being generated. Source lyric coverage will update when it completes.',
+        sourceLineCount: 0,
+        coveredLineCount: 0,
+        missingLineCount: 0,
+        missingLines: [],
+        isChecking: true,
+      }
+    }
   const chordData = getChordDataFromEditorJson()
   const placedLines = getPlacedSongSheetLines(chordData)
 
@@ -3480,6 +3505,7 @@ const getPlacedSongsheetSourceCoverage = () => {
     coveredLineCount,
     missingLineCount: missingLines.length,
     missingLines: missingLines.slice(0, 10),
+    isChecking: false,
   }
 }
 
@@ -6877,16 +6903,20 @@ return (
     </div>
 
     <div
-      className={`text-xs ${
-        placedSongsheetSourceCoverage.missingLineCount > 0
-          ? 'text-yellow-300'
-          : 'text-green-300'
-      }`}
-    >
-      {placedSongsheetSourceCoverage.missingLineCount > 0
-        ? 'Incomplete'
-        : 'Covered'}
-    </div>
+          className={`text-xs ${
+            placedSongsheetSourceCoverage.isChecking
+              ? 'text-blue-300'
+              : placedSongsheetSourceCoverage.missingLineCount > 0
+                ? 'text-yellow-300'
+                : 'text-green-300'
+          }`}
+        >
+          {placedSongsheetSourceCoverage.isChecking
+            ? 'Checking'
+            : placedSongsheetSourceCoverage.missingLineCount > 0
+              ? 'Incomplete'
+              : 'Covered'}
+        </div>
   </div>
 
   <div className="mt-1 text-xs leading-5 text-gray-500">
