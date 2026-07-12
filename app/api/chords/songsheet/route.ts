@@ -125,6 +125,26 @@ function getChordPlacements(value: unknown): SongsheetChordPlacement[] {
   }
 
   return value.flatMap((chordItem): SongsheetChordPlacement[] => {
+    if (Array.isArray(chordItem)) {
+      const chord = typeof chordItem[0] === 'string' ? chordItem[0].trim() : ''
+
+      const charIndex =
+        typeof chordItem[1] === 'number' && Number.isFinite(chordItem[1])
+          ? chordItem[1]
+          : 0
+
+      if (!chord) {
+        return []
+      }
+
+      return [
+        {
+          chord,
+          charIndex: Math.max(0, Math.floor(charIndex)),
+        },
+      ]
+    }
+
     if (!isRecord(chordItem)) {
       return []
     }
@@ -373,25 +393,27 @@ Return this exact JSON shape:
 
     {
       "songSheetLineRefs": [
-        {
-          "section": "Verse 1",
-          "lineNumber": 1,
-          "chords": [
-            { "chord": "Em", "charIndex": 0 },
-            { "chord": "C", "charIndex": 12 }
-          ]
-        }
-      ],
+      {
+        "section": "Verse 1",
+        "lineNumber": 1,
+        "chords": [
+          ["Em", 0],
+          ["C", 12]
+        ]
+      }
+    ],
       "songsheetNotes": "One or two short notes only."
     }
 
 Requirements:
 - Do not return lyric text.
+- Keep JSON compact. Use no extra fields beyond section, lineNumber, chords, and songsheetNotes.
 - Use lineNumber to refer to the numbered source lyric lines.
 - lineNumber must be the 1-based number from the source lyric list.
 - Preserve source lyric order.
 - Include each source lyric line once unless it is intentionally skipped because it is blank.
 - Place chords above the word or syllable where the chord should change, using zero-based charIndex positions within that source lyric line.
+- Use compact chord tuples: ["ChordName", charIndex]. Do not use {"chord":"...","charIndex":...} objects.
 - Do not put every chord at charIndex 0.
 - Header/section label lines may have no chords.
 - If a chord belongs after the lyric line as a turnaround or held chord, place it near the end of the line and explain briefly in songsheetNotes.
