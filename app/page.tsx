@@ -1439,6 +1439,76 @@ const getStagedChordVersionTitle = (
 }
 
 
+const getChordGenerationMetaRows = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return []
+  }
+
+  const record = chordData as Record<string, unknown>
+  const generationMeta = record.generationMeta
+
+  if (
+    !generationMeta ||
+    typeof generationMeta !== 'object' ||
+    Array.isArray(generationMeta)
+  ) {
+    return []
+  }
+
+  const meta = generationMeta as Record<string, unknown>
+
+  const rows = [
+    {
+      label: 'Route',
+      value: typeof meta.route === 'string' ? meta.route : '',
+    },
+    {
+      label: 'Model',
+      value: typeof meta.model === 'string' ? meta.model : '',
+    },
+    {
+      label: 'Duration',
+      value:
+        typeof meta.durationSeconds === 'number'
+          ? `${meta.durationSeconds}s`
+          : '',
+    },
+    {
+      label: 'Input tokens',
+      value:
+        typeof meta.inputTokens === 'number'
+          ? meta.inputTokens.toLocaleString()
+          : '',
+    },
+    {
+      label: 'Output tokens',
+      value:
+        typeof meta.outputTokens === 'number'
+          ? meta.outputTokens.toLocaleString()
+          : '',
+    },
+    {
+      label: 'Total tokens',
+      value:
+        typeof meta.totalTokens === 'number'
+          ? meta.totalTokens.toLocaleString()
+          : '',
+    },
+    {
+      label: 'Generated at',
+      value:
+        typeof meta.generatedAt === 'string'
+          ? new Date(meta.generatedAt).toLocaleString()
+          : '',
+    },
+  ]
+
+  return rows.filter((row) => row.value)
+}
+
+
 const getChordVersionCopyTitle = () => {
   const title = chordVersionTitle.trim()
 
@@ -4215,6 +4285,7 @@ const audioPreviewSpecStatus = getAudioPreviewSpecStatus()
 const audioGuideReadiness = getAudioGuideReadiness()
 const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
+const chordGenerationMetaRows = getChordGenerationMetaRows()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const songsheetServerValidation = getSongsheetServerValidation()
@@ -7349,6 +7420,31 @@ return (
     ))}
   </div>
 </div>
+
+{chordGenerationMetaRows.length > 0 ? (
+  <div className="rounded border border-gray-800 bg-gray-950 p-4">
+    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+      Last staged generation
+    </div>
+
+    <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+      {chordGenerationMetaRows.map((row) => (
+        <div
+          key={row.label}
+          className="rounded border border-gray-800 bg-gray-900 p-3"
+        >
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            {row.label}
+          </div>
+
+          <div className="mt-1 text-sm text-gray-300">
+            {row.value}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+) : null}
 
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded border border-gray-800 bg-gray-950 p-4">
