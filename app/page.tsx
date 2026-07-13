@@ -242,6 +242,7 @@ export default function Page() {
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
   const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
   const [justCopiedAudioRenderSteps, setJustCopiedAudioRenderSteps] = useState(false)
+  const [justCopiedGenerationUsage, setJustCopiedGenerationUsage] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
 
@@ -1438,6 +1439,95 @@ const getStagedChordVersionTitle = (
   return `${baseTitle} with songsheet and guide plan`
 }
 
+
+const buildChordGenerationUsageCopyText = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return ''
+  }
+
+  const record = chordData as Record<string, unknown>
+  const history = Array.isArray(record.generationHistory)
+    ? record.generationHistory
+    : []
+
+  const entries = history.filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+  )
+
+  if (entries.length === 0) {
+    return ''
+  }
+
+  const summary = getChordGenerationHistorySummary()
+
+  return [
+    'STAGED CHORD GENERATION USAGE',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    '',
+    'TOTALS',
+    '',
+    `Stages run: ${summary.stageCount}`,
+    `Total duration: ${summary.totalDurationSeconds.toFixed(1)}s`,
+    `Input tokens: ${summary.totalInputTokens.toLocaleString()}`,
+    `Output tokens: ${summary.totalOutputTokens.toLocaleString()}`,
+    `Total tokens: ${summary.totalTokens.toLocaleString()}`,
+    summary.routes.length > 0 ? `Routes: ${summary.routes.join(' → ')}` : '',
+    '',
+    'STAGES',
+    '',
+    ...entries.flatMap((entry, index) => {
+      const route = typeof entry.route === 'string' ? entry.route : 'Unknown route'
+      const model = typeof entry.model === 'string' ? entry.model : 'Unknown model'
+      const duration =
+        typeof entry.durationSeconds === 'number'
+          ? `${entry.durationSeconds.toFixed(1)}s`
+          : 'Unknown'
+      const inputTokens =
+        typeof entry.inputTokens === 'number'
+          ? entry.inputTokens.toLocaleString()
+          : 'Unknown'
+      const outputTokens =
+        typeof entry.outputTokens === 'number'
+          ? entry.outputTokens.toLocaleString()
+          : 'Unknown'
+      const totalTokens =
+        typeof entry.totalTokens === 'number'
+          ? entry.totalTokens.toLocaleString()
+          : 'Unknown'
+      const generatedAt =
+        typeof entry.generatedAt === 'string'
+          ? new Date(entry.generatedAt).toLocaleString()
+          : 'Unknown'
+
+      return [
+        `Stage ${index + 1}: ${route}`,
+        `Model: ${model}`,
+        `Duration: ${duration}`,
+        `Input tokens: ${inputTokens}`,
+        `Output tokens: ${outputTokens}`,
+        `Total tokens: ${totalTokens}`,
+        `Generated at: ${generatedAt}`,
+        '',
+      ]
+    }),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
+
 const getChordGenerationHistorySummary = () => {
   const chordData = getChordDataFromEditorJson()
 
@@ -1625,6 +1715,29 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   setChordExtractionMessage('')
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
 }
+
+
+const copyChordGenerationUsage = async () => {
+  const copyText = buildChordGenerationUsageCopyText()
+
+  if (!copyText) {
+    setChordExtractionMessage('No staged generation usage available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedGenerationUsage(true)
+    setChordExtractionMessage('Staged generation usage copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedGenerationUsage(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy staged generation usage.')
+  }
+}
+
 
 const copyChordJson = async () => {
   if (!chordsText.trim()) {
@@ -7481,8 +7594,19 @@ return (
 
 {chordGenerationMetaRows.length > 0 ? (
   <div className="rounded border border-gray-800 bg-gray-950 p-4">
-    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-      Last staged generation
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Last staged generation
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyChordGenerationUsage()}
+        disabled={!chordGenerationHistorySummary.hasHistory}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedGenerationUsage ? 'Copied ✓' : 'Copy usage'}
+      </button>
     </div>
 
     <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
