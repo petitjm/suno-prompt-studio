@@ -1438,6 +1438,62 @@ const getStagedChordVersionTitle = (
   return `${baseTitle} with songsheet and guide plan`
 }
 
+const getChordGenerationHistorySummary = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return {
+      hasHistory: false,
+      stageCount: 0,
+      totalDurationSeconds: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      totalTokens: 0,
+      routes: [] as string[],
+    }
+  }
+
+  const record = chordData as Record<string, unknown>
+  const history = Array.isArray(record.generationHistory)
+    ? record.generationHistory
+    : []
+
+  const entries = history.filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+  )
+
+  const totalDurationSeconds = entries.reduce((total, entry) => {
+    return total + (typeof entry.durationSeconds === 'number' ? entry.durationSeconds : 0)
+  }, 0)
+
+  const totalInputTokens = entries.reduce((total, entry) => {
+    return total + (typeof entry.inputTokens === 'number' ? entry.inputTokens : 0)
+  }, 0)
+
+  const totalOutputTokens = entries.reduce((total, entry) => {
+    return total + (typeof entry.outputTokens === 'number' ? entry.outputTokens : 0)
+  }, 0)
+
+  const totalTokens = entries.reduce((total, entry) => {
+    return total + (typeof entry.totalTokens === 'number' ? entry.totalTokens : 0)
+  }, 0)
+
+  const routes = entries
+    .map((entry) => (typeof entry.route === 'string' ? entry.route : ''))
+    .filter(Boolean)
+
+  return {
+    hasHistory: entries.length > 0,
+    stageCount: entries.length,
+    totalDurationSeconds,
+    totalInputTokens,
+    totalOutputTokens,
+    totalTokens,
+    routes,
+  }
+}
+
 
 const getChordGenerationMetaRows = () => {
   const chordData = getChordDataFromEditorJson()
@@ -4287,6 +4343,7 @@ const audioGuideReadiness = getAudioGuideReadiness()
 const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
+const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const songsheetServerValidation = getSongsheetServerValidation()
@@ -7430,20 +7487,82 @@ return (
 
     <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
       {chordGenerationMetaRows.map((row) => (
-        <div
-          key={row.label}
-          className="rounded border border-gray-800 bg-gray-900 p-3"
-        >
-          <div className="text-xs uppercase tracking-wide text-gray-500">
-            {row.label}
-          </div>
+            <div
+              key={row.label}
+              className="rounded border border-gray-800 bg-gray-900 p-3"
+            >
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        {row.label}
+                      </div>
 
-          <div className="mt-1 text-sm text-gray-300">
-            {row.value}
-          </div>
-        </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {row.value}
+                      </div>
+            </div>
       ))}
     </div>
+
+    {chordGenerationHistorySummary.hasHistory ? (
+  <div className="mt-4 rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-sm font-medium text-gray-200">
+      Staged workflow totals
+    </div>
+
+    <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-5">
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Stages run
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {chordGenerationHistorySummary.stageCount}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Total duration
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {chordGenerationHistorySummary.totalDurationSeconds.toFixed(1)}s
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Input tokens
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {chordGenerationHistorySummary.totalInputTokens.toLocaleString()}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Output tokens
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {chordGenerationHistorySummary.totalOutputTokens.toLocaleString()}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Total tokens
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {chordGenerationHistorySummary.totalTokens.toLocaleString()}
+        </div>
+      </div>
+    </div>
+
+    {chordGenerationHistorySummary.routes.length > 0 ? (
+      <div className="mt-3 text-xs leading-5 text-gray-500">
+        Routes: {chordGenerationHistorySummary.routes.join(' → ')}
+      </div>
+    ) : null}
+  </div>
+) : null}
+
   </div>
 ) : null}
 
