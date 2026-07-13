@@ -1572,6 +1572,42 @@ const getChordGenerationHistoryRows = () => {
     }))
 }
 
+const getChordGenerationUsageWarning = () => {
+  const summary = getChordGenerationHistorySummary()
+
+  if (!summary.hasHistory) {
+    return {
+      hasWarning: false,
+      label: '',
+      detail: '',
+    }
+  }
+
+  if (summary.totalTokens >= 30000) {
+    return {
+      hasWarning: true,
+      label: 'High staged generation usage',
+      detail:
+        'This staged workflow has used more than 30,000 tokens. That is fine during development, but worth reviewing during normal song sessions.',
+    }
+  }
+
+  if (summary.totalTokens >= 15000) {
+    return {
+      hasWarning: true,
+      label: 'Moderate staged generation usage',
+      detail:
+        'This staged workflow has used more than 15,000 tokens. Songsheet generation is likely the main contributor.',
+    }
+  }
+
+  return {
+    hasWarning: false,
+    label: '',
+    detail: '',
+  }
+}
+
 
 const getChordGenerationHistorySummary = () => {
   const chordData = getChordDataFromEditorJson()
@@ -4516,6 +4552,7 @@ const nextChordWorkflowAction = getNextChordWorkflowAction()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
+const chordGenerationUsageWarning = getChordGenerationUsageWarning()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const songsheetServerValidation = getSongsheetServerValidation()
@@ -7737,6 +7774,18 @@ return (
         </div>
       </div>
     </div>
+
+    {chordGenerationUsageWarning.hasWarning ? (
+  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
+    <div className="font-medium">
+      {chordGenerationUsageWarning.label}
+    </div>
+    <div className="mt-1 text-yellow-200">
+      {chordGenerationUsageWarning.detail}
+    </div>
+  </div>
+) : null}
+
 
     {chordGenerationHistorySummary.routes.length > 0 ? (
       <div className="mt-3 text-xs leading-5 text-gray-500">
