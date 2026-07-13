@@ -2723,6 +2723,30 @@ const buildChordPacketCopyText = () => {
   ].join('\n')
 }
 
+const getSongsheetReviewSummaryLine = () => {
+  const sourceMatch = getPlacedSongsheetSourceMatch()
+  const serverValidation = getSongsheetServerValidation()
+  const sourceCoverage = getPlacedSongsheetSourceCoverage()
+
+  const warnings = [
+    sourceMatch.unmatchedCount > 0
+      ? `${sourceMatch.unmatchedCount} unmatched placed line${sourceMatch.unmatchedCount === 1 ? '' : 's'}`
+      : '',
+    serverValidation.rejectedLineCount > 0
+      ? `${serverValidation.rejectedLineCount} rejected line${serverValidation.rejectedLineCount === 1 ? '' : 's'}`
+      : '',
+    sourceCoverage.missingLineCount > 0
+      ? `${sourceCoverage.missingLineCount} missing source line${sourceCoverage.missingLineCount === 1 ? '' : 's'}`
+      : '',
+  ].filter(Boolean)
+
+  if (warnings.length === 0) {
+    return ''
+  }
+
+  return `Songsheet review: ${warnings.join(', ')}.`
+}
+
 
 const buildPerformanceDesignNotesCopyText = () => {
   const chordData = getChordDataFromEditorJson()
@@ -4582,6 +4606,7 @@ const audioPreviewSpecStatus = getAudioPreviewSpecStatus()
 const audioGuideReadiness = getAudioGuideReadiness()
 const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
+const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
@@ -7678,6 +7703,11 @@ return (
   </div>
 ) : null}
 
+{songsheetReviewSummaryLine ? (
+  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
+    {songsheetReviewSummaryLine}
+  </div>
+) : null}
 
   <div
       className={`mt-2 ${
