@@ -2870,6 +2870,7 @@ const getCompactChordContext = (value: unknown) => {
     'outro',
     'notes',
     'songsheetNotes',
+    'generationHistory',
   ]
 
   return Object.fromEntries(
