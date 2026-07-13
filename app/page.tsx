@@ -1528,6 +1528,51 @@ const buildChordGenerationUsageCopyText = () => {
 }
 
 
+const getChordGenerationHistoryRows = () => {
+  const chordData = getChordDataFromEditorJson()
+
+  if (!chordData || typeof chordData !== 'object' || Array.isArray(chordData)) {
+    return []
+  }
+
+  const record = chordData as Record<string, unknown>
+  const history = Array.isArray(record.generationHistory)
+    ? record.generationHistory
+    : []
+
+  return history
+    .filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+    )
+    .map((entry, index) => ({
+      stage: index + 1,
+      route: typeof entry.route === 'string' ? entry.route : 'Unknown route',
+      model: typeof entry.model === 'string' ? entry.model : 'Unknown model',
+      duration:
+        typeof entry.durationSeconds === 'number'
+          ? `${entry.durationSeconds.toFixed(1)}s`
+          : 'Unknown',
+      inputTokens:
+        typeof entry.inputTokens === 'number'
+          ? entry.inputTokens.toLocaleString()
+          : 'Unknown',
+      outputTokens:
+        typeof entry.outputTokens === 'number'
+          ? entry.outputTokens.toLocaleString()
+          : 'Unknown',
+      totalTokens:
+        typeof entry.totalTokens === 'number'
+          ? entry.totalTokens.toLocaleString()
+          : 'Unknown',
+      generatedAt:
+        typeof entry.generatedAt === 'string'
+          ? new Date(entry.generatedAt).toLocaleString()
+          : 'Unknown',
+    }))
+}
+
+
 const getChordGenerationHistorySummary = () => {
   const chordData = getChordDataFromEditorJson()
 
@@ -4470,6 +4515,7 @@ const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
+const chordGenerationHistoryRows = getChordGenerationHistoryRows()
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const songsheetServerValidation = getSongsheetServerValidation()
@@ -7697,6 +7743,81 @@ return (
         Routes: {chordGenerationHistorySummary.routes.join(' → ')}
       </div>
     ) : null}
+
+{chordGenerationHistoryRows.length > 0 ? (
+  <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+    <summary className="cursor-pointer text-xs font-medium text-gray-300">
+      Show staged generation history
+    </summary>
+
+    <div className="mt-3 grid gap-3">
+      {chordGenerationHistoryRows.map((row) => (
+        <div
+          key={`${row.stage}-${row.route}-${row.generatedAt}`}
+          className="rounded border border-gray-800 bg-gray-900 p-3"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm font-medium text-gray-200">
+              Stage {row.stage}: {row.route}
+            </div>
+
+            <div className="text-xs text-gray-500">
+              {row.generatedAt}
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-5">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Model
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.model}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Duration
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.duration}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Input
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.inputTokens}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Output
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.outputTokens}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Total
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.totalTokens}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </details>
+) : null}
+
   </div>
 ) : null}
 
