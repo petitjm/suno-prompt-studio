@@ -237,6 +237,7 @@ export default function Page() {
   const [justCopiedPerformanceDesignNotes, setJustCopiedPerformanceDesignNotes] = useState(false)
   const [justCopiedGuideTrackPlan, setJustCopiedGuideTrackPlan] = useState(false)
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
+  const [justCopiedSongsheetReview, setJustCopiedSongsheetReview] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
@@ -1805,6 +1806,28 @@ const loadChordVersionIntoEditor = (versionId: string) => {
   resetAudioPreviewRequestState()
   setChordExtractionMessage('')
   setProjectMessage(`Loaded chord version: ${selected.title || 'Untitled chord version'}`)
+}
+
+
+const copySongsheetReview = async () => {
+  const copyText = buildSongsheetReviewCopyText()
+
+  if (!copyText.trim()) {
+    setChordExtractionMessage('No songsheet review available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedSongsheetReview(true)
+    setChordExtractionMessage('Songsheet review copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedSongsheetReview(false)
+    }, 1500)
+  } catch {
+    setChordExtractionMessage('Could not copy songsheet review.')
+  }
 }
 
 
@@ -7209,9 +7232,25 @@ return (
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
       <div className="flex items-center justify-between gap-3">
-          <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-            Performance songsheet quality
-          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+      Performance songsheet quality
+        </div>
+        <div className="mt-1 text-xs text-gray-500">
+          Checks placement, lyric match, server validation, and source coverage.
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copySongsheetReview()}
+        disabled={!hasUsableChordData()}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedSongsheetReview ? 'Copied ✓' : 'Copy review'}
+      </button>
+    </div>
 
           <button
             type="button"
