@@ -217,6 +217,7 @@ export default function Page() {
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
+  const [audioPreviewMeta, setAudioPreviewMeta] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderSteps, setAudioPreviewRenderSteps] = useState<
       Record<string, unknown>[]
     >([])
@@ -226,6 +227,7 @@ export default function Page() {
       setAudioPreviewPlan(null)
       setAudioPreviewRenderPrompt('')
       setAudioPreviewRenderSteps([])
+      setAudioPreviewMeta(null)
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2244,6 +2246,7 @@ const requestAudioPreview = async () => {
   setAudioPreviewPlan(null)
   setAudioPreviewRenderPrompt('')
   setAudioPreviewRenderSteps([])
+  setAudioPreviewMeta(null)
 
   try {
     const parsedSpec = JSON.parse(previewSpec)
@@ -2291,6 +2294,14 @@ const requestAudioPreview = async () => {
                 item && typeof item === 'object' && !Array.isArray(item),
             ) as Record<string, unknown>[],
           )
+
+          setAudioPreviewMeta(
+          result.audioPreviewMeta &&
+            typeof result.audioPreviewMeta === 'object' &&
+            !Array.isArray(result.audioPreviewMeta)
+            ? result.audioPreviewMeta
+            : null,
+        )
         }
   } catch {
     setAudioPreviewMessage('Could not send audio preview spec.')
@@ -7114,6 +7125,90 @@ return (
           ))}
       </div>
     ) : null}
+
+    {audioPreviewMeta ? (
+  <div className="rounded border border-gray-800 bg-gray-950 p-4">
+    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview planner
+    </div>
+
+    <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+      {[
+        {
+          label: 'Route',
+          value:
+            typeof audioPreviewMeta.route === 'string'
+              ? audioPreviewMeta.route
+              : '',
+        },
+        {
+          label: 'Planner',
+          value:
+            typeof audioPreviewMeta.planner === 'string'
+              ? audioPreviewMeta.planner
+              : '',
+        },
+        {
+          label: 'Model',
+          value:
+            typeof audioPreviewMeta.model === 'string'
+              ? audioPreviewMeta.model
+              : '',
+        },
+        {
+          label: 'Duration',
+          value:
+            typeof audioPreviewMeta.durationSeconds === 'number'
+              ? `${audioPreviewMeta.durationSeconds}s`
+              : '',
+        },
+        {
+          label: 'Input tokens',
+          value:
+            typeof audioPreviewMeta.inputTokens === 'number'
+              ? audioPreviewMeta.inputTokens.toLocaleString()
+              : '',
+        },
+        {
+          label: 'Output tokens',
+          value:
+            typeof audioPreviewMeta.outputTokens === 'number'
+              ? audioPreviewMeta.outputTokens.toLocaleString()
+              : '',
+        },
+        {
+          label: 'Total tokens',
+          value:
+            typeof audioPreviewMeta.totalTokens === 'number'
+              ? audioPreviewMeta.totalTokens.toLocaleString()
+              : '',
+        },
+        {
+          label: 'Generated at',
+          value:
+            typeof audioPreviewMeta.generatedAt === 'string'
+              ? new Date(audioPreviewMeta.generatedAt).toLocaleString()
+              : '',
+        },
+      ]
+        .filter((row) => row.value)
+        .map((row) => (
+          <div
+            key={row.label}
+            className="rounded border border-gray-800 bg-gray-900 p-3"
+          >
+            <div className="text-xs uppercase tracking-wide text-gray-500">
+              {row.label}
+            </div>
+
+            <div className="mt-1 text-sm text-gray-300">
+              {row.value}
+            </div>
+          </div>
+        ))}
+    </div>
+  </div>
+) : null}
 
 
     {audioPreviewRenderSteps.length > 0 ? (
