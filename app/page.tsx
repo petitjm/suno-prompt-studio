@@ -2723,6 +2723,24 @@ const buildChordPacketCopyText = () => {
   ].join('\n')
 }
 
+const getSongsheetReviewStatusLabel = () => {
+  const reviewSummary = getSongsheetReviewSummaryLine()
+
+  if (reviewSummary) {
+    return 'Needs songsheet review'
+  }
+
+  const placedLines = getPlacedSongSheetLines(getChordDataFromEditorJson())
+
+  if (placedLines.length > 0) {
+    return 'Songsheet checks clear'
+  }
+
+  return 'No placed songsheet yet'
+}
+
+
+
 const getSongsheetReviewSummaryLine = () => {
   const sourceMatch = getPlacedSongsheetSourceMatch()
   const serverValidation = getSongsheetServerValidation()
@@ -2870,6 +2888,7 @@ const buildFullPerformancePackCopyText = () => {
   const guideTrackPlanText = buildGuideTrackPlanCopyText()
   const audioGuidePromptText = buildCompactAudioGuidePromptCopyText()
   const generationUsageText = buildChordGenerationUsageCopyText()
+  const songsheetReviewStatusLabel = getSongsheetReviewStatusLabel()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -2891,6 +2910,7 @@ const buildFullPerformancePackCopyText = () => {
     `Project: ${activeProject?.title || 'Untitled project'}`,
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+    `Songsheet status: ${songsheetReviewStatusLabel}`,
     `Generated at: ${new Date().toLocaleString()}`,
     ...getSongsheetTransposeCopyRows(),
     '',
