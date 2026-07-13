@@ -3147,6 +3147,8 @@ const buildAudioPreviewSpecCopyText = () => {
       detail: readiness.detail,
       checks: readiness.checks,
     },
+    songsheetStatus: getSongsheetReviewStatusLabel(),
+    songsheetReview: getSongsheetReviewSummaryLine(),
     performanceIntent: Object.fromEntries(
       intentRows.map((row) => [row.label, row.value]),
     ),

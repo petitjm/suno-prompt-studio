@@ -8,6 +8,8 @@ type AudioPreviewSpec = {
   chordVersion?: string
   key?: string
   transposeSemitones?: number
+  songsheetStatus?: string
+  songsheetReview?: string
   readiness?: {
     label?: string
     detail?: string
@@ -172,6 +174,8 @@ export async function POST(req: Request) {
       `Chord version: ${body.chordVersion || 'Untitled chord version'}`,
       body.key ? `Key: ${body.key}` : '',
       `Transpose: ${body.transposeSemitones ?? 0} semitones`,
+      body.songsheetStatus ? `Songsheet status: ${body.songsheetStatus}` : '',
+      body.songsheetReview ? `Songsheet review: ${body.songsheetReview}` : '',
       tempo ? `Tempo: ${tempo}` : '',
       groove ? `Groove: ${groove}` : '',
       `Instrumentation: ${instrumentation}`,
@@ -202,6 +206,8 @@ export async function POST(req: Request) {
         chordVersion: body.chordVersion || 'Untitled chord version',
         key: body.key || '',
         transposeSemitones: body.transposeSemitones ?? 0,
+        songsheetStatus: body.songsheetStatus || '',
+        songsheetReview: body.songsheetReview || '',
         tempo,
         groove,
         instrumentation,
