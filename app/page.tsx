@@ -2731,6 +2731,7 @@ const buildFullPerformancePackCopyText = () => {
   const designNotesText = buildCompactPerformanceDesignNotesCopyText()
   const guideTrackPlanText = buildGuideTrackPlanCopyText()
   const audioGuidePromptText = buildCompactAudioGuidePromptCopyText()
+  const generationUsageText = buildChordGenerationUsageCopyText()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -2782,6 +2783,18 @@ const buildFullPerformancePackCopyText = () => {
           '============================================================',
           '',
           designNotesText,
+          '',
+        ]
+      : []),
+    ...(generationUsageText
+      ? [
+          '============================================================',
+          'STAGED GENERATION USAGE',
+          '============================================================',
+          '',
+          generationUsageText
+            .replace(/^STAGED CHORD GENERATION USAGE\s*/i, '')
+            .trim(),
           '',
         ]
       : []),
