@@ -1462,6 +1462,7 @@ const buildChordGenerationUsageCopyText = () => {
   }
 
   const summary = getChordGenerationHistorySummary()
+  const usageWarning = getChordGenerationUsageWarning()
 
   return [
     'STAGED CHORD GENERATION USAGE',
@@ -1479,6 +1480,15 @@ const buildChordGenerationUsageCopyText = () => {
     `Total tokens: ${summary.totalTokens.toLocaleString()}`,
     summary.routes.length > 0 ? `Routes: ${summary.routes.join(' → ')}` : '',
     '',
+    ...(usageWarning.hasWarning
+      ? [
+          'USAGE WARNING',
+          '',
+          usageWarning.label,
+          usageWarning.detail,
+          '',
+        ]
+      : []),
     'STAGES',
     '',
     ...entries.flatMap((entry, index) => {
