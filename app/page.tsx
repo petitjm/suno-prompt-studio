@@ -1464,6 +1464,8 @@ const buildChordGenerationUsageCopyText = () => {
 
   const summary = getChordGenerationHistorySummary()
   const usageWarning = getChordGenerationUsageWarning()
+  const songsheetReviewStatusLabel = getSongsheetReviewStatusLabel()
+  const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 
   return [
     'STAGED CHORD GENERATION USAGE',
@@ -1471,6 +1473,8 @@ const buildChordGenerationUsageCopyText = () => {
     `Project: ${activeProject?.title || 'Untitled project'}`,
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${getChordVersionCopyTitle()}`,
+    `Songsheet status: ${songsheetReviewStatusLabel}`,
+    songsheetReviewSummaryLine ? songsheetReviewSummaryLine : '',
     '',
     'TOTALS',
     '',
