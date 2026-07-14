@@ -3268,6 +3268,38 @@ const buildAudioPreviewSpecCopyText = () => {
   return JSON.stringify(spec, null, 2)
 }
 
+const getFullPackAudioPreviewStatus = () => {
+  const hasPlacedSongsheet = Boolean(audioPreviewSongSheetText.trim())
+  const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
+  const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
+
+  if (hasPlacedSongsheet && hasSectionGuide && hasRenderPrompt) {
+    return {
+      label: 'Full pack includes audio preview artefacts',
+      detail:
+        'The Full Performance Pack will include the audio preview placed songsheet, section guide, and renderer-ready prompt.',
+      tone: 'ready',
+    }
+  }
+
+  if (hasRenderPrompt) {
+    return {
+      label: 'Full pack includes audio preview render prompt',
+      detail:
+        'The Full Performance Pack includes the renderer-ready prompt, but one or more separate audio preview artefacts are missing.',
+      tone: 'review',
+    }
+  }
+
+  return {
+    label: 'Full pack audio preview handoff incomplete',
+    detail:
+      'Request audio preview before copying the final Full Performance Pack if you want audio-preview artefacts included.',
+    tone: 'missing',
+  }
+}
+
+
 const getAudioPreviewHandoffStatus = () => {
   if (audioPreviewRenderPrompt.trim()) {
     return {
@@ -4773,6 +4805,7 @@ const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
 const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
+const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
@@ -7961,6 +7994,22 @@ return (
 </div>
 
 <div className="rounded border border-gray-800 bg-gray-950 p-4">
+<div
+  className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+    fullPackAudioPreviewStatus.tone === 'ready'
+      ? 'border-green-900 bg-green-950/20 text-green-100'
+      : fullPackAudioPreviewStatus.tone === 'review'
+        ? 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+        : 'border-gray-800 bg-gray-950 text-gray-400'
+  }`}
+>
+  <div className="font-medium">
+    {fullPackAudioPreviewStatus.label}
+  </div>
+  <div className="mt-1">
+    {fullPackAudioPreviewStatus.detail}
+  </div>
+</div>
   <div className="flex items-center justify-between gap-3">
     <div>
       <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
