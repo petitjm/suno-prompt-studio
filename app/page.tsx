@@ -218,6 +218,7 @@ export default function Page() {
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
   const [audioPreviewMeta, setAudioPreviewMeta] = useState<Record<string, unknown> | null>(null)
+const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
   const [audioPreviewSectionGuideText, setAudioPreviewSectionGuideText] = useState('')
   const [audioPreviewRenderSteps, setAudioPreviewRenderSteps] = useState<
       Record<string, unknown>[]
@@ -230,6 +231,7 @@ export default function Page() {
       setAudioPreviewRenderSteps([])
       setAudioPreviewMeta(null)
       setAudioPreviewSectionGuideText('')
+      setAudioPreviewSongSheetText('')
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2251,6 +2253,7 @@ const requestAudioPreview = async () => {
   setAudioPreviewRenderSteps([])
   setAudioPreviewMeta(null)
   setAudioPreviewSectionGuideText('')
+  setAudioPreviewSongSheetText('')
 
   try {
     const parsedSpec = JSON.parse(previewSpec)
@@ -2309,6 +2312,13 @@ const requestAudioPreview = async () => {
             ? result.audioPreviewMeta
             : null,
         )
+
+        setAudioPreviewSongSheetText(
+          typeof result.previewSongSheetText === 'string'
+            ? result.previewSongSheetText
+            : '',
+        )
+
 
         setAudioPreviewSectionGuideText(
           typeof result.sectionGuideText === 'string' ? result.sectionGuideText : '',
@@ -7312,6 +7322,22 @@ return (
         ))}
     </div>
   </div>
+) : null}
+
+{audioPreviewSongSheetText ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview placed songsheet
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Exact chord-over-lyric songsheet included in the audio preview render prompt.
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+      {audioPreviewSongSheetText}
+    </pre>
+  </details>
 ) : null}
 
 

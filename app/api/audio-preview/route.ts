@@ -384,8 +384,9 @@ const previewSectionGuideText =
         sectionPlanCount: sectionPlan.length,
       },
       renderPrompt,
-      sectionGuideText: previewSectionGuideText,
-      renderSteps,
+        previewSongSheetText,
+        sectionGuideText: previewSectionGuideText,
+        renderSteps,
       renderNotes: [
         'This response confirms the spec can be converted into an audio-preview request.',
         'No audio file is generated yet.',
