@@ -192,6 +192,28 @@ function buildPreviewSongSheetText(lines: AudioPreviewSongSheetLine[]) {
   return output.join('\n').trim()
 }
 
+function buildPreviewSectionGuideText(items: GuideTrackSectionPlanItem[]) {
+  if (items.length === 0) {
+    return 'No section-specific guide track plan was provided. Use the songsheet sections and performance intent as the guide.'
+  }
+
+  return items
+    .map((item, index) => {
+      return [
+        `Section ${index + 1}: ${item.section || `Section ${index + 1}`}`,
+        item.feel ? `Feel: ${item.feel}` : '',
+        item.guitarApproach ? `Guitar: ${item.guitarApproach}` : '',
+        item.vocalApproach ? `Vocal: ${item.vocalApproach}` : '',
+        item.dynamicShape ? `Dynamics: ${item.dynamicShape}` : '',
+        item.notes ? `Notes: ${item.notes}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+    })
+    .join('\n\n')
+}
+
+
 const AUDIO_PREVIEW_PLANNER = 'local-audio-preview-planner'
 
 function getAudioPreviewMeta(startedAt: number) {
@@ -252,6 +274,9 @@ export async function POST(req: Request) {
 )
 
 const previewSongSheetText = buildPreviewSongSheetText(normalizedSongSheetLines)
+
+const previewSectionGuideText =
+  buildPreviewSectionGuideText(normalizedSectionPlan)
 
     const renderSteps = normalizedSectionPlan.map((item, index) => ({
       step: index + 1,
@@ -326,7 +351,10 @@ const previewSongSheetText = buildPreviewSongSheetText(normalizedSongSheetLines)
       `Section plan items: ${sectionPlan.length}`,
       '',
       'Placed performance songsheet:',
-      previewSongSheetText,
+        previewSongSheetText,
+        '',
+        'Section rendering guide:',
+        previewSectionGuideText,
     ]
       .filter(Boolean)
       .join('\n')
@@ -356,6 +384,7 @@ const previewSongSheetText = buildPreviewSongSheetText(normalizedSongSheetLines)
         sectionPlanCount: sectionPlan.length,
       },
       renderPrompt,
+      sectionGuideText: previewSectionGuideText,
       renderSteps,
       renderNotes: [
         'This response confirms the spec can be converted into an audio-preview request.',
