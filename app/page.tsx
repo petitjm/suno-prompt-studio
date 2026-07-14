@@ -251,6 +251,7 @@ const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
   const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
   const [justCopiedAudioRenderSteps, setJustCopiedAudioRenderSteps] = useState(false)
   const [justCopiedAudioPreviewSongSheet, setJustCopiedAudioPreviewSongSheet] = useState(false)
+  const [justCopiedAudioPreviewChecklist, setJustCopiedAudioPreviewChecklist] = useState(false)
   const [justCopiedGenerationUsage, setJustCopiedGenerationUsage] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
@@ -2464,6 +2465,28 @@ const buildSongsheetReviewCopyText = () => {
     .join('\n')
 }
 
+const copyAudioPreviewChecklist = async () => {
+  const copyText = buildAudioPreviewChecklistCopyText()
+
+  if (!copyText.trim()) {
+    setAudioPreviewMessage('No audio preview checklist available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewChecklist(true)
+    setAudioPreviewMessage('Audio preview checklist copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewChecklist(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewMessage('Could not copy audio preview checklist.')
+  }
+}
+
+
 const copyAudioPreviewSongSheet = async () => {
   if (!audioPreviewSongSheetText.trim()) {
     setAudioPreviewMessage('No audio preview placed songsheet available to copy.')
@@ -3298,6 +3321,53 @@ const getFullPackAudioPreviewStatus = () => {
     tone: 'missing',
   }
 }
+
+const buildAudioPreviewChecklistCopyText = () => {
+  const checklist = getAudioPreviewChecklist()
+  const summary = getAudioPreviewChecklistSummary()
+  const handoffStatus = getAudioPreviewHandoffStatus()
+  const fullPackStatus = getFullPackAudioPreviewStatus()
+
+  return [
+    'AUDIO PREVIEW WORKFLOW CHECKLIST',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    '',
+    'READINESS',
+    '',
+    summary.label,
+    summary.detail,
+    '',
+    'AUDIO PREVIEW HANDOFF',
+    '',
+    handoffStatus.label,
+    handoffStatus.detail,
+    '',
+    'FULL PERFORMANCE PACK AUDIO STATUS',
+    '',
+    fullPackStatus.label,
+    fullPackStatus.detail,
+    '',
+    'CHECKLIST',
+    '',
+    ...checklist.flatMap((item) => [
+      `${item.complete ? '[x]' : '[ ]'} ${item.label}`,
+      item.detail,
+      '',
+    ]),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+}
+
 
 const getAudioPreviewChecklistSummary = () => {
   const checklist = getAudioPreviewChecklist()
@@ -7353,6 +7423,15 @@ return (
     <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
       Audio preview checklist
     </div>
+
+    <button
+      type="button"
+      onClick={() => copyAudioPreviewChecklist()}
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+    >
+      {justCopiedAudioPreviewChecklist ? 'Copied ✓' : 'Copy checklist'}
+    </button>
+
     <div className="mt-1 text-xs leading-5 text-gray-500">
       Tracks whether the audio-preview handoff is ready for testing or export.
     </div>
