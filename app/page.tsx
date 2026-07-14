@@ -3020,14 +3020,27 @@ const buildFullPerformancePackCopyText = () => {
           audioGuidePromptText,
         ]
       : []),
-      ...(audioPreviewRenderPrompt
+     ...(audioPreviewRenderPrompt
       ? [
+          '============================================================',
+          'AUDIO PREVIEW RENDER PROMPT',
+          '============================================================',
           '',
-          '============================================================',
-          'AUDIO RENDER PROMPT',
-          '============================================================',
+          'Renderer-ready prompt generated from the current performance intent, placed songsheet, and section guide.',
           '',
           audioPreviewRenderPrompt,
+          '',
+        ]
+      : []),
+      ...(!audioPreviewRenderPrompt
+      ? [
+          '============================================================',
+          'AUDIO PREVIEW RENDER PROMPT',
+          '============================================================',
+          '',
+          'No audio preview render prompt has been requested yet.',
+          'Use Request audio preview before copying the final Full Performance Pack if you want this handoff included.',
+          '',
         ]
       : []),
   ].join('\n')
