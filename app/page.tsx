@@ -3300,6 +3300,73 @@ const getFullPackAudioPreviewStatus = () => {
 }
 
 
+const getAudioPreviewChecklist = () => {
+  const hasPlacedSongsheet =
+    getPlacedSongSheetLines(getChordDataFromEditorJson()).length > 0
+
+  const hasGuidePlan =
+    getGuideTrackPlanRows(getChordDataFromEditorJson()).length > 0 ||
+    getGuideTrackSectionPlanRows(getChordDataFromEditorJson()).length > 0
+
+  const hasPreviewSpec = Boolean(audioPreviewSpecPreview.trim())
+  const hasPreviewPlan = Boolean(audioPreviewPlan)
+  const hasPreviewSongSheet = Boolean(audioPreviewSongSheetText.trim())
+  const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
+  const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
+
+  return [
+    {
+      label: 'Placed songsheet ready',
+      complete: hasPlacedSongsheet,
+      detail: hasPlacedSongsheet
+        ? 'Chord-over-lyric songsheet is available.'
+        : 'Generate placed songsheet first.',
+    },
+    {
+      label: 'Guide plan ready',
+      complete: hasGuidePlan,
+      detail: hasGuidePlan
+        ? 'Guide track plan or section plan is available.'
+        : 'Generate guide plan before requesting audio preview.',
+    },
+    {
+      label: 'Preview spec ready',
+      complete: hasPreviewSpec,
+      detail: hasPreviewSpec
+        ? 'Audio preview request spec can be copied or sent.'
+        : 'Preview spec is not available yet.',
+    },
+    {
+      label: 'Planner response ready',
+      complete: hasPreviewPlan,
+      detail: hasPreviewPlan
+        ? 'Audio preview planner returned a preview plan.'
+        : 'Request audio preview to create planner output.',
+    },
+    {
+      label: 'Renderer songsheet ready',
+      complete: hasPreviewSongSheet,
+      detail: hasPreviewSongSheet
+        ? 'Audio-preview placed songsheet is available.'
+        : 'Request audio preview to derive the renderer songsheet.',
+    },
+    {
+      label: 'Section guide ready',
+      complete: hasSectionGuide,
+      detail: hasSectionGuide
+        ? 'Section-by-section render guide is available.'
+        : 'Request audio preview to derive the section guide.',
+    },
+    {
+      label: 'Render prompt ready',
+      complete: hasRenderPrompt,
+      detail: hasRenderPrompt
+        ? 'Renderer-ready audio preview prompt is available.'
+        : 'Request audio preview to generate the render prompt.',
+    },
+  ]
+}
+
 const getAudioPreviewHandoffStatus = () => {
   if (audioPreviewRenderPrompt.trim()) {
     return {
@@ -4806,6 +4873,7 @@ const nextChordWorkflowAction = getNextChordWorkflowAction()
 const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
 const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+const audioPreviewChecklist = getAudioPreviewChecklist()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
@@ -7234,6 +7302,38 @@ return (
       </div>
     </div>
 
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+        Audio preview checklist
+      </div>
+
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        {audioPreviewChecklist.map((item) => (
+          <div
+            key={item.label}
+            className="rounded border border-gray-800 bg-gray-900 p-3"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-gray-200">
+                {item.label}
+              </div>
+
+              <div
+                className={`text-xs ${
+                  item.complete ? 'text-green-300' : 'text-yellow-300'
+                }`}
+              >
+                {item.complete ? 'Done' : 'Needed'}
+              </div>
+            </div>
+
+            <div className="mt-1 text-xs leading-5 text-gray-500">
+              {item.detail}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
 
     <button
       type="button"
