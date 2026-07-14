@@ -250,6 +250,7 @@ const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
   const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
   const [justCopiedAudioRenderSteps, setJustCopiedAudioRenderSteps] = useState(false)
+  const [justCopiedAudioPreviewSongSheet, setJustCopiedAudioPreviewSongSheet] = useState(false)
   const [justCopiedGenerationUsage, setJustCopiedGenerationUsage] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
@@ -2461,6 +2462,25 @@ const buildSongsheetReviewCopyText = () => {
       return lines[index - 1] !== ''
     })
     .join('\n')
+}
+
+const copyAudioPreviewSongSheet = async () => {
+  if (!audioPreviewSongSheetText.trim()) {
+    setAudioPreviewMessage('No audio preview placed songsheet available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(audioPreviewSongSheetText)
+    setJustCopiedAudioPreviewSongSheet(true)
+    setAudioPreviewMessage('Audio preview placed songsheet copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewSongSheet(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewMessage('Could not copy audio preview placed songsheet.')
+  }
 }
 
 
@@ -7330,8 +7350,18 @@ return (
       Audio preview placed songsheet
     </summary>
 
-    <div className="mt-3 text-xs leading-5 text-gray-500">
-      Exact chord-over-lyric songsheet included in the audio preview render prompt.
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-xs leading-5 text-gray-500">
+        Exact chord-over-lyric songsheet included in the audio preview render prompt.
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyAudioPreviewSongSheet()}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+      >
+        {justCopiedAudioPreviewSongSheet ? 'Copied ✓' : 'Copy placed songsheet'}
+      </button>
     </div>
 
     <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
