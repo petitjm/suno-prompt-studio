@@ -2297,8 +2297,11 @@ const requestAudioPreview = async () => {
                 item && typeof item === 'object' && !Array.isArray(item),
             ) as Record<string, unknown>[],
           )
+        } else {
+          setAudioPreviewRenderSteps([])
+        }
 
-          setAudioPreviewMeta(
+        setAudioPreviewMeta(
           result.audioPreviewMeta &&
             typeof result.audioPreviewMeta === 'object' &&
             !Array.isArray(result.audioPreviewMeta)
@@ -2309,8 +2312,6 @@ const requestAudioPreview = async () => {
         setAudioPreviewSectionGuideText(
           typeof result.sectionGuideText === 'string' ? result.sectionGuideText : '',
         )
-
-        }
   } catch {
     setAudioPreviewMessage('Could not send audio preview spec.')
   } finally {
@@ -4959,6 +4960,14 @@ const clearChordEditor = () => {
   setJustClearedChords(true)
   setChordTransposeSemitones(0)
   setLastAppliedTransposeSnapshot(null)
+
+  setAudioPreviewMessage('')
+  setAudioPreviewResponse('')
+  setAudioPreviewPlan(null)
+  setAudioPreviewRenderPrompt('')
+  setAudioPreviewRenderSteps([])
+  setAudioPreviewSectionGuideText('')
+  setAudioPreviewMeta(null)
 
   window.setTimeout(() => {
     setJustClearedChords(false)
