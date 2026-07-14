@@ -243,6 +243,7 @@ export default function Page() {
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
   const [justCopiedSongsheetReview, setJustCopiedSongsheetReview] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
+  const [justCopiedAudioPreviewSectionGuide, setJustCopiedAudioPreviewSectionGuide] = useState(false)
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
   const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
@@ -2450,6 +2451,26 @@ const buildSongsheetReviewCopyText = () => {
       return lines[index - 1] !== ''
     })
     .join('\n')
+}
+
+
+const copyAudioPreviewSectionGuide = async () => {
+  if (!audioPreviewSectionGuideText.trim()) {
+    setAudioPreviewMessage('No audio preview section guide available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(audioPreviewSectionGuideText)
+    setJustCopiedAudioPreviewSectionGuide(true)
+    setAudioPreviewMessage('Audio preview section guide copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewSectionGuide(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewMessage('Could not copy audio preview section guide.')
+  }
 }
 
 
@@ -7231,16 +7252,30 @@ return (
 
 
     {audioPreviewSectionGuideText ? (
-      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-          Audio preview section guide
-        </summary>
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview section guide
+    </summary>
 
-        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-          {audioPreviewSectionGuideText}
-        </pre>
-      </details>
-    ) : null}
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-xs leading-5 text-gray-500">
+        Section-by-section render guidance derived from the guide track plan.
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyAudioPreviewSectionGuide()}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+      >
+        {justCopiedAudioPreviewSectionGuide ? 'Copied ✓' : 'Copy section guide'}
+      </button>
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+      {audioPreviewSectionGuideText}
+    </pre>
+  </details>
+) : null}
 
 
     {audioPreviewRenderSteps.length > 0 ? (
