@@ -3048,6 +3048,30 @@ const buildFullPerformancePackCopyText = () => {
           '============================================================',
           '',
           audioGuidePromptText,
+            ]
+          : []),
+          ...(audioPreviewSongSheetText
+          ? [
+              '============================================================',
+              'AUDIO PREVIEW PLACED SONGSHEET',
+              '============================================================',
+              '',
+              'Exact chord-over-lyric songsheet included in the audio preview render prompt.',
+              '',
+              audioPreviewSongSheetText,
+              '',
+            ]
+          : []),
+          ...(audioPreviewSectionGuideText
+      ? [
+          '============================================================',
+          'AUDIO PREVIEW SECTION GUIDE',
+          '============================================================',
+          '',
+          'Section-by-section render guidance derived from the guide track plan.',
+          '',
+          audioPreviewSectionGuideText,
+          '',
         ]
       : []),
      ...(audioPreviewRenderPrompt
