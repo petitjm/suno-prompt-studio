@@ -31,6 +31,19 @@ type GuideTrackSectionPlanItem = {
   notes?: string
 }
 
+
+type AudioPreviewChordPlacement = {
+  chord: string
+  charIndex: number
+}
+
+type AudioPreviewSongSheetLine = {
+  section: string
+  lyric: string
+  chords: AudioPreviewChordPlacement[]
+}
+
+
 function normalizeSectionPlanItem(
   item: unknown,
   index: number,
@@ -63,6 +76,120 @@ function normalizeSectionPlanItem(
         : '',
     notes: typeof record.notes === 'string' ? record.notes.trim() : '',
   }
+}
+
+function normalizeChordPlacement(item: unknown): AudioPreviewChordPlacement | null {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+  const chord = typeof record.chord === 'string' ? record.chord.trim() : ''
+  const charIndex =
+    typeof record.charIndex === 'number' && Number.isFinite(record.charIndex)
+      ? Math.max(0, Math.floor(record.charIndex))
+      : 0
+
+  if (!chord) {
+    return null
+  }
+
+  return {
+    chord,
+    charIndex,
+  }
+}
+
+function normalizeSongSheetLine(
+  item: unknown,
+  index: number,
+): AudioPreviewSongSheetLine {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return {
+      section: `Line ${index + 1}`,
+      lyric: '',
+      chords: [],
+    }
+  }
+
+  const record = item as Record<string, unknown>
+
+  const section =
+    typeof record.section === 'string' && record.section.trim()
+      ? record.section.trim()
+      : `Line ${index + 1}`
+
+  const lyric =
+    typeof record.lyric === 'string' && record.lyric.trim()
+      ? record.lyric.trim()
+      : ''
+
+  const chords = Array.isArray(record.chords)
+    ? record.chords
+        .map(normalizeChordPlacement)
+        .filter((chord): chord is AudioPreviewChordPlacement => Boolean(chord))
+    : []
+
+  return {
+    section,
+    lyric,
+    chords,
+  }
+}
+
+function renderPreviewChordLine(line: AudioPreviewSongSheetLine) {
+  if (line.chords.length === 0) {
+    return ''
+  }
+
+  const lyricLength = line.lyric.length
+  const lineWidth = Math.max(
+    lyricLength,
+    ...line.chords.map((chord) => chord.charIndex + chord.chord.length),
+  )
+
+  const chars = Array.from({ length: lineWidth }, () => ' ')
+
+  line.chords
+    .slice()
+    .sort((a, b) => a.charIndex - b.charIndex)
+    .forEach((placement) => {
+      placement.chord.split('').forEach((char, offset) => {
+        const targetIndex = placement.charIndex + offset
+
+        if (targetIndex >= 0 && targetIndex < chars.length) {
+          chars[targetIndex] = char
+        }
+      })
+    })
+
+  return chars.join('').trimEnd()
+}
+
+function buildPreviewSongSheetText(lines: AudioPreviewSongSheetLine[]) {
+  const output: string[] = []
+  let currentSection = ''
+
+  lines.forEach((line) => {
+    if (line.section && line.section !== currentSection) {
+      if (output.length > 0) {
+        output.push('')
+      }
+
+      output.push(`[${line.section}]`)
+      currentSection = line.section
+    }
+
+    const chordLine = renderPreviewChordLine(line)
+
+    if (chordLine) {
+      output.push(chordLine)
+    }
+
+    output.push(line.lyric || '(instrumental / no lyric)')
+  })
+
+  return output.join('\n').trim()
 }
 
 const AUDIO_PREVIEW_PLANNER = 'local-audio-preview-planner'
@@ -119,6 +246,12 @@ export async function POST(req: Request) {
     const normalizedSectionPlan = sectionPlan.map((item, index) =>
       normalizeSectionPlanItem(item, index),
     )
+
+    const normalizedSongSheetLines = body.songsheetLines.map((item, index) =>
+  normalizeSongSheetLine(item, index),
+)
+
+const previewSongSheetText = buildPreviewSongSheetText(normalizedSongSheetLines)
 
     const renderSteps = normalizedSectionPlan.map((item, index) => ({
       step: index + 1,
@@ -189,8 +322,11 @@ export async function POST(req: Request) {
       '- Use acoustic guitar as the main timing and harmony reference.',
       '- Avoid full-band production unless explicitly requested later.',
       '',
-      `Songsheet lines: ${body.songsheetLines.length}`,
+      `Songsheet lines: ${normalizedSongSheetLines.length}`,
       `Section plan items: ${sectionPlan.length}`,
+      '',
+      'Placed performance songsheet:',
+      previewSongSheetText,
     ]
       .filter(Boolean)
       .join('\n')
@@ -216,7 +352,7 @@ export async function POST(req: Request) {
         renderMode: 'guide-track-plan-only',
         renderStatus: 'not-connected',
         renderStepCount: renderSteps.length,
-        songsheetLineCount: body.songsheetLines.length,
+        songsheetLineCount: normalizedSongSheetLines.length,
         sectionPlanCount: sectionPlan.length,
       },
       renderPrompt,
