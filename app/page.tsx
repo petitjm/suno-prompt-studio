@@ -3214,6 +3214,37 @@ const buildAudioPreviewSpecCopyText = () => {
   return JSON.stringify(spec, null, 2)
 }
 
+const getAudioPreviewHandoffStatus = () => {
+  if (audioPreviewRenderPrompt.trim()) {
+    return {
+      label: 'Audio preview handoff ready',
+      detail:
+        'The Full Performance Pack will include the renderer-ready audio preview prompt.',
+      tone: 'ready',
+    }
+  }
+
+  const hasPreviewInputs =
+    getPlacedSongSheetLines(getChordDataFromEditorJson()).length > 0 &&
+    getGuideTrackPlanRows(getChordDataFromEditorJson()).length > 0
+
+  if (hasPreviewInputs) {
+    return {
+      label: 'Audio preview handoff not requested yet',
+      detail:
+        'The Full Performance Pack will include a reminder placeholder until you request audio preview.',
+      tone: 'review',
+    }
+  }
+
+  return {
+    label: 'Audio preview handoff not ready',
+    detail:
+      'Generate a placed songsheet and guide plan before requesting audio preview.',
+    tone: 'missing',
+  }
+}
+
 
 const getAudioPreviewSpecStatus = () => {
   const previewSpec = buildAudioPreviewSpecCopyText()
@@ -4687,6 +4718,7 @@ const audioGuideReadiness = getAudioGuideReadiness()
 const chordWorkflowStatus = getChordWorkflowStatus()
 const nextChordWorkflowAction = getNextChordWorkflowAction()
 const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
+const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
@@ -7096,6 +7128,25 @@ return (
     >
       {justCopiedAudioPreviewSpec ? 'Copied ✓' : 'Copy preview spec'}
     </button>
+
+
+   <div
+      className={`w-full rounded border px-3 py-2 text-xs leading-5 ${
+        audioPreviewHandoffStatus.tone === 'ready'
+          ? 'border-green-900 bg-green-950/20 text-green-100'
+          : audioPreviewHandoffStatus.tone === 'review'
+            ? 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+            : 'border-gray-800 bg-gray-950 text-gray-400'
+      }`}
+    >
+      <div className="font-medium">
+        {audioPreviewHandoffStatus.label}
+      </div>
+      <div className="mt-1">
+        {audioPreviewHandoffStatus.detail}
+      </div>
+    </div>
+
 
     <button
       type="button"
