@@ -3299,6 +3299,50 @@ const getFullPackAudioPreviewStatus = () => {
   }
 }
 
+const getAudioPreviewChecklistSummary = () => {
+  const checklist = getAudioPreviewChecklist()
+  const completeCount = checklist.filter((item) => item.complete).length
+  const totalCount = checklist.length
+
+  if (totalCount === 0) {
+    return {
+      completeCount: 0,
+      totalCount: 0,
+      label: 'Audio preview readiness unknown',
+      detail: 'No audio preview checklist items are available.',
+      tone: 'missing',
+    }
+  }
+
+  if (completeCount === totalCount) {
+    return {
+      completeCount,
+      totalCount,
+      label: 'Audio preview workflow ready',
+      detail: `${completeCount}/${totalCount} audio preview items are ready.`,
+      tone: 'ready',
+    }
+  }
+
+  if (completeCount >= 3) {
+    return {
+      completeCount,
+      totalCount,
+      label: 'Audio preview workflow partly ready',
+      detail: `${completeCount}/${totalCount} audio preview items are ready.`,
+      tone: 'review',
+    }
+  }
+
+  return {
+    completeCount,
+    totalCount,
+    label: 'Audio preview workflow not ready',
+    detail: `${completeCount}/${totalCount} audio preview items are ready.`,
+    tone: 'missing',
+  }
+}
+
 
 const getAudioPreviewChecklist = () => {
   const hasPlacedSongsheet =
@@ -4874,6 +4918,7 @@ const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
 const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 const audioPreviewChecklist = getAudioPreviewChecklist()
+const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
@@ -7303,9 +7348,33 @@ return (
     </div>
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
-      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-        Audio preview checklist
-      </div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+  <div>
+    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview checklist
+    </div>
+    <div className="mt-1 text-xs leading-5 text-gray-500">
+      Tracks whether the audio-preview handoff is ready for testing or export.
+    </div>
+  </div>
+
+  <div
+    className={`rounded border px-3 py-2 text-xs leading-5 ${
+      audioPreviewChecklistSummary.tone === 'ready'
+        ? 'border-green-900 bg-green-950/20 text-green-100'
+        : audioPreviewChecklistSummary.tone === 'review'
+          ? 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+          : 'border-gray-800 bg-gray-900 text-gray-400'
+    }`}
+  >
+    <div className="font-medium">
+      {audioPreviewChecklistSummary.label}
+    </div>
+    <div className="mt-1">
+      {audioPreviewChecklistSummary.detail}
+    </div>
+  </div>
+</div>
 
       <div className="mt-3 grid gap-2 md:grid-cols-2">
         {audioPreviewChecklist.map((item) => (
