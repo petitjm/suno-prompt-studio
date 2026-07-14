@@ -7335,27 +7335,31 @@ return (
 
 
     {audioPreviewRenderPrompt ? (
-      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-        <summary className="cursor-pointer text-xs font-medium text-gray-300">
-          Show audio render prompt
-        </summary>
+  <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview render prompt
+    </summary>
 
-        <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={() => copyAudioRenderPrompt()}
-            disabled={!audioPreviewRenderPrompt}
-            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-          >
-            {justCopiedAudioRenderPrompt ? 'Copied ✓' : 'Copy render prompt'}
-          </button>
-        </div>
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-xs leading-5 text-gray-500">
+        Full renderer-ready prompt containing performance intent, placed songsheet, and section guidance.
+      </div>
 
-        <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
-          {audioPreviewRenderPrompt}
-        </pre>
-      </details>
-    ) : null}
+      <button
+        type="button"
+        onClick={() => copyAudioRenderPrompt()}
+        disabled={!audioPreviewRenderPrompt}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+      >
+        {justCopiedAudioRenderPrompt ? 'Copied ✓' : 'Copy render prompt'}
+      </button>
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+      {audioPreviewRenderPrompt}
+    </pre>
+  </details>
+) : null}
 
     {audioPreviewResponse ? (
       <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
