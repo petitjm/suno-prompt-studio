@@ -3421,6 +3421,53 @@ const buildAudioPreviewChecklistCopyText = () => {
 }
 
 
+const getAudioPreviewRendererPayloadSummary = () => {
+  if (!audioPreviewRendererPayload) {
+    return {
+      hasPayload: false,
+      type: '',
+      renderStatus: '',
+      songsheetLineCount: 0,
+      renderStepCount: 0,
+      hasRenderPrompt: false,
+      hasPreviewSongSheetText: false,
+      hasSectionGuideText: false,
+    }
+  }
+
+  const songsheetLines = Array.isArray(audioPreviewRendererPayload.songsheetLines)
+    ? audioPreviewRendererPayload.songsheetLines
+    : []
+
+  const renderSteps = Array.isArray(audioPreviewRendererPayload.renderSteps)
+    ? audioPreviewRendererPayload.renderSteps
+    : []
+
+  return {
+    hasPayload: true,
+    type:
+      typeof audioPreviewRendererPayload.type === 'string'
+        ? audioPreviewRendererPayload.type
+        : '',
+    renderStatus:
+      typeof audioPreviewRendererPayload.renderStatus === 'string'
+        ? audioPreviewRendererPayload.renderStatus
+        : '',
+    songsheetLineCount: songsheetLines.length,
+    renderStepCount: renderSteps.length,
+    hasRenderPrompt:
+      typeof audioPreviewRendererPayload.renderPrompt === 'string' &&
+      audioPreviewRendererPayload.renderPrompt.trim().length > 0,
+    hasPreviewSongSheetText:
+      typeof audioPreviewRendererPayload.previewSongSheetText === 'string' &&
+      audioPreviewRendererPayload.previewSongSheetText.trim().length > 0,
+    hasSectionGuideText:
+      typeof audioPreviewRendererPayload.sectionGuideText === 'string' &&
+      audioPreviewRendererPayload.sectionGuideText.trim().length > 0,
+  }
+}
+
+
 const getAudioPreviewChecklistSummary = () => {
   const checklist = getAudioPreviewChecklist()
   const completeCount = checklist.filter((item) => item.complete).length
@@ -5049,6 +5096,7 @@ const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
 const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 const audioPreviewChecklist = getAudioPreviewChecklist()
 const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
+const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
@@ -7866,6 +7914,91 @@ return (
         {justCopiedAudioPreviewRendererPayload ? 'Copied ✓' : 'Copy renderer payload'}
       </button>
     </div>
+
+    {audioPreviewRendererPayloadSummary.hasPayload ? (
+      <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Type
+          </div>
+          <div className="mt-1 text-sm text-gray-300">
+            {audioPreviewRendererPayloadSummary.type || 'Unknown'}
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Status
+          </div>
+          <div className="mt-1 text-sm text-gray-300">
+            {audioPreviewRendererPayloadSummary.renderStatus || 'Unknown'}
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Songsheet lines
+          </div>
+          <div className="mt-1 text-sm text-gray-300">
+            {audioPreviewRendererPayloadSummary.songsheetLineCount}
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Render steps
+          </div>
+          <div className="mt-1 text-sm text-gray-300">
+            {audioPreviewRendererPayloadSummary.renderStepCount}
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Render prompt
+          </div>
+          <div
+            className={`mt-1 text-sm ${
+              audioPreviewRendererPayloadSummary.hasRenderPrompt
+                ? 'text-green-300'
+                : 'text-yellow-300'
+            }`}
+          >
+            {audioPreviewRendererPayloadSummary.hasRenderPrompt ? 'Included' : 'Missing'}
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Placed songsheet
+          </div>
+          <div
+            className={`mt-1 text-sm ${
+              audioPreviewRendererPayloadSummary.hasPreviewSongSheetText
+                ? 'text-green-300'
+                : 'text-yellow-300'
+            }`}
+          >
+            {audioPreviewRendererPayloadSummary.hasPreviewSongSheetText ? 'Included' : 'Missing'}
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Section guide
+          </div>
+          <div
+            className={`mt-1 text-sm ${
+              audioPreviewRendererPayloadSummary.hasSectionGuideText
+                ? 'text-green-300'
+                : 'text-yellow-300'
+            }`}
+          >
+            {audioPreviewRendererPayloadSummary.hasSectionGuideText ? 'Included' : 'Missing'}
+          </div>
+        </div>
+      </div>
+    ) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(audioPreviewRendererPayload, null, 2)}
