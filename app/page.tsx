@@ -1898,6 +1898,15 @@ const copyChordJson = async () => {
   }
 }
 
+const isAudioPreviewDryRunReady = () => {
+  return (
+    audioPreviewRenderJob &&
+    typeof audioPreviewRenderJob.status === 'string' &&
+    audioPreviewRenderJob.status === 'dry-run-ready'
+  )
+}
+
+
 const isAudioPreviewRendererPayloadValidated = () => {
   return audioPreviewRendererPayloadValidation?.ready === true
 }
@@ -3446,6 +3455,28 @@ const buildFullPerformancePackCopyText = () => {
           '',
             ]
           : []),
+          ...(audioPreviewRenderJob
+          ? [
+              '============================================================',
+              'AUDIO PREVIEW DRY-RUN JOB',
+              '============================================================',
+              '',
+              'Dry-run handoff response from /api/audio-preview/render. No audio file is generated yet.',
+              '',
+              JSON.stringify(audioPreviewRenderJob, null, 2),
+              '',
+            ]
+          : []),
+          ...(audioPreviewRenderResponse
+          ? [
+              '============================================================',
+              'AUDIO PREVIEW DRY-RUN RESPONSE',
+              '============================================================',
+              '',
+              audioPreviewRenderResponse,
+              '',
+            ]
+          : []),
       ].join('\n')
     }
 
@@ -3622,6 +3653,7 @@ const getFullPackAudioPreviewStatus = () => {
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
+  const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
 
   if (
@@ -3629,17 +3661,23 @@ const getFullPackAudioPreviewStatus = () => {
       hasSectionGuide &&
       hasRenderPrompt &&
       hasRendererPayload &&
-      hasValidatedRendererPayload
+      hasValidatedRendererPayload &&
+      hasDryRunJob 
     ) {
     return {
       label: 'Full pack includes audio preview artefacts',
       detail:
-  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, and validation-passed status.',
+  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, and dry-run handoff confirmation.',
       tone: 'ready',
     }
   }
 
-  if (hasRenderPrompt || hasRendererPayload || audioPreviewRendererPayloadValidation) {
+  if (
+      hasRenderPrompt ||
+      hasRendererPayload ||
+      audioPreviewRendererPayloadValidation ||
+      hasDryRunJob
+    ) {
     return {
       label: 'Full pack includes audio preview render prompt',
       detail:
@@ -3887,6 +3925,7 @@ const getAudioPreviewChecklist = () => {
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
+  const hasDryRunJob = isAudioPreviewDryRunReady()
 
   return [
     {
@@ -3954,6 +3993,17 @@ const getAudioPreviewChecklist = () => {
               ? 'Renderer payload exists but validation needs review.'
               : 'Request audio preview to validate the renderer payload.',
         },
+
+        {
+  label: 'Dry-run handoff ready',
+  complete: Boolean(hasDryRunJob),
+  detail: hasDryRunJob
+    ? 'Renderer payload was accepted by the dry-run handoff route.'
+    : hasValidatedRendererPayload
+      ? 'Submit dry run to confirm the renderer handoff route accepts the payload.'
+      : 'Validate the renderer payload before submitting a dry run.',
+},
+
   ]
 }
 
