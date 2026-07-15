@@ -1890,6 +1890,11 @@ const copyChordJson = async () => {
   }
 }
 
+const isAudioPreviewRendererPayloadValidated = () => {
+  return audioPreviewRendererPayloadValidation?.ready === true
+}
+
+
 const copyAudioRenderPrompt = async () => {
   if (!audioPreviewRenderPrompt) {
     setAudioPreviewMessage('No audio render prompt available to copy.')
@@ -3173,12 +3178,21 @@ const buildFullPerformancePackCopyText = () => {
           '',
           'Structured machine-readable payload intended for a future audio preview renderer.',
           '',
+          `Validation: ${
+              audioPreviewRendererPayloadValidation?.ready === true
+                ? 'Passed'
+                : 'Needs review'
+            }`,
+            typeof audioPreviewRendererPayloadValidation?.detail === 'string'
+              ? audioPreviewRendererPayloadValidation.detail
+              : 'Validation details unavailable.',
+            '',
           JSON.stringify(audioPreviewRendererPayload, null, 2),
           '',
-        ]
-      : []),
-  ].join('\n')
-}
+            ]
+          : []),
+      ].join('\n')
+    }
 
 
 const buildChordPracticePackCopyText = () => {
@@ -3353,22 +3367,24 @@ const getFullPackAudioPreviewStatus = () => {
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
+  const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
 
   if (
       hasPlacedSongsheet &&
       hasSectionGuide &&
       hasRenderPrompt &&
-      hasRendererPayload
+      hasRendererPayload &&
+      hasValidatedRendererPayload
     ) {
     return {
       label: 'Full pack includes audio preview artefacts',
       detail:
-        'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, and structured renderer payload.',
+  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, and validation-passed status.',
       tone: 'ready',
     }
   }
 
-  if (hasRenderPrompt || hasRendererPayload) {
+  if (hasRenderPrompt || hasRendererPayload || audioPreviewRendererPayloadValidation) {
     return {
       label: 'Full pack includes audio preview render prompt',
       detail:
@@ -3538,6 +3554,7 @@ const getAudioPreviewChecklist = () => {
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
+  const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
 
   return [
     {
@@ -3589,13 +3606,22 @@ const getAudioPreviewChecklist = () => {
             ? 'Renderer-ready audio preview prompt is available.'
             : 'Request audio preview to generate the render prompt.',
         },
+       {
+          label: 'Renderer payload ready',
+          complete: hasRendererPayload,
+          detail: hasRendererPayload
+            ? 'Structured machine-readable renderer payload is available.'
+            : 'Request audio preview to generate the renderer payload.',
+        },
         {
-      label: 'Renderer payload ready',
-      complete: hasRendererPayload,
-      detail: hasRendererPayload
-        ? 'Structured machine-readable renderer payload is available.'
-        : 'Request audio preview to generate the renderer payload.',
-    },
+          label: 'Renderer payload validated',
+          complete: hasValidatedRendererPayload,
+          detail: hasValidatedRendererPayload
+            ? 'Renderer payload validation passed.'
+            : hasRendererPayload
+              ? 'Renderer payload exists but validation needs review.'
+              : 'Request audio preview to validate the renderer payload.',
+        },
   ]
 }
 
