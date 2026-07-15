@@ -214,6 +214,10 @@ export default function Page() {
   const [generatingGuideTrackPlan, setGeneratingGuideTrackPlan] = useState(false)
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
+  const [submittingAudioPreviewRender, setSubmittingAudioPreviewRender] = useState(false)
+  const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] = useState('')
+  const [audioPreviewRenderJob, setAudioPreviewRenderJob] = useState<Record<string, unknown> | null>(null)
+  const [audioPreviewRenderResponse, setAudioPreviewRenderResponse] = useState('')
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
@@ -236,6 +240,10 @@ export default function Page() {
       setAudioPreviewSongSheetText('')
       setAudioPreviewRendererPayload(null)
       setAudioPreviewRendererPayloadValidation(null)
+      setSubmittingAudioPreviewRender(false)
+      setAudioPreviewRenderMessage('')
+      setAudioPreviewRenderJob(null)
+      setAudioPreviewRenderResponse('')
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2279,6 +2287,68 @@ const transposeChordProgressionText = (value: string, semitones: number) => {
   )
 }
 
+const submitAudioPreviewRendererPayload = async () => {
+  if (!audioPreviewRendererPayload) {
+    setAudioPreviewRenderMessage('No renderer payload available to submit.')
+    return
+  }
+
+  if (audioPreviewRendererPayloadValidation?.ready !== true) {
+    setAudioPreviewRenderMessage(
+      'Renderer payload validation has not passed. Review the payload before submitting.',
+    )
+    return
+  }
+
+  setSubmittingAudioPreviewRender(true)
+  setAudioPreviewRenderMessage('Submitting renderer payload...')
+  setAudioPreviewRenderJob(null)
+  setAudioPreviewRenderResponse('')
+
+  try {
+    const response = await fetch('/api/audio-preview/render', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(audioPreviewRendererPayload),
+    })
+
+    const result = await response.json()
+
+    setAudioPreviewRenderResponse(JSON.stringify(result, null, 2))
+
+    if (!response.ok) {
+      setAudioPreviewRenderMessage(
+        typeof result.error === 'string'
+          ? result.error
+          : typeof result.validation?.detail === 'string'
+            ? result.validation.detail
+            : 'Renderer payload submission failed.',
+      )
+      return
+    }
+
+    setAudioPreviewRenderMessage(
+      typeof result.message === 'string'
+        ? result.message
+        : 'Renderer payload accepted.',
+    )
+
+    setAudioPreviewRenderJob(
+      result.renderJob &&
+        typeof result.renderJob === 'object' &&
+        !Array.isArray(result.renderJob)
+        ? result.renderJob
+        : null,
+    )
+  } catch {
+    setAudioPreviewRenderMessage('Could not submit renderer payload.')
+  } finally {
+    setSubmittingAudioPreviewRender(false)
+  }
+}
+
 
 const requestAudioPreview = async () => {
   const previewSpec = buildAudioPreviewSpecCopyText()
@@ -3703,6 +3773,10 @@ const clearAudioPreviewOutput = () => {
   setJustCopiedAudioPreviewSectionGuide(false)
   setJustCopiedAudioRenderPrompt(false)
   setJustCopiedAudioPreviewRendererPayload(false)
+  setSubmittingAudioPreviewRender(false)
+  setAudioPreviewRenderMessage('')
+  setAudioPreviewRenderJob(null)
+  setAudioPreviewRenderResponse('')
 }
 
 
@@ -5700,6 +5774,10 @@ const clearChordEditor = () => {
   setJustClearedChords(true)
   setChordTransposeSemitones(0)
   setLastAppliedTransposeSnapshot(null)
+  setSubmittingAudioPreviewRender(false)
+  setAudioPreviewRenderMessage('')
+  setAudioPreviewRenderJob(null)
+  setAudioPreviewRenderResponse('')
 
   setAudioPreviewMessage('')
   setAudioPreviewResponse('')
@@ -8229,6 +8307,20 @@ return (
       >
         {justCopiedAudioPreviewRendererPayload ? 'Copied ✓' : 'Copy renderer payload'}
       </button>
+
+      <button
+          type="button"
+          onClick={() => submitAudioPreviewRendererPayload()}
+          disabled={
+            submittingAudioPreviewRender ||
+            !audioPreviewRendererPayload ||
+            audioPreviewRendererPayloadValidation?.ready !== true
+          }
+          className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+        >
+          {submittingAudioPreviewRender ? 'Submitting...' : 'Submit dry run'}
+        </button>
+
     </div>
 
     {audioPreviewRendererPayloadSummary.hasPayload ? (
@@ -8343,6 +8435,87 @@ return (
     </pre>
   </details>
 ) : null}
+
+
+{audioPreviewRenderMessage ? (
+  <div className="rounded border border-gray-800 bg-gray-950 px-3 py-2 text-xs leading-5 text-gray-300">
+    {audioPreviewRenderMessage}
+  </div>
+) : null}
+
+{audioPreviewRenderJob ? (
+  <div className="rounded border border-green-900 bg-green-950/20 p-4">
+    <div className="text-sm font-medium uppercase tracking-wide text-green-200">
+      Audio preview dry-run job
+    </div>
+
+    <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+      {[
+        {
+          label: 'Status',
+          value:
+            typeof audioPreviewRenderJob.status === 'string'
+              ? audioPreviewRenderJob.status
+              : '',
+        },
+        {
+          label: 'Renderer',
+          value:
+            typeof audioPreviewRenderJob.renderer === 'string'
+              ? audioPreviewRenderJob.renderer
+              : '',
+        },
+        {
+          label: 'Audio status',
+          value:
+            typeof audioPreviewRenderJob.audioStatus === 'string'
+              ? audioPreviewRenderJob.audioStatus
+              : '',
+        },
+        {
+          label: 'Render mode',
+          value:
+            typeof audioPreviewRenderJob.renderMode === 'string'
+              ? audioPreviewRenderJob.renderMode
+              : '',
+        },
+        {
+          label: 'Created at',
+          value:
+            typeof audioPreviewRenderJob.createdAt === 'string'
+              ? new Date(audioPreviewRenderJob.createdAt).toLocaleString()
+              : '',
+        },
+      ]
+        .filter((row) => row.value)
+        .map((row) => (
+          <div
+            key={row.label}
+            className="rounded border border-green-900 bg-gray-950 p-3"
+          >
+            <div className="text-xs uppercase tracking-wide text-green-300">
+              {row.label}
+            </div>
+            <div className="mt-1 text-sm text-green-100">
+              {row.value}
+            </div>
+          </div>
+        ))}
+    </div>
+  </div>
+) : null}
+
+    {audioPreviewRenderResponse ? (
+      <details className="rounded border border-gray-800 bg-gray-950 p-4">
+        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+          Audio preview dry-run response
+        </summary>
+
+        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+          {audioPreviewRenderResponse}
+        </pre>
+      </details>
+    ) : null}
 
     {audioPreviewResponse ? (
       <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
