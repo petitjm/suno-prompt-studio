@@ -259,6 +259,7 @@ export default function Page() {
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
   const [justCopiedSongsheetReview, setJustCopiedSongsheetReview] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
+  const [justCopiedAudioPreviewDryRunPlan, setJustCopiedAudioPreviewDryRunPlan] = useState(false)
   const [justCopiedAudioPreviewSectionGuide, setJustCopiedAudioPreviewSectionGuide] = useState(false)
   const [justCopiedAudioPreviewRendererPayload, setJustCopiedAudioPreviewRendererPayload] = useState(false)
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
@@ -2608,6 +2609,57 @@ const buildSongsheetReviewCopyText = () => {
     .join('\n')
 }
 
+const copyAudioPreviewDryRunPlan = async () => {
+  if (!audioPreviewDryRunRenderPlan) {
+    setAudioPreviewRenderMessage('No audio preview dry-run render plan available to copy.')
+    return
+  }
+
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW DRY-RUN RENDER PLAN',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'DRY-RUN RENDER PLAN JSON',
+    '',
+    JSON.stringify(audioPreviewDryRunRenderPlan, null, 2),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewDryRunPlan(true)
+    setAudioPreviewRenderMessage('Audio preview dry-run render plan copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewDryRunPlan(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewRenderMessage('Could not copy audio preview dry-run render plan.')
+  }
+}
+
+
 const copyAudioPreviewRendererPayload = async () => {
   if (!audioPreviewRendererPayload) {
     setAudioPreviewMessage('No audio preview renderer payload available to copy.')
@@ -3762,6 +3814,56 @@ const buildAudioPreviewChecklistCopyText = () => {
         })
         .join('\n')
     }
+
+    const getAudioPreviewDryRunPlanSummary = () => {
+  if (!audioPreviewDryRunRenderPlan) {
+    return {
+      hasPlan: false,
+      type: '',
+      renderMode: '',
+      audioStatus: '',
+      songsheetLineCount: 0,
+      renderStepCount: 0,
+      sectionCount: 0,
+      hasInstructions: false,
+    }
+  }
+
+  const sections = Array.isArray(audioPreviewDryRunRenderPlan.sections)
+    ? audioPreviewDryRunRenderPlan.sections
+    : []
+
+  const rendererInstructions = Array.isArray(audioPreviewDryRunRenderPlan.rendererInstructions)
+    ? audioPreviewDryRunRenderPlan.rendererInstructions
+    : []
+
+  return {
+    hasPlan: true,
+    type:
+      typeof audioPreviewDryRunRenderPlan.type === 'string'
+        ? audioPreviewDryRunRenderPlan.type
+        : '',
+    renderMode:
+      typeof audioPreviewDryRunRenderPlan.renderMode === 'string'
+        ? audioPreviewDryRunRenderPlan.renderMode
+        : '',
+    audioStatus:
+      typeof audioPreviewDryRunRenderPlan.audioStatus === 'string'
+        ? audioPreviewDryRunRenderPlan.audioStatus
+        : '',
+    songsheetLineCount:
+      typeof audioPreviewDryRunRenderPlan.songsheetLineCount === 'number'
+        ? audioPreviewDryRunRenderPlan.songsheetLineCount
+        : 0,
+    renderStepCount:
+      typeof audioPreviewDryRunRenderPlan.renderStepCount === 'number'
+        ? audioPreviewDryRunRenderPlan.renderStepCount
+        : 0,
+    sectionCount: sections.length,
+    hasInstructions: rendererInstructions.length > 0,
+  }
+}
+
 
     const getAudioPreviewResultStatus = () => {
   if (!audioPreviewPlan) {
@@ -5523,6 +5625,7 @@ const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 const audioPreviewChecklist = getAudioPreviewChecklist()
 const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
 const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
+const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
@@ -8570,9 +8673,92 @@ return (
                   Audio preview dry-run render plan
                 </summary>
 
-                <div className="mt-3 text-xs leading-5 text-gray-500">
-                  Structured section-by-section plan returned by the dry-run renderer route. No audio file is generated yet.
+               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-xs leading-5 text-gray-500">
+                    Structured section-by-section plan returned by the dry-run renderer route. No audio file is generated yet.
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => copyAudioPreviewDryRunPlan()}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                  >
+                    {justCopiedAudioPreviewDryRunPlan ? 'Copied ✓' : 'Copy dry-run plan'}
+                  </button>
                 </div>
+
+                {audioPreviewDryRunPlanSummary.hasPlan ? (
+                  <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Type
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.type || 'Unknown'}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Render mode
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.renderMode || 'Unknown'}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Audio status
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.audioStatus || 'Unknown'}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Sections
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.sectionCount}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Songsheet lines
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.songsheetLineCount}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Render steps
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.renderStepCount}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Instructions
+                      </div>
+                      <div
+                        className={`mt-1 text-sm ${
+                          audioPreviewDryRunPlanSummary.hasInstructions
+                            ? 'text-green-300'
+                            : 'text-yellow-300'
+                        }`}
+                      >
+                        {audioPreviewDryRunPlanSummary.hasInstructions ? 'Included' : 'Missing'}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
                   {JSON.stringify(audioPreviewDryRunRenderPlan, null, 2)}
