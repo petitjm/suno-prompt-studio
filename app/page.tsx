@@ -2717,23 +2717,56 @@ const copyAudioPreviewSectionGuide = async () => {
 
 
 const copyAudioPreviewSpec = async () => {
-  const copyText = buildAudioPreviewSpecCopyText()
-
-  if (!copyText) {
-    setChordExtractionMessage('No audio preview spec available to copy.')
+  if (!audioPreviewSpecPreview.trim()) {
+    setAudioPreviewMessage('No audio preview spec available to copy.')
     return
   }
+
+  const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+  const songsheetReviewStatusLabel = getSongsheetReviewStatusLabel()
+  const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
+
+  const copyText = [
+    'AUDIO PREVIEW SPEC',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Songsheet status: ${songsheetReviewStatusLabel}`,
+    songsheetReviewSummaryLine ? songsheetReviewSummaryLine : '',
+    `Audio preview handoff: ${audioPreviewHandoffStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewHandoffStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'AUDIO PREVIEW SPEC JSON',
+    '',
+    audioPreviewSpecPreview,
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
 
   try {
     await navigator.clipboard.writeText(copyText)
     setJustCopiedAudioPreviewSpec(true)
-    setChordExtractionMessage('Audio preview spec copied.')
+    setAudioPreviewMessage('Audio preview spec copied.')
 
     window.setTimeout(() => {
       setJustCopiedAudioPreviewSpec(false)
     }, 1500)
   } catch {
-    setChordExtractionMessage('Could not copy audio preview spec.')
+    setAudioPreviewMessage('Could not copy audio preview spec.')
   }
 }
 
