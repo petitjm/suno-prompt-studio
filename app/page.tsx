@@ -248,6 +248,7 @@ export default function Page() {
   const [justCopiedSongsheetReview, setJustCopiedSongsheetReview] = useState(false)
   const [justCopiedAudioGuidePrompt, setJustCopiedAudioGuidePrompt] = useState(false)
   const [justCopiedAudioPreviewSectionGuide, setJustCopiedAudioPreviewSectionGuide] = useState(false)
+  const [justCopiedAudioPreviewRendererPayload, setJustCopiedAudioPreviewRendererPayload] = useState(false)
   const [justCopiedAudioGuideSummary, setJustCopiedAudioGuideSummary] = useState(false)
   const [justCopiedAudioPreviewSpec, setJustCopiedAudioPreviewSpec] = useState(false)
   const [justCopiedAudioRenderPrompt, setJustCopiedAudioRenderPrompt] = useState(false)
@@ -2475,6 +2476,28 @@ const buildSongsheetReviewCopyText = () => {
     })
     .join('\n')
 }
+
+const copyAudioPreviewRendererPayload = async () => {
+  if (!audioPreviewRendererPayload) {
+    setAudioPreviewMessage('No audio preview renderer payload available to copy.')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(
+      JSON.stringify(audioPreviewRendererPayload, null, 2),
+    )
+    setJustCopiedAudioPreviewRendererPayload(true)
+    setAudioPreviewMessage('Audio preview renderer payload copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewRendererPayload(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewMessage('Could not copy audio preview renderer payload.')
+  }
+}
+
 
 const copyAudioPreviewChecklist = async () => {
   const copyText = buildAudioPreviewChecklistCopyText()
@@ -7804,8 +7827,18 @@ return (
       Audio preview renderer payload
     </summary>
 
-    <div className="mt-3 text-xs leading-5 text-gray-500">
-      Structured machine-readable payload intended for a future audio preview renderer.
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-xs leading-5 text-gray-500">
+        Structured machine-readable payload intended for a future audio preview renderer.
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyAudioPreviewRendererPayload()}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+      >
+        {justCopiedAudioPreviewRendererPayload ? 'Copied ✓' : 'Copy renderer payload'}
+      </button>
     </div>
 
     <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
