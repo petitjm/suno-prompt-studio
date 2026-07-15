@@ -3461,6 +3461,7 @@ const getAudioPreviewChecklist = () => {
   const hasPreviewSongSheet = Boolean(audioPreviewSongSheetText.trim())
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
+  const hasRendererPayload = Boolean(audioPreviewRendererPayload)
 
   return [
     {
@@ -3507,10 +3508,17 @@ const getAudioPreviewChecklist = () => {
     },
     {
       label: 'Render prompt ready',
-      complete: hasRenderPrompt,
-      detail: hasRenderPrompt
-        ? 'Renderer-ready audio preview prompt is available.'
-        : 'Request audio preview to generate the render prompt.',
+          complete: hasRenderPrompt,
+          detail: hasRenderPrompt
+            ? 'Renderer-ready audio preview prompt is available.'
+            : 'Request audio preview to generate the render prompt.',
+        },
+        {
+      label: 'Renderer payload ready',
+      complete: hasRendererPayload,
+      detail: hasRendererPayload
+        ? 'Structured machine-readable renderer payload is available.'
+        : 'Request audio preview to generate the renderer payload.',
     },
   ]
 }
