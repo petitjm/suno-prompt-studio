@@ -3406,6 +3406,7 @@ const buildAudioPreviewChecklistCopyText = () => {
   const summary = getAudioPreviewChecklistSummary()
   const handoffStatus = getAudioPreviewHandoffStatus()
   const fullPackStatus = getFullPackAudioPreviewStatus()
+  const rendererValidation = audioPreviewRendererPayloadValidation
 
   return [
     'AUDIO PREVIEW WORKFLOW CHECKLIST',
@@ -3429,23 +3430,34 @@ const buildAudioPreviewChecklistCopyText = () => {
     fullPackStatus.label,
     fullPackStatus.detail,
     '',
-    'CHECKLIST',
-    '',
-    ...checklist.flatMap((item) => [
-      `${item.complete ? '[x]' : '[ ]'} ${item.label}`,
-      item.detail,
-      '',
-    ]),
-  ]
-    .filter((line, index, lines) => {
-      if (line !== '') {
-        return true
-      }
+    ...(rendererValidation
+      ? [
+          'RENDERER PAYLOAD VALIDATION',
+          '',
+          rendererValidation.ready === true ? 'Validation: Passed' : 'Validation: Needs review',
+          typeof rendererValidation.detail === 'string'
+            ? rendererValidation.detail
+            : 'Validation details unavailable.',
+          '',
+        ]
+      : []),
+        'CHECKLIST',
+        '',
+        ...checklist.flatMap((item) => [
+          `${item.complete ? '[x]' : '[ ]'} ${item.label}`,
+          item.detail,
+          '',
+        ]),
+      ]
+        .filter((line, index, lines) => {
+          if (line !== '') {
+            return true
+          }
 
-      return lines[index - 1] !== ''
-    })
-    .join('\n')
-}
+          return lines[index - 1] !== ''
+        })
+        .join('\n')
+    }
 
 
 const getAudioPreviewRendererPayloadSummary = () => {
