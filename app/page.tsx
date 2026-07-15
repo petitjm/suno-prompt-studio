@@ -2530,10 +2530,56 @@ const copyAudioPreviewRendererPayload = async () => {
     return
   }
 
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const validationText = audioPreviewRendererPayloadValidation
+    ? [
+        `Validation: ${
+          audioPreviewRendererPayloadValidation.ready === true
+            ? 'Passed'
+            : 'Needs review'
+        }`,
+        typeof audioPreviewRendererPayloadValidation.detail === 'string'
+          ? audioPreviewRendererPayloadValidation.detail
+          : 'Validation details unavailable.',
+      ]
+    : ['Validation: Not available']
+
+  const copyText = [
+    'AUDIO PREVIEW RENDERER PAYLOAD',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'RENDERER PAYLOAD VALIDATION',
+    '',
+    ...validationText,
+    '',
+    'RENDERER PAYLOAD JSON',
+    '',
+    JSON.stringify(audioPreviewRendererPayload, null, 2),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
   try {
-    await navigator.clipboard.writeText(
-      JSON.stringify(audioPreviewRendererPayload, null, 2),
-    )
+    await navigator.clipboard.writeText(copyText)
     setJustCopiedAudioPreviewRendererPayload(true)
     setAudioPreviewMessage('Audio preview renderer payload copied.')
 
