@@ -3459,6 +3459,43 @@ const buildAudioPreviewChecklistCopyText = () => {
         .join('\n')
     }
 
+    const getAudioPreviewResultStatus = () => {
+  if (!audioPreviewPlan) {
+    return {
+      label: 'Audio preview not requested',
+      detail: 'Request audio preview to create the planner output and renderer payload.',
+      tone: 'missing',
+    }
+  }
+
+  if (audioPreviewRendererPayloadValidation?.ready === true) {
+    return {
+      label: 'Audio preview result ready',
+      detail:
+        'Planner output, render prompt, renderer payload, and payload validation are ready.',
+      tone: 'ready',
+    }
+  }
+
+  if (audioPreviewRendererPayload) {
+    return {
+      label: 'Audio preview result needs review',
+      detail:
+        typeof audioPreviewRendererPayloadValidation?.detail === 'string'
+          ? audioPreviewRendererPayloadValidation.detail
+          : 'Renderer payload exists, but validation details are unavailable.',
+      tone: 'review',
+    }
+  }
+
+  return {
+    label: 'Audio preview result incomplete',
+    detail:
+      'Planner output exists, but the structured renderer payload was not created.',
+    tone: 'review',
+  }
+}
+
 
 const getAudioPreviewRendererPayloadSummary = () => {
   if (!audioPreviewRendererPayload) {
@@ -5146,6 +5183,7 @@ const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 const audioPreviewChecklist = getAudioPreviewChecklist()
 const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
 const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
+const audioPreviewResultStatus = getAudioPreviewResultStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
