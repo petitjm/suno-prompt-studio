@@ -3154,6 +3154,18 @@ const buildFullPerformancePackCopyText = () => {
           '',
         ]
       : []),
+      ...(audioPreviewRendererPayload
+      ? [
+          '============================================================',
+          'AUDIO PREVIEW RENDERER PAYLOAD',
+          '============================================================',
+          '',
+          'Structured machine-readable payload intended for a future audio preview renderer.',
+          '',
+          JSON.stringify(audioPreviewRendererPayload, null, 2),
+          '',
+        ]
+      : []),
   ].join('\n')
 }
 
@@ -3329,21 +3341,27 @@ const getFullPackAudioPreviewStatus = () => {
   const hasPlacedSongsheet = Boolean(audioPreviewSongSheetText.trim())
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
+  const hasRendererPayload = Boolean(audioPreviewRendererPayload)
 
-  if (hasPlacedSongsheet && hasSectionGuide && hasRenderPrompt) {
+  if (
+      hasPlacedSongsheet &&
+      hasSectionGuide &&
+      hasRenderPrompt &&
+      hasRendererPayload
+    ) {
     return {
       label: 'Full pack includes audio preview artefacts',
       detail:
-        'The Full Performance Pack will include the audio preview placed songsheet, section guide, and renderer-ready prompt.',
+        'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, and structured renderer payload.',
       tone: 'ready',
     }
   }
 
-  if (hasRenderPrompt) {
+  if (hasRenderPrompt || hasRendererPayload) {
     return {
       label: 'Full pack includes audio preview render prompt',
       detail:
-        'The Full Performance Pack includes the renderer-ready prompt, but one or more separate audio preview artefacts are missing.',
+        'The Full Performance Pack includes some audio-preview handoff artefacts, but one or more expected artefacts are missing.',
       tone: 'review',
     }
   }
