@@ -359,6 +359,35 @@ const previewSectionGuideText =
       .filter(Boolean)
       .join('\n')
 
+    const rendererPayload = {
+      type: 'audio-preview-renderer-payload',
+      version: 1,
+      renderStatus: 'not-connected',
+      project: body.project || 'Untitled project',
+      songVersion: body.songVersion || 'Untitled song version',
+      chordVersion: body.chordVersion || 'Untitled chord version',
+      key: body.key || '',
+      transposeSemitones: body.transposeSemitones ?? 0,
+      songsheetStatus: body.songsheetStatus || '',
+      songsheetReview: body.songsheetReview || '',
+      tempo,
+      groove,
+      instrumentation,
+      countIn,
+      vocalGuideStyle,
+      readiness: body.readiness || null,
+      songsheetLines: normalizedSongSheetLines,
+      previewSongSheetText,
+      sectionGuideText: previewSectionGuideText,
+      renderSteps,
+      renderPrompt,
+      renderNotes: [
+        'This is a structured handoff payload for a future audio preview renderer.',
+        'No audio file is generated yet.',
+      ],
+    }
+    
+
     const response = {
       status: 'ready',
       audioPreviewMeta: getAudioPreviewMeta(startedAt),
@@ -383,10 +412,11 @@ const previewSectionGuideText =
         songsheetLineCount: normalizedSongSheetLines.length,
         sectionPlanCount: sectionPlan.length,
       },
+      rendererPayload,
       renderPrompt,
-        previewSongSheetText,
-        sectionGuideText: previewSectionGuideText,
-        renderSteps,
+      previewSongSheetText,
+      sectionGuideText: previewSectionGuideText,
+      renderSteps,
       renderNotes: [
         'This response confirms the spec can be converted into an audio-preview request.',
         'No audio file is generated yet.',
