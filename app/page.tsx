@@ -1901,6 +1901,11 @@ const copyChordJson = async () => {
   }
 }
 
+
+const isAudioPreviewDryRunPlanReady = () => {
+  return Boolean(audioPreviewDryRunRenderPlan)
+}
+
 const isAudioPreviewDryRunReady = () => {
   return (
     audioPreviewRenderJob &&
@@ -3712,6 +3717,7 @@ const getFullPackAudioPreviewStatus = () => {
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
   const hasDryRunJob = isAudioPreviewDryRunReady()
+  const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
 
   if (
@@ -3720,22 +3726,24 @@ const getFullPackAudioPreviewStatus = () => {
       hasRenderPrompt &&
       hasRendererPayload &&
       hasValidatedRendererPayload &&
-      hasDryRunJob 
+      hasDryRunJob &&
+      hasDryRunPlan
     ) {
     return {
       label: 'Full pack includes audio preview artefacts',
       detail:
-  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, and dry-run handoff confirmation.',
+  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, and dry-run render plan.',
       tone: 'ready',
     }
   }
 
   if (
-      hasRenderPrompt ||
-      hasRendererPayload ||
-      audioPreviewRendererPayloadValidation ||
-      hasDryRunJob
-    ) {
+  hasRenderPrompt ||
+  hasRendererPayload ||
+  audioPreviewRendererPayloadValidation ||
+  hasDryRunJob ||
+  hasDryRunPlan
+) {
     return {
       label: 'Full pack includes audio preview render prompt',
       detail:
@@ -4035,6 +4043,7 @@ const getAudioPreviewChecklist = () => {
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
   const hasDryRunJob = isAudioPreviewDryRunReady()
+  const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
 
   return [
     {
@@ -4111,6 +4120,16 @@ const getAudioPreviewChecklist = () => {
     : hasValidatedRendererPayload
       ? 'Submit dry run to confirm the renderer handoff route accepts the payload.'
       : 'Validate the renderer payload before submitting a dry run.',
+},
+
+{
+  label: 'Dry-run render plan ready',
+  complete: hasDryRunPlan,
+  detail: hasDryRunPlan
+    ? 'Structured dry-run render plan is available.'
+    : hasDryRunJob
+      ? 'Dry-run handoff succeeded, but no render plan was returned.'
+      : 'Submit dry run to create the structured render plan.',
 },
 
   ]
