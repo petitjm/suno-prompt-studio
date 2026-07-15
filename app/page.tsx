@@ -2620,8 +2620,39 @@ const copyAudioPreviewSongSheet = async () => {
     return
   }
 
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW PLACED SONGSHEET',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'PLACED SONGSHEET',
+    '',
+    audioPreviewSongSheetText,
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
   try {
-    await navigator.clipboard.writeText(audioPreviewSongSheetText)
+    await navigator.clipboard.writeText(copyText)
     setJustCopiedAudioPreviewSongSheet(true)
     setAudioPreviewMessage('Audio preview placed songsheet copied.')
 
@@ -2640,8 +2671,39 @@ const copyAudioPreviewSectionGuide = async () => {
     return
   }
 
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW SECTION GUIDE',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'SECTION GUIDE',
+    '',
+    audioPreviewSectionGuideText,
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
   try {
-    await navigator.clipboard.writeText(audioPreviewSectionGuideText)
+    await navigator.clipboard.writeText(copyText)
     setJustCopiedAudioPreviewSectionGuide(true)
     setAudioPreviewMessage('Audio preview section guide copied.')
 
