@@ -3037,6 +3037,8 @@ const buildFullPerformancePackCopyText = () => {
   const audioGuidePromptText = buildCompactAudioGuidePromptCopyText()
   const generationUsageText = buildChordGenerationUsageCopyText()
   const songsheetReviewStatusLabel = getSongsheetReviewStatusLabel()
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -3052,18 +3054,29 @@ const buildFullPerformancePackCopyText = () => {
     return ''
   }
 
-  return [
-    'FULL PERFORMANCE PACK',
-    '',
-    `Project: ${activeProject?.title || 'Untitled project'}`,
-    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
-    `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
-    `Songsheet status: ${songsheetReviewStatusLabel}`,
-    `Generated at: ${new Date().toLocaleString()}`,
-    ...getSongsheetTransposeCopyRows(),
-    '',
-    ...(intentRows.length > 0
-      ? [
+ return [
+  'FULL PERFORMANCE PACK',
+  '',
+  `Project: ${activeProject?.title || 'Untitled project'}`,
+  `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+  `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
+  `Songsheet status: ${songsheetReviewStatusLabel}`,
+  `Audio preview result: ${audioPreviewResultStatus.label}`,
+  `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+  `Generated at: ${new Date().toLocaleString()}`,
+  ...getSongsheetTransposeCopyRows(),
+  '',
+  ...(audioPreviewResultStatus.detail || fullPackAudioPreviewStatus.detail
+    ? [
+        'AUDIO PREVIEW STATUS',
+        '',
+        audioPreviewResultStatus.detail,
+        fullPackAudioPreviewStatus.detail,
+        '',
+      ]
+    : []),
+  ...(intentRows.length > 0
+    ? [
           '============================================================',
           'PERFORMANCE INTENT',
           '============================================================',
