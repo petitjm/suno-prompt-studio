@@ -28,9 +28,45 @@ type RendererPayload = {
   }
 }
 
+type RenderStep = {
+  step?: number
+  section?: string
+  goal?: string
+  guitarInstruction?: string
+  vocalInstruction?: string
+  dynamicInstruction?: string
+  notes?: string
+}
+
+
 function getString(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
 }
+
+function normalizeRenderStep(item: unknown, index: number): RenderStep {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return {
+      step: index + 1,
+      section: `Section ${index + 1}`,
+    }
+  }
+
+  const record = item as Record<string, unknown>
+
+  return {
+    step:
+      typeof record.step === 'number' && Number.isFinite(record.step)
+        ? record.step
+        : index + 1,
+    section: getString(record.section) || `Section ${index + 1}`,
+    goal: getString(record.goal),
+    guitarInstruction: getString(record.guitarInstruction),
+    vocalInstruction: getString(record.vocalInstruction),
+    dynamicInstruction: getString(record.dynamicInstruction),
+    notes: getString(record.notes),
+  }
+}
+
 
 function validateRendererPayload(payload: RendererPayload) {
   const missing: string[] = []
@@ -85,6 +121,52 @@ function validateRendererPayload(payload: RendererPayload) {
   }
 }
 
+function buildDryRunRenderPlan(payload: RendererPayload) {
+  const renderSteps = Array.isArray(payload.renderSteps)
+    ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
+    : []
+
+  return {
+    type: 'audio-preview-dry-run-render-plan',
+    version: 1,
+    renderMode: 'guide-track-preview',
+    audioStatus: 'not-generated',
+    project: payload.project || 'Untitled project',
+    songVersion: payload.songVersion || 'Untitled song version',
+    chordVersion: payload.chordVersion || 'Untitled chord version',
+    key: payload.key || '',
+    tempo: payload.tempo || '',
+    groove: payload.groove || '',
+    instrumentation: payload.instrumentation || '',
+    countIn: payload.countIn || '',
+    vocalGuideStyle: payload.vocalGuideStyle || '',
+    songsheetLineCount: Array.isArray(payload.songsheetLines)
+      ? payload.songsheetLines.length
+      : 0,
+    renderStepCount: renderSteps.length,
+    sections: renderSteps.map((step, index) => ({
+      order: index + 1,
+      section: step.section || `Section ${index + 1}`,
+      goal: step.goal || 'Preserve the section feel from the renderer payload.',
+      guitarInstruction:
+        step.guitarInstruction ||
+        'Use sparse acoustic guitar as the main timing and harmony reference.',
+      vocalInstruction:
+        step.vocalInstruction ||
+        'Use understated guide vocal or melody reference only.',
+      dynamicInstruction:
+        step.dynamicInstruction || 'Keep dynamics clear and rehearsal-focused.',
+      notes: step.notes || '',
+    })),
+    rendererInstructions: [
+      'This is a dry-run plan only. No audio file is generated.',
+      'Use the count-in, tempo, groove, placed songsheet, and section instructions as the render source.',
+      'Prioritize rehearsal usefulness, timing clarity, and chord/lyric alignment over production quality.',
+    ],
+  }
+}
+
+
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
     .toString(36)
@@ -114,6 +196,8 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
+
+    const dryRunRenderPlan = buildDryRunRenderPlan(body)
 
     const renderJob = {
       id: createRenderJobId(),
@@ -146,6 +230,7 @@ export async function POST(req: Request) {
       renderStatus: 'dry-run-ready',
       validation,
       renderJob,
+      dryRunRenderPlan,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })

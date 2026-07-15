@@ -218,6 +218,7 @@ export default function Page() {
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] = useState('')
   const [audioPreviewRenderJob, setAudioPreviewRenderJob] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderResponse, setAudioPreviewRenderResponse] = useState('')
+  const [audioPreviewDryRunRenderPlan, setAudioPreviewDryRunRenderPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
@@ -244,6 +245,7 @@ export default function Page() {
       setAudioPreviewRenderMessage('')
       setAudioPreviewRenderJob(null)
       setAudioPreviewRenderResponse('')
+      setAudioPreviewDryRunRenderPlan(null)
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2313,6 +2315,8 @@ const submitAudioPreviewRendererPayload = async () => {
   setAudioPreviewRenderMessage('Submitting renderer payload...')
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
+  setAudioPreviewDryRunRenderPlan(null)
+
 
   try {
     const response = await fetch('/api/audio-preview/render', {
@@ -2343,21 +2347,22 @@ const submitAudioPreviewRendererPayload = async () => {
         ? result.message
         : 'Renderer payload accepted.',
     )
+setAudioPreviewRenderJob(
+  result.renderJob &&
+    typeof result.renderJob === 'object' &&
+    !Array.isArray(result.renderJob)
+    ? result.renderJob
+    : null,
+)
 
-    setAudioPreviewRenderJob(
-      result.renderJob &&
-        typeof result.renderJob === 'object' &&
-        !Array.isArray(result.renderJob)
-        ? result.renderJob
-        : null,
-    )
-  } catch {
-    setAudioPreviewRenderMessage('Could not submit renderer payload.')
-  } finally {
-    setSubmittingAudioPreviewRender(false)
-  }
-}
-
+setAudioPreviewDryRunRenderPlan(
+  result.dryRunRenderPlan &&
+    typeof result.dryRunRenderPlan === 'object' &&
+    !Array.isArray(result.dryRunRenderPlan)
+    ? result.dryRunRenderPlan
+    : null,
+)
+} catch { setAudioPreviewRenderMessage('Could not submit renderer payload.') } finally { setSubmittingAudioPreviewRender(false) } }
 
 const requestAudioPreview = async () => {
   const previewSpec = buildAudioPreviewSpecCopyText()
@@ -3467,6 +3472,7 @@ const buildFullPerformancePackCopyText = () => {
               '',
             ]
           : []),
+         
           ...(audioPreviewRenderResponse
           ? [
               '============================================================',
@@ -3815,6 +3821,7 @@ const clearAudioPreviewOutput = () => {
   setAudioPreviewRenderMessage('')
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
+  setAudioPreviewDryRunRenderPlan(null)
 }
 
 
@@ -5828,6 +5835,7 @@ const clearChordEditor = () => {
   setAudioPreviewRenderMessage('')
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
+  setAudioPreviewDryRunRenderPlan(null)
 
   setAudioPreviewMessage('')
   setAudioPreviewResponse('')
@@ -8554,6 +8562,23 @@ return (
     </div>
   </div>
 ) : null}
+
+
+ {audioPreviewDryRunRenderPlan ? (
+              <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                  Audio preview dry-run render plan
+                </summary>
+
+                <div className="mt-3 text-xs leading-5 text-gray-500">
+                  Structured section-by-section plan returned by the dry-run renderer route. No audio file is generated yet.
+                </div>
+
+                <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                  {JSON.stringify(audioPreviewDryRunRenderPlan, null, 2)}
+                </pre>
+              </details>
+            ) : null}
 
     {audioPreviewRenderResponse ? (
       <details className="rounded border border-gray-800 bg-gray-950 p-4">
