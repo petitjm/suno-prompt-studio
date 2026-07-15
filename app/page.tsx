@@ -218,7 +218,8 @@ export default function Page() {
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
   const [audioPreviewMeta, setAudioPreviewMeta] = useState<Record<string, unknown> | null>(null)
-const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
+  const [audioPreviewRendererPayload, setAudioPreviewRendererPayload] = useState<Record<string, unknown> | null>(null)
+  const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
   const [audioPreviewSectionGuideText, setAudioPreviewSectionGuideText] = useState('')
   const [audioPreviewRenderSteps, setAudioPreviewRenderSteps] = useState<
       Record<string, unknown>[]
@@ -232,6 +233,7 @@ const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
       setAudioPreviewMeta(null)
       setAudioPreviewSectionGuideText('')
       setAudioPreviewSongSheetText('')
+      setAudioPreviewRendererPayload(null)
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2248,6 +2250,7 @@ const requestAudioPreview = async () => {
   }
 
   setRequestingAudioPreview(true)
+  setAudioPreviewRendererPayload(null)
   setAudioPreviewMessage('Sending audio preview spec...')
   setAudioPreviewResponse('')
   setAudioPreviewPlan(null)
@@ -2269,6 +2272,14 @@ const requestAudioPreview = async () => {
     })
 
     const result = await response.json()
+
+    setAudioPreviewRendererPayload(
+      result.rendererPayload &&
+        typeof result.rendererPayload === 'object' &&
+        !Array.isArray(result.rendererPayload)
+        ? result.rendererPayload
+        : null,
+    )
 
     if (!response.ok) {
       setAudioPreviewMessage(
@@ -5304,6 +5315,7 @@ const clearChordEditor = () => {
   setAudioPreviewRenderSteps([])
   setAudioPreviewSectionGuideText('')
   setAudioPreviewMeta(null)
+  setAudioPreviewRendererPayload(null)
 
   window.setTimeout(() => {
     setJustClearedChords(false)
@@ -7782,6 +7794,22 @@ return (
 
     <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
       {audioPreviewRenderPrompt}
+    </pre>
+  </details>
+) : null}
+
+{audioPreviewRendererPayload ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview renderer payload
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Structured machine-readable payload intended for a future audio preview renderer.
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+      {JSON.stringify(audioPreviewRendererPayload, null, 2)}
     </pre>
   </details>
 ) : null}
