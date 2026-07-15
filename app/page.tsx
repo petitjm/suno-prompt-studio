@@ -3686,6 +3686,19 @@ const buildAudioPreviewChecklistCopyText = () => {
   }
 }
 
+const clearAudioPreviewOutput = () => {
+  setAudioPreviewMessage('Audio preview output cleared.')
+  setAudioPreviewResponse('')
+  setAudioPreviewPlan(null)
+  setAudioPreviewRenderPrompt('')
+  setAudioPreviewRenderSteps([])
+  setAudioPreviewSongSheetText('')
+  setAudioPreviewSectionGuideText('')
+  setAudioPreviewRendererPayload(null)
+  setAudioPreviewRendererPayloadValidation(null)
+  setAudioPreviewMeta(null)
+}
+
 
 const getAudioPreviewRendererPayloadSummary = () => {
   if (!audioPreviewRendererPayload) {
@@ -7877,6 +7890,25 @@ return (
       className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
     >
       {requestingAudioPreview ? 'Requesting...' : 'Request preview'}
+    </button>
+
+    <button
+      type="button"
+      onClick={() => clearAudioPreviewOutput()}
+      disabled={
+        !audioPreviewResponse &&
+        !audioPreviewPlan &&
+        !audioPreviewRenderPrompt &&
+        audioPreviewRenderSteps.length === 0 &&
+        !audioPreviewSongSheetText &&
+        !audioPreviewSectionGuideText &&
+        !audioPreviewRendererPayload &&
+        !audioPreviewRendererPayloadValidation &&
+        !audioPreviewMeta
+      }
+      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+    >
+      Clear preview output
     </button>
 
   </div>
