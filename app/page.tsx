@@ -1896,13 +1896,44 @@ const isAudioPreviewRendererPayloadValidated = () => {
 
 
 const copyAudioRenderPrompt = async () => {
-  if (!audioPreviewRenderPrompt) {
+  if (!audioPreviewRenderPrompt.trim()) {
     setAudioPreviewMessage('No audio render prompt available to copy.')
     return
   }
 
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW RENDER PROMPT',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'RENDER PROMPT',
+    '',
+    audioPreviewRenderPrompt,
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
   try {
-    await navigator.clipboard.writeText(audioPreviewRenderPrompt)
+    await navigator.clipboard.writeText(copyText)
     setJustCopiedAudioRenderPrompt(true)
     setAudioPreviewMessage('Audio render prompt copied.')
 
