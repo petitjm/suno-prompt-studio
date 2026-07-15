@@ -3592,6 +3592,8 @@ const buildAudioPreviewChecklistCopyText = () => {
   const handoffStatus = getAudioPreviewHandoffStatus()
   const fullPackStatus = getFullPackAudioPreviewStatus()
   const rendererValidation = audioPreviewRendererPayloadValidation
+  const songsheetReviewStatusLabel = getSongsheetReviewStatusLabel()
+  const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 
   return [
     'AUDIO PREVIEW WORKFLOW CHECKLIST',
@@ -3599,6 +3601,9 @@ const buildAudioPreviewChecklistCopyText = () => {
     `Project: ${activeProject?.title || 'Untitled project'}`,
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${getChordVersionCopyTitle()}`,
+    `Songsheet status: ${songsheetReviewStatusLabel}`,
+    songsheetReviewSummaryLine ? songsheetReviewSummaryLine : '',
+    `Generated at: ${new Date().toLocaleString()}`,
     '',
     'READINESS',
     '',
