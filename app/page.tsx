@@ -3697,6 +3697,12 @@ const clearAudioPreviewOutput = () => {
   setAudioPreviewRendererPayload(null)
   setAudioPreviewRendererPayloadValidation(null)
   setAudioPreviewMeta(null)
+  setJustCopiedAudioPreviewSpec(false)
+  setJustCopiedAudioPreviewChecklist(false)
+  setJustCopiedAudioPreviewSongSheet(false)
+  setJustCopiedAudioPreviewSectionGuide(false)
+  setJustCopiedAudioRenderPrompt(false)
+  setJustCopiedAudioPreviewRendererPayload(false)
 }
 
 
