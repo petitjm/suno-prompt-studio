@@ -219,6 +219,7 @@ export default function Page() {
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
   const [audioPreviewMeta, setAudioPreviewMeta] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRendererPayload, setAudioPreviewRendererPayload] = useState<Record<string, unknown> | null>(null)
+  const [audioPreviewRendererPayloadValidation, setAudioPreviewRendererPayloadValidation] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewSongSheetText, setAudioPreviewSongSheetText] = useState('')
   const [audioPreviewSectionGuideText, setAudioPreviewSectionGuideText] = useState('')
   const [audioPreviewRenderSteps, setAudioPreviewRenderSteps] = useState<
@@ -234,6 +235,7 @@ export default function Page() {
       setAudioPreviewSectionGuideText('')
       setAudioPreviewSongSheetText('')
       setAudioPreviewRendererPayload(null)
+      setAudioPreviewRendererPayloadValidation(null)
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2252,6 +2254,7 @@ const requestAudioPreview = async () => {
 
   setRequestingAudioPreview(true)
   setAudioPreviewRendererPayload(null)
+  setAudioPreviewRendererPayloadValidation(null)
   setAudioPreviewMessage('Sending audio preview spec...')
   setAudioPreviewResponse('')
   setAudioPreviewPlan(null)
@@ -2290,6 +2293,14 @@ const requestAudioPreview = async () => {
       )
       return
     }
+
+    setAudioPreviewRendererPayloadValidation(
+      result.rendererPayloadValidation &&
+        typeof result.rendererPayloadValidation === 'object' &&
+        !Array.isArray(result.rendererPayloadValidation)
+        ? result.rendererPayloadValidation
+        : null,
+    )
 
     setAudioPreviewMessage(
       typeof result.message === 'string'
@@ -5413,6 +5424,7 @@ const clearChordEditor = () => {
   setAudioPreviewSectionGuideText('')
   setAudioPreviewMeta(null)
   setAudioPreviewRendererPayload(null)
+  setAudioPreviewRendererPayloadValidation(null)
 
   window.setTimeout(() => {
     setJustClearedChords(false)
@@ -7995,10 +8007,32 @@ return (
             }`}
           >
             {audioPreviewRendererPayloadSummary.hasSectionGuideText ? 'Included' : 'Missing'}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {audioPreviewRendererPayloadValidation ? (
+          <div
+            className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+              audioPreviewRendererPayloadValidation.ready === true
+                ? 'border-green-900 bg-green-950/20 text-green-100'
+                : 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+            }`}
+          >
+            <div className="font-medium">
+              {audioPreviewRendererPayloadValidation.ready === true
+                ? 'Renderer payload validation passed'
+                : 'Renderer payload validation needs review'}
+            </div>
+
+            <div className="mt-1">
+              {typeof audioPreviewRendererPayloadValidation.detail === 'string'
+                ? audioPreviewRendererPayloadValidation.detail
+                : 'Validation details unavailable.'}
+            </div>
           </div>
-        </div>
-      </div>
-    ) : null}
+        ) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(audioPreviewRendererPayload, null, 2)}
@@ -8011,6 +8045,8 @@ return (
         <summary className="cursor-pointer text-xs font-medium text-gray-300">
           Show raw preview response JSON
         </summary>
+
+
 
         <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
           {audioPreviewResponse}

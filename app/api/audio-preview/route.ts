@@ -213,6 +213,45 @@ function buildPreviewSectionGuideText(items: GuideTrackSectionPlanItem[]) {
     .join('\n\n')
 }
 
+function getRendererPayloadValidation(payload: {
+  renderPrompt?: string
+  previewSongSheetText?: string
+  sectionGuideText?: string
+  songsheetLines?: unknown[]
+  renderSteps?: unknown[]
+}) {
+  const missing: string[] = []
+
+  if (!payload.renderPrompt || !payload.renderPrompt.trim()) {
+    missing.push('renderPrompt')
+  }
+
+  if (!payload.previewSongSheetText || !payload.previewSongSheetText.trim()) {
+    missing.push('previewSongSheetText')
+  }
+
+  if (!payload.sectionGuideText || !payload.sectionGuideText.trim()) {
+    missing.push('sectionGuideText')
+  }
+
+  if (!Array.isArray(payload.songsheetLines) || payload.songsheetLines.length === 0) {
+    missing.push('songsheetLines')
+  }
+
+  if (!Array.isArray(payload.renderSteps) || payload.renderSteps.length === 0) {
+    missing.push('renderSteps')
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+    detail:
+      missing.length === 0
+        ? 'Renderer payload contains the expected prompt, placed songsheet, section guide, songsheet lines, and render steps.'
+        : `Renderer payload is missing: ${missing.join(', ')}.`,
+  }
+}
+
 
 const AUDIO_PREVIEW_PLANNER = 'local-audio-preview-planner'
 
@@ -359,10 +398,19 @@ const previewSectionGuideText =
       .filter(Boolean)
       .join('\n')
 
+      const rendererPayloadValidation = getRendererPayloadValidation({
+      renderPrompt,
+      previewSongSheetText,
+      sectionGuideText: previewSectionGuideText,
+      songsheetLines: normalizedSongSheetLines,
+      renderSteps,
+    })
+
     const rendererPayload = {
       type: 'audio-preview-renderer-payload',
       version: 1,
       renderStatus: 'not-connected',
+      validation: rendererPayloadValidation,
       project: body.project || 'Untitled project',
       songVersion: body.songVersion || 'Untitled song version',
       chordVersion: body.chordVersion || 'Untitled chord version',
@@ -413,6 +461,7 @@ const previewSectionGuideText =
         sectionPlanCount: sectionPlan.length,
       },
       rendererPayload,
+      rendererPayloadValidation,
       renderPrompt,
       previewSongSheetText,
       sectionGuideText: previewSectionGuideText,
