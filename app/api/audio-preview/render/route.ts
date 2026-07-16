@@ -509,6 +509,95 @@ function validateDryRunCueSheet(cueSheet: {
 }
 
 
+function buildDryRunRenderManifest({
+  payload,
+  renderJob,
+  dryRunRenderPlan,
+  dryRunRenderPlanValidation,
+  dryRunCueSheetValidation,
+}: {
+  payload: RendererPayload
+  renderJob: Record<string, unknown>
+  dryRunRenderPlan: Record<string, unknown>
+  dryRunRenderPlanValidation: Record<string, unknown>
+  dryRunCueSheetValidation: Record<string, unknown>
+}) {
+  const cueSheet =
+    dryRunRenderPlan.cueSheet &&
+    typeof dryRunRenderPlan.cueSheet === 'object' &&
+    !Array.isArray(dryRunRenderPlan.cueSheet)
+      ? (dryRunRenderPlan.cueSheet as Record<string, unknown>)
+      : null
+
+  return {
+    type: 'audio-preview-dry-run-render-manifest',
+    version: 1,
+    manifestStatus: 'dry-run-ready',
+    audioStatus: 'not-generated',
+    createdAt: new Date().toISOString(),
+    project: payload.project || 'Untitled project',
+    songVersion: payload.songVersion || 'Untitled song version',
+    chordVersion: payload.chordVersion || 'Untitled chord version',
+    renderJob,
+    validation: {
+      rendererPayloadReady: payload.validation?.ready === true,
+      dryRunRenderPlanReady: dryRunRenderPlanValidation.ready === true,
+      dryRunCueSheetReady: dryRunCueSheetValidation.ready === true,
+    },
+    sourceSummary: {
+      key: payload.key || '',
+      tempo: payload.tempo || '',
+      groove: payload.groove || '',
+      instrumentation: payload.instrumentation || '',
+      countIn: payload.countIn || '',
+      vocalGuideStyle: payload.vocalGuideStyle || '',
+      songsheetLineCount: dryRunRenderPlan.songsheetLineCount || 0,
+      renderStepCount: dryRunRenderPlan.renderStepCount || 0,
+      timelineSectionCount: dryRunRenderPlan.timelineSectionCount || 0,
+      cueSheetSectionCount:
+        cueSheet && Array.isArray(cueSheet.sections)
+          ? cueSheet.sections.length
+          : 0,
+      totalEstimatedSeconds:
+        cueSheet && typeof cueSheet.totalEstimatedSeconds === 'number'
+          ? cueSheet.totalEstimatedSeconds
+          : 0,
+      totalEstimatedBars:
+        cueSheet && typeof cueSheet.totalEstimatedBars === 'number'
+          ? cueSheet.totalEstimatedBars
+          : 0,
+    },
+    expectedOutputs: {
+      guideTrackAudio: {
+        status: 'not-generated',
+        format: 'unknown',
+        url: null,
+      },
+      clickTrack: {
+        status: 'not-generated',
+        format: 'unknown',
+        url: null,
+      },
+      chordReferenceTrack: {
+        status: 'not-generated',
+        format: 'unknown',
+        url: null,
+      },
+      vocalGuideTrack: {
+        status: 'not-generated',
+        format: 'unknown',
+        url: null,
+      },
+    },
+    notes: [
+      'This manifest describes a dry-run audio preview job only.',
+      'No audio files have been generated.',
+      'The expected output slots are placeholders for a future renderer.',
+    ],
+  }
+}
+
+
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
     .toString(36)
@@ -572,6 +661,14 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       },
     }
 
+    const dryRunRenderManifest = buildDryRunRenderManifest({
+      payload: body,
+      renderJob,
+      dryRunRenderPlan,
+      dryRunRenderPlanValidation,
+      dryRunCueSheetValidation,
+    })
+
     return NextResponse.json({
       status: 'accepted',
       renderStatus: 'dry-run-ready',
@@ -580,6 +677,7 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       dryRunRenderPlan,
       dryRunRenderPlanValidation,
       dryRunCueSheetValidation,
+      dryRunRenderManifest,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })

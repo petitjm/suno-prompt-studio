@@ -219,6 +219,8 @@ export default function Page() {
   const [audioPreviewRenderJob, setAudioPreviewRenderJob] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderResponse, setAudioPreviewRenderResponse] = useState('')
   const [audioPreviewDryRunRenderPlan, setAudioPreviewDryRunRenderPlan] = useState<Record<string, unknown> | null>(null)
+  const [dryRunRenderManifest, setDryRunRenderManifest] =
+    useState<Record<string, unknown> | null>(null)
   const [dryRunCueSheetValidation,
       setDryRunCueSheetValidation,
     ] = useState<Record<string, unknown> | null>(null)
@@ -253,6 +255,7 @@ export default function Page() {
       setAudioPreviewRenderResponse('')
       setAudioPreviewDryRunRenderPlan(null)
       setDryRunRenderPlanValidation(null)
+      setDryRunRenderManifest(null)
       setDryRunCueSheetValidation(null)
       
     }
@@ -2333,6 +2336,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setAudioPreviewRenderResponse('')
   setAudioPreviewDryRunRenderPlan(null)
   setDryRunRenderPlanValidation(null)
+  setDryRunRenderManifest(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -2397,6 +2401,15 @@ setDryRunCueSheetValidation(
     ? result.dryRunCueSheetValidation
     : null,
 )
+
+setDryRunRenderManifest(
+  result.dryRunRenderManifest &&
+    typeof result.dryRunRenderManifest === 'object' &&
+    !Array.isArray(result.dryRunRenderManifest)
+    ? result.dryRunRenderManifest
+    : null,
+)
+
   } catch {
     setAudioPreviewRenderMessage('Could not submit renderer payload.')
   } finally {
@@ -3656,6 +3669,7 @@ const buildFullPerformancePackCopyText = () => {
               '',
             ]
           : []),
+
          
           ...(audioPreviewRenderResponse
           ? [
@@ -4207,6 +4221,7 @@ const clearAudioPreviewOutput = () => {
   setAudioPreviewRenderResponse('')
   setAudioPreviewDryRunRenderPlan(null)
   setDryRunRenderPlanValidation(null)
+  setDryRunRenderManifest(null)
   setDryRunCueSheetValidation(null)
   
 }
@@ -6238,6 +6253,7 @@ const clearChordEditor = () => {
   setAudioPreviewRenderResponse('')
   setAudioPreviewDryRunRenderPlan(null)
   setDryRunRenderPlanValidation(null)
+  setDryRunRenderManifest(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -9310,6 +9326,22 @@ return (
   </details>
 ) : null}
 
+
+{dryRunRenderManifest ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview dry-run render manifest
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
+      {JSON.stringify(dryRunRenderManifest, null, 2)}
+    </pre>
+  </details>
+) : null}
 
     {audioPreviewRenderResponse ? (
       <details className="rounded border border-gray-800 bg-gray-950 p-4">
