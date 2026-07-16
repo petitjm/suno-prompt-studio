@@ -3643,6 +3643,15 @@ const buildFullPerformancePackCopyText = () => {
               '',
               'Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.',
               '',
+              'CUE SHEET VALIDATION',
+              '',
+              dryRunCueSheetValidation?.ready === true ? 'Passed' : 'Needs review',
+              typeof dryRunCueSheetValidation?.detail === 'string'
+                ? dryRunCueSheetValidation.detail
+                : 'Validation details unavailable.',
+              '',
+              'CUE SHEET JSON',
+              '',
               JSON.stringify(audioPreviewDryRunCueSheet, null, 2),
               '',
             ]
