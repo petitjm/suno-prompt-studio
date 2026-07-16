@@ -3417,6 +3417,7 @@ const buildFullPerformancePackCopyText = () => {
   const songsheetReviewStatusLabel = getSongsheetReviewStatusLabel()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+  const audioPreviewDryRunCueSheet = getAudioPreviewDryRunCueSheet()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -3591,6 +3592,19 @@ const buildFullPerformancePackCopyText = () => {
               'Dry-run handoff response from /api/audio-preview/render. No audio file is generated yet.',
               '',
               JSON.stringify(audioPreviewRenderJob, null, 2),
+              '',
+            ]
+          : []),
+
+          ...(audioPreviewDryRunCueSheet
+          ? [
+              '============================================================',
+              'AUDIO PREVIEW DRY-RUN CUE SHEET',
+              '============================================================',
+              '',
+              'Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.',
+              '',
+              JSON.stringify(audioPreviewDryRunCueSheet, null, 2),
               '',
             ]
           : []),
@@ -3886,6 +3900,21 @@ const buildAudioPreviewChecklistCopyText = () => {
           return lines[index - 1] !== ''
         })
         .join('\n')
+    }
+
+    const getAudioPreviewDryRunCueSheet = () => {
+      if (!audioPreviewDryRunRenderPlan) {
+        return null
+      }
+
+      const cueSheet =
+        audioPreviewDryRunRenderPlan.cueSheet &&
+        typeof audioPreviewDryRunRenderPlan.cueSheet === 'object' &&
+        !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+          ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+          : null
+
+      return cueSheet
     }
 
 
