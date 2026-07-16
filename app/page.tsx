@@ -3888,6 +3888,9 @@ const buildAudioPreviewChecklistCopyText = () => {
       renderStepCount: 0,
       sectionCount: 0,
       timelineSectionCount: 0,
+      cueSheetSectionCount: 0,
+      totalEstimatedSeconds: 0,
+      totalEstimatedBars: 0,
       hasInstructions: false,
     }
   }
@@ -3900,7 +3903,19 @@ const buildAudioPreviewChecklistCopyText = () => {
     ? audioPreviewDryRunRenderPlan.timeline
     : []
 
-  const rendererInstructions = Array.isArray(audioPreviewDryRunRenderPlan.rendererInstructions)
+  const cueSheet =
+    audioPreviewDryRunRenderPlan.cueSheet &&
+    typeof audioPreviewDryRunRenderPlan.cueSheet === 'object' &&
+    !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+      ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+      : null
+
+  const cueSheetSections =
+    cueSheet && Array.isArray(cueSheet.sections) ? cueSheet.sections : []
+
+  const rendererInstructions = Array.isArray(
+    audioPreviewDryRunRenderPlan.rendererInstructions,
+  )
     ? audioPreviewDryRunRenderPlan.rendererInstructions
     : []
 
@@ -3928,6 +3943,15 @@ const buildAudioPreviewChecklistCopyText = () => {
         : 0,
     sectionCount: sections.length,
     timelineSectionCount: timeline.length,
+    cueSheetSectionCount: cueSheetSections.length,
+    totalEstimatedSeconds:
+      cueSheet && typeof cueSheet.totalEstimatedSeconds === 'number'
+        ? cueSheet.totalEstimatedSeconds
+        : 0,
+    totalEstimatedBars:
+      cueSheet && typeof cueSheet.totalEstimatedBars === 'number'
+        ? cueSheet.totalEstimatedBars
+        : 0,
     hasInstructions: rendererInstructions.length > 0,
   }
 }
@@ -8829,6 +8853,33 @@ return (
                       </div>
                       <div className="mt-1 text-sm text-gray-300">
                         {audioPreviewDryRunPlanSummary.timelineSectionCount}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Cue sections
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.cueSheetSectionCount}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Estimated bars
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.totalEstimatedBars}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Estimated length
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.totalEstimatedSeconds}s
                       </div>
                     </div>
 

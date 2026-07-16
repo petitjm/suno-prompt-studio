@@ -160,6 +160,86 @@ function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
 }
 
 
+function getTempoBpm(value: unknown) {
+  if (typeof value !== 'string') {
+    return 80
+  }
+
+  const match = value.match(/(\d+(?:\.\d+)?)/)
+  const bpm = match ? Number(match[1]) : 80
+
+  return Number.isFinite(bpm) && bpm > 0 ? bpm : 80
+}
+
+function getBeatsPerBar(payload: RendererPayload) {
+  const text = [
+    payload.groove || '',
+    payload.countIn || '',
+    payload.renderPrompt || '',
+  ]
+    .join(' ')
+    .toLowerCase()
+
+  if (text.includes('6/8')) {
+    return 6
+  }
+
+  if (text.includes('3/4')) {
+    return 3
+  }
+
+  return 4
+}
+
+function buildDryRunCueSheet(payload: RendererPayload, timeline: TimelineSection[]) {
+  const tempoBpm = getTempoBpm(payload.tempo)
+  const beatsPerBar = getBeatsPerBar(payload)
+
+  let cumulativeSeconds = 0
+
+  const sections = timeline.map((section) => {
+    const estimatedBars = Math.max(2, section.lyricLineCount * 2)
+    const estimatedSeconds = Number(
+      (((estimatedBars * beatsPerBar) / tempoBpm) * 60).toFixed(1),
+    )
+    const startSeconds = Number(cumulativeSeconds.toFixed(1))
+    const endSeconds = Number((cumulativeSeconds + estimatedSeconds).toFixed(1))
+
+    cumulativeSeconds += estimatedSeconds
+
+    return {
+      order: section.order,
+      section: section.section,
+      estimatedBars,
+      estimatedSeconds,
+      startSeconds,
+      endSeconds,
+      lyricLineCount: section.lyricLineCount,
+      chordPlacementCount: section.chordPlacementCount,
+    }
+  })
+
+  return {
+    type: 'audio-preview-dry-run-cue-sheet',
+    version: 1,
+    timingStatus: 'estimated',
+    tempoBpm,
+    beatsPerBar,
+    totalEstimatedSeconds: Number(cumulativeSeconds.toFixed(1)),
+    totalEstimatedBars: sections.reduce(
+      (total, section) => total + section.estimatedBars,
+      0,
+    ),
+    sections,
+    notes: [
+      'Timing is estimated from lyric line counts and detected tempo/groove.',
+      'This is not final musical timing.',
+      'Actual audio generation should revise these estimates from rendered audio or explicit bar counts.',
+    ],
+  }
+}
+
+
 function validateRendererPayload(payload: RendererPayload) {
   const missing: string[] = []
 
@@ -218,6 +298,7 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
     ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
     : []
     const timeline = buildDryRunTimeline(payload)
+    const cueSheet = buildDryRunCueSheet(payload, timeline)
   return {
     type: 'audio-preview-dry-run-render-plan',
     version: 1,
@@ -253,6 +334,7 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
       notes: step.notes || '',
     })),
     timeline,
+    cueSheet,
     rendererInstructions: [
       'This is a dry-run plan only. No audio file is generated.',
       'Use the count-in, tempo, groove, placed songsheet, and section instructions as the render source.',
