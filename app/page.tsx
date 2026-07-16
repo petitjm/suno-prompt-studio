@@ -219,6 +219,12 @@ export default function Page() {
   const [audioPreviewRenderJob, setAudioPreviewRenderJob] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderResponse, setAudioPreviewRenderResponse] = useState('')
   const [audioPreviewDryRunRenderPlan, setAudioPreviewDryRunRenderPlan] = useState<Record<string, unknown> | null>(null)
+  const [dryRunCueSheetValidation,
+      setDryRunCueSheetValidation,
+    ] = useState<Record<string, unknown> | null>(null)
+  const [dryRunRenderPlanValidation,
+      setDryRunRenderPlanValidation,
+    ] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
@@ -246,6 +252,9 @@ export default function Page() {
       setAudioPreviewRenderJob(null)
       setAudioPreviewRenderResponse('')
       setAudioPreviewDryRunRenderPlan(null)
+      setDryRunRenderPlanValidation(null)
+      setDryRunCueSheetValidation(null)
+      
     }
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false)
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false)
@@ -2323,6 +2332,9 @@ const submitAudioPreviewRendererPayload = async () => {
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
   setAudioPreviewDryRunRenderPlan(null)
+  setDryRunRenderPlanValidation(null)
+  setDryRunCueSheetValidation(null)
+ 
 
 
   try {
@@ -2369,8 +2381,28 @@ setAudioPreviewDryRunRenderPlan(
     ? result.dryRunRenderPlan
     : null,
 )
-} catch { setAudioPreviewRenderMessage('Could not submit renderer payload.') } finally { setSubmittingAudioPreviewRender(false) } }
 
+setDryRunRenderPlanValidation(
+  result.dryRunRenderPlanValidation &&
+    typeof result.dryRunRenderPlanValidation === 'object' &&
+    !Array.isArray(result.dryRunRenderPlanValidation)
+    ? result.dryRunRenderPlanValidation
+    : null,
+)
+
+setDryRunCueSheetValidation(
+  result.dryRunCueSheetValidation &&
+    typeof result.dryRunCueSheetValidation === 'object' &&
+    !Array.isArray(result.dryRunCueSheetValidation)
+    ? result.dryRunCueSheetValidation
+    : null,
+)
+  } catch {
+    setAudioPreviewRenderMessage('Could not submit renderer payload.')
+  } finally {
+    setSubmittingAudioPreviewRender(false)
+  }
+}
 const requestAudioPreview = async () => {
   const previewSpec = buildAudioPreviewSpecCopyText()
 
@@ -2650,6 +2682,13 @@ const copyAudioPreviewCueSheet = async () => {
     '',
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
+    '',
+    'CUE SHEET VALIDATION',
+    '',
+    dryRunCueSheetValidation?.ready === true ? 'Passed' : 'Needs review',
+    typeof dryRunCueSheetValidation?.detail === 'string'
+      ? dryRunCueSheetValidation.detail
+      : 'Validation details unavailable.',
     '',
     'CUE SHEET JSON',
     '',
@@ -4158,6 +4197,9 @@ const clearAudioPreviewOutput = () => {
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
   setAudioPreviewDryRunRenderPlan(null)
+  setDryRunRenderPlanValidation(null)
+  setDryRunCueSheetValidation(null)
+  
 }
 
 
@@ -6186,6 +6228,9 @@ const clearChordEditor = () => {
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
   setAudioPreviewDryRunRenderPlan(null)
+  setDryRunRenderPlanValidation(null)
+  setDryRunCueSheetValidation(null)
+ 
 
   setAudioPreviewMessage('')
   setAudioPreviewResponse('')
@@ -8934,6 +8979,23 @@ return (
                   </button>
                 </div>
 
+                setDryRunRenderPlanValidation(
+                  result.dryRunRenderPlanValidation &&
+                    typeof result.dryRunRenderPlanValidation === 'object' &&
+                    !Array.isArray(result.dryRunRenderPlanValidation)
+                    ? result.dryRunRenderPlanValidation
+                    : null,
+                )
+
+                setDryRunCueSheetValidation(
+                  result.dryRunCueSheetValidation &&
+                    typeof result.dryRunCueSheetValidation === 'object' &&
+                    !Array.isArray(result.dryRunCueSheetValidation)
+                    ? result.dryRunCueSheetValidation
+                    : null,
+                )
+
+
                 {audioPreviewDryRunPlanSummary.hasPlan ? (
                   <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded border border-gray-800 bg-gray-900 p-3">
@@ -9162,6 +9224,27 @@ return (
     {justCopiedAudioPreviewCueSheet ? 'Copied ✓' : 'Copy cue sheet'}
   </button>
 </div>
+
+{dryRunCueSheetValidation ? (
+  <div
+    className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+      dryRunCueSheetValidation.ready === true
+        ? 'border-green-900 bg-green-950/20 text-green-100'
+        : 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+    }`}
+  >
+    <div className="font-medium">
+      {dryRunCueSheetValidation.ready === true
+        ? 'Dry-run cue sheet validation passed'
+        : 'Dry-run cue sheet validation needs review'}
+    </div>
+    <div className="mt-1">
+      {typeof dryRunCueSheetValidation.detail === 'string'
+        ? dryRunCueSheetValidation.detail
+        : 'Validation details unavailable.'}
+    </div>
+  </div>
+) : null}
 
     <div className="mt-3 grid gap-3">
       {audioPreviewDryRunCueSheetRows.map((row) => (

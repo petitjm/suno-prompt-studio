@@ -239,7 +239,6 @@ function buildDryRunCueSheet(payload: RendererPayload, timeline: TimelineSection
   }
 }
 
-
 function validateRendererPayload(payload: RendererPayload) {
   const missing: string[] = []
 
@@ -297,8 +296,10 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
   const renderSteps = Array.isArray(payload.renderSteps)
     ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
     : []
-    const timeline = buildDryRunTimeline(payload)
-    const cueSheet = buildDryRunCueSheet(payload, timeline)
+
+  const timeline = buildDryRunTimeline(payload)
+  const cueSheet = buildDryRunCueSheet(payload, timeline)
+
   return {
     type: 'audio-preview-dry-run-render-plan',
     version: 1,
@@ -319,7 +320,6 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
     renderStepCount: renderSteps.length,
     timelineSectionCount: timeline.length,
     sections: renderSteps.map((step, index) => ({
-      timeline,
       order: index + 1,
       section: step.section || `Section ${index + 1}`,
       goal: step.goal || 'Preserve the section feel from the renderer payload.',
@@ -343,6 +343,171 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
   }
 }
 
+function validateDryRunRenderPlan(plan: {
+  type?: string
+  renderMode?: string
+  audioStatus?: string
+  sections?: unknown[]
+  timeline?: unknown[]
+  rendererInstructions?: unknown[]
+  songsheetLineCount?: number
+  renderStepCount?: number
+  timelineSectionCount?: number
+}) {
+  const missing: string[] = []
+
+  if (plan.type !== 'audio-preview-dry-run-render-plan') {
+    missing.push('type')
+  }
+
+  if (plan.renderMode !== 'guide-track-preview') {
+    missing.push('renderMode')
+  }
+
+  if (plan.audioStatus !== 'not-generated') {
+    missing.push('audioStatus')
+  }
+
+  if (!Array.isArray(plan.sections) || plan.sections.length === 0) {
+    missing.push('sections')
+  }
+
+  if (!Array.isArray(plan.timeline) || plan.timeline.length === 0) {
+    missing.push('timeline')
+  }
+
+  if (
+    !Array.isArray(plan.rendererInstructions) ||
+    plan.rendererInstructions.length === 0
+  ) {
+    missing.push('rendererInstructions')
+  }
+
+  if (
+    typeof plan.songsheetLineCount !== 'number' ||
+    !Number.isFinite(plan.songsheetLineCount) ||
+    plan.songsheetLineCount <= 0
+  ) {
+    missing.push('songsheetLineCount')
+  }
+
+  if (
+    typeof plan.renderStepCount !== 'number' ||
+    !Number.isFinite(plan.renderStepCount) ||
+    plan.renderStepCount <= 0
+  ) {
+    missing.push('renderStepCount')
+  }
+
+  if (
+    typeof plan.timelineSectionCount !== 'number' ||
+    !Number.isFinite(plan.timelineSectionCount) ||
+    plan.timelineSectionCount <= 0
+  ) {
+    missing.push('timelineSectionCount')
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+    detail:
+      missing.length === 0
+        ? 'Dry-run render plan contains render steps, timeline, renderer instructions, songsheet count, and section counts.'
+        : `Dry-run render plan is missing or invalid: ${missing.join(', ')}.`,
+  }
+}
+
+function validateDryRunCueSheet(cueSheet: {
+  type?: string
+  timingStatus?: string
+  tempoBpm?: number
+  beatsPerBar?: number
+  totalEstimatedSeconds?: number
+  totalEstimatedBars?: number
+  sections?: unknown[]
+}) {
+  const missing: string[] = []
+
+  if (cueSheet.type !== 'audio-preview-dry-run-cue-sheet') {
+    missing.push('type')
+  }
+
+  if (cueSheet.timingStatus !== 'estimated') {
+    missing.push('timingStatus')
+  }
+
+  if (
+    typeof cueSheet.tempoBpm !== 'number' ||
+    !Number.isFinite(cueSheet.tempoBpm) ||
+    cueSheet.tempoBpm <= 0
+  ) {
+    missing.push('tempoBpm')
+  }
+
+  if (
+    typeof cueSheet.beatsPerBar !== 'number' ||
+    !Number.isFinite(cueSheet.beatsPerBar) ||
+    cueSheet.beatsPerBar <= 0
+  ) {
+    missing.push('beatsPerBar')
+  }
+
+  if (
+    typeof cueSheet.totalEstimatedSeconds !== 'number' ||
+    !Number.isFinite(cueSheet.totalEstimatedSeconds) ||
+    cueSheet.totalEstimatedSeconds <= 0
+  ) {
+    missing.push('totalEstimatedSeconds')
+  }
+
+  if (
+    typeof cueSheet.totalEstimatedBars !== 'number' ||
+    !Number.isFinite(cueSheet.totalEstimatedBars) ||
+    cueSheet.totalEstimatedBars <= 0
+  ) {
+    missing.push('totalEstimatedBars')
+  }
+
+  if (!Array.isArray(cueSheet.sections) || cueSheet.sections.length === 0) {
+    missing.push('sections')
+  }
+
+  const sectionTimingInvalid = Array.isArray(cueSheet.sections)
+    ? cueSheet.sections.some((section) => {
+        if (!section || typeof section !== 'object' || Array.isArray(section)) {
+          return true
+        }
+
+        const record = section as Record<string, unknown>
+
+        return (
+          typeof record.section !== 'string' ||
+          !record.section.trim() ||
+          typeof record.estimatedBars !== 'number' ||
+          record.estimatedBars <= 0 ||
+          typeof record.estimatedSeconds !== 'number' ||
+          record.estimatedSeconds <= 0 ||
+          typeof record.startSeconds !== 'number' ||
+          typeof record.endSeconds !== 'number' ||
+          record.endSeconds <= record.startSeconds
+        )
+      })
+    : true
+
+  if (sectionTimingInvalid) {
+    missing.push('sectionTiming')
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+    detail:
+      missing.length === 0
+        ? 'Dry-run cue sheet contains estimated section timing, total bars, total seconds, tempo, and meter.'
+        : `Dry-run cue sheet is missing or invalid: ${missing.join(', ')}.`,
+  }
+}
+
 
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
@@ -353,13 +518,6 @@ function createRenderJobId() {
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as RendererPayload
-
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return NextResponse.json(
-        { error: 'Renderer payload is required.' },
-        { status: 400 },
-      )
-    }
 
     const validation = validateRendererPayload(body)
 
@@ -375,6 +533,18 @@ export async function POST(req: Request) {
     }
 
     const dryRunRenderPlan = buildDryRunRenderPlan(body)
+
+const dryRunRenderPlanValidation =
+  validateDryRunRenderPlan(dryRunRenderPlan)
+
+const dryRunCueSheet =
+  dryRunRenderPlan.cueSheet &&
+  typeof dryRunRenderPlan.cueSheet === 'object' &&
+  !Array.isArray(dryRunRenderPlan.cueSheet)
+    ? dryRunRenderPlan.cueSheet
+    : {}
+
+const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
 
     const renderJob = {
       id: createRenderJobId(),
@@ -408,6 +578,8 @@ export async function POST(req: Request) {
       validation,
       renderJob,
       dryRunRenderPlan,
+      dryRunRenderPlanValidation,
+      dryRunCueSheetValidation,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })
