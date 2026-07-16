@@ -3823,7 +3823,7 @@ const buildAudioPreviewChecklistCopyText = () => {
         .join('\n')
     }
 
-    const getAudioPreviewDryRunPlanSummary = () => {
+   const getAudioPreviewDryRunPlanSummary = () => {
   if (!audioPreviewDryRunRenderPlan) {
     return {
       hasPlan: false,
@@ -3833,12 +3833,17 @@ const buildAudioPreviewChecklistCopyText = () => {
       songsheetLineCount: 0,
       renderStepCount: 0,
       sectionCount: 0,
+      timelineSectionCount: 0,
       hasInstructions: false,
     }
   }
 
   const sections = Array.isArray(audioPreviewDryRunRenderPlan.sections)
     ? audioPreviewDryRunRenderPlan.sections
+    : []
+
+  const timeline = Array.isArray(audioPreviewDryRunRenderPlan.timeline)
+    ? audioPreviewDryRunRenderPlan.timeline
     : []
 
   const rendererInstructions = Array.isArray(audioPreviewDryRunRenderPlan.rendererInstructions)
@@ -3868,6 +3873,7 @@ const buildAudioPreviewChecklistCopyText = () => {
         ? audioPreviewDryRunRenderPlan.renderStepCount
         : 0,
     sectionCount: sections.length,
+    timelineSectionCount: timeline.length,
     hasInstructions: rendererInstructions.length > 0,
   }
 }
@@ -8759,6 +8765,15 @@ return (
                       </div>
                       <div className="mt-1 text-sm text-gray-300">
                         {audioPreviewDryRunPlanSummary.renderStepCount}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Timeline sections
+                      </div>
+                      <div className="mt-1 text-sm text-gray-300">
+                        {audioPreviewDryRunPlanSummary.timelineSectionCount}
                       </div>
                     </div>
 

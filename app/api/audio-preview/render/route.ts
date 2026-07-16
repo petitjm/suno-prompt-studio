@@ -38,6 +38,25 @@ type RenderStep = {
   notes?: string
 }
 
+type SongSheetLine = {
+  section?: string
+  lyric?: string
+  chords?: unknown[]
+}
+
+type TimelineSection = {
+  order: number
+  section: string
+  lyricLineCount: number
+  chordPlacementCount: number
+  firstLyric: string
+  lastLyric: string
+  goal: string
+  guitarInstruction: string
+  vocalInstruction: string
+  dynamicInstruction: string
+}
+
 
 function getString(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
@@ -65,6 +84,79 @@ function normalizeRenderStep(item: unknown, index: number): RenderStep {
     dynamicInstruction: getString(record.dynamicInstruction),
     notes: getString(record.notes),
   }
+}
+
+function normalizeSongSheetLine(item: unknown, index: number): SongSheetLine {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return {
+      section: `Section ${index + 1}`,
+      lyric: '',
+      chords: [],
+    }
+  }
+
+  const record = item as Record<string, unknown>
+
+  return {
+    section: getString(record.section) || `Section ${index + 1}`,
+    lyric: getString(record.lyric),
+    chords: Array.isArray(record.chords) ? record.chords : [],
+  }
+}
+
+function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
+  const songSheetLines = Array.isArray(payload.songsheetLines)
+    ? payload.songsheetLines.map((item, index) => normalizeSongSheetLine(item, index))
+    : []
+
+  const renderSteps = Array.isArray(payload.renderSteps)
+    ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
+    : []
+
+  const sectionOrder: string[] = []
+  const linesBySection = new Map<string, SongSheetLine[]>()
+
+  songSheetLines.forEach((line) => {
+    const section = line.section || 'Unknown section'
+
+    if (!linesBySection.has(section)) {
+      linesBySection.set(section, [])
+      sectionOrder.push(section)
+    }
+
+    linesBySection.get(section)?.push(line)
+  })
+
+  return sectionOrder.map((section, index) => {
+    const lines = linesBySection.get(section) || []
+    const matchingStep =
+      renderSteps.find((step) => step.section === section) || renderSteps[index]
+
+    const chordPlacementCount = lines.reduce((total, line) => {
+      return total + (Array.isArray(line.chords) ? line.chords.length : 0)
+    }, 0)
+
+    return {
+      order: index + 1,
+      section,
+      lyricLineCount: lines.length,
+      chordPlacementCount,
+      firstLyric: lines[0]?.lyric || '',
+      lastLyric: lines[lines.length - 1]?.lyric || '',
+      goal:
+        matchingStep?.goal ||
+        'Preserve the section feel from the placed songsheet.',
+      guitarInstruction:
+        matchingStep?.guitarInstruction ||
+        'Use sparse acoustic guitar as the main timing and harmony reference.',
+      vocalInstruction:
+        matchingStep?.vocalInstruction ||
+        'Use understated guide vocal or melody reference only.',
+      dynamicInstruction:
+        matchingStep?.dynamicInstruction ||
+        'Keep dynamics clear and rehearsal-focused.',
+    }
+  })
 }
 
 
@@ -125,7 +217,7 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
   const renderSteps = Array.isArray(payload.renderSteps)
     ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
     : []
-
+    const timeline = buildDryRunTimeline(payload)
   return {
     type: 'audio-preview-dry-run-render-plan',
     version: 1,
@@ -144,7 +236,9 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
       ? payload.songsheetLines.length
       : 0,
     renderStepCount: renderSteps.length,
+    timelineSectionCount: timeline.length,
     sections: renderSteps.map((step, index) => ({
+      timeline,
       order: index + 1,
       section: step.section || `Section ${index + 1}`,
       goal: step.goal || 'Preserve the section feel from the renderer payload.',
