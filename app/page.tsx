@@ -4150,7 +4150,76 @@ const buildAudioPreviewChecklistCopyText = () => {
     }))
 }
 
+const getDryRunRenderManifestSummary = () => {
+  if (!dryRunRenderManifest) {
+    return {
+      manifestStatus: '',
+      audioStatus: '',
+      outputSlotCount: 0,
+      notGeneratedOutputCount: 0,
+      totalEstimatedSeconds: 0,
+      totalEstimatedBars: 0,
+      cueSheetSectionCount: 0,
+      dryRunRenderPlanReady: false,
+      dryRunCueSheetReady: false,
+    }
+  }
 
+  const expectedOutputs =
+    dryRunRenderManifest.expectedOutputs &&
+    typeof dryRunRenderManifest.expectedOutputs === 'object' &&
+    !Array.isArray(dryRunRenderManifest.expectedOutputs)
+      ? (dryRunRenderManifest.expectedOutputs as Record<string, unknown>)
+      : {}
+
+  const outputSlots = Object.values(expectedOutputs).filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+  )
+
+  const sourceSummary =
+    dryRunRenderManifest.sourceSummary &&
+    typeof dryRunRenderManifest.sourceSummary === 'object' &&
+    !Array.isArray(dryRunRenderManifest.sourceSummary)
+      ? (dryRunRenderManifest.sourceSummary as Record<string, unknown>)
+      : {}
+
+  const validation =
+    dryRunRenderManifest.validation &&
+    typeof dryRunRenderManifest.validation === 'object' &&
+    !Array.isArray(dryRunRenderManifest.validation)
+      ? (dryRunRenderManifest.validation as Record<string, unknown>)
+      : {}
+
+  return {
+    manifestStatus:
+      typeof dryRunRenderManifest.manifestStatus === 'string'
+        ? dryRunRenderManifest.manifestStatus
+        : '',
+    audioStatus:
+      typeof dryRunRenderManifest.audioStatus === 'string'
+        ? dryRunRenderManifest.audioStatus
+        : '',
+    outputSlotCount: outputSlots.length,
+    notGeneratedOutputCount: outputSlots.filter(
+      (slot) => slot.status === 'not-generated',
+    ).length,
+    totalEstimatedSeconds:
+      typeof sourceSummary.totalEstimatedSeconds === 'number'
+        ? sourceSummary.totalEstimatedSeconds
+        : 0,
+    totalEstimatedBars:
+      typeof sourceSummary.totalEstimatedBars === 'number'
+        ? sourceSummary.totalEstimatedBars
+        : 0,
+    cueSheetSectionCount:
+      typeof sourceSummary.cueSheetSectionCount === 'number'
+        ? sourceSummary.cueSheetSectionCount
+        : 0,
+    dryRunRenderPlanReady: validation.dryRunRenderPlanReady === true,
+    dryRunCueSheetReady: validation.dryRunCueSheetReady === true,
+  }
+}
 
    const getAudioPreviewDryRunPlanSummary = () => {
   if (!audioPreviewDryRunRenderPlan) {
@@ -6010,6 +6079,7 @@ const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary
 const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
 const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
+const dryRunRenderManifestSummary = getDryRunRenderManifestSummary()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
@@ -9417,6 +9487,81 @@ return (
         {justCopiedAudioPreviewRenderManifest ? 'Copied ✓' : 'Copy manifest'}
       </button>
     </div>
+
+    <div className="mt-3 grid gap-3 md:grid-cols-4">
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Manifest status
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.manifestStatus || 'Unknown'}
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Audio status
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.audioStatus || 'Unknown'}
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Output slots
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.notGeneratedOutputCount}/
+      {dryRunRenderManifestSummary.outputSlotCount} not generated
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Cue sections
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.cueSheetSectionCount}
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Estimated bars
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.totalEstimatedBars}
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Estimated length
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.totalEstimatedSeconds}s
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Plan validation
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.dryRunRenderPlanReady ? 'Passed' : 'Needs review'}
+    </div>
+  </div>
+
+  <div className="rounded border border-gray-800 bg-gray-900 p-3">
+    <div className="text-xs uppercase tracking-wide text-gray-500">
+      Cue validation
+    </div>
+    <div className="mt-1 text-sm text-gray-300">
+      {dryRunRenderManifestSummary.dryRunCueSheetReady ? 'Passed' : 'Needs review'}
+    </div>
+  </div>
+</div>
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunRenderManifest, null, 2)}
