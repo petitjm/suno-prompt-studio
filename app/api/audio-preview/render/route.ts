@@ -252,6 +252,7 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
         step.dynamicInstruction || 'Keep dynamics clear and rehearsal-focused.',
       notes: step.notes || '',
     })),
+    timeline,
     rendererInstructions: [
       'This is a dry-run plan only. No audio file is generated.',
       'Use the count-in, tempo, groove, placed songsheet, and section instructions as the render source.',

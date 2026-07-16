@@ -3823,6 +3823,60 @@ const buildAudioPreviewChecklistCopyText = () => {
         .join('\n')
     }
 
+    const getAudioPreviewDryRunTimelineRows = () => {
+  if (!audioPreviewDryRunRenderPlan) {
+    return []
+  }
+
+  const timeline = Array.isArray(audioPreviewDryRunRenderPlan.timeline)
+    ? audioPreviewDryRunRenderPlan.timeline
+    : []
+
+  return timeline
+    .filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+    )
+    .map((item, index) => ({
+      order:
+        typeof item.order === 'number' && Number.isFinite(item.order)
+          ? item.order
+          : index + 1,
+      section:
+        typeof item.section === 'string' && item.section.trim()
+          ? item.section
+          : `Section ${index + 1}`,
+      lyricLineCount:
+        typeof item.lyricLineCount === 'number'
+          ? item.lyricLineCount
+          : 0,
+      chordPlacementCount:
+        typeof item.chordPlacementCount === 'number'
+          ? item.chordPlacementCount
+          : 0,
+      firstLyric:
+        typeof item.firstLyric === 'string' ? item.firstLyric : '',
+      lastLyric:
+        typeof item.lastLyric === 'string' ? item.lastLyric : '',
+      goal:
+        typeof item.goal === 'string' ? item.goal : '',
+      guitarInstruction:
+        typeof item.guitarInstruction === 'string'
+          ? item.guitarInstruction
+          : '',
+      vocalInstruction:
+        typeof item.vocalInstruction === 'string'
+          ? item.vocalInstruction
+          : '',
+      dynamicInstruction:
+        typeof item.dynamicInstruction === 'string'
+          ? item.dynamicInstruction
+          : '',
+    }))
+}
+
+
+
    const getAudioPreviewDryRunPlanSummary = () => {
   if (!audioPreviewDryRunRenderPlan) {
     return {
@@ -5651,6 +5705,7 @@ const audioPreviewChecklist = getAudioPreviewChecklist()
 const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
 const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
 const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
+const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
@@ -8799,6 +8854,99 @@ return (
                 </pre>
               </details>
             ) : null}
+
+{audioPreviewDryRunTimelineRows.length > 0 ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview dry-run timeline
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Renderer-style section timeline grouped from the placed songsheet.
+    </div>
+
+    <div className="mt-3 grid gap-3">
+      {audioPreviewDryRunTimelineRows.map((row) => (
+        <div
+          key={`${row.order}-${row.section}`}
+          className="rounded border border-gray-800 bg-gray-900 p-3"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-gray-200">
+                {row.order}. {row.section}
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                {row.lyricLineCount} lyric line{row.lyricLineCount === 1 ? '' : 's'} · {row.chordPlacementCount} chord placement{row.chordPlacementCount === 1 ? '' : 's'}
+              </div>
+            </div>
+          </div>
+
+          {(row.firstLyric || row.lastLyric) ? (
+            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+              {row.firstLyric ? (
+                <div>
+                  <span className="text-gray-500">First:</span> {row.firstLyric}
+                </div>
+              ) : null}
+              {row.lastLyric && row.lastLyric !== row.firstLyric ? (
+                <div className="mt-1">
+                  <span className="text-gray-500">Last:</span> {row.lastLyric}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {row.goal ? (
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">
+                  Goal
+                </div>
+                <div className="mt-1 text-xs leading-5 text-gray-300">
+                  {row.goal}
+                </div>
+              </div>
+            ) : null}
+
+            {row.guitarInstruction ? (
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">
+                  Guitar
+                </div>
+                <div className="mt-1 text-xs leading-5 text-gray-300">
+                  {row.guitarInstruction}
+                </div>
+              </div>
+            ) : null}
+
+            {row.vocalInstruction ? (
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">
+                  Vocal
+                </div>
+                <div className="mt-1 text-xs leading-5 text-gray-300">
+                  {row.vocalInstruction}
+                </div>
+              </div>
+            ) : null}
+
+            {row.dynamicInstruction ? (
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">
+                  Dynamics
+                </div>
+                <div className="mt-1 text-xs leading-5 text-gray-300">
+                  {row.dynamicInstruction}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  </details>
+) : null}
 
     {audioPreviewRenderResponse ? (
       <details className="rounded border border-gray-800 bg-gray-950 p-4">
