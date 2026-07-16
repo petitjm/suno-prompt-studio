@@ -2702,10 +2702,17 @@ const copyAudioPreviewRenderManifest = async () => {
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
     '',
+    'MANIFEST VALIDATION',
+    '',
+    dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
+    typeof dryRunRenderManifestValidation?.detail === 'string'
+      ? dryRunRenderManifestValidation.detail
+      : 'Validation details unavailable.',
+    '',
     'MANIFEST JSON',
     '',
     JSON.stringify(dryRunRenderManifest, null, 2),
-  ]
+    ]
     .filter((line, index, lines) => {
       if (line !== '') {
         return true
@@ -3740,13 +3747,20 @@ const buildFullPerformancePackCopyText = () => {
             ]
           : []),
 
-            ...(dryRunRenderManifest
+          ...(dryRunRenderManifest
           ? [
               '============================================================',
               'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
               '============================================================',
               '',
               'Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.',
+              '',
+              'MANIFEST VALIDATION',
+              '',
+              dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
+              typeof dryRunRenderManifestValidation?.detail === 'string'
+                ? dryRunRenderManifestValidation.detail
+                : 'Validation details unavailable.',
               '',
               'MANIFEST JSON',
               '',
@@ -3945,6 +3959,7 @@ const getFullPackAudioPreviewStatus = () => {
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
   const hasValidatedDryRunPlan = dryRunRenderPlanValidation?.ready === true
+  const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
   const hasDryRunManifest = Boolean(dryRunRenderManifest)
   if (
       hasPlacedSongsheet &&
@@ -3954,12 +3969,13 @@ const getFullPackAudioPreviewStatus = () => {
       hasValidatedRendererPayload &&
       hasDryRunJob &&
       hasValidatedDryRunPlan &&
-      hasDryRunManifest
+      hasDryRunManifest &&
+      hasValidatedManifest
     ) {
     return {
       label: 'Full pack includes audio preview artefacts',
   detail:
-  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, and render manifest.',
+  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, and future audio output placeholders.',
     }
   }
 
@@ -3968,6 +3984,7 @@ const getFullPackAudioPreviewStatus = () => {
   hasRendererPayload ||
   audioPreviewRendererPayloadValidation ||
   hasDryRunJob ||
+  hasValidatedManifest ||
   hasDryRunPlan
 ) {
     return {
