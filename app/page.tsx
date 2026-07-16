@@ -3525,6 +3525,7 @@ const buildFullPerformancePackCopyText = () => {
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
   const audioPreviewDryRunCueSheet = getAudioPreviewDryRunCueSheet()
+  
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -3725,7 +3726,21 @@ const buildFullPerformancePackCopyText = () => {
             ]
           : []),
 
-         
+            ...(dryRunRenderManifest
+          ? [
+              '============================================================',
+              'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
+              '============================================================',
+              '',
+              'Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.',
+              '',
+              'MANIFEST JSON',
+              '',
+              JSON.stringify(dryRunRenderManifest, null, 2),
+              '',
+            ]
+          : []),
+
           ...(audioPreviewRenderResponse
           ? [
               '============================================================',
@@ -3915,7 +3930,8 @@ const getFullPackAudioPreviewStatus = () => {
   const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
-
+  const hasValidatedDryRunPlan = dryRunRenderPlanValidation?.ready === true
+  const hasDryRunManifest = Boolean(dryRunRenderManifest)
   if (
       hasPlacedSongsheet &&
       hasSectionGuide &&
@@ -3923,13 +3939,13 @@ const getFullPackAudioPreviewStatus = () => {
       hasRendererPayload &&
       hasValidatedRendererPayload &&
       hasDryRunJob &&
-      hasDryRunPlan
+      hasValidatedDryRunPlan &&
+      hasDryRunManifest
     ) {
     return {
       label: 'Full pack includes audio preview artefacts',
-      detail:
-  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, and dry-run render plan.',
-      tone: 'ready',
+  detail:
+  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, and render manifest.',
     }
   }
 
