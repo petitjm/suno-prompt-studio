@@ -4508,6 +4508,8 @@ const getAudioPreviewChecklist = () => {
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
   const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
+  const hasDryRunManifest = Boolean(dryRunRenderManifest)
+  const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
 
   return [
     {
@@ -4538,13 +4540,7 @@ const getAudioPreviewChecklist = () => {
         ? 'Audio preview planner returned a preview plan.'
         : 'Request audio preview to create planner output.',
     },
-    {
-      label: 'Renderer songsheet ready',
-      complete: hasPreviewSongSheet,
-      detail: hasPreviewSongSheet
-        ? 'Audio-preview placed songsheet is available.'
-        : 'Request audio preview to derive the renderer songsheet.',
-    },
+    
     {
       label: 'Section guide ready',
       complete: hasSectionGuide,
@@ -4566,15 +4562,7 @@ const getAudioPreviewChecklist = () => {
             ? 'Structured machine-readable renderer payload is available.'
             : 'Request audio preview to generate the renderer payload.',
         },
-        {
-          label: 'Renderer payload validated',
-          complete: hasValidatedRendererPayload,
-          detail: hasValidatedRendererPayload
-            ? 'Renderer payload validation passed.'
-            : hasRendererPayload
-              ? 'Renderer payload exists but validation needs review.'
-              : 'Request audio preview to validate the renderer payload.',
-        },
+       
 
         {
   label: 'Dry-run handoff ready',
@@ -4594,6 +4582,39 @@ const getAudioPreviewChecklist = () => {
     : hasDryRunJob
       ? 'Dry-run handoff succeeded, but no render plan was returned.'
       : 'Submit dry run to create the structured render plan.',
+},
+
+ {
+          label: 'Renderer payload validated',
+          complete: hasValidatedRendererPayload,
+          detail: hasValidatedRendererPayload
+            ? 'Renderer payload validation passed.'
+            : hasRendererPayload
+              ? 'Renderer payload exists but validation needs review.'
+              : 'Request audio preview to validate the renderer payload.',
+        },
+{
+      label: 'Renderer songsheet ready',
+      complete: hasPreviewSongSheet,
+      detail: hasPreviewSongSheet
+        ? 'Audio-preview placed songsheet is available.'
+        : 'Request audio preview to derive the renderer songsheet.',
+    },
+    {
+  label: 'Dry-run render manifest ready',
+  complete: hasDryRunManifest,
+  detail: hasDryRunManifest
+    ? 'Renderer-facing dry-run manifest is available.'
+    : 'Submit dry run to create the renderer-facing manifest.',
+},
+{
+  label: 'Dry-run render manifest validated',
+  complete: hasValidatedManifest,
+  detail: hasValidatedManifest
+    ? 'Dry-run render manifest validation passed.'
+    : hasDryRunManifest
+      ? 'Dry-run render manifest exists but validation needs review.'
+      : 'Submit dry run to create and validate the render manifest.',
 },
 
   ]
