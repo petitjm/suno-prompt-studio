@@ -268,6 +268,7 @@ export default function Page() {
   const [justCopiedAudioRenderSteps, setJustCopiedAudioRenderSteps] = useState(false)
   const [justCopiedAudioPreviewSongSheet, setJustCopiedAudioPreviewSongSheet] = useState(false)
   const [justCopiedAudioPreviewChecklist, setJustCopiedAudioPreviewChecklist] = useState(false)
+  const [justCopiedAudioPreviewCueSheet, setJustCopiedAudioPreviewCueSheet] = useState(false)
   const [justCopiedGenerationUsage, setJustCopiedGenerationUsage] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
@@ -2613,6 +2614,70 @@ const buildSongsheetReviewCopyText = () => {
     })
     .join('\n')
 }
+
+const copyAudioPreviewCueSheet = async () => {
+  if (!audioPreviewDryRunRenderPlan) {
+    setAudioPreviewRenderMessage('No audio preview dry-run cue sheet available to copy.')
+    return
+  }
+
+  const cueSheet =
+    audioPreviewDryRunRenderPlan.cueSheet &&
+    typeof audioPreviewDryRunRenderPlan.cueSheet === 'object' &&
+    !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+      ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+      : null
+
+  if (!cueSheet) {
+    setAudioPreviewRenderMessage('No audio preview dry-run cue sheet available to copy.')
+    return
+  }
+
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW DRY-RUN CUE SHEET',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'CUE SHEET JSON',
+    '',
+    JSON.stringify(cueSheet, null, 2),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewCueSheet(true)
+    setAudioPreviewRenderMessage('Audio preview dry-run cue sheet copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewCueSheet(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewRenderMessage('Could not copy audio preview dry-run cue sheet.')
+  }
+}
+
+
 
 const copyAudioPreviewDryRunPlan = async () => {
   if (!audioPreviewDryRunRenderPlan) {
@@ -9055,9 +9120,19 @@ return (
       Audio preview dry-run cue sheet
     </summary>
 
-    <div className="mt-3 text-xs leading-5 text-gray-500">
-      Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.
-    </div>
+   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+  <div className="text-xs leading-5 text-gray-500">
+    Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.
+  </div>
+
+  <button
+    type="button"
+    onClick={() => copyAudioPreviewCueSheet()}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+  >
+    {justCopiedAudioPreviewCueSheet ? 'Copied ✓' : 'Copy cue sheet'}
+  </button>
+</div>
 
     <div className="mt-3 grid gap-3">
       {audioPreviewDryRunCueSheetRows.map((row) => (
