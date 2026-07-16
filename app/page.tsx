@@ -3823,6 +3823,54 @@ const buildAudioPreviewChecklistCopyText = () => {
         .join('\n')
     }
 
+
+    const getAudioPreviewDryRunCueSheetRows = () => {
+  if (!audioPreviewDryRunRenderPlan) {
+    return []
+  }
+
+  const cueSheet =
+    audioPreviewDryRunRenderPlan.cueSheet &&
+    typeof audioPreviewDryRunRenderPlan.cueSheet === 'object' &&
+    !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+      ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+      : null
+
+  const sections =
+    cueSheet && Array.isArray(cueSheet.sections) ? cueSheet.sections : []
+
+  return sections
+    .filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+    )
+    .map((item, index) => ({
+      order:
+        typeof item.order === 'number' && Number.isFinite(item.order)
+          ? item.order
+          : index + 1,
+      section:
+        typeof item.section === 'string' && item.section.trim()
+          ? item.section
+          : `Section ${index + 1}`,
+      estimatedBars:
+        typeof item.estimatedBars === 'number' ? item.estimatedBars : 0,
+      estimatedSeconds:
+        typeof item.estimatedSeconds === 'number' ? item.estimatedSeconds : 0,
+      startSeconds:
+        typeof item.startSeconds === 'number' ? item.startSeconds : 0,
+      endSeconds:
+        typeof item.endSeconds === 'number' ? item.endSeconds : 0,
+      lyricLineCount:
+        typeof item.lyricLineCount === 'number' ? item.lyricLineCount : 0,
+      chordPlacementCount:
+        typeof item.chordPlacementCount === 'number'
+          ? item.chordPlacementCount
+          : 0,
+    }))
+}
+
+
     const getAudioPreviewDryRunTimelineRows = () => {
   if (!audioPreviewDryRunRenderPlan) {
     return []
@@ -5730,6 +5778,7 @@ const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
 const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
 const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
+const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
@@ -8998,6 +9047,73 @@ return (
     </div>
   </details>
 ) : null}
+
+
+{audioPreviewDryRunCueSheetRows.length > 0 ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview dry-run cue sheet
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.
+    </div>
+
+    <div className="mt-3 grid gap-3">
+      {audioPreviewDryRunCueSheetRows.map((row) => (
+        <div
+          key={`${row.order}-${row.section}`}
+          className="rounded border border-gray-800 bg-gray-900 p-3"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-gray-200">
+                {row.order}. {row.section}
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                {row.lyricLineCount} lyric line{row.lyricLineCount === 1 ? '' : 's'} · {row.chordPlacementCount} chord placement{row.chordPlacementCount === 1 ? '' : 's'}
+              </div>
+            </div>
+
+            <div className="text-xs leading-5 text-gray-400">
+              {row.startSeconds.toFixed(1)}s → {row.endSeconds.toFixed(1)}s
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Estimated bars
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.estimatedBars}
+              </div>
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Estimated seconds
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.estimatedSeconds.toFixed(1)}s
+              </div>
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                Time range
+              </div>
+              <div className="mt-1 text-sm text-gray-300">
+                {row.startSeconds.toFixed(1)}s–{row.endSeconds.toFixed(1)}s
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </details>
+) : null}
+
 
     {audioPreviewRenderResponse ? (
       <details className="rounded border border-gray-800 bg-gray-950 p-4">
