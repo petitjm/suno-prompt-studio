@@ -281,6 +281,10 @@ export default function Page() {
   const [justCopiedAudioPreviewSongSheet, setJustCopiedAudioPreviewSongSheet] = useState(false)
   const [justCopiedAudioPreviewChecklist, setJustCopiedAudioPreviewChecklist] = useState(false)
   const [justCopiedAudioPreviewCueSheet, setJustCopiedAudioPreviewCueSheet] = useState(false)
+  const [
+  justCopiedAudioPreviewRenderManifest,
+     setJustCopiedAudioPreviewRenderManifest,
+    ] = useState(false)
   const [justCopiedGenerationUsage, setJustCopiedGenerationUsage] = useState(false)
   const [justClearedChords, setJustClearedChords] = useState(false)
   const [chordTransposeSemitones, setChordTransposeSemitones] = useState(0)
@@ -2659,6 +2663,57 @@ const buildSongsheetReviewCopyText = () => {
     })
     .join('\n')
 }
+
+const copyAudioPreviewRenderManifest = async () => {
+  if (!dryRunRenderManifest) {
+    setAudioPreviewRenderMessage('No audio preview dry-run render manifest available to copy.')
+    return
+  }
+
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'MANIFEST JSON',
+    '',
+    JSON.stringify(dryRunRenderManifest, null, 2),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewRenderManifest(true)
+    setAudioPreviewRenderMessage('Audio preview dry-run render manifest copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewRenderManifest(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewRenderMessage('Could not copy audio preview dry-run render manifest.')
+  }
+}
+
 
 const copyAudioPreviewCueSheet = async () => {
   if (!audioPreviewDryRunRenderPlan) {
@@ -9333,8 +9388,18 @@ return (
       Audio preview dry-run render manifest
     </summary>
 
-    <div className="mt-3 text-xs leading-5 text-gray-500">
-      Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-xs leading-5 text-gray-500">
+        Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.
+      </div>
+
+      <button
+        type="button"
+        onClick={() => copyAudioPreviewRenderManifest()}
+        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+      >
+        {justCopiedAudioPreviewRenderManifest ? 'Copied ✓' : 'Copy manifest'}
+      </button>
     </div>
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
