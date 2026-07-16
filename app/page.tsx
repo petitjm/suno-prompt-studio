@@ -219,6 +219,10 @@ export default function Page() {
   const [audioPreviewRenderJob, setAudioPreviewRenderJob] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderResponse, setAudioPreviewRenderResponse] = useState('')
   const [audioPreviewDryRunRenderPlan, setAudioPreviewDryRunRenderPlan] = useState<Record<string, unknown> | null>(null)
+ const [
+  dryRunRenderManifestValidation,
+      setDryRunRenderManifestValidation,
+    ] = useState<Record<string, unknown> | null>(null)
   const [dryRunRenderManifest, setDryRunRenderManifest] =
     useState<Record<string, unknown> | null>(null)
   const [dryRunCueSheetValidation,
@@ -256,6 +260,7 @@ export default function Page() {
       setAudioPreviewDryRunRenderPlan(null)
       setDryRunRenderPlanValidation(null)
       setDryRunRenderManifest(null)
+      setDryRunRenderManifestValidation(null)
       setDryRunCueSheetValidation(null)
       
     }
@@ -2341,6 +2346,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setAudioPreviewDryRunRenderPlan(null)
   setDryRunRenderPlanValidation(null)
   setDryRunRenderManifest(null)
+  setDryRunRenderManifestValidation(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -2411,6 +2417,14 @@ setDryRunRenderManifest(
     typeof result.dryRunRenderManifest === 'object' &&
     !Array.isArray(result.dryRunRenderManifest)
     ? result.dryRunRenderManifest
+    : null,
+)
+
+setDryRunRenderManifestValidation(
+  result.dryRunRenderManifestValidation &&
+    typeof result.dryRunRenderManifestValidation === 'object' &&
+    !Array.isArray(result.dryRunRenderManifestValidation)
+    ? result.dryRunRenderManifestValidation
     : null,
 )
 
@@ -4362,6 +4376,7 @@ const clearAudioPreviewOutput = () => {
   setAudioPreviewDryRunRenderPlan(null)
   setDryRunRenderPlanValidation(null)
   setDryRunRenderManifest(null)
+  setDryRunRenderManifestValidation(null)
   setDryRunCueSheetValidation(null)
   
 }
@@ -6395,6 +6410,7 @@ const clearChordEditor = () => {
   setAudioPreviewDryRunRenderPlan(null)
   setDryRunRenderPlanValidation(null)
   setDryRunRenderManifest(null)
+  setDryRunRenderManifestValidation(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -9487,6 +9503,28 @@ return (
         {justCopiedAudioPreviewRenderManifest ? 'Copied ✓' : 'Copy manifest'}
       </button>
     </div>
+
+    {dryRunRenderManifestValidation ? (
+      <div
+        className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+          dryRunRenderManifestValidation.ready === true
+            ? 'border-green-900 bg-green-950/20 text-green-100'
+            : 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+        }`}
+      >
+        <div className="font-medium">
+          {dryRunRenderManifestValidation.ready === true
+            ? 'Dry-run render manifest validation passed'
+            : 'Dry-run render manifest validation needs review'}
+        </div>
+        <div className="mt-1">
+          {typeof dryRunRenderManifestValidation.detail === 'string'
+            ? dryRunRenderManifestValidation.detail
+            : 'Validation details unavailable.'}
+        </div>
+      </div>
+    ) : null}
+
 
     <div className="mt-3 grid gap-3 md:grid-cols-4">
   <div className="rounded border border-gray-800 bg-gray-900 p-3">

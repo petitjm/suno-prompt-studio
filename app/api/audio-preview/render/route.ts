@@ -598,6 +598,152 @@ function buildDryRunRenderManifest({
 }
 
 
+function validateDryRunRenderManifest(manifest: {
+  type?: string
+  manifestStatus?: string
+  audioStatus?: string
+  renderJob?: unknown
+  validation?: unknown
+  sourceSummary?: unknown
+  expectedOutputs?: unknown
+}) {
+  const missing: string[] = []
+
+  if (manifest.type !== 'audio-preview-dry-run-render-manifest') {
+    missing.push('type')
+  }
+
+  if (manifest.manifestStatus !== 'dry-run-ready') {
+    missing.push('manifestStatus')
+  }
+
+  if (manifest.audioStatus !== 'not-generated') {
+    missing.push('audioStatus')
+  }
+
+  if (
+    !manifest.renderJob ||
+    typeof manifest.renderJob !== 'object' ||
+    Array.isArray(manifest.renderJob)
+  ) {
+    missing.push('renderJob')
+  }
+
+  const validation =
+    manifest.validation &&
+    typeof manifest.validation === 'object' &&
+    !Array.isArray(manifest.validation)
+      ? (manifest.validation as Record<string, unknown>)
+      : null
+
+  if (!validation) {
+    missing.push('validation')
+  } else {
+    if (validation.rendererPayloadReady !== true) {
+      missing.push('validation.rendererPayloadReady')
+    }
+
+    if (validation.dryRunRenderPlanReady !== true) {
+      missing.push('validation.dryRunRenderPlanReady')
+    }
+
+    if (validation.dryRunCueSheetReady !== true) {
+      missing.push('validation.dryRunCueSheetReady')
+    }
+  }
+
+  const sourceSummary =
+    manifest.sourceSummary &&
+    typeof manifest.sourceSummary === 'object' &&
+    !Array.isArray(manifest.sourceSummary)
+      ? (manifest.sourceSummary as Record<string, unknown>)
+      : null
+
+  if (!sourceSummary) {
+    missing.push('sourceSummary')
+  } else {
+    if (
+      typeof sourceSummary.songsheetLineCount !== 'number' ||
+      sourceSummary.songsheetLineCount <= 0
+    ) {
+      missing.push('sourceSummary.songsheetLineCount')
+    }
+
+    if (
+      typeof sourceSummary.renderStepCount !== 'number' ||
+      sourceSummary.renderStepCount <= 0
+    ) {
+      missing.push('sourceSummary.renderStepCount')
+    }
+
+    if (
+      typeof sourceSummary.timelineSectionCount !== 'number' ||
+      sourceSummary.timelineSectionCount <= 0
+    ) {
+      missing.push('sourceSummary.timelineSectionCount')
+    }
+
+    if (
+      typeof sourceSummary.cueSheetSectionCount !== 'number' ||
+      sourceSummary.cueSheetSectionCount <= 0
+    ) {
+      missing.push('sourceSummary.cueSheetSectionCount')
+    }
+
+    if (
+      typeof sourceSummary.totalEstimatedSeconds !== 'number' ||
+      sourceSummary.totalEstimatedSeconds <= 0
+    ) {
+      missing.push('sourceSummary.totalEstimatedSeconds')
+    }
+
+    if (
+      typeof sourceSummary.totalEstimatedBars !== 'number' ||
+      sourceSummary.totalEstimatedBars <= 0
+    ) {
+      missing.push('sourceSummary.totalEstimatedBars')
+    }
+  }
+
+  const expectedOutputs =
+    manifest.expectedOutputs &&
+    typeof manifest.expectedOutputs === 'object' &&
+    !Array.isArray(manifest.expectedOutputs)
+      ? (manifest.expectedOutputs as Record<string, unknown>)
+      : null
+
+  if (!expectedOutputs) {
+    missing.push('expectedOutputs')
+  } else {
+    const outputSlots = Object.values(expectedOutputs).filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+    )
+
+    if (outputSlots.length === 0) {
+      missing.push('expectedOutputs.slots')
+    }
+
+    const invalidOutputSlot = outputSlots.some(
+      (slot) => slot.status !== 'not-generated',
+    )
+
+    if (invalidOutputSlot) {
+      missing.push('expectedOutputs.status')
+    }
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+    detail:
+      missing.length === 0
+        ? 'Dry-run render manifest contains validated source summary, expected output placeholders, and not-generated audio status.'
+        : `Dry-run render manifest is missing or invalid: ${missing.join(', ')}.`,
+  }
+}
+
+
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
     .toString(36)
@@ -669,6 +815,9 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       dryRunCueSheetValidation,
     })
 
+    const dryRunRenderManifestValidation =
+        validateDryRunRenderManifest(dryRunRenderManifest)
+
     return NextResponse.json({
       status: 'accepted',
       renderStatus: 'dry-run-ready',
@@ -678,6 +827,7 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       dryRunRenderPlanValidation,
       dryRunCueSheetValidation,
       dryRunRenderManifest,
+      dryRunRenderManifestValidation,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })
