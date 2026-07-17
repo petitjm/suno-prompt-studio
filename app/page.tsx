@@ -4655,6 +4655,11 @@ const getAudioPreviewChecklist = () => {
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasDryRunManifest = Boolean(dryRunRenderManifest)
   const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
+  const expectedOutputRows = getDryRunExpectedOutputRows()
+  const hasExpectedOutputSlots = expectedOutputRows.length > 0
+  const hasOnlyNotGeneratedOutputs =
+  hasExpectedOutputSlots &&
+  expectedOutputRows.every((output) => output.status === 'not-generated')
 
   return [
     {
@@ -4760,6 +4765,22 @@ const getAudioPreviewChecklist = () => {
     : hasDryRunManifest
       ? 'Dry-run render manifest exists but validation needs review.'
       : 'Submit dry run to create and validate the render manifest.',
+},
+{
+  label: 'Expected audio output slots ready',
+  complete: hasExpectedOutputSlots,
+  detail: hasExpectedOutputSlots
+    ? `${expectedOutputRows.length} expected audio output slot${expectedOutputRows.length === 1 ? '' : 's'} available.`
+    : 'Submit dry run to create expected future audio output slots.',
+},
+{
+  label: 'Expected audio outputs not generated',
+  complete: hasOnlyNotGeneratedOutputs,
+  detail: hasOnlyNotGeneratedOutputs
+    ? 'All expected audio output slots are correctly marked not-generated.'
+    : hasExpectedOutputSlots
+      ? 'Review expected output slot statuses before connecting a real renderer.'
+      : 'Submit dry run to confirm expected audio output statuses.',
 },
 
   ]
