@@ -4302,6 +4302,58 @@ const getDryRunExpectedOutputRows = () => {
   })
 }
 
+const getDryRunRendererContractSummary = () => {
+  if (!dryRunRenderManifest) {
+    return {
+      contractStatus: '',
+      rendererMode: '',
+      consumes: [] as string[],
+      produces: [] as string[],
+      requiredBeforeRealRender: [] as string[],
+      safetyNotes: [] as string[],
+    }
+  }
+
+  const rendererContract =
+    dryRunRenderManifest.rendererContract &&
+    typeof dryRunRenderManifest.rendererContract === 'object' &&
+    !Array.isArray(dryRunRenderManifest.rendererContract)
+      ? (dryRunRenderManifest.rendererContract as Record<string, unknown>)
+      : {}
+
+  return {
+    contractStatus:
+      typeof rendererContract.contractStatus === 'string'
+        ? rendererContract.contractStatus
+        : '',
+    rendererMode:
+      typeof rendererContract.rendererMode === 'string'
+        ? rendererContract.rendererMode
+        : '',
+    consumes: Array.isArray(rendererContract.consumes)
+      ? rendererContract.consumes.filter(
+          (item): item is string => typeof item === 'string',
+        )
+      : [],
+    produces: Array.isArray(rendererContract.produces)
+      ? rendererContract.produces.filter(
+          (item): item is string => typeof item === 'string',
+        )
+      : [],
+    requiredBeforeRealRender: Array.isArray(
+      rendererContract.requiredBeforeRealRender,
+    )
+      ? rendererContract.requiredBeforeRealRender.filter(
+          (item): item is string => typeof item === 'string',
+        )
+      : [],
+    safetyNotes: Array.isArray(rendererContract.safetyNotes)
+      ? rendererContract.safetyNotes.filter(
+          (item): item is string => typeof item === 'string',
+        )
+      : [],
+  }
+}
 
 const getDryRunRenderManifestSummary = () => {
   if (!dryRunRenderManifest) {
@@ -6338,6 +6390,7 @@ const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
 const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
 const dryRunRenderManifestSummary = getDryRunRenderManifestSummary()
+const dryRunRendererContractSummary = getDryRunRendererContractSummary()
 const dryRunExpectedOutputRows = getDryRunExpectedOutputRows()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 
@@ -9803,122 +9856,142 @@ return (
       </div>
     ) : null}
 
-
     <div className="mt-3 grid gap-3 md:grid-cols-4">
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Manifest status
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.manifestStatus || 'Unknown'}
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Audio status
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.audioStatus || 'Unknown'}
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Output slots
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.notGeneratedOutputCount}/
-      {dryRunRenderManifestSummary.outputSlotCount} not generated
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Cue sections
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.cueSheetSectionCount}
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Estimated bars
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.totalEstimatedBars}
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Estimated length
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.totalEstimatedSeconds}s
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Plan validation
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.dryRunRenderPlanReady ? 'Passed' : 'Needs review'}
-    </div>
-  </div>
-
-  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-    <div className="text-xs uppercase tracking-wide text-gray-500">
-      Cue validation
-    </div>
-    <div className="mt-1 text-sm text-gray-300">
-      {dryRunRenderManifestSummary.dryRunCueSheetReady ? 'Passed' : 'Needs review'}
-    </div>
-  </div>
-</div>
-
-{dryRunExpectedOutputRows.length > 0 ? (
-  <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-      Expected audio outputs
-    </div>
-
-    <div className="mt-3 grid gap-2 md:grid-cols-2">
-      {dryRunExpectedOutputRows.map((output) => (
-        <div
-          key={output.key}
-          className="rounded border border-gray-800 bg-gray-900 p-3"
-        >
-          <div className="text-sm font-medium text-gray-200">
-            {output.label}
-          </div>
-          {output.description ? (
-              <div className="mt-1 text-xs leading-5 text-gray-500">
-                {output.description}
-              </div>
-            ) : null}
-
-          <div className="mt-2 grid gap-1 text-xs leading-5 text-gray-400">
-            <div>
-              <span className="text-gray-500">Status:</span>{' '}
-              {output.status}
-            </div>
-            <div>
-              <span className="text-gray-500">Format:</span>{' '}
-              {output.format}
-            </div>
-            <div>
-              <span className="text-gray-500">URL:</span>{' '}
-              {output.url || 'Not generated'}
-            </div>
-          </div>
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Manifest status
         </div>
-      ))}
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.manifestStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Audio status
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.audioStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Output slots
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.notGeneratedOutputCount}/
+          {dryRunRenderManifestSummary.outputSlotCount} not generated
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Cue sections
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.cueSheetSectionCount}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Estimated bars
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.totalEstimatedBars}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Estimated length
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.totalEstimatedSeconds}s
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Plan validation
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.dryRunRenderPlanReady
+            ? 'Passed'
+            : 'Needs review'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Cue validation
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRenderManifestSummary.dryRunCueSheetReady
+            ? 'Passed'
+            : 'Needs review'}
+        </div>
+      </div>
     </div>
-  </div>
-) : null}
+
+    {dryRunExpectedOutputRows.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          Expected audio outputs
+        </div>
+
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
+          {dryRunExpectedOutputRows.map((output) => (
+            <div
+              key={output.key}
+              className="rounded border border-gray-800 bg-gray-900 p-3"
+            >
+              <div className="text-sm font-medium text-gray-200">
+                {output.label}
+              </div>
+
+              {output.description ? (
+                <div className="mt-1 text-xs leading-5 text-gray-500">
+                  {output.description}
+                </div>
+              ) : null}
+
+              <div className="mt-2 grid gap-1 text-xs leading-5 text-gray-400">
+                {output.role ? (
+                  <div>
+                    <span className="text-gray-500">Role:</span>{' '}
+                    {output.role}
+                  </div>
+                ) : null}
+
+                {output.suggestedFileName ? (
+                  <div>
+                    <span className="text-gray-500">Suggested file:</span>{' '}
+                    {output.suggestedFileName}
+                  </div>
+                ) : null}
+
+                <div>
+                  <span className="text-gray-500">Status:</span>{' '}
+                  {output.status}
+                </div>
+
+                <div>
+                  <span className="text-gray-500">Format:</span>{' '}
+                  {output.format}
+                </div>
+
+                <div>
+                  <span className="text-gray-500">URL:</span>{' '}
+                  {output.url || 'Not generated'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunRenderManifest, null, 2)}
