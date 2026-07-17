@@ -231,7 +231,9 @@ export default function Page() {
   const [dryRunRenderPlanValidation,
       setDryRunRenderPlanValidation,
     ] = useState<Record<string, unknown> | null>(null)
-  const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
+  const [dryRunHandoffBundle, setDryRunHandoffBundle] =
+  useState<Record<string, unknown> | null>(null)
+    const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
   const [audioPreviewMeta, setAudioPreviewMeta] = useState<Record<string, unknown> | null>(null)
@@ -261,6 +263,7 @@ export default function Page() {
       setDryRunRenderPlanValidation(null)
       setDryRunRenderManifest(null)
       setDryRunRenderManifestValidation(null)
+      setDryRunHandoffBundle(null)
       setDryRunCueSheetValidation(null)
       
     }
@@ -2347,6 +2350,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setDryRunRenderPlanValidation(null)
   setDryRunRenderManifest(null)
   setDryRunRenderManifestValidation(null)
+  setDryRunHandoffBundle(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -2425,6 +2429,14 @@ setDryRunRenderManifestValidation(
     typeof result.dryRunRenderManifestValidation === 'object' &&
     !Array.isArray(result.dryRunRenderManifestValidation)
     ? result.dryRunRenderManifestValidation
+    : null,
+)
+
+setDryRunHandoffBundle(
+  result.dryRunHandoffBundle &&
+    typeof result.dryRunHandoffBundle === 'object' &&
+    !Array.isArray(result.dryRunHandoffBundle)
+    ? result.dryRunHandoffBundle
     : null,
 )
 
@@ -4608,6 +4620,7 @@ const clearAudioPreviewOutput = () => {
   setDryRunRenderPlanValidation(null)
   setDryRunRenderManifest(null)
   setDryRunRenderManifestValidation(null)
+  setDryRunHandoffBundle(null)
   setDryRunCueSheetValidation(null)
   
 }
@@ -6776,6 +6789,7 @@ const clearChordEditor = () => {
   setDryRunRenderPlanValidation(null)
   setDryRunRenderManifest(null)
   setDryRunRenderManifestValidation(null)
+  setDryRunHandoffBundle(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -10137,6 +10151,23 @@ return (
     </pre>
   </details>
 ) : null}
+
+{dryRunHandoffBundle ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview dry-run handoff bundle
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Consolidated dry-run handoff summary for future renderer integration. No audio file is generated yet.
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
+      {JSON.stringify(dryRunHandoffBundle, null, 2)}
+    </pre>
+  </details>
+) : null}
+
 
     {audioPreviewRenderResponse ? (
       <details className="rounded border border-gray-800 bg-gray-950 p-4">

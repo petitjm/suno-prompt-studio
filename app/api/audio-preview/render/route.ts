@@ -848,6 +848,67 @@ if (!expectedOutputs) {
       }
     }
 
+function buildDryRunHandoffBundle({
+  renderJob,
+  dryRunRenderPlanValidation,
+  dryRunCueSheetValidation,
+  dryRunRenderManifestValidation,
+}: {
+  renderJob: Record<string, unknown>
+  dryRunRenderPlanValidation: Record<string, unknown>
+  dryRunCueSheetValidation: Record<string, unknown>
+  dryRunRenderManifestValidation: Record<string, unknown>
+}) {
+  const allValidationsPassed =
+    dryRunRenderPlanValidation.ready === true &&
+    dryRunCueSheetValidation.ready === true &&
+    dryRunRenderManifestValidation.ready === true
+
+  return {
+    type: 'audio-preview-dry-run-handoff-bundle',
+    version: 1,
+    handoffStatus: allValidationsPassed
+      ? 'dry-run-handoff-ready'
+      : 'dry-run-handoff-needs-review',
+    audioStatus: 'not-generated',
+    createdAt: new Date().toISOString(),
+    renderJobId:
+      typeof renderJob.id === 'string' ? renderJob.id : 'unknown-render-job',
+    includedArtifacts: [
+      'rendererPayload',
+      'dryRunRenderPlan',
+      'dryRunCueSheet',
+      'dryRunRenderManifest',
+      'rendererContract',
+      'expectedOutputs',
+      'validationResults',
+    ],
+    validationSummary: {
+      dryRunRenderPlanReady: dryRunRenderPlanValidation.ready === true,
+      dryRunCueSheetReady: dryRunCueSheetValidation.ready === true,
+      dryRunRenderManifestReady:
+        dryRunRenderManifestValidation.ready === true,
+      allValidationsPassed,
+    },
+    nextActions: allValidationsPassed
+      ? [
+          'Review the dry-run cue sheet timing estimates.',
+          'Choose real audio output formats.',
+          'Connect a renderer that can consume the manifest contract.',
+          'Keep all output slots not-generated until files are actually written.',
+        ]
+      : [
+          'Review validation messages before connecting a renderer.',
+          'Do not generate or claim audio until the handoff bundle is ready.',
+        ],
+    notes: [
+      'This is a dry-run handoff bundle only.',
+      'No audio files have been generated.',
+      'This bundle summarises renderer-facing artefacts for future integration.',
+    ],
+  }
+}
+
 
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
@@ -923,6 +984,13 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
     const dryRunRenderManifestValidation =
         validateDryRunRenderManifest(dryRunRenderManifest)
 
+    const dryRunHandoffBundle = buildDryRunHandoffBundle({
+  renderJob,
+  dryRunRenderPlanValidation,
+  dryRunCueSheetValidation,
+  dryRunRenderManifestValidation,
+})
+
     return NextResponse.json({
       status: 'accepted',
       renderStatus: 'dry-run-ready',
@@ -933,6 +1001,7 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       dryRunCueSheetValidation,
       dryRunRenderManifest,
       dryRunRenderManifestValidation,
+      dryRunHandoffBundle,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })
