@@ -3861,7 +3861,27 @@ const fullPackPipelineStatus = fullPackPipelineComplete
               '',
             ]
           : []),
-
+          ...(audioPreviewDryRunRenderPlan
+  ? [
+      '============================================================',
+      'AUDIO PREVIEW DRY-RUN RENDER PLAN',
+      '============================================================',
+      '',
+      'Renderer-facing dry-run plan derived from the audio preview payload. No audio file is generated yet.',
+      '',
+      'RENDER PLAN VALIDATION',
+      '',
+      dryRunRenderPlanValidation?.ready === true ? 'Passed' : 'Needs review',
+      typeof dryRunRenderPlanValidation?.detail === 'string'
+        ? dryRunRenderPlanValidation.detail
+        : 'Validation details unavailable.',
+      '',
+      'RENDER PLAN JSON',
+      '',
+      JSON.stringify(audioPreviewDryRunRenderPlan, null, 2),
+      '',
+    ]
+  : []),
           ...(audioPreviewDryRunCueSheet
   ? [
       '============================================================',
