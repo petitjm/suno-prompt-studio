@@ -4678,6 +4678,14 @@ const getAudioPreviewChecklist = () => {
   const hasOnlyNotGeneratedOutputs =
   hasExpectedOutputSlots &&
   expectedOutputRows.every((output) => output.status === 'not-generated')
+  const hasExpectedOutputMetadata =
+  hasExpectedOutputSlots &&
+  expectedOutputRows.every(
+    (output) =>
+      Boolean(output.role) &&
+      Boolean(output.description) &&
+      Boolean(output.suggestedFileName),
+  )
 
   return [
     {
@@ -4799,6 +4807,15 @@ const getAudioPreviewChecklist = () => {
     : hasExpectedOutputSlots
       ? 'Review expected output slot statuses before connecting a real renderer.'
       : 'Submit dry run to confirm expected audio output statuses.',
+},
+{
+  label: 'Expected audio output metadata ready',
+  complete: hasExpectedOutputMetadata,
+  detail: hasExpectedOutputMetadata
+    ? 'Expected audio output slots include role, description, and suggested file names.'
+    : hasExpectedOutputSlots
+      ? 'Review expected output metadata before connecting a real renderer.'
+      : 'Submit dry run to create expected output metadata.',
 },
 
   ]

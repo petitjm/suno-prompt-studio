@@ -722,42 +722,57 @@ function validateDryRunRenderManifest(manifest: {
   }
 
   const expectedOutputs =
-    manifest.expectedOutputs &&
-    typeof manifest.expectedOutputs === 'object' &&
-    !Array.isArray(manifest.expectedOutputs)
-      ? (manifest.expectedOutputs as Record<string, unknown>)
-      : null
+  manifest.expectedOutputs &&
+  typeof manifest.expectedOutputs === 'object' &&
+  !Array.isArray(manifest.expectedOutputs)
+    ? (manifest.expectedOutputs as Record<string, unknown>)
+    : null
 
-  if (!expectedOutputs) {
-    missing.push('expectedOutputs')
-  } else {
-    const outputSlots = Object.values(expectedOutputs).filter(
-      (item): item is Record<string, unknown> =>
-        Boolean(item) && typeof item === 'object' && !Array.isArray(item),
-    )
+if (!expectedOutputs) {
+  missing.push('expectedOutputs')
+} else {
+  const outputSlots = Object.values(expectedOutputs).filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+  )
 
-    if (outputSlots.length === 0) {
-      missing.push('expectedOutputs.slots')
-    }
-
-    const invalidOutputSlot = outputSlots.some(
-      (slot) => slot.status !== 'not-generated',
-    )
-
-    if (invalidOutputSlot) {
-      missing.push('expectedOutputs.status')
-    }
+  if (outputSlots.length === 0) {
+    missing.push('expectedOutputs.slots')
   }
+
+  const invalidOutputStatus = outputSlots.some(
+    (slot) => slot.status !== 'not-generated',
+  )
+
+  if (invalidOutputStatus) {
+    missing.push('expectedOutputs.status')
+  }
+
+  const missingOutputMetadata = outputSlots.some((slot) => {
+    return (
+      typeof slot.role !== 'string' ||
+      !slot.role.trim() ||
+      typeof slot.description !== 'string' ||
+      !slot.description.trim() ||
+      typeof slot.suggestedFileName !== 'string' ||
+      !slot.suggestedFileName.trim()
+    )
+  })
+
+  if (missingOutputMetadata) {
+    missing.push('expectedOutputs.metadata')
+  }
+}
 
   return {
     ready: missing.length === 0,
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run render manifest contains validated source summary, expected output placeholders, and not-generated audio status.'
+        ? 'Dry-run render manifest contains validated source summary, expected output placeholders, output metadata, and not-generated audio status.'
         : `Dry-run render manifest is missing or invalid: ${missing.join(', ')}.`,
-  }
-}
+      }
+    }
 
 
 function createRenderJobId() {
