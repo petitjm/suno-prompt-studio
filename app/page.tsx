@@ -2686,6 +2686,7 @@ const copyAudioPreviewRenderManifest = async () => {
 
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+  const expectedOutputRows = getDryRunExpectedOutputRows()
 
   const copyText = [
     'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
@@ -2703,15 +2704,28 @@ const copyAudioPreviewRenderManifest = async () => {
     fullPackAudioPreviewStatus.detail,
     '',
     'MANIFEST VALIDATION',
-    '',
-    dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
-    typeof dryRunRenderManifestValidation?.detail === 'string'
-      ? dryRunRenderManifestValidation.detail
-      : 'Validation details unavailable.',
-    '',
-    'MANIFEST JSON',
-    '',
-    JSON.stringify(dryRunRenderManifest, null, 2),
+'',
+dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
+typeof dryRunRenderManifestValidation?.detail === 'string'
+  ? dryRunRenderManifestValidation.detail
+  : 'Validation details unavailable.',
+'',
+...(expectedOutputRows.length > 0
+  ? [
+      'EXPECTED AUDIO OUTPUTS',
+      '',
+      ...expectedOutputRows.flatMap((output) => [
+        output.label,
+        `Status: ${output.status}`,
+        `Format: ${output.format}`,
+        `URL: ${output.url || 'Not generated'}`,
+        '',
+      ]),
+    ]
+  : []),
+'MANIFEST JSON',
+'',
+JSON.stringify(dryRunRenderManifest, null, 2),
     ]
     .filter((line, index, lines) => {
       if (line !== '') {
@@ -3537,7 +3551,7 @@ const buildPerformanceIntentCopyText = () => {
 }
 
 const buildFullPerformancePackCopyText = () => {
-    const fullPackPipelineComplete =
+  const fullPackPipelineComplete =
   Boolean(audioPreviewRendererPayload) &&
   audioPreviewRendererPayloadValidation?.ready === true &&
   Boolean(audioPreviewDryRunRenderPlan) &&
@@ -3570,7 +3584,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
   const audioPreviewDryRunCueSheet = getAudioPreviewDryRunCueSheet()
-  
+  const expectedOutputRows = getDryRunExpectedOutputRows()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -3786,15 +3800,28 @@ const fullPackPipelineStatus = fullPackPipelineComplete
               'Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.',
               '',
               'MANIFEST VALIDATION',
-              '',
-              dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
-              typeof dryRunRenderManifestValidation?.detail === 'string'
-                ? dryRunRenderManifestValidation.detail
-                : 'Validation details unavailable.',
-              '',
-              'MANIFEST JSON',
-              '',
-              JSON.stringify(dryRunRenderManifest, null, 2),
+'',
+dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
+typeof dryRunRenderManifestValidation?.detail === 'string'
+  ? dryRunRenderManifestValidation.detail
+  : 'Validation details unavailable.',
+'',
+...(expectedOutputRows.length > 0
+  ? [
+      'EXPECTED AUDIO OUTPUTS',
+      '',
+      ...expectedOutputRows.flatMap((output) => [
+        output.label,
+        `Status: ${output.status}`,
+        `Format: ${output.format}`,
+        `URL: ${output.url || 'Not generated'}`,
+        '',
+      ]),
+    ]
+  : []),
+'MANIFEST JSON',
+'',
+JSON.stringify(dryRunRenderManifest, null, 2),
               '',
             ]
           : []),
