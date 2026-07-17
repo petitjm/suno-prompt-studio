@@ -4006,6 +4006,7 @@ const getFullPackAudioPreviewStatus = () => {
 const buildAudioPreviewChecklistCopyText = () => {
   const checklist = getAudioPreviewChecklist()
   const summary = getAudioPreviewChecklistSummary()
+  const pipelineStatus = getAudioPreviewPipelineStatus()
   const handoffStatus = getAudioPreviewHandoffStatus()
   const fullPackStatus = getFullPackAudioPreviewStatus()
   const rendererValidation = audioPreviewRendererPayloadValidation
@@ -4021,6 +4022,13 @@ const buildAudioPreviewChecklistCopyText = () => {
     `Songsheet status: ${songsheetReviewStatusLabel}`,
     songsheetReviewSummaryLine ? songsheetReviewSummaryLine : '',
     `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'PIPELINE STATUS',
+    '',
+    pipelineStatus.label,
+    pipelineStatus.detail,
+    `Progress: ${pipelineStatus.completeCount}/${pipelineStatus.totalCount} complete`,
+    `Next: ${pipelineStatus.nextAction}`,
     '',
     'READINESS',
     '',
