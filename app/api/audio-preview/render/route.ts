@@ -568,27 +568,43 @@ function buildDryRunRenderManifest({
           : 0,
     },
     expectedOutputs: {
-      guideTrackAudio: {
-        status: 'not-generated',
-        format: 'unknown',
-        url: null,
-      },
-      clickTrack: {
-        status: 'not-generated',
-        format: 'unknown',
-        url: null,
-      },
-      chordReferenceTrack: {
-        status: 'not-generated',
-        format: 'unknown',
-        url: null,
-      },
-      vocalGuideTrack: {
-        status: 'not-generated',
-        format: 'unknown',
-        url: null,
-      },
-    },
+  guideTrackAudio: {
+    status: 'not-generated',
+    role: 'main-guide-track',
+    description:
+      'Combined rehearsal guide track using the placed songsheet, cue sheet, and render plan.',
+    suggestedFileName: 'guide-track-preview.wav',
+    format: 'unknown',
+    url: null,
+  },
+  clickTrack: {
+    status: 'not-generated',
+    role: 'timing-reference',
+    description:
+      'Simple timing reference aligned to the cue sheet and section timing estimates.',
+    suggestedFileName: 'click-track.wav',
+    format: 'unknown',
+    url: null,
+  },
+  chordReferenceTrack: {
+    status: 'not-generated',
+    role: 'chord-reference',
+    description:
+      'Sparse chord reference track for checking harmony and chord-change timing.',
+    suggestedFileName: 'chord-reference-track.wav',
+    format: 'unknown',
+    url: null,
+  },
+  vocalGuideTrack: {
+    status: 'not-generated',
+    role: 'vocal-guide-reference',
+    description:
+      'Optional simple vocal guide or melody-reference track for rehearsal use.',
+    suggestedFileName: 'vocal-guide-track.wav',
+    format: 'unknown',
+    url: null,
+  },
+},
     notes: [
       'This manifest describes a dry-run audio preview job only.',
       'No audio files have been generated.',

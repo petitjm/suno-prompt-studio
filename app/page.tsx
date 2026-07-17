@@ -2714,13 +2714,18 @@ typeof dryRunRenderManifestValidation?.detail === 'string'
   ? [
       'EXPECTED AUDIO OUTPUTS',
       '',
-      ...expectedOutputRows.flatMap((output) => [
-        output.label,
-        `Status: ${output.status}`,
-        `Format: ${output.format}`,
-        `URL: ${output.url || 'Not generated'}`,
-        '',
-      ]),
+     ...expectedOutputRows.flatMap((output) => [
+      output.label,
+      output.description ? `Description: ${output.description}` : '',
+      output.role ? `Role: ${output.role}` : '',
+      output.suggestedFileName
+        ? `Suggested file: ${output.suggestedFileName}`
+        : '',
+      `Status: ${output.status}`,
+      `Format: ${output.format}`,
+      `URL: ${output.url || 'Not generated'}`,
+      '',
+    ]),
     ]
   : []),
 'MANIFEST JSON',
@@ -3811,12 +3816,17 @@ typeof dryRunRenderManifestValidation?.detail === 'string'
       'EXPECTED AUDIO OUTPUTS',
       '',
       ...expectedOutputRows.flatMap((output) => [
-        output.label,
-        `Status: ${output.status}`,
-        `Format: ${output.format}`,
-        `URL: ${output.url || 'Not generated'}`,
-        '',
-      ]),
+      output.label,
+      output.description ? `Description: ${output.description}` : '',
+      output.role ? `Role: ${output.role}` : '',
+      output.suggestedFileName
+        ? `Suggested file: ${output.suggestedFileName}`
+        : '',
+      `Status: ${output.status}`,
+      `Format: ${output.format}`,
+      `URL: ${output.url || 'Not generated'}`,
+      '',
+    ]),
     ]
   : []),
 'MANIFEST JSON',
@@ -4272,6 +4282,14 @@ const getDryRunExpectedOutputRows = () => {
       label: key
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, (letter) => letter.toUpperCase()),
+        role:
+          typeof output.role === 'string' ? output.role : '',
+        description:
+          typeof output.description === 'string' ? output.description : '',
+        suggestedFileName:
+          typeof output.suggestedFileName === 'string'
+            ? output.suggestedFileName
+            : '',
       status:
         typeof output.status === 'string' ? output.status : 'unknown',
       format:
@@ -9859,6 +9877,11 @@ return (
           <div className="text-sm font-medium text-gray-200">
             {output.label}
           </div>
+          {output.description ? (
+              <div className="mt-1 text-xs leading-5 text-gray-500">
+                {output.description}
+              </div>
+            ) : null}
 
           <div className="mt-2 grid gap-1 text-xs leading-5 text-gray-400">
             <div>
