@@ -274,6 +274,10 @@ export default function Page() {
   const [justCopiedChordSheet, setJustCopiedChordSheet] = useState(false)
   const [justCopiedPlacedSongSheet, setJustCopiedPlacedSongSheet] = useState(false)
   const [justCopiedPerformanceIntent, setJustCopiedPerformanceIntent] = useState(false)
+  const [
+  justCopiedAudioPreviewHandoffBundle,
+     setJustCopiedAudioPreviewHandoffBundle,
+] = useState(false)
   const [justCopiedPerformanceDesignNotes, setJustCopiedPerformanceDesignNotes] = useState(false)
   const [justCopiedGuideTrackPlan, setJustCopiedGuideTrackPlan] = useState(false)
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
@@ -2690,6 +2694,57 @@ const buildSongsheetReviewCopyText = () => {
     .join('\n')
 }
 
+const copyAudioPreviewHandoffBundle = async () => {
+  if (!dryRunHandoffBundle) {
+    setAudioPreviewRenderMessage('No audio preview dry-run handoff bundle available to copy.')
+    return
+  }
+
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW DRY-RUN HANDOFF BUNDLE',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'HANDOFF BUNDLE JSON',
+    '',
+    JSON.stringify(dryRunHandoffBundle, null, 2),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewHandoffBundle(true)
+    setAudioPreviewRenderMessage('Audio preview dry-run handoff bundle copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewHandoffBundle(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewRenderMessage('Could not copy audio preview dry-run handoff bundle.')
+  }
+}
+
+
 const copyAudioPreviewRenderManifest = async () => {
   if (!dryRunRenderManifest) {
     setAudioPreviewRenderMessage('No audio preview dry-run render manifest available to copy.')
@@ -3808,85 +3863,102 @@ const fullPackPipelineStatus = fullPackPipelineComplete
           : []),
 
           ...(audioPreviewDryRunCueSheet
-          ? [
-              '============================================================',
-              'AUDIO PREVIEW DRY-RUN CUE SHEET',
-              '============================================================',
-              '',
-              'Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.',
-              '',
-              'CUE SHEET VALIDATION',
-              '',
-              dryRunCueSheetValidation?.ready === true ? 'Passed' : 'Needs review',
-              typeof dryRunCueSheetValidation?.detail === 'string'
-                ? dryRunCueSheetValidation.detail
-                : 'Validation details unavailable.',
-              '',
-              'CUE SHEET JSON',
-              '',
-              JSON.stringify(audioPreviewDryRunCueSheet, null, 2),
-              '',
-            ]
-          : []),
+  ? [
+      '============================================================',
+      'AUDIO PREVIEW DRY-RUN CUE SHEET',
+      '============================================================',
+      '',
+      'Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.',
+      '',
+      'CUE SHEET VALIDATION',
+      '',
+      dryRunCueSheetValidation?.ready === true ? 'Passed' : 'Needs review',
+      typeof dryRunCueSheetValidation?.detail === 'string'
+        ? dryRunCueSheetValidation.detail
+        : 'Validation details unavailable.',
+      '',
+      'CUE SHEET JSON',
+      '',
+      JSON.stringify(audioPreviewDryRunCueSheet, null, 2),
+      '',
+    ]
+  : []),
 
-          ...(dryRunRenderManifest
-          ? [
-              '============================================================',
-              'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
-              '============================================================',
-              '',
-              'Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.',
-              '',
-              'MANIFEST VALIDATION',
-'',
-dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
-typeof dryRunRenderManifestValidation?.detail === 'string'
-  ? dryRunRenderManifestValidation.detail
-  : 'Validation details unavailable.',
-'',
-...(dryRunRendererContractSummary.contractStatus
+...(dryRunRenderManifest
   ? [
-      'RENDERER CONTRACT',
+      '============================================================',
+      'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
+      '============================================================',
       '',
-      `Contract status: ${dryRunRendererContractSummary.contractStatus}`,
-      `Renderer mode: ${dryRunRendererContractSummary.rendererMode || 'Unknown'}`,
-      `Consumes: ${dryRunRendererContractSummary.consumes.join(', ') || 'None listed'}`,
-      `Produces: ${dryRunRendererContractSummary.produces.join(', ') || 'None listed'}`,
+      'Renderer-facing dry-run manifest with validation status and future audio output placeholders. No audio file is generated yet.',
       '',
-      'Required before real render:',
-      ...dryRunRendererContractSummary.requiredBeforeRealRender.map(
-        (item) => `- ${item}`,
-      ),
+      'MANIFEST VALIDATION',
       '',
-      'Safety notes:',
-      ...dryRunRendererContractSummary.safetyNotes.map((item) => `- ${item}`),
+      dryRunRenderManifestValidation?.ready === true ? 'Passed' : 'Needs review',
+      typeof dryRunRenderManifestValidation?.detail === 'string'
+        ? dryRunRenderManifestValidation.detail
+        : 'Validation details unavailable.',
+      '',
+      ...(dryRunRendererContractSummary.contractStatus
+        ? [
+            'RENDERER CONTRACT',
+            '',
+            `Contract status: ${dryRunRendererContractSummary.contractStatus}`,
+            `Renderer mode: ${dryRunRendererContractSummary.rendererMode || 'Unknown'}`,
+            `Consumes: ${dryRunRendererContractSummary.consumes.join(', ') || 'None listed'}`,
+            `Produces: ${dryRunRendererContractSummary.produces.join(', ') || 'None listed'}`,
+            '',
+            'Required before real render:',
+            ...dryRunRendererContractSummary.requiredBeforeRealRender.map(
+              (item) => `- ${item}`,
+            ),
+            '',
+            'Safety notes:',
+            ...dryRunRendererContractSummary.safetyNotes.map(
+              (item) => `- ${item}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(expectedOutputRows.length > 0
+        ? [
+            'EXPECTED AUDIO OUTPUTS',
+            '',
+            ...expectedOutputRows.flatMap((output) => [
+              output.label,
+              output.description ? `Description: ${output.description}` : '',
+              output.role ? `Role: ${output.role}` : '',
+              output.suggestedFileName
+                ? `Suggested file: ${output.suggestedFileName}`
+                : '',
+              `Status: ${output.status}`,
+              `Format: ${output.format}`,
+              `URL: ${output.url || 'Not generated'}`,
+              '',
+            ]),
+          ]
+        : []),
+      'MANIFEST JSON',
+      '',
+      JSON.stringify(dryRunRenderManifest, null, 2),
       '',
     ]
   : []),
-...(expectedOutputRows.length > 0
+
+...(dryRunHandoffBundle
   ? [
-      'EXPECTED AUDIO OUTPUTS',
+      '============================================================',
+      'AUDIO PREVIEW DRY-RUN HANDOFF BUNDLE',
+      '============================================================',
       '',
-      ...expectedOutputRows.flatMap((output) => [
-      output.label,
-      output.description ? `Description: ${output.description}` : '',
-      output.role ? `Role: ${output.role}` : '',
-      output.suggestedFileName
-        ? `Suggested file: ${output.suggestedFileName}`
-        : '',
-      `Status: ${output.status}`,
-      `Format: ${output.format}`,
-      `URL: ${output.url || 'Not generated'}`,
+      'Consolidated dry-run handoff summary for future renderer integration. No audio file is generated yet.',
       '',
-    ]),
+      'HANDOFF BUNDLE JSON',
+      '',
+      JSON.stringify(dryRunHandoffBundle, null, 2),
+      '',
     ]
   : []),
-'MANIFEST JSON',
-'',
-JSON.stringify(dryRunRenderManifest, null, 2),
-              '',
-            ]
-          : []),
 
           ...(audioPreviewRenderResponse
           ? [
@@ -10158,9 +10230,19 @@ return (
       Audio preview dry-run handoff bundle
     </summary>
 
-    <div className="mt-3 text-xs leading-5 text-gray-500">
-      Consolidated dry-run handoff summary for future renderer integration. No audio file is generated yet.
-    </div>
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+  <div className="text-xs leading-5 text-gray-500">
+    Consolidated dry-run handoff summary for future renderer integration. No audio file is generated yet.
+  </div>
+
+  <button
+    type="button"
+    onClick={() => copyAudioPreviewHandoffBundle()}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+  >
+    {justCopiedAudioPreviewHandoffBundle ? 'Copied ✓' : 'Copy handoff bundle'}
+  </button>
+</div>
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunHandoffBundle, null, 2)}
