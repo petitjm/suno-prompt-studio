@@ -4445,6 +4445,47 @@ const getAudioPreviewRendererPayloadSummary = () => {
   }
 }
 
+const getAudioPreviewPipelineStatus = () => {
+  const checklist = getAudioPreviewChecklist()
+  const completeCount = checklist.filter((item) => item.complete).length
+  const nextIncomplete = checklist.find((item) => !item.complete)
+
+  if (completeCount === checklist.length && checklist.length > 0) {
+    return {
+      label: 'Audio preview pipeline complete',
+      detail:
+        'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, and validations are ready.',
+      completeCount,
+      totalCount: checklist.length,
+      nextAction: 'Ready for future renderer integration.',
+      tone: 'ready',
+    }
+  }
+
+  if (nextIncomplete) {
+    return {
+      label: 'Audio preview pipeline in progress',
+      detail: nextIncomplete.detail,
+      completeCount,
+      totalCount: checklist.length,
+      nextAction: nextIncomplete.label,
+      tone: completeCount > 0 ? 'review' : 'missing',
+    }
+  }
+
+  return {
+    label: 'Audio preview pipeline not started',
+    detail: 'Generate a placed songsheet and guide plan before requesting audio preview.',
+    completeCount,
+    totalCount: checklist.length,
+    nextAction: 'Request audio preview when inputs are ready.',
+    tone: 'missing',
+  }
+}
+
+
+
+
 
 const getAudioPreviewChecklistSummary = () => {
   const checklist = getAudioPreviewChecklist()
@@ -6128,6 +6169,7 @@ const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
 const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 const audioPreviewChecklist = getAudioPreviewChecklist()
 const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
+const audioPreviewPipelineStatus = getAudioPreviewPipelineStatus()
 const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
 const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
@@ -8851,6 +8893,36 @@ return (
   </details>
 ) : null}
 
+<div
+  className={`rounded border px-4 py-3 text-sm ${
+    audioPreviewPipelineStatus.tone === 'ready'
+      ? 'border-green-900 bg-green-950/20 text-green-100'
+      : audioPreviewPipelineStatus.tone === 'review'
+        ? 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
+        : 'border-gray-800 bg-gray-950 text-gray-300'
+  }`}
+>
+  <div className="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <div className="font-medium">
+        {audioPreviewPipelineStatus.label}
+      </div>
+      <div className="mt-1 text-xs leading-5 opacity-80">
+        {audioPreviewPipelineStatus.detail}
+      </div>
+    </div>
+
+    <div className="text-right text-xs leading-5 opacity-80">
+      <div>
+        {audioPreviewPipelineStatus.completeCount}/
+        {audioPreviewPipelineStatus.totalCount} complete
+      </div>
+      <div>
+        Next: {audioPreviewPipelineStatus.nextAction}
+      </div>
+    </div>
+  </div>
+</div>
 
     {audioPreviewSectionGuideText ? (
   <details className="rounded border border-gray-800 bg-gray-950 p-4">
