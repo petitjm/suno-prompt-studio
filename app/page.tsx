@@ -4219,6 +4219,45 @@ const buildAudioPreviewChecklistCopyText = () => {
     }))
 }
 
+const getDryRunExpectedOutputRows = () => {
+  if (!dryRunRenderManifest) {
+    return []
+  }
+
+  const expectedOutputs =
+    dryRunRenderManifest.expectedOutputs &&
+    typeof dryRunRenderManifest.expectedOutputs === 'object' &&
+    !Array.isArray(dryRunRenderManifest.expectedOutputs)
+      ? (dryRunRenderManifest.expectedOutputs as Record<string, unknown>)
+      : {}
+
+ return Object.entries(expectedOutputs)
+  .filter((entry) => {
+    const value = entry[1]
+
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+  })
+  .map(([key, value]) => {
+    const output = value as Record<string, unknown>
+
+    return {
+      key,
+      label: key
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, (letter) => letter.toUpperCase()),
+      status:
+        typeof output.status === 'string' ? output.status : 'unknown',
+      format:
+        typeof output.format === 'string' ? output.format : 'unknown',
+      url:
+        typeof output.url === 'string' && output.url.trim()
+          ? output.url
+          : '',
+    }
+  })
+}
+
+
 const getDryRunRenderManifestSummary = () => {
   if (!dryRunRenderManifest) {
     return {
@@ -6216,6 +6255,7 @@ const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
 const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
 const dryRunRenderManifestSummary = getDryRunRenderManifestSummary()
+const dryRunExpectedOutputRows = getDryRunExpectedOutputRows()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 
 const chordGenerationMetaRows = getChordGenerationMetaRows()
@@ -9755,6 +9795,42 @@ return (
     </div>
   </div>
 </div>
+
+{dryRunExpectedOutputRows.length > 0 ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+      Expected audio outputs
+    </div>
+
+    <div className="mt-3 grid gap-2 md:grid-cols-2">
+      {dryRunExpectedOutputRows.map((output) => (
+        <div
+          key={output.key}
+          className="rounded border border-gray-800 bg-gray-900 p-3"
+        >
+          <div className="text-sm font-medium text-gray-200">
+            {output.label}
+          </div>
+
+          <div className="mt-2 grid gap-1 text-xs leading-5 text-gray-400">
+            <div>
+              <span className="text-gray-500">Status:</span>{' '}
+              {output.status}
+            </div>
+            <div>
+              <span className="text-gray-500">Format:</span>{' '}
+              {output.format}
+            </div>
+            <div>
+              <span className="text-gray-500">URL:</span>{' '}
+              {output.url || 'Not generated'}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunRenderManifest, null, 2)}
