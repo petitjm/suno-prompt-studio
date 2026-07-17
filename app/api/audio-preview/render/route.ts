@@ -567,6 +567,32 @@ function buildDryRunRenderManifest({
           ? cueSheet.totalEstimatedBars
           : 0,
     },
+    rendererContract: {
+  contractStatus: 'dry-run-contract-ready',
+  rendererMode: 'guide-track-preview',
+  consumes: [
+    'rendererPayload',
+    'dryRunRenderPlan',
+    'dryRunCueSheet',
+    'expectedOutputs',
+  ],
+  produces: [
+    'guideTrackAudio',
+    'clickTrack',
+    'chordReferenceTrack',
+    'vocalGuideTrack',
+  ],
+  requiredBeforeRealRender: [
+    'Confirm cue sheet timings or replace estimates with final bar/time data.',
+    'Choose actual output audio format.',
+    'Connect an audio renderer capable of using the placed songsheet and section instructions.',
+    'Persist generated audio URLs after render completion.',
+  ],
+  safetyNotes: [
+    'Dry-run mode must not claim that audio has been generated.',
+    'All expected output slots should remain not-generated until a real renderer writes files.',
+  ],
+},
     expectedOutputs: {
   guideTrackAudio: {
     status: 'not-generated',
@@ -621,6 +647,7 @@ function validateDryRunRenderManifest(manifest: {
   renderJob?: unknown
   validation?: unknown
   sourceSummary?: unknown
+  rendererContract?: unknown
   expectedOutputs?: unknown
 }) {
   const missing: string[] = []
@@ -721,6 +748,53 @@ function validateDryRunRenderManifest(manifest: {
     }
   }
 
+  const rendererContract =
+  manifest.rendererContract &&
+  typeof manifest.rendererContract === 'object' &&
+  !Array.isArray(manifest.rendererContract)
+    ? (manifest.rendererContract as Record<string, unknown>)
+    : null
+
+if (!rendererContract) {
+  missing.push('rendererContract')
+} else {
+  if (rendererContract.contractStatus !== 'dry-run-contract-ready') {
+    missing.push('rendererContract.contractStatus')
+  }
+
+  if (rendererContract.rendererMode !== 'guide-track-preview') {
+    missing.push('rendererContract.rendererMode')
+  }
+
+  if (
+    !Array.isArray(rendererContract.consumes) ||
+    rendererContract.consumes.length === 0
+  ) {
+    missing.push('rendererContract.consumes')
+  }
+
+  if (
+    !Array.isArray(rendererContract.produces) ||
+    rendererContract.produces.length === 0
+  ) {
+    missing.push('rendererContract.produces')
+  }
+
+  if (
+    !Array.isArray(rendererContract.requiredBeforeRealRender) ||
+    rendererContract.requiredBeforeRealRender.length === 0
+  ) {
+    missing.push('rendererContract.requiredBeforeRealRender')
+  }
+
+  if (
+    !Array.isArray(rendererContract.safetyNotes) ||
+    rendererContract.safetyNotes.length === 0
+  ) {
+    missing.push('rendererContract.safetyNotes')
+  }
+}
+
   const expectedOutputs =
   manifest.expectedOutputs &&
   typeof manifest.expectedOutputs === 'object' &&
@@ -769,7 +843,7 @@ if (!expectedOutputs) {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run render manifest contains validated source summary, expected output placeholders, output metadata, and not-generated audio status.'
+        ? 'Dry-run render manifest contains validated source summary, renderer contract, expected output placeholders, output metadata, and not-generated audio status.'
         : `Dry-run render manifest is missing or invalid: ${missing.join(', ')}.`,
       }
     }

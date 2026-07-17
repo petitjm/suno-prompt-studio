@@ -9935,6 +9935,81 @@ return (
       </div>
     </div>
 
+
+    {dryRunRendererContractSummary.contractStatus ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+      Renderer contract
+    </div>
+
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Contract status
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRendererContractSummary.contractStatus}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Renderer mode
+        </div>
+        <div className="mt-1 text-sm text-gray-300">
+          {dryRunRendererContractSummary.rendererMode || 'Unknown'}
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div>
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Consumes
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+          {dryRunRendererContractSummary.consumes.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          Produces
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+          {dryRunRendererContractSummary.produces.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <div className="mt-3">
+      <div className="text-xs uppercase tracking-wide text-gray-500">
+        Required before real render
+      </div>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+        {dryRunRendererContractSummary.requiredBeforeRealRender.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div className="mt-3">
+      <div className="text-xs uppercase tracking-wide text-gray-500">
+        Safety notes
+      </div>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+        {dryRunRendererContractSummary.safetyNotes.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+) : null}
+
     {dryRunExpectedOutputRows.length > 0 ? (
       <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
         <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
