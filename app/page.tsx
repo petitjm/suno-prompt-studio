@@ -2687,6 +2687,7 @@ const copyAudioPreviewRenderManifest = async () => {
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
   const expectedOutputRows = getDryRunExpectedOutputRows()
+  const dryRunRendererContractSummary = getDryRunRendererContractSummary()
 
   const copyText = [
     'AUDIO PREVIEW DRY-RUN RENDER MANIFEST',
@@ -2710,6 +2711,25 @@ typeof dryRunRenderManifestValidation?.detail === 'string'
   ? dryRunRenderManifestValidation.detail
   : 'Validation details unavailable.',
 '',
+...(dryRunRendererContractSummary.contractStatus
+  ? [
+      'RENDERER CONTRACT',
+      '',
+      `Contract status: ${dryRunRendererContractSummary.contractStatus}`,
+      `Renderer mode: ${dryRunRendererContractSummary.rendererMode || 'Unknown'}`,
+      `Consumes: ${dryRunRendererContractSummary.consumes.join(', ') || 'None listed'}`,
+      `Produces: ${dryRunRendererContractSummary.produces.join(', ') || 'None listed'}`,
+      '',
+      'Required before real render:',
+      ...dryRunRendererContractSummary.requiredBeforeRealRender.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+      'Safety notes:',
+      ...dryRunRendererContractSummary.safetyNotes.map((item) => `- ${item}`),
+      '',
+    ]
+  : []),
 ...(expectedOutputRows.length > 0
   ? [
       'EXPECTED AUDIO OUTPUTS',
@@ -3590,6 +3610,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
   const audioPreviewDryRunCueSheet = getAudioPreviewDryRunCueSheet()
   const expectedOutputRows = getDryRunExpectedOutputRows()
+  const dryRunRendererContractSummary = getDryRunRendererContractSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
 
   const compactGuideTrackPlanText = guideTrackPlanText
@@ -3811,6 +3832,25 @@ typeof dryRunRenderManifestValidation?.detail === 'string'
   ? dryRunRenderManifestValidation.detail
   : 'Validation details unavailable.',
 '',
+...(dryRunRendererContractSummary.contractStatus
+  ? [
+      'RENDERER CONTRACT',
+      '',
+      `Contract status: ${dryRunRendererContractSummary.contractStatus}`,
+      `Renderer mode: ${dryRunRendererContractSummary.rendererMode || 'Unknown'}`,
+      `Consumes: ${dryRunRendererContractSummary.consumes.join(', ') || 'None listed'}`,
+      `Produces: ${dryRunRendererContractSummary.produces.join(', ') || 'None listed'}`,
+      '',
+      'Required before real render:',
+      ...dryRunRendererContractSummary.requiredBeforeRealRender.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+      'Safety notes:',
+      ...dryRunRendererContractSummary.safetyNotes.map((item) => `- ${item}`),
+      '',
+    ]
+  : []),
 ...(expectedOutputRows.length > 0
   ? [
       'EXPECTED AUDIO OUTPUTS',
@@ -4724,6 +4764,14 @@ const getAudioPreviewChecklist = () => {
   const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasDryRunManifest = Boolean(dryRunRenderManifest)
+  const rendererContractSummary = getDryRunRendererContractSummary()
+  const hasRendererContract = Boolean(rendererContractSummary.contractStatus)
+  const hasRendererContractLists =
+  hasRendererContract &&
+  rendererContractSummary.consumes.length > 0 &&
+  rendererContractSummary.produces.length > 0 &&
+  rendererContractSummary.requiredBeforeRealRender.length > 0 &&
+  rendererContractSummary.safetyNotes.length > 0
   const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
   const expectedOutputRows = getDryRunExpectedOutputRows()
   const hasExpectedOutputSlots = expectedOutputRows.length > 0
@@ -4868,6 +4916,22 @@ const getAudioPreviewChecklist = () => {
     : hasExpectedOutputSlots
       ? 'Review expected output metadata before connecting a real renderer.'
       : 'Submit dry run to create expected output metadata.',
+},
+{
+  label: 'Renderer contract ready',
+  complete: hasRendererContract,
+  detail: hasRendererContract
+    ? 'Dry-run renderer contract is available in the manifest.'
+    : 'Submit dry run to create the renderer contract.',
+},
+{
+  label: 'Renderer contract lists complete',
+  complete: hasRendererContractLists,
+  detail: hasRendererContractLists
+    ? 'Renderer contract includes consumes, produces, required-before-render, and safety notes.'
+    : hasRendererContract
+      ? 'Review renderer contract lists before connecting a real renderer.'
+      : 'Submit dry run to create renderer contract lists.',
 },
 
   ]
