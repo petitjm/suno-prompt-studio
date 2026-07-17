@@ -3537,6 +3537,30 @@ const buildPerformanceIntentCopyText = () => {
 }
 
 const buildFullPerformancePackCopyText = () => {
+    const fullPackPipelineComplete =
+  Boolean(audioPreviewRendererPayload) &&
+  audioPreviewRendererPayloadValidation?.ready === true &&
+  Boolean(audioPreviewDryRunRenderPlan) &&
+  dryRunRenderPlanValidation?.ready === true &&
+  dryRunCueSheetValidation?.ready === true &&
+  Boolean(dryRunRenderManifest) &&
+  dryRunRenderManifestValidation?.ready === true
+
+const fullPackPipelineStatus = fullPackPipelineComplete
+  ? {
+      label: 'Audio preview pipeline complete',
+      progress: 'Complete',
+      nextAction: 'Ready for future renderer integration.',
+      detail:
+        'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, and validations are ready.',
+    }
+  : {
+      label: 'Audio preview pipeline in progress',
+      progress: 'Incomplete',
+      nextAction: 'Complete the audio preview request and dry-run handoff.',
+      detail:
+        'The Full Performance Pack does not yet have every audio-preview dry-run artefact and validation.',
+    }
   const songsheetText = buildCompactPlacedSongSheetCopyText()
   const designNotesText = buildCompactPerformanceDesignNotesCopyText()
   const guideTrackPlanText = buildGuideTrackPlanCopyText()
@@ -3571,18 +3595,24 @@ const buildFullPerformancePackCopyText = () => {
   `Songsheet status: ${songsheetReviewStatusLabel}`,
   `Audio preview result: ${audioPreviewResultStatus.label}`,
   `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+  `Audio preview pipeline: ${fullPackPipelineStatus.label}`,
+  `Audio preview progress: ${fullPackPipelineStatus.progress}`,
+  `Audio preview next step: ${fullPackPipelineStatus.nextAction}`,
   `Generated at: ${new Date().toLocaleString()}`,
   ...getSongsheetTransposeCopyRows(),
   '',
-  ...(audioPreviewResultStatus.detail || fullPackAudioPreviewStatus.detail
-    ? [
-        'AUDIO PREVIEW STATUS',
-        '',
-        audioPreviewResultStatus.detail,
-        fullPackAudioPreviewStatus.detail,
-        '',
-      ]
-    : []),
+ ...(audioPreviewResultStatus.detail ||
+        fullPackAudioPreviewStatus.detail ||
+        audioPreviewPipelineStatus.detail
+            ? [
+                'AUDIO PREVIEW STATUS',
+                '',
+                `Result: ${audioPreviewResultStatus.detail}`,
+                `Full pack: ${fullPackAudioPreviewStatus.detail}`,
+                `Pipeline: ${fullPackPipelineStatus.detail}`,
+                '',
+            ]
+     : []),
   ...(intentRows.length > 0
     ? [
           '============================================================',
@@ -6160,13 +6190,14 @@ const getChordEditorStatus = () => {
 
 const chordSummaryRows = getChordSummaryRows(chords)
 const chordEditorStatus = getChordEditorStatus()
+
 const chordSheetPreview = buildChordSheetCopyText()
 const placedSongSheetPreview = buildPlacedSongSheetCopyText()
 const audioGuidePromptPreview = buildAudioGuidePromptCopyText()
 const performanceDesignNotesPreview = buildPerformanceDesignNotesCopyText()
-const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 const guideTrackPlanPreview = buildGuideTrackPlanCopyText()
 const audioGuideSummaryPreview = buildAudioGuideSummaryCopyText()
+
 const audioPreviewSpecPreview = buildAudioPreviewSpecCopyText()
 const audioPreviewSpecStatus = getAudioPreviewSpecStatus()
 const audioGuideReadiness = getAudioGuideReadiness()
@@ -6175,23 +6206,28 @@ const nextChordWorkflowAction = getNextChordWorkflowAction()
 const songsheetReviewSummaryLine = getSongsheetReviewSummaryLine()
 const audioPreviewHandoffStatus = getAudioPreviewHandoffStatus()
 const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
 const audioPreviewChecklist = getAudioPreviewChecklist()
 const audioPreviewChecklistSummary = getAudioPreviewChecklistSummary()
 const audioPreviewPipelineStatus = getAudioPreviewPipelineStatus()
+
 const audioPreviewRendererPayloadSummary = getAudioPreviewRendererPayloadSummary()
 const audioPreviewDryRunPlanSummary = getAudioPreviewDryRunPlanSummary()
 const audioPreviewDryRunTimelineRows = getAudioPreviewDryRunTimelineRows()
 const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
 const dryRunRenderManifestSummary = getDryRunRenderManifestSummary()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
+
 const chordGenerationMetaRows = getChordGenerationMetaRows()
 const chordGenerationHistorySummary = getChordGenerationHistorySummary()
 const chordGenerationHistoryRows = getChordGenerationHistoryRows()
 const chordGenerationUsageWarning = getChordGenerationUsageWarning()
+
 const placedSongSheetQuality = getPlacedSongSheetQuality()
 const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch()
 const songsheetServerValidation = getSongsheetServerValidation()
 const placedSongsheetSourceCoverage = getPlacedSongsheetSourceCoverage()
+
 const performanceIntentRows = getPerformanceIntentRows(
   getChordDataFromEditorJson(),
 )
@@ -6202,6 +6238,7 @@ const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(
 
 const keyChordConsistency = getKeyChordConsistency(getChordDataFromEditorJson())
 
+const fullPerformancePackPreview = buildFullPerformancePackCopyText()
 
 const buildChordSummaryCopyText = () => {
   const rows = getChordSummaryRows(chords)
