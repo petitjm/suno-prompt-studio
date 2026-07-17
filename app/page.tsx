@@ -3650,7 +3650,9 @@ const buildFullPerformancePackCopyText = () => {
   dryRunRenderPlanValidation?.ready === true &&
   dryRunCueSheetValidation?.ready === true &&
   Boolean(dryRunRenderManifest) &&
-  dryRunRenderManifestValidation?.ready === true
+  dryRunRenderManifestValidation?.ready === true &&
+  dryRunHandoffBundle?.handoffStatus === 'dry-run-handoff-ready' &&
+  dryRunHandoffBundle?.audioStatus === 'not-generated'
 
 const fullPackPipelineStatus = fullPackPipelineComplete
   ? {
@@ -3658,7 +3660,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       progress: 'Complete',
       nextAction: 'Ready for future renderer integration.',
       detail:
-        'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, and validations are ready.',
+      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, and validations are ready.'
     }
   : {
       label: 'Audio preview pipeline in progress',
@@ -4166,6 +4168,10 @@ const getFullPackAudioPreviewStatus = () => {
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
+  const hasDryRunHandoffBundle = Boolean(dryRunHandoffBundle)
+  const hasReadyDryRunHandoffBundle =
+  dryRunHandoffBundle?.handoffStatus === 'dry-run-handoff-ready' &&
+  dryRunHandoffBundle?.audioStatus === 'not-generated'
   const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
@@ -4185,8 +4191,8 @@ const getFullPackAudioPreviewStatus = () => {
     ) {
     return {
       label: 'Full pack includes audio preview artefacts',
-  detail:
-  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, and future audio output placeholders.',
+      detail:
+  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, and future audio output placeholders.'
     }
   }
 
@@ -4772,8 +4778,8 @@ const getAudioPreviewPipelineStatus = () => {
   if (completeCount === checklist.length && checklist.length > 0) {
     return {
       label: 'Audio preview pipeline complete',
-      detail:
-        'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, and validations are ready.',
+detail:
+  'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, and validations are ready.',
       completeCount,
       totalCount: checklist.length,
       nextAction: 'Ready for future renderer integration.',
@@ -4878,6 +4884,10 @@ const getAudioPreviewChecklist = () => {
   rendererContractSummary.requiredBeforeRealRender.length > 0 &&
   rendererContractSummary.safetyNotes.length > 0
   const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
+  const hasDryRunHandoffBundle = Boolean(dryRunHandoffBundle)
+  const hasReadyDryRunHandoffBundle =
+  dryRunHandoffBundle?.handoffStatus === 'dry-run-handoff-ready' &&
+  dryRunHandoffBundle?.audioStatus === 'not-generated'
   const expectedOutputRows = getDryRunExpectedOutputRows()
   const hasExpectedOutputSlots = expectedOutputRows.length > 0
   const hasOnlyNotGeneratedOutputs =
@@ -5037,6 +5047,22 @@ const getAudioPreviewChecklist = () => {
     : hasRendererContract
       ? 'Review renderer contract lists before connecting a real renderer.'
       : 'Submit dry run to create renderer contract lists.',
+},
+{
+  label: 'Dry-run handoff bundle ready',
+  complete: hasDryRunHandoffBundle,
+  detail: hasDryRunHandoffBundle
+    ? 'Consolidated dry-run handoff bundle is available.'
+    : 'Submit dry run to create the consolidated handoff bundle.',
+},
+{
+  label: 'Dry-run handoff bundle validated',
+  complete: hasReadyDryRunHandoffBundle,
+  detail: hasReadyDryRunHandoffBundle
+    ? 'Handoff bundle is ready and confirms audio status is not-generated.'
+    : hasDryRunHandoffBundle
+      ? 'Review handoff bundle status before future renderer integration.'
+      : 'Submit dry run to validate the handoff bundle.',
 },
 
   ]
