@@ -2749,6 +2749,7 @@ const copyAudioPreviewArtifactPackage = async () => {
     return
   }
 
+  const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -2774,6 +2775,28 @@ const copyAudioPreviewArtifactPackage = async () => {
       ? dryRunArtifactPackageValidation.detail
       : 'Validation details unavailable.',
     '',
+    ...(realRenderReadinessSummary.readinessStatus
+  ? [
+      'REAL-RENDER READINESS',
+      '',
+      `Ready for real render: ${
+        realRenderReadinessSummary.readyForRealRender === true ? 'Yes' : 'No'
+      }`,
+      `Status: ${realRenderReadinessSummary.readinessStatus}`,
+      '',
+      'Blockers:',
+      ...realRenderReadinessSummary.blockers.map((item) => `- ${item}`),
+      '',
+      'Required decisions:',
+      ...realRenderReadinessSummary.requiredDecisions.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+      'Safety notes:',
+      ...realRenderReadinessSummary.safetyNotes.map((item) => `- ${item}`),
+      '',
+    ]
+  : []),
     'ARTEFACT PACKAGE JSON',
         '',
     JSON.stringify(dryRunArtifactPackage, null, 2),
@@ -3796,6 +3819,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const expectedOutputRows = getDryRunExpectedOutputRows()
   const dryRunRendererContractSummary = getDryRunRendererContractSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
+  const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
   const compactGuideTrackPlanText = guideTrackPlanText
     .replace(/^GUIDE TRACK PLAN\s*/i, '')
@@ -4114,6 +4138,28 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       '',
       'Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.',
       '',
+      ...(realRenderReadinessSummary.readinessStatus
+  ? [
+      'REAL-RENDER READINESS',
+      '',
+      `Ready for real render: ${
+        realRenderReadinessSummary.readyForRealRender === true ? 'Yes' : 'No'
+      }`,
+      `Status: ${realRenderReadinessSummary.readinessStatus}`,
+      '',
+      'Blockers:',
+      ...realRenderReadinessSummary.blockers.map((item) => `- ${item}`),
+      '',
+      'Required decisions:',
+      ...realRenderReadinessSummary.requiredDecisions.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+      'Safety notes:',
+      ...realRenderReadinessSummary.safetyNotes.map((item) => `- ${item}`),
+      '',
+    ]
+  : []),
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
@@ -4607,6 +4653,47 @@ const getDryRunExpectedOutputRows = () => {
           : '',
     }
   })
+}
+
+const getDryRunRealRenderReadinessSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return {
+      readyForRealRender: null as boolean | null,
+      readinessStatus: '',
+      blockers: [] as string[],
+      requiredDecisions: [] as string[],
+      safetyNotes: [] as string[],
+    }
+  }
+
+  const readiness =
+    dryRunArtifactPackage.realRenderReadiness &&
+    typeof dryRunArtifactPackage.realRenderReadiness === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderReadiness)
+      ? (dryRunArtifactPackage.realRenderReadiness as Record<string, unknown>)
+      : {}
+
+  return {
+    readyForRealRender:
+      typeof readiness.readyForRealRender === 'boolean'
+        ? readiness.readyForRealRender
+        : null,
+    readinessStatus:
+      typeof readiness.readinessStatus === 'string'
+        ? readiness.readinessStatus
+        : '',
+    blockers: Array.isArray(readiness.blockers)
+      ? readiness.blockers.filter((item): item is string => typeof item === 'string')
+      : [],
+    requiredDecisions: Array.isArray(readiness.requiredDecisions)
+      ? readiness.requiredDecisions.filter(
+          (item): item is string => typeof item === 'string',
+        )
+      : [],
+    safetyNotes: Array.isArray(readiness.safetyNotes)
+      ? readiness.safetyNotes.filter((item): item is string => typeof item === 'string')
+      : [],
+  }
 }
 
 const getDryRunRendererContractSummary = () => {
@@ -6767,6 +6854,8 @@ const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
 const dryRunRenderManifestSummary = getDryRunRenderManifestSummary()
 const dryRunRendererContractSummary = getDryRunRendererContractSummary()
 const dryRunExpectedOutputRows = getDryRunExpectedOutputRows()
+const dryRunRealRenderReadinessSummary =
+  getDryRunRealRenderReadinessSummary()
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 
 const chordGenerationMetaRows = getChordGenerationMetaRows()
@@ -10533,6 +10622,59 @@ return (
     </div>
   </div>
 ) : null}
+
+{dryRunRealRenderReadinessSummary.readinessStatus ? (
+  <div className="mt-3 rounded border border-amber-900/60 bg-amber-950/20 p-3 text-xs leading-5 text-amber-100">
+    <div className="font-medium uppercase tracking-wide text-amber-300">
+      Real-render readiness
+    </div>
+
+    <div className="mt-2">
+      Ready for real render:{' '}
+      {dryRunRealRenderReadinessSummary.readyForRealRender === true
+        ? 'Yes'
+        : 'No'}
+    </div>
+
+    <div className="mt-1 text-amber-200">
+      Status: {dryRunRealRenderReadinessSummary.readinessStatus}
+    </div>
+
+    {dryRunRealRenderReadinessSummary.blockers.length > 0 ? (
+      <div className="mt-3">
+        <div className="font-medium text-amber-300">Blockers</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5">
+          {dryRunRealRenderReadinessSummary.blockers.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRealRenderReadinessSummary.requiredDecisions.length > 0 ? (
+      <div className="mt-3">
+        <div className="font-medium text-amber-300">Required decisions</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5">
+          {dryRunRealRenderReadinessSummary.requiredDecisions.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRealRenderReadinessSummary.safetyNotes.length > 0 ? (
+      <div className="mt-3">
+        <div className="font-medium text-amber-300">Safety notes</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5">
+          {dryRunRealRenderReadinessSummary.safetyNotes.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunArtifactPackage, null, 2)}
