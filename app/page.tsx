@@ -3765,7 +3765,9 @@ const buildFullPerformancePackCopyText = () => {
   dryRunCueSheetValidation?.ready === true &&
   Boolean(dryRunRenderManifest) &&
   dryRunRenderManifestValidation?.ready === true &&
-  dryRunHandoffBundleValidation?.ready === true
+  dryRunHandoffBundleValidation?.ready === true &&
+  Boolean(dryRunArtifactPackage) &&
+  dryRunArtifactPackageValidation?.ready === true
 
 const fullPackPipelineStatus = fullPackPipelineComplete
   ? {
@@ -3773,7 +3775,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       progress: 'Complete',
       nextAction: 'Ready for future renderer integration.',
       detail:
-      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, and validations are ready.'
+      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, and validations are ready.'
     }
   : {
       label: 'Audio preview pipeline in progress',
@@ -4115,6 +4117,13 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
+      'ARTEFACT PACKAGE VALIDATION',
+    '',
+    dryRunArtifactPackageValidation?.ready === true ? 'Passed' : 'Needs review',
+    typeof dryRunArtifactPackageValidation?.detail === 'string'
+      ? dryRunArtifactPackageValidation.detail
+      : 'Validation details unavailable.',
+    '',
       '',
     ]
   : []),
@@ -4305,41 +4314,53 @@ const getFullPackAudioPreviewStatus = () => {
   const hasSectionGuide = Boolean(audioPreviewSectionGuideText.trim())
   const hasRenderPrompt = Boolean(audioPreviewRenderPrompt.trim())
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
-  const hasDryRunHandoffBundle = Boolean(dryRunHandoffBundle)
-  const hasReadyDryRunHandoffBundle =
-  dryRunHandoffBundleValidation?.ready === true
   const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
   const hasValidatedDryRunPlan = dryRunRenderPlanValidation?.ready === true
-  const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
   const hasDryRunManifest = Boolean(dryRunRenderManifest)
+  const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
+  const hasDryRunHandoffBundle = Boolean(dryRunHandoffBundle)
+  const hasReadyDryRunHandoffBundle =
+    dryRunHandoffBundleValidation?.ready === true
+  const hasDryRunArtifactPackage = Boolean(dryRunArtifactPackage)
+  const hasValidatedDryRunArtifactPackage =
+    dryRunArtifactPackageValidation?.ready === true
+
   if (
-      hasPlacedSongsheet &&
-      hasSectionGuide &&
-      hasRenderPrompt &&
-      hasRendererPayload &&
-      hasValidatedRendererPayload &&
-      hasDryRunJob &&
-      hasValidatedDryRunPlan &&
-      hasDryRunManifest &&
-      hasValidatedManifest
-    ) {
+    hasPlacedSongsheet &&
+    hasSectionGuide &&
+    hasRenderPrompt &&
+    hasRendererPayload &&
+    hasValidatedRendererPayload &&
+    hasDryRunJob &&
+    hasDryRunPlan &&
+    hasValidatedDryRunPlan &&
+    hasDryRunManifest &&
+    hasValidatedManifest &&
+    hasDryRunHandoffBundle &&
+    hasReadyDryRunHandoffBundle &&
+    hasDryRunArtifactPackage &&
+    hasValidatedDryRunArtifactPackage
+  ) {
     return {
       label: 'Full pack includes audio preview artefacts',
       detail:
-  'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, and future audio output placeholders.'
+        'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, validated artefact package, and future audio output placeholders.',
+      tone: 'ready',
     }
   }
 
   if (
-  hasRenderPrompt ||
-  hasRendererPayload ||
-  audioPreviewRendererPayloadValidation ||
-  hasDryRunJob ||
-  hasValidatedManifest ||
-  hasDryRunPlan
-) {
+    hasRenderPrompt ||
+    hasRendererPayload ||
+    audioPreviewRendererPayloadValidation ||
+    hasDryRunJob ||
+    hasDryRunPlan ||
+    hasValidatedManifest ||
+    hasDryRunHandoffBundle ||
+    hasDryRunArtifactPackage
+  ) {
     return {
       label: 'Full pack includes audio preview render prompt',
       detail:
@@ -4914,17 +4935,18 @@ const getAudioPreviewPipelineStatus = () => {
   const completeCount = checklist.filter((item) => item.complete).length
   const nextIncomplete = checklist.find((item) => !item.complete)
 
-  if (completeCount === checklist.length && checklist.length > 0) {
-    return {
-      label: 'Audio preview pipeline complete',
-detail:
-  'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, and validations are ready.',
-      completeCount,
-      totalCount: checklist.length,
-      nextAction: 'Ready for future renderer integration.',
-      tone: 'ready',
-    }
+  if (completeCount === checklist.length) {
+  return {
+    label: 'Audio preview pipeline complete',
+    progress: 'Complete',
+    detail:
+      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, and validations are ready.',
+    completeCount,
+    totalCount: checklist.length,
+    nextAction: 'Ready for future renderer integration.',
+    tone: 'ready',
   }
+}
 
   if (nextIncomplete) {
     return {
@@ -4995,6 +5017,8 @@ const getAudioPreviewChecklistSummary = () => {
   }
 }
 
+ 
+
 
 const getAudioPreviewChecklist = () => {
   const hasPlacedSongsheet =
@@ -5003,7 +5027,9 @@ const getAudioPreviewChecklist = () => {
   const hasGuidePlan =
     getGuideTrackPlanRows(getChordDataFromEditorJson()).length > 0 ||
     getGuideTrackSectionPlanRows(getChordDataFromEditorJson()).length > 0
-
+  const hasDryRunArtifactPackage = Boolean(dryRunArtifactPackage)
+  const hasValidatedDryRunArtifactPackage =
+  dryRunArtifactPackageValidation?.ready === true
   const hasPreviewSpec = Boolean(audioPreviewSpecPreview.trim())
   const hasPreviewPlan = Boolean(audioPreviewPlan)
   const hasPreviewSongSheet = Boolean(audioPreviewSongSheetText.trim())
@@ -5101,6 +5127,22 @@ const getAudioPreviewChecklist = () => {
     : hasValidatedRendererPayload
       ? 'Submit dry run to confirm the renderer handoff route accepts the payload.'
       : 'Validate the renderer payload before submitting a dry run.',
+},
+{
+  label: 'Dry-run artefact package ready',
+  complete: hasDryRunArtifactPackage,
+  detail: hasDryRunArtifactPackage
+    ? 'Machine-readable dry-run artefact package is available.'
+    : 'Submit dry run to create the artefact package.',
+},
+{
+  label: 'Dry-run artefact package validated',
+  complete: hasValidatedDryRunArtifactPackage,
+  detail: hasValidatedDryRunArtifactPackage
+    ? 'Artefact package validation passed and confirms audio status is not-generated.'
+    : hasDryRunArtifactPackage
+      ? 'Review artefact package validation before future renderer integration.'
+      : 'Submit dry run to validate the artefact package.',
 },
 
 {
