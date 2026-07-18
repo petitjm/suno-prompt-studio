@@ -4001,6 +4001,15 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       '',
       'Consolidated dry-run handoff summary for future renderer integration. No audio file is generated yet.',
       '',
+      'HANDOFF BUNDLE VALIDATION',
+      '',
+      dryRunHandoffBundleValidation?.ready === true
+        ? 'Passed'
+        : 'Needs review',
+      typeof dryRunHandoffBundleValidation?.detail === 'string'
+        ? dryRunHandoffBundleValidation.detail
+        : 'Validation details unavailable.',
+      '',
       'HANDOFF BUNDLE JSON',
       '',
       JSON.stringify(dryRunHandoffBundle, null, 2),
