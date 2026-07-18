@@ -1028,6 +1028,26 @@ function buildDryRunArtifactPackage({
       'dryRunHandoffBundle',
       'dryRunHandoffBundleValidation',
     ],
+    realRenderReadiness: {
+      readyForRealRender: false,
+      readinessStatus: 'blocked-until-renderer-connected',
+      blockers: [
+        'No real audio renderer is connected yet.',
+        'Output audio format has not been selected.',
+        'Generated audio file storage has not been configured.',
+        'Cue sheet timings are still estimated and need final confirmation before real rendering.',
+      ],
+      requiredDecisions: [
+        'Choose renderer implementation.',
+        'Choose audio output format.',
+        'Choose generated file storage location.',
+        'Decide whether to render guide track, click track, chord reference track, vocal guide track, or all outputs.',
+      ],
+      safetyNotes: [
+        'A validated dry-run artefact package is not the same as generated audio.',
+        'Do not mark any expected output as generated until a real renderer writes and stores the file.',
+      ],
+    },
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1050,6 +1070,7 @@ function validateDryRunArtifactPackage(pkg: {
   packageStatus?: unknown
   audioStatus?: unknown
   packageContents?: unknown
+  realRenderReadiness?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -1078,6 +1099,49 @@ function validateDryRunArtifactPackage(pkg: {
     missing.push('packageContents')
   }
 
+  const realRenderReadiness =
+  pkg.realRenderReadiness &&
+  typeof pkg.realRenderReadiness === 'object' &&
+  !Array.isArray(pkg.realRenderReadiness)
+    ? (pkg.realRenderReadiness as Record<string, unknown>)
+    : null
+
+if (!realRenderReadiness) {
+  missing.push('realRenderReadiness')
+} else {
+  if (realRenderReadiness.readyForRealRender !== false) {
+    missing.push('realRenderReadiness.readyForRealRender')
+  }
+
+  if (
+    realRenderReadiness.readinessStatus !==
+    'blocked-until-renderer-connected'
+  ) {
+    missing.push('realRenderReadiness.readinessStatus')
+  }
+
+  if (
+    !Array.isArray(realRenderReadiness.blockers) ||
+    realRenderReadiness.blockers.length === 0
+  ) {
+    missing.push('realRenderReadiness.blockers')
+  }
+
+  if (
+    !Array.isArray(realRenderReadiness.requiredDecisions) ||
+    realRenderReadiness.requiredDecisions.length === 0
+  ) {
+    missing.push('realRenderReadiness.requiredDecisions')
+  }
+
+  if (
+    !Array.isArray(realRenderReadiness.safetyNotes) ||
+    realRenderReadiness.safetyNotes.length === 0
+  ) {
+    missing.push('realRenderReadiness.safetyNotes')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -1104,7 +1168,7 @@ function validateDryRunArtifactPackage(pkg: {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run artefact package is validated and confirms no audio has been generated.'
+        ? 'Dry-run artefact package is validated, confirms no audio has been generated, and lists real-render readiness blockers.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
