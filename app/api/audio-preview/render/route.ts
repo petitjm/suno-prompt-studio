@@ -848,6 +848,10 @@ if (!expectedOutputs) {
       }
     }
 
+
+
+
+
 function buildDryRunHandoffBundle({
   renderJob,
   dryRunRenderPlanValidation,
@@ -906,6 +910,83 @@ function buildDryRunHandoffBundle({
       'No audio files have been generated.',
       'This bundle summarises renderer-facing artefacts for future integration.',
     ],
+  }
+}
+
+function validateDryRunHandoffBundle(bundle: {
+  type?: unknown
+  handoffStatus?: unknown
+  audioStatus?: unknown
+  renderJobId?: unknown
+  includedArtifacts?: unknown
+  validationSummary?: unknown
+  nextActions?: unknown
+  notes?: unknown
+}) {
+  const missing: string[] = []
+
+  if (bundle.type !== 'audio-preview-dry-run-handoff-bundle') {
+    missing.push('type')
+  }
+
+  if (bundle.handoffStatus !== 'dry-run-handoff-ready') {
+    missing.push('handoffStatus')
+  }
+
+  if (bundle.audioStatus !== 'not-generated') {
+    missing.push('audioStatus')
+  }
+
+  if (typeof bundle.renderJobId !== 'string' || !bundle.renderJobId.trim()) {
+    missing.push('renderJobId')
+  }
+
+  if (!Array.isArray(bundle.includedArtifacts) || bundle.includedArtifacts.length === 0) {
+    missing.push('includedArtifacts')
+  }
+
+  const validationSummary =
+    bundle.validationSummary &&
+    typeof bundle.validationSummary === 'object' &&
+    !Array.isArray(bundle.validationSummary)
+      ? (bundle.validationSummary as Record<string, unknown>)
+      : null
+
+  if (!validationSummary) {
+    missing.push('validationSummary')
+  } else {
+    if (validationSummary.dryRunRenderPlanReady !== true) {
+      missing.push('validationSummary.dryRunRenderPlanReady')
+    }
+
+    if (validationSummary.dryRunCueSheetReady !== true) {
+      missing.push('validationSummary.dryRunCueSheetReady')
+    }
+
+    if (validationSummary.dryRunRenderManifestReady !== true) {
+      missing.push('validationSummary.dryRunRenderManifestReady')
+    }
+
+    if (validationSummary.allValidationsPassed !== true) {
+      missing.push('validationSummary.allValidationsPassed')
+    }
+  }
+
+  if (!Array.isArray(bundle.nextActions) || bundle.nextActions.length === 0) {
+    missing.push('nextActions')
+  }
+
+  if (!Array.isArray(bundle.notes) || bundle.notes.length === 0) {
+    missing.push('notes')
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+    detail:
+      missing.length === 0
+        ? 'Dry-run handoff bundle is validated and confirms no audio has been generated.'
+        : `Dry-run handoff bundle needs review: ${missing.join(', ')}`,
   }
 }
 
@@ -985,11 +1066,14 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
         validateDryRunRenderManifest(dryRunRenderManifest)
 
     const dryRunHandoffBundle = buildDryRunHandoffBundle({
-  renderJob,
-  dryRunRenderPlanValidation,
-  dryRunCueSheetValidation,
-  dryRunRenderManifestValidation,
-})
+      renderJob,
+      dryRunRenderPlanValidation,
+      dryRunCueSheetValidation,
+      dryRunRenderManifestValidation,
+    })
+
+const dryRunHandoffBundleValidation =
+  validateDryRunHandoffBundle(dryRunHandoffBundle)
 
     return NextResponse.json({
       status: 'accepted',
@@ -1002,6 +1086,7 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       dryRunRenderManifest,
       dryRunRenderManifestValidation,
       dryRunHandoffBundle,
+      dryRunHandoffBundleValidation,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })

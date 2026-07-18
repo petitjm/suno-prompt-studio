@@ -233,6 +233,8 @@ export default function Page() {
     ] = useState<Record<string, unknown> | null>(null)
   const [dryRunHandoffBundle, setDryRunHandoffBundle] =
   useState<Record<string, unknown> | null>(null)
+  const [dryRunHandoffBundleValidation, setDryRunHandoffBundleValidation] =
+  useState<Record<string, unknown> | null>(null)
     const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
@@ -264,6 +266,7 @@ export default function Page() {
       setDryRunRenderManifest(null)
       setDryRunRenderManifestValidation(null)
       setDryRunHandoffBundle(null)
+      setDryRunHandoffBundleValidation(null)
       setDryRunCueSheetValidation(null)
       
     }
@@ -2355,6 +2358,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setDryRunRenderManifest(null)
   setDryRunRenderManifestValidation(null)
   setDryRunHandoffBundle(null)
+  setDryRunHandoffBundleValidation(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -2441,6 +2445,22 @@ setDryRunHandoffBundle(
     typeof result.dryRunHandoffBundle === 'object' &&
     !Array.isArray(result.dryRunHandoffBundle)
     ? result.dryRunHandoffBundle
+    : null,
+)
+
+setDryRunHandoffBundle(
+  result.dryRunHandoffBundle &&
+    typeof result.dryRunHandoffBundle === 'object' &&
+    !Array.isArray(result.dryRunHandoffBundle)
+    ? result.dryRunHandoffBundle
+    : null,
+)
+
+setDryRunHandoffBundleValidation(
+  result.dryRunHandoffBundleValidation &&
+    typeof result.dryRunHandoffBundleValidation === 'object' &&
+    !Array.isArray(result.dryRunHandoffBundleValidation)
+    ? result.dryRunHandoffBundleValidation
     : null,
 )
 
@@ -2717,6 +2737,13 @@ const copyAudioPreviewHandoffBundle = async () => {
     '',
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
+    '',
+    'HANDOFF BUNDLE VALIDATION',
+    '',
+    dryRunHandoffBundleValidation?.ready === true ? 'Passed' : 'Needs review',
+    typeof dryRunHandoffBundleValidation?.detail === 'string'
+      ? dryRunHandoffBundleValidation.detail
+      : 'Validation details unavailable.',
     '',
     'HANDOFF BUNDLE JSON',
     '',
@@ -3651,8 +3678,7 @@ const buildFullPerformancePackCopyText = () => {
   dryRunCueSheetValidation?.ready === true &&
   Boolean(dryRunRenderManifest) &&
   dryRunRenderManifestValidation?.ready === true &&
-  dryRunHandoffBundle?.handoffStatus === 'dry-run-handoff-ready' &&
-  dryRunHandoffBundle?.audioStatus === 'not-generated'
+  dryRunHandoffBundleValidation?.ready === true
 
 const fullPackPipelineStatus = fullPackPipelineComplete
   ? {
@@ -4170,8 +4196,7 @@ const getFullPackAudioPreviewStatus = () => {
   const hasRendererPayload = Boolean(audioPreviewRendererPayload)
   const hasDryRunHandoffBundle = Boolean(dryRunHandoffBundle)
   const hasReadyDryRunHandoffBundle =
-  dryRunHandoffBundle?.handoffStatus === 'dry-run-handoff-ready' &&
-  dryRunHandoffBundle?.audioStatus === 'not-generated'
+  dryRunHandoffBundleValidation?.ready === true
   const hasDryRunJob = isAudioPreviewDryRunReady()
   const hasDryRunPlan = isAudioPreviewDryRunPlanReady()
   const hasValidatedRendererPayload = isAudioPreviewRendererPayloadValidated()
@@ -4719,6 +4744,7 @@ const clearAudioPreviewOutput = () => {
   setDryRunRenderManifest(null)
   setDryRunRenderManifestValidation(null)
   setDryRunHandoffBundle(null)
+  setDryRunHandoffBundleValidation(null)
   setDryRunCueSheetValidation(null)
   
 }
@@ -4886,8 +4912,7 @@ const getAudioPreviewChecklist = () => {
   const hasValidatedManifest = dryRunRenderManifestValidation?.ready === true
   const hasDryRunHandoffBundle = Boolean(dryRunHandoffBundle)
   const hasReadyDryRunHandoffBundle =
-  dryRunHandoffBundle?.handoffStatus === 'dry-run-handoff-ready' &&
-  dryRunHandoffBundle?.audioStatus === 'not-generated'
+  dryRunHandoffBundleValidation?.ready === true
   const expectedOutputRows = getDryRunExpectedOutputRows()
   const hasExpectedOutputSlots = expectedOutputRows.length > 0
   const hasOnlyNotGeneratedOutputs =
@@ -6908,6 +6933,7 @@ const clearChordEditor = () => {
   setDryRunRenderManifest(null)
   setDryRunRenderManifestValidation(null)
   setDryRunHandoffBundle(null)
+  setDryRunHandoffBundleValidation(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -10289,6 +10315,22 @@ return (
     {justCopiedAudioPreviewHandoffBundle ? 'Copied ✓' : 'Copy handoff bundle'}
   </button>
 </div>
+
+{dryRunHandoffBundleValidation ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Handoff bundle validation
+    </div>
+    <div className="mt-2">
+      {dryRunHandoffBundleValidation.ready === true ? 'Passed' : 'Needs review'}
+    </div>
+    <div className="mt-1 text-gray-500">
+      {typeof dryRunHandoffBundleValidation.detail === 'string'
+        ? dryRunHandoffBundleValidation.detail
+        : 'Validation details unavailable.'}
+    </div>
+  </div>
+) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunHandoffBundle, null, 2)}
