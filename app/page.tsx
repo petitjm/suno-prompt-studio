@@ -235,6 +235,8 @@ export default function Page() {
   useState<Record<string, unknown> | null>(null)
   const [dryRunHandoffBundleValidation, setDryRunHandoffBundleValidation] =
   useState<Record<string, unknown> | null>(null)
+  const [dryRunArtifactPackage, setDryRunArtifactPackage] =
+  useState<Record<string, unknown> | null>(null)
     const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
@@ -267,6 +269,7 @@ export default function Page() {
       setDryRunRenderManifestValidation(null)
       setDryRunHandoffBundle(null)
       setDryRunHandoffBundleValidation(null)
+      setDryRunArtifactPackage(null)
       setDryRunCueSheetValidation(null)
       
     }
@@ -2359,6 +2362,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setDryRunRenderManifestValidation(null)
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
+  setDryRunArtifactPackage(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -2461,6 +2465,14 @@ setDryRunHandoffBundleValidation(
     typeof result.dryRunHandoffBundleValidation === 'object' &&
     !Array.isArray(result.dryRunHandoffBundleValidation)
     ? result.dryRunHandoffBundleValidation
+    : null,
+)
+
+setDryRunArtifactPackage(
+  result.dryRunArtifactPackage &&
+    typeof result.dryRunArtifactPackage === 'object' &&
+    !Array.isArray(result.dryRunArtifactPackage)
+    ? result.dryRunArtifactPackage
     : null,
 )
 
@@ -4754,6 +4766,7 @@ const clearAudioPreviewOutput = () => {
   setDryRunRenderManifestValidation(null)
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
+  setDryRunArtifactPackage(null)
   setDryRunCueSheetValidation(null)
   
 }
@@ -6943,6 +6956,7 @@ const clearChordEditor = () => {
   setDryRunRenderManifestValidation(null)
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
+  setDryRunArtifactPackage(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -10343,6 +10357,23 @@ return (
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunHandoffBundle, null, 2)}
+    </pre>
+  </details>
+) : null}
+
+
+{dryRunArtifactPackage ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+      Audio preview dry-run artefact package
+    </summary>
+
+    <div className="mt-3 text-xs leading-5 text-gray-500">
+      Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.
+    </div>
+
+    <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
+      {JSON.stringify(dryRunArtifactPackage, null, 2)}
     </pre>
   </details>
 ) : null}

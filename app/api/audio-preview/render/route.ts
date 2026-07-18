@@ -990,6 +990,60 @@ function validateDryRunHandoffBundle(bundle: {
   }
 }
 
+function buildDryRunArtifactPackage({
+  renderJob,
+  dryRunRenderPlan,
+  dryRunRenderPlanValidation,
+  dryRunCueSheetValidation,
+  dryRunRenderManifest,
+  dryRunRenderManifestValidation,
+  dryRunHandoffBundle,
+  dryRunHandoffBundleValidation,
+}: {
+  renderJob: Record<string, unknown>
+  dryRunRenderPlan: Record<string, unknown>
+  dryRunRenderPlanValidation: Record<string, unknown>
+  dryRunCueSheetValidation: Record<string, unknown>
+  dryRunRenderManifest: Record<string, unknown>
+  dryRunRenderManifestValidation: Record<string, unknown>
+  dryRunHandoffBundle: Record<string, unknown>
+  dryRunHandoffBundleValidation: Record<string, unknown>
+}) {
+  return {
+    type: 'audio-preview-dry-run-artifact-package',
+    version: 1,
+    packageStatus:
+      dryRunHandoffBundleValidation.ready === true
+        ? 'dry-run-package-ready'
+        : 'dry-run-package-needs-review',
+    audioStatus: 'not-generated',
+    createdAt: new Date().toISOString(),
+    packageContents: [
+      'renderJob',
+      'dryRunRenderPlan',
+      'dryRunRenderPlanValidation',
+      'dryRunCueSheetValidation',
+      'dryRunRenderManifest',
+      'dryRunRenderManifestValidation',
+      'dryRunHandoffBundle',
+      'dryRunHandoffBundleValidation',
+    ],
+    renderJob,
+    dryRunRenderPlan,
+    dryRunRenderPlanValidation,
+    dryRunCueSheetValidation,
+    dryRunRenderManifest,
+    dryRunRenderManifestValidation,
+    dryRunHandoffBundle,
+    dryRunHandoffBundleValidation,
+    notes: [
+      'This package is a machine-readable dry-run artefact bundle.',
+      'No audio files have been generated.',
+      'Future renderer integration should consume this package only after validation is ready.',
+    ],
+  }
+}
+
 
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
@@ -1074,6 +1128,16 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
 
 const dryRunHandoffBundleValidation =
   validateDryRunHandoffBundle(dryRunHandoffBundle)
+const dryRunArtifactPackage = buildDryRunArtifactPackage({
+  renderJob,
+  dryRunRenderPlan,
+  dryRunRenderPlanValidation,
+  dryRunCueSheetValidation,
+  dryRunRenderManifest,
+  dryRunRenderManifestValidation,
+  dryRunHandoffBundle,
+  dryRunHandoffBundleValidation,
+})
 
     return NextResponse.json({
       status: 'accepted',
@@ -1087,6 +1151,7 @@ const dryRunHandoffBundleValidation =
       dryRunRenderManifestValidation,
       dryRunHandoffBundle,
       dryRunHandoffBundleValidation,
+      dryRunArtifactPackage,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })
