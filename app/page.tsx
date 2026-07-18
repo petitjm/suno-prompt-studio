@@ -283,7 +283,11 @@ export default function Page() {
   const [
   justCopiedAudioPreviewHandoffBundle,
      setJustCopiedAudioPreviewHandoffBundle,
-] = useState(false)
+    ] = useState(false)
+const [
+  justCopiedAudioPreviewArtifactPackage,
+      setJustCopiedAudioPreviewArtifactPackage,
+    ] = useState(false)
   const [justCopiedPerformanceDesignNotes, setJustCopiedPerformanceDesignNotes] = useState(false)
   const [justCopiedGuideTrackPlan, setJustCopiedGuideTrackPlan] = useState(false)
   const [justCopiedFullPerformancePack, setJustCopiedFullPerformancePack] = useState(false)
@@ -2726,6 +2730,57 @@ const buildSongsheetReviewCopyText = () => {
     .join('\n')
 }
 
+const copyAudioPreviewArtifactPackage = async () => {
+  if (!dryRunArtifactPackage) {
+    setAudioPreviewRenderMessage('No audio preview dry-run artefact package available to copy.')
+    return
+  }
+
+  const audioPreviewResultStatus = getAudioPreviewResultStatus()
+  const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
+
+  const copyText = [
+    'AUDIO PREVIEW DRY-RUN ARTEFACT PACKAGE',
+    '',
+    `Project: ${activeProject?.title || 'Untitled project'}`,
+    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+    `Chord version: ${getChordVersionCopyTitle()}`,
+    `Audio preview result: ${audioPreviewResultStatus.label}`,
+    `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
+    `Generated at: ${new Date().toLocaleString()}`,
+    '',
+    'STATUS DETAIL',
+    '',
+    audioPreviewResultStatus.detail,
+    fullPackAudioPreviewStatus.detail,
+    '',
+    'ARTEFACT PACKAGE JSON',
+    '',
+    JSON.stringify(dryRunArtifactPackage, null, 2),
+  ]
+    .filter((line, index, lines) => {
+      if (line !== '') {
+        return true
+      }
+
+      return lines[index - 1] !== ''
+    })
+    .join('\n')
+
+  try {
+    await navigator.clipboard.writeText(copyText)
+    setJustCopiedAudioPreviewArtifactPackage(true)
+    setAudioPreviewRenderMessage('Audio preview dry-run artefact package copied.')
+
+    window.setTimeout(() => {
+      setJustCopiedAudioPreviewArtifactPackage(false)
+    }, 1500)
+  } catch {
+    setAudioPreviewRenderMessage('Could not copy audio preview dry-run artefact package.')
+  }
+}
+
+
 const copyAudioPreviewHandoffBundle = async () => {
   if (!dryRunHandoffBundle) {
     setAudioPreviewRenderMessage('No audio preview dry-run handoff bundle available to copy.')
@@ -4025,6 +4080,21 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       'HANDOFF BUNDLE JSON',
       '',
       JSON.stringify(dryRunHandoffBundle, null, 2),
+      '',
+    ]
+  : []),
+
+  ...(dryRunArtifactPackage
+  ? [
+      '============================================================',
+      'AUDIO PREVIEW DRY-RUN ARTEFACT PACKAGE',
+      '============================================================',
+      '',
+      'Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.',
+      '',
+      'ARTEFACT PACKAGE JSON',
+      '',
+      JSON.stringify(dryRunArtifactPackage, null, 2),
       '',
     ]
   : []),
@@ -10368,9 +10438,19 @@ return (
       Audio preview dry-run artefact package
     </summary>
 
-    <div className="mt-3 text-xs leading-5 text-gray-500">
-      Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.
-    </div>
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+  <div className="text-xs leading-5 text-gray-500">
+    Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.
+  </div>
+
+  <button
+    type="button"
+    onClick={() => copyAudioPreviewArtifactPackage()}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+  >
+    {justCopiedAudioPreviewArtifactPackage ? 'Copied ✓' : 'Copy artefact package'}
+  </button>
+</div>
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunArtifactPackage, null, 2)}
