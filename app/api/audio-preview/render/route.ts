@@ -1045,6 +1045,70 @@ function buildDryRunArtifactPackage({
 }
 
 
+function validateDryRunArtifactPackage(pkg: {
+  type?: unknown
+  packageStatus?: unknown
+  audioStatus?: unknown
+  packageContents?: unknown
+  renderJob?: unknown
+  dryRunRenderPlan?: unknown
+  dryRunRenderPlanValidation?: unknown
+  dryRunCueSheetValidation?: unknown
+  dryRunRenderManifest?: unknown
+  dryRunRenderManifestValidation?: unknown
+  dryRunHandoffBundle?: unknown
+  dryRunHandoffBundleValidation?: unknown
+  notes?: unknown
+}) {
+  const missing: string[] = []
+
+  if (pkg.type !== 'audio-preview-dry-run-artifact-package') {
+    missing.push('type')
+  }
+
+  if (pkg.packageStatus !== 'dry-run-package-ready') {
+    missing.push('packageStatus')
+  }
+
+  if (pkg.audioStatus !== 'not-generated') {
+    missing.push('audioStatus')
+  }
+
+  if (!Array.isArray(pkg.packageContents) || pkg.packageContents.length === 0) {
+    missing.push('packageContents')
+  }
+
+  const requiredObjects: Array<[string, unknown]> = [
+    ['renderJob', pkg.renderJob],
+    ['dryRunRenderPlan', pkg.dryRunRenderPlan],
+    ['dryRunRenderPlanValidation', pkg.dryRunRenderPlanValidation],
+    ['dryRunCueSheetValidation', pkg.dryRunCueSheetValidation],
+    ['dryRunRenderManifest', pkg.dryRunRenderManifest],
+    ['dryRunRenderManifestValidation', pkg.dryRunRenderManifestValidation],
+    ['dryRunHandoffBundle', pkg.dryRunHandoffBundle],
+    ['dryRunHandoffBundleValidation', pkg.dryRunHandoffBundleValidation],
+  ]
+
+  requiredObjects.forEach(([label, value]) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      missing.push(label)
+    }
+  })
+
+  if (!Array.isArray(pkg.notes) || pkg.notes.length === 0) {
+    missing.push('notes')
+  }
+
+  return {
+    ready: missing.length === 0,
+    missing,
+    detail:
+      missing.length === 0
+        ? 'Dry-run artefact package is validated and confirms no audio has been generated.'
+        : `Dry-run artefact package needs review: ${missing.join(', ')}`,
+  }
+}
+
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
     .toString(36)
@@ -1139,6 +1203,9 @@ const dryRunArtifactPackage = buildDryRunArtifactPackage({
   dryRunHandoffBundleValidation,
 })
 
+const dryRunArtifactPackageValidation =
+  validateDryRunArtifactPackage(dryRunArtifactPackage)
+
     return NextResponse.json({
       status: 'accepted',
       renderStatus: 'dry-run-ready',
@@ -1152,6 +1219,7 @@ const dryRunArtifactPackage = buildDryRunArtifactPackage({
       dryRunHandoffBundle,
       dryRunHandoffBundleValidation,
       dryRunArtifactPackage,
+      dryRunArtifactPackageValidation,
       message:
         'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
     })

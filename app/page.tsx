@@ -237,6 +237,8 @@ export default function Page() {
   useState<Record<string, unknown> | null>(null)
   const [dryRunArtifactPackage, setDryRunArtifactPackage] =
   useState<Record<string, unknown> | null>(null)
+  const [dryRunArtifactPackageValidation, setDryRunArtifactPackageValidation] =
+  useState<Record<string, unknown> | null>(null)
     const [audioPreviewResponse, setAudioPreviewResponse] = useState('')
   const [audioPreviewPlan, setAudioPreviewPlan] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderPrompt, setAudioPreviewRenderPrompt] = useState('')
@@ -270,6 +272,7 @@ export default function Page() {
       setDryRunHandoffBundle(null)
       setDryRunHandoffBundleValidation(null)
       setDryRunArtifactPackage(null)
+      setDryRunArtifactPackageValidation(null)
       setDryRunCueSheetValidation(null)
       
     }
@@ -2367,6 +2370,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
   setDryRunArtifactPackage(null)
+  setDryRunArtifactPackageValidation(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -2479,6 +2483,15 @@ setDryRunArtifactPackage(
     ? result.dryRunArtifactPackage
     : null,
 )
+
+setDryRunArtifactPackageValidation(
+  result.dryRunArtifactPackageValidation &&
+    typeof result.dryRunArtifactPackageValidation === 'object' &&
+    !Array.isArray(result.dryRunArtifactPackageValidation)
+    ? result.dryRunArtifactPackageValidation
+    : null,
+)
+
 
   } catch {
     setAudioPreviewRenderMessage('Could not submit renderer payload.')
@@ -2754,8 +2767,15 @@ const copyAudioPreviewArtifactPackage = async () => {
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
     '',
-    'ARTEFACT PACKAGE JSON',
+    'ARTEFACT PACKAGE VALIDATION',
     '',
+    dryRunArtifactPackageValidation?.ready === true ? 'Passed' : 'Needs review',
+    typeof dryRunArtifactPackageValidation?.detail === 'string'
+      ? dryRunArtifactPackageValidation.detail
+      : 'Validation details unavailable.',
+    '',
+    'ARTEFACT PACKAGE JSON',
+        '',
     JSON.stringify(dryRunArtifactPackage, null, 2),
   ]
     .filter((line, index, lines) => {
@@ -4837,6 +4857,7 @@ const clearAudioPreviewOutput = () => {
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
   setDryRunArtifactPackage(null)
+  setDryRunArtifactPackageValidation(null)
   setDryRunCueSheetValidation(null)
   
 }
@@ -7027,6 +7048,7 @@ const clearChordEditor = () => {
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
   setDryRunArtifactPackage(null)
+  setDryRunArtifactPackageValidation(null)
   setDryRunCueSheetValidation(null)
  
 
@@ -10451,6 +10473,24 @@ return (
     {justCopiedAudioPreviewArtifactPackage ? 'Copied ✓' : 'Copy artefact package'}
   </button>
 </div>
+
+{dryRunArtifactPackageValidation ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Artefact package validation
+    </div>
+    <div className="mt-2">
+      {dryRunArtifactPackageValidation.ready === true
+        ? 'Passed'
+        : 'Needs review'}
+    </div>
+    <div className="mt-1 text-gray-500">
+      {typeof dryRunArtifactPackageValidation.detail === 'string'
+        ? dryRunArtifactPackageValidation.detail
+        : 'Validation details unavailable.'}
+    </div>
+  </div>
+) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunArtifactPackage, null, 2)}
