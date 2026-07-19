@@ -2755,11 +2755,12 @@ const copyAudioPreviewArtifactPackage = async () => {
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
   const copyText = [
-    'AUDIO PREVIEW DRY-RUN ARTEFACT PACKAGE',
-    '',
-    `Project: ${activeProject?.title || 'Untitled project'}`,
-    `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
-    `Chord version: ${getChordVersionCopyTitle()}`,
+  'AUDIO PREVIEW DRY-RUN ARTEFACT PACKAGE',
+  '',
+  ...getAudioPreviewReadinessCopyLines(),
+  `Project: ${activeProject?.title || 'Untitled project'}`,
+  `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
+  `Chord version: ${getChordVersionCopyTitle()}`,
     `Audio preview result: ${audioPreviewResultStatus.label}`,
     `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
     `Generated at: ${new Date().toLocaleString()}`,
@@ -3876,6 +3877,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
  return [
   'FULL PERFORMANCE PACK',
   '',
+  ...getAudioPreviewReadinessCopyLines(),
   `Project: ${activeProject?.title || 'Untitled project'}`,
   `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
   `Chord version: ${chordVersionTitle || 'Unsaved or untitled chord version'}`,
@@ -4729,6 +4731,38 @@ const getDryRunExpectedOutputRows = () => {
           : '',
     }
   })
+}
+
+const getAudioPreviewReadinessSummary = () => {
+  const checklist = getAudioPreviewChecklist()
+
+  const complete = checklist.filter((item) => item.complete).length
+  const total = checklist.length
+  const percentage =
+    total === 0 ? 0 : Math.round((complete / total) * 100)
+
+  return {
+    complete,
+    total,
+    percentage,
+    ready: complete === total && total > 0,
+  }
+}
+
+const getAudioPreviewReadinessCopyLines = () => {
+  const summary = getAudioPreviewReadinessSummary()
+
+  return [
+    'AUDIO PREVIEW READINESS',
+    '',
+    `${summary.percentage}%`,
+    `${summary.complete} / ${summary.total} checks complete`,
+    '',
+    summary.ready
+      ? 'Ready for future renderer integration'
+      : 'Waiting for remaining checks',
+    '',
+  ]
 }
 
 const getDryRunRealRenderReadinessSummary = () => {
@@ -7029,6 +7063,7 @@ const audioPreviewDryRunCueSheetRows = getAudioPreviewDryRunCueSheetRows()
 const dryRunRenderManifestSummary = getDryRunRenderManifestSummary()
 const dryRunRendererContractSummary = getDryRunRendererContractSummary()
 const dryRunExpectedOutputRows = getDryRunExpectedOutputRows()
+const audioPreviewReadinessSummary = getAudioPreviewReadinessSummary()
 const dryRunRealRenderReadinessSummary =
   getDryRunRealRenderReadinessSummary()
   const dryRunRenderTargetRows = getDryRunRenderTargetRows()
@@ -9486,6 +9521,32 @@ return (
     </div>
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
+    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    Audio Preview Readiness
+  </div>
+
+  <div className="mt-3 text-3xl font-semibold text-gray-100">
+    {audioPreviewReadinessSummary.percentage}%
+  </div>
+
+  <div className="mt-1 text-sm text-gray-400">
+    {audioPreviewReadinessSummary.complete} /{' '}
+    {audioPreviewReadinessSummary.total} checks complete
+  </div>
+
+  <div
+    className={
+      audioPreviewReadinessSummary.ready
+        ? 'mt-3 text-sm font-medium text-green-300'
+        : 'mt-3 text-sm font-medium text-yellow-300'
+    }
+  >
+    {audioPreviewReadinessSummary.ready
+      ? 'Ready for future renderer integration'
+      : 'Waiting for remaining checks'}
+  </div>
+</div>
       <div className="flex flex-wrap items-start justify-between gap-3">
   <div>
     <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
