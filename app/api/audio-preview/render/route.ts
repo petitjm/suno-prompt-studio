@@ -1048,6 +1048,47 @@ function buildDryRunArtifactPackage({
         'Do not mark any expected output as generated until a real renderer writes and stores the file.',
       ],
     },
+    renderTargets: {
+  targetStatus: 'dry-run-targets-declared',
+  selectedOutputs: [
+    {
+      key: 'guideTrackAudio',
+      label: 'Guide track audio',
+      priority: 1,
+      selected: true,
+      reason:
+        'Primary rehearsal output combining placed songsheet, render plan, cue sheet, and performance guidance.',
+    },
+    {
+      key: 'clickTrack',
+      label: 'Click track',
+      priority: 2,
+      selected: true,
+      reason:
+        'Timing reference for checking section lengths, count-in, and cue sheet estimates.',
+    },
+    {
+      key: 'chordReferenceTrack',
+      label: 'Chord reference track',
+      priority: 3,
+      selected: true,
+      reason:
+        'Sparse harmony reference for checking chord changes and song structure.',
+    },
+    {
+      key: 'vocalGuideTrack',
+      label: 'Vocal guide track',
+      priority: 4,
+      selected: false,
+      reason:
+        'Optional future melody or vocal-reference output; left off by default until a vocal guide strategy is chosen.',
+    },
+  ],
+  notes: [
+    'Render targets are declared for future renderer integration only.',
+    'Selected targets must remain not-generated until a real renderer creates and stores audio files.',
+  ],
+},
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1071,6 +1112,7 @@ function validateDryRunArtifactPackage(pkg: {
   audioStatus?: unknown
   packageContents?: unknown
   realRenderReadiness?: unknown
+  renderTargets?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -1142,6 +1184,65 @@ if (!realRenderReadiness) {
   }
 }
 
+const renderTargets =
+  pkg.renderTargets &&
+  typeof pkg.renderTargets === 'object' &&
+  !Array.isArray(pkg.renderTargets)
+    ? (pkg.renderTargets as Record<string, unknown>)
+    : null
+
+if (!renderTargets) {
+  missing.push('renderTargets')
+} else {
+  if (renderTargets.targetStatus !== 'dry-run-targets-declared') {
+    missing.push('renderTargets.targetStatus')
+  }
+
+  const selectedOutputs = Array.isArray(renderTargets.selectedOutputs)
+    ? renderTargets.selectedOutputs
+    : []
+
+  if (selectedOutputs.length === 0) {
+    missing.push('renderTargets.selectedOutputs')
+  } else {
+    selectedOutputs.forEach((output, index) => {
+      const target =
+        output && typeof output === 'object' && !Array.isArray(output)
+          ? (output as Record<string, unknown>)
+          : null
+
+      if (!target) {
+        missing.push(`renderTargets.selectedOutputs.${index}`)
+        return
+      }
+
+      if (typeof target.key !== 'string' || !target.key.trim()) {
+        missing.push(`renderTargets.selectedOutputs.${index}.key`)
+      }
+
+      if (typeof target.label !== 'string' || !target.label.trim()) {
+        missing.push(`renderTargets.selectedOutputs.${index}.label`)
+      }
+
+      if (typeof target.priority !== 'number') {
+        missing.push(`renderTargets.selectedOutputs.${index}.priority`)
+      }
+
+      if (typeof target.selected !== 'boolean') {
+        missing.push(`renderTargets.selectedOutputs.${index}.selected`)
+      }
+
+      if (typeof target.reason !== 'string' || !target.reason.trim()) {
+        missing.push(`renderTargets.selectedOutputs.${index}.reason`)
+      }
+    })
+  }
+
+  if (!Array.isArray(renderTargets.notes) || renderTargets.notes.length === 0) {
+    missing.push('renderTargets.notes')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -1168,7 +1269,7 @@ if (!realRenderReadiness) {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run artefact package is validated, confirms no audio has been generated, and lists real-render readiness blockers.'
+        ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, and declares future render targets.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
