@@ -6879,6 +6879,10 @@ const dryRunRendererContractSummary = getDryRunRendererContractSummary()
 const dryRunExpectedOutputRows = getDryRunExpectedOutputRows()
 const dryRunRealRenderReadinessSummary =
   getDryRunRealRenderReadinessSummary()
+const showRealRenderBlockedBanner =
+  dryRunRealRenderReadinessSummary.readyForRealRender === false &&
+  dryRunRealRenderReadinessSummary.readinessStatus ===
+    'blocked-until-renderer-connected'
 const audioPreviewResultStatus = getAudioPreviewResultStatus()
 
 const chordGenerationMetaRows = getChordGenerationMetaRows()
@@ -9897,6 +9901,28 @@ return (
 {audioPreviewRenderMessage ? (
   <div className="rounded border border-gray-800 bg-gray-950 px-3 py-2 text-xs leading-5 text-gray-300">
     {audioPreviewRenderMessage}
+  </div>
+) : null}
+
+{showRealRenderBlockedBanner ? (
+  <div className="rounded border border-amber-900/60 bg-amber-950/20 p-4 text-sm leading-6 text-amber-100">
+    <div className="font-semibold uppercase tracking-wide text-amber-300">
+      Dry-run only — real rendering is blocked
+    </div>
+
+    <div className="mt-2 text-xs text-amber-100">
+      The audio preview dry run is validated, but no audio has been generated.
+      Real rendering remains blocked until renderer, format, storage, and timing
+      decisions are made.
+    </div>
+
+    {dryRunRealRenderReadinessSummary.blockers.length > 0 ? (
+      <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-amber-100">
+        {dryRunRealRenderReadinessSummary.blockers.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    ) : null}
   </div>
 ) : null}
 
