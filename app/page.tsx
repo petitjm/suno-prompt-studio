@@ -4469,7 +4469,8 @@ const getFullPackAudioPreviewStatus = () => {
     return {
       label: 'Full pack includes audio preview artefacts',
     detail:
-      'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, validated artefact package, real-render readiness blockers, and future audio output placeholders.',    }
+      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, real-render blockers, and render targets are ready.', 
+    }
   }
 
   if (
@@ -5149,9 +5150,8 @@ const getAudioPreviewPipelineStatus = () => {
   return {
     label: 'Audio preview pipeline complete',
     progress: 'Complete',
-    detail:
-      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, and real-render blockers are ready.',    completeCount,
-    totalCount: checklist.length,
+detail:
+  'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, real-render blockers, and render targets are ready.',    totalCount: checklist.length,
     nextAction: 'Ready for future renderer integration.',
     tone: 'ready',
   }
@@ -5246,6 +5246,18 @@ const getAudioPreviewChecklist = () => {
    realRenderReadinessSummary.readyForRealRender === false &&
    realRenderReadinessSummary.readinessStatus ===
     'blocked-until-renderer-connected'
+    const renderTargetRows = getDryRunRenderTargetRows()
+    const hasDeclaredRenderTargets = renderTargetRows.length > 0
+    const selectedRenderTargetCount = renderTargetRows.filter(
+      (target) => target.selected,
+    ).length
+    const optionalRenderTargetCount = renderTargetRows.filter(
+      (target) => !target.selected,
+    ).length
+    const hasExpectedRenderTargetShape =
+      hasDeclaredRenderTargets &&
+      selectedRenderTargetCount > 0 &&
+      optionalRenderTargetCount > 0
   const hasPreviewSpec = Boolean(audioPreviewSpecPreview.trim())
   const hasPreviewPlan = Boolean(audioPreviewPlan)
   const hasPreviewSongSheet = Boolean(audioPreviewSongSheetText.trim())
@@ -5378,7 +5390,22 @@ const getAudioPreviewChecklist = () => {
       : 'Submit dry run to confirm real rendering remains blocked.',
 },
 
-
+{
+  label: 'Render targets declared',
+  complete: hasDeclaredRenderTargets,
+  detail: hasDeclaredRenderTargets
+    ? `${renderTargetRows.length} future render target${renderTargetRows.length === 1 ? '' : 's'} declared.`
+    : 'Submit dry run to declare future render targets.',
+},
+{
+  label: 'Render target selection ready',
+  complete: hasExpectedRenderTargetShape,
+  detail: hasExpectedRenderTargetShape
+    ? `${selectedRenderTargetCount} selected target${selectedRenderTargetCount === 1 ? '' : 's'} and ${optionalRenderTargetCount} optional target${optionalRenderTargetCount === 1 ? '' : 's'} are documented.`
+    : hasDeclaredRenderTargets
+      ? 'Review selected and optional render targets before future renderer integration.'
+      : 'Submit dry run to create render target selection details.',
+},
 
 {
   label: 'Dry-run render plan ready',
