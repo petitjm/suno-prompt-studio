@@ -4765,6 +4765,54 @@ const getAudioPreviewReadinessCopyLines = () => {
   ]
 }
 
+const renderAudioPreviewReadinessCard = (
+  size: 'standard' | 'compact' = 'standard',
+) => {
+  const percentageClassName =
+    size === 'compact'
+      ? 'mt-2 text-2xl font-semibold text-gray-100'
+      : 'mt-3 text-3xl font-semibold text-gray-100'
+
+  const wrapperClassName =
+    size === 'compact'
+      ? 'mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400'
+      : 'rounded border border-gray-800 bg-gray-950 p-4'
+
+  return (
+    <div className={wrapperClassName}>
+      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        Audio Preview Readiness
+      </div>
+
+      <div className={percentageClassName}>
+        {audioPreviewReadinessSummary.percentage}%
+      </div>
+
+      <div className={size === 'compact' ? 'mt-1 text-gray-400' : 'mt-1 text-sm text-gray-400'}>
+        {audioPreviewReadinessSummary.complete} /{' '}
+        {audioPreviewReadinessSummary.total} checks complete
+      </div>
+
+      <div
+        className={
+          audioPreviewReadinessSummary.ready
+            ? size === 'compact'
+              ? 'mt-2 font-medium text-green-300'
+              : 'mt-3 text-sm font-medium text-green-300'
+            : size === 'compact'
+              ? 'mt-2 font-medium text-yellow-300'
+              : 'mt-3 text-sm font-medium text-yellow-300'
+        }
+      >
+        {audioPreviewReadinessSummary.ready
+          ? 'Ready for future renderer integration'
+          : 'Waiting for remaining checks'}
+      </div>
+    </div>
+  )
+}
+
+
 const getDryRunRealRenderReadinessSummary = () => {
   if (!dryRunArtifactPackage) {
     return {
@@ -9520,69 +9568,8 @@ return (
       </div>
     </div>
 
-    <div className="rounded border border-gray-800 bg-gray-950 p-4">
-    <div className="rounded border border-gray-800 bg-gray-950 p-4">
-  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-    Audio Preview Readiness
-  </div>
 
-  <div className="mt-3 text-3xl font-semibold text-gray-100">
-    {audioPreviewReadinessSummary.percentage}%
-  </div>
-
-  <div className="mt-1 text-sm text-gray-400">
-    {audioPreviewReadinessSummary.complete} /{' '}
-    {audioPreviewReadinessSummary.total} checks complete
-  </div>
-
-  <div
-    className={
-      audioPreviewReadinessSummary.ready
-        ? 'mt-3 text-sm font-medium text-green-300'
-        : 'mt-3 text-sm font-medium text-yellow-300'
-    }
-  >
-    {audioPreviewReadinessSummary.ready
-      ? 'Ready for future renderer integration'
-      : 'Waiting for remaining checks'}
-  </div>
-</div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-  <div>
-    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-      Audio preview checklist
-    </div>
-
-    <button
-      type="button"
-      onClick={() => copyAudioPreviewChecklist()}
-      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-    >
-      {justCopiedAudioPreviewChecklist ? 'Copied ✓' : 'Copy checklist'}
-    </button>
-
-    <div className="mt-1 text-xs leading-5 text-gray-500">
-      Tracks whether the audio-preview handoff is ready for testing or export.
-    </div>
-  </div>
-
-  <div
-    className={`rounded border px-3 py-2 text-xs leading-5 ${
-      audioPreviewChecklistSummary.tone === 'ready'
-        ? 'border-green-900 bg-green-950/20 text-green-100'
-        : audioPreviewChecklistSummary.tone === 'review'
-          ? 'border-yellow-900 bg-yellow-950/20 text-yellow-100'
-          : 'border-gray-800 bg-gray-900 text-gray-400'
-    }`}
-  >
-    <div className="font-medium">
-      {audioPreviewChecklistSummary.label}
-    </div>
-    <div className="mt-1">
-      {audioPreviewChecklistSummary.detail}
-    </div>
-  </div>
-</div>
+    {renderAudioPreviewReadinessCard()}
 
       <div className="mt-3 grid gap-2 md:grid-cols-2">
         {audioPreviewChecklist.map((item) => (
@@ -10799,32 +10786,7 @@ return (
       Audio preview dry-run handoff bundle
     </summary>
 
-    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-  <div className="font-medium uppercase tracking-wide text-gray-500">
-    Audio Preview Readiness
-  </div>
-
-  <div className="mt-2 text-2xl font-semibold text-gray-100">
-    {audioPreviewReadinessSummary.percentage}%
-  </div>
-
-  <div className="mt-1 text-gray-400">
-    {audioPreviewReadinessSummary.complete} /{' '}
-    {audioPreviewReadinessSummary.total} checks complete
-  </div>
-
-  <div
-    className={
-      audioPreviewReadinessSummary.ready
-        ? 'mt-2 font-medium text-green-300'
-        : 'mt-2 font-medium text-yellow-300'
-    }
-  >
-    {audioPreviewReadinessSummary.ready
-      ? 'Ready for future renderer integration'
-      : 'Waiting for remaining checks'}
-  </div>
-</div>
+   {renderAudioPreviewReadinessCard('compact')}
 
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
   <div className="text-xs leading-5 text-gray-500">
@@ -10863,38 +10825,7 @@ return (
 ) : null}
 
 
-{dryRunArtifactPackage ? (
-  <details className="rounded border border-gray-800 bg-gray-950 p-4">
-    <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-      Audio preview dry-run artefact package
-    </summary>
-
-    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-  <div className="font-medium uppercase tracking-wide text-gray-500">
-    Audio Preview Readiness
-  </div>
-
-  <div className="mt-2 text-2xl font-semibold text-gray-100">
-    {audioPreviewReadinessSummary.percentage}%
-  </div>
-
-  <div className="mt-1 text-gray-400">
-    {audioPreviewReadinessSummary.complete} /{' '}
-    {audioPreviewReadinessSummary.total} checks complete
-  </div>
-
-  <div
-    className={
-      audioPreviewReadinessSummary.ready
-        ? 'mt-2 font-medium text-green-300'
-        : 'mt-2 font-medium text-yellow-300'
-    }
-  >
-    {audioPreviewReadinessSummary.ready
-      ? 'Ready for future renderer integration'
-      : 'Waiting for remaining checks'}
-  </div>
-</div>
+{renderAudioPreviewReadinessCard('compact')}
 
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
   <div className="text-xs leading-5 text-gray-500">
@@ -10980,6 +10911,13 @@ return (
   </div>
 ) : null}
 
+{dryRunArtifactPackage ? (
+  <details className="rounded border border-gray-800 bg-gray-950 p-4">
+    <summary className="cursor-pointer text-sm font-medium text-gray-200">
+      Audio preview dry-run artefact package
+    </summary>
+
+        {renderAudioPreviewReadinessCard('compact')}
 
 {dryRunRenderTargetRows.length > 0 ? (
   <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
@@ -10997,6 +10935,7 @@ return (
             <div className="font-medium text-gray-300">
               {target.priority}. {target.label}
             </div>
+
             <div className={target.selected ? 'text-green-300' : 'text-gray-500'}>
               {target.selected ? 'Selected' : 'Optional'}
             </div>
@@ -11059,6 +10998,7 @@ return (
     ) : null}
    </div>
 
+<>
   <div className="mt-3 grid gap-2 lg:grid-cols-2">
     {audioGuideReadiness.checks.map((check) => (
       <div
@@ -11084,7 +11024,7 @@ return (
       </div>
     ))}
   </div>
-</div>
+
 
 
 
@@ -11114,7 +11054,7 @@ return (
       'No performance design notes yet. Generate chords with performance intent to create this summary.'}
   </pre>
 </div>
-
+</>
 
     <div className="rounded border border-gray-800 bg-gray-950 p-4">
       <div className="flex items-center justify-between gap-3">
