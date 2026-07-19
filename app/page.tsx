@@ -2763,10 +2763,15 @@ const copyAudioPreviewArtifactPackage = async () => {
     `Full pack audio status: ${fullPackAudioPreviewStatus.label}`,
     `Generated at: ${new Date().toLocaleString()}`,
     '',
-    'STATUS DETAIL',
+   'STATUS DETAIL',
     '',
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
+    '',
+    'DRY-RUN ONLY WARNING',
+    '',
+    'No audio file has been generated.',
+    'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
     '',
     'ARTEFACT PACKAGE VALIDATION',
     '',
@@ -2847,6 +2852,11 @@ const copyAudioPreviewHandoffBundle = async () => {
     '',
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
+    '',
+    'DRY-RUN ONLY WARNING',
+    '',
+    'No audio file has been generated.',
+    'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
     '',
     'HANDOFF BUNDLE VALIDATION',
     '',
@@ -4138,38 +4148,49 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       '',
       'Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.',
       '',
+      'DRY-RUN ONLY WARNING',
+      '',
+      'No audio file has been generated.',
+      'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
+      '',
+      'ARTEFACT PACKAGE VALIDATION',
+      '',
+      dryRunArtifactPackageValidation?.ready === true
+        ? 'Passed'
+        : 'Needs review',
+      typeof dryRunArtifactPackageValidation?.detail === 'string'
+        ? dryRunArtifactPackageValidation.detail
+        : 'Validation details unavailable.',
+      '',
       ...(realRenderReadinessSummary.readinessStatus
-  ? [
-      'REAL-RENDER READINESS',
-      '',
-      `Ready for real render: ${
-        realRenderReadinessSummary.readyForRealRender === true ? 'Yes' : 'No'
-      }`,
-      `Status: ${realRenderReadinessSummary.readinessStatus}`,
-      '',
-      'Blockers:',
-      ...realRenderReadinessSummary.blockers.map((item) => `- ${item}`),
-      '',
-      'Required decisions:',
-      ...realRenderReadinessSummary.requiredDecisions.map(
-        (item) => `- ${item}`,
-      ),
-      '',
-      'Safety notes:',
-      ...realRenderReadinessSummary.safetyNotes.map((item) => `- ${item}`),
-      '',
-    ]
-  : []),
+        ? [
+            'REAL-RENDER READINESS',
+            '',
+            `Ready for real render: ${
+              realRenderReadinessSummary.readyForRealRender === true
+                ? 'Yes'
+                : 'No'
+            }`,
+            `Status: ${realRenderReadinessSummary.readinessStatus}`,
+            '',
+            'Blockers:',
+            ...realRenderReadinessSummary.blockers.map((item) => `- ${item}`),
+            '',
+            'Required decisions:',
+            ...realRenderReadinessSummary.requiredDecisions.map(
+              (item) => `- ${item}`,
+            ),
+            '',
+            'Safety notes:',
+            ...realRenderReadinessSummary.safetyNotes.map(
+              (item) => `- ${item}`,
+            ),
+            '',
+          ]
+        : []),
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
-      'ARTEFACT PACKAGE VALIDATION',
-    '',
-    dryRunArtifactPackageValidation?.ready === true ? 'Passed' : 'Needs review',
-    typeof dryRunArtifactPackageValidation?.detail === 'string'
-      ? dryRunArtifactPackageValidation.detail
-      : 'Validation details unavailable.',
-    '',
       '',
     ]
   : []),
