@@ -3798,7 +3798,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       progress: 'Complete',
       nextAction: 'Ready for future renderer integration.',
       detail:
-      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, and validations are ready.'
+      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, and real-render blockers are ready.'
     }
   : {
       label: 'Audio preview pipeline in progress',
@@ -4391,9 +4391,8 @@ const getFullPackAudioPreviewStatus = () => {
   ) {
     return {
       label: 'Full pack includes audio preview artefacts',
-      detail:
-        'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, validated artefact package, and future audio output placeholders.',
-      tone: 'ready',
+    detail:
+      'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, validated artefact package, real-render readiness blockers, and future audio output placeholders.',      tone: 'ready',
     }
   }
 
@@ -5027,7 +5026,7 @@ const getAudioPreviewPipelineStatus = () => {
     label: 'Audio preview pipeline complete',
     progress: 'Complete',
     detail:
-      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, and validations are ready.',
+       'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, and real-render blockers are ready.',
     completeCount,
     totalCount: checklist.length,
     nextAction: 'Ready for future renderer integration.',
@@ -5117,6 +5116,13 @@ const getAudioPreviewChecklist = () => {
   const hasDryRunArtifactPackage = Boolean(dryRunArtifactPackage)
   const hasValidatedDryRunArtifactPackage =
   dryRunArtifactPackageValidation?.ready === true
+  const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
+  const hasRealRenderReadiness =
+   Boolean(realRenderReadinessSummary.readinessStatus)
+  const realRenderIsCorrectlyBlocked =
+   realRenderReadinessSummary.readyForRealRender === false &&
+   realRenderReadinessSummary.readinessStatus ===
+    'blocked-until-renderer-connected'
   const hasPreviewSpec = Boolean(audioPreviewSpecPreview.trim())
   const hasPreviewPlan = Boolean(audioPreviewPlan)
   const hasPreviewSongSheet = Boolean(audioPreviewSongSheetText.trim())
@@ -5230,6 +5236,23 @@ const getAudioPreviewChecklist = () => {
     : hasDryRunArtifactPackage
       ? 'Review artefact package validation before future renderer integration.'
       : 'Submit dry run to validate the artefact package.',
+},
+
+{
+  label: 'Real-render readiness documented',
+  complete: hasRealRenderReadiness,
+  detail: hasRealRenderReadiness
+    ? 'Real-render readiness blockers and required decisions are documented.'
+    : 'Submit dry run to create real-render readiness blockers.',
+},
+{
+  label: 'Real-render correctly blocked',
+  complete: realRenderIsCorrectlyBlocked,
+  detail: realRenderIsCorrectlyBlocked
+    ? 'Real rendering is correctly blocked until renderer, format, storage, and timing decisions are made.'
+    : hasRealRenderReadiness
+      ? 'Review real-render readiness status before allowing renderer integration.'
+      : 'Submit dry run to confirm real rendering remains blocked.',
 },
 
 {
