@@ -2750,6 +2750,7 @@ const copyAudioPreviewArtifactPackage = async () => {
   }
 
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
+  const renderTargetRows = getDryRunRenderTargetRows()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -2800,6 +2801,18 @@ const copyAudioPreviewArtifactPackage = async () => {
       'Safety notes:',
       ...realRenderReadinessSummary.safetyNotes.map((item) => `- ${item}`),
       '',
+    ]
+  : []),
+  ...(renderTargetRows.length > 0
+  ? [
+      'DECLARED RENDER TARGETS',
+      '',
+      ...renderTargetRows.flatMap((target) => [
+        `${target.priority}. ${target.label}`,
+        `Status: ${target.selected ? 'Selected' : 'Optional'}`,
+        target.reason ? `Reason: ${target.reason}` : '',
+        '',
+      ]),
     ]
   : []),
     'ARTEFACT PACKAGE JSON',
@@ -3843,6 +3856,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const audioPreviewDryRunCueSheet = getAudioPreviewDryRunCueSheet()
   const expectedOutputRows = getDryRunExpectedOutputRows()
   const dryRunRendererContractSummary = getDryRunRendererContractSummary()
+  const renderTargetRows = getDryRunRenderTargetRows()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4218,6 +4232,18 @@ const fullPackPipelineStatus = fullPackPipelineComplete
             '',
           ]
         : []),
+        ...(renderTargetRows.length > 0
+        ? [
+          'DECLARED RENDER TARGETS',
+          '',
+          ...renderTargetRows.flatMap((target) => [
+            `${target.priority}. ${target.label}`,
+            `Status: ${target.selected ? 'Selected' : 'Optional'}`,
+            target.reason ? `Reason: ${target.reason}` : '',
+            '',
+          ]),
+        ]
+      : []),
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
@@ -4743,6 +4769,54 @@ const getDryRunRealRenderReadinessSummary = () => {
       ? readiness.safetyNotes.filter((item): item is string => typeof item === 'string')
       : [],
   }
+}
+
+const getDryRunRenderTargetRows = () => {
+  if (!dryRunArtifactPackage) {
+    return []
+  }
+
+  const renderTargets =
+    dryRunArtifactPackage.renderTargets &&
+    typeof dryRunArtifactPackage.renderTargets === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.renderTargets)
+      ? (dryRunArtifactPackage.renderTargets as Record<string, unknown>)
+      : {}
+
+  const selectedOutputs = Array.isArray(renderTargets.selectedOutputs)
+    ? renderTargets.selectedOutputs
+    : []
+
+  return selectedOutputs
+    .map((output) => {
+      const target =
+        output && typeof output === 'object' && !Array.isArray(output)
+          ? (output as Record<string, unknown>)
+          : null
+
+      if (!target) {
+        return null
+      }
+
+      return {
+        key: typeof target.key === 'string' ? target.key : '',
+        label: typeof target.label === 'string' ? target.label : 'Unnamed target',
+        priority:
+          typeof target.priority === 'number'
+            ? target.priority
+            : Number.MAX_SAFE_INTEGER,
+        selected: target.selected === true,
+        reason: typeof target.reason === 'string' ? target.reason : '',
+      }
+    })
+    .filter((target): target is {
+      key: string
+      label: string
+      priority: number
+      selected: boolean
+      reason: string
+    } => Boolean(target))
+    .sort((a, b) => a.priority - b.priority)
 }
 
 const getDryRunRendererContractSummary = () => {
@@ -6930,6 +7004,7 @@ const dryRunRendererContractSummary = getDryRunRendererContractSummary()
 const dryRunExpectedOutputRows = getDryRunExpectedOutputRows()
 const dryRunRealRenderReadinessSummary =
   getDryRunRealRenderReadinessSummary()
+  const dryRunRenderTargetRows = getDryRunRenderTargetRows()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -10763,6 +10838,36 @@ return (
   </div>
 ) : null}
 
+
+{dryRunRenderTargetRows.length > 0 ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Declared render targets
+    </div>
+
+    <div className="mt-2 grid gap-2">
+      {dryRunRenderTargetRows.map((target) => (
+        <div
+          key={target.key || target.label}
+          className="rounded border border-gray-800 bg-gray-950 p-3"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="font-medium text-gray-300">
+              {target.priority}. {target.label}
+            </div>
+            <div className={target.selected ? 'text-green-300' : 'text-gray-500'}>
+              {target.selected ? 'Selected' : 'Optional'}
+            </div>
+          </div>
+
+          {target.reason ? (
+            <div className="mt-2 text-gray-500">{target.reason}</div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  </div>
+) : null}
 
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunArtifactPackage, null, 2)}
