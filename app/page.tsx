@@ -10842,6 +10842,33 @@ return (
       Audio preview dry-run artefact package
     </summary>
 
+    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+  <div className="font-medium uppercase tracking-wide text-gray-500">
+    Audio Preview Readiness
+  </div>
+
+  <div className="mt-2 text-2xl font-semibold text-gray-100">
+    {audioPreviewReadinessSummary.percentage}%
+  </div>
+
+  <div className="mt-1 text-gray-400">
+    {audioPreviewReadinessSummary.complete} /{' '}
+    {audioPreviewReadinessSummary.total} checks complete
+  </div>
+
+  <div
+    className={
+      audioPreviewReadinessSummary.ready
+        ? 'mt-2 font-medium text-green-300'
+        : 'mt-2 font-medium text-yellow-300'
+    }
+  >
+    {audioPreviewReadinessSummary.ready
+      ? 'Ready for future renderer integration'
+      : 'Waiting for remaining checks'}
+  </div>
+</div>
+
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
   <div className="text-xs leading-5 text-gray-500">
     Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.
