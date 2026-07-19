@@ -4778,6 +4778,16 @@ const renderAudioPreviewReadinessCard = (
       ? 'mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400'
       : 'rounded border border-gray-800 bg-gray-950 p-4'
 
+  const remainingChecks = audioPreviewChecklist.filter(
+    (item) => !item.complete,
+  )
+
+  const remainingChecksToShow = remainingChecks.slice(0, 3)
+  const remainingChecksNotShown = Math.max(
+    remainingChecks.length - remainingChecksToShow.length,
+    0,
+  )
+
   return (
     <div className={wrapperClassName}>
       <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -4808,6 +4818,33 @@ const renderAudioPreviewReadinessCard = (
           ? 'Ready for future renderer integration'
           : 'Waiting for remaining checks'}
       </div>
+
+            {size === 'standard' &&
+      !audioPreviewReadinessSummary.ready &&
+      remainingChecksToShow.length > 0 ? (
+        <div className="mt-4 rounded border border-yellow-900 bg-yellow-950/20 p-3 text-sm text-yellow-100">
+          <div className="font-medium">Remaining checks</div>
+
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-yellow-100/80">
+            {remainingChecksToShow.map((item) => (
+              <li key={item.label}>
+                <span className="font-medium">{item.label}</span>
+                {item.detail ? (
+                  <span className="text-yellow-100/60"> — {item.detail}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+
+          {remainingChecksNotShown > 0 ? (
+            <div className="mt-2 text-xs text-yellow-100/60">
+              + {remainingChecksNotShown} more remaining check
+              {remainingChecksNotShown === 1 ? '' : 's'}.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
     </div>
   )
 }
