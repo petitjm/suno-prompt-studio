@@ -3030,6 +3030,11 @@ const copyAudioPreviewCueSheet = async () => {
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
     '',
+    'DRY-RUN ONLY WARNING',
+    '',
+    'No audio file has been generated.',
+    'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
+    '',
     'CUE SHEET VALIDATION',
     '',
     dryRunCueSheetValidation?.ready === true ? 'Passed' : 'Needs review',
@@ -3088,6 +3093,11 @@ const copyAudioPreviewDryRunPlan = async () => {
     '',
     audioPreviewResultStatus.detail,
     fullPackAudioPreviewStatus.detail,
+    '',
+    'DRY-RUN ONLY WARNING',
+    '',
+    'No audio file has been generated.',
+    'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
     '',
     'DRY-RUN RENDER PLAN JSON',
     '',
@@ -4025,6 +4035,11 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       '',
       'Renderer-facing dry-run plan derived from the audio preview payload. No audio file is generated yet.',
       '',
+      'DRY-RUN ONLY WARNING',
+        '',
+        'No audio file has been generated.',
+        'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
+'',
       'RENDER PLAN VALIDATION',
       '',
       dryRunRenderPlanValidation?.ready === true ? 'Passed' : 'Needs review',
@@ -4046,6 +4061,11 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       '',
       'Estimated timing cue sheet derived from the dry-run timeline. These timings are approximate and are not final rendered audio timings.',
       '',
+      'DRY-RUN ONLY WARNING',
+        '',
+        'No audio file has been generated.',
+        'Real rendering is blocked until renderer, format, storage, and timing decisions are made.',
+        '',
       'CUE SHEET VALIDATION',
       '',
       dryRunCueSheetValidation?.ready === true ? 'Passed' : 'Needs review',
@@ -10040,21 +10060,9 @@ return (
                   </button>
                 </div>
 
-                setDryRunRenderPlanValidation(
-                  result.dryRunRenderPlanValidation &&
-                    typeof result.dryRunRenderPlanValidation === 'object' &&
-                    !Array.isArray(result.dryRunRenderPlanValidation)
-                    ? result.dryRunRenderPlanValidation
-                    : null,
-                )
+               
 
-                setDryRunCueSheetValidation(
-                  result.dryRunCueSheetValidation &&
-                    typeof result.dryRunCueSheetValidation === 'object' &&
-                    !Array.isArray(result.dryRunCueSheetValidation)
-                    ? result.dryRunCueSheetValidation
-                    : null,
-                )
+                
 
 
                 {audioPreviewDryRunPlanSummary.hasPlan ? (
