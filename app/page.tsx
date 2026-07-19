@@ -4392,8 +4392,7 @@ const getFullPackAudioPreviewStatus = () => {
     return {
       label: 'Full pack includes audio preview artefacts',
     detail:
-      'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, validated artefact package, real-render readiness blockers, and future audio output placeholders.',      tone: 'ready',
-    }
+      'The Full Performance Pack will include the audio preview placed songsheet, section guide, renderer-ready prompt, structured renderer payload, validation-passed status, dry-run handoff confirmation, dry-run render plan, cue sheet, validated render manifest, consolidated handoff bundle, validated artefact package, real-render readiness blockers, and future audio output placeholders.',    }
   }
 
   if (
@@ -5026,8 +5025,7 @@ const getAudioPreviewPipelineStatus = () => {
     label: 'Audio preview pipeline complete',
     progress: 'Complete',
     detail:
-       'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, and real-render blockers are ready.',
-    completeCount,
+      'Preview spec, renderer payload, dry-run plan, cue sheet, manifest, handoff bundle, artefact package, validations, and real-render blockers are ready.',    completeCount,
     totalCount: checklist.length,
     nextAction: 'Ready for future renderer integration.',
     tone: 'ready',
@@ -5254,6 +5252,8 @@ const getAudioPreviewChecklist = () => {
       ? 'Review real-render readiness status before allowing renderer integration.'
       : 'Submit dry run to confirm real rendering remains blocked.',
 },
+
+
 
 {
   label: 'Dry-run render plan ready',
