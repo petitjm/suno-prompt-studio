@@ -2855,6 +2855,7 @@ const copyAudioPreviewHandoffBundle = async () => {
   const copyText = [
     'AUDIO PREVIEW DRY-RUN HANDOFF BUNDLE',
     '',
+     ...getAudioPreviewReadinessCopyLines(),
     `Project: ${activeProject?.title || 'Untitled project'}`,
     `Song version: ${activeSongVersion?.title || songVersionTitle || 'Unsaved or untitled version'}`,
     `Chord version: ${getChordVersionCopyTitle()}`,
@@ -4751,6 +4752,9 @@ const getAudioPreviewReadinessSummary = () => {
 
 const getAudioPreviewReadinessCopyLines = () => {
   const summary = getAudioPreviewReadinessSummary()
+  const remainingChecks = audioPreviewChecklist.filter(
+    (item) => !item.complete,
+  )
 
   return [
     'AUDIO PREVIEW READINESS',
@@ -4762,6 +4766,17 @@ const getAudioPreviewReadinessCopyLines = () => {
       ? 'Ready for future renderer integration'
       : 'Waiting for remaining checks',
     '',
+    ...(remainingChecks.length > 0
+      ? [
+          'REMAINING CHECKS',
+          '',
+          ...remainingChecks.flatMap((item) => [
+            `- ${item.label}`,
+            item.detail ? `  ${item.detail}` : '',
+          ]),
+          '',
+        ]
+      : []),
   ]
 }
 
