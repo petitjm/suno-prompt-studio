@@ -2755,6 +2755,8 @@ const copyAudioPreviewArtifactPackage = async () => {
   getDryRunGuideTrackRenderRecipeSummary()
   const clickTrackRenderRecipeSummary =
   getDryRunClickTrackRenderRecipeSummary()
+  const chordReferenceRenderRecipeSummary =
+  getDryRunChordReferenceRenderRecipeSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -2906,6 +2908,55 @@ const copyAudioPreviewArtifactPackage = async () => {
         ? [
             'Completion criteria:',
             ...clickTrackRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(chordReferenceRenderRecipeSummary
+  ? [
+      'CHORD-REFERENCE RENDER RECIPE',
+      '',
+      `Recipe status: ${chordReferenceRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${chordReferenceRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Output status: ${chordReferenceRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Count-in: ${
+        chordReferenceRenderRecipeSummary.countIn.enabled
+          ? `${chordReferenceRenderRecipeSummary.countIn.bars} bar`
+          : 'Not declared'
+      }`,
+      `Voicing: ${
+        chordReferenceRenderRecipeSummary.voicing.primaryInstrument ||
+        'Not declared'
+      }${
+        chordReferenceRenderRecipeSummary.voicing.density
+          ? `, ${chordReferenceRenderRecipeSummary.voicing.density}`
+          : ''
+      }`,
+      '',
+      chordReferenceRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${chordReferenceRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      chordReferenceRenderRecipeSummary.chordSource.description
+        ? `Chord source: ${chordReferenceRenderRecipeSummary.chordSource.description}`
+        : '',
+      '',
+      ...(chordReferenceRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...chordReferenceRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(chordReferenceRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...chordReferenceRenderRecipeSummary.completionCriteria.map(
               (criterion) => `- ${criterion}`,
             ),
             '',
@@ -5417,6 +5468,141 @@ const getDryRunClickTrackRenderRecipeSummary = () => {
   }
 }
 
+  const getDryRunChordReferenceRenderRecipeSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const chordReferenceRenderRecipe =
+    dryRunArtifactPackage.chordReferenceRenderRecipe &&
+    typeof dryRunArtifactPackage.chordReferenceRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.chordReferenceRenderRecipe)
+      ? (dryRunArtifactPackage.chordReferenceRenderRecipe as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!chordReferenceRenderRecipe) {
+    return null
+  }
+
+  const countIn =
+    chordReferenceRenderRecipe.countIn &&
+    typeof chordReferenceRenderRecipe.countIn === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.countIn)
+      ? (chordReferenceRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  const timing =
+    chordReferenceRenderRecipe.timing &&
+    typeof chordReferenceRenderRecipe.timing === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.timing)
+      ? (chordReferenceRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  const chordSource =
+    chordReferenceRenderRecipe.chordSource &&
+    typeof chordReferenceRenderRecipe.chordSource === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.chordSource)
+      ? (chordReferenceRenderRecipe.chordSource as Record<string, unknown>)
+      : null
+
+  const voicing =
+    chordReferenceRenderRecipe.voicing &&
+    typeof chordReferenceRenderRecipe.voicing === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.voicing)
+      ? (chordReferenceRenderRecipe.voicing as Record<string, unknown>)
+      : null
+
+  const sectionMarkers =
+    chordReferenceRenderRecipe.sectionMarkers &&
+    typeof chordReferenceRenderRecipe.sectionMarkers === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.sectionMarkers)
+      ? (chordReferenceRenderRecipe.sectionMarkers as Record<string, unknown>)
+      : null
+
+  const mixPriorities = Array.isArray(
+    chordReferenceRenderRecipe.mixPriorities,
+  )
+    ? chordReferenceRenderRecipe.mixPriorities.filter(
+        (priority): priority is string =>
+          typeof priority === 'string' && priority.trim().length > 0,
+      )
+    : []
+
+  const completionCriteria = Array.isArray(
+    chordReferenceRenderRecipe.completionCriteria,
+  )
+    ? chordReferenceRenderRecipe.completionCriteria.filter(
+        (criterion): criterion is string =>
+          typeof criterion === 'string' && criterion.trim().length > 0,
+      )
+    : []
+
+  return {
+    recipeStatus:
+      typeof chordReferenceRenderRecipe.recipeStatus === 'string'
+        ? chordReferenceRenderRecipe.recipeStatus
+        : '',
+    targetKey:
+      typeof chordReferenceRenderRecipe.targetKey === 'string'
+        ? chordReferenceRenderRecipe.targetKey
+        : '',
+    outputStatus:
+      typeof chordReferenceRenderRecipe.outputStatus === 'string'
+        ? chordReferenceRenderRecipe.outputStatus
+        : '',
+    rendererRequirement:
+      typeof chordReferenceRenderRecipe.rendererRequirement === 'string'
+        ? chordReferenceRenderRecipe.rendererRequirement
+        : '',
+    countIn: {
+      enabled: countIn?.enabled === true,
+      bars: typeof countIn?.bars === 'number' ? countIn.bars : 0,
+      description:
+        typeof countIn?.description === 'string' ? countIn.description : '',
+    },
+    timing: {
+      tempoSource:
+        typeof timing?.tempoSource === 'string' ? timing.tempoSource : '',
+      sectionTimingSource:
+        typeof timing?.sectionTimingSource === 'string'
+          ? timing.sectionTimingSource
+          : '',
+      description:
+        typeof timing?.description === 'string' ? timing.description : '',
+    },
+    chordSource: {
+      source:
+        typeof chordSource?.source === 'string' ? chordSource.source : '',
+      description:
+        typeof chordSource?.description === 'string'
+          ? chordSource.description
+          : '',
+    },
+    voicing: {
+      primaryInstrument:
+        typeof voicing?.primaryInstrument === 'string'
+          ? voicing.primaryInstrument
+          : '',
+      density: typeof voicing?.density === 'string' ? voicing.density : '',
+      description:
+        typeof voicing?.description === 'string' ? voicing.description : '',
+    },
+    sectionMarkers: {
+      enabled: sectionMarkers?.enabled === true,
+      description:
+        typeof sectionMarkers?.description === 'string'
+          ? sectionMarkers.description
+          : '',
+    },
+    mixPriorities,
+    completionCriteria,
+  }
+}
+
+
 const getDryRunRendererContractSummary = () => {
   if (!dryRunRenderManifest) {
     return {
@@ -7634,6 +7820,8 @@ const dryRunRealRenderReadinessSummary =
   getDryRunGuideTrackRenderRecipeSummary()
   const dryRunClickTrackRenderRecipeSummary =
   getDryRunClickTrackRenderRecipeSummary()
+  const dryRunChordReferenceRenderRecipeSummary =
+  getDryRunChordReferenceRenderRecipeSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -11640,6 +11828,84 @@ return (
         <div className="font-medium text-gray-300">Mix priorities</div>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
           {dryRunClickTrackRenderRecipeSummary.mixPriorities.map(
+            (priority) => (
+              <li key={priority}>{priority}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
+{dryRunChordReferenceRenderRecipeSummary ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Chord-reference render recipe
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Target</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.targetKey ||
+            'No target key'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Output status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.outputStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Count-in</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.countIn.enabled
+            ? `${dryRunChordReferenceRenderRecipeSummary.countIn.bars} bar count-in`
+            : 'No count-in declared'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Voicing</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.voicing.primaryInstrument ||
+            'No voicing declared'}
+          {dryRunChordReferenceRenderRecipeSummary.voicing.density
+            ? `, ${dryRunChordReferenceRenderRecipeSummary.voicing.density}`
+            : ''}
+        </div>
+      </div>
+    </div>
+
+    {dryRunChordReferenceRenderRecipeSummary.rendererRequirement ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Renderer requirement
+        </div>
+        <div className="mt-1 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.rendererRequirement}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunChordReferenceRenderRecipeSummary.chordSource.description ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Chord source</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.chordSource.description}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunChordReferenceRenderRecipeSummary.mixPriorities.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Mix priorities</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunChordReferenceRenderRecipeSummary.mixPriorities.map(
             (priority) => (
               <li key={priority}>{priority}</li>
             ),
