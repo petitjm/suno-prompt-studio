@@ -10035,27 +10035,25 @@ return (
           {submittingAudioPreviewRender ? 'Submitting...' : 'Submit dry run'}
         </button>
 
-        {!dryRunHandoffBundle ? (
+      {!dryRunHandoffBundle || !dryRunArtifactPackage ? (
   <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-6 text-yellow-100">
     <div className="font-medium">
-      Audio preview dry-run handoff bundle pending
+      Audio preview dry-run packages pending
     </div>
 
     <div className="mt-2 text-yellow-100/80">
-      Handoff bundle is created only after Submit dry run. Submit the dry run to generate the deterministic handoff bundle, artefact package, manifest, and related validation outputs.
-    </div>
-  </div>
-) : null}
-
-{!dryRunArtifactPackage ? (
-  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-6 text-yellow-100">
-    <div className="font-medium">
-      Audio preview dry-run artefact package pending
+      Submit dry run to generate the deterministic handoff bundle, artefact package, manifest, real-render blockers, render targets, validation outputs, and future audio output placeholders.
     </div>
 
-    <div className="mt-2 text-yellow-100/80">
-      Artefact package is created only after Submit dry run. Submit the dry run to generate the consolidated artefact package, real-render blockers, render targets, and future audio output placeholders.
-    </div>
+    <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-yellow-100/70">
+      {!dryRunHandoffBundle ? (
+        <li>Handoff bundle pending</li>
+      ) : null}
+
+      {!dryRunArtifactPackage ? (
+        <li>Artefact package pending</li>
+      ) : null}
+    </ul>
   </div>
 ) : null}
 
