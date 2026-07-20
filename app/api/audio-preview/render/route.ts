@@ -1089,6 +1089,58 @@ function buildDryRunArtifactPackage({
     'Selected targets must remain not-generated until a real renderer creates and stores audio files.',
   ],
 },
+guideTrackRenderRecipe: {
+  recipeStatus: 'dry-run-guide-track-recipe-declared',
+  targetKey: 'guideTrackAudio',
+  outputStatus: 'not-generated',
+  rendererRequirement:
+    'Future renderer must create an audible guide track from the validated preview spec, render plan, cue sheet, and chord-aware payload.',
+  countIn: {
+    enabled: true,
+    bars: 1,
+    description:
+      'Add a one-bar count-in before the first musical section so the performer can enter confidently.',
+  },
+  timing: {
+    tempoSource: 'audioPreviewSpec',
+    sectionTimingSource: 'dryRunCueSheet',
+    description:
+      'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
+  },
+  musicalBed: {
+    primaryInstrument: 'warm acoustic guitar',
+    supportInstruments: [
+      'soft bass reference',
+      'light brushed percussion or click-supported pulse',
+      'subtle pad only if needed for section continuity',
+    ],
+    description:
+      'Create a simple, performance-focused guide bed that supports rehearsal without over-producing the song.',
+  },
+  chordHandling: {
+    source: 'rendererPayload.chordSections',
+    description:
+      'Follow the chord section structure from the renderer payload. Chord changes should be clear enough for rehearsal and arrangement testing.',
+  },
+  vocalGuide: {
+    status: 'placeholder-only',
+    description:
+      'No generated vocal audio is produced in dry run. Future renderer may add a simple melody guide only when a melody source exists.',
+  },
+  mixPriorities: [
+    'Keep rhythm and chord changes clear.',
+    'Keep the arrangement sparse enough for songwriting decisions.',
+    'Avoid final-production polish at preview stage.',
+    'Make the output useful for rehearsal, revision, and song-structure testing.',
+  ],
+  completionCriteria: [
+    'Audio file exists.',
+    'Audio duration matches the cue-sheet structure closely enough for rehearsal.',
+    'Count-in is present when enabled.',
+    'Chord changes are audible or clearly implied.',
+    'Output file path or storage reference is recorded in the artefact package.',
+  ],
+},
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1113,6 +1165,7 @@ function validateDryRunArtifactPackage(pkg: {
   packageContents?: unknown
   realRenderReadiness?: unknown
   renderTargets?: unknown
+  guideTrackRenderRecipe?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -1243,6 +1296,178 @@ if (!renderTargets) {
   }
 }
 
+const guideTrackRenderRecipe =
+  pkg.guideTrackRenderRecipe &&
+  typeof pkg.guideTrackRenderRecipe === 'object' &&
+  !Array.isArray(pkg.guideTrackRenderRecipe)
+    ? (pkg.guideTrackRenderRecipe as Record<string, unknown>)
+    : null
+
+if (!guideTrackRenderRecipe) {
+  missing.push('guideTrackRenderRecipe')
+} else {
+  if (
+    guideTrackRenderRecipe.recipeStatus !==
+    'dry-run-guide-track-recipe-declared'
+  ) {
+    missing.push('guideTrackRenderRecipe.recipeStatus')
+  }
+
+  if (guideTrackRenderRecipe.targetKey !== 'guideTrackAudio') {
+    missing.push('guideTrackRenderRecipe.targetKey')
+  }
+
+  if (guideTrackRenderRecipe.outputStatus !== 'not-generated') {
+    missing.push('guideTrackRenderRecipe.outputStatus')
+  }
+
+  if (
+    typeof guideTrackRenderRecipe.rendererRequirement !== 'string' ||
+    !guideTrackRenderRecipe.rendererRequirement.trim()
+  ) {
+    missing.push('guideTrackRenderRecipe.rendererRequirement')
+  }
+
+  const countIn =
+    guideTrackRenderRecipe.countIn &&
+    typeof guideTrackRenderRecipe.countIn === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.countIn)
+      ? (guideTrackRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  if (!countIn) {
+    missing.push('guideTrackRenderRecipe.countIn')
+  } else {
+    if (countIn.enabled !== true) {
+      missing.push('guideTrackRenderRecipe.countIn.enabled')
+    }
+
+    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
+      missing.push('guideTrackRenderRecipe.countIn.bars')
+    }
+
+    if (
+      typeof countIn.description !== 'string' ||
+      !countIn.description.trim()
+    ) {
+      missing.push('guideTrackRenderRecipe.countIn.description')
+    }
+  }
+
+  const timing =
+    guideTrackRenderRecipe.timing &&
+    typeof guideTrackRenderRecipe.timing === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.timing)
+      ? (guideTrackRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  if (!timing) {
+    missing.push('guideTrackRenderRecipe.timing')
+  } else {
+    if (timing.tempoSource !== 'audioPreviewSpec') {
+      missing.push('guideTrackRenderRecipe.timing.tempoSource')
+    }
+
+    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
+      missing.push('guideTrackRenderRecipe.timing.sectionTimingSource')
+    }
+
+    if (
+      typeof timing.description !== 'string' ||
+      !timing.description.trim()
+    ) {
+      missing.push('guideTrackRenderRecipe.timing.description')
+    }
+  }
+
+  const musicalBed =
+    guideTrackRenderRecipe.musicalBed &&
+    typeof guideTrackRenderRecipe.musicalBed === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.musicalBed)
+      ? (guideTrackRenderRecipe.musicalBed as Record<string, unknown>)
+      : null
+
+  if (!musicalBed) {
+    missing.push('guideTrackRenderRecipe.musicalBed')
+  } else {
+    if (musicalBed.primaryInstrument !== 'warm acoustic guitar') {
+      missing.push('guideTrackRenderRecipe.musicalBed.primaryInstrument')
+    }
+
+    if (
+      !Array.isArray(musicalBed.supportInstruments) ||
+      musicalBed.supportInstruments.length === 0
+    ) {
+      missing.push('guideTrackRenderRecipe.musicalBed.supportInstruments')
+    }
+
+    if (
+      typeof musicalBed.description !== 'string' ||
+      !musicalBed.description.trim()
+    ) {
+      missing.push('guideTrackRenderRecipe.musicalBed.description')
+    }
+  }
+
+  const chordHandling =
+    guideTrackRenderRecipe.chordHandling &&
+    typeof guideTrackRenderRecipe.chordHandling === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.chordHandling)
+      ? (guideTrackRenderRecipe.chordHandling as Record<string, unknown>)
+      : null
+
+  if (!chordHandling) {
+    missing.push('guideTrackRenderRecipe.chordHandling')
+  } else {
+    if (chordHandling.source !== 'rendererPayload.chordSections') {
+      missing.push('guideTrackRenderRecipe.chordHandling.source')
+    }
+
+    if (
+      typeof chordHandling.description !== 'string' ||
+      !chordHandling.description.trim()
+    ) {
+      missing.push('guideTrackRenderRecipe.chordHandling.description')
+    }
+  }
+
+  const vocalGuide =
+    guideTrackRenderRecipe.vocalGuide &&
+    typeof guideTrackRenderRecipe.vocalGuide === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.vocalGuide)
+      ? (guideTrackRenderRecipe.vocalGuide as Record<string, unknown>)
+      : null
+
+  if (!vocalGuide) {
+    missing.push('guideTrackRenderRecipe.vocalGuide')
+  } else {
+    if (vocalGuide.status !== 'placeholder-only') {
+      missing.push('guideTrackRenderRecipe.vocalGuide.status')
+    }
+
+    if (
+      typeof vocalGuide.description !== 'string' ||
+      !vocalGuide.description.trim()
+    ) {
+      missing.push('guideTrackRenderRecipe.vocalGuide.description')
+    }
+  }
+
+  if (
+    !Array.isArray(guideTrackRenderRecipe.mixPriorities) ||
+    guideTrackRenderRecipe.mixPriorities.length === 0
+  ) {
+    missing.push('guideTrackRenderRecipe.mixPriorities')
+  }
+
+  if (
+    !Array.isArray(guideTrackRenderRecipe.completionCriteria) ||
+    guideTrackRenderRecipe.completionCriteria.length === 0
+  ) {
+    missing.push('guideTrackRenderRecipe.completionCriteria')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -1269,7 +1494,7 @@ if (!renderTargets) {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, and declares future render targets.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, and includes a guide-track render recipe.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
