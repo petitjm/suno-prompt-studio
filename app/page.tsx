@@ -3902,6 +3902,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const expectedOutputRows = getDryRunExpectedOutputRows()
   const dryRunRendererContractSummary = getDryRunRendererContractSummary()
   const renderTargetRows = getDryRunRenderTargetRows()
+  const guideTrackRenderRecipeSummary =
+  getDryRunGuideTrackRenderRecipeSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4290,6 +4292,56 @@ const fullPackPipelineStatus = fullPackPipelineComplete
           ]),
         ]
       : []),
+      ...(guideTrackRenderRecipeSummary
+  ? [
+      'GUIDE-TRACK RENDER RECIPE',
+      '',
+      `Recipe status: ${guideTrackRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${guideTrackRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Output status: ${guideTrackRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Count-in: ${
+        guideTrackRenderRecipeSummary.countIn.enabled
+          ? `${guideTrackRenderRecipeSummary.countIn.bars} bar`
+          : 'Not declared'
+      }`,
+      `Primary bed: ${
+        guideTrackRenderRecipeSummary.musicalBed.primaryInstrument ||
+        'Not declared'
+      }`,
+      '',
+      guideTrackRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${guideTrackRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      ...(guideTrackRenderRecipeSummary.musicalBed.supportInstruments.length > 0
+        ? [
+            'Support instruments:',
+            ...guideTrackRenderRecipeSummary.musicalBed.supportInstruments.map(
+              (instrument) => `- ${instrument}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(guideTrackRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...guideTrackRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(guideTrackRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...guideTrackRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
