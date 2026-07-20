@@ -2751,6 +2751,8 @@ const copyAudioPreviewArtifactPackage = async () => {
 
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const renderTargetRows = getDryRunRenderTargetRows()
+  const guideTrackRenderRecipeSummary =
+  getDryRunGuideTrackRenderRecipeSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -2814,6 +2816,47 @@ const copyAudioPreviewArtifactPackage = async () => {
         target.reason ? `Reason: ${target.reason}` : '',
         '',
       ]),
+    ]
+  : []),
+  ...(guideTrackRenderRecipeSummary
+  ? [
+      'GUIDE-TRACK RENDER RECIPE',
+      '',
+      `Recipe status: ${guideTrackRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${guideTrackRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Output status: ${guideTrackRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Count-in: ${
+        guideTrackRenderRecipeSummary.countIn.enabled
+          ? `${guideTrackRenderRecipeSummary.countIn.bars} bar`
+          : 'Not declared'
+      }`,
+      `Primary bed: ${
+        guideTrackRenderRecipeSummary.musicalBed.primaryInstrument ||
+        'Not declared'
+      }`,
+      '',
+      guideTrackRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${guideTrackRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      ...(guideTrackRenderRecipeSummary.musicalBed.supportInstruments.length > 0
+        ? [
+            'Support instruments:',
+            ...guideTrackRenderRecipeSummary.musicalBed.supportInstruments.map(
+              (instrument) => `- ${instrument}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(guideTrackRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...guideTrackRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
     ]
   : []),
     'ARTEFACT PACKAGE JSON',
@@ -4911,6 +4954,8 @@ const getDryRunRenderTargetRows = () => {
     return []
   }
 
+ 
+
   const renderTargets =
     dryRunArtifactPackage.renderTargets &&
     typeof dryRunArtifactPackage.renderTargets === 'object' &&
@@ -4952,6 +4997,148 @@ const getDryRunRenderTargetRows = () => {
       reason: string
     } => Boolean(target))
     .sort((a, b) => a.priority - b.priority)
+}
+
+
+ const getDryRunGuideTrackRenderRecipeSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const guideTrackRenderRecipe =
+    dryRunArtifactPackage.guideTrackRenderRecipe &&
+    typeof dryRunArtifactPackage.guideTrackRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.guideTrackRenderRecipe)
+      ? (dryRunArtifactPackage.guideTrackRenderRecipe as Record<string, unknown>)
+      : null
+
+  if (!guideTrackRenderRecipe) {
+    return null
+  }
+
+  const countIn =
+    guideTrackRenderRecipe.countIn &&
+    typeof guideTrackRenderRecipe.countIn === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.countIn)
+      ? (guideTrackRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  const timing =
+    guideTrackRenderRecipe.timing &&
+    typeof guideTrackRenderRecipe.timing === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.timing)
+      ? (guideTrackRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  const musicalBed =
+    guideTrackRenderRecipe.musicalBed &&
+    typeof guideTrackRenderRecipe.musicalBed === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.musicalBed)
+      ? (guideTrackRenderRecipe.musicalBed as Record<string, unknown>)
+      : null
+
+  const chordHandling =
+    guideTrackRenderRecipe.chordHandling &&
+    typeof guideTrackRenderRecipe.chordHandling === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.chordHandling)
+      ? (guideTrackRenderRecipe.chordHandling as Record<string, unknown>)
+      : null
+
+  const vocalGuide =
+    guideTrackRenderRecipe.vocalGuide &&
+    typeof guideTrackRenderRecipe.vocalGuide === 'object' &&
+    !Array.isArray(guideTrackRenderRecipe.vocalGuide)
+      ? (guideTrackRenderRecipe.vocalGuide as Record<string, unknown>)
+      : null
+
+  const supportInstruments = Array.isArray(musicalBed?.supportInstruments)
+    ? musicalBed.supportInstruments.filter(
+        (instrument): instrument is string =>
+          typeof instrument === 'string' && instrument.trim().length > 0,
+      )
+    : []
+
+  const mixPriorities = Array.isArray(guideTrackRenderRecipe.mixPriorities)
+    ? guideTrackRenderRecipe.mixPriorities.filter(
+        (priority): priority is string =>
+          typeof priority === 'string' && priority.trim().length > 0,
+      )
+    : []
+
+  const completionCriteria = Array.isArray(
+    guideTrackRenderRecipe.completionCriteria,
+  )
+    ? guideTrackRenderRecipe.completionCriteria.filter(
+        (criterion): criterion is string =>
+          typeof criterion === 'string' && criterion.trim().length > 0,
+      )
+    : []
+
+  return {
+    recipeStatus:
+      typeof guideTrackRenderRecipe.recipeStatus === 'string'
+        ? guideTrackRenderRecipe.recipeStatus
+        : '',
+    targetKey:
+      typeof guideTrackRenderRecipe.targetKey === 'string'
+        ? guideTrackRenderRecipe.targetKey
+        : '',
+    outputStatus:
+      typeof guideTrackRenderRecipe.outputStatus === 'string'
+        ? guideTrackRenderRecipe.outputStatus
+        : '',
+    rendererRequirement:
+      typeof guideTrackRenderRecipe.rendererRequirement === 'string'
+        ? guideTrackRenderRecipe.rendererRequirement
+        : '',
+    countIn: {
+      enabled: countIn?.enabled === true,
+      bars: typeof countIn?.bars === 'number' ? countIn.bars : 0,
+      description:
+        typeof countIn?.description === 'string' ? countIn.description : '',
+    },
+    timing: {
+      tempoSource:
+        typeof timing?.tempoSource === 'string' ? timing.tempoSource : '',
+      sectionTimingSource:
+        typeof timing?.sectionTimingSource === 'string'
+          ? timing.sectionTimingSource
+          : '',
+      description:
+        typeof timing?.description === 'string' ? timing.description : '',
+    },
+    musicalBed: {
+      primaryInstrument:
+        typeof musicalBed?.primaryInstrument === 'string'
+          ? musicalBed.primaryInstrument
+          : '',
+      supportInstruments,
+      description:
+        typeof musicalBed?.description === 'string'
+          ? musicalBed.description
+          : '',
+    },
+    chordHandling: {
+      source:
+        typeof chordHandling?.source === 'string'
+          ? chordHandling.source
+          : '',
+      description:
+        typeof chordHandling?.description === 'string'
+          ? chordHandling.description
+          : '',
+    },
+    vocalGuide: {
+      status:
+        typeof vocalGuide?.status === 'string' ? vocalGuide.status : '',
+      description:
+        typeof vocalGuide?.description === 'string'
+          ? vocalGuide.description
+          : '',
+    },
+    mixPriorities,
+    completionCriteria,
+  }
 }
 
 const getDryRunRendererContractSummary = () => {
@@ -7167,6 +7354,8 @@ const audioPreviewReadinessSummary = getAudioPreviewReadinessSummary()
 const dryRunRealRenderReadinessSummary =
   getDryRunRealRenderReadinessSummary()
   const dryRunRenderTargetRows = getDryRunRenderTargetRows()
+  const dryRunGuideTrackRenderRecipeSummary =
+  getDryRunGuideTrackRenderRecipeSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -11021,6 +11210,87 @@ return (
         </div>
       ))}
     </div>
+  </div>
+) : null}
+
+{dryRunGuideTrackRenderRecipeSummary ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Guide-track render recipe
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Target</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.targetKey || 'No target key'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Output status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.outputStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Count-in</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.countIn.enabled
+            ? `${dryRunGuideTrackRenderRecipeSummary.countIn.bars} bar count-in`
+            : 'No count-in declared'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Primary bed</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.musicalBed.primaryInstrument ||
+            'No primary instrument declared'}
+        </div>
+      </div>
+    </div>
+
+    {dryRunGuideTrackRenderRecipeSummary.rendererRequirement ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Renderer requirement
+        </div>
+        <div className="mt-1 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.rendererRequirement}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunGuideTrackRenderRecipeSummary.musicalBed.supportInstruments.length >
+    0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Support instruments
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.musicalBed.supportInstruments.map(
+            (instrument) => (
+              <li key={instrument}>{instrument}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunGuideTrackRenderRecipeSummary.mixPriorities.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Mix priorities</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunGuideTrackRenderRecipeSummary.mixPriorities.map(
+            (priority) => (
+              <li key={priority}>{priority}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
   </div>
 ) : null}
 
