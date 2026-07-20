@@ -1186,6 +1186,55 @@ guideTrackRenderRecipe: {
       'Output file path or storage reference is recorded in the artefact package.',
     ],
   },
+
+  chordReferenceRenderRecipe: {
+  recipeStatus: 'dry-run-chord-reference-recipe-declared',
+  targetKey: 'chordReferenceTrack',
+  outputStatus: 'not-generated',
+  rendererRequirement:
+    'Future renderer must create a sparse chord-reference track from the renderer payload chord sections, cue sheet, and render plan.',
+  countIn: {
+    enabled: true,
+    bars: 1,
+    description:
+      'Use the same one-bar count-in as the guide and click tracks so all future preview outputs align.',
+  },
+  timing: {
+    tempoSource: 'audioPreviewSpec',
+    sectionTimingSource: 'dryRunCueSheet',
+    description:
+      'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
+  },
+  chordSource: {
+    source: 'rendererPayload.chordSections',
+    description:
+      'Use chord sections from the renderer payload as the source of truth for harmony changes.',
+  },
+  voicing: {
+    primaryInstrument: 'clean acoustic guitar or simple piano',
+    density: 'sparse',
+    description:
+      'Play clear chord changes with minimal rhythmic decoration so harmony can be checked quickly.',
+  },
+  sectionMarkers: {
+    enabled: true,
+    description:
+      'Future renderer may add subtle section markers or metadata at section boundaries to help review song structure.',
+  },
+  mixPriorities: [
+    'Make chord changes clear.',
+    'Keep the harmonic reference sparse and uncluttered.',
+    'Avoid final-production arrangement detail.',
+    'Keep the chord reference aligned with the count-in, cue sheet, and click track.',
+  ],
+  completionCriteria: [
+    'Audio file exists.',
+    'Chord changes follow the renderer payload chord sections.',
+    'Tempo matches the preview spec.',
+    'Section length follows the cue-sheet structure.',
+    'Output file path or storage reference is recorded in the artefact package.',
+  ],
+},
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1213,6 +1262,7 @@ function validateDryRunArtifactPackage(pkg: {
   renderTargets?: unknown
   guideTrackRenderRecipe?: unknown
   clickTrackRenderRecipe?: unknown
+  chordReferenceRenderRecipe?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -1517,7 +1567,174 @@ if (!guideTrackRenderRecipe) {
   }
 }
 
+const chordReferenceRenderRecipe =
+  pkg.chordReferenceRenderRecipe &&
+  typeof pkg.chordReferenceRenderRecipe === 'object' &&
+  !Array.isArray(pkg.chordReferenceRenderRecipe)
+    ? (pkg.chordReferenceRenderRecipe as Record<string, unknown>)
+    : null
 
+if (!chordReferenceRenderRecipe) {
+  missing.push('chordReferenceRenderRecipe')
+} else {
+  if (
+    chordReferenceRenderRecipe.recipeStatus !==
+    'dry-run-chord-reference-recipe-declared'
+  ) {
+    missing.push('chordReferenceRenderRecipe.recipeStatus')
+  }
+
+  if (chordReferenceRenderRecipe.targetKey !== 'chordReferenceTrack') {
+    missing.push('chordReferenceRenderRecipe.targetKey')
+  }
+
+  if (chordReferenceRenderRecipe.outputStatus !== 'not-generated') {
+    missing.push('chordReferenceRenderRecipe.outputStatus')
+  }
+
+  if (
+    typeof chordReferenceRenderRecipe.rendererRequirement !== 'string' ||
+    !chordReferenceRenderRecipe.rendererRequirement.trim()
+  ) {
+    missing.push('chordReferenceRenderRecipe.rendererRequirement')
+  }
+
+  const countIn =
+    chordReferenceRenderRecipe.countIn &&
+    typeof chordReferenceRenderRecipe.countIn === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.countIn)
+      ? (chordReferenceRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  if (!countIn) {
+    missing.push('chordReferenceRenderRecipe.countIn')
+  } else {
+    if (countIn.enabled !== true) {
+      missing.push('chordReferenceRenderRecipe.countIn.enabled')
+    }
+
+    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
+      missing.push('chordReferenceRenderRecipe.countIn.bars')
+    }
+
+    if (
+      typeof countIn.description !== 'string' ||
+      !countIn.description.trim()
+    ) {
+      missing.push('chordReferenceRenderRecipe.countIn.description')
+    }
+  }
+
+  const timing =
+    chordReferenceRenderRecipe.timing &&
+    typeof chordReferenceRenderRecipe.timing === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.timing)
+      ? (chordReferenceRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  if (!timing) {
+    missing.push('chordReferenceRenderRecipe.timing')
+  } else {
+    if (timing.tempoSource !== 'audioPreviewSpec') {
+      missing.push('chordReferenceRenderRecipe.timing.tempoSource')
+    }
+
+    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
+      missing.push('chordReferenceRenderRecipe.timing.sectionTimingSource')
+    }
+
+    if (
+      typeof timing.description !== 'string' ||
+      !timing.description.trim()
+    ) {
+      missing.push('chordReferenceRenderRecipe.timing.description')
+    }
+  }
+
+  const chordSource =
+    chordReferenceRenderRecipe.chordSource &&
+    typeof chordReferenceRenderRecipe.chordSource === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.chordSource)
+      ? (chordReferenceRenderRecipe.chordSource as Record<string, unknown>)
+      : null
+
+  if (!chordSource) {
+    missing.push('chordReferenceRenderRecipe.chordSource')
+  } else {
+    if (chordSource.source !== 'rendererPayload.chordSections') {
+      missing.push('chordReferenceRenderRecipe.chordSource.source')
+    }
+
+    if (
+      typeof chordSource.description !== 'string' ||
+      !chordSource.description.trim()
+    ) {
+      missing.push('chordReferenceRenderRecipe.chordSource.description')
+    }
+  }
+
+  const voicing =
+    chordReferenceRenderRecipe.voicing &&
+    typeof chordReferenceRenderRecipe.voicing === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.voicing)
+      ? (chordReferenceRenderRecipe.voicing as Record<string, unknown>)
+      : null
+
+  if (!voicing) {
+    missing.push('chordReferenceRenderRecipe.voicing')
+  } else {
+    if (voicing.primaryInstrument !== 'clean acoustic guitar or simple piano') {
+      missing.push('chordReferenceRenderRecipe.voicing.primaryInstrument')
+    }
+
+    if (voicing.density !== 'sparse') {
+      missing.push('chordReferenceRenderRecipe.voicing.density')
+    }
+
+    if (
+      typeof voicing.description !== 'string' ||
+      !voicing.description.trim()
+    ) {
+      missing.push('chordReferenceRenderRecipe.voicing.description')
+    }
+  }
+
+  const sectionMarkers =
+    chordReferenceRenderRecipe.sectionMarkers &&
+    typeof chordReferenceRenderRecipe.sectionMarkers === 'object' &&
+    !Array.isArray(chordReferenceRenderRecipe.sectionMarkers)
+      ? (chordReferenceRenderRecipe.sectionMarkers as Record<string, unknown>)
+      : null
+
+  if (!sectionMarkers) {
+    missing.push('chordReferenceRenderRecipe.sectionMarkers')
+  } else {
+    if (sectionMarkers.enabled !== true) {
+      missing.push('chordReferenceRenderRecipe.sectionMarkers.enabled')
+    }
+
+    if (
+      typeof sectionMarkers.description !== 'string' ||
+      !sectionMarkers.description.trim()
+    ) {
+      missing.push('chordReferenceRenderRecipe.sectionMarkers.description')
+    }
+  }
+
+  if (
+    !Array.isArray(chordReferenceRenderRecipe.mixPriorities) ||
+    chordReferenceRenderRecipe.mixPriorities.length === 0
+  ) {
+    missing.push('chordReferenceRenderRecipe.mixPriorities')
+  }
+
+  if (
+    !Array.isArray(chordReferenceRenderRecipe.completionCriteria) ||
+    chordReferenceRenderRecipe.completionCriteria.length === 0
+  ) {
+    missing.push('chordReferenceRenderRecipe.completionCriteria')
+  }
+}
 
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
@@ -1692,7 +1909,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, and includes guide-track and click-track render recipes.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, and includes guide-track, click-track, and chord-reference render recipes.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
