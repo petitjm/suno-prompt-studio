@@ -3958,6 +3958,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const renderTargetRows = getDryRunRenderTargetRows()
   const guideTrackRenderRecipeSummary =
   getDryRunGuideTrackRenderRecipeSummary()
+  const clickTrackRenderRecipeSummary =
+  getDryRunClickTrackRenderRecipeSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4389,6 +4391,58 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         ? [
             'Completion criteria:',
             ...guideTrackRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(clickTrackRenderRecipeSummary
+  ? [
+      'CLICK-TRACK RENDER RECIPE',
+      '',
+      `Recipe status: ${clickTrackRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${clickTrackRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Output status: ${clickTrackRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Count-in: ${
+        clickTrackRenderRecipeSummary.countIn.enabled
+          ? `${clickTrackRenderRecipeSummary.countIn.bars} bar`
+          : 'Not declared'
+      }`,
+      `Click sound: ${
+        clickTrackRenderRecipeSummary.clickSound.subdivision || 'Not declared'
+      }${
+        clickTrackRenderRecipeSummary.clickSound.downbeatEmphasis
+          ? ' with downbeat emphasis'
+          : ''
+      }`,
+      '',
+      clickTrackRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${clickTrackRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      ...(clickTrackRenderRecipeSummary.sectionMarkers.enabled
+        ? [
+            'Section markers:',
+            clickTrackRenderRecipeSummary.sectionMarkers.description ||
+              'Section markers declared.',
+            '',
+          ]
+        : []),
+      ...(clickTrackRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...clickTrackRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(clickTrackRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...clickTrackRenderRecipeSummary.completionCriteria.map(
               (criterion) => `- ${criterion}`,
             ),
             '',
