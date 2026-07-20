@@ -2753,6 +2753,8 @@ const copyAudioPreviewArtifactPackage = async () => {
   const renderTargetRows = getDryRunRenderTargetRows()
   const guideTrackRenderRecipeSummary =
   getDryRunGuideTrackRenderRecipeSummary()
+  const clickTrackRenderRecipeSummary =
+  getDryRunClickTrackRenderRecipeSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -2853,6 +2855,58 @@ const copyAudioPreviewArtifactPackage = async () => {
             'Mix priorities:',
             ...guideTrackRenderRecipeSummary.mixPriorities.map(
               (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(clickTrackRenderRecipeSummary
+  ? [
+      'CLICK-TRACK RENDER RECIPE',
+      '',
+      `Recipe status: ${clickTrackRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${clickTrackRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Output status: ${clickTrackRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Count-in: ${
+        clickTrackRenderRecipeSummary.countIn.enabled
+          ? `${clickTrackRenderRecipeSummary.countIn.bars} bar`
+          : 'Not declared'
+      }`,
+      `Click sound: ${
+        clickTrackRenderRecipeSummary.clickSound.subdivision || 'Not declared'
+      }${
+        clickTrackRenderRecipeSummary.clickSound.downbeatEmphasis
+          ? ' with downbeat emphasis'
+          : ''
+      }`,
+      '',
+      clickTrackRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${clickTrackRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      ...(clickTrackRenderRecipeSummary.sectionMarkers.enabled
+        ? [
+            'Section markers:',
+            clickTrackRenderRecipeSummary.sectionMarkers.description ||
+              'Section markers declared.',
+            '',
+          ]
+        : []),
+      ...(clickTrackRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...clickTrackRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(clickTrackRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...clickTrackRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
             ),
             '',
           ]
@@ -5193,6 +5247,122 @@ const getDryRunRenderTargetRows = () => {
   }
 }
 
+const getDryRunClickTrackRenderRecipeSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const clickTrackRenderRecipe =
+    dryRunArtifactPackage.clickTrackRenderRecipe &&
+    typeof dryRunArtifactPackage.clickTrackRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.clickTrackRenderRecipe)
+      ? (dryRunArtifactPackage.clickTrackRenderRecipe as Record<string, unknown>)
+      : null
+
+  if (!clickTrackRenderRecipe) {
+    return null
+  }
+
+  const countIn =
+    clickTrackRenderRecipe.countIn &&
+    typeof clickTrackRenderRecipe.countIn === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.countIn)
+      ? (clickTrackRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  const timing =
+    clickTrackRenderRecipe.timing &&
+    typeof clickTrackRenderRecipe.timing === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.timing)
+      ? (clickTrackRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  const clickSound =
+    clickTrackRenderRecipe.clickSound &&
+    typeof clickTrackRenderRecipe.clickSound === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.clickSound)
+      ? (clickTrackRenderRecipe.clickSound as Record<string, unknown>)
+      : null
+
+  const sectionMarkers =
+    clickTrackRenderRecipe.sectionMarkers &&
+    typeof clickTrackRenderRecipe.sectionMarkers === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.sectionMarkers)
+      ? (clickTrackRenderRecipe.sectionMarkers as Record<string, unknown>)
+      : null
+
+  const mixPriorities = Array.isArray(clickTrackRenderRecipe.mixPriorities)
+    ? clickTrackRenderRecipe.mixPriorities.filter(
+        (priority): priority is string =>
+          typeof priority === 'string' && priority.trim().length > 0,
+      )
+    : []
+
+  const completionCriteria = Array.isArray(
+    clickTrackRenderRecipe.completionCriteria,
+  )
+    ? clickTrackRenderRecipe.completionCriteria.filter(
+        (criterion): criterion is string =>
+          typeof criterion === 'string' && criterion.trim().length > 0,
+      )
+    : []
+
+  return {
+    recipeStatus:
+      typeof clickTrackRenderRecipe.recipeStatus === 'string'
+        ? clickTrackRenderRecipe.recipeStatus
+        : '',
+    targetKey:
+      typeof clickTrackRenderRecipe.targetKey === 'string'
+        ? clickTrackRenderRecipe.targetKey
+        : '',
+    outputStatus:
+      typeof clickTrackRenderRecipe.outputStatus === 'string'
+        ? clickTrackRenderRecipe.outputStatus
+        : '',
+    rendererRequirement:
+      typeof clickTrackRenderRecipe.rendererRequirement === 'string'
+        ? clickTrackRenderRecipe.rendererRequirement
+        : '',
+    countIn: {
+      enabled: countIn?.enabled === true,
+      bars: typeof countIn?.bars === 'number' ? countIn.bars : 0,
+      description:
+        typeof countIn?.description === 'string' ? countIn.description : '',
+    },
+    timing: {
+      tempoSource:
+        typeof timing?.tempoSource === 'string' ? timing.tempoSource : '',
+      sectionTimingSource:
+        typeof timing?.sectionTimingSource === 'string'
+          ? timing.sectionTimingSource
+          : '',
+      description:
+        typeof timing?.description === 'string' ? timing.description : '',
+    },
+    clickSound: {
+      downbeatEmphasis: clickSound?.downbeatEmphasis === true,
+      subdivision:
+        typeof clickSound?.subdivision === 'string'
+          ? clickSound.subdivision
+          : '',
+      description:
+        typeof clickSound?.description === 'string'
+          ? clickSound.description
+          : '',
+    },
+    sectionMarkers: {
+      enabled: sectionMarkers?.enabled === true,
+      description:
+        typeof sectionMarkers?.description === 'string'
+          ? sectionMarkers.description
+          : '',
+    },
+    mixPriorities,
+    completionCriteria,
+  }
+}
+
 const getDryRunRendererContractSummary = () => {
   if (!dryRunRenderManifest) {
     return {
@@ -7408,6 +7578,8 @@ const dryRunRealRenderReadinessSummary =
   const dryRunRenderTargetRows = getDryRunRenderTargetRows()
   const dryRunGuideTrackRenderRecipeSummary =
   getDryRunGuideTrackRenderRecipeSummary()
+  const dryRunClickTrackRenderRecipeSummary =
+  getDryRunClickTrackRenderRecipeSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -11336,6 +11508,84 @@ return (
         <div className="font-medium text-gray-300">Mix priorities</div>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
           {dryRunGuideTrackRenderRecipeSummary.mixPriorities.map(
+            (priority) => (
+              <li key={priority}>{priority}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
+{dryRunClickTrackRenderRecipeSummary ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Click-track render recipe
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Target</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.targetKey || 'No target key'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Output status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.outputStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Count-in</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.countIn.enabled
+            ? `${dryRunClickTrackRenderRecipeSummary.countIn.bars} bar count-in`
+            : 'No count-in declared'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Click sound</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.clickSound.subdivision ||
+            'No subdivision declared'}
+          {dryRunClickTrackRenderRecipeSummary.clickSound.downbeatEmphasis
+            ? ' with downbeat emphasis'
+            : ''}
+        </div>
+      </div>
+    </div>
+
+    {dryRunClickTrackRenderRecipeSummary.rendererRequirement ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Renderer requirement
+        </div>
+        <div className="mt-1 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.rendererRequirement}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunClickTrackRenderRecipeSummary.sectionMarkers.enabled ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Section markers</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.sectionMarkers.description ||
+            'Section markers declared.'}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunClickTrackRenderRecipeSummary.mixPriorities.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Mix priorities</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunClickTrackRenderRecipeSummary.mixPriorities.map(
             (priority) => (
               <li key={priority}>{priority}</li>
             ),
