@@ -1141,6 +1141,51 @@ guideTrackRenderRecipe: {
     'Output file path or storage reference is recorded in the artefact package.',
   ],
 },
+
+
+  clickTrackRenderRecipe: {
+    recipeStatus: 'dry-run-click-track-recipe-declared',
+    targetKey: 'clickTrack',
+    outputStatus: 'not-generated',
+    rendererRequirement:
+      'Future renderer must create a timing-only click track from the validated preview tempo, cue sheet, and render plan.',
+    countIn: {
+      enabled: true,
+      bars: 1,
+      description:
+        'Use the same one-bar count-in as the guide track so all future preview outputs align.',
+    },
+    timing: {
+      tempoSource: 'audioPreviewSpec',
+      sectionTimingSource: 'dryRunCueSheet',
+      description:
+        'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
+    },
+    clickSound: {
+      downbeatEmphasis: true,
+      subdivision: 'quarter-note',
+      description:
+        'Use a clear downbeat accent and simple quarter-note pulse suitable for rehearsal and structure testing.',
+    },
+    sectionMarkers: {
+      enabled: true,
+      description:
+        'Future renderer may add subtle section marker tones or metadata at section boundaries, but dry run only declares the requirement.',
+    },
+    mixPriorities: [
+      'Keep timing clear and uncluttered.',
+      'Make downbeats easy to identify.',
+      'Avoid musical arrangement elements in the click-only output.',
+      'Keep the click track aligned with the guide-track count-in and cue sheet.',
+    ],
+    completionCriteria: [
+      'Audio file exists.',
+      'Click starts after the declared count-in.',
+      'Tempo matches the preview spec.',
+      'Section length follows the cue-sheet structure.',
+      'Output file path or storage reference is recorded in the artefact package.',
+    ],
+  },
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1156,6 +1201,7 @@ guideTrackRenderRecipe: {
     ],
   }
 }
+  
 
 
 function validateDryRunArtifactPackage(pkg: {
@@ -1166,6 +1212,7 @@ function validateDryRunArtifactPackage(pkg: {
   realRenderReadiness?: unknown
   renderTargets?: unknown
   guideTrackRenderRecipe?: unknown
+  clickTrackRenderRecipe?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -1354,6 +1401,8 @@ if (!guideTrackRenderRecipe) {
     }
   }
 
+
+
   const timing =
     guideTrackRenderRecipe.timing &&
     typeof guideTrackRenderRecipe.timing === 'object' &&
@@ -1468,6 +1517,8 @@ if (!guideTrackRenderRecipe) {
   }
 }
 
+
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -1478,6 +1529,153 @@ if (!guideTrackRenderRecipe) {
     ['dryRunHandoffBundle', pkg.dryRunHandoffBundle],
     ['dryRunHandoffBundleValidation', pkg.dryRunHandoffBundleValidation],
   ]
+
+  const clickTrackRenderRecipe =
+  pkg.clickTrackRenderRecipe &&
+  typeof pkg.clickTrackRenderRecipe === 'object' &&
+  !Array.isArray(pkg.clickTrackRenderRecipe)
+    ? (pkg.clickTrackRenderRecipe as Record<string, unknown>)
+    : null
+
+if (!clickTrackRenderRecipe) {
+  missing.push('clickTrackRenderRecipe')
+} else {
+  if (
+    clickTrackRenderRecipe.recipeStatus !==
+    'dry-run-click-track-recipe-declared'
+  ) {
+    missing.push('clickTrackRenderRecipe.recipeStatus')
+  }
+
+  if (clickTrackRenderRecipe.targetKey !== 'clickTrack') {
+    missing.push('clickTrackRenderRecipe.targetKey')
+  }
+
+  if (clickTrackRenderRecipe.outputStatus !== 'not-generated') {
+    missing.push('clickTrackRenderRecipe.outputStatus')
+  }
+
+  if (
+    typeof clickTrackRenderRecipe.rendererRequirement !== 'string' ||
+    !clickTrackRenderRecipe.rendererRequirement.trim()
+  ) {
+    missing.push('clickTrackRenderRecipe.rendererRequirement')
+  }
+
+  const countIn =
+    clickTrackRenderRecipe.countIn &&
+    typeof clickTrackRenderRecipe.countIn === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.countIn)
+      ? (clickTrackRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  if (!countIn) {
+    missing.push('clickTrackRenderRecipe.countIn')
+  } else {
+    if (countIn.enabled !== true) {
+      missing.push('clickTrackRenderRecipe.countIn.enabled')
+    }
+
+    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
+      missing.push('clickTrackRenderRecipe.countIn.bars')
+    }
+
+    if (
+      typeof countIn.description !== 'string' ||
+      !countIn.description.trim()
+    ) {
+      missing.push('clickTrackRenderRecipe.countIn.description')
+    }
+  }
+
+  const timing =
+    clickTrackRenderRecipe.timing &&
+    typeof clickTrackRenderRecipe.timing === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.timing)
+      ? (clickTrackRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  if (!timing) {
+    missing.push('clickTrackRenderRecipe.timing')
+  } else {
+    if (timing.tempoSource !== 'audioPreviewSpec') {
+      missing.push('clickTrackRenderRecipe.timing.tempoSource')
+    }
+
+    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
+      missing.push('clickTrackRenderRecipe.timing.sectionTimingSource')
+    }
+
+    if (
+      typeof timing.description !== 'string' ||
+      !timing.description.trim()
+    ) {
+      missing.push('clickTrackRenderRecipe.timing.description')
+    }
+  }
+
+  const clickSound =
+    clickTrackRenderRecipe.clickSound &&
+    typeof clickTrackRenderRecipe.clickSound === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.clickSound)
+      ? (clickTrackRenderRecipe.clickSound as Record<string, unknown>)
+      : null
+
+  if (!clickSound) {
+    missing.push('clickTrackRenderRecipe.clickSound')
+  } else {
+    if (clickSound.downbeatEmphasis !== true) {
+      missing.push('clickTrackRenderRecipe.clickSound.downbeatEmphasis')
+    }
+
+    if (clickSound.subdivision !== 'quarter-note') {
+      missing.push('clickTrackRenderRecipe.clickSound.subdivision')
+    }
+
+    if (
+      typeof clickSound.description !== 'string' ||
+      !clickSound.description.trim()
+    ) {
+      missing.push('clickTrackRenderRecipe.clickSound.description')
+    }
+  }
+
+  const sectionMarkers =
+    clickTrackRenderRecipe.sectionMarkers &&
+    typeof clickTrackRenderRecipe.sectionMarkers === 'object' &&
+    !Array.isArray(clickTrackRenderRecipe.sectionMarkers)
+      ? (clickTrackRenderRecipe.sectionMarkers as Record<string, unknown>)
+      : null
+
+  if (!sectionMarkers) {
+    missing.push('clickTrackRenderRecipe.sectionMarkers')
+  } else {
+    if (sectionMarkers.enabled !== true) {
+      missing.push('clickTrackRenderRecipe.sectionMarkers.enabled')
+    }
+
+    if (
+      typeof sectionMarkers.description !== 'string' ||
+      !sectionMarkers.description.trim()
+    ) {
+      missing.push('clickTrackRenderRecipe.sectionMarkers.description')
+    }
+  }
+
+  if (
+    !Array.isArray(clickTrackRenderRecipe.mixPriorities) ||
+    clickTrackRenderRecipe.mixPriorities.length === 0
+  ) {
+    missing.push('clickTrackRenderRecipe.mixPriorities')
+  }
+
+  if (
+    !Array.isArray(clickTrackRenderRecipe.completionCriteria) ||
+    clickTrackRenderRecipe.completionCriteria.length === 0
+  ) {
+    missing.push('clickTrackRenderRecipe.completionCriteria')
+  }
+}
 
   requiredObjects.forEach(([label, value]) => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -1494,7 +1692,7 @@ if (!guideTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, and includes a guide-track render recipe.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, and includes guide-track and click-track render recipes.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
