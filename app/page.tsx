@@ -2757,6 +2757,8 @@ const copyAudioPreviewArtifactPackage = async () => {
   getDryRunClickTrackRenderRecipeSummary()
   const chordReferenceRenderRecipeSummary =
   getDryRunChordReferenceRenderRecipeSummary()
+  const vocalGuideRenderRecipeSummary =
+  getDryRunVocalGuideRenderRecipeSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -2957,6 +2959,67 @@ const copyAudioPreviewArtifactPackage = async () => {
         ? [
             'Completion criteria:',
             ...chordReferenceRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(vocalGuideRenderRecipeSummary
+  ? [
+      'OPTIONAL VOCAL-GUIDE RENDER RECIPE',
+      '',
+      `Recipe status: ${vocalGuideRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${vocalGuideRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Selection: ${vocalGuideRenderRecipeSummary.targetSelection || 'Unknown'}`,
+      `Output status: ${vocalGuideRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Melody source: ${
+        vocalGuideRenderRecipeSummary.melodySource.status || 'Unknown'
+      }`,
+      '',
+      vocalGuideRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${vocalGuideRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      ...(vocalGuideRenderRecipeSummary.activationRequirements.length > 0
+        ? [
+            'Activation requirements:',
+            ...vocalGuideRenderRecipeSummary.activationRequirements.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.melodySource.acceptedSources.length > 0
+        ? [
+            'Accepted melody sources:',
+            ...vocalGuideRenderRecipeSummary.melodySource.acceptedSources.map(
+              (source) => `- ${source}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.vocalStyle.defaultReference
+        ? [
+            'Vocal style placeholder:',
+            vocalGuideRenderRecipeSummary.vocalStyle.defaultReference,
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...vocalGuideRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...vocalGuideRenderRecipeSummary.completionCriteria.map(
               (criterion) => `- ${criterion}`,
             ),
             '',
@@ -5602,6 +5665,149 @@ const getDryRunClickTrackRenderRecipeSummary = () => {
   }
 }
 
+const getDryRunVocalGuideRenderRecipeSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const vocalGuideRenderRecipe =
+    dryRunArtifactPackage.vocalGuideRenderRecipe &&
+    typeof dryRunArtifactPackage.vocalGuideRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.vocalGuideRenderRecipe)
+      ? (dryRunArtifactPackage.vocalGuideRenderRecipe as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!vocalGuideRenderRecipe) {
+    return null
+  }
+
+  const countIn =
+    vocalGuideRenderRecipe.countIn &&
+    typeof vocalGuideRenderRecipe.countIn === 'object' &&
+    !Array.isArray(vocalGuideRenderRecipe.countIn)
+      ? (vocalGuideRenderRecipe.countIn as Record<string, unknown>)
+      : null
+
+  const timing =
+    vocalGuideRenderRecipe.timing &&
+    typeof vocalGuideRenderRecipe.timing === 'object' &&
+    !Array.isArray(vocalGuideRenderRecipe.timing)
+      ? (vocalGuideRenderRecipe.timing as Record<string, unknown>)
+      : null
+
+  const melodySource =
+    vocalGuideRenderRecipe.melodySource &&
+    typeof vocalGuideRenderRecipe.melodySource === 'object' &&
+    !Array.isArray(vocalGuideRenderRecipe.melodySource)
+      ? (vocalGuideRenderRecipe.melodySource as Record<string, unknown>)
+      : null
+
+  const vocalStyle =
+    vocalGuideRenderRecipe.vocalStyle &&
+    typeof vocalGuideRenderRecipe.vocalStyle === 'object' &&
+    !Array.isArray(vocalGuideRenderRecipe.vocalStyle)
+      ? (vocalGuideRenderRecipe.vocalStyle as Record<string, unknown>)
+      : null
+
+  const activationRequirements = Array.isArray(
+    vocalGuideRenderRecipe.activationRequirements,
+  )
+    ? vocalGuideRenderRecipe.activationRequirements.filter(
+        (requirement): requirement is string =>
+          typeof requirement === 'string' && requirement.trim().length > 0,
+      )
+    : []
+
+  const acceptedSources = Array.isArray(melodySource?.acceptedSources)
+    ? melodySource.acceptedSources.filter(
+        (source): source is string =>
+          typeof source === 'string' && source.trim().length > 0,
+      )
+    : []
+
+  const mixPriorities = Array.isArray(vocalGuideRenderRecipe.mixPriorities)
+    ? vocalGuideRenderRecipe.mixPriorities.filter(
+        (priority): priority is string =>
+          typeof priority === 'string' && priority.trim().length > 0,
+      )
+    : []
+
+  const completionCriteria = Array.isArray(
+    vocalGuideRenderRecipe.completionCriteria,
+  )
+    ? vocalGuideRenderRecipe.completionCriteria.filter(
+        (criterion): criterion is string =>
+          typeof criterion === 'string' && criterion.trim().length > 0,
+      )
+    : []
+
+  return {
+    recipeStatus:
+      typeof vocalGuideRenderRecipe.recipeStatus === 'string'
+        ? vocalGuideRenderRecipe.recipeStatus
+        : '',
+    targetKey:
+      typeof vocalGuideRenderRecipe.targetKey === 'string'
+        ? vocalGuideRenderRecipe.targetKey
+        : '',
+    targetSelection:
+      typeof vocalGuideRenderRecipe.targetSelection === 'string'
+        ? vocalGuideRenderRecipe.targetSelection
+        : '',
+    outputStatus:
+      typeof vocalGuideRenderRecipe.outputStatus === 'string'
+        ? vocalGuideRenderRecipe.outputStatus
+        : '',
+    rendererRequirement:
+      typeof vocalGuideRenderRecipe.rendererRequirement === 'string'
+        ? vocalGuideRenderRecipe.rendererRequirement
+        : '',
+    activationRequirements,
+    countIn: {
+      enabled: countIn?.enabled === true,
+      bars: typeof countIn?.bars === 'number' ? countIn.bars : 0,
+      description:
+        typeof countIn?.description === 'string' ? countIn.description : '',
+    },
+    timing: {
+      tempoSource:
+        typeof timing?.tempoSource === 'string' ? timing.tempoSource : '',
+      sectionTimingSource:
+        typeof timing?.sectionTimingSource === 'string'
+          ? timing.sectionTimingSource
+          : '',
+      description:
+        typeof timing?.description === 'string' ? timing.description : '',
+    },
+    melodySource: {
+      status:
+        typeof melodySource?.status === 'string' ? melodySource.status : '',
+      acceptedSources,
+      description:
+        typeof melodySource?.description === 'string'
+          ? melodySource.description
+          : '',
+    },
+    vocalStyle: {
+      status:
+        typeof vocalStyle?.status === 'string' ? vocalStyle.status : '',
+      defaultReference:
+        typeof vocalStyle?.defaultReference === 'string'
+          ? vocalStyle.defaultReference
+          : '',
+      description:
+        typeof vocalStyle?.description === 'string'
+          ? vocalStyle.description
+          : '',
+    },
+    mixPriorities,
+    completionCriteria,
+  }
+}
+
 
 const getDryRunRendererContractSummary = () => {
   if (!dryRunRenderManifest) {
@@ -7822,6 +8028,8 @@ const dryRunRealRenderReadinessSummary =
   getDryRunClickTrackRenderRecipeSummary()
   const dryRunChordReferenceRenderRecipeSummary =
   getDryRunChordReferenceRenderRecipeSummary()
+  const dryRunVocalGuideRenderRecipeSummary =
+  getDryRunVocalGuideRenderRecipeSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -11906,6 +12114,111 @@ return (
         <div className="font-medium text-gray-300">Mix priorities</div>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
           {dryRunChordReferenceRenderRecipeSummary.mixPriorities.map(
+            (priority) => (
+              <li key={priority}>{priority}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
+{dryRunVocalGuideRenderRecipeSummary ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Optional vocal-guide render recipe
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Target</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.targetKey || 'No target key'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Selection</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.targetSelection || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Output status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.outputStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Melody source</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.melodySource.status ||
+            'Unknown'}
+        </div>
+      </div>
+    </div>
+
+    {dryRunVocalGuideRenderRecipeSummary.rendererRequirement ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Renderer requirement
+        </div>
+        <div className="mt-1 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.rendererRequirement}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunVocalGuideRenderRecipeSummary.activationRequirements.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Activation requirements
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.activationRequirements.map(
+            (requirement) => (
+              <li key={requirement}>{requirement}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunVocalGuideRenderRecipeSummary.melodySource.acceptedSources.length >
+    0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Accepted melody sources
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.melodySource.acceptedSources.map(
+            (source) => (
+              <li key={source}>{source}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunVocalGuideRenderRecipeSummary.vocalStyle.defaultReference ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Vocal style placeholder
+        </div>
+        <div className="mt-1 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.vocalStyle.defaultReference}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunVocalGuideRenderRecipeSummary.mixPriorities.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Mix priorities</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunVocalGuideRenderRecipeSummary.mixPriorities.map(
             (priority) => (
               <li key={priority}>{priority}</li>
             ),
