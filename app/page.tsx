@@ -4615,6 +4615,67 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         : []),
     ]
   : []),
+  ...(vocalGuideRenderRecipeSummary
+  ? [
+      'OPTIONAL VOCAL-GUIDE RENDER RECIPE',
+      '',
+      `Recipe status: ${vocalGuideRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${vocalGuideRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Selection: ${vocalGuideRenderRecipeSummary.targetSelection || 'Unknown'}`,
+      `Output status: ${vocalGuideRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Melody source: ${
+        vocalGuideRenderRecipeSummary.melodySource.status || 'Unknown'
+      }`,
+      '',
+      vocalGuideRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${vocalGuideRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      ...(vocalGuideRenderRecipeSummary.activationRequirements.length > 0
+        ? [
+            'Activation requirements:',
+            ...vocalGuideRenderRecipeSummary.activationRequirements.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.melodySource.acceptedSources.length > 0
+        ? [
+            'Accepted melody sources:',
+            ...vocalGuideRenderRecipeSummary.melodySource.acceptedSources.map(
+              (source) => `- ${source}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.vocalStyle.defaultReference
+        ? [
+            'Vocal style placeholder:',
+            vocalGuideRenderRecipeSummary.vocalStyle.defaultReference,
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...vocalGuideRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(vocalGuideRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...vocalGuideRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
