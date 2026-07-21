@@ -1293,6 +1293,73 @@ guideTrackRenderRecipe: {
     'Output file path or storage reference is recorded in the artefact package.',
   ],
 },
+expectedOutputFiles: {
+  outputStatus: 'not-generated',
+  storageStatus: 'not-configured',
+  formatStatus: 'not-selected',
+  outputs: [
+    {
+      key: 'guideTrackAudio',
+      label: 'Guide track audio',
+      selected: true,
+      status: 'not-generated',
+      requiredBeforeGenerated: [
+        'Real renderer is connected.',
+        'Audio output format is selected.',
+        'Storage location is configured.',
+        'Guide-track render recipe is accepted.',
+      ],
+      file: null,
+    },
+    {
+      key: 'clickTrack',
+      label: 'Click track',
+      selected: true,
+      status: 'not-generated',
+      requiredBeforeGenerated: [
+        'Real renderer is connected.',
+        'Audio output format is selected.',
+        'Storage location is configured.',
+        'Click-track render recipe is accepted.',
+      ],
+      file: null,
+    },
+    {
+      key: 'chordReferenceTrack',
+      label: 'Chord reference track',
+      selected: true,
+      status: 'not-generated',
+      requiredBeforeGenerated: [
+        'Real renderer is connected.',
+        'Audio output format is selected.',
+        'Storage location is configured.',
+        'Chord-reference render recipe is accepted.',
+      ],
+      file: null,
+    },
+    {
+      key: 'vocalGuideTrack',
+      label: 'Optional vocal guide track',
+      selected: false,
+      status: 'not-generated',
+      requiredBeforeGenerated: [
+        'Optional vocal-guide target is enabled.',
+        'A melody source is provided.',
+        'A vocal guide strategy is selected.',
+        'Performer-safe vocal range is confirmed.',
+        'Real renderer, output format, and storage are configured.',
+      ],
+      file: null,
+    },
+  ],
+  notes: [
+    'Expected output file records are placeholders only.',
+    'No output should be marked generated until a real renderer writes and stores the audio file.',
+    'The file field must remain null during dry run.',
+  ],
+},
+
+
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1322,6 +1389,7 @@ function validateDryRunArtifactPackage(pkg: {
   clickTrackRenderRecipe?: unknown
   chordReferenceRenderRecipe?: unknown
   vocalGuideRenderRecipe?: unknown
+  expectedOutputFiles?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -1962,7 +2030,91 @@ if (!vocalGuideRenderRecipe) {
     missing.push('vocalGuideRenderRecipe.completionCriteria')
   }
 }
+const expectedOutputFiles =
+  pkg.expectedOutputFiles &&
+  typeof pkg.expectedOutputFiles === 'object' &&
+  !Array.isArray(pkg.expectedOutputFiles)
+    ? (pkg.expectedOutputFiles as Record<string, unknown>)
+    : null
 
+if (!expectedOutputFiles) {
+  missing.push('expectedOutputFiles')
+} else {
+  if (expectedOutputFiles.outputStatus !== 'not-generated') {
+    missing.push('expectedOutputFiles.outputStatus')
+  }
+
+  if (expectedOutputFiles.storageStatus !== 'not-configured') {
+    missing.push('expectedOutputFiles.storageStatus')
+  }
+
+  if (expectedOutputFiles.formatStatus !== 'not-selected') {
+    missing.push('expectedOutputFiles.formatStatus')
+  }
+
+  const outputs = Array.isArray(expectedOutputFiles.outputs)
+    ? expectedOutputFiles.outputs
+    : []
+
+  if (outputs.length !== 4) {
+    missing.push('expectedOutputFiles.outputs')
+  }
+
+  const requiredOutputKeys = [
+    'guideTrackAudio',
+    'clickTrack',
+    'chordReferenceTrack',
+    'vocalGuideTrack',
+  ]
+
+  for (const requiredOutputKey of requiredOutputKeys) {
+    const output = outputs.find(
+      (item) =>
+        item &&
+        typeof item === 'object' &&
+        !Array.isArray(item) &&
+        (item as Record<string, unknown>).key === requiredOutputKey,
+    )
+
+    if (!output || typeof output !== 'object' || Array.isArray(output)) {
+      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}`)
+      continue
+    }
+
+    const outputRecord = output as Record<string, unknown>
+
+    if (outputRecord.status !== 'not-generated') {
+      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.status`)
+    }
+
+    if (outputRecord.file !== null) {
+      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.file`)
+    }
+
+    if (
+      typeof outputRecord.label !== 'string' ||
+      !outputRecord.label.trim()
+    ) {
+      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.label`)
+    }
+
+    if (
+      !Array.isArray(outputRecord.requiredBeforeGenerated) ||
+      outputRecord.requiredBeforeGenerated.length === 0
+    ) {
+      missing.push(
+        `expectedOutputFiles.outputs.${requiredOutputKey}.requiredBeforeGenerated`,
+      )
+    }
+  }
+
+  if (
+    !Array.isArray(expectedOutputFiles.notes) ||
+    expectedOutputFiles.notes.length === 0
+  ) {
+    missing.push('expectedOutputFiles.notes')
+  }
+}
 
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
@@ -2137,7 +2289,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, and includes guide-track, click-track, chord-reference, and optional vocal-guide render recipes.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, and defines expected output file placeholders.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
