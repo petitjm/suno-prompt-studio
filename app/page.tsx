@@ -6338,8 +6338,36 @@ const getAudioPreviewChecklist = () => {
     getGuideTrackPlanRows(getChordDataFromEditorJson()).length > 0 ||
     getGuideTrackSectionPlanRows(getChordDataFromEditorJson()).length > 0
   const hasDryRunArtifactPackage = Boolean(dryRunArtifactPackage)
-  const hasValidatedDryRunArtifactPackage =
-  dryRunArtifactPackageValidation?.ready === true
+    const hasValidatedDryRunArtifactPackage =
+    dryRunArtifactPackageValidation?.ready === true
+
+  const hasGuideTrackRenderRecipe = Boolean(
+    dryRunArtifactPackage &&
+      dryRunArtifactPackage.guideTrackRenderRecipe &&
+      typeof dryRunArtifactPackage.guideTrackRenderRecipe === 'object' &&
+      !Array.isArray(dryRunArtifactPackage.guideTrackRenderRecipe),
+  )
+
+  const hasClickTrackRenderRecipe = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.clickTrackRenderRecipe &&
+    typeof dryRunArtifactPackage.clickTrackRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.clickTrackRenderRecipe),
+)
+
+const hasChordReferenceRenderRecipe = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.chordReferenceRenderRecipe &&
+    typeof dryRunArtifactPackage.chordReferenceRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.chordReferenceRenderRecipe),
+)
+
+const hasVocalGuideRenderRecipe = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.vocalGuideRenderRecipe &&
+    typeof dryRunArtifactPackage.vocalGuideRenderRecipe === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.vocalGuideRenderRecipe),
+)
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
    Boolean(realRenderReadinessSummary.readinessStatus)
@@ -6472,6 +6500,34 @@ const getAudioPreviewChecklist = () => {
     : hasDryRunArtifactPackage
       ? 'Review artefact package validation before future renderer integration.'
       : 'Submit dry run to validate the artefact package.',
+},
+{
+  label: 'Guide-track render recipe',
+  detail: hasGuideTrackRenderRecipe
+    ? 'Guide-track render recipe is present in the dry-run artefact package.'
+    : 'Guide-track render recipe is pending until dry run creates the artefact package.',
+  complete: hasGuideTrackRenderRecipe,
+},
+{
+  label: 'Click-track render recipe',
+  detail: hasClickTrackRenderRecipe
+    ? 'Click-track render recipe is present in the dry-run artefact package.'
+    : 'Click-track render recipe is pending until dry run creates the artefact package.',
+  complete: hasClickTrackRenderRecipe,
+},
+{
+  label: 'Chord-reference render recipe',
+  detail: hasChordReferenceRenderRecipe
+    ? 'Chord-reference render recipe is present in the dry-run artefact package.'
+    : 'Chord-reference render recipe is pending until dry run creates the artefact package.',
+  complete: hasChordReferenceRenderRecipe,
+},
+{
+  label: 'Optional vocal-guide render recipe',
+  detail: hasVocalGuideRenderRecipe
+    ? 'Optional vocal-guide render recipe is present in the dry-run artefact package.'
+    : 'Optional vocal-guide render recipe is pending until dry run creates the artefact package.',
+  complete: hasVocalGuideRenderRecipe,
 },
 
 {
