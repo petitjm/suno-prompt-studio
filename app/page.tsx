@@ -4074,6 +4074,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getDryRunGuideTrackRenderRecipeSummary()
   const clickTrackRenderRecipeSummary =
   getDryRunClickTrackRenderRecipeSummary()
+  const chordReferenceRenderRecipeSummary =
+  getDryRunChordReferenceRenderRecipeSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4557,6 +4559,55 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         ? [
             'Completion criteria:',
             ...clickTrackRenderRecipeSummary.completionCriteria.map(
+              (criterion) => `- ${criterion}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(chordReferenceRenderRecipeSummary
+  ? [
+      'CHORD-REFERENCE RENDER RECIPE',
+      '',
+      `Recipe status: ${chordReferenceRenderRecipeSummary.recipeStatus || 'Unknown'}`,
+      `Target: ${chordReferenceRenderRecipeSummary.targetKey || 'Unknown'}`,
+      `Output status: ${chordReferenceRenderRecipeSummary.outputStatus || 'Unknown'}`,
+      `Count-in: ${
+        chordReferenceRenderRecipeSummary.countIn.enabled
+          ? `${chordReferenceRenderRecipeSummary.countIn.bars} bar`
+          : 'Not declared'
+      }`,
+      `Voicing: ${
+        chordReferenceRenderRecipeSummary.voicing.primaryInstrument ||
+        'Not declared'
+      }${
+        chordReferenceRenderRecipeSummary.voicing.density
+          ? `, ${chordReferenceRenderRecipeSummary.voicing.density}`
+          : ''
+      }`,
+      '',
+      chordReferenceRenderRecipeSummary.rendererRequirement
+        ? `Renderer requirement: ${chordReferenceRenderRecipeSummary.rendererRequirement}`
+        : '',
+      '',
+      chordReferenceRenderRecipeSummary.chordSource.description
+        ? `Chord source: ${chordReferenceRenderRecipeSummary.chordSource.description}`
+        : '',
+      '',
+      ...(chordReferenceRenderRecipeSummary.mixPriorities.length > 0
+        ? [
+            'Mix priorities:',
+            ...chordReferenceRenderRecipeSummary.mixPriorities.map(
+              (priority) => `- ${priority}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(chordReferenceRenderRecipeSummary.completionCriteria.length > 0
+        ? [
+            'Completion criteria:',
+            ...chordReferenceRenderRecipeSummary.completionCriteria.map(
               (criterion) => `- ${criterion}`,
             ),
             '',
@@ -8028,6 +8079,8 @@ const dryRunRealRenderReadinessSummary =
   getDryRunClickTrackRenderRecipeSummary()
   const dryRunChordReferenceRenderRecipeSummary =
   getDryRunChordReferenceRenderRecipeSummary()
+  const vocalGuideRenderRecipeSummary =
+  getDryRunVocalGuideRenderRecipeSummary()
   const dryRunVocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
 const showRealRenderBlockedBanner =
