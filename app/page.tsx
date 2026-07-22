@@ -6829,6 +6829,12 @@ const hasRendererInputContract = Boolean(
     typeof dryRunArtifactPackage.rendererInputContract === 'object' &&
     !Array.isArray(dryRunArtifactPackage.rendererInputContract),
 )
+const hasRealRenderGate = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderGate &&
+    typeof dryRunArtifactPackage.realRenderGate === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderGate),
+)
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
    Boolean(realRenderReadinessSummary.readinessStatus)
@@ -7003,6 +7009,13 @@ const hasRendererInputContract = Boolean(
     ? 'Renderer input contract is present and confirms the real renderer is not connected yet.'
     : 'Renderer input contract is pending until dry run creates the artefact package.',
   complete: hasRendererInputContract,
+},
+{
+  label: 'Real-render safety gate',
+  detail: hasRealRenderGate
+    ? 'Real-render safety gate is present and keeps audio generation blocked until renderer, format, storage, and execution are configured.'
+    : 'Real-render safety gate is pending until dry run creates the artefact package.',
+  complete: hasRealRenderGate,
 },
 
 {
