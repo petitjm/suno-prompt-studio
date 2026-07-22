@@ -2759,6 +2759,7 @@ const copyAudioPreviewArtifactPackage = async () => {
   getDryRunChordReferenceRenderRecipeSummary()
   const vocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
+  const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3025,6 +3026,28 @@ const copyAudioPreviewArtifactPackage = async () => {
             '',
           ]
         : []),
+    ]
+  : []),
+  ...(expectedOutputFileRows.length > 0
+  ? [
+      'EXPECTED OUTPUT FILE PLACEHOLDERS',
+      '',
+      ...expectedOutputFileRows.flatMap((output) => [
+        `${output.label || output.key || 'Unnamed output'}`,
+        `Key: ${output.key || 'Unknown'}`,
+        `Selected: ${output.selected ? 'yes' : 'no'}`,
+        `Status: ${output.status || 'Unknown'}`,
+        `File: ${output.file === null ? 'null' : 'unexpected file value'}`,
+        ...(output.requiredBeforeGenerated.length > 0
+          ? [
+              'Required before generated:',
+              ...output.requiredBeforeGenerated.map(
+                (requirement) => `- ${requirement}`,
+              ),
+            ]
+          : []),
+        '',
+      ]),
     ]
   : []),
     'ARTEFACT PACKAGE JSON',
@@ -5527,6 +5550,9 @@ const getDryRunRenderTargetRows = () => {
   }
 }
 
+
+
+
 const getDryRunClickTrackRenderRecipeSummary = () => {
   if (!dryRunArtifactPackage) {
     return null
@@ -5919,6 +5945,53 @@ const getDryRunVocalGuideRenderRecipeSummary = () => {
     completionCriteria,
   }
 }
+
+const getDryRunExpectedOutputFileRows = () => {
+  if (!dryRunArtifactPackage) {
+    return []
+  }
+
+  const expectedOutputFiles =
+    dryRunArtifactPackage.expectedOutputFiles &&
+    typeof dryRunArtifactPackage.expectedOutputFiles === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.expectedOutputFiles)
+      ? (dryRunArtifactPackage.expectedOutputFiles as Record<string, unknown>)
+      : null
+
+  if (!expectedOutputFiles || !Array.isArray(expectedOutputFiles.outputs)) {
+    return []
+  }
+
+  return expectedOutputFiles.outputs
+    .filter(
+      (output): output is Record<string, unknown> =>
+        output !== null &&
+        typeof output === 'object' &&
+        !Array.isArray(output),
+    )
+    .map((output) => {
+      const requiredBeforeGenerated = Array.isArray(
+        output.requiredBeforeGenerated,
+      )
+        ? output.requiredBeforeGenerated.filter(
+            (item): item is string =>
+              typeof item === 'string' && item.trim().length > 0,
+          )
+        : []
+
+      return {
+        key: typeof output.key === 'string' ? output.key : '',
+        label: typeof output.label === 'string' ? output.label : '',
+        selected: output.selected === true,
+        status: typeof output.status === 'string' ? output.status : '',
+        file: output.file === null ? null : output.file,
+        requiredBeforeGenerated,
+      }
+    })
+}
+
+
+
 
 
 const getDryRunRendererContractSummary = () => {
@@ -8200,6 +8273,7 @@ const dryRunRealRenderReadinessSummary =
   getDryRunVocalGuideRenderRecipeSummary()
   const dryRunVocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
+const dryRunExpectedOutputFileRows = getDryRunExpectedOutputFileRows()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -12396,6 +12470,52 @@ return (
         </ul>
       </div>
     ) : null}
+  </div>
+) : null}
+
+
+{dryRunExpectedOutputFileRows.length > 0 ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Expected output file placeholders
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      {dryRunExpectedOutputFileRows.map((output) => (
+        <div
+          key={output.key || output.label}
+          className="rounded border border-gray-800 bg-gray-950 p-3"
+        >
+          <div className="font-medium text-gray-300">
+            {output.label || output.key || 'Unnamed output'}
+          </div>
+
+          <div className="mt-1 text-gray-500">
+            Key: {output.key || 'Unknown'}
+          </div>
+
+          <div className="mt-1 text-gray-500">
+            Selected: {output.selected ? 'yes' : 'no'}
+          </div>
+
+          <div className="mt-1 text-gray-500">
+            Status: {output.status || 'Unknown'}
+          </div>
+
+          <div className="mt-1 text-gray-500">
+            File: {output.file === null ? 'null' : 'unexpected file value'}
+          </div>
+
+          {output.requiredBeforeGenerated.length > 0 ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+              {output.requiredBeforeGenerated.map((requirement) => (
+                <li key={requirement}>{requirement}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ))}
+    </div>
   </div>
 ) : null}
 
