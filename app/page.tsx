@@ -2760,6 +2760,7 @@ const copyAudioPreviewArtifactPackage = async () => {
   const vocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
   const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
+  
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3050,6 +3051,7 @@ const copyAudioPreviewArtifactPackage = async () => {
       ]),
     ]
   : []),
+  'ARTEFACT PACKAGE JSON',
     'ARTEFACT PACKAGE JSON',
         '',
     JSON.stringify(dryRunArtifactPackage, null, 2),
@@ -4099,6 +4101,9 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getDryRunClickTrackRenderRecipeSummary()
   const chordReferenceRenderRecipeSummary =
   getDryRunChordReferenceRenderRecipeSummary()
+  const vocalGuideRenderRecipeSummary =
+  getDryRunVocalGuideRenderRecipeSummary()
+  const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4697,6 +4702,28 @@ const fullPackPipelineStatus = fullPackPipelineComplete
             '',
           ]
         : []),
+    ]
+  : []),
+  ...(expectedOutputFileRows.length > 0
+  ? [
+      'EXPECTED OUTPUT FILE PLACEHOLDERS',
+      '',
+      ...expectedOutputFileRows.flatMap((output) => [
+        `${output.label || output.key || 'Unnamed output'}`,
+        `Key: ${output.key || 'Unknown'}`,
+        `Selected: ${output.selected ? 'yes' : 'no'}`,
+        `Status: ${output.status || 'Unknown'}`,
+        `File: ${output.file === null ? 'null' : 'unexpected file value'}`,
+        ...(output.requiredBeforeGenerated.length > 0
+          ? [
+              'Required before generated:',
+              ...output.requiredBeforeGenerated.map(
+                (requirement) => `- ${requirement}`,
+              ),
+            ]
+          : []),
+        '',
+      ]),
     ]
   : []),
       'ARTEFACT PACKAGE JSON',
@@ -8271,6 +8298,7 @@ const dryRunRealRenderReadinessSummary =
   getDryRunChordReferenceRenderRecipeSummary()
   const vocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
+
   const dryRunVocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
 const dryRunExpectedOutputFileRows = getDryRunExpectedOutputFileRows()
