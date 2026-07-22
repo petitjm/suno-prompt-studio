@@ -1478,6 +1478,37 @@ firstRealRenderPlan: {
   ],
 },
 
+realRenderRouteScaffold: {
+  routeStatus: 'blocked-scaffold-declared',
+  method: 'POST',
+  path: '/api/audio-preview/real-render',
+  expectedBlockedStatusCode: 423,
+  audioStatus: 'not-generated',
+  rendererStatus: 'not-connected',
+  purpose:
+    'Reserve the future real-render endpoint while keeping all audio generation blocked until renderer, format, storage, and execution are implemented.',
+  expectedRequestShape: {
+    requestedTarget: 'clickTrack',
+    rendererInputContract: 'required-before-real-render',
+    realRenderGate: 'required-before-real-render',
+    firstRealRenderPlan: 'required-before-real-render',
+  },
+  expectedBlockedResponse: {
+    ok: false,
+    status: 'blocked',
+    audioStatus: 'not-generated',
+    rendererStatus: 'not-connected',
+    storageStatus: 'not-configured',
+    formatStatus: 'not-selected',
+  },
+  safetyRules: [
+    'The route scaffold may be called for blocked-status testing only.',
+    'The route scaffold must not generate audio files.',
+    'The route scaffold must return blocked status until real render execution is implemented.',
+    'The UI must not treat a blocked response as generated audio.',
+  ],
+},
+
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1511,6 +1542,7 @@ function validateDryRunArtifactPackage(pkg: {
   rendererInputContract?: unknown
   realRenderGate?: unknown
   firstRealRenderPlan?: unknown
+  realRenderRouteScaffold?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -2464,6 +2496,145 @@ if (!firstRealRenderPlan) {
   }
 }
 
+const realRenderRouteScaffold =
+  pkg.realRenderRouteScaffold &&
+  typeof pkg.realRenderRouteScaffold === 'object' &&
+  !Array.isArray(pkg.realRenderRouteScaffold)
+    ? (pkg.realRenderRouteScaffold as Record<string, unknown>)
+    : null
+
+if (!realRenderRouteScaffold) {
+  missing.push('realRenderRouteScaffold')
+} else {
+  if (realRenderRouteScaffold.routeStatus !== 'blocked-scaffold-declared') {
+    missing.push('realRenderRouteScaffold.routeStatus')
+  }
+
+  if (realRenderRouteScaffold.method !== 'POST') {
+    missing.push('realRenderRouteScaffold.method')
+  }
+
+  if (realRenderRouteScaffold.path !== '/api/audio-preview/real-render') {
+    missing.push('realRenderRouteScaffold.path')
+  }
+
+  if (realRenderRouteScaffold.expectedBlockedStatusCode !== 423) {
+    missing.push('realRenderRouteScaffold.expectedBlockedStatusCode')
+  }
+
+  if (realRenderRouteScaffold.audioStatus !== 'not-generated') {
+    missing.push('realRenderRouteScaffold.audioStatus')
+  }
+
+  if (realRenderRouteScaffold.rendererStatus !== 'not-connected') {
+    missing.push('realRenderRouteScaffold.rendererStatus')
+  }
+
+  if (
+    typeof realRenderRouteScaffold.purpose !== 'string' ||
+    !realRenderRouteScaffold.purpose.trim()
+  ) {
+    missing.push('realRenderRouteScaffold.purpose')
+  }
+
+  const expectedRequestShape =
+    realRenderRouteScaffold.expectedRequestShape &&
+    typeof realRenderRouteScaffold.expectedRequestShape === 'object' &&
+    !Array.isArray(realRenderRouteScaffold.expectedRequestShape)
+      ? (realRenderRouteScaffold.expectedRequestShape as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!expectedRequestShape) {
+    missing.push('realRenderRouteScaffold.expectedRequestShape')
+  } else {
+    if (expectedRequestShape.requestedTarget !== 'clickTrack') {
+      missing.push(
+        'realRenderRouteScaffold.expectedRequestShape.requestedTarget',
+      )
+    }
+
+    if (
+      expectedRequestShape.rendererInputContract !==
+      'required-before-real-render'
+    ) {
+      missing.push(
+        'realRenderRouteScaffold.expectedRequestShape.rendererInputContract',
+      )
+    }
+
+    if (expectedRequestShape.realRenderGate !== 'required-before-real-render') {
+      missing.push(
+        'realRenderRouteScaffold.expectedRequestShape.realRenderGate',
+      )
+    }
+
+    if (
+      expectedRequestShape.firstRealRenderPlan !==
+      'required-before-real-render'
+    ) {
+      missing.push(
+        'realRenderRouteScaffold.expectedRequestShape.firstRealRenderPlan',
+      )
+    }
+  }
+
+  const expectedBlockedResponse =
+    realRenderRouteScaffold.expectedBlockedResponse &&
+    typeof realRenderRouteScaffold.expectedBlockedResponse === 'object' &&
+    !Array.isArray(realRenderRouteScaffold.expectedBlockedResponse)
+      ? (realRenderRouteScaffold.expectedBlockedResponse as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!expectedBlockedResponse) {
+    missing.push('realRenderRouteScaffold.expectedBlockedResponse')
+  } else {
+    if (expectedBlockedResponse.ok !== false) {
+      missing.push('realRenderRouteScaffold.expectedBlockedResponse.ok')
+    }
+
+    if (expectedBlockedResponse.status !== 'blocked') {
+      missing.push('realRenderRouteScaffold.expectedBlockedResponse.status')
+    }
+
+    if (expectedBlockedResponse.audioStatus !== 'not-generated') {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.audioStatus',
+      )
+    }
+
+    if (expectedBlockedResponse.rendererStatus !== 'not-connected') {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.rendererStatus',
+      )
+    }
+
+    if (expectedBlockedResponse.storageStatus !== 'not-configured') {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.storageStatus',
+      )
+    }
+
+    if (expectedBlockedResponse.formatStatus !== 'not-selected') {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.formatStatus',
+      )
+    }
+  }
+
+  if (
+    !Array.isArray(realRenderRouteScaffold.safetyRules) ||
+    realRenderRouteScaffold.safetyRules.length === 0
+  ) {
+    missing.push('realRenderRouteScaffold.safetyRules')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -2637,8 +2808,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, and declares click track as the first real-render target.'
-        : `Dry-run artefact package needs review: ${missing.join(', ')}`,
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, and declares the blocked real-render route scaffold.'        : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
 
