@@ -7383,6 +7383,13 @@ const hasRealRenderRouteScaffold = Boolean(
     !Array.isArray(dryRunArtifactPackage.realRenderRouteScaffold),
 )
 
+const hasBlockedRealRenderRouteTestPassed =
+  realRenderRouteTestResponse !== null &&
+  realRenderRouteTestResponse.httpStatus === 423 &&
+  realRenderRouteTestResponse.status === 'blocked' &&
+  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
+  realRenderRouteTestResponse.rendererStatus === 'not-connected'
+
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
    Boolean(realRenderReadinessSummary.readinessStatus)
@@ -7580,6 +7587,16 @@ const hasRealRenderRouteScaffold = Boolean(
     ? 'Blocked real-render route scaffold is present and declares the future endpoint while keeping audio generation disabled.'
     : 'Blocked real-render route scaffold is pending until dry run creates the artefact package.',
   complete: hasRealRenderRouteScaffold,
+},
+
+{
+  label: 'Blocked real-render route test',
+  detail: hasBlockedRealRenderRouteTestPassed
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked with not-generated audio status.'
+    : hasRealRenderRouteScaffold
+      ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status.'
+      : 'Blocked real-render route test is pending until the scaffold is declared.',
+  complete: hasBlockedRealRenderRouteTestPassed,
 },
 
 {
