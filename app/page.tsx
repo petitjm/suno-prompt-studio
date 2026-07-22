@@ -2762,6 +2762,7 @@ const copyAudioPreviewArtifactPackage = async () => {
   const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
   const rendererInputContractSummary =
   getDryRunRendererInputContractSummary()
+  const realRenderGateSummary = getDryRunRealRenderGateSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3097,6 +3098,47 @@ const copyAudioPreviewArtifactPackage = async () => {
         ? [
             'Handoff rules:',
             ...rendererInputContractSummary.handoffRules.map(
+              (rule) => `- ${rule}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(realRenderGateSummary
+  ? [
+      'REAL-RENDER SAFETY GATE',
+      '',
+      `Gate status: ${realRenderGateSummary.gateStatus || 'Unknown'}`,
+      `Can render audio: ${realRenderGateSummary.canRenderAudio ? 'yes' : 'no'}`,
+      `Audio status: ${realRenderGateSummary.audioStatus || 'Unknown'}`,
+      `Renderer status: ${realRenderGateSummary.rendererStatus || 'Unknown'}`,
+      `Storage status: ${realRenderGateSummary.storageStatus || 'Unknown'}`,
+      `Format status: ${realRenderGateSummary.formatStatus || 'Unknown'}`,
+      `Dry run ready: ${realRenderGateSummary.dryRunReady ? 'yes' : 'no'}`,
+      '',
+      ...(realRenderGateSummary.blockedReasons.length > 0
+        ? [
+            'Blocked reasons:',
+            ...realRenderGateSummary.blockedReasons.map(
+              (reason) => `- ${reason}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(realRenderGateSummary.requiredToUnlock.length > 0
+        ? [
+            'Required to unlock:',
+            ...realRenderGateSummary.requiredToUnlock.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(realRenderGateSummary.safetyRules.length > 0
+        ? [
+            'Safety rules:',
+            ...realRenderGateSummary.safetyRules.map(
               (rule) => `- ${rule}`,
             ),
             '',
@@ -6217,6 +6259,75 @@ const getDryRunRendererInputContractSummary = () => {
   }
 }
 
+const getDryRunRealRenderGateSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const realRenderGate =
+    dryRunArtifactPackage.realRenderGate &&
+    typeof dryRunArtifactPackage.realRenderGate === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderGate)
+      ? (dryRunArtifactPackage.realRenderGate as Record<string, unknown>)
+      : null
+
+  if (!realRenderGate) {
+    return null
+  }
+
+  const blockedReasons = Array.isArray(realRenderGate.blockedReasons)
+    ? realRenderGate.blockedReasons.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const requiredToUnlock = Array.isArray(realRenderGate.requiredToUnlock)
+    ? realRenderGate.requiredToUnlock.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const safetyRules = Array.isArray(realRenderGate.safetyRules)
+    ? realRenderGate.safetyRules.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    gateStatus:
+      typeof realRenderGate.gateStatus === 'string'
+        ? realRenderGate.gateStatus
+        : '',
+    canRenderAudio: realRenderGate.canRenderAudio === true,
+    audioStatus:
+      typeof realRenderGate.audioStatus === 'string'
+        ? realRenderGate.audioStatus
+        : '',
+    rendererStatus:
+      typeof realRenderGate.rendererStatus === 'string'
+        ? realRenderGate.rendererStatus
+        : '',
+    storageStatus:
+      typeof realRenderGate.storageStatus === 'string'
+        ? realRenderGate.storageStatus
+        : '',
+    formatStatus:
+      typeof realRenderGate.formatStatus === 'string'
+        ? realRenderGate.formatStatus
+        : '',
+    dryRunReady:
+      typeof realRenderGate.dryRunReady === 'boolean'
+        ? realRenderGate.dryRunReady
+        : false,
+    blockedReasons,
+    requiredToUnlock,
+    safetyRules,
+  }
+}
+
 
 const getDryRunRendererContractSummary = () => {
   if (!dryRunRenderManifest) {
@@ -8528,6 +8639,7 @@ const dryRunRealRenderReadinessSummary =
 const dryRunExpectedOutputFileRows = getDryRunExpectedOutputFileRows()
 const dryRunRendererInputContractSummary =
   getDryRunRendererInputContractSummary()
+const dryRunRealRenderGateSummary = getDryRunRealRenderGateSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -12869,11 +12981,99 @@ return (
   </div>
 ) : null}
 
+{dryRunRealRenderGateSummary ? (
+  <div className="mt-3 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
+    <div className="font-medium uppercase tracking-wide text-red-200">
+      Real-render safety gate
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Gate status</div>
+        <div className="mt-1 text-red-100/80">
+          {dryRunRealRenderGateSummary.gateStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Can render audio</div>
+        <div className="mt-1 text-red-100/80">
+          {dryRunRealRenderGateSummary.canRenderAudio ? 'yes' : 'no'}
+        </div>
+      </div>
+
+      <div className="rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Audio status</div>
+        <div className="mt-1 text-red-100/80">
+          {dryRunRealRenderGateSummary.audioStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Renderer status</div>
+        <div className="mt-1 text-red-100/80">
+          {dryRunRealRenderGateSummary.rendererStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Storage / format</div>
+        <div className="mt-1 text-red-100/80">
+          {dryRunRealRenderGateSummary.storageStatus || 'Unknown'} /{' '}
+          {dryRunRealRenderGateSummary.formatStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Dry run ready</div>
+        <div className="mt-1 text-red-100/80">
+          {dryRunRealRenderGateSummary.dryRunReady ? 'yes' : 'no'}
+        </div>
+      </div>
+    </div>
+
+    {dryRunRealRenderGateSummary.blockedReasons.length > 0 ? (
+      <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Blocked reasons</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
+          {dryRunRealRenderGateSummary.blockedReasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRealRenderGateSummary.requiredToUnlock.length > 0 ? (
+      <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Required to unlock</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
+          {dryRunRealRenderGateSummary.requiredToUnlock.map((requirement) => (
+            <li key={requirement}>{requirement}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRealRenderGateSummary.safetyRules.length > 0 ? (
+      <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
+        <div className="font-medium text-red-100">Safety rules</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
+          {dryRunRealRenderGateSummary.safetyRules.map((rule) => (
+            <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
     <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
       {JSON.stringify(dryRunArtifactPackage, null, 2)}
     </pre>
   </details>
 ) : null}
+
+
 
 
     {audioPreviewRenderResponse ? (
