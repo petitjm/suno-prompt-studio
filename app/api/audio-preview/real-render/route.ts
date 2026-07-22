@@ -60,13 +60,13 @@ export async function POST(req: Request) {
       'Real audio renderer is not connected.',
       'Audio output format has not been selected.',
       'Generated audio storage has not been configured.',
-      'Render execution implementation has not been added.',
+      'Real render execution implementation has not been enabled.',
     ],
     requiredToUnlock: [
       'Connect a real renderer implementation.',
       'Choose an audio output format.',
       'Configure generated audio storage.',
-      'Implement real render execution.',
+      'Replace this blocked scaffold with real render execution.',
       'Write and store an audio file before marking any output generated.',
     ],
     receivedContractSummary: {

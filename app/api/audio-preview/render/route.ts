@@ -1422,13 +1422,13 @@ realRenderGate: {
     'Real audio renderer is not connected.',
     'Audio output format has not been selected.',
     'Generated audio storage has not been configured.',
-    'Render execution endpoint has not been implemented.',
+    'Real render execution is still blocked; the route scaffold exists but does not generate audio.',
   ],
   requiredToUnlock: [
     'Connect a real renderer implementation.',
     'Choose an audio output format.',
     'Configure generated audio storage.',
-    'Add a real render execution endpoint.',
+    'Replace the blocked route scaffold with a real render execution implementation.',
     'Require all selected output files to be written before marking them generated.',
   ],
   safetyRules: [
@@ -1452,7 +1452,7 @@ firstRealRenderPlan: {
       'Future implementation should generate a simple timing-only click track from tempo, count-in, cue sheet, and render plan data before attempting guide-track or chord-reference audio.',
   },
   firstUnlockRequirements: [
-    'Real render execution endpoint is implemented.',
+    'Blocked real-render route scaffold is replaced by a real execution implementation.',
     'Audio output format is selected.',
     'Generated audio storage is configured.',
     'Click-track render recipe is accepted.',
