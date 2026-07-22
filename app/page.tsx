@@ -2765,6 +2765,8 @@ const copyAudioPreviewArtifactPackage = async () => {
   const realRenderGateSummary = getDryRunRealRenderGateSummary()
   const firstRealRenderPlanSummary =
   getDryRunFirstRealRenderPlanSummary()
+  const realRenderRouteScaffoldSummary =
+  getDryRunRealRenderRouteScaffoldSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3205,7 +3207,79 @@ const copyAudioPreviewArtifactPackage = async () => {
         : []),
     ]
   : []),
-  'ARTEFACT PACKAGE JSON',
+
+  ...(realRenderRouteScaffoldSummary
+  ? [
+      'BLOCKED REAL-RENDER ROUTE SCAFFOLD',
+      '',
+      `Route status: ${realRenderRouteScaffoldSummary.routeStatus || 'Unknown'}`,
+      `Method: ${realRenderRouteScaffoldSummary.method || 'Unknown'}`,
+      `Path: ${realRenderRouteScaffoldSummary.path || 'Unknown'}`,
+      `Expected blocked status code: ${
+        realRenderRouteScaffoldSummary.expectedBlockedStatusCode || 'Unknown'
+      }`,
+      `Audio status: ${realRenderRouteScaffoldSummary.audioStatus || 'Unknown'}`,
+      `Renderer status: ${
+        realRenderRouteScaffoldSummary.rendererStatus || 'Unknown'
+      }`,
+      '',
+      realRenderRouteScaffoldSummary.purpose
+        ? `Purpose: ${realRenderRouteScaffoldSummary.purpose}`
+        : '',
+      '',
+      'Expected request shape:',
+      `- requestedTarget: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape.requestedTarget ||
+        'Unknown'
+      }`,
+      `- rendererInputContract: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape
+          .rendererInputContract || 'Unknown'
+      }`,
+      `- realRenderGate: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape.realRenderGate ||
+        'Unknown'
+      }`,
+      `- firstRealRenderPlan: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape
+          .firstRealRenderPlan || 'Unknown'
+      }`,
+      '',
+      'Expected blocked response:',
+      `- status: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.status ||
+        'Unknown'
+      }`,
+      `- audioStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.audioStatus ||
+        'Unknown'
+      }`,
+      `- rendererStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .rendererStatus || 'Unknown'
+      }`,
+      `- storageStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.storageStatus ||
+        'Unknown'
+      }`,
+      `- formatStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
+        'Unknown'
+      }`,
+      '',
+      ...(realRenderRouteScaffoldSummary.safetyRules.length > 0
+        ? [
+            'Safety rules:',
+            ...realRenderRouteScaffoldSummary.safetyRules.map(
+              (rule) => `- ${rule}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  
+  
     'ARTEFACT PACKAGE JSON',
         '',
     JSON.stringify(dryRunArtifactPackage, null, 2),
@@ -4263,6 +4337,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const realRenderGateSummary = getDryRunRealRenderGateSummary()
   const firstRealRenderPlanSummary =
   getDryRunFirstRealRenderPlanSummary()
+  const realRenderRouteScaffoldSummary =
+  getDryRunRealRenderRouteScaffoldSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -5033,6 +5109,77 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         : []),
     ]
   : []),
+  ...(realRenderRouteScaffoldSummary
+  ? [
+      'BLOCKED REAL-RENDER ROUTE SCAFFOLD',
+      '',
+      `Route status: ${realRenderRouteScaffoldSummary.routeStatus || 'Unknown'}`,
+      `Method: ${realRenderRouteScaffoldSummary.method || 'Unknown'}`,
+      `Path: ${realRenderRouteScaffoldSummary.path || 'Unknown'}`,
+      `Expected blocked status code: ${
+        realRenderRouteScaffoldSummary.expectedBlockedStatusCode || 'Unknown'
+      }`,
+      `Audio status: ${realRenderRouteScaffoldSummary.audioStatus || 'Unknown'}`,
+      `Renderer status: ${
+        realRenderRouteScaffoldSummary.rendererStatus || 'Unknown'
+      }`,
+      '',
+      realRenderRouteScaffoldSummary.purpose
+        ? `Purpose: ${realRenderRouteScaffoldSummary.purpose}`
+        : '',
+      '',
+      'Expected request shape:',
+      `- requestedTarget: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape.requestedTarget ||
+        'Unknown'
+      }`,
+      `- rendererInputContract: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape
+          .rendererInputContract || 'Unknown'
+      }`,
+      `- realRenderGate: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape.realRenderGate ||
+        'Unknown'
+      }`,
+      `- firstRealRenderPlan: ${
+        realRenderRouteScaffoldSummary.expectedRequestShape
+          .firstRealRenderPlan || 'Unknown'
+      }`,
+      '',
+      'Expected blocked response:',
+      `- status: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.status ||
+        'Unknown'
+      }`,
+      `- audioStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.audioStatus ||
+        'Unknown'
+      }`,
+      `- rendererStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .rendererStatus || 'Unknown'
+      }`,
+      `- storageStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.storageStatus ||
+        'Unknown'
+      }`,
+      `- formatStatus: ${
+        realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
+        'Unknown'
+      }`,
+      '',
+      ...(realRenderRouteScaffoldSummary.safetyRules.length > 0
+        ? [
+            'Safety rules:',
+            ...realRenderRouteScaffoldSummary.safetyRules.map(
+              (rule) => `- ${rule}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+
       'ARTEFACT PACKAGE JSON',
       '',
       JSON.stringify(dryRunArtifactPackage, null, 2),
@@ -6495,6 +6642,8 @@ const getDryRunFirstRealRenderPlanSummary = () => {
     return null
   }
 
+
+
   const firstRealRenderPlan =
     dryRunArtifactPackage.firstRealRenderPlan &&
     typeof dryRunArtifactPackage.firstRealRenderPlan === 'object' &&
@@ -6580,6 +6729,125 @@ const getDryRunFirstRealRenderPlanSummary = () => {
     firstValidationChecks,
     laterTargets,
     notes,
+  }
+}
+
+const getDryRunRealRenderRouteScaffoldSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const realRenderRouteScaffold =
+    dryRunArtifactPackage.realRenderRouteScaffold &&
+    typeof dryRunArtifactPackage.realRenderRouteScaffold === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderRouteScaffold)
+      ? (dryRunArtifactPackage.realRenderRouteScaffold as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!realRenderRouteScaffold) {
+    return null
+  }
+
+  const expectedRequestShape =
+    realRenderRouteScaffold.expectedRequestShape &&
+    typeof realRenderRouteScaffold.expectedRequestShape === 'object' &&
+    !Array.isArray(realRenderRouteScaffold.expectedRequestShape)
+      ? (realRenderRouteScaffold.expectedRequestShape as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  const expectedBlockedResponse =
+    realRenderRouteScaffold.expectedBlockedResponse &&
+    typeof realRenderRouteScaffold.expectedBlockedResponse === 'object' &&
+    !Array.isArray(realRenderRouteScaffold.expectedBlockedResponse)
+      ? (realRenderRouteScaffold.expectedBlockedResponse as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  const safetyRules = Array.isArray(realRenderRouteScaffold.safetyRules)
+    ? realRenderRouteScaffold.safetyRules.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    routeStatus:
+      typeof realRenderRouteScaffold.routeStatus === 'string'
+        ? realRenderRouteScaffold.routeStatus
+        : '',
+    method:
+      typeof realRenderRouteScaffold.method === 'string'
+        ? realRenderRouteScaffold.method
+        : '',
+    path:
+      typeof realRenderRouteScaffold.path === 'string'
+        ? realRenderRouteScaffold.path
+        : '',
+    expectedBlockedStatusCode:
+      typeof realRenderRouteScaffold.expectedBlockedStatusCode === 'number'
+        ? realRenderRouteScaffold.expectedBlockedStatusCode
+        : 0,
+    audioStatus:
+      typeof realRenderRouteScaffold.audioStatus === 'string'
+        ? realRenderRouteScaffold.audioStatus
+        : '',
+    rendererStatus:
+      typeof realRenderRouteScaffold.rendererStatus === 'string'
+        ? realRenderRouteScaffold.rendererStatus
+        : '',
+    purpose:
+      typeof realRenderRouteScaffold.purpose === 'string'
+        ? realRenderRouteScaffold.purpose
+        : '',
+    expectedRequestShape: {
+      requestedTarget:
+        typeof expectedRequestShape?.requestedTarget === 'string'
+          ? expectedRequestShape.requestedTarget
+          : '',
+      rendererInputContract:
+        typeof expectedRequestShape?.rendererInputContract === 'string'
+          ? expectedRequestShape.rendererInputContract
+          : '',
+      realRenderGate:
+        typeof expectedRequestShape?.realRenderGate === 'string'
+          ? expectedRequestShape.realRenderGate
+          : '',
+      firstRealRenderPlan:
+        typeof expectedRequestShape?.firstRealRenderPlan === 'string'
+          ? expectedRequestShape.firstRealRenderPlan
+          : '',
+    },
+    expectedBlockedResponse: {
+      status:
+        typeof expectedBlockedResponse?.status === 'string'
+          ? expectedBlockedResponse.status
+          : '',
+      audioStatus:
+        typeof expectedBlockedResponse?.audioStatus === 'string'
+          ? expectedBlockedResponse.audioStatus
+          : '',
+      rendererStatus:
+        typeof expectedBlockedResponse?.rendererStatus === 'string'
+          ? expectedBlockedResponse.rendererStatus
+          : '',
+      storageStatus:
+        typeof expectedBlockedResponse?.storageStatus === 'string'
+          ? expectedBlockedResponse.storageStatus
+          : '',
+      formatStatus:
+        typeof expectedBlockedResponse?.formatStatus === 'string'
+          ? expectedBlockedResponse.formatStatus
+          : '',
+    },
+    safetyRules,
   }
 }
 
@@ -8923,6 +9191,8 @@ const dryRunRendererInputContractSummary =
 const dryRunRealRenderGateSummary = getDryRunRealRenderGateSummary()
 const dryRunFirstRealRenderPlanSummary =
   getDryRunFirstRealRenderPlanSummary()
+  const dryRunRealRenderRouteScaffoldSummary =
+  getDryRunRealRenderRouteScaffoldSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
