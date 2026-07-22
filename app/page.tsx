@@ -7325,6 +7325,14 @@ const hasFirstRealRenderPlan = Boolean(
     typeof dryRunArtifactPackage.firstRealRenderPlan === 'object' &&
     !Array.isArray(dryRunArtifactPackage.firstRealRenderPlan),
 )
+
+const hasRealRenderRouteScaffold = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderRouteScaffold &&
+    typeof dryRunArtifactPackage.realRenderRouteScaffold === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderRouteScaffold),
+)
+
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
    Boolean(realRenderReadinessSummary.readinessStatus)
@@ -7514,6 +7522,14 @@ const hasFirstRealRenderPlan = Boolean(
     ? 'First real-render plan is present and declares clickTrack as the safest first audio target.'
     : 'First real-render plan is pending until dry run creates the artefact package.',
   complete: hasFirstRealRenderPlan,
+},
+
+{
+  label: 'Blocked real-render route scaffold',
+  detail: hasRealRenderRouteScaffold
+    ? 'Blocked real-render route scaffold is present and declares the future endpoint while keeping audio generation disabled.'
+    : 'Blocked real-render route scaffold is pending until dry run creates the artefact package.',
+  complete: hasRealRenderRouteScaffold,
 },
 
 {
