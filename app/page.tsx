@@ -11561,6 +11561,27 @@ return (
           {submittingAudioPreviewRender ? 'Submitting...' : 'Submit dry run'}
         </button>
 
+        <button
+          type="button"
+          disabled
+          title="Real audio rendering is blocked until a renderer, output format, storage, and execution endpoint are configured."
+          className="rounded border border-red-800 px-3 py-1 text-xs font-medium text-red-200 opacity-70 disabled:cursor-not-allowed"
+        >
+          Generate audio blocked
+        </button>
+
+        {dryRunRealRenderGateSummary ? (
+          <div className="mt-2 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
+            <div className="font-medium">Real audio rendering is blocked</div>
+            <div className="mt-1 text-red-100/80">
+              Gate status: {dryRunRealRenderGateSummary.gateStatus || 'Unknown'}.
+              Renderer: {dryRunRealRenderGateSummary.rendererStatus || 'Unknown'}.
+              Storage: {dryRunRealRenderGateSummary.storageStatus || 'Unknown'}.
+              Format: {dryRunRealRenderGateSummary.formatStatus || 'Unknown'}.
+            </div>
+          </div>
+        ) : null}
+
       {!dryRunHandoffBundle || !dryRunArtifactPackage ? (
   <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-6 text-yellow-100">
     <div className="font-medium">
