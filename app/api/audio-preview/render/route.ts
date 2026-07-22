@@ -1359,6 +1359,52 @@ expectedOutputFiles: {
   ],
 },
 
+rendererInputContract: {
+  contractStatus: 'dry-run-renderer-input-contract-declared',
+  audioStatus: 'not-generated',
+  rendererStatus: 'not-connected',
+  storageStatus: 'not-configured',
+  formatStatus: 'not-selected',
+  purpose:
+    'Define the complete dry-run input contract that a future real audio renderer must consume before generating any audio files.',
+  requiredInputObjects: [
+    'renderJob',
+    'dryRunRenderPlan',
+    'dryRunRenderPlanValidation',
+    'dryRunCueSheetValidation',
+    'dryRunRenderManifest',
+    'dryRunRenderManifestValidation',
+    'dryRunHandoffBundle',
+    'dryRunHandoffBundleValidation',
+    'renderTargets',
+    'guideTrackRenderRecipe',
+    'clickTrackRenderRecipe',
+    'chordReferenceRenderRecipe',
+    'vocalGuideRenderRecipe',
+    'expectedOutputFiles',
+  ],
+  selectedOutputKeys: [
+    'guideTrackAudio',
+    'clickTrack',
+    'chordReferenceTrack',
+  ],
+  optionalOutputKeys: ['vocalGuideTrack'],
+  requiredBeforeRealRender: [
+    'Real renderer implementation is connected.',
+    'Audio output format is selected.',
+    'Generated audio storage is configured.',
+    'Renderer input contract is accepted.',
+    'Expected output file placeholders are ready.',
+    'Selected render recipes are accepted.',
+  ],
+  handoffRules: [
+    'Do not generate audio from partial input objects.',
+    'Do not mark any output as generated until a real audio file exists.',
+    'Do not replace dry-run placeholders with file metadata until storage succeeds.',
+    'Use the cue sheet and render plan as the timing source of truth.',
+    'Keep optional vocal-guide output disabled until melody source and vocal strategy are confirmed.',
+  ],
+},
 
     renderJob,
     dryRunRenderPlan,
@@ -1390,6 +1436,7 @@ function validateDryRunArtifactPackage(pkg: {
   chordReferenceRenderRecipe?: unknown
   vocalGuideRenderRecipe?: unknown
   expectedOutputFiles?: unknown
+  rendererInputContract?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -2116,6 +2163,82 @@ if (!expectedOutputFiles) {
   }
 }
 
+const rendererInputContract =
+  pkg.rendererInputContract &&
+  typeof pkg.rendererInputContract === 'object' &&
+  !Array.isArray(pkg.rendererInputContract)
+    ? (pkg.rendererInputContract as Record<string, unknown>)
+    : null
+
+if (!rendererInputContract) {
+  missing.push('rendererInputContract')
+} else {
+  if (
+    rendererInputContract.contractStatus !==
+    'dry-run-renderer-input-contract-declared'
+  ) {
+    missing.push('rendererInputContract.contractStatus')
+  }
+
+  if (rendererInputContract.audioStatus !== 'not-generated') {
+    missing.push('rendererInputContract.audioStatus')
+  }
+
+  if (rendererInputContract.rendererStatus !== 'not-connected') {
+    missing.push('rendererInputContract.rendererStatus')
+  }
+
+  if (rendererInputContract.storageStatus !== 'not-configured') {
+    missing.push('rendererInputContract.storageStatus')
+  }
+
+  if (rendererInputContract.formatStatus !== 'not-selected') {
+    missing.push('rendererInputContract.formatStatus')
+  }
+
+  if (
+    typeof rendererInputContract.purpose !== 'string' ||
+    !rendererInputContract.purpose.trim()
+  ) {
+    missing.push('rendererInputContract.purpose')
+  }
+
+  if (
+    !Array.isArray(rendererInputContract.requiredInputObjects) ||
+    rendererInputContract.requiredInputObjects.length === 0
+  ) {
+    missing.push('rendererInputContract.requiredInputObjects')
+  }
+
+  if (
+    !Array.isArray(rendererInputContract.selectedOutputKeys) ||
+    rendererInputContract.selectedOutputKeys.length === 0
+  ) {
+    missing.push('rendererInputContract.selectedOutputKeys')
+  }
+
+  if (
+    !Array.isArray(rendererInputContract.optionalOutputKeys) ||
+    rendererInputContract.optionalOutputKeys.length === 0
+  ) {
+    missing.push('rendererInputContract.optionalOutputKeys')
+  }
+
+  if (
+    !Array.isArray(rendererInputContract.requiredBeforeRealRender) ||
+    rendererInputContract.requiredBeforeRealRender.length === 0
+  ) {
+    missing.push('rendererInputContract.requiredBeforeRealRender')
+  }
+
+  if (
+    !Array.isArray(rendererInputContract.handoffRules) ||
+    rendererInputContract.handoffRules.length === 0
+  ) {
+    missing.push('rendererInputContract.handoffRules')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -2289,7 +2412,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, and defines expected output file placeholders.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, and includes the renderer input contract.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
