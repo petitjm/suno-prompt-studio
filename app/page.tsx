@@ -4261,6 +4261,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const rendererInputContractSummary =
   getDryRunRendererInputContractSummary()
   const realRenderGateSummary = getDryRunRealRenderGateSummary()
+  const firstRealRenderPlanSummary =
+  getDryRunFirstRealRenderPlanSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4969,6 +4971,63 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         ? [
             'Safety rules:',
             ...realRenderGateSummary.safetyRules.map((rule) => `- ${rule}`),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(firstRealRenderPlanSummary
+  ? [
+      'FIRST REAL-RENDER PLAN',
+      '',
+      `Plan status: ${firstRealRenderPlanSummary.planStatus || 'Unknown'}`,
+      `Audio status: ${firstRealRenderPlanSummary.audioStatus || 'Unknown'}`,
+      `Recommended first target: ${
+        firstRealRenderPlanSummary.recommendedFirstTarget || 'Unknown'
+      }`,
+      `Strategy: ${
+        firstRealRenderPlanSummary.rendererStrategy.strategyType || 'Unknown'
+      }`,
+      `Implementation status: ${
+        firstRealRenderPlanSummary.rendererStrategy.implementationStatus ||
+        'Unknown'
+      }`,
+      '',
+      firstRealRenderPlanSummary.recommendedReason
+        ? `Reason: ${firstRealRenderPlanSummary.recommendedReason}`
+        : '',
+      '',
+      ...(firstRealRenderPlanSummary.firstUnlockRequirements.length > 0
+        ? [
+            'First unlock requirements:',
+            ...firstRealRenderPlanSummary.firstUnlockRequirements.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(firstRealRenderPlanSummary.firstValidationChecks.length > 0
+        ? [
+            'First validation checks:',
+            ...firstRealRenderPlanSummary.firstValidationChecks.map(
+              (check) => `- ${check}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(firstRealRenderPlanSummary.laterTargets.length > 0
+        ? [
+            'Later targets:',
+            ...firstRealRenderPlanSummary.laterTargets.map(
+              (target) => `- ${target}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(firstRealRenderPlanSummary.notes.length > 0
+        ? [
+            'Notes:',
+            ...firstRealRenderPlanSummary.notes.map((note) => `- ${note}`),
             '',
           ]
         : []),
