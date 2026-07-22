@@ -7049,6 +7049,12 @@ const hasRealRenderGate = Boolean(
     typeof dryRunArtifactPackage.realRenderGate === 'object' &&
     !Array.isArray(dryRunArtifactPackage.realRenderGate),
 )
+const hasFirstRealRenderPlan = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.firstRealRenderPlan &&
+    typeof dryRunArtifactPackage.firstRealRenderPlan === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.firstRealRenderPlan),
+)
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
    Boolean(realRenderReadinessSummary.readinessStatus)
@@ -7230,6 +7236,14 @@ const hasRealRenderGate = Boolean(
     ? 'Real-render safety gate is present and keeps audio generation blocked until renderer, format, storage, and execution are configured.'
     : 'Real-render safety gate is pending until dry run creates the artefact package.',
   complete: hasRealRenderGate,
+},
+
+{
+  label: 'First real-render plan',
+  detail: hasFirstRealRenderPlan
+    ? 'First real-render plan is present and declares clickTrack as the safest first audio target.'
+    : 'First real-render plan is pending until dry run creates the artefact package.',
+  complete: hasFirstRealRenderPlan,
 },
 
 {
