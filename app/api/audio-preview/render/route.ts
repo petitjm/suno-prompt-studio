@@ -1439,6 +1439,45 @@ realRenderGate: {
   ],
 },
 
+firstRealRenderPlan: {
+  planStatus: 'dry-run-first-real-render-plan-declared',
+  audioStatus: 'not-generated',
+  recommendedFirstTarget: 'clickTrack',
+  recommendedReason:
+    'A click track is the safest first real audio output because tempo, count-in, duration, and section alignment can be checked objectively before musical rendering is attempted.',
+  rendererStrategy: {
+    strategyType: 'server-side-synthetic-click-track',
+    implementationStatus: 'not-implemented',
+    description:
+      'Future implementation should generate a simple timing-only click track from tempo, count-in, cue sheet, and render plan data before attempting guide-track or chord-reference audio.',
+  },
+  firstUnlockRequirements: [
+    'Real render execution endpoint is implemented.',
+    'Audio output format is selected.',
+    'Generated audio storage is configured.',
+    'Click-track render recipe is accepted.',
+    'Expected output placeholder for clickTrack can be replaced only after a real file exists.',
+  ],
+  firstValidationChecks: [
+    'Output file exists.',
+    'Output file path or storage reference is recorded.',
+    'Audio duration follows the cue-sheet section structure.',
+    'One-bar count-in is present.',
+    'Tempo matches the audio preview spec.',
+    'Output remains timing-only with no musical arrangement elements.',
+  ],
+  laterTargets: [
+    'chordReferenceTrack',
+    'guideTrackAudio',
+    'vocalGuideTrack',
+  ],
+  notes: [
+    'Do not attempt all render targets at once.',
+    'Do not start with vocal guide audio because no melody source or vocal strategy exists yet.',
+    'Do not start with full guide-track audio until click-track timing has been proven.',
+  ],
+},
+
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1471,6 +1510,7 @@ function validateDryRunArtifactPackage(pkg: {
   expectedOutputFiles?: unknown
   rendererInputContract?: unknown
   realRenderGate?: unknown
+  firstRealRenderPlan?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -2333,6 +2373,97 @@ if (!realRenderGate) {
   }
 }
 
+const firstRealRenderPlan =
+  pkg.firstRealRenderPlan &&
+  typeof pkg.firstRealRenderPlan === 'object' &&
+  !Array.isArray(pkg.firstRealRenderPlan)
+    ? (pkg.firstRealRenderPlan as Record<string, unknown>)
+    : null
+
+if (!firstRealRenderPlan) {
+  missing.push('firstRealRenderPlan')
+} else {
+  if (
+    firstRealRenderPlan.planStatus !==
+    'dry-run-first-real-render-plan-declared'
+  ) {
+    missing.push('firstRealRenderPlan.planStatus')
+  }
+
+  if (firstRealRenderPlan.audioStatus !== 'not-generated') {
+    missing.push('firstRealRenderPlan.audioStatus')
+  }
+
+  if (firstRealRenderPlan.recommendedFirstTarget !== 'clickTrack') {
+    missing.push('firstRealRenderPlan.recommendedFirstTarget')
+  }
+
+  if (
+    typeof firstRealRenderPlan.recommendedReason !== 'string' ||
+    !firstRealRenderPlan.recommendedReason.trim()
+  ) {
+    missing.push('firstRealRenderPlan.recommendedReason')
+  }
+
+  const rendererStrategy =
+    firstRealRenderPlan.rendererStrategy &&
+    typeof firstRealRenderPlan.rendererStrategy === 'object' &&
+    !Array.isArray(firstRealRenderPlan.rendererStrategy)
+      ? (firstRealRenderPlan.rendererStrategy as Record<string, unknown>)
+      : null
+
+  if (!rendererStrategy) {
+    missing.push('firstRealRenderPlan.rendererStrategy')
+  } else {
+    if (
+      rendererStrategy.strategyType !== 'server-side-synthetic-click-track'
+    ) {
+      missing.push('firstRealRenderPlan.rendererStrategy.strategyType')
+    }
+
+    if (rendererStrategy.implementationStatus !== 'not-implemented') {
+      missing.push(
+        'firstRealRenderPlan.rendererStrategy.implementationStatus',
+      )
+    }
+
+    if (
+      typeof rendererStrategy.description !== 'string' ||
+      !rendererStrategy.description.trim()
+    ) {
+      missing.push('firstRealRenderPlan.rendererStrategy.description')
+    }
+  }
+
+  if (
+    !Array.isArray(firstRealRenderPlan.firstUnlockRequirements) ||
+    firstRealRenderPlan.firstUnlockRequirements.length === 0
+  ) {
+    missing.push('firstRealRenderPlan.firstUnlockRequirements')
+  }
+
+  if (
+    !Array.isArray(firstRealRenderPlan.firstValidationChecks) ||
+    firstRealRenderPlan.firstValidationChecks.length === 0
+  ) {
+    missing.push('firstRealRenderPlan.firstValidationChecks')
+  }
+
+  if (
+    !Array.isArray(firstRealRenderPlan.laterTargets) ||
+    firstRealRenderPlan.laterTargets.length === 0
+  ) {
+    missing.push('firstRealRenderPlan.laterTargets')
+  }
+
+  if (
+    !Array.isArray(firstRealRenderPlan.notes) ||
+    firstRealRenderPlan.notes.length === 0
+  ) {
+    missing.push('firstRealRenderPlan.notes')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -2506,7 +2637,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, and keeps real rendering blocked behind a safety gate.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, and declares click track as the first real-render target.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
