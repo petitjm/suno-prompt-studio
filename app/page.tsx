@@ -4201,6 +4201,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
   const rendererInputContractSummary =
   getDryRunRendererInputContractSummary()
+  const realRenderGateSummary = getDryRunRealRenderGateSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4870,6 +4871,45 @@ const fullPackPipelineStatus = fullPackPipelineComplete
             ...rendererInputContractSummary.handoffRules.map(
               (rule) => `- ${rule}`,
             ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(realRenderGateSummary
+  ? [
+      'REAL-RENDER SAFETY GATE',
+      '',
+      `Gate status: ${realRenderGateSummary.gateStatus || 'Unknown'}`,
+      `Can render audio: ${realRenderGateSummary.canRenderAudio ? 'yes' : 'no'}`,
+      `Audio status: ${realRenderGateSummary.audioStatus || 'Unknown'}`,
+      `Renderer status: ${realRenderGateSummary.rendererStatus || 'Unknown'}`,
+      `Storage status: ${realRenderGateSummary.storageStatus || 'Unknown'}`,
+      `Format status: ${realRenderGateSummary.formatStatus || 'Unknown'}`,
+      `Dry run ready: ${realRenderGateSummary.dryRunReady ? 'yes' : 'no'}`,
+      '',
+      ...(realRenderGateSummary.blockedReasons.length > 0
+        ? [
+            'Blocked reasons:',
+            ...realRenderGateSummary.blockedReasons.map(
+              (reason) => `- ${reason}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(realRenderGateSummary.requiredToUnlock.length > 0
+        ? [
+            'Required to unlock:',
+            ...realRenderGateSummary.requiredToUnlock.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(realRenderGateSummary.safetyRules.length > 0
+        ? [
+            'Safety rules:',
+            ...realRenderGateSummary.safetyRules.map((rule) => `- ${rule}`),
             '',
           ]
         : []),
