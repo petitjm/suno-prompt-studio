@@ -2763,6 +2763,8 @@ const copyAudioPreviewArtifactPackage = async () => {
   const rendererInputContractSummary =
   getDryRunRendererInputContractSummary()
   const realRenderGateSummary = getDryRunRealRenderGateSummary()
+  const firstRealRenderPlanSummary =
+  getDryRunFirstRealRenderPlanSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3141,6 +3143,63 @@ const copyAudioPreviewArtifactPackage = async () => {
             ...realRenderGateSummary.safetyRules.map(
               (rule) => `- ${rule}`,
             ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(firstRealRenderPlanSummary
+  ? [
+      'FIRST REAL-RENDER PLAN',
+      '',
+      `Plan status: ${firstRealRenderPlanSummary.planStatus || 'Unknown'}`,
+      `Audio status: ${firstRealRenderPlanSummary.audioStatus || 'Unknown'}`,
+      `Recommended first target: ${
+        firstRealRenderPlanSummary.recommendedFirstTarget || 'Unknown'
+      }`,
+      `Strategy: ${
+        firstRealRenderPlanSummary.rendererStrategy.strategyType || 'Unknown'
+      }`,
+      `Implementation status: ${
+        firstRealRenderPlanSummary.rendererStrategy.implementationStatus ||
+        'Unknown'
+      }`,
+      '',
+      firstRealRenderPlanSummary.recommendedReason
+        ? `Reason: ${firstRealRenderPlanSummary.recommendedReason}`
+        : '',
+      '',
+      ...(firstRealRenderPlanSummary.firstUnlockRequirements.length > 0
+        ? [
+            'First unlock requirements:',
+            ...firstRealRenderPlanSummary.firstUnlockRequirements.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(firstRealRenderPlanSummary.firstValidationChecks.length > 0
+        ? [
+            'First validation checks:',
+            ...firstRealRenderPlanSummary.firstValidationChecks.map(
+              (check) => `- ${check}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(firstRealRenderPlanSummary.laterTargets.length > 0
+        ? [
+            'Later targets:',
+            ...firstRealRenderPlanSummary.laterTargets.map(
+              (target) => `- ${target}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(firstRealRenderPlanSummary.notes.length > 0
+        ? [
+            'Notes:',
+            ...firstRealRenderPlanSummary.notes.map((note) => `- ${note}`),
             '',
           ]
         : []),
@@ -5472,7 +5531,11 @@ const renderAudioPreviewReadinessCard = (
   )
 
   return (
+
+
+
     <div className={wrapperClassName}>
+    
       <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
         Audio Preview Readiness
       </div>
@@ -6368,6 +6431,98 @@ const getDryRunRealRenderGateSummary = () => {
   }
 }
 
+const getDryRunFirstRealRenderPlanSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const firstRealRenderPlan =
+    dryRunArtifactPackage.firstRealRenderPlan &&
+    typeof dryRunArtifactPackage.firstRealRenderPlan === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.firstRealRenderPlan)
+      ? (dryRunArtifactPackage.firstRealRenderPlan as Record<string, unknown>)
+      : null
+
+  if (!firstRealRenderPlan) {
+    return null
+  }
+
+  const rendererStrategy =
+    firstRealRenderPlan.rendererStrategy &&
+    typeof firstRealRenderPlan.rendererStrategy === 'object' &&
+    !Array.isArray(firstRealRenderPlan.rendererStrategy)
+      ? (firstRealRenderPlan.rendererStrategy as Record<string, unknown>)
+      : null
+
+  const firstUnlockRequirements = Array.isArray(
+    firstRealRenderPlan.firstUnlockRequirements,
+  )
+    ? firstRealRenderPlan.firstUnlockRequirements.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const firstValidationChecks = Array.isArray(
+    firstRealRenderPlan.firstValidationChecks,
+  )
+    ? firstRealRenderPlan.firstValidationChecks.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const laterTargets = Array.isArray(firstRealRenderPlan.laterTargets)
+    ? firstRealRenderPlan.laterTargets.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const notes = Array.isArray(firstRealRenderPlan.notes)
+    ? firstRealRenderPlan.notes.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    planStatus:
+      typeof firstRealRenderPlan.planStatus === 'string'
+        ? firstRealRenderPlan.planStatus
+        : '',
+    audioStatus:
+      typeof firstRealRenderPlan.audioStatus === 'string'
+        ? firstRealRenderPlan.audioStatus
+        : '',
+    recommendedFirstTarget:
+      typeof firstRealRenderPlan.recommendedFirstTarget === 'string'
+        ? firstRealRenderPlan.recommendedFirstTarget
+        : '',
+    recommendedReason:
+      typeof firstRealRenderPlan.recommendedReason === 'string'
+        ? firstRealRenderPlan.recommendedReason
+        : '',
+    rendererStrategy: {
+      strategyType:
+        typeof rendererStrategy?.strategyType === 'string'
+          ? rendererStrategy.strategyType
+          : '',
+      implementationStatus:
+        typeof rendererStrategy?.implementationStatus === 'string'
+          ? rendererStrategy.implementationStatus
+          : '',
+      description:
+        typeof rendererStrategy?.description === 'string'
+          ? rendererStrategy.description
+          : '',
+    },
+    firstUnlockRequirements,
+    firstValidationChecks,
+    laterTargets,
+    notes,
+  }
+}
 
 const getDryRunRendererContractSummary = () => {
   if (!dryRunRenderManifest) {
@@ -8693,6 +8848,8 @@ const dryRunExpectedOutputFileRows = getDryRunExpectedOutputFileRows()
 const dryRunRendererInputContractSummary =
   getDryRunRendererInputContractSummary()
 const dryRunRealRenderGateSummary = getDryRunRealRenderGateSummary()
+const dryRunFirstRealRenderPlanSummary =
+  getDryRunFirstRealRenderPlanSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -12453,13 +12610,7 @@ return (
     Machine-readable package containing the dry-run render job, render plan, cue sheet, manifest, handoff bundle, and validations. No audio file is generated yet.
   </div>
 
-  <button
-    type="button"
-    onClick={() => copyAudioPreviewArtifactPackage()}
-    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-  >
-    {justCopiedAudioPreviewArtifactPackage ? 'Copied ✓' : 'Copy artefact package'}
-  </button>
+  
 </div>
 
 {dryRunArtifactPackageValidation ? (
@@ -12534,6 +12685,15 @@ return (
 
 {dryRunArtifactPackage ? (
   <details className="rounded border border-gray-800 bg-gray-950 p-4">
+
+  <button
+    type="button"
+    onClick={() => copyAudioPreviewArtifactPackage()}
+    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+  >
+    {justCopiedAudioPreviewArtifactPackage ? 'Copied ✓' : 'Copy artefact package'}
+  </button>
+
     <summary className="cursor-pointer text-sm font-medium text-gray-200">
       Audio preview dry-run artefact package
     </summary>
@@ -13134,6 +13294,97 @@ return (
         <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
           {dryRunRealRenderGateSummary.safetyRules.map((rule) => (
             <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
+{dryRunFirstRealRenderPlanSummary ? (
+  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-3 text-xs leading-5 text-yellow-100">
+    <div className="font-medium uppercase tracking-wide text-yellow-200">
+      First real-render plan
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">Recommended first target</div>
+        <div className="mt-1 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.recommendedFirstTarget ||
+            'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">Audio status</div>
+        <div className="mt-1 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.audioStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">Strategy</div>
+        <div className="mt-1 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.rendererStrategy.strategyType ||
+            'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">Implementation</div>
+        <div className="mt-1 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.rendererStrategy
+            .implementationStatus || 'Unknown'}
+        </div>
+      </div>
+    </div>
+
+    {dryRunFirstRealRenderPlanSummary.recommendedReason ? (
+      <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">Reason</div>
+        <div className="mt-1 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.recommendedReason}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunFirstRealRenderPlanSummary.firstUnlockRequirements.length > 0 ? (
+      <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">
+          First unlock requirements
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.firstUnlockRequirements.map(
+            (requirement) => (
+              <li key={requirement}>{requirement}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunFirstRealRenderPlanSummary.firstValidationChecks.length > 0 ? (
+      <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">
+          First validation checks
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.firstValidationChecks.map(
+            (check) => (
+              <li key={check}>{check}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunFirstRealRenderPlanSummary.laterTargets.length > 0 ? (
+      <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+        <div className="font-medium text-yellow-100">Later targets</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
+          {dryRunFirstRealRenderPlanSummary.laterTargets.map((target) => (
+            <li key={target}>{target}</li>
           ))}
         </ul>
       </div>
