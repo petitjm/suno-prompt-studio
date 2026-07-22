@@ -2760,7 +2760,8 @@ const copyAudioPreviewArtifactPackage = async () => {
   const vocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
   const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
-  
+  const rendererInputContractSummary =
+  getDryRunRendererInputContractSummary()
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3049,6 +3050,58 @@ const copyAudioPreviewArtifactPackage = async () => {
           : []),
         '',
       ]),
+    ]
+  : []),
+  ...(rendererInputContractSummary
+  ? [
+      'RENDERER INPUT CONTRACT',
+      '',
+      `Contract status: ${rendererInputContractSummary.contractStatus || 'Unknown'}`,
+      `Audio status: ${rendererInputContractSummary.audioStatus || 'Unknown'}`,
+      `Renderer status: ${rendererInputContractSummary.rendererStatus || 'Unknown'}`,
+      `Storage status: ${rendererInputContractSummary.storageStatus || 'Unknown'}`,
+      `Format status: ${rendererInputContractSummary.formatStatus || 'Unknown'}`,
+      '',
+      rendererInputContractSummary.purpose
+        ? `Purpose: ${rendererInputContractSummary.purpose}`
+        : '',
+      '',
+      ...(rendererInputContractSummary.requiredBeforeRealRender.length > 0
+        ? [
+            'Required before real render:',
+            ...rendererInputContractSummary.requiredBeforeRealRender.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(rendererInputContractSummary.selectedOutputKeys.length > 0
+        ? [
+            'Selected outputs:',
+            ...rendererInputContractSummary.selectedOutputKeys.map(
+              (key) => `- ${key}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(rendererInputContractSummary.optionalOutputKeys.length > 0
+        ? [
+            'Optional outputs:',
+            ...rendererInputContractSummary.optionalOutputKeys.map(
+              (key) => `- ${key}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(rendererInputContractSummary.handoffRules.length > 0
+        ? [
+            'Handoff rules:',
+            ...rendererInputContractSummary.handoffRules.map(
+              (rule) => `- ${rule}`,
+            ),
+            '',
+          ]
+        : []),
     ]
   : []),
   'ARTEFACT PACKAGE JSON',
@@ -6018,7 +6071,97 @@ const getDryRunExpectedOutputFileRows = () => {
 }
 
 
+const getDryRunRendererInputContractSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
 
+  const rendererInputContract =
+    dryRunArtifactPackage.rendererInputContract &&
+    typeof dryRunArtifactPackage.rendererInputContract === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.rendererInputContract)
+      ? (dryRunArtifactPackage.rendererInputContract as Record<string, unknown>)
+      : null
+
+  if (!rendererInputContract) {
+    return null
+  }
+
+  const requiredInputObjects = Array.isArray(
+    rendererInputContract.requiredInputObjects,
+  )
+    ? rendererInputContract.requiredInputObjects.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const selectedOutputKeys = Array.isArray(
+    rendererInputContract.selectedOutputKeys,
+  )
+    ? rendererInputContract.selectedOutputKeys.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const optionalOutputKeys = Array.isArray(
+    rendererInputContract.optionalOutputKeys,
+  )
+    ? rendererInputContract.optionalOutputKeys.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const requiredBeforeRealRender = Array.isArray(
+    rendererInputContract.requiredBeforeRealRender,
+  )
+    ? rendererInputContract.requiredBeforeRealRender.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  const handoffRules = Array.isArray(rendererInputContract.handoffRules)
+    ? rendererInputContract.handoffRules.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    contractStatus:
+      typeof rendererInputContract.contractStatus === 'string'
+        ? rendererInputContract.contractStatus
+        : '',
+    audioStatus:
+      typeof rendererInputContract.audioStatus === 'string'
+        ? rendererInputContract.audioStatus
+        : '',
+    rendererStatus:
+      typeof rendererInputContract.rendererStatus === 'string'
+        ? rendererInputContract.rendererStatus
+        : '',
+    storageStatus:
+      typeof rendererInputContract.storageStatus === 'string'
+        ? rendererInputContract.storageStatus
+        : '',
+    formatStatus:
+      typeof rendererInputContract.formatStatus === 'string'
+        ? rendererInputContract.formatStatus
+        : '',
+    purpose:
+      typeof rendererInputContract.purpose === 'string'
+        ? rendererInputContract.purpose
+        : '',
+    requiredInputObjects,
+    selectedOutputKeys,
+    optionalOutputKeys,
+    requiredBeforeRealRender,
+    handoffRules,
+  }
+}
 
 
 const getDryRunRendererContractSummary = () => {
@@ -8302,6 +8445,8 @@ const dryRunRealRenderReadinessSummary =
   const dryRunVocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
 const dryRunExpectedOutputFileRows = getDryRunExpectedOutputFileRows()
+const dryRunRendererInputContractSummary =
+  getDryRunRendererInputContractSummary()
 const showRealRenderBlockedBanner =
   dryRunRealRenderReadinessSummary.readyForRealRender === false &&
   dryRunRealRenderReadinessSummary.readinessStatus ===
@@ -12544,6 +12689,102 @@ return (
         </div>
       ))}
     </div>
+  </div>
+) : null}
+
+{dryRunRendererInputContractSummary ? (
+  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+    <div className="font-medium uppercase tracking-wide text-gray-500">
+      Renderer input contract
+    </div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Contract status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunRendererInputContractSummary.contractStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Audio status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunRendererInputContractSummary.audioStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Renderer status</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunRendererInputContractSummary.rendererStatus || 'Unknown'}
+        </div>
+      </div>
+
+      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Storage / format</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunRendererInputContractSummary.storageStatus || 'Unknown'} /{' '}
+          {dryRunRendererInputContractSummary.formatStatus || 'Unknown'}
+        </div>
+      </div>
+    </div>
+
+    {dryRunRendererInputContractSummary.purpose ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Purpose</div>
+        <div className="mt-1 text-gray-500">
+          {dryRunRendererInputContractSummary.purpose}
+        </div>
+      </div>
+    ) : null}
+
+    {dryRunRendererInputContractSummary.requiredBeforeRealRender.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">
+          Required before real render
+        </div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunRendererInputContractSummary.requiredBeforeRealRender.map(
+            (requirement) => (
+              <li key={requirement}>{requirement}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRendererInputContractSummary.selectedOutputKeys.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Selected outputs</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunRendererInputContractSummary.selectedOutputKeys.map((key) => (
+            <li key={key}>{key}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRendererInputContractSummary.optionalOutputKeys.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Optional outputs</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunRendererInputContractSummary.optionalOutputKeys.map((key) => (
+            <li key={key}>{key}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+
+    {dryRunRendererInputContractSummary.handoffRules.length > 0 ? (
+      <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+        <div className="font-medium text-gray-300">Handoff rules</div>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+          {dryRunRendererInputContractSummary.handoffRules.map((rule) => (
+            <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
   </div>
 ) : null}
 
