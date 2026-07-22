@@ -1406,6 +1406,39 @@ rendererInputContract: {
   ],
 },
 
+realRenderGate: {
+  gateStatus: 'blocked',
+  canRenderAudio: false,
+  audioStatus: 'not-generated',
+  rendererStatus: 'not-connected',
+  storageStatus: 'not-configured',
+  formatStatus: 'not-selected',
+  dryRunReady:
+    dryRunRenderPlanValidation.ready === true &&
+    dryRunCueSheetValidation.ready === true &&
+    dryRunRenderManifestValidation.ready === true &&
+    dryRunHandoffBundleValidation.ready === true,
+  blockedReasons: [
+    'Real audio renderer is not connected.',
+    'Audio output format has not been selected.',
+    'Generated audio storage has not been configured.',
+    'Render execution endpoint has not been implemented.',
+  ],
+  requiredToUnlock: [
+    'Connect a real renderer implementation.',
+    'Choose an audio output format.',
+    'Configure generated audio storage.',
+    'Add a real render execution endpoint.',
+    'Require all selected output files to be written before marking them generated.',
+  ],
+  safetyRules: [
+    'The dry-run package may be copied, inspected, and validated.',
+    'The dry-run package must not create audio files.',
+    'The app must not show download links until stored output files exist.',
+    'The app must not mark the preview as generated while this gate is blocked.',
+  ],
+},
+
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1437,6 +1470,7 @@ function validateDryRunArtifactPackage(pkg: {
   vocalGuideRenderRecipe?: unknown
   expectedOutputFiles?: unknown
   rendererInputContract?: unknown
+  realRenderGate?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -2239,6 +2273,66 @@ if (!rendererInputContract) {
   }
 }
 
+const realRenderGate =
+  pkg.realRenderGate &&
+  typeof pkg.realRenderGate === 'object' &&
+  !Array.isArray(pkg.realRenderGate)
+    ? (pkg.realRenderGate as Record<string, unknown>)
+    : null
+
+if (!realRenderGate) {
+  missing.push('realRenderGate')
+} else {
+  if (realRenderGate.gateStatus !== 'blocked') {
+    missing.push('realRenderGate.gateStatus')
+  }
+
+  if (realRenderGate.canRenderAudio !== false) {
+    missing.push('realRenderGate.canRenderAudio')
+  }
+
+  if (realRenderGate.audioStatus !== 'not-generated') {
+    missing.push('realRenderGate.audioStatus')
+  }
+
+  if (realRenderGate.rendererStatus !== 'not-connected') {
+    missing.push('realRenderGate.rendererStatus')
+  }
+
+  if (realRenderGate.storageStatus !== 'not-configured') {
+    missing.push('realRenderGate.storageStatus')
+  }
+
+  if (realRenderGate.formatStatus !== 'not-selected') {
+    missing.push('realRenderGate.formatStatus')
+  }
+
+  if (typeof realRenderGate.dryRunReady !== 'boolean') {
+    missing.push('realRenderGate.dryRunReady')
+  }
+
+  if (
+    !Array.isArray(realRenderGate.blockedReasons) ||
+    realRenderGate.blockedReasons.length === 0
+  ) {
+    missing.push('realRenderGate.blockedReasons')
+  }
+
+  if (
+    !Array.isArray(realRenderGate.requiredToUnlock) ||
+    realRenderGate.requiredToUnlock.length === 0
+  ) {
+    missing.push('realRenderGate.requiredToUnlock')
+  }
+
+  if (
+    !Array.isArray(realRenderGate.safetyRules) ||
+    realRenderGate.safetyRules.length === 0
+  ) {
+    missing.push('realRenderGate.safetyRules')
+  }
+}
+
   const requiredObjects: Array<[string, unknown]> = [
     ['renderJob', pkg.renderJob],
     ['dryRunRenderPlan', pkg.dryRunRenderPlan],
@@ -2412,7 +2506,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, and includes the renderer input contract.'
+       ? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, and keeps real rendering blocked behind a safety gate.'
         : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
