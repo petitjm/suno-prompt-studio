@@ -215,6 +215,9 @@ export default function Page() {
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false)
   const [audioPreviewMessage, setAudioPreviewMessage] = useState('')
   const [submittingAudioPreviewRender, setSubmittingAudioPreviewRender] = useState(false)
+  const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false)
+const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
+  useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] = useState('')
   const [audioPreviewRenderJob, setAudioPreviewRenderJob] = useState<Record<string, unknown> | null>(null)
   const [audioPreviewRenderResponse, setAudioPreviewRenderResponse] = useState('')
@@ -2607,6 +2610,53 @@ const requestAudioPreview = async () => {
     setAudioPreviewMessage('Could not send audio preview spec.')
   } finally {
     setRequestingAudioPreview(false)
+  }
+}
+
+const testBlockedRealRenderRoute = async () => {
+  if (!dryRunArtifactPackage) {
+    setRealRenderRouteTestResponse({
+      ok: false,
+      status: 'missing-dry-run-artifact-package',
+      message: 'Submit dry run before testing the blocked real-render route.',
+    })
+    return
+  }
+
+  setTestingRealRenderRoute(true)
+  setRealRenderRouteTestResponse(null)
+
+  try {
+    const response = await fetch('/api/audio-preview/real-render', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requestedTarget: 'clickTrack',
+        rendererInputContract: dryRunArtifactPackage.rendererInputContract,
+        realRenderGate: dryRunArtifactPackage.realRenderGate,
+        firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
+      }),
+    })
+
+    const data = await response.json()
+
+    setRealRenderRouteTestResponse({
+      httpStatus: response.status,
+      ...data,
+    })
+  } catch (error) {
+    setRealRenderRouteTestResponse({
+      ok: false,
+      status: 'request-failed',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Blocked real-render route test failed.',
+    })
+  } finally {
+    setTestingRealRenderRoute(false)
   }
 }
 
@@ -12087,6 +12137,59 @@ return (
         >
           Generate audio blocked
         </button>
+
+        <button
+          type="button"
+          onClick={() => testBlockedRealRenderRoute()}
+          disabled={testingRealRenderRoute || !dryRunArtifactPackage}
+          title="Safely call the blocked real-render route and confirm it returns blocked status."
+          className="rounded border border-purple-800 px-3 py-1 text-xs font-medium text-purple-200 hover:bg-purple-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+        >
+          {testingRealRenderRoute ? 'Testing blocked route...' : 'Test blocked route'}
+        </button>
+
+        {realRenderRouteTestResponse ? (
+  <div className="mt-2 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
+    <div className="font-medium">Blocked real-render route test</div>
+
+    <div className="mt-1 text-purple-100/80">
+      HTTP status:{' '}
+      {typeof realRenderRouteTestResponse.httpStatus === 'number'
+        ? realRenderRouteTestResponse.httpStatus
+        : 'not available'}
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      Status:{' '}
+      {typeof realRenderRouteTestResponse.status === 'string'
+        ? realRenderRouteTestResponse.status
+        : 'unknown'}
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      Audio status:{' '}
+      {typeof realRenderRouteTestResponse.audioStatus === 'string'
+        ? realRenderRouteTestResponse.audioStatus
+        : 'unknown'}
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      Renderer status:{' '}
+      {typeof realRenderRouteTestResponse.rendererStatus === 'string'
+        ? realRenderRouteTestResponse.rendererStatus
+        : 'unknown'}
+    </div>
+
+    <details className="mt-2">
+      <summary className="cursor-pointer text-purple-200">
+        Raw blocked route response
+      </summary>
+      <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-[11px] text-purple-100/80">
+        {JSON.stringify(realRenderRouteTestResponse, null, 2)}
+      </pre>
+    </details>
+  </div>
+) : null}
 
         {dryRunRealRenderGateSummary ? (
           <div className="mt-2 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
