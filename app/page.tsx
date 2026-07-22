@@ -4157,6 +4157,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   const vocalGuideRenderRecipeSummary =
   getDryRunVocalGuideRenderRecipeSummary()
   const expectedOutputFileRows = getDryRunExpectedOutputFileRows()
+  const rendererInputContractSummary =
+  getDryRunRendererInputContractSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -4777,6 +4779,58 @@ const fullPackPipelineStatus = fullPackPipelineComplete
           : []),
         '',
       ]),
+    ]
+  : []),
+  ...(rendererInputContractSummary
+  ? [
+      'RENDERER INPUT CONTRACT',
+      '',
+      `Contract status: ${rendererInputContractSummary.contractStatus || 'Unknown'}`,
+      `Audio status: ${rendererInputContractSummary.audioStatus || 'Unknown'}`,
+      `Renderer status: ${rendererInputContractSummary.rendererStatus || 'Unknown'}`,
+      `Storage status: ${rendererInputContractSummary.storageStatus || 'Unknown'}`,
+      `Format status: ${rendererInputContractSummary.formatStatus || 'Unknown'}`,
+      '',
+      rendererInputContractSummary.purpose
+        ? `Purpose: ${rendererInputContractSummary.purpose}`
+        : '',
+      '',
+      ...(rendererInputContractSummary.requiredBeforeRealRender.length > 0
+        ? [
+            'Required before real render:',
+            ...rendererInputContractSummary.requiredBeforeRealRender.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(rendererInputContractSummary.selectedOutputKeys.length > 0
+        ? [
+            'Selected outputs:',
+            ...rendererInputContractSummary.selectedOutputKeys.map(
+              (key) => `- ${key}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(rendererInputContractSummary.optionalOutputKeys.length > 0
+        ? [
+            'Optional outputs:',
+            ...rendererInputContractSummary.optionalOutputKeys.map(
+              (key) => `- ${key}`,
+            ),
+            '',
+          ]
+        : []),
+      ...(rendererInputContractSummary.handoffRules.length > 0
+        ? [
+            'Handoff rules:',
+            ...rendererInputContractSummary.handoffRules.map(
+              (rule) => `- ${rule}`,
+            ),
+            '',
+          ]
+        : []),
     ]
   : []),
       'ARTEFACT PACKAGE JSON',
