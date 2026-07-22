@@ -6665,6 +6665,19 @@ const hasVocalGuideRenderRecipe = Boolean(
     typeof dryRunArtifactPackage.vocalGuideRenderRecipe === 'object' &&
     !Array.isArray(dryRunArtifactPackage.vocalGuideRenderRecipe),
 )
+const hasExpectedOutputFiles = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.expectedOutputFiles &&
+    typeof dryRunArtifactPackage.expectedOutputFiles === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.expectedOutputFiles),
+)
+
+const hasRendererInputContract = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.rendererInputContract &&
+    typeof dryRunArtifactPackage.rendererInputContract === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.rendererInputContract),
+)
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
    Boolean(realRenderReadinessSummary.readinessStatus)
@@ -6825,6 +6838,20 @@ const hasVocalGuideRenderRecipe = Boolean(
     ? 'Optional vocal-guide render recipe is present in the dry-run artefact package.'
     : 'Optional vocal-guide render recipe is pending until dry run creates the artefact package.',
   complete: hasVocalGuideRenderRecipe,
+},
+{
+  label: 'Expected output file placeholders',
+  detail: hasExpectedOutputFiles
+    ? 'Expected output file placeholders are present and remain marked not-generated.'
+    : 'Expected output file placeholders are pending until dry run creates the artefact package.',
+  complete: hasExpectedOutputFiles,
+},
+{
+  label: 'Renderer input contract',
+  detail: hasRendererInputContract
+    ? 'Renderer input contract is present and confirms the real renderer is not connected yet.'
+    : 'Renderer input contract is pending until dry run creates the artefact package.',
+  complete: hasRendererInputContract,
 },
 
 {
