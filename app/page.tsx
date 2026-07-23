@@ -2615,6 +2615,55 @@ const requestAudioPreview = async () => {
   }
 }
 
+const getRealRenderRouteReceivedConfigurationSummary = () => {
+  if (
+    !realRenderRouteTestResponse ||
+    typeof realRenderRouteTestResponse.receivedConfigurationSummary !==
+      'object' ||
+    realRenderRouteTestResponse.receivedConfigurationSummary === null ||
+    Array.isArray(realRenderRouteTestResponse.receivedConfigurationSummary)
+  ) {
+    return null
+  }
+
+  const receivedConfigurationSummary =
+    realRenderRouteTestResponse.receivedConfigurationSummary as Record<
+      string,
+      unknown
+    >
+
+  return {
+    configurationStatus:
+      typeof receivedConfigurationSummary.configurationStatus === 'string'
+        ? receivedConfigurationSummary.configurationStatus
+        : '',
+    audioStatus:
+      typeof receivedConfigurationSummary.audioStatus === 'string'
+        ? receivedConfigurationSummary.audioStatus
+        : '',
+    rendererStatus:
+      typeof receivedConfigurationSummary.rendererStatus === 'string'
+        ? receivedConfigurationSummary.rendererStatus
+        : '',
+    outputFormatStatus:
+      typeof receivedConfigurationSummary.outputFormatStatus === 'string'
+        ? receivedConfigurationSummary.outputFormatStatus
+        : '',
+    sampleRateStatus:
+      typeof receivedConfigurationSummary.sampleRateStatus === 'string'
+        ? receivedConfigurationSummary.sampleRateStatus
+        : '',
+    storageStatus:
+      typeof receivedConfigurationSummary.storageStatus === 'string'
+        ? receivedConfigurationSummary.storageStatus
+        : '',
+    firstTargetKey:
+      typeof receivedConfigurationSummary.firstTargetKey === 'string'
+        ? receivedConfigurationSummary.firstTargetKey
+        : '',
+  }
+}
+
 const getRealRenderRouteReceivedConfigurationStatus = () => {
   if (
     !realRenderRouteTestResponse ||
@@ -12587,6 +12636,50 @@ return (
     ? 'Passed — route returned 423 blocked, received configuration placeholders, and generated no audio.'
     : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders.'}
 </div>
+
+{getRealRenderRouteReceivedConfigurationSummary() ? (
+  <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+    <div className="font-medium text-purple-100">
+      Received configuration summary
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      Configuration status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.configurationStatus || 'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Audio status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()?.audioStatus ||
+        'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Renderer status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()?.rendererStatus ||
+        'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Output format status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.outputFormatStatus || 'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Sample rate status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.sampleRateStatus || 'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Storage status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()?.storageStatus ||
+        'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      First target:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()?.firstTargetKey ||
+        'unknown'}
+    </div>
+  </div>
+) : null}
 
     <details className="mt-2">
       <summary className="cursor-pointer text-purple-200">
