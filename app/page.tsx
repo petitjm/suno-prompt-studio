@@ -2819,6 +2819,9 @@ const copyAudioPreviewArtifactPackage = async () => {
   getDryRunFirstRealRenderPlanSummary()
   const realRenderRouteScaffoldSummary =
   getDryRunRealRenderRouteScaffoldSummary()
+
+  const realRenderConfigurationSummary =
+  getDryRunRealRenderConfigurationSummary()
   const blockedRealRenderRouteTestPassed =
   realRenderRouteTestResponse !== null &&
   realRenderRouteTestResponse.httpStatus === 423 &&
@@ -4398,6 +4401,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getDryRunFirstRealRenderPlanSummary()
   const realRenderRouteScaffoldSummary =
   getDryRunRealRenderRouteScaffoldSummary()
+  const realRenderConfigurationSummary =
+  getDryRunRealRenderConfigurationSummary()
   const blockedRealRenderRouteTestPassed =
   realRenderRouteTestResponse !== null &&
   realRenderRouteTestResponse.httpStatus === 423 &&
@@ -6967,6 +6972,156 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
   }
 }
 
+const getDryRunRealRenderConfigurationSummary = () => {
+  if (!dryRunArtifactPackage) {
+    return null
+  }
+
+  const realRenderConfiguration =
+    dryRunArtifactPackage.realRenderConfiguration &&
+    typeof dryRunArtifactPackage.realRenderConfiguration === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderConfiguration)
+      ? (dryRunArtifactPackage.realRenderConfiguration as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!realRenderConfiguration) {
+    return null
+  }
+
+  const rendererImplementation =
+    realRenderConfiguration.rendererImplementation &&
+    typeof realRenderConfiguration.rendererImplementation === 'object' &&
+    !Array.isArray(realRenderConfiguration.rendererImplementation)
+      ? (realRenderConfiguration.rendererImplementation as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  const outputFormat =
+    realRenderConfiguration.outputFormat &&
+    typeof realRenderConfiguration.outputFormat === 'object' &&
+    !Array.isArray(realRenderConfiguration.outputFormat)
+      ? (realRenderConfiguration.outputFormat as Record<string, unknown>)
+      : null
+
+  const sampleRate =
+    realRenderConfiguration.sampleRate &&
+    typeof realRenderConfiguration.sampleRate === 'object' &&
+    !Array.isArray(realRenderConfiguration.sampleRate)
+      ? (realRenderConfiguration.sampleRate as Record<string, unknown>)
+      : null
+
+  const storage =
+    realRenderConfiguration.storage &&
+    typeof realRenderConfiguration.storage === 'object' &&
+    !Array.isArray(realRenderConfiguration.storage)
+      ? (realRenderConfiguration.storage as Record<string, unknown>)
+      : null
+
+  const firstTarget =
+    realRenderConfiguration.firstTarget &&
+    typeof realRenderConfiguration.firstTarget === 'object' &&
+    !Array.isArray(realRenderConfiguration.firstTarget)
+      ? (realRenderConfiguration.firstTarget as Record<string, unknown>)
+      : null
+
+  const unlockRequirements = Array.isArray(
+    realRenderConfiguration.unlockRequirements,
+  )
+    ? realRenderConfiguration.unlockRequirements.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    configurationStatus:
+      typeof realRenderConfiguration.configurationStatus === 'string'
+        ? realRenderConfiguration.configurationStatus
+        : '',
+    audioStatus:
+      typeof realRenderConfiguration.audioStatus === 'string'
+        ? realRenderConfiguration.audioStatus
+        : '',
+    rendererImplementation: {
+      status:
+        typeof rendererImplementation?.status === 'string'
+          ? rendererImplementation.status
+          : '',
+      selectedRenderer:
+        typeof rendererImplementation?.selectedRenderer === 'string'
+          ? rendererImplementation.selectedRenderer
+          : null,
+      requiredDecision:
+        typeof rendererImplementation?.requiredDecision === 'string'
+          ? rendererImplementation.requiredDecision
+          : '',
+    },
+    outputFormat: {
+      status:
+        typeof outputFormat?.status === 'string' ? outputFormat.status : '',
+      selectedFormat:
+        typeof outputFormat?.selectedFormat === 'string'
+          ? outputFormat.selectedFormat
+          : null,
+      allowedFirstFormats: Array.isArray(outputFormat?.allowedFirstFormats)
+        ? outputFormat.allowedFirstFormats.filter(
+            (item): item is string =>
+              typeof item === 'string' && item.trim().length > 0,
+          )
+        : [],
+      requiredDecision:
+        typeof outputFormat?.requiredDecision === 'string'
+          ? outputFormat.requiredDecision
+          : '',
+    },
+    sampleRate: {
+      status:
+        typeof sampleRate?.status === 'string' ? sampleRate.status : '',
+      selectedSampleRateHz:
+        typeof sampleRate?.selectedSampleRateHz === 'number'
+          ? sampleRate.selectedSampleRateHz
+          : null,
+      allowedFirstSampleRatesHz: Array.isArray(
+        sampleRate?.allowedFirstSampleRatesHz,
+      )
+        ? sampleRate.allowedFirstSampleRatesHz.filter(
+            (item): item is number => typeof item === 'number',
+          )
+        : [],
+      requiredDecision:
+        typeof sampleRate?.requiredDecision === 'string'
+          ? sampleRate.requiredDecision
+          : '',
+    },
+    storage: {
+      status: typeof storage?.status === 'string' ? storage.status : '',
+      selectedProvider:
+        typeof storage?.selectedProvider === 'string'
+          ? storage.selectedProvider
+          : null,
+      requiredDecision:
+        typeof storage?.requiredDecision === 'string'
+          ? storage.requiredDecision
+          : '',
+    },
+    firstTarget: {
+      key: typeof firstTarget?.key === 'string' ? firstTarget.key : '',
+      status:
+        typeof firstTarget?.status === 'string' ? firstTarget.status : '',
+      requiredDecision:
+        typeof firstTarget?.requiredDecision === 'string'
+          ? firstTarget.requiredDecision
+          : '',
+    },
+    unlockRequirements,
+  }
+}
+
 const getDryRunRendererContractSummary = () => {
   if (!dryRunRenderManifest) {
     return {
@@ -9340,6 +9495,8 @@ const dryRunRendererInputContractSummary =
 const dryRunRealRenderGateSummary = getDryRunRealRenderGateSummary()
 const dryRunFirstRealRenderPlanSummary =
   getDryRunFirstRealRenderPlanSummary()
+  const realRenderConfigurationSummary =
+  getDryRunRealRenderConfigurationSummary()
   const dryRunRealRenderRouteScaffoldSummary =
   getDryRunRealRenderRouteScaffoldSummary()
 const showRealRenderBlockedBanner =
@@ -13931,6 +14088,75 @@ return (
           {dryRunFirstRealRenderPlanSummary.laterTargets.map((target) => (
             <li key={target}>{target}</li>
           ))}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
+{realRenderConfigurationSummary ? (
+  <div className="mt-3 rounded border border-cyan-900 bg-cyan-950/20 p-3 text-xs leading-5 text-cyan-100">
+    <div className="font-medium">Real-render configuration placeholders</div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div>
+        <div>
+          Configuration status:{' '}
+          {realRenderConfigurationSummary.configurationStatus || 'Unknown'}
+        </div>
+        <div>
+          Audio status:{' '}
+          {realRenderConfigurationSummary.audioStatus || 'Unknown'}
+        </div>
+        <div>
+          First target:{' '}
+          {realRenderConfigurationSummary.firstTarget.key || 'Unknown'} (
+          {realRenderConfigurationSummary.firstTarget.status || 'Unknown'})
+        </div>
+      </div>
+
+      <div>
+        <div>
+          Renderer:{' '}
+          {realRenderConfigurationSummary.rendererImplementation
+            .selectedRenderer || 'not connected'}{' '}
+          (
+          {realRenderConfigurationSummary.rendererImplementation.status ||
+            'Unknown'}
+          )
+        </div>
+        <div>
+          Format:{' '}
+          {realRenderConfigurationSummary.outputFormat.selectedFormat ||
+            'not selected'}{' '}
+          ({realRenderConfigurationSummary.outputFormat.status || 'Unknown'})
+        </div>
+        <div>
+          Sample rate:{' '}
+          {realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
+            'not selected'}{' '}
+          (
+          {realRenderConfigurationSummary.sampleRate.status || 'Unknown'}
+          )
+        </div>
+        <div>
+          Storage:{' '}
+          {realRenderConfigurationSummary.storage.selectedProvider ||
+            'not configured'}{' '}
+          ({realRenderConfigurationSummary.storage.status || 'Unknown'})
+        </div>
+      </div>
+    </div>
+
+    {realRenderConfigurationSummary.unlockRequirements.length > 0 ? (
+      <div className="mt-2">
+        <div className="font-medium">Unlock requirements:</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5">
+          {realRenderConfigurationSummary.unlockRequirements.map(
+            (requirement) => (
+              <li key={requirement}>{requirement}</li>
+            ),
+          )}
         </ul>
       </div>
     ) : null}
