@@ -2636,6 +2636,25 @@ const getRealRenderRouteReceivedConfigurationStatus = () => {
     : 'no'
 }
 
+const getRealRenderRouteReceivedConfigurationPassed = () => {
+  if (
+    !realRenderRouteTestResponse ||
+    typeof realRenderRouteTestResponse.receivedContractSummary !== 'object' ||
+    realRenderRouteTestResponse.receivedContractSummary === null ||
+    Array.isArray(realRenderRouteTestResponse.receivedContractSummary)
+  ) {
+    return false
+  }
+
+  const receivedContractSummary =
+    realRenderRouteTestResponse.receivedContractSummary as Record<
+      string,
+      unknown
+    >
+
+  return receivedContractSummary.hasRealRenderConfiguration === true
+}
+
 const testBlockedRealRenderRoute = async () => {
   if (!dryRunArtifactPackage) {
     setRealRenderRouteTestResponse({
@@ -2683,6 +2702,7 @@ const testBlockedRealRenderRoute = async () => {
     setTestingRealRenderRoute(false)
   }
 }
+
 
 
 const getPreviewPlanValue = (key: string) => {
@@ -7736,7 +7756,8 @@ const hasBlockedRealRenderRouteTestPassed =
   realRenderRouteTestResponse.httpStatus === 423 &&
   realRenderRouteTestResponse.status === 'blocked' &&
   realRenderRouteTestResponse.audioStatus === 'not-generated' &&
-  realRenderRouteTestResponse.rendererStatus === 'not-connected'
+  realRenderRouteTestResponse.rendererStatus === 'not-connected' &&
+  getRealRenderRouteReceivedConfigurationPassed()
 
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
@@ -7940,7 +7961,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked with not-generated audio status.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and received the real-render configuration placeholders.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
