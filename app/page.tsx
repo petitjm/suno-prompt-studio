@@ -2704,13 +2704,28 @@ const getRealRenderRouteReceivedConfigurationPassed = () => {
   return receivedContractSummary.hasRealRenderConfiguration === true
 }
 
-const getBlockedRealRenderRouteTestPassed = () =>
-  realRenderRouteTestResponse !== null &&
-  realRenderRouteTestResponse.httpStatus === 423 &&
-  realRenderRouteTestResponse.status === 'blocked' &&
-  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
-  realRenderRouteTestResponse.rendererStatus === 'not-connected' &&
-  getRealRenderRouteReceivedConfigurationPassed()
+const getBlockedRealRenderRouteTestPassed = () => {
+  const receivedConfigurationSummary =
+    getRealRenderRouteReceivedConfigurationSummary()
+
+  return (
+    realRenderRouteTestResponse !== null &&
+    realRenderRouteTestResponse.httpStatus === 423 &&
+    realRenderRouteTestResponse.status === 'blocked' &&
+    realRenderRouteTestResponse.audioStatus === 'not-generated' &&
+    realRenderRouteTestResponse.rendererStatus === 'not-connected' &&
+    getRealRenderRouteReceivedConfigurationPassed() &&
+    receivedConfigurationSummary !== null &&
+    receivedConfigurationSummary.configurationStatus ===
+      'dry-run-real-render-configuration-placeholder' &&
+    receivedConfigurationSummary.audioStatus === 'not-generated' &&
+    receivedConfigurationSummary.rendererStatus === 'not-connected' &&
+    receivedConfigurationSummary.outputFormatStatus === 'not-selected' &&
+    receivedConfigurationSummary.sampleRateStatus === 'not-selected' &&
+    receivedConfigurationSummary.storageStatus === 'not-configured' &&
+    receivedConfigurationSummary.firstTargetKey === 'clickTrack'
+  )
+}
 
 const testBlockedRealRenderRoute = async () => {
   if (!dryRunArtifactPackage) {
@@ -5433,7 +5448,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         `Real-render configuration received: ${getRealRenderRouteReceivedConfigurationStatus()}`,
       '',
       blockedRealRenderRouteTestPassed
-        ? 'Result: The blocked real-render route safely returned 423 blocked, received the real-render configuration placeholders, and did not generate audio.'
+        ? 'Result: The blocked real-render route safely returned 423 blocked, received verified real-render configuration placeholder statuses, and did not generate audio.'
         : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
       '',
       ...(receivedConfigurationSummary
@@ -8039,7 +8054,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and received the real-render configuration placeholders.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and verified the received real-render configuration placeholder statuses.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
@@ -12662,7 +12677,7 @@ return (
 <div className="mt-2 font-medium text-purple-100">
   Result:{' '}
   {getBlockedRealRenderRouteTestPassed()
-    ? 'Passed — route returned 423 blocked, received configuration placeholders, and generated no audio.'
+    ? 'Passed — route returned 423 blocked, received verified configuration placeholder statuses, and generated no audio.'
     : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders.'}
 </div>
 
