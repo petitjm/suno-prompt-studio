@@ -4551,8 +4551,10 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getDryRunRealRenderRouteScaffoldSummary()
   const realRenderConfigurationSummary =
   getDryRunRealRenderConfigurationSummary()
- const blockedRealRenderRouteTestPassed =
+  const blockedRealRenderRouteTestPassed =
   getBlockedRealRenderRouteTestPassed()
+  const receivedConfigurationSummary =
+  getRealRenderRouteReceivedConfigurationSummary()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -5434,6 +5436,33 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         ? 'Result: The blocked real-render route safely returned 423 blocked, received the real-render configuration placeholders, and did not generate audio.'
         : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
       '',
+      ...(receivedConfigurationSummary
+  ? [
+      'Received configuration summary:',
+      `- Configuration status: ${
+        receivedConfigurationSummary.configurationStatus || 'unknown'
+      }`,
+      `- Audio status: ${
+        receivedConfigurationSummary.audioStatus || 'unknown'
+      }`,
+      `- Renderer status: ${
+        receivedConfigurationSummary.rendererStatus || 'unknown'
+      }`,
+      `- Output format status: ${
+        receivedConfigurationSummary.outputFormatStatus || 'unknown'
+      }`,
+      `- Sample rate status: ${
+        receivedConfigurationSummary.sampleRateStatus || 'unknown'
+      }`,
+      `- Storage status: ${
+        receivedConfigurationSummary.storageStatus || 'unknown'
+      }`,
+      `- First target: ${
+        receivedConfigurationSummary.firstTargetKey || 'unknown'
+      }`,
+      '',
+    ]
+  : []),
       ...(realRenderRouteTestResponse
         ? [
             'Raw blocked route response:',
