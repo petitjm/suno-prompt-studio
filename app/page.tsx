@@ -7963,7 +7963,7 @@ const hasBlockedRealRenderRouteTestPassed =
   detail: hasBlockedRealRenderRouteTestPassed
     ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and received the real-render configuration placeholders.'
     : hasRealRenderRouteScaffold
-      ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status.'
+      ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
   complete: hasBlockedRealRenderRouteTestPassed,
 },
