@@ -2655,6 +2655,14 @@ const getRealRenderRouteReceivedConfigurationPassed = () => {
   return receivedContractSummary.hasRealRenderConfiguration === true
 }
 
+const getBlockedRealRenderRouteTestPassed = () =>
+  realRenderRouteTestResponse !== null &&
+  realRenderRouteTestResponse.httpStatus === 423 &&
+  realRenderRouteTestResponse.status === 'blocked' &&
+  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
+  realRenderRouteTestResponse.rendererStatus === 'not-connected' &&
+  getRealRenderRouteReceivedConfigurationPassed()
+
 const testBlockedRealRenderRoute = async () => {
   if (!dryRunArtifactPackage) {
     setRealRenderRouteTestResponse({
@@ -4494,12 +4502,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getDryRunRealRenderRouteScaffoldSummary()
   const realRenderConfigurationSummary =
   getDryRunRealRenderConfigurationSummary()
-  const blockedRealRenderRouteTestPassed =
-  realRenderRouteTestResponse !== null &&
-  realRenderRouteTestResponse.httpStatus === 423 &&
-  realRenderRouteTestResponse.status === 'blocked' &&
-  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
-  realRenderRouteTestResponse.rendererStatus === 'not-connected'
+ const blockedRealRenderRouteTestPassed =
+  getBlockedRealRenderRouteTestPassed()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -7753,12 +7757,7 @@ const hasRealRenderConfiguration = Boolean(
 )
 
 const hasBlockedRealRenderRouteTestPassed =
-  realRenderRouteTestResponse !== null &&
-  realRenderRouteTestResponse.httpStatus === 423 &&
-  realRenderRouteTestResponse.status === 'blocked' &&
-  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
-  realRenderRouteTestResponse.rendererStatus === 'not-connected' &&
-  getRealRenderRouteReceivedConfigurationPassed()
+  getBlockedRealRenderRouteTestPassed()
 
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
   const hasRealRenderReadiness =
@@ -12580,6 +12579,13 @@ return (
     <div className="mt-1 text-purple-100/80">
   Real-render configuration received:{' '}
   {getRealRenderRouteReceivedConfigurationStatus()}
+</div>
+
+<div className="mt-2 font-medium text-purple-100">
+  Result:{' '}
+  {getBlockedRealRenderRouteTestPassed()
+    ? 'Passed — route returned 423 blocked, received configuration placeholders, and generated no audio.'
+    : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders.'}
 </div>
 
     <details className="mt-2">
