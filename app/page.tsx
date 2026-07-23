@@ -5347,6 +5347,57 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         : []),
     ]
   : []),
+  ...(realRenderConfigurationSummary
+  ? [
+      'REAL-RENDER CONFIGURATION PLACEHOLDERS',
+      '',
+      `Configuration status: ${
+        realRenderConfigurationSummary.configurationStatus || 'Unknown'
+      }`,
+      `Audio status: ${realRenderConfigurationSummary.audioStatus || 'Unknown'}`,
+      `First target: ${
+        realRenderConfigurationSummary.firstTarget.key || 'Unknown'
+      } (${
+        realRenderConfigurationSummary.firstTarget.status || 'Unknown'
+      })`,
+      '',
+      `Renderer: ${
+        realRenderConfigurationSummary.rendererImplementation
+          .selectedRenderer || 'not connected'
+      } (${
+        realRenderConfigurationSummary.rendererImplementation.status ||
+        'Unknown'
+      })`,
+      `Format: ${
+        realRenderConfigurationSummary.outputFormat.selectedFormat ||
+        'not selected'
+      } (${
+        realRenderConfigurationSummary.outputFormat.status || 'Unknown'
+      })`,
+      `Sample rate: ${
+        realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
+        'not selected'
+      } (${
+        realRenderConfigurationSummary.sampleRate.status || 'Unknown'
+      })`,
+      `Storage: ${
+        realRenderConfigurationSummary.storage.selectedProvider ||
+        'not configured'
+      } (${
+        realRenderConfigurationSummary.storage.status || 'Unknown'
+      })`,
+      '',
+      ...(realRenderConfigurationSummary.unlockRequirements.length > 0
+        ? [
+            'Unlock requirements:',
+            ...realRenderConfigurationSummary.unlockRequirements.map(
+              (requirement) => `- ${requirement}`,
+            ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
 
       'ARTEFACT PACKAGE JSON',
       '',
