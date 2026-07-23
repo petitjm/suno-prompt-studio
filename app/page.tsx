@@ -2817,6 +2817,12 @@ const copyAudioPreviewArtifactPackage = async () => {
   getDryRunFirstRealRenderPlanSummary()
   const realRenderRouteScaffoldSummary =
   getDryRunRealRenderRouteScaffoldSummary()
+  const blockedRealRenderRouteTestPassed =
+  realRenderRouteTestResponse !== null &&
+  realRenderRouteTestResponse.httpStatus === 423 &&
+  realRenderRouteTestResponse.status === 'blocked' &&
+  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
+  realRenderRouteTestResponse.rendererStatus === 'not-connected'
   const audioPreviewResultStatus = getAudioPreviewResultStatus()
   const fullPackAudioPreviewStatus = getFullPackAudioPreviewStatus()
 
@@ -3329,6 +3335,7 @@ const copyAudioPreviewArtifactPackage = async () => {
     ]
   : []),
   
+
   
     'ARTEFACT PACKAGE JSON',
         '',
@@ -4389,6 +4396,12 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getDryRunFirstRealRenderPlanSummary()
   const realRenderRouteScaffoldSummary =
   getDryRunRealRenderRouteScaffoldSummary()
+  const blockedRealRenderRouteTestPassed =
+  realRenderRouteTestResponse !== null &&
+  realRenderRouteTestResponse.httpStatus === 423 &&
+  realRenderRouteTestResponse.status === 'blocked' &&
+  realRenderRouteTestResponse.audioStatus === 'not-generated' &&
+  realRenderRouteTestResponse.rendererStatus === 'not-connected'
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -5224,6 +5237,55 @@ const fullPackPipelineStatus = fullPackPipelineComplete
             ...realRenderRouteScaffoldSummary.safetyRules.map(
               (rule) => `- ${rule}`,
             ),
+            '',
+          ]
+        : []),
+    ]
+  : []),
+  ...(realRenderRouteScaffoldSummary
+  ? [
+      'BLOCKED REAL-RENDER ROUTE TEST',
+      '',
+      `Test status: ${
+        blockedRealRenderRouteTestPassed ? 'passed' : 'not passed'
+      }`,
+      realRenderRouteTestResponse
+        ? `HTTP status: ${
+            typeof realRenderRouteTestResponse.httpStatus === 'number'
+              ? realRenderRouteTestResponse.httpStatus
+              : 'not available'
+          }`
+        : 'HTTP status: not run',
+      realRenderRouteTestResponse
+        ? `Status: ${
+            typeof realRenderRouteTestResponse.status === 'string'
+              ? realRenderRouteTestResponse.status
+              : 'unknown'
+          }`
+        : 'Status: not run',
+      realRenderRouteTestResponse
+        ? `Audio status: ${
+            typeof realRenderRouteTestResponse.audioStatus === 'string'
+              ? realRenderRouteTestResponse.audioStatus
+              : 'unknown'
+          }`
+        : 'Audio status: not run',
+      realRenderRouteTestResponse
+        ? `Renderer status: ${
+            typeof realRenderRouteTestResponse.rendererStatus === 'string'
+              ? realRenderRouteTestResponse.rendererStatus
+              : 'unknown'
+          }`
+        : 'Renderer status: not run',
+      '',
+      blockedRealRenderRouteTestPassed
+        ? 'Result: The blocked real-render route safely returned 423 blocked and did not generate audio.'
+        : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
+      '',
+      ...(realRenderRouteTestResponse
+        ? [
+            'Raw blocked route response:',
+            JSON.stringify(realRenderRouteTestResponse, null, 2),
             '',
           ]
         : []),
