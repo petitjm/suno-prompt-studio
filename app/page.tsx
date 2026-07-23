@@ -7702,6 +7702,13 @@ const hasRealRenderRouteScaffold = Boolean(
     !Array.isArray(dryRunArtifactPackage.realRenderRouteScaffold),
 )
 
+const hasRealRenderConfiguration = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderConfiguration &&
+    typeof dryRunArtifactPackage.realRenderConfiguration === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderConfiguration),
+)
+
 const hasBlockedRealRenderRouteTestPassed =
   realRenderRouteTestResponse !== null &&
   realRenderRouteTestResponse.httpStatus === 423 &&
@@ -7916,6 +7923,14 @@ const hasBlockedRealRenderRouteTestPassed =
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
   complete: hasBlockedRealRenderRouteTestPassed,
+},
+
+{
+  label: 'Real-render configuration placeholders',
+  detail: hasRealRenderConfiguration
+    ? 'Real-render configuration placeholders are present and keep renderer, format, sample rate, and storage unset until real rendering is deliberately enabled.'
+    : 'Real-render configuration placeholders are pending until dry run creates the artefact package.',
+  complete: hasRealRenderConfiguration,
 },
 
 {
