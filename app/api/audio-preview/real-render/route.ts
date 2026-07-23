@@ -14,6 +14,7 @@ type RealRenderBlockedResponse = {
     hasRendererInputContract: boolean
     hasRealRenderGate: boolean
     hasFirstRealRenderPlan: boolean
+    hasRealRenderConfiguration: boolean
     requestedTarget: string | null
   }
 }
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
   const rendererInputContract = bodyRecord?.rendererInputContract
   const realRenderGate = bodyRecord?.realRenderGate
   const firstRealRenderPlan = bodyRecord?.firstRealRenderPlan
+  const realRenderConfiguration = bodyRecord?.realRenderConfiguration
 
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
@@ -73,6 +75,7 @@ export async function POST(req: Request) {
       hasRendererInputContract: isRecord(rendererInputContract),
       hasRealRenderGate: isRecord(realRenderGate),
       hasFirstRealRenderPlan: isRecord(firstRealRenderPlan),
+      hasRealRenderConfiguration: isRecord(realRenderConfiguration),
       requestedTarget,
     },
   }

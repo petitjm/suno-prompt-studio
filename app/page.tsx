@@ -2639,6 +2639,7 @@ const testBlockedRealRenderRoute = async () => {
         rendererInputContract: dryRunArtifactPackage.rendererInputContract,
         realRenderGate: dryRunArtifactPackage.realRenderGate,
         firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
+        realRenderConfiguration: dryRunArtifactPackage.realRenderConfiguration,
       }),
     })
 
