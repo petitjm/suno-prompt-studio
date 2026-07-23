@@ -2615,6 +2615,27 @@ const requestAudioPreview = async () => {
   }
 }
 
+const getRealRenderRouteReceivedConfigurationStatus = () => {
+  if (
+    !realRenderRouteTestResponse ||
+    typeof realRenderRouteTestResponse.receivedContractSummary !== 'object' ||
+    realRenderRouteTestResponse.receivedContractSummary === null ||
+    Array.isArray(realRenderRouteTestResponse.receivedContractSummary)
+  ) {
+    return 'unknown'
+  }
+
+  const receivedContractSummary =
+    realRenderRouteTestResponse.receivedContractSummary as Record<
+      string,
+      unknown
+    >
+
+  return receivedContractSummary.hasRealRenderConfiguration === true
+    ? 'yes'
+    : 'no'
+}
+
 const testBlockedRealRenderRoute = async () => {
   if (!dryRunArtifactPackage) {
     setRealRenderRouteTestResponse({
@@ -12533,6 +12554,11 @@ return (
         ? realRenderRouteTestResponse.rendererStatus
         : 'unknown'}
     </div>
+
+    <div className="mt-1 text-purple-100/80">
+  Real-render configuration received:{' '}
+  {getRealRenderRouteReceivedConfigurationStatus()}
+</div>
 
     <details className="mt-2">
       <summary className="cursor-pointer text-purple-200">
