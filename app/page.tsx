@@ -5375,9 +5375,10 @@ const fullPackPipelineStatus = fullPackPipelineComplete
               : 'unknown'
           }`
         : 'Renderer status: not run',
+        `Real-render configuration received: ${getRealRenderRouteReceivedConfigurationStatus()}`,
       '',
       blockedRealRenderRouteTestPassed
-        ? 'Result: The blocked real-render route safely returned 423 blocked and did not generate audio.'
+        ? 'Result: The blocked real-render route safely returned 423 blocked, received the real-render configuration placeholders, and did not generate audio.'
         : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
       '',
       ...(realRenderRouteTestResponse
