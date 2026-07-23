@@ -2363,6 +2363,7 @@ const submitAudioPreviewRendererPayload = async () => {
   }
 
   setSubmittingAudioPreviewRender(true)
+  setRealRenderRouteTestResponse(null)
   setAudioPreviewRenderMessage('Submitting renderer payload...')
   setAudioPreviewRenderJob(null)
   setAudioPreviewRenderResponse('')
@@ -2373,6 +2374,7 @@ const submitAudioPreviewRendererPayload = async () => {
   setDryRunHandoffBundle(null)
   setDryRunHandoffBundleValidation(null)
   setDryRunArtifactPackage(null)
+  setRealRenderRouteTestResponse(null)
   setDryRunArtifactPackageValidation(null)
   setDryRunCueSheetValidation(null)
  
