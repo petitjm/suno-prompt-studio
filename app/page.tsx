@@ -6310,6 +6310,11 @@ const renderAudioPreviewReadinessCard = (
         {audioPreviewReadinessSummary.ready
           ? 'Ready for future renderer integration'
           : 'Waiting for remaining checks'}
+          <div className="mt-2 text-xs text-yellow-100/80">
+              Blocked route received-contract and received-configuration checks may pass,
+              but real audio rendering remains locked until renderer, format, storage,
+              and execution are deliberately enabled.
+            </div>
       </div>
 
             {size === 'standard' &&
