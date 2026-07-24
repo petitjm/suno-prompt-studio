@@ -3453,10 +3453,14 @@ const copyAudioPreviewArtifactPackage = async () => {
         'Unknown'
       }`,
       `- firstRealRenderPlan: ${
-        realRenderRouteScaffoldSummary.expectedRequestShape
-          .firstRealRenderPlan || 'Unknown'
-      }`,
-      '',
+          realRenderRouteScaffoldSummary.expectedRequestShape
+            .firstRealRenderPlan || 'Unknown'
+        }`,
+        `- realRenderConfiguration: ${
+          realRenderRouteScaffoldSummary.expectedRequestShape
+            .realRenderConfiguration || 'Unknown'
+        }`,
+        '',
       'Expected blocked response:',
       `- status: ${
         realRenderRouteScaffoldSummary.expectedBlockedResponse.status ||
@@ -3478,7 +3482,23 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
       }`,
+      `- receivedConfigurationCheck.passed: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedConfigurationCheck.passed
+            ? 'true'
+            : 'false'
+        }`,
+        ...(realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .receivedConfigurationCheck.missingOrInvalid.length > 0
+          ? [
+              '- receivedConfigurationCheck.missingOrInvalid:',
+              ...realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid.map(
+                (item) => `  - ${item}`,
+              ),
+            ]
+          : ['- receivedConfigurationCheck.missingOrInvalid: []']),
       '',
+
       ...(realRenderRouteScaffoldSummary.safetyRules.length > 0
         ? [
             'Safety rules:',
@@ -5412,11 +5432,15 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         realRenderRouteScaffoldSummary.expectedRequestShape.realRenderGate ||
         'Unknown'
       }`,
-      `- firstRealRenderPlan: ${
-        realRenderRouteScaffoldSummary.expectedRequestShape
-          .firstRealRenderPlan || 'Unknown'
-      }`,
-      '',
+     `- firstRealRenderPlan: ${
+          realRenderRouteScaffoldSummary.expectedRequestShape
+            .firstRealRenderPlan || 'Unknown'
+        }`,
+        `- realRenderConfiguration: ${
+          realRenderRouteScaffoldSummary.expectedRequestShape
+            .realRenderConfiguration || 'Unknown'
+        }`,
+        '',
       'Expected blocked response:',
       `- status: ${
         realRenderRouteScaffoldSummary.expectedBlockedResponse.status ||
@@ -5438,6 +5462,21 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
       }`,
+      `- receivedConfigurationCheck.passed: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedConfigurationCheck.passed
+            ? 'true'
+            : 'false'
+        }`,
+        ...(realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .receivedConfigurationCheck.missingOrInvalid.length > 0
+          ? [
+              '- receivedConfigurationCheck.missingOrInvalid:',
+              ...realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid.map(
+                (item) => `  - ${item}`,
+              ),
+            ]
+          : ['- receivedConfigurationCheck.missingOrInvalid: []']),
       '',
       ...(realRenderRouteScaffoldSummary.safetyRules.length > 0
         ? [
@@ -7240,6 +7279,10 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
         typeof expectedRequestShape?.firstRealRenderPlan === 'string'
           ? expectedRequestShape.firstRealRenderPlan
           : '',
+      realRenderConfiguration:
+          typeof expectedRequestShape?.realRenderConfiguration === 'string'
+            ? expectedRequestShape.realRenderConfiguration
+            : '',
     },
     expectedBlockedResponse: {
       status:
@@ -7262,6 +7305,36 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
         typeof expectedBlockedResponse?.formatStatus === 'string'
           ? expectedBlockedResponse.formatStatus
           : '',
+      receivedConfigurationCheck: {
+          passed:
+            expectedBlockedResponse?.receivedConfigurationCheck &&
+            typeof expectedBlockedResponse.receivedConfigurationCheck === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck) &&
+            (expectedBlockedResponse.receivedConfigurationCheck as Record<
+              string,
+              unknown
+            >).passed === true,
+          missingOrInvalid:
+            expectedBlockedResponse?.receivedConfigurationCheck &&
+            typeof expectedBlockedResponse.receivedConfigurationCheck === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck) &&
+            Array.isArray(
+              (expectedBlockedResponse.receivedConfigurationCheck as Record<
+                string,
+                unknown
+              >).missingOrInvalid,
+            )
+              ? (
+                  (expectedBlockedResponse.receivedConfigurationCheck as Record<
+                    string,
+                    unknown
+                  >).missingOrInvalid as unknown[]
+                ).filter(
+                  (item): item is string =>
+                    typeof item === 'string' && item.trim().length > 0,
+                )
+              : [],
+        },
     },
     safetyRules,
   }
