@@ -18,6 +18,11 @@ type RealRenderBlockedResponse = {
     requestedTarget: string | null
 
     }
+  receivedContractCheck: {
+      passed: boolean
+      missingOrInvalid: string[]
+    }
+
   receivedConfigurationSummary: {
       configurationStatus: string | null
       audioStatus: string | null
@@ -75,6 +80,27 @@ export async function POST(req: Request) {
    const sampleRate = getRecord(realRenderConfigurationRecord?.sampleRate)
    const storage = getRecord(realRenderConfigurationRecord?.storage)
    const firstTarget = getRecord(realRenderConfigurationRecord?.firstTarget)
+   const missingOrInvalidContractFields: string[] = []
+
+if (!isRecord(rendererInputContract)) {
+  missingOrInvalidContractFields.push('rendererInputContract')
+}
+
+if (!isRecord(realRenderGate)) {
+  missingOrInvalidContractFields.push('realRenderGate')
+}
+
+if (!isRecord(firstRealRenderPlan)) {
+  missingOrInvalidContractFields.push('firstRealRenderPlan')
+}
+
+if (!isRecord(realRenderConfiguration)) {
+  missingOrInvalidContractFields.push('realRenderConfiguration')
+}
+
+if (requestedTarget !== 'clickTrack') {
+  missingOrInvalidContractFields.push('requestedTarget')
+}
    const missingOrInvalidConfigurationFields: string[] = []
 
 if (!realRenderConfigurationRecord) {
@@ -140,6 +166,10 @@ if (getString(firstTarget?.key) !== 'clickTrack') {
       hasFirstRealRenderPlan: isRecord(firstRealRenderPlan),
       hasRealRenderConfiguration: isRecord(realRenderConfiguration),
       requestedTarget,
+    },
+    receivedContractCheck: {
+      passed: missingOrInvalidContractFields.length === 0,
+      missingOrInvalid: missingOrInvalidContractFields,
     },
     receivedConfigurationSummary: {
       configurationStatus: getString(
