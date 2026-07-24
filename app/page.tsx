@@ -6238,6 +6238,8 @@ const getAudioPreviewReadinessCopyLines = () => {
       ? 'Ready for future renderer integration'
       : 'Waiting for remaining checks',
     '',
+    'Blocked route received-contract and received-configuration checks may pass, but real audio rendering remains locked until renderer, format, storage, and execution are deliberately enabled.',
+    '',
     ...(remainingChecks.length > 0
       ? [
           'REMAINING CHECKS',
