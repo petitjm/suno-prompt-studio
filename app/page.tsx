@@ -7977,6 +7977,76 @@ const hasRealRenderConfiguration = Boolean(
     !Array.isArray(dryRunArtifactPackage.realRenderConfiguration),
 )
 
+const hasExpectedReceivedConfigurationCheck = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderRouteScaffold &&
+    typeof dryRunArtifactPackage.realRenderRouteScaffold === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderRouteScaffold) &&
+    (dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>)
+      .expectedBlockedResponse &&
+    typeof (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>
+    ).expectedBlockedResponse === 'object' &&
+    !Array.isArray(
+      (dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>)
+        .expectedBlockedResponse,
+    ) &&
+    (
+      (
+        dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>
+      ).expectedBlockedResponse as Record<string, unknown>
+    ).receivedConfigurationCheck &&
+    typeof (
+      (
+        dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>
+      ).expectedBlockedResponse as Record<string, unknown>
+    ).receivedConfigurationCheck === 'object' &&
+    !Array.isArray(
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationCheck,
+    ) &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationCheck as Record<string, unknown>
+    ).passed === true &&
+    Array.isArray(
+      (
+        (
+          (
+            dryRunArtifactPackage.realRenderRouteScaffold as Record<
+              string,
+              unknown
+            >
+          ).expectedBlockedResponse as Record<string, unknown>
+        ).receivedConfigurationCheck as Record<string, unknown>
+      ).missingOrInvalid,
+    ) &&
+    (
+      (
+        (
+          (
+            dryRunArtifactPackage.realRenderRouteScaffold as Record<
+              string,
+              unknown
+            >
+          ).expectedBlockedResponse as Record<string, unknown>
+        ).receivedConfigurationCheck as Record<string, unknown>
+      ).missingOrInvalid as unknown[]
+    ).length === 0,
+)
+
 const hasBlockedRealRenderRouteTestPassed =
   getBlockedRealRenderRouteTestPassed()
 
@@ -8195,6 +8265,14 @@ const hasBlockedRealRenderRouteTestPassed =
     ? 'Real-render configuration placeholders are present and keep renderer, format, sample rate, and storage unset until real rendering is deliberately enabled.'
     : 'Real-render configuration placeholders are pending until dry run creates the artefact package.',
   complete: hasRealRenderConfiguration,
+},
+
+{
+  label: 'Expected received-configuration check',
+  detail: hasExpectedReceivedConfigurationCheck
+    ? 'Blocked route scaffold declares the expected received-configuration check with passed true and no missing or invalid fields.'
+    : 'Expected received-configuration check is pending until the dry-run scaffold declares it in the expected blocked response.',
+  complete: hasExpectedReceivedConfigurationCheck,
 },
 
 {
