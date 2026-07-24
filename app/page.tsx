@@ -4713,6 +4713,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getRealRenderRouteReceivedConfigurationSummary()
   const receivedConfigurationCheck =
   getRealRenderRouteReceivedConfigurationCheck()
+  const receivedContractSummary =
+  getRealRenderRouteReceivedContractSummary()
   const receivedContractCheck =
   getRealRenderRouteReceivedContractCheck()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
@@ -5669,6 +5671,27 @@ const fullPackPipelineStatus = fullPackPipelineComplete
             ),
           ]
         : ['- Missing or invalid: none']),
+      '',
+    ]
+  : []),
+  ...(receivedContractSummary
+  ? [
+      'Received contract summary:',
+      `- rendererInputContract: ${
+        receivedContractSummary.hasRendererInputContract ? 'yes' : 'no'
+      }`,
+      `- realRenderGate: ${
+        receivedContractSummary.hasRealRenderGate ? 'yes' : 'no'
+      }`,
+      `- firstRealRenderPlan: ${
+        receivedContractSummary.hasFirstRealRenderPlan ? 'yes' : 'no'
+      }`,
+      `- realRenderConfiguration: ${
+        receivedContractSummary.hasRealRenderConfiguration ? 'yes' : 'no'
+      }`,
+      `- requestedTarget: ${
+        receivedContractSummary.requestedTarget || 'unknown'
+      }`,
       '',
     ]
   : []),
