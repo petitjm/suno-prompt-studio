@@ -3519,6 +3519,21 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
       }`,
+      `- receivedContractCheck.passed: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractCheck.passed
+            ? 'true'
+            : 'false'
+        }`,
+        ...(realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .receivedContractCheck.missingOrInvalid.length > 0
+          ? [
+              '- receivedContractCheck.missingOrInvalid:',
+              ...realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedContractCheck.missingOrInvalid.map(
+                (item) => `  - ${item}`,
+              ),
+            ]
+          : ['- receivedContractCheck.missingOrInvalid: []']),
       `- receivedConfigurationCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedConfigurationCheck.passed
@@ -5501,6 +5516,21 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
       }`,
+      `- receivedContractCheck.passed: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractCheck.passed
+            ? 'true'
+            : 'false'
+        }`,
+        ...(realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .receivedContractCheck.missingOrInvalid.length > 0
+          ? [
+              '- receivedContractCheck.missingOrInvalid:',
+              ...realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedContractCheck.missingOrInvalid.map(
+                (item) => `  - ${item}`,
+              ),
+            ]
+          : ['- receivedContractCheck.missingOrInvalid: []']),
       `- receivedConfigurationCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedConfigurationCheck.passed
@@ -7359,6 +7389,36 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
         typeof expectedBlockedResponse?.formatStatus === 'string'
           ? expectedBlockedResponse.formatStatus
           : '',
+          receivedContractCheck: {
+      passed:
+        expectedBlockedResponse?.receivedContractCheck &&
+        typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedContractCheck) &&
+        (expectedBlockedResponse.receivedContractCheck as Record<
+          string,
+          unknown
+        >).passed === true,
+      missingOrInvalid:
+        expectedBlockedResponse?.receivedContractCheck &&
+        typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedContractCheck) &&
+        Array.isArray(
+          (expectedBlockedResponse.receivedContractCheck as Record<
+            string,
+            unknown
+          >).missingOrInvalid,
+        )
+          ? (
+              (expectedBlockedResponse.receivedContractCheck as Record<
+                string,
+                unknown
+              >).missingOrInvalid as unknown[]
+            ).filter(
+              (item): item is string =>
+                typeof item === 'string' && item.trim().length > 0,
+            )
+          : [],
+    },
       receivedConfigurationCheck: {
           passed:
             expectedBlockedResponse?.receivedConfigurationCheck &&
