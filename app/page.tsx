@@ -4667,6 +4667,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getRealRenderRouteReceivedConfigurationSummary()
   const receivedConfigurationCheck =
   getRealRenderRouteReceivedConfigurationCheck()
+  const receivedContractCheck =
+  getRealRenderRouteReceivedContractCheck()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -5602,6 +5604,21 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         ? [
             '- Missing or invalid:',
             ...receivedConfigurationCheck.missingOrInvalid.map(
+              (item) => `  - ${item}`,
+            ),
+          ]
+        : ['- Missing or invalid: none']),
+      '',
+    ]
+  : []),
+  ...(receivedContractCheck
+  ? [
+      'Received contract check:',
+      `- Passed: ${receivedContractCheck.passed ? 'yes' : 'no'}`,
+      ...(receivedContractCheck.missingOrInvalid.length > 0
+        ? [
+            '- Missing or invalid:',
+            ...receivedContractCheck.missingOrInvalid.map(
               (item) => `  - ${item}`,
             ),
           ]
