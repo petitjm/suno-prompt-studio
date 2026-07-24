@@ -4608,6 +4608,8 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   getBlockedRealRenderRouteTestPassed()
   const receivedConfigurationSummary =
   getRealRenderRouteReceivedConfigurationSummary()
+  const receivedConfigurationCheck =
+  getRealRenderRouteReceivedConfigurationCheck()
   const intentRows = getPerformanceIntentRows(getChordDataFromEditorJson())
   const realRenderReadinessSummary = getDryRunRealRenderReadinessSummary()
 
@@ -5513,6 +5515,21 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       `- First target: ${
         receivedConfigurationSummary.firstTargetKey || 'unknown'
       }`,
+      '',
+    ]
+  : []),
+  ...(receivedConfigurationCheck
+  ? [
+      'Received configuration check:',
+      `- Passed: ${receivedConfigurationCheck.passed ? 'yes' : 'no'}`,
+      ...(receivedConfigurationCheck.missingOrInvalid.length > 0
+        ? [
+            '- Missing or invalid:',
+            ...receivedConfigurationCheck.missingOrInvalid.map(
+              (item) => `  - ${item}`,
+            ),
+          ]
+        : ['- Missing or invalid: none']),
       '',
     ]
   : []),
