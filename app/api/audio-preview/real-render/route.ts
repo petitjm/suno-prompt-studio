@@ -27,6 +27,10 @@ type RealRenderBlockedResponse = {
       storageStatus: string | null
       firstTargetKey: string | null
     }
+    receivedConfigurationCheck: {
+      passed: boolean
+      missingOrInvalid: string[]
+    }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -71,6 +75,42 @@ export async function POST(req: Request) {
    const sampleRate = getRecord(realRenderConfigurationRecord?.sampleRate)
    const storage = getRecord(realRenderConfigurationRecord?.storage)
    const firstTarget = getRecord(realRenderConfigurationRecord?.firstTarget)
+   const missingOrInvalidConfigurationFields: string[] = []
+
+if (!realRenderConfigurationRecord) {
+  missingOrInvalidConfigurationFields.push('realRenderConfiguration')
+}
+
+if (
+  getString(realRenderConfigurationRecord?.configurationStatus) !==
+  'dry-run-real-render-configuration-placeholder'
+) {
+  missingOrInvalidConfigurationFields.push('configurationStatus')
+}
+
+if (getString(realRenderConfigurationRecord?.audioStatus) !== 'not-generated') {
+  missingOrInvalidConfigurationFields.push('audioStatus')
+}
+
+if (getString(rendererImplementation?.status) !== 'not-connected') {
+  missingOrInvalidConfigurationFields.push('rendererImplementation.status')
+}
+
+if (getString(outputFormat?.status) !== 'not-selected') {
+  missingOrInvalidConfigurationFields.push('outputFormat.status')
+}
+
+if (getString(sampleRate?.status) !== 'not-selected') {
+  missingOrInvalidConfigurationFields.push('sampleRate.status')
+}
+
+if (getString(storage?.status) !== 'not-configured') {
+  missingOrInvalidConfigurationFields.push('storage.status')
+}
+
+if (getString(firstTarget?.key) !== 'clickTrack') {
+  missingOrInvalidConfigurationFields.push('firstTarget.key')
+}
 
   const response: RealRenderBlockedResponse = {
     ok: false,
@@ -111,6 +151,10 @@ export async function POST(req: Request) {
       sampleRateStatus: getString(sampleRate?.status),
       storageStatus: getString(storage?.status),
       firstTargetKey: getString(firstTarget?.key),
+    },
+    receivedConfigurationCheck: {
+      passed: missingOrInvalidConfigurationFields.length === 0,
+      missingOrInvalid: missingOrInvalidConfigurationFields,
     },
   }
 
