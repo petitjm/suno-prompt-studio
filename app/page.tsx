@@ -6238,7 +6238,7 @@ const getAudioPreviewReadinessCopyLines = () => {
       ? 'Ready for future renderer integration'
       : 'Waiting for remaining checks',
     '',
-    'Blocked route received-contract and received-configuration checks may pass, but real audio rendering remains locked until renderer, format, storage, and execution are deliberately enabled.',
+    'Blocked route received-contract and received-configuration checks may pass, but they only verify safe blocked-route inputs; real audio rendering remains locked until renderer, format, storage, and execution are deliberately enabled.',
     '',
     ...(remainingChecks.length > 0
       ? [
@@ -6312,10 +6312,11 @@ const renderAudioPreviewReadinessCard = (
           : 'Waiting for remaining checks'}
           <div className="mt-2 text-xs text-yellow-100/80">
               Blocked route received-contract and received-configuration checks may pass,
-              but real audio rendering remains locked until renderer, format, storage,
-              and execution are deliberately enabled.
+              but they only verify safe blocked-route inputs; real audio rendering remains
+              locked until renderer, format, storage, and execution are deliberately
+              enabled.
             </div>
-      </div>
+                  </div>
 
             {size === 'standard' &&
       !audioPreviewReadinessSummary.ready &&
