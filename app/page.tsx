@@ -2615,6 +2615,37 @@ const requestAudioPreview = async () => {
   }
 }
 
+const getRealRenderRouteReceivedContractCheck = () => {
+  if (
+    !realRenderRouteTestResponse ||
+    typeof realRenderRouteTestResponse.receivedContractCheck !== 'object' ||
+    realRenderRouteTestResponse.receivedContractCheck === null ||
+    Array.isArray(realRenderRouteTestResponse.receivedContractCheck)
+  ) {
+    return null
+  }
+
+  const receivedContractCheck =
+    realRenderRouteTestResponse.receivedContractCheck as Record<
+      string,
+      unknown
+    >
+
+  const missingOrInvalid = Array.isArray(
+    receivedContractCheck.missingOrInvalid,
+  )
+    ? receivedContractCheck.missingOrInvalid.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    passed: receivedContractCheck.passed === true,
+    missingOrInvalid,
+  }
+}
+
 const getRealRenderRouteReceivedConfigurationCheck = () => {
   if (
     !realRenderRouteTestResponse ||
@@ -12972,6 +13003,38 @@ return (
         {JSON.stringify(realRenderRouteTestResponse, null, 2)}
       </pre>
     </details>
+  </div>
+) : null}
+
+{getRealRenderRouteReceivedContractCheck() ? (
+  <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+    <div className="font-medium text-purple-100">
+      Received contract check
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      Passed:{' '}
+      {getRealRenderRouteReceivedContractCheck()?.passed ? 'yes' : 'no'}
+    </div>
+
+    {getRealRenderRouteReceivedContractCheck()?.missingOrInvalid.length ? (
+      <div className="mt-2">
+        <div className="font-medium text-purple-100">
+          Missing or invalid:
+        </div>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-purple-100/80">
+          {getRealRenderRouteReceivedContractCheck()?.missingOrInvalid.map(
+            (item) => (
+              <li key={item}>{item}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : (
+      <div className="mt-1 text-purple-100/80">
+        Missing or invalid: none
+      </div>
+    )}
   </div>
 ) : null}
 
