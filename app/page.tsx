@@ -14905,20 +14905,38 @@ return (
           Renderer status:{' '}
           {realRenderRouteScaffoldSummary.rendererStatus || 'Unknown'}
         </div>
-        <div>
-          Expected contract check:{' '}
-          {realRenderRouteScaffoldSummary.expectedBlockedResponse
-            .receivedContractCheck.passed
-            ? 'passed'
-            : 'not passed'}
-        </div>
-        <div>
-          Expected configuration check:{' '}
-          {realRenderRouteScaffoldSummary.expectedBlockedResponse
-            .receivedConfigurationCheck.passed
-            ? 'passed'
-            : 'not passed'}
-        </div>
+       <div>
+  Expected contract check:{' '}
+      {realRenderRouteScaffoldSummary.expectedBlockedResponse
+        .receivedContractCheck.passed
+        ? 'passed'
+        : 'not passed'}
+    </div>
+    <div>
+      Expected contract missing/invalid:{' '}
+      {realRenderRouteScaffoldSummary.expectedBlockedResponse
+        .receivedContractCheck.missingOrInvalid.length > 0
+        ? realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedContractCheck.missingOrInvalid.join(
+            ', ',
+          )
+        : 'none'}
+    </div>
+    <div>
+      Expected configuration check:{' '}
+      {realRenderRouteScaffoldSummary.expectedBlockedResponse
+        .receivedConfigurationCheck.passed
+        ? 'passed'
+        : 'not passed'}
+    </div>
+    <div>
+      Expected configuration missing/invalid:{' '}
+      {realRenderRouteScaffoldSummary.expectedBlockedResponse
+        .receivedConfigurationCheck.missingOrInvalid.length > 0
+        ? realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid.join(
+            ', ',
+          )
+        : 'none'}
+    </div>
       </div>
     </div>
 
