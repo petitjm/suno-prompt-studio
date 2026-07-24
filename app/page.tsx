@@ -5530,7 +5530,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
                 (item) => `  - ${item}`,
               ),
             ]
-          : ['- receivedContractCheck.missingOrInvalid: []']),
+          : ['- receivedContractCheck.missingOrInvalid: none']),
       `- receivedConfigurationCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedConfigurationCheck.passed
@@ -5545,7 +5545,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
                 (item) => `  - ${item}`,
               ),
             ]
-          : ['- receivedConfigurationCheck.missingOrInvalid: []']),
+          : ['- receivedConfigurationCheck.missingOrInvalid: none']),
       '',
       ...(realRenderRouteScaffoldSummary.safetyRules.length > 0
         ? [
