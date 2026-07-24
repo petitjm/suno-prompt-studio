@@ -3533,7 +3533,7 @@ const copyAudioPreviewArtifactPackage = async () => {
                 (item) => `  - ${item}`,
               ),
             ]
-          : ['- receivedContractCheck.missingOrInvalid: []']),
+          : ['- receivedContractCheck.missingOrInvalid: none']),
       `- receivedConfigurationCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedConfigurationCheck.passed
