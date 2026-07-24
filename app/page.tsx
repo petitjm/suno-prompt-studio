@@ -2615,6 +2615,38 @@ const requestAudioPreview = async () => {
   }
 }
 
+const getRealRenderRouteReceivedConfigurationCheck = () => {
+  if (
+    !realRenderRouteTestResponse ||
+    typeof realRenderRouteTestResponse.receivedConfigurationCheck !==
+      'object' ||
+    realRenderRouteTestResponse.receivedConfigurationCheck === null ||
+    Array.isArray(realRenderRouteTestResponse.receivedConfigurationCheck)
+  ) {
+    return null
+  }
+
+  const receivedConfigurationCheck =
+    realRenderRouteTestResponse.receivedConfigurationCheck as Record<
+      string,
+      unknown
+    >
+
+  const missingOrInvalid = Array.isArray(
+    receivedConfigurationCheck.missingOrInvalid,
+  )
+    ? receivedConfigurationCheck.missingOrInvalid.filter(
+        (item): item is string =>
+          typeof item === 'string' && item.trim().length > 0,
+      )
+    : []
+
+  return {
+    passed: receivedConfigurationCheck.passed === true,
+    missingOrInvalid,
+  }
+}
+
 const getRealRenderRouteReceivedConfigurationSummary = () => {
   if (
     !realRenderRouteTestResponse ||
@@ -12722,6 +12754,39 @@ return (
       {getRealRenderRouteReceivedConfigurationSummary()?.firstTargetKey ||
         'unknown'}
     </div>
+  </div>
+) : null}
+
+{getRealRenderRouteReceivedConfigurationCheck() ? (
+  <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+    <div className="font-medium text-purple-100">
+      Received configuration check
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      Passed:{' '}
+      {getRealRenderRouteReceivedConfigurationCheck()?.passed ? 'yes' : 'no'}
+    </div>
+
+    {getRealRenderRouteReceivedConfigurationCheck()?.missingOrInvalid
+      .length ? (
+      <div className="mt-2">
+        <div className="font-medium text-purple-100">
+          Missing or invalid:
+        </div>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-purple-100/80">
+          {getRealRenderRouteReceivedConfigurationCheck()?.missingOrInvalid.map(
+            (item) => (
+              <li key={item}>{item}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : (
+      <div className="mt-1 text-purple-100/80">
+        Missing or invalid: none
+      </div>
+    )}
   </div>
 ) : null}
 
