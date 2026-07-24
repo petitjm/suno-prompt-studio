@@ -10144,6 +10144,8 @@ const dryRunRendererInputContractSummary =
 const dryRunRealRenderGateSummary = getDryRunRealRenderGateSummary()
 const dryRunFirstRealRenderPlanSummary =
   getDryRunFirstRealRenderPlanSummary()
+  const realRenderRouteScaffoldSummary =
+  getDryRunRealRenderRouteScaffoldSummary()
   const realRenderConfigurationSummary =
   getDryRunRealRenderConfigurationSummary()
   const dryRunRealRenderRouteScaffoldSummary =
@@ -14857,6 +14859,132 @@ return (
         <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
           {dryRunFirstRealRenderPlanSummary.laterTargets.map((target) => (
             <li key={target}>{target}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
+{realRenderRouteScaffoldSummary ? (
+  <div className="mt-3 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
+    <div className="font-medium">Blocked real-render route scaffold</div>
+
+    <div className="mt-2 grid gap-2 md:grid-cols-2">
+      <div>
+        <div>
+          Route status:{' '}
+          {realRenderRouteScaffoldSummary.routeStatus || 'Unknown'}
+        </div>
+        <div>
+          Method: {realRenderRouteScaffoldSummary.method || 'Unknown'}
+        </div>
+        <div>
+          Path: {realRenderRouteScaffoldSummary.path || 'Unknown'}
+        </div>
+        <div>
+          Expected blocked status code:{' '}
+          {realRenderRouteScaffoldSummary.expectedBlockedStatusCode ||
+            'Unknown'}
+        </div>
+      </div>
+
+      <div>
+        <div>
+          Audio status:{' '}
+          {realRenderRouteScaffoldSummary.audioStatus || 'Unknown'}
+        </div>
+        <div>
+          Renderer status:{' '}
+          {realRenderRouteScaffoldSummary.rendererStatus || 'Unknown'}
+        </div>
+        <div>
+          Expected contract check:{' '}
+          {realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractCheck.passed
+            ? 'passed'
+            : 'not passed'}
+        </div>
+        <div>
+          Expected configuration check:{' '}
+          {realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedConfigurationCheck.passed
+            ? 'passed'
+            : 'not passed'}
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-3 rounded border border-purple-900 bg-gray-950 p-3">
+      <div className="font-medium text-purple-100">
+        Expected request shape
+      </div>
+
+      <div className="mt-1 text-purple-100/80">
+        requestedTarget:{' '}
+        {realRenderRouteScaffoldSummary.expectedRequestShape
+          .requestedTarget || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        rendererInputContract:{' '}
+        {realRenderRouteScaffoldSummary.expectedRequestShape
+          .rendererInputContract || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        realRenderGate:{' '}
+        {realRenderRouteScaffoldSummary.expectedRequestShape
+          .realRenderGate || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        firstRealRenderPlan:{' '}
+        {realRenderRouteScaffoldSummary.expectedRequestShape
+          .firstRealRenderPlan || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        realRenderConfiguration:{' '}
+        {realRenderRouteScaffoldSummary.expectedRequestShape
+          .realRenderConfiguration || 'Unknown'}
+      </div>
+    </div>
+
+    <div className="mt-3 rounded border border-purple-900 bg-gray-950 p-3">
+      <div className="font-medium text-purple-100">
+        Expected blocked response
+      </div>
+
+      <div className="mt-1 text-purple-100/80">
+        status:{' '}
+        {realRenderRouteScaffoldSummary.expectedBlockedResponse.status ||
+          'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        audioStatus:{' '}
+        {realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .audioStatus || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        rendererStatus:{' '}
+        {realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .rendererStatus || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        storageStatus:{' '}
+        {realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .storageStatus || 'Unknown'}
+      </div>
+      <div className="mt-1 text-purple-100/80">
+        formatStatus:{' '}
+        {realRenderRouteScaffoldSummary.expectedBlockedResponse
+          .formatStatus || 'Unknown'}
+      </div>
+    </div>
+
+    {realRenderRouteScaffoldSummary.safetyRules.length > 0 ? (
+      <div className="mt-3">
+        <div className="font-medium">Safety rules:</div>
+        <ul className="mt-1 list-disc space-y-1 pl-5">
+          {realRenderRouteScaffoldSummary.safetyRules.map((rule) => (
+            <li key={rule}>{rule}</li>
           ))}
         </ul>
       </div>
