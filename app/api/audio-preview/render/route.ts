@@ -1495,13 +1495,17 @@ realRenderRouteScaffold: {
       realRenderConfiguration: 'required-before-real-render',
     },
   expectedBlockedResponse: {
-    ok: false,
-    status: 'blocked',
-    audioStatus: 'not-generated',
-    rendererStatus: 'not-connected',
-    storageStatus: 'not-configured',
-    formatStatus: 'not-selected',
-  },
+      ok: false,
+      status: 'blocked',
+      audioStatus: 'not-generated',
+      rendererStatus: 'not-connected',
+      storageStatus: 'not-configured',
+      formatStatus: 'not-selected',
+      receivedConfigurationCheck: {
+        passed: true,
+        missingOrInvalid: [],
+      },
+    },
   safetyRules: [
     'The route scaffold may be called for blocked-status testing only.',
     'The route scaffold must not generate audio files.',
@@ -2680,6 +2684,38 @@ if (!realRenderRouteScaffold) {
         'realRenderRouteScaffold.expectedBlockedResponse.formatStatus',
       )
     }
+
+    const expectedReceivedConfigurationCheck =
+  expectedBlockedResponse.receivedConfigurationCheck &&
+  typeof expectedBlockedResponse.receivedConfigurationCheck === 'object' &&
+  !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck)
+    ? (expectedBlockedResponse.receivedConfigurationCheck as Record<
+        string,
+        unknown
+      >)
+    : null
+
+if (!expectedReceivedConfigurationCheck) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck',
+  )
+} else {
+  if (expectedReceivedConfigurationCheck.passed !== true) {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck.passed',
+    )
+  }
+
+  if (
+    !Array.isArray(expectedReceivedConfigurationCheck.missingOrInvalid) ||
+    expectedReceivedConfigurationCheck.missingOrInvalid.length !== 0
+  ) {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid',
+    )
+  }
+}
+
   }
 
   if (
@@ -3008,7 +3044,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape, and includes real-render configuration placeholders.'        
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response check, and includes real-render configuration placeholders.'        
 : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
