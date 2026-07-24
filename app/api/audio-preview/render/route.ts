@@ -1501,6 +1501,10 @@ realRenderRouteScaffold: {
       rendererStatus: 'not-connected',
       storageStatus: 'not-configured',
       formatStatus: 'not-selected',
+      receivedContractCheck: {
+          passed: true,
+          missingOrInvalid: [],
+        },
       receivedConfigurationCheck: {
         passed: true,
         missingOrInvalid: [],
@@ -2684,6 +2688,37 @@ if (!realRenderRouteScaffold) {
         'realRenderRouteScaffold.expectedBlockedResponse.formatStatus',
       )
     }
+
+    const expectedReceivedContractCheck =
+  expectedBlockedResponse.receivedContractCheck &&
+  typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
+  !Array.isArray(expectedBlockedResponse.receivedContractCheck)
+    ? (expectedBlockedResponse.receivedContractCheck as Record<
+        string,
+        unknown
+      >)
+    : null
+
+if (!expectedReceivedContractCheck) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck',
+  )
+} else {
+  if (expectedReceivedContractCheck.passed !== true) {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck.passed',
+    )
+  }
+
+  if (
+    !Array.isArray(expectedReceivedContractCheck.missingOrInvalid) ||
+    expectedReceivedContractCheck.missingOrInvalid.length !== 0
+  ) {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck.missingOrInvalid',
+    )
+  }
+}
 
     const expectedReceivedConfigurationCheck =
   expectedBlockedResponse.receivedConfigurationCheck &&
