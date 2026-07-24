@@ -2615,6 +2615,37 @@ const requestAudioPreview = async () => {
   }
 }
 
+const getRealRenderRouteReceivedContractSummary = () => {
+  if (
+    !realRenderRouteTestResponse ||
+    typeof realRenderRouteTestResponse.receivedContractSummary !== 'object' ||
+    realRenderRouteTestResponse.receivedContractSummary === null ||
+    Array.isArray(realRenderRouteTestResponse.receivedContractSummary)
+  ) {
+    return null
+  }
+
+  const receivedContractSummary =
+    realRenderRouteTestResponse.receivedContractSummary as Record<
+      string,
+      unknown
+    >
+
+  return {
+    hasRendererInputContract:
+      receivedContractSummary.hasRendererInputContract === true,
+    hasRealRenderGate: receivedContractSummary.hasRealRenderGate === true,
+    hasFirstRealRenderPlan:
+      receivedContractSummary.hasFirstRealRenderPlan === true,
+    hasRealRenderConfiguration:
+      receivedContractSummary.hasRealRenderConfiguration === true,
+    requestedTarget:
+      typeof receivedContractSummary.requestedTarget === 'string'
+        ? receivedContractSummary.requestedTarget
+        : '',
+  }
+}
+
 const getRealRenderRouteReceivedContractCheck = () => {
   if (
     !realRenderRouteTestResponse ||
@@ -13174,6 +13205,47 @@ return (
         {JSON.stringify(realRenderRouteTestResponse, null, 2)}
       </pre>
     </details>
+  </div>
+) : null}
+
+{getRealRenderRouteReceivedContractSummary() ? (
+  <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+    <div className="font-medium text-purple-100">
+      Received contract summary
+    </div>
+
+    <div className="mt-1 text-purple-100/80">
+      rendererInputContract:{' '}
+      {getRealRenderRouteReceivedContractSummary()
+        ?.hasRendererInputContract
+        ? 'yes'
+        : 'no'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      realRenderGate:{' '}
+      {getRealRenderRouteReceivedContractSummary()?.hasRealRenderGate
+        ? 'yes'
+        : 'no'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      firstRealRenderPlan:{' '}
+      {getRealRenderRouteReceivedContractSummary()
+        ?.hasFirstRealRenderPlan
+        ? 'yes'
+        : 'no'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      realRenderConfiguration:{' '}
+      {getRealRenderRouteReceivedContractSummary()
+        ?.hasRealRenderConfiguration
+        ? 'yes'
+        : 'no'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      requestedTarget:{' '}
+      {getRealRenderRouteReceivedContractSummary()?.requestedTarget ||
+        'unknown'}
+    </div>
   </div>
 ) : null}
 
