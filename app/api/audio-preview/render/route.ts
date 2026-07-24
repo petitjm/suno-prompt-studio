@@ -1488,11 +1488,12 @@ realRenderRouteScaffold: {
   purpose:
     'Reserve the future real-render endpoint while keeping all audio generation blocked until renderer, format, storage, and execution are implemented.',
   expectedRequestShape: {
-    requestedTarget: 'clickTrack',
-    rendererInputContract: 'required-before-real-render',
-    realRenderGate: 'required-before-real-render',
-    firstRealRenderPlan: 'required-before-real-render',
-  },
+      requestedTarget: 'clickTrack',
+      rendererInputContract: 'required-before-real-render',
+      realRenderGate: 'required-before-real-render',
+      firstRealRenderPlan: 'required-before-real-render',
+      realRenderConfiguration: 'required-before-real-render',
+    },
   expectedBlockedResponse: {
     ok: false,
     status: 'blocked',
@@ -2610,6 +2611,15 @@ if (!realRenderRouteScaffold) {
       )
     }
 
+    if (
+  expectedRequestShape.realRenderConfiguration !==
+      'required-before-real-render'
+    ) {
+      missing.push(
+        'realRenderRouteScaffold.expectedRequestShape.realRenderConfiguration',
+      )
+    }
+
     if (expectedRequestShape.realRenderGate !== 'required-before-real-render') {
       missing.push(
         'realRenderRouteScaffold.expectedRequestShape.realRenderGate',
@@ -2998,7 +3008,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold, and includes real-render configuration placeholders.'        
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape, and includes real-render configuration placeholders.'        
 : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
