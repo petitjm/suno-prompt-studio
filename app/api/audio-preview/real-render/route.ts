@@ -27,6 +27,9 @@ type RealRenderBlockedResponse = {
       configurationStatus: string | null
       audioStatus: string | null
       rendererStatus: string | null
+      rendererCandidateStatus: string | null
+      recommendedFirstRenderer: string | null
+      rendererCandidateSelectedRenderer: string | null
       outputFormatStatus: string | null
       sampleRateStatus: string | null
       storageStatus: string | null
@@ -76,6 +79,9 @@ export async function POST(req: Request) {
    const rendererImplementation = getRecord(
       realRenderConfigurationRecord?.rendererImplementation,
    )
+   const rendererCandidatePlan = getRecord(
+      realRenderConfigurationRecord?.rendererCandidatePlan,
+    )
    const outputFormat = getRecord(realRenderConfigurationRecord?.outputFormat)
    const sampleRate = getRecord(realRenderConfigurationRecord?.sampleRate)
    const storage = getRecord(realRenderConfigurationRecord?.storage)
@@ -120,6 +126,28 @@ if (getString(realRenderConfigurationRecord?.audioStatus) !== 'not-generated') {
 
 if (getString(rendererImplementation?.status) !== 'not-connected') {
   missingOrInvalidConfigurationFields.push('rendererImplementation.status')
+}
+
+if (
+  getString(rendererCandidatePlan?.status) !==
+  'candidate-declared-not-selected'
+) {
+  missingOrInvalidConfigurationFields.push('rendererCandidatePlan.status')
+}
+
+if (
+  getString(rendererCandidatePlan?.recommendedFirstRenderer) !==
+  'local-click-track-wav-renderer'
+) {
+  missingOrInvalidConfigurationFields.push(
+    'rendererCandidatePlan.recommendedFirstRenderer',
+  )
+}
+
+if (rendererCandidatePlan?.selectedRenderer !== null) {
+  missingOrInvalidConfigurationFields.push(
+    'rendererCandidatePlan.selectedRenderer',
+  )
 }
 
 if (getString(outputFormat?.status) !== 'not-selected') {
@@ -172,11 +200,18 @@ if (getString(firstTarget?.key) !== 'clickTrack') {
       missingOrInvalid: missingOrInvalidContractFields,
     },
     receivedConfigurationSummary: {
-      configurationStatus: getString(
-        realRenderConfigurationRecord?.configurationStatus,
-      ),
-      audioStatus: getString(realRenderConfigurationRecord?.audioStatus),
+  configurationStatus: getString(
+    realRenderConfigurationRecord?.configurationStatus,
+  ),
+  audioStatus: getString(realRenderConfigurationRecord?.audioStatus),
       rendererStatus: getString(rendererImplementation?.status),
+      rendererCandidateStatus: getString(rendererCandidatePlan?.status),
+      recommendedFirstRenderer: getString(
+        rendererCandidatePlan?.recommendedFirstRenderer,
+      ),
+      rendererCandidateSelectedRenderer: getString(
+        rendererCandidatePlan?.selectedRenderer,
+      ),
       outputFormatStatus: getString(outputFormat?.status),
       sampleRateStatus: getString(sampleRate?.status),
       storageStatus: getString(storage?.status),
