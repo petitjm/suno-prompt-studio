@@ -2848,6 +2848,11 @@ const receivedContractCheck =
       'dry-run-real-render-configuration-placeholder' &&
     receivedConfigurationSummary.audioStatus === 'not-generated' &&
     receivedConfigurationSummary.rendererStatus === 'not-connected' &&
+    receivedConfigurationSummary.rendererCandidateStatus ===
+      'candidate-declared-not-selected' &&
+    receivedConfigurationSummary.recommendedFirstRenderer ===
+      'local-click-track-wav-renderer' &&
+    receivedConfigurationSummary.rendererCandidateSelectedRenderer === null &&
     receivedConfigurationSummary.outputFormatStatus === 'not-selected' &&
     receivedConfigurationSummary.sampleRateStatus === 'not-selected' &&
     receivedConfigurationSummary.storageStatus === 'not-configured' &&
@@ -5791,7 +5796,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         `Real-render configuration received: ${getRealRenderRouteReceivedConfigurationStatus()}`,
       '',
       blockedRealRenderRouteTestPassed
-        ? 'Result: The blocked real-render route safely returned 423 blocked, verified received contract/configuration summaries and checks, and did not generate audio.'
+        ? 'Result: The blocked real-render route safely returned 423 blocked, verified received contract/configuration summaries including the renderer candidate, verified checks, and did not generate audio.'
         : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
       '',
       ...(receivedConfigurationSummary
@@ -13763,7 +13768,7 @@ return (
 <div className="mt-2 font-medium text-purple-100">
   Result:{' '}
   {getBlockedRealRenderRouteTestPassed()
-    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries and checks, and generated no audio.'
+    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries including the renderer candidate, verified checks, and generated no audio.'
     : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders.'}
 </div>
 
