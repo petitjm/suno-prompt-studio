@@ -8850,17 +8850,47 @@ const hasExpectedReceivedConfigurationSummary = Boolean(
           >
         ).expectedBlockedResponse as Record<string, unknown>
       ).receivedConfigurationSummary as Record<string, unknown>
-    ).rendererStatus === 'not-connected' &&
+).rendererStatus === 'not-connected' &&
+(
+  (
     (
-      (
-        (
-          dryRunArtifactPackage.realRenderRouteScaffold as Record<
-            string,
-            unknown
-          >
-        ).expectedBlockedResponse as Record<string, unknown>
-      ).receivedConfigurationSummary as Record<string, unknown>
-    ).outputFormatStatus === 'not-selected' &&
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).rendererCandidateStatus === 'candidate-declared-not-selected' &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).recommendedFirstRenderer === 'local-click-track-wav-renderer' &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).rendererCandidateSelectedRenderer === null &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).outputFormatStatus === 'not-selected' &&
     (
       (
         (
@@ -9210,7 +9240,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Expected received-configuration summary',
   detail: hasExpectedReceivedConfigurationSummary
-    ? 'Blocked route scaffold declares the expected received-configuration summary with all required placeholder statuses.'
+    ? 'Blocked route scaffold declares the expected received-configuration summary with all required placeholder statuses and renderer candidate fields.'
     : 'Expected received-configuration summary is pending until the dry-run scaffold declares it in the expected blocked response.',
   complete: hasExpectedReceivedConfigurationSummary,
 },
