@@ -1543,6 +1543,20 @@ realRenderConfiguration: {
     requiredDecision:
       'Choose and connect the first real renderer implementation before audio generation can be enabled.',
   },
+  rendererCandidatePlan: {
+  status: 'candidate-declared-not-selected',
+  recommendedFirstRenderer: 'local-click-track-wav-renderer',
+  selectedRenderer: null,
+  reason:
+    'A deterministic local click-track WAV renderer is the safest first real-render candidate because it can prove timing, format, storage, and download flow before any musical audio is attempted.',
+  mustRemainBlockedUntil: [
+    'Renderer implementation is written and tested.',
+    'Output format is selected.',
+    'Sample rate is selected.',
+    'Generated audio storage or browser download flow is selected.',
+    'Blocked route scaffold is replaced by real execution.',
+  ],
+},
   outputFormat: {
     status: 'not-selected',
     selectedFormat: null,
@@ -2929,6 +2943,50 @@ if (!realRenderConfiguration) {
     }
   }
 
+  const rendererCandidatePlan =
+          realRenderConfiguration.rendererCandidatePlan &&
+          typeof realRenderConfiguration.rendererCandidatePlan === 'object' &&
+          !Array.isArray(realRenderConfiguration.rendererCandidatePlan)
+            ? (realRenderConfiguration.rendererCandidatePlan as Record<
+                string,
+                unknown
+              >)
+            : null
+
+        if (!rendererCandidatePlan) {
+          missing.push('realRenderConfiguration.rendererCandidatePlan')
+        } else {
+          if (
+            rendererCandidatePlan.status !== 'candidate-declared-not-selected'
+          ) {
+            missing.push('realRenderConfiguration.rendererCandidatePlan.status')
+          }
+
+          if (
+            rendererCandidatePlan.recommendedFirstRenderer !==
+            'local-click-track-wav-renderer'
+          ) {
+            missing.push(
+              'realRenderConfiguration.rendererCandidatePlan.recommendedFirstRenderer',
+            )
+          }
+
+          if (rendererCandidatePlan.selectedRenderer !== null) {
+            missing.push(
+              'realRenderConfiguration.rendererCandidatePlan.selectedRenderer',
+            )
+          }
+
+          if (
+            !Array.isArray(rendererCandidatePlan.mustRemainBlockedUntil) ||
+            rendererCandidatePlan.mustRemainBlockedUntil.length === 0
+          ) {
+            missing.push(
+              'realRenderConfiguration.rendererCandidatePlan.mustRemainBlockedUntil',
+            )
+          }
+        }
+
   const outputFormat =
     realRenderConfiguration.outputFormat &&
     typeof realRenderConfiguration.outputFormat === 'object' &&
@@ -3202,7 +3260,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, and includes real-render configuration placeholders.'     
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, includes real-render configuration placeholders, and declares the first real-render candidate without selecting it.'    
 : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
