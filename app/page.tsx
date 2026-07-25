@@ -3603,6 +3603,35 @@ const copyAudioPreviewArtifactPackage = async () => {
               ),
             ]
           : ['- receivedContractCheck.missingOrInvalid: none']),
+          '- receivedConfigurationSummary:',
+`  - configurationStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.configurationStatus || 'Unknown'
+}`,
+`  - audioStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.audioStatus || 'Unknown'
+}`,
+`  - rendererStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererStatus || 'Unknown'
+}`,
+`  - outputFormatStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.outputFormatStatus || 'Unknown'
+}`,
+`  - sampleRateStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.sampleRateStatus || 'Unknown'
+}`,
+`  - storageStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.storageStatus || 'Unknown'
+}`,
+`  - firstTargetKey: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.firstTargetKey || 'Unknown'
+}`,
       `- receivedConfigurationCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedConfigurationCheck.passed
@@ -5631,6 +5660,35 @@ const fullPackPipelineStatus = fullPackPipelineComplete
               ),
             ]
           : ['- receivedContractCheck.missingOrInvalid: none']),
+          '- receivedConfigurationSummary:',
+`  - configurationStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.configurationStatus || 'Unknown'
+}`,
+`  - audioStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.audioStatus || 'Unknown'
+}`,
+`  - rendererStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererStatus || 'Unknown'
+}`,
+`  - outputFormatStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.outputFormatStatus || 'Unknown'
+}`,
+`  - sampleRateStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.sampleRateStatus || 'Unknown'
+}`,
+`  - storageStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.storageStatus || 'Unknown'
+}`,
+`  - firstTargetKey: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.firstTargetKey || 'Unknown'
+}`,
       `- receivedConfigurationCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedConfigurationCheck.passed
@@ -7596,6 +7654,103 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
             )
           : [],
     },
+
+     
+
+        receivedConfigurationSummary: {
+      configurationStatus:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).configurationStatus === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).configurationStatus as string)
+          : '',
+      audioStatus:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).audioStatus === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).audioStatus as string)
+          : '',
+      rendererStatus:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).rendererStatus === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).rendererStatus as string)
+          : '',
+      outputFormatStatus:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).outputFormatStatus === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).outputFormatStatus as string)
+          : '',
+      sampleRateStatus:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).sampleRateStatus === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).sampleRateStatus as string)
+          : '',
+      storageStatus:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).storageStatus === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).storageStatus as string)
+          : '',
+      firstTargetKey:
+        expectedBlockedResponse?.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+        typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+          string,
+          unknown
+        >).firstTargetKey === 'string'
+          ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >).firstTargetKey as string)
+          : '',
+    },
+
       receivedConfigurationCheck: {
           passed:
             expectedBlockedResponse?.receivedConfigurationCheck &&
@@ -15342,6 +15497,44 @@ return (
   requestedTarget:{' '}
   {realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedContractSummary.requestedTarget || 'Unknown'}
+</div>
+<div className="mt-3 font-medium text-purple-100">
+  Expected received configuration summary
+</div>
+<div className="mt-1 text-purple-100/80">
+  configurationStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.configurationStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  audioStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.audioStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  rendererStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  outputFormatStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.outputFormatStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  sampleRateStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.sampleRateStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  storageStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.storageStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  firstTargetKey:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.firstTargetKey || 'Unknown'}
 </div>
     </div>
 
