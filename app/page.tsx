@@ -8579,6 +8579,113 @@ const hasExpectedReceivedContractCheck = Boolean(
     ).length === 0,
 )
 
+const hasExpectedReceivedConfigurationSummary = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderRouteScaffold &&
+    typeof dryRunArtifactPackage.realRenderRouteScaffold === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderRouteScaffold) &&
+    (dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>)
+      .expectedBlockedResponse &&
+    typeof (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>
+    ).expectedBlockedResponse === 'object' &&
+    !Array.isArray(
+      (dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>)
+        .expectedBlockedResponse,
+    ) &&
+    (
+      (
+        dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>
+      ).expectedBlockedResponse as Record<string, unknown>
+    ).receivedConfigurationSummary &&
+    typeof (
+      (
+        dryRunArtifactPackage.realRenderRouteScaffold as Record<string, unknown>
+      ).expectedBlockedResponse as Record<string, unknown>
+    ).receivedConfigurationSummary === 'object' &&
+    !Array.isArray(
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary,
+    ) &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).configurationStatus ===
+      'dry-run-real-render-configuration-placeholder' &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).audioStatus === 'not-generated' &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).rendererStatus === 'not-connected' &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).outputFormatStatus === 'not-selected' &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).sampleRateStatus === 'not-selected' &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).storageStatus === 'not-configured' &&
+    (
+      (
+        (
+          dryRunArtifactPackage.realRenderRouteScaffold as Record<
+            string,
+            unknown
+          >
+        ).expectedBlockedResponse as Record<string, unknown>
+      ).receivedConfigurationSummary as Record<string, unknown>
+    ).firstTargetKey === 'clickTrack',
+)
+
 const hasExpectedReceivedConfigurationCheck = Boolean(
   dryRunArtifactPackage &&
     dryRunArtifactPackage.realRenderRouteScaffold &&
@@ -8883,6 +8990,14 @@ const hasBlockedRealRenderRouteTestPassed =
     ? 'Blocked route scaffold declares the expected received-contract check with passed true and no missing or invalid fields.'
     : 'Expected received-contract check is pending until the dry-run scaffold declares it in the expected blocked response.',
   complete: hasExpectedReceivedContractCheck,
+},
+
+{
+  label: 'Expected received-configuration summary',
+  detail: hasExpectedReceivedConfigurationSummary
+    ? 'Blocked route scaffold declares the expected received-configuration summary with all required placeholder statuses.'
+    : 'Expected received-configuration summary is pending until the dry-run scaffold declares it in the expected blocked response.',
+  complete: hasExpectedReceivedConfigurationSummary,
 },
 
 {
