@@ -3682,6 +3682,29 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderConfigurationSummary.rendererImplementation.status ||
         'Unknown'
       })`,
+      `Renderer candidate: ${
+          realRenderConfigurationSummary.rendererCandidatePlan
+            .recommendedFirstRenderer || 'not declared'
+        } (${
+          realRenderConfigurationSummary.rendererCandidatePlan.status || 'Unknown'
+        })`,
+        `Renderer candidate selected: ${
+          realRenderConfigurationSummary.rendererCandidatePlan.selectedRenderer ||
+          'not selected'
+        }`,
+        realRenderConfigurationSummary.rendererCandidatePlan.reason
+          ? `Renderer candidate reason: ${realRenderConfigurationSummary.rendererCandidatePlan.reason}`
+          : '',
+        ...(realRenderConfigurationSummary.rendererCandidatePlan
+          .mustRemainBlockedUntil.length > 0
+          ? [
+              'Renderer candidate must remain blocked until:',
+              ...realRenderConfigurationSummary.rendererCandidatePlan.mustRemainBlockedUntil.map(
+                (item) => `- ${item}`,
+              ),
+              '',
+            ]
+          : []),
       `Format: ${
         realRenderConfigurationSummary.outputFormat.selectedFormat ||
         'not selected'
@@ -3701,6 +3724,7 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderConfigurationSummary.storage.status || 'Unknown'
       })`,
       '',
+
       ...(realRenderConfigurationSummary.unlockRequirements.length > 0
         ? [
             'Unlock requirements:',
@@ -5865,6 +5889,29 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         realRenderConfigurationSummary.rendererImplementation.status ||
         'Unknown'
       })`,
+      `Renderer candidate: ${
+          realRenderConfigurationSummary.rendererCandidatePlan
+            .recommendedFirstRenderer || 'not declared'
+        } (${
+          realRenderConfigurationSummary.rendererCandidatePlan.status || 'Unknown'
+        })`,
+        `Renderer candidate selected: ${
+          realRenderConfigurationSummary.rendererCandidatePlan.selectedRenderer ||
+          'not selected'
+        }`,
+        realRenderConfigurationSummary.rendererCandidatePlan.reason
+          ? `Renderer candidate reason: ${realRenderConfigurationSummary.rendererCandidatePlan.reason}`
+          : '',
+        ...(realRenderConfigurationSummary.rendererCandidatePlan
+          .mustRemainBlockedUntil.length > 0
+          ? [
+              'Renderer candidate must remain blocked until:',
+              ...realRenderConfigurationSummary.rendererCandidatePlan.mustRemainBlockedUntil.map(
+                (item) => `- ${item}`,
+              ),
+              '',
+            ]
+          : []),
       `Format: ${
         realRenderConfigurationSummary.outputFormat.selectedFormat ||
         'not selected'
@@ -7815,6 +7862,16 @@ const getDryRunRealRenderConfigurationSummary = () => {
         >)
       : null
 
+      const rendererCandidatePlan =
+      realRenderConfiguration.rendererCandidatePlan &&
+      typeof realRenderConfiguration.rendererCandidatePlan === 'object' &&
+      !Array.isArray(realRenderConfiguration.rendererCandidatePlan)
+        ? (realRenderConfiguration.rendererCandidatePlan as Record<
+            string,
+            unknown
+          >)
+        : null
+
   const outputFormat =
     realRenderConfiguration.outputFormat &&
     typeof realRenderConfiguration.outputFormat === 'object' &&
@@ -7852,29 +7909,56 @@ const getDryRunRealRenderConfigurationSummary = () => {
       )
     : []
 
-  return {
-    configurationStatus:
-      typeof realRenderConfiguration.configurationStatus === 'string'
-        ? realRenderConfiguration.configurationStatus
+return {
+  configurationStatus:
+    typeof realRenderConfiguration.configurationStatus === 'string'
+      ? realRenderConfiguration.configurationStatus
+      : '',
+  audioStatus:
+    typeof realRenderConfiguration.audioStatus === 'string'
+      ? realRenderConfiguration.audioStatus
+      : '',
+  rendererImplementation: {
+    status:
+      typeof rendererImplementation?.status === 'string'
+        ? rendererImplementation.status
         : '',
-    audioStatus:
-      typeof realRenderConfiguration.audioStatus === 'string'
-        ? realRenderConfiguration.audioStatus
+    selectedRenderer:
+      typeof rendererImplementation?.selectedRenderer === 'string'
+        ? rendererImplementation.selectedRenderer
+        : null,
+    requiredDecision:
+      typeof rendererImplementation?.requiredDecision === 'string'
+        ? rendererImplementation.requiredDecision
         : '',
-    rendererImplementation: {
-      status:
-        typeof rendererImplementation?.status === 'string'
-          ? rendererImplementation.status
-          : '',
-      selectedRenderer:
-        typeof rendererImplementation?.selectedRenderer === 'string'
-          ? rendererImplementation.selectedRenderer
-          : null,
-      requiredDecision:
-        typeof rendererImplementation?.requiredDecision === 'string'
-          ? rendererImplementation.requiredDecision
-          : '',
-    },
+  },
+  rendererCandidatePlan: {
+    status:
+      typeof rendererCandidatePlan?.status === 'string'
+        ? rendererCandidatePlan.status
+        : '',
+    recommendedFirstRenderer:
+      typeof rendererCandidatePlan?.recommendedFirstRenderer === 'string'
+        ? rendererCandidatePlan.recommendedFirstRenderer
+        : '',
+    selectedRenderer:
+      typeof rendererCandidatePlan?.selectedRenderer === 'string'
+        ? rendererCandidatePlan.selectedRenderer
+        : null,
+    reason:
+      typeof rendererCandidatePlan?.reason === 'string'
+        ? rendererCandidatePlan.reason
+        : '',
+    mustRemainBlockedUntil: Array.isArray(
+      rendererCandidatePlan?.mustRemainBlockedUntil,
+    )
+      ? rendererCandidatePlan.mustRemainBlockedUntil.filter(
+          (item): item is string =>
+            typeof item === 'string' && item.trim().length > 0,
+        )
+      : [],
+  },
+
     outputFormat: {
       status:
         typeof outputFormat?.status === 'string' ? outputFormat.status : '',
@@ -15698,6 +15782,15 @@ return (
           )
         </div>
         <div>
+          Renderer candidate:{' '}
+          {realRenderConfigurationSummary.rendererCandidatePlan
+            .recommendedFirstRenderer || 'not declared'}{' '}
+          (
+          {realRenderConfigurationSummary.rendererCandidatePlan.status ||
+            'Unknown'}
+          )
+        </div>
+        <div>
           Format:{' '}
           {realRenderConfigurationSummary.outputFormat.selectedFormat ||
             'not selected'}{' '}
@@ -15719,6 +15812,33 @@ return (
         </div>
       </div>
     </div>
+
+    {realRenderConfigurationSummary.rendererCandidatePlan.reason ? (
+      <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+        <div className="font-medium text-cyan-100">
+          Renderer candidate reason
+        </div>
+        <div className="mt-1 text-cyan-100/80">
+          {realRenderConfigurationSummary.rendererCandidatePlan.reason}
+        </div>
+      </div>
+    ) : null}
+
+    {realRenderConfigurationSummary.rendererCandidatePlan
+      .mustRemainBlockedUntil.length > 0 ? (
+      <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+        <div className="font-medium text-cyan-100">
+          Must remain blocked until
+        </div>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+          {realRenderConfigurationSummary.rendererCandidatePlan.mustRemainBlockedUntil.map(
+            (item) => (
+              <li key={item}>{item}</li>
+            ),
+          )}
+        </ul>
+      </div>
+    ) : null}
 
     {realRenderConfigurationSummary.unlockRequirements.length > 0 ? (
       <div className="mt-2">
