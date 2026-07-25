@@ -1512,6 +1512,15 @@ realRenderRouteScaffold: {
           passed: true,
           missingOrInvalid: [],
         },
+        receivedConfigurationSummary: {
+          configurationStatus: 'dry-run-real-render-configuration-placeholder',
+          audioStatus: 'not-generated',
+          rendererStatus: 'not-connected',
+          outputFormatStatus: 'not-selected',
+          sampleRateStatus: 'not-selected',
+          storageStatus: 'not-configured',
+          firstTargetKey: 'clickTrack',
+        },
       receivedConfigurationCheck: {
         passed: true,
         missingOrInvalid: [],
@@ -2773,11 +2782,72 @@ if (!expectedReceivedContractCheck) {
   }
 }
 
+const expectedReceivedConfigurationSummary =
+  expectedBlockedResponse.receivedConfigurationSummary &&
+  typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+  !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary)
+    ? (expectedBlockedResponse.receivedConfigurationSummary as Record<
+        string,
+        unknown
+      >)
+    : null
+
+if (!expectedReceivedConfigurationSummary) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary',
+  )
+} else {
+  if (
+    expectedReceivedConfigurationSummary.configurationStatus !==
+    'dry-run-real-render-configuration-placeholder'
+  ) {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.configurationStatus',
+    )
+  }
+
+  if (expectedReceivedConfigurationSummary.audioStatus !== 'not-generated') {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.audioStatus',
+    )
+  }
+
+  if (expectedReceivedConfigurationSummary.rendererStatus !== 'not-connected') {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererStatus',
+    )
+  }
+
+  if (expectedReceivedConfigurationSummary.outputFormatStatus !== 'not-selected') {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.outputFormatStatus',
+    )
+  }
+
+  if (expectedReceivedConfigurationSummary.sampleRateStatus !== 'not-selected') {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.sampleRateStatus',
+    )
+  }
+
+  if (expectedReceivedConfigurationSummary.storageStatus !== 'not-configured') {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.storageStatus',
+    )
+  }
+
+  if (expectedReceivedConfigurationSummary.firstTargetKey !== 'clickTrack') {
+    missing.push(
+      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.firstTargetKey',
+    )
+  }
+}
+
     const expectedReceivedConfigurationCheck =
-  expectedBlockedResponse.receivedConfigurationCheck &&
-  typeof expectedBlockedResponse.receivedConfigurationCheck === 'object' &&
-  !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck)
-    ? (expectedBlockedResponse.receivedConfigurationCheck as Record<
+      expectedBlockedResponse.receivedConfigurationCheck &&
+      typeof expectedBlockedResponse.receivedConfigurationCheck === 'object' &&
+      !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck)
+        ? (expectedBlockedResponse.receivedConfigurationCheck as Record<
         string,
         unknown
       >)
@@ -3132,7 +3202,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract summary plus contract and configuration checks, and includes real-render configuration placeholders.'     
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, and includes real-render configuration placeholders.'     
 : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
