@@ -3559,6 +3559,35 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
       }`,
+      '- receivedContractSummary:',
+        `  - rendererInputContract: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasRendererInputContract
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - realRenderGate: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasRealRenderGate
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - firstRealRenderPlan: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasFirstRealRenderPlan
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - realRenderConfiguration: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasRealRenderConfiguration
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - requestedTarget: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.requestedTarget || 'Unknown'
+        }`,
       `- receivedContractCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedContractCheck.passed
@@ -5558,6 +5587,35 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
       }`,
+      '- receivedContractSummary:',
+        `  - rendererInputContract: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasRendererInputContract
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - realRenderGate: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasRealRenderGate
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - firstRealRenderPlan: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasFirstRealRenderPlan
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - realRenderConfiguration: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.hasRealRenderConfiguration
+            ? 'yes'
+            : 'no'
+        }`,
+        `  - requestedTarget: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedContractSummary.requestedTarget || 'Unknown'
+        }`,
       `- receivedContractCheck.passed: ${
           realRenderRouteScaffoldSummary.expectedBlockedResponse
             .receivedContractCheck.passed
@@ -7460,8 +7518,56 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
         typeof expectedBlockedResponse?.formatStatus === 'string'
           ? expectedBlockedResponse.formatStatus
           : '',
-          receivedContractCheck: {
-      passed:
+     
+      receivedContractSummary: {
+          hasRendererInputContract:
+            expectedBlockedResponse?.receivedContractSummary &&
+            typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedContractSummary) &&
+            (expectedBlockedResponse.receivedContractSummary as Record<
+              string,
+              unknown
+            >).hasRendererInputContract === true,
+          hasRealRenderGate:
+            expectedBlockedResponse?.receivedContractSummary &&
+            typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedContractSummary) &&
+            (expectedBlockedResponse.receivedContractSummary as Record<
+              string,
+              unknown
+            >).hasRealRenderGate === true,
+          hasFirstRealRenderPlan:
+            expectedBlockedResponse?.receivedContractSummary &&
+            typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedContractSummary) &&
+            (expectedBlockedResponse.receivedContractSummary as Record<
+              string,
+              unknown
+            >).hasFirstRealRenderPlan === true,
+          hasRealRenderConfiguration:
+            expectedBlockedResponse?.receivedContractSummary &&
+            typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedContractSummary) &&
+            (expectedBlockedResponse.receivedContractSummary as Record<
+              string,
+              unknown
+            >).hasRealRenderConfiguration === true,
+          requestedTarget:
+            expectedBlockedResponse?.receivedContractSummary &&
+            typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
+            !Array.isArray(expectedBlockedResponse.receivedContractSummary) &&
+            typeof (expectedBlockedResponse.receivedContractSummary as Record<
+              string,
+              unknown
+            >).requestedTarget === 'string'
+              ? ((expectedBlockedResponse.receivedContractSummary as Record<
+                  string,
+                  unknown
+                >).requestedTarget as string)
+              : '',
+        },
+      receivedContractCheck: {
+        passed:
         expectedBlockedResponse?.receivedContractCheck &&
         typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
         !Array.isArray(expectedBlockedResponse.receivedContractCheck) &&
@@ -15107,6 +15213,42 @@ return (
         {realRenderRouteScaffoldSummary.expectedBlockedResponse
           .formatStatus || 'Unknown'}
       </div>
+      <div className="mt-3 font-medium text-purple-100">
+  Expected received contract summary
+</div>
+<div className="mt-1 text-purple-100/80">
+  rendererInputContract:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedContractSummary.hasRendererInputContract
+    ? 'yes'
+    : 'no'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  realRenderGate:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedContractSummary.hasRealRenderGate
+    ? 'yes'
+    : 'no'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  firstRealRenderPlan:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedContractSummary.hasFirstRealRenderPlan
+    ? 'yes'
+    : 'no'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  realRenderConfiguration:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedContractSummary.hasRealRenderConfiguration
+    ? 'yes'
+    : 'no'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  requestedTarget:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedContractSummary.requestedTarget || 'Unknown'}
+</div>
     </div>
 
     {realRenderRouteScaffoldSummary.safetyRules.length > 0 ? (
