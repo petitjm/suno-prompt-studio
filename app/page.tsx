@@ -8507,6 +8507,37 @@ const hasRealRenderConfiguration = Boolean(
     !Array.isArray(dryRunArtifactPackage.realRenderConfiguration),
 )
 
+const hasRendererCandidatePlan = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderConfiguration &&
+    typeof dryRunArtifactPackage.realRenderConfiguration === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderConfiguration) &&
+    (dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>)
+      .rendererCandidatePlan &&
+    typeof (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).rendererCandidatePlan === 'object' &&
+    !Array.isArray(
+      (dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>)
+        .rendererCandidatePlan,
+    ) &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).rendererCandidatePlan as Record<string, unknown>
+    ).status === 'candidate-declared-not-selected' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).rendererCandidatePlan as Record<string, unknown>
+    ).recommendedFirstRenderer === 'local-click-track-wav-renderer' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).rendererCandidatePlan as Record<string, unknown>
+    ).selectedRenderer === null,
+)
+
 const hasExpectedReceivedContractSummary = Boolean(
   dryRunArtifactPackage &&
     dryRunArtifactPackage.realRenderRouteScaffold &&
@@ -9058,6 +9089,14 @@ const hasBlockedRealRenderRouteTestPassed =
     ? 'Real-render configuration placeholders are present and keep renderer, format, sample rate, and storage unset until real rendering is deliberately enabled.'
     : 'Real-render configuration placeholders are pending until dry run creates the artefact package.',
   complete: hasRealRenderConfiguration,
+},
+
+{
+  label: 'First renderer candidate placeholder',
+  detail: hasRendererCandidatePlan
+    ? 'First renderer candidate placeholder is present, recommends the local click-track WAV renderer, and keeps it unselected.'
+    : 'First renderer candidate placeholder is pending until dry run creates the real-render configuration.',
+  complete: hasRendererCandidatePlan,
 },
 
 {
