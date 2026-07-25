@@ -1516,6 +1516,9 @@ realRenderRouteScaffold: {
           configurationStatus: 'dry-run-real-render-configuration-placeholder',
           audioStatus: 'not-generated',
           rendererStatus: 'not-connected',
+          rendererCandidateStatus: 'candidate-declared-not-selected',
+          recommendedFirstRenderer: 'local-click-track-wav-renderer',
+          rendererCandidateSelectedRenderer: null,
           outputFormatStatus: 'not-selected',
           sampleRateStatus: 'not-selected',
           storageStatus: 'not-configured',
@@ -2831,6 +2834,33 @@ if (!expectedReceivedConfigurationSummary) {
       'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererStatus',
     )
   }
+
+if (
+  expectedReceivedConfigurationSummary.rendererCandidateStatus !==
+  'candidate-declared-not-selected'
+) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererCandidateStatus',
+  )
+}
+
+if (
+  expectedReceivedConfigurationSummary.recommendedFirstRenderer !==
+  'local-click-track-wav-renderer'
+) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstRenderer',
+  )
+}
+
+if (
+  expectedReceivedConfigurationSummary.rendererCandidateSelectedRenderer !==
+  null
+) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererCandidateSelectedRenderer',
+  )
+}
 
   if (expectedReceivedConfigurationSummary.outputFormatStatus !== 'not-selected') {
     missing.push(
