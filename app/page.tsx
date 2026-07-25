@@ -2739,6 +2739,19 @@ const getRealRenderRouteReceivedConfigurationSummary = () => {
       typeof receivedConfigurationSummary.rendererStatus === 'string'
         ? receivedConfigurationSummary.rendererStatus
         : '',
+    rendererCandidateStatus:
+      typeof receivedConfigurationSummary.rendererCandidateStatus === 'string'
+        ? receivedConfigurationSummary.rendererCandidateStatus
+        : '',
+    recommendedFirstRenderer:
+      typeof receivedConfigurationSummary.recommendedFirstRenderer === 'string'
+        ? receivedConfigurationSummary.recommendedFirstRenderer
+        : '',
+    rendererCandidateSelectedRenderer:
+      typeof receivedConfigurationSummary.rendererCandidateSelectedRenderer ===
+      'string'
+        ? receivedConfigurationSummary.rendererCandidateSelectedRenderer
+        : null,
     outputFormatStatus:
       typeof receivedConfigurationSummary.outputFormatStatus === 'string'
         ? receivedConfigurationSummary.outputFormatStatus
@@ -5793,6 +5806,15 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       `- Renderer status: ${
         receivedConfigurationSummary.rendererStatus || 'unknown'
       }`,
+      `- Renderer candidate status: ${
+          receivedConfigurationSummary.rendererCandidateStatus || 'unknown'
+        }`,
+        `- Recommended first renderer: ${
+          receivedConfigurationSummary.recommendedFirstRenderer || 'unknown'
+        }`,
+        `- Renderer candidate selected: ${
+          receivedConfigurationSummary.rendererCandidateSelectedRenderer || 'none'
+        }`,
       `- Output format status: ${
         receivedConfigurationSummary.outputFormatStatus || 'unknown'
       }`,
@@ -13761,10 +13783,20 @@ return (
       {getRealRenderRouteReceivedConfigurationSummary()?.audioStatus ||
         'unknown'}
     </div>
+   <div className="mt-1 text-purple-100/80">
+      Renderer candidate status:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.rendererCandidateStatus || 'unknown'}
+    </div>
     <div className="mt-1 text-purple-100/80">
-      Renderer status:{' '}
-      {getRealRenderRouteReceivedConfigurationSummary()?.rendererStatus ||
-        'unknown'}
+      Recommended first renderer:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.recommendedFirstRenderer || 'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Renderer candidate selected:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.rendererCandidateSelectedRenderer || 'none'}
     </div>
     <div className="mt-1 text-purple-100/80">
       Output format status:{' '}
