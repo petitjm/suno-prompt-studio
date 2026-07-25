@@ -1501,6 +1501,13 @@ realRenderRouteScaffold: {
       rendererStatus: 'not-connected',
       storageStatus: 'not-configured',
       formatStatus: 'not-selected',
+      receivedContractSummary: {
+      hasRendererInputContract: true,
+      hasRealRenderGate: true,
+      hasFirstRealRenderPlan: true,
+      hasRealRenderConfiguration: true,
+      requestedTarget: 'clickTrack',
+    },
       receivedContractCheck: {
           passed: true,
           missingOrInvalid: [],
@@ -2689,13 +2696,59 @@ if (!realRenderRouteScaffold) {
       )
     }
 
+    const expectedReceivedContractSummary =
+      expectedBlockedResponse.receivedContractSummary &&
+      typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
+      !Array.isArray(expectedBlockedResponse.receivedContractSummary)
+        ? (expectedBlockedResponse.receivedContractSummary as Record<
+            string,
+            unknown
+      >)
+    : null
+
+    if (!expectedReceivedContractSummary) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary',
+      )
+    } else {
+      if (expectedReceivedContractSummary.hasRendererInputContract !== true) {
+        missing.push(
+          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRendererInputContract',
+        )
+      }
+
+      if (expectedReceivedContractSummary.hasRealRenderGate !== true) {
+        missing.push(
+          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRealRenderGate',
+        )
+      }
+
+      if (expectedReceivedContractSummary.hasFirstRealRenderPlan !== true) {
+        missing.push(
+          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasFirstRealRenderPlan',
+        )
+      }
+
+      if (expectedReceivedContractSummary.hasRealRenderConfiguration !== true) {
+        missing.push(
+          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRealRenderConfiguration',
+        )
+      }
+
+      if (expectedReceivedContractSummary.requestedTarget !== 'clickTrack') {
+        missing.push(
+          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.requestedTarget',
+        )
+      }
+    }
+
     const expectedReceivedContractCheck =
-  expectedBlockedResponse.receivedContractCheck &&
-  typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
-  !Array.isArray(expectedBlockedResponse.receivedContractCheck)
-    ? (expectedBlockedResponse.receivedContractCheck as Record<
-        string,
-        unknown
+      expectedBlockedResponse.receivedContractCheck &&
+      typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
+      !Array.isArray(expectedBlockedResponse.receivedContractCheck)
+        ? (expectedBlockedResponse.receivedContractCheck as Record<
+            string,
+            unknown
       >)
     : null
 
@@ -3079,7 +3132,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response check, and includes real-render configuration placeholders.'        
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract summary plus contract and configuration checks, and includes real-render configuration placeholders.'     
 : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
