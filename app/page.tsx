@@ -3634,6 +3634,19 @@ const copyAudioPreviewArtifactPackage = async () => {
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.rendererStatus || 'Unknown'
 }`,
+`  - rendererCandidateStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererCandidateStatus || 'Unknown'
+}`,
+`  - recommendedFirstRenderer: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstRenderer || 'Unknown'
+}`,
+`  - rendererCandidateSelectedRenderer: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererCandidateSelectedRenderer ||
+  'none'
+}`,
 `  - outputFormatStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.outputFormatStatus || 'Unknown'
@@ -5715,6 +5728,19 @@ const fullPackPipelineStatus = fullPackPipelineComplete
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.rendererStatus || 'Unknown'
 }`,
+`  - rendererCandidateStatus: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererCandidateStatus || 'Unknown'
+}`,
+`  - recommendedFirstRenderer: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstRenderer || 'Unknown'
+}`,
+`  - rendererCandidateSelectedRenderer: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererCandidateSelectedRenderer ||
+  'none'
+}`,
 `  - outputFormatStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.outputFormatStatus || 'Unknown'
@@ -7771,6 +7797,45 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
               unknown
             >).rendererStatus as string)
           : '',
+          rendererCandidateStatus:
+              expectedBlockedResponse?.receivedConfigurationSummary &&
+              typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+              !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+              typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+                string,
+                unknown
+              >).rendererCandidateStatus === 'string'
+                ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+                    string,
+                    unknown
+                  >).rendererCandidateStatus as string)
+                : '',
+            recommendedFirstRenderer:
+              expectedBlockedResponse?.receivedConfigurationSummary &&
+              typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+              !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+              typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+                string,
+                unknown
+              >).recommendedFirstRenderer === 'string'
+                ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+                    string,
+                    unknown
+                  >).recommendedFirstRenderer as string)
+                : '',
+            rendererCandidateSelectedRenderer:
+              expectedBlockedResponse?.receivedConfigurationSummary &&
+              typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+              !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+              typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+                string,
+                unknown
+              >).rendererCandidateSelectedRenderer === 'string'
+                ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+                    string,
+                    unknown
+                  >).rendererCandidateSelectedRenderer as string)
+                : null,
       outputFormatStatus:
         expectedBlockedResponse?.receivedConfigurationSummary &&
         typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
@@ -9103,7 +9168,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and verified the received contract/configuration summaries and checks.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, the received renderer candidate summary, and the received contract/configuration checks.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
@@ -15790,6 +15855,22 @@ return (
   rendererStatus:{' '}
   {realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.rendererStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  rendererCandidateStatus:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererCandidateStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  recommendedFirstRenderer:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstRenderer || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  rendererCandidateSelectedRenderer:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.rendererCandidateSelectedRenderer ||
+    'none'}
 </div>
 <div className="mt-1 text-purple-100/80">
   outputFormatStatus:{' '}
