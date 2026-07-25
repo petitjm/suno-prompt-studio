@@ -2802,8 +2802,11 @@ const getBlockedRealRenderRouteTestPassed = () => {
   const receivedConfigurationSummary =
     getRealRenderRouteReceivedConfigurationSummary()
 
-  const receivedConfigurationCheck =
+const receivedConfigurationCheck =
     getRealRenderRouteReceivedConfigurationCheck()
+
+const receivedContractSummary =
+  getRealRenderRouteReceivedContractSummary()
 
 const receivedContractCheck =
   getRealRenderRouteReceivedContractCheck()
@@ -2815,6 +2818,12 @@ const receivedContractCheck =
     realRenderRouteTestResponse.audioStatus === 'not-generated' &&
     realRenderRouteTestResponse.rendererStatus === 'not-connected' &&
     getRealRenderRouteReceivedConfigurationPassed() &&
+    receivedContractSummary !== null &&
+    receivedContractSummary.hasRendererInputContract &&
+    receivedContractSummary.hasRealRenderGate &&
+    receivedContractSummary.hasFirstRealRenderPlan &&
+    receivedContractSummary.hasRealRenderConfiguration &&
+    receivedContractSummary.requestedTarget === 'clickTrack' &&
     receivedContractCheck !== null &&
     receivedContractCheck.passed &&
     receivedContractCheck.missingOrInvalid.length === 0 &&
@@ -5629,7 +5638,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         `Real-render configuration received: ${getRealRenderRouteReceivedConfigurationStatus()}`,
       '',
       blockedRealRenderRouteTestPassed
-        ? 'Result: The blocked real-render route safely returned 423 blocked, passed the received-contract and received-configuration checks, and did not generate audio.'
+        ? 'Result: The blocked real-render route safely returned 423 blocked, verified received contract/configuration summaries and checks, and did not generate audio.'
         : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
       '',
       ...(receivedConfigurationSummary
@@ -8498,7 +8507,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and passed the received-contract and received-configuration checks.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, and verified the received contract/configuration summaries and checks.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
@@ -13139,7 +13148,7 @@ return (
 <div className="mt-2 font-medium text-purple-100">
   Result:{' '}
   {getBlockedRealRenderRouteTestPassed()
-    ? 'Passed — route returned 423 blocked, passed the received-contract and received-configuration checks, and generated no audio.'
+    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries and checks, and generated no audio.'
     : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders.'}
 </div>
 
