@@ -3686,6 +3686,15 @@ const copyAudioPreviewArtifactPackage = async () => {
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.sampleRateStatus || 'Unknown'
 }`,
+`  - recommendedFirstSampleRateHz: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstSampleRateHz ??
+  'Unknown'
+}`,
+`  - selectedSampleRateHz: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.selectedSampleRateHz ?? 'none'
+}`,
 `  - storageStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.storageStatus || 'Unknown'
@@ -5813,6 +5822,15 @@ const fullPackPipelineStatus = fullPackPipelineComplete
 `  - sampleRateStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.sampleRateStatus || 'Unknown'
+}`,
+`  - recommendedFirstSampleRateHz: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstSampleRateHz ??
+  'Unknown'
+}`,
+`  - selectedSampleRateHz: ${
+  realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.selectedSampleRateHz ?? 'none'
 }`,
 `  - storageStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
@@ -7999,6 +8017,33 @@ const getDryRunRealRenderRouteScaffoldSummary = () => {
               unknown
             >).sampleRateStatus as string)
           : '',
+          recommendedFirstSampleRateHz:
+  expectedBlockedResponse?.receivedConfigurationSummary &&
+  typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+  !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+  typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+    string,
+    unknown
+  >).recommendedFirstSampleRateHz === 'number'
+    ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+        string,
+        unknown
+      >).recommendedFirstSampleRateHz as number)
+    : null,
+selectedSampleRateHz:
+  expectedBlockedResponse?.receivedConfigurationSummary &&
+  typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+  !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+  typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+    string,
+    unknown
+  >).selectedSampleRateHz === 'number'
+    ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+        string,
+        unknown
+      >).selectedSampleRateHz as number)
+    : null,
+
       storageStatus:
         expectedBlockedResponse?.receivedConfigurationSummary &&
         typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
@@ -16129,6 +16174,17 @@ return (
   sampleRateStatus:{' '}
   {realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.sampleRateStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  recommendedFirstSampleRateHz:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstSampleRateHz ??
+    'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  selectedSampleRateHz:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.selectedSampleRateHz ?? 'none'}
 </div>
 <div className="mt-1 text-purple-100/80">
   storageStatus:{' '}
