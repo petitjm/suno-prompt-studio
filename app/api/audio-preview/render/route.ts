@@ -1525,7 +1525,9 @@ realRenderRouteScaffold: {
           sampleRateStatus: 'sample-rate-candidate-declared-not-selected',
           recommendedFirstSampleRateHz: 44100,
           selectedSampleRateHz: null,
-          storageStatus: 'not-configured',
+          storageStatus: 'storage-candidate-declared-not-configured',
+          recommendedFirstProvider: 'browser-download',
+          selectedProvider: null,
           firstTargetKey: 'clickTrack',
         },
       receivedConfigurationCheck: {
@@ -2936,11 +2938,29 @@ if (
       )
     }
 
-  if (expectedReceivedConfigurationSummary.storageStatus !== 'not-configured') {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.storageStatus',
-    )
-  }
+  if (
+      expectedReceivedConfigurationSummary.storageStatus !==
+      'storage-candidate-declared-not-configured'
+    ) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.storageStatus',
+      )
+    }
+
+    if (
+  expectedReceivedConfigurationSummary.recommendedFirstProvider !==
+  'browser-download'
+) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstProvider',
+  )
+}
+
+if (expectedReceivedConfigurationSummary.selectedProvider !== null) {
+  missing.push(
+    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedProvider',
+  )
+}
 
   if (expectedReceivedConfigurationSummary.firstTargetKey !== 'clickTrack') {
     missing.push(
