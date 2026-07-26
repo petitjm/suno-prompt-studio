@@ -1519,7 +1519,9 @@ realRenderRouteScaffold: {
           rendererCandidateStatus: 'candidate-declared-not-selected',
           recommendedFirstRenderer: 'local-click-track-wav-renderer',
           rendererCandidateSelectedRenderer: null,
-          outputFormatStatus: 'not-selected',
+          outputFormatStatus: 'format-candidate-declared-not-selected',
+          recommendedFirstFormat: 'wav',
+          selectedFormat: null,
           sampleRateStatus: 'not-selected',
           storageStatus: 'not-configured',
           firstTargetKey: 'clickTrack',
@@ -2871,11 +2873,26 @@ if (
   )
 }
 
-  if (expectedReceivedConfigurationSummary.outputFormatStatus !== 'not-selected') {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.outputFormatStatus',
-    )
-  }
+  if (
+      expectedReceivedConfigurationSummary.outputFormatStatus !==
+      'format-candidate-declared-not-selected'
+    ) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.outputFormatStatus',
+      )
+    }
+
+    if (expectedReceivedConfigurationSummary.recommendedFirstFormat !== 'wav') {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstFormat',
+      )
+    }
+
+    if (expectedReceivedConfigurationSummary.selectedFormat !== null) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedFormat',
+      )
+    }
 
   if (expectedReceivedConfigurationSummary.sampleRateStatus !== 'not-selected') {
     missing.push(
