@@ -1522,7 +1522,9 @@ realRenderRouteScaffold: {
           outputFormatStatus: 'format-candidate-declared-not-selected',
           recommendedFirstFormat: 'wav',
           selectedFormat: null,
-          sampleRateStatus: 'not-selected',
+          sampleRateStatus: 'sample-rate-candidate-declared-not-selected',
+          recommendedFirstSampleRateHz: 44100,
+          selectedSampleRateHz: null,
           storageStatus: 'not-configured',
           firstTargetKey: 'clickTrack',
         },
@@ -2903,11 +2905,26 @@ if (
       )
     }
 
-  if (expectedReceivedConfigurationSummary.sampleRateStatus !== 'not-selected') {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.sampleRateStatus',
-    )
-  }
+  if (
+      expectedReceivedConfigurationSummary.sampleRateStatus !==
+      'sample-rate-candidate-declared-not-selected'
+    ) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.sampleRateStatus',
+      )
+    }
+
+    if (expectedReceivedConfigurationSummary.recommendedFirstSampleRateHz !== 44100) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstSampleRateHz',
+      )
+    }
+
+    if (expectedReceivedConfigurationSummary.selectedSampleRateHz !== null) {
+      missing.push(
+        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedSampleRateHz',
+      )
+    }
 
   if (expectedReceivedConfigurationSummary.storageStatus !== 'not-configured') {
     missing.push(
