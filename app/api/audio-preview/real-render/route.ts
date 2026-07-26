@@ -34,6 +34,8 @@ type RealRenderBlockedResponse = {
       recommendedFirstFormat: string | null
       selectedFormat: string | null
       sampleRateStatus: string | null
+      recommendedFirstSampleRateHz: number | null
+      selectedSampleRateHz: number | null
       storageStatus: string | null
       firstTargetKey: string | null
     }
@@ -169,8 +171,20 @@ if (outputFormat?.selectedFormat !== null) {
   missingOrInvalidConfigurationFields.push('outputFormat.selectedFormat')
 }
 
-if (getString(sampleRate?.status) !== 'not-selected') {
+if (
+  getString(sampleRate?.status) !==
+  'sample-rate-candidate-declared-not-selected'
+) {
   missingOrInvalidConfigurationFields.push('sampleRate.status')
+}
+if (sampleRate?.recommendedFirstSampleRateHz !== 44100) {
+  missingOrInvalidConfigurationFields.push(
+    'sampleRate.recommendedFirstSampleRateHz',
+  )
+}
+
+if (sampleRate?.selectedSampleRateHz !== null) {
+  missingOrInvalidConfigurationFields.push('sampleRate.selectedSampleRateHz')
 }
 
 if (getString(storage?.status) !== 'not-configured') {
@@ -231,14 +245,22 @@ if (getString(firstTarget?.key) !== 'clickTrack') {
       recommendedFirstFormat: getString(outputFormat?.recommendedFirstFormat),
       selectedFormat: getString(outputFormat?.selectedFormat),
       sampleRateStatus: getString(sampleRate?.status),
-      storageStatus: getString(storage?.status),
-      firstTargetKey: getString(firstTarget?.key),
-    },
-    receivedConfigurationCheck: {
-      passed: missingOrInvalidConfigurationFields.length === 0,
-      missingOrInvalid: missingOrInvalidConfigurationFields,
-    },
-  }
+      recommendedFirstSampleRateHz:
+      typeof sampleRate?.recommendedFirstSampleRateHz === 'number'
+        ? sampleRate.recommendedFirstSampleRateHz
+        : null,
+        selectedSampleRateHz:
+          typeof sampleRate?.selectedSampleRateHz === 'number'
+            ? sampleRate.selectedSampleRateHz
+            : null,
+              storageStatus: getString(storage?.status),
+              firstTargetKey: getString(firstTarget?.key),
+            },
+            receivedConfigurationCheck: {
+              passed: missingOrInvalidConfigurationFields.length === 0,
+              missingOrInvalid: missingOrInvalidConfigurationFields,
+            },
+          }
 
   return Response.json(response, { status: 423 })
 }

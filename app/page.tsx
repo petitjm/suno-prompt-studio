@@ -2765,10 +2765,19 @@ const getRealRenderRouteReceivedConfigurationSummary = () => {
         ? receivedConfigurationSummary.selectedFormat
         : null,
     sampleRateStatus:
-      typeof receivedConfigurationSummary.sampleRateStatus === 'string'
-        ? receivedConfigurationSummary.sampleRateStatus
-        : '',
-    storageStatus:
+  typeof receivedConfigurationSummary.sampleRateStatus === 'string'
+    ? receivedConfigurationSummary.sampleRateStatus
+    : '',
+    recommendedFirstSampleRateHz:
+      typeof receivedConfigurationSummary.recommendedFirstSampleRateHz ===
+      'number'
+        ? receivedConfigurationSummary.recommendedFirstSampleRateHz
+        : null,
+    selectedSampleRateHz:
+      typeof receivedConfigurationSummary.selectedSampleRateHz === 'number'
+        ? receivedConfigurationSummary.selectedSampleRateHz
+    : null,
+storageStatus:
       typeof receivedConfigurationSummary.storageStatus === 'string'
         ? receivedConfigurationSummary.storageStatus
         : '',
@@ -2865,7 +2874,10 @@ const receivedContractCheck =
      'format-candidate-declared-not-selected' &&
     receivedConfigurationSummary.recommendedFirstFormat === 'wav' &&
     receivedConfigurationSummary.selectedFormat === null &&
-    receivedConfigurationSummary.sampleRateStatus === 'not-selected' &&
+    receivedConfigurationSummary.sampleRateStatus ===
+     'sample-rate-candidate-declared-not-selected' &&
+   receivedConfigurationSummary.recommendedFirstSampleRateHz === 44100 &&
+   receivedConfigurationSummary.selectedSampleRateHz === null &&
     receivedConfigurationSummary.storageStatus === 'not-configured' &&
     receivedConfigurationSummary.firstTargetKey === 'clickTrack'
   )
@@ -5797,14 +5809,6 @@ const fullPackPipelineStatus = fullPackPipelineComplete
 `  - outputFormatStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.outputFormatStatus || 'Unknown'
-}`,
-`  - recommendedFirstFormat: ${
-  realRenderRouteScaffoldSummary.expectedBlockedResponse
-    .receivedConfigurationSummary.recommendedFirstFormat || 'Unknown'
-}`,
-`  - selectedFormat: ${
-  realRenderRouteScaffoldSummary.expectedBlockedResponse
-    .receivedConfigurationSummary.selectedFormat || 'none'
 }`,
 `  - sampleRateStatus: ${
   realRenderRouteScaffoldSummary.expectedBlockedResponse
