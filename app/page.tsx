@@ -5978,6 +5978,12 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       `- Storage status: ${
         receivedConfigurationSummary.storageStatus || 'unknown'
       }`,
+      `- Recommended first storage: ${
+          receivedConfigurationSummary.recommendedFirstProvider || 'unknown'
+        }`,
+        `- Selected storage: ${
+  receivedConfigurationSummary.selectedProvider || 'none'
+}`,
       `- First target: ${
         receivedConfigurationSummary.firstTargetKey || 'unknown'
       }`,
@@ -9497,7 +9503,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, generated no audio, and verified the received contract/configuration summaries including renderer, WAV format, and 44.1 kHz sample-rate candidate fields.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, generated no audio, and verified the received contract/configuration summaries including renderer, WAV format, 44.1 kHz sample-rate, and browser-download storage candidate fields.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
@@ -14162,7 +14168,7 @@ return (
 <div className="mt-2 text-purple-100/80">
   Result:{' '}
   {getBlockedRealRenderRouteTestPassed()
-    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries including the renderer, WAV format, and 44.1 kHz sample-rate candidates, verified checks, and generated no audio.'
+    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries including the renderer, WAV format, 44.1 kHz sample-rate, and browser-download storage candidates, verified checks, and generated no audio.'
     : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders without generating audio.'}
 </div>
 
@@ -14233,6 +14239,16 @@ return (
       {getRealRenderRouteReceivedConfigurationSummary()?.storageStatus ||
         'unknown'}
     </div>
+    <div className="mt-1 text-purple-100/80">
+      Recommended first storage:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.recommendedFirstProvider || 'unknown'}
+    </div>
+<div className="mt-1 text-purple-100/80">
+  Selected storage:{' '}
+  {getRealRenderRouteReceivedConfigurationSummary()?.selectedProvider ||
+    'none'}
+</div>
     <div className="mt-1 text-purple-100/80">
       First target:{' '}
       {getRealRenderRouteReceivedConfigurationSummary()?.firstTargetKey ||
