@@ -2756,6 +2756,14 @@ const getRealRenderRouteReceivedConfigurationSummary = () => {
       typeof receivedConfigurationSummary.outputFormatStatus === 'string'
         ? receivedConfigurationSummary.outputFormatStatus
         : '',
+    recommendedFirstFormat:
+      typeof receivedConfigurationSummary.recommendedFirstFormat === 'string'
+        ? receivedConfigurationSummary.recommendedFirstFormat
+        : '',
+    selectedFormat:
+      typeof receivedConfigurationSummary.selectedFormat === 'string'
+        ? receivedConfigurationSummary.selectedFormat
+        : null,
     sampleRateStatus:
       typeof receivedConfigurationSummary.sampleRateStatus === 'string'
         ? receivedConfigurationSummary.sampleRateStatus
@@ -2855,6 +2863,8 @@ const receivedContractCheck =
     receivedConfigurationSummary.rendererCandidateSelectedRenderer === null &&
     receivedConfigurationSummary.outputFormatStatus ===
      'format-candidate-declared-not-selected' &&
+    receivedConfigurationSummary.recommendedFirstFormat === 'wav' &&
+    receivedConfigurationSummary.selectedFormat === null &&
     receivedConfigurationSummary.sampleRateStatus === 'not-selected' &&
     receivedConfigurationSummary.storageStatus === 'not-configured' &&
     receivedConfigurationSummary.firstTargetKey === 'clickTrack'
@@ -5867,6 +5877,12 @@ const fullPackPipelineStatus = fullPackPipelineComplete
       `- Output format status: ${
         receivedConfigurationSummary.outputFormatStatus || 'unknown'
       }`,
+      `- Recommended first format: ${
+         receivedConfigurationSummary.recommendedFirstFormat || 'unknown'
+        }`,
+        `- Selected format: ${
+          receivedConfigurationSummary.selectedFormat || 'none'
+        }`,
       `- Sample rate status: ${
         receivedConfigurationSummary.sampleRateStatus || 'unknown'
       }`,
@@ -13953,6 +13969,16 @@ return (
       Output format status:{' '}
       {getRealRenderRouteReceivedConfigurationSummary()
         ?.outputFormatStatus || 'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Recommended first format:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()
+        ?.recommendedFirstFormat || 'unknown'}
+    </div>
+    <div className="mt-1 text-purple-100/80">
+      Selected format:{' '}
+      {getRealRenderRouteReceivedConfigurationSummary()?.selectedFormat ||
+        'none'}
     </div>
     <div className="mt-1 text-purple-100/80">
       Sample rate status:{' '}
