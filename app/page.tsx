@@ -3736,12 +3736,29 @@ const copyAudioPreviewArtifactPackage = async () => {
               '',
             ]
           : []),
-      `Format: ${
-        realRenderConfigurationSummary.outputFormat.selectedFormat ||
-        'not selected'
-      } (${
-        realRenderConfigurationSummary.outputFormat.status || 'Unknown'
-      })`,
+     `Format candidate: ${
+          realRenderConfigurationSummary.outputFormat.recommendedFirstFormat ||
+          'not declared'
+        } (${
+          realRenderConfigurationSummary.outputFormat.status || 'Unknown'
+        })`,
+        `Format selected: ${
+          realRenderConfigurationSummary.outputFormat.selectedFormat ||
+          'not selected'
+        }`,
+        realRenderConfigurationSummary.outputFormat.reason
+          ? `Format candidate reason: ${realRenderConfigurationSummary.outputFormat.reason}`
+          : '',
+        ...(realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil
+          .length > 0
+          ? [
+              'Format candidate must remain blocked until:',
+              ...realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
+                (item) => `- ${item}`,
+              ),
+              '',
+            ]
+          : []),
       `Sample rate: ${
         realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
         'not selected'
@@ -5965,12 +5982,29 @@ const fullPackPipelineStatus = fullPackPipelineComplete
               '',
             ]
           : []),
-      `Format: ${
-        realRenderConfigurationSummary.outputFormat.selectedFormat ||
-        'not selected'
-      } (${
-        realRenderConfigurationSummary.outputFormat.status || 'Unknown'
-      })`,
+      `Format candidate: ${
+          realRenderConfigurationSummary.outputFormat.recommendedFirstFormat ||
+          'not declared'
+        } (${
+          realRenderConfigurationSummary.outputFormat.status || 'Unknown'
+        })`,
+        `Format selected: ${
+          realRenderConfigurationSummary.outputFormat.selectedFormat ||
+          'not selected'
+        }`,
+        realRenderConfigurationSummary.outputFormat.reason
+          ? `Format candidate reason: ${realRenderConfigurationSummary.outputFormat.reason}`
+          : '',
+        ...(realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil
+          .length > 0
+          ? [
+              'Format candidate must remain blocked until:',
+              ...realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
+                (item) => `- ${item}`,
+              ),
+              '',
+            ]
+          : []),
       `Sample rate: ${
         realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
         'not selected'
@@ -8053,11 +8087,27 @@ return {
 
     outputFormat: {
       status:
-        typeof outputFormat?.status === 'string' ? outputFormat.status : '',
+        typeof outputFormat?.status === 'string'
+          ? outputFormat.status
+          : '',
+      recommendedFirstFormat:
+        typeof outputFormat?.recommendedFirstFormat === 'string'
+          ? outputFormat.recommendedFirstFormat
+          : '',
       selectedFormat:
         typeof outputFormat?.selectedFormat === 'string'
           ? outputFormat.selectedFormat
           : null,
+      reason:
+        typeof outputFormat?.reason === 'string' ? outputFormat.reason : '',
+      mustRemainBlockedUntil: Array.isArray(
+        outputFormat?.mustRemainBlockedUntil,
+      )
+        ? outputFormat.mustRemainBlockedUntil.filter(
+            (item): item is string =>
+              typeof item === 'string' && item.trim().length > 0,
+          )
+        : [],
       allowedFirstFormats: Array.isArray(outputFormat?.allowedFirstFormats)
         ? outputFormat.allowedFirstFormats.filter(
             (item): item is string =>
@@ -15978,11 +16028,42 @@ return (
           )
         </div>
         <div>
-          Format:{' '}
-          {realRenderConfigurationSummary.outputFormat.selectedFormat ||
-            'not selected'}{' '}
+          Format candidate:{' '}
+          {realRenderConfigurationSummary.outputFormat.recommendedFirstFormat ||
+            'not declared'}{' '}
           ({realRenderConfigurationSummary.outputFormat.status || 'Unknown'})
         </div>
+        <div>
+          Format selected:{' '}
+          {realRenderConfigurationSummary.outputFormat.selectedFormat ||
+            'not selected'}
+        </div>
+        {realRenderConfigurationSummary.outputFormat.reason ? (
+          <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+            <div className="font-medium text-cyan-100">
+              Output format candidate reason
+            </div>
+            <div className="mt-1 text-cyan-100/80">
+              {realRenderConfigurationSummary.outputFormat.reason}
+            </div>
+          </div>
+        ) : null}
+
+        {realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil
+          .length > 0 ? (
+          <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+            <div className="font-medium text-cyan-100">
+              Output format must remain blocked until
+            </div>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+              {realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
+                (item) => (
+                  <li key={item}>{item}</li>
+                ),
+              )}
+            </ul>
+          </div>
+        ) : null}
         <div>
           Sample rate:{' '}
           {realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
