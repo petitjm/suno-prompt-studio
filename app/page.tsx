@@ -3608,6 +3608,14 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderRouteScaffoldSummary.expectedBlockedResponse.storageStatus ||
         'Unknown'
       }`,
+      `  - recommendedFirstProvider: ${
+              realRenderRouteScaffoldSummary.expectedBlockedResponse
+                .receivedConfigurationSummary.recommendedFirstProvider || 'Unknown'
+            }`,
+            `  - selectedProvider: ${
+              realRenderRouteScaffoldSummary.expectedBlockedResponse
+                .receivedConfigurationSummary.selectedProvider || 'none'
+            }`,
       `- formatStatus: ${
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
@@ -5769,6 +5777,14 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         realRenderRouteScaffoldSummary.expectedBlockedResponse.storageStatus ||
         'Unknown'
       }`,
+      `  - recommendedFirstProvider: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedConfigurationSummary.recommendedFirstProvider || 'Unknown'
+        }`,
+        `  - selectedProvider: ${
+          realRenderRouteScaffoldSummary.expectedBlockedResponse
+            .receivedConfigurationSummary.selectedProvider || 'none'
+        }`,
       `- formatStatus: ${
         realRenderRouteScaffoldSummary.expectedBlockedResponse.formatStatus ||
         'Unknown'
@@ -8097,6 +8113,32 @@ selectedSampleRateHz:
               unknown
             >).storageStatus as string)
           : '',
+          recommendedFirstProvider:
+              expectedBlockedResponse?.receivedConfigurationSummary &&
+              typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+              !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+              typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+                string,
+                unknown
+              >).recommendedFirstProvider === 'string'
+                ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+                    string,
+                    unknown
+                  >).recommendedFirstProvider as string)
+                : '',
+            selectedProvider:
+              expectedBlockedResponse?.receivedConfigurationSummary &&
+              typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
+              !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary) &&
+              typeof (expectedBlockedResponse.receivedConfigurationSummary as Record<
+                string,
+                unknown
+              >).selectedProvider === 'string'
+                ? ((expectedBlockedResponse.receivedConfigurationSummary as Record<
+                    string,
+                    unknown
+                  >).selectedProvider as string)
+                : null,
       firstTargetKey:
         expectedBlockedResponse?.receivedConfigurationSummary &&
         typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
@@ -16273,6 +16315,16 @@ return (
   storageStatus:{' '}
   {realRenderRouteScaffoldSummary.expectedBlockedResponse
     .receivedConfigurationSummary.storageStatus || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  recommendedFirstProvider:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.recommendedFirstProvider || 'Unknown'}
+</div>
+<div className="mt-1 text-purple-100/80">
+  selectedProvider:{' '}
+  {realRenderRouteScaffoldSummary.expectedBlockedResponse
+    .receivedConfigurationSummary.selectedProvider || 'none'}
 </div>
 <div className="mt-1 text-purple-100/80">
   firstTargetKey:{' '}
