@@ -1561,12 +1561,21 @@ realRenderConfiguration: {
   ],
 },
   outputFormat: {
-    status: 'not-selected',
-    selectedFormat: null,
-    allowedFirstFormats: ['wav'],
-    requiredDecision:
-      'Choose an initial output format. WAV is recommended for the first synthetic click-track render.',
-  },
+  status: 'format-candidate-declared-not-selected',
+  recommendedFirstFormat: 'wav',
+  selectedFormat: null,
+  allowedFirstFormats: ['wav'],
+  reason:
+    'WAV is the safest first output format because it is uncompressed, easy to validate locally, and suitable for proving timing-only click-track generation before musical audio is attempted.',
+  mustRemainBlockedUntil: [
+    'Output format selection is deliberately confirmed.',
+    'Sample rate is selected.',
+    'Renderer implementation is connected.',
+    'Generated audio storage or browser download flow is selected.',
+  ],
+  requiredDecision:
+    'Choose an initial output format. WAV is recommended for the first synthetic click-track render.',
+},
   sampleRate: {
     status: 'not-selected',
     selectedSampleRateHz: null,
@@ -3027,8 +3036,12 @@ if (!realRenderConfiguration) {
   if (!outputFormat) {
     missing.push('realRenderConfiguration.outputFormat')
   } else {
-    if (outputFormat.status !== 'not-selected') {
+    if (outputFormat?.status !== 'format-candidate-declared-not-selected') {
       missing.push('realRenderConfiguration.outputFormat.status')
+    }
+
+    if (outputFormat?.recommendedFirstFormat !== 'wav') {
+      missing.push('realRenderConfiguration.outputFormat.recommendedFirstFormat')
     }
 
     if (outputFormat.selectedFormat !== null) {
