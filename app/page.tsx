@@ -2853,7 +2853,8 @@ const receivedContractCheck =
     receivedConfigurationSummary.recommendedFirstRenderer ===
       'local-click-track-wav-renderer' &&
     receivedConfigurationSummary.rendererCandidateSelectedRenderer === null &&
-    receivedConfigurationSummary.outputFormatStatus === 'not-selected' &&
+    receivedConfigurationSummary.outputFormatStatus ===
+     'format-candidate-declared-not-selected' &&
     receivedConfigurationSummary.sampleRateStatus === 'not-selected' &&
     receivedConfigurationSummary.storageStatus === 'not-configured' &&
     receivedConfigurationSummary.firstTargetKey === 'clickTrack'
@@ -5839,7 +5840,7 @@ const fullPackPipelineStatus = fullPackPipelineComplete
         `Real-render configuration received: ${getRealRenderRouteReceivedConfigurationStatus()}`,
       '',
       blockedRealRenderRouteTestPassed
-        ? 'Result: The blocked real-render route safely returned 423 blocked, verified received contract/configuration summaries including the renderer candidate, verified checks, and did not generate audio.'
+        ? 'Result: The blocked real-render route safely returned 423 blocked, verified received contract/configuration summaries including the renderer and WAV format candidates, verified checks, and did not generate audio.'
         : 'Result: Run Test blocked route before relying on this full pack as a verified route-test record.',
       '',
       ...(receivedConfigurationSummary
@@ -9248,7 +9249,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, generated no audio, and verified the received contract/configuration summaries including renderer candidate fields.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, generated no audio, and verified the received contract/configuration summaries including renderer and WAV format candidate fields.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
@@ -13913,7 +13914,7 @@ return (
 <div className="mt-2 font-medium text-purple-100">
   Result:{' '}
   {getBlockedRealRenderRouteTestPassed()
-    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries including the renderer candidate, verified checks, and generated no audio.'
+    ? 'Passed — route returned 423 blocked, verified received contract/configuration summaries including thPassed — route returned 423 blocked, verified received contract/configuration summaries including the renderer and WAV format candidates, verified checks, and generated no audio.e renderer candidate, verified checks, and generated no audio.'
     : 'Not passed — confirm the route returns 423 blocked and receives the configuration placeholders.'}
 </div>
 

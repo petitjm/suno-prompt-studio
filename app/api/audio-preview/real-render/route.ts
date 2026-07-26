@@ -31,6 +31,8 @@ type RealRenderBlockedResponse = {
       recommendedFirstRenderer: string | null
       rendererCandidateSelectedRenderer: string | null
       outputFormatStatus: string | null
+      recommendedFirstFormat: string | null
+      selectedFormat: string | null
       sampleRateStatus: string | null
       storageStatus: string | null
       firstTargetKey: string | null
@@ -150,8 +152,21 @@ if (rendererCandidatePlan?.selectedRenderer !== null) {
   )
 }
 
-if (getString(outputFormat?.status) !== 'not-selected') {
+if (
+  getString(outputFormat?.status) !==
+  'format-candidate-declared-not-selected'
+) {
   missingOrInvalidConfigurationFields.push('outputFormat.status')
+}
+
+if (getString(outputFormat?.recommendedFirstFormat) !== 'wav') {
+  missingOrInvalidConfigurationFields.push(
+    'outputFormat.recommendedFirstFormat',
+  )
+}
+
+if (outputFormat?.selectedFormat !== null) {
+  missingOrInvalidConfigurationFields.push('outputFormat.selectedFormat')
 }
 
 if (getString(sampleRate?.status) !== 'not-selected') {
@@ -213,6 +228,8 @@ if (getString(firstTarget?.key) !== 'clickTrack') {
         rendererCandidatePlan?.selectedRenderer,
       ),
       outputFormatStatus: getString(outputFormat?.status),
+      recommendedFirstFormat: getString(outputFormat?.recommendedFirstFormat),
+      selectedFormat: getString(outputFormat?.selectedFormat),
       sampleRateStatus: getString(sampleRate?.status),
       storageStatus: getString(storage?.status),
       firstTargetKey: getString(firstTarget?.key),
