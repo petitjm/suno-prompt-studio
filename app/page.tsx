@@ -9198,7 +9198,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Blocked real-render route test',
   detail: hasBlockedRealRenderRouteTestPassed
-    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, not-generated audio status, not-connected renderer status, the received renderer candidate summary, and the received contract/configuration checks.'
+    ? 'Blocked real-render route test passed and confirmed the endpoint returns 423 blocked, generated no audio, and verified the received contract/configuration summaries including renderer candidate fields.'
     : hasRealRenderRouteScaffold
       ? 'Run Test blocked route to confirm the real-render scaffold safely returns blocked status and receives the real-render configuration placeholders.'
       : 'Blocked real-render route test is pending until the scaffold is declared.',
@@ -9207,14 +9207,14 @@ const hasBlockedRealRenderRouteTestPassed =
 
 {
   label: 'Real-render configuration placeholders',
-  detail: hasRealRenderConfiguration
-    ? 'Real-render configuration placeholders are present and keep renderer, format, sample rate, and storage unset until real rendering is deliberately enabled.'
-    : 'Real-render configuration placeholders are pending until dry run creates the artefact package.',
+  detail: hasRendererCandidatePlan
+    ? 'Real-render candidate placeholder is present in the dry-run configuration, recommends the local click-track WAV renderer, and keeps it unselected.'
+    : 'Real-render candidate placeholder is pending until dry run creates the real-render configuration.',
   complete: hasRealRenderConfiguration,
 },
 
 {
-  label: 'First renderer candidate placeholder',
+  label: 'Real-render candidate placeholder',
   detail: hasRendererCandidatePlan
     ? 'First renderer candidate placeholder is present, recommends the local click-track WAV renderer, and keeps it unselected.'
     : 'First renderer candidate placeholder is pending until dry run creates the real-render configuration.',
@@ -9240,7 +9240,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Expected received-configuration summary',
   detail: hasExpectedReceivedConfigurationSummary
-    ? 'Blocked route scaffold declares the expected received-configuration summary with all required placeholder statuses and renderer candidate fields.'
+    ? 'Blocked route scaffold declares the expected received-configuration summary, including renderer candidate fields, before any real renderer can be connected.'
     : 'Expected received-configuration summary is pending until the dry-run scaffold declares it in the expected blocked response.',
   complete: hasExpectedReceivedConfigurationSummary,
 },
