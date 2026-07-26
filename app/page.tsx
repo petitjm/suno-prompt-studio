@@ -3822,12 +3822,28 @@ realRenderConfigurationSummary.sampleRate.reason
       '',
     ]
   : []),
-      `Storage: ${
-        realRenderConfigurationSummary.storage.selectedProvider ||
-        'not configured'
-      } (${
-        realRenderConfigurationSummary.storage.status || 'Unknown'
-      })`,
+      `Storage candidate: ${
+          realRenderConfigurationSummary.storage.recommendedFirstProvider ||
+          'not declared'
+        } (${
+          realRenderConfigurationSummary.storage.status || 'Unknown'
+        })`,
+        `Storage selected: ${
+          realRenderConfigurationSummary.storage.selectedProvider ||
+          'not configured'
+        }`,
+        realRenderConfigurationSummary.storage.reason
+          ? `Storage candidate reason: ${realRenderConfigurationSummary.storage.reason}`
+          : '',
+        ...(realRenderConfigurationSummary.storage.mustRemainBlockedUntil.length > 0
+          ? [
+              'Storage candidate must remain blocked until:',
+              ...realRenderConfigurationSummary.storage.mustRemainBlockedUntil.map(
+                (item) => `- ${item}`,
+              ),
+              '',
+            ]
+          : []),
       '',
 
       ...(realRenderConfigurationSummary.unlockRequirements.length > 0
@@ -6106,22 +6122,28 @@ realRenderConfigurationSummary.sampleRate.reason
       '',
     ]
   : []),
-      `Storage: ${
-        realRenderConfigurationSummary.storage.selectedProvider ||
-        'not configured'
-      } (${
-        realRenderConfigurationSummary.storage.status || 'Unknown'
-      })`,
-      '',
-      ...(realRenderConfigurationSummary.unlockRequirements.length > 0
-        ? [
-            'Unlock requirements:',
-            ...realRenderConfigurationSummary.unlockRequirements.map(
-              (requirement) => `- ${requirement}`,
-            ),
-            '',
-          ]
-        : []),
+     `Storage candidate: ${
+          realRenderConfigurationSummary.storage.recommendedFirstProvider ||
+          'not declared'
+        } (${
+          realRenderConfigurationSummary.storage.status || 'Unknown'
+        })`,
+        `Storage selected: ${
+          realRenderConfigurationSummary.storage.selectedProvider ||
+          'not configured'
+        }`,
+        realRenderConfigurationSummary.storage.reason
+          ? `Storage candidate reason: ${realRenderConfigurationSummary.storage.reason}`
+          : '',
+        ...(realRenderConfigurationSummary.storage.mustRemainBlockedUntil.length > 0
+          ? [
+              'Storage candidate must remain blocked until:',
+              ...realRenderConfigurationSummary.storage.mustRemainBlockedUntil.map(
+                (item) => `- ${item}`,
+              ),
+              '',
+            ]
+          : []),
     ]
   : []),
 
@@ -8301,11 +8323,24 @@ return {
           : '',
     },
     storage: {
-      status: typeof storage?.status === 'string' ? storage.status : '',
+      status:
+        typeof storage?.status === 'string' ? storage.status : '',
+      recommendedFirstProvider:
+        typeof storage?.recommendedFirstProvider === 'string'
+          ? storage.recommendedFirstProvider
+          : '',
       selectedProvider:
         typeof storage?.selectedProvider === 'string'
           ? storage.selectedProvider
           : null,
+      reason:
+        typeof storage?.reason === 'string' ? storage.reason : '',
+      mustRemainBlockedUntil: Array.isArray(storage?.mustRemainBlockedUntil)
+        ? storage.mustRemainBlockedUntil.filter(
+            (item): item is string =>
+              typeof item === 'string' && item.trim().length > 0,
+          )
+        : [],
       requiredDecision:
         typeof storage?.requiredDecision === 'string'
           ? storage.requiredDecision
@@ -16346,11 +16381,41 @@ return (
           </div>
         ) : null}
         <div>
-          Storage:{' '}
-          {realRenderConfigurationSummary.storage.selectedProvider ||
-            'not configured'}{' '}
+          Storage candidate:{' '}
+          {realRenderConfigurationSummary.storage.recommendedFirstProvider ||
+            'not declared'}{' '}
           ({realRenderConfigurationSummary.storage.status || 'Unknown'})
         </div>
+        <div>
+          Storage selected:{' '}
+          {realRenderConfigurationSummary.storage.selectedProvider ||
+            'not configured'}
+        </div>
+        {realRenderConfigurationSummary.storage.reason ? (
+          <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+            <div className="font-medium text-cyan-100">
+              Storage candidate reason
+            </div>
+            <div className="mt-1 text-cyan-100/80">
+              {realRenderConfigurationSummary.storage.reason}
+            </div>
+          </div>
+        ) : null}
+
+        {realRenderConfigurationSummary.storage.mustRemainBlockedUntil.length > 0 ? (
+          <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+            <div className="font-medium text-cyan-100">
+              Storage must remain blocked until
+            </div>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+              {realRenderConfigurationSummary.storage.mustRemainBlockedUntil.map(
+                (item) => (
+                  <li key={item}>{item}</li>
+                ),
+              )}
+            </ul>
+          </div>
+        ) : null}
       </div>
     </div>
 
