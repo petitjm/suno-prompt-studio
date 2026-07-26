@@ -3768,22 +3768,39 @@ const copyAudioPreviewArtifactPackage = async () => {
         realRenderConfigurationSummary.outputFormat.reason
           ? `Format candidate reason: ${realRenderConfigurationSummary.outputFormat.reason}`
           : '',
-        ...(realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil
-          .length > 0
-          ? [
-              'Format candidate must remain blocked until:',
-              ...realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
-                (item) => `- ${item}`,
-              ),
-              '',
-            ]
-          : []),
-      `Sample rate: ${
-        realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
-        'not selected'
-      } (${
-        realRenderConfigurationSummary.sampleRate.status || 'Unknown'
-      })`,
+...(realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil
+  .length > 0
+  ? [
+      'Format candidate must remain blocked until:',
+      ...realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+    ]
+  : []),
+`Sample-rate candidate: ${
+  realRenderConfigurationSummary.sampleRate
+    .recommendedFirstSampleRateHz ?? 'not declared'
+} Hz (${
+  realRenderConfigurationSummary.sampleRate.status || 'Unknown'
+})`,
+`Sample rate selected: ${
+  realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
+  'not selected'
+}`,
+realRenderConfigurationSummary.sampleRate.reason
+  ? `Sample-rate candidate reason: ${realRenderConfigurationSummary.sampleRate.reason}`
+  : '',
+...(realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil
+  .length > 0
+  ? [
+      'Sample-rate candidate must remain blocked until:',
+      ...realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+    ]
+  : []),
       `Storage: ${
         realRenderConfigurationSummary.storage.selectedProvider ||
         'not configured'
@@ -6038,12 +6055,29 @@ const fullPackPipelineStatus = fullPackPipelineComplete
               '',
             ]
           : []),
-      `Sample rate: ${
-        realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
-        'not selected'
-      } (${
-        realRenderConfigurationSummary.sampleRate.status || 'Unknown'
-      })`,
+      `Sample-rate candidate: ${
+  realRenderConfigurationSummary.sampleRate
+    .recommendedFirstSampleRateHz ?? 'not declared'
+} Hz (${
+  realRenderConfigurationSummary.sampleRate.status || 'Unknown'
+})`,
+`Sample rate selected: ${
+  realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
+  'not selected'
+}`,
+realRenderConfigurationSummary.sampleRate.reason
+  ? `Sample-rate candidate reason: ${realRenderConfigurationSummary.sampleRate.reason}`
+  : '',
+...(realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil
+  .length > 0
+  ? [
+      'Sample-rate candidate must remain blocked until:',
+      ...realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil.map(
+        (item) => `- ${item}`,
+      ),
+      '',
+    ]
+  : []),
       `Storage: ${
         realRenderConfigurationSummary.storage.selectedProvider ||
         'not configured'
@@ -8181,10 +8215,24 @@ return {
     sampleRate: {
       status:
         typeof sampleRate?.status === 'string' ? sampleRate.status : '',
+      recommendedFirstSampleRateHz:
+        typeof sampleRate?.recommendedFirstSampleRateHz === 'number'
+          ? sampleRate.recommendedFirstSampleRateHz
+          : null,
       selectedSampleRateHz:
         typeof sampleRate?.selectedSampleRateHz === 'number'
           ? sampleRate.selectedSampleRateHz
           : null,
+      reason:
+        typeof sampleRate?.reason === 'string' ? sampleRate.reason : '',
+      mustRemainBlockedUntil: Array.isArray(
+        sampleRate?.mustRemainBlockedUntil,
+      )
+        ? sampleRate.mustRemainBlockedUntil.filter(
+            (item): item is string =>
+              typeof item === 'string' && item.trim().length > 0,
+          )
+        : [],
       allowedFirstSampleRatesHz: Array.isArray(
         sampleRate?.allowedFirstSampleRatesHz,
       )
@@ -16163,14 +16211,43 @@ return (
             </ul>
           </div>
         ) : null}
-        <div>
-          Sample rate:{' '}
-          {realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
-            'not selected'}{' '}
-          (
-          {realRenderConfigurationSummary.sampleRate.status || 'Unknown'}
-          )
+       <div>
+          Sample-rate candidate:{' '}
+          {realRenderConfigurationSummary.sampleRate
+            .recommendedFirstSampleRateHz ?? 'not declared'}{' '}
+          Hz ({realRenderConfigurationSummary.sampleRate.status || 'Unknown'})
         </div>
+        <div>
+          Sample rate selected:{' '}
+          {realRenderConfigurationSummary.sampleRate.selectedSampleRateHz ??
+            'not selected'}
+        </div>
+        {realRenderConfigurationSummary.sampleRate.reason ? (
+          <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+            <div className="font-medium text-cyan-100">
+              Sample-rate candidate reason
+            </div>
+            <div className="mt-1 text-cyan-100/80">
+              {realRenderConfigurationSummary.sampleRate.reason}
+            </div>
+          </div>
+        ) : null}
+
+        {realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil
+          .length > 0 ? (
+          <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+            <div className="font-medium text-cyan-100">
+              Sample rate must remain blocked until
+            </div>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+              {realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil.map(
+                (item) => (
+                  <li key={item}>{item}</li>
+                ),
+              )}
+            </ul>
+          </div>
+        ) : null}
         <div>
           Storage:{' '}
           {realRenderConfigurationSummary.storage.selectedProvider ||
