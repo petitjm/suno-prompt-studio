@@ -9132,7 +9132,27 @@ const hasExpectedReceivedConfigurationSummary = Boolean(
           >
         ).expectedBlockedResponse as Record<string, unknown>
       ).receivedConfigurationSummary as Record<string, unknown>
-    ).sampleRateStatus === 'not-selected' &&
+    ).sampleRateStatus === 'sample-rate-candidate-declared-not-selected' &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).recommendedFirstSampleRateHz === 44100 &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).selectedSampleRateHz === null &&
     (
       (
         (
@@ -9472,7 +9492,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Expected received-configuration summary',
   detail: hasExpectedReceivedConfigurationSummary
-    ? 'Blocked route scaffold declares the expected received-configuration summary, including renderer and WAV format candidate fields, before any real renderer can be connected.'
+    ? 'Blocked route scaffold declares the expected received-configuration summary, including renderer, WAV format, and 44.1 kHz sample-rate candidate fields, before any real renderer can be connected.'
     : 'Expected received-configuration summary is pending until the dry-run scaffold declares it in the expected blocked response.',
   complete: hasExpectedReceivedConfigurationSummary,
 },
