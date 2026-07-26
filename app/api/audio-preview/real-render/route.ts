@@ -16,33 +16,33 @@ type RealRenderBlockedResponse = {
     hasFirstRealRenderPlan: boolean
     hasRealRenderConfiguration: boolean
     requestedTarget: string | null
-
-    }
+  }
   receivedContractCheck: {
-      passed: boolean
-      missingOrInvalid: string[]
-    }
-
+    passed: boolean
+    missingOrInvalid: string[]
+  }
   receivedConfigurationSummary: {
-      configurationStatus: string | null
-      audioStatus: string | null
-      rendererStatus: string | null
-      rendererCandidateStatus: string | null
-      recommendedFirstRenderer: string | null
-      rendererCandidateSelectedRenderer: string | null
-      outputFormatStatus: string | null
-      recommendedFirstFormat: string | null
-      selectedFormat: string | null
-      sampleRateStatus: string | null
-      recommendedFirstSampleRateHz: number | null
-      selectedSampleRateHz: number | null
-      storageStatus: string | null
-      firstTargetKey: string | null
-    }
-    receivedConfigurationCheck: {
-      passed: boolean
-      missingOrInvalid: string[]
-    }
+    configurationStatus: string | null
+    audioStatus: string | null
+    rendererStatus: string | null
+    rendererCandidateStatus: string | null
+    recommendedFirstRenderer: string | null
+    rendererCandidateSelectedRenderer: string | null
+    outputFormatStatus: string | null
+    recommendedFirstFormat: string | null
+    selectedFormat: string | null
+    sampleRateStatus: string | null
+    recommendedFirstSampleRateHz: number | null
+    selectedSampleRateHz: number | null
+    storageStatus: string | null
+    recommendedFirstProvider: string | null
+    selectedProvider: string | null
+    firstTargetKey: string | null
+  }
+  receivedConfigurationCheck: {
+    passed: boolean
+    missingOrInvalid: string[]
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -79,121 +79,139 @@ export async function POST(req: Request) {
       ? getString(firstRealRenderPlan.recommendedFirstTarget)
       : null)
 
-   const realRenderConfigurationRecord = getRecord(realRenderConfiguration)
-   const rendererImplementation = getRecord(
-      realRenderConfigurationRecord?.rendererImplementation,
-   )
-   const rendererCandidatePlan = getRecord(
-      realRenderConfigurationRecord?.rendererCandidatePlan,
+  const realRenderConfigurationRecord = getRecord(realRenderConfiguration)
+  const rendererImplementation = getRecord(
+    realRenderConfigurationRecord?.rendererImplementation,
+  )
+  const rendererCandidatePlan = getRecord(
+    realRenderConfigurationRecord?.rendererCandidatePlan,
+  )
+  const outputFormat = getRecord(realRenderConfigurationRecord?.outputFormat)
+  const sampleRate = getRecord(realRenderConfigurationRecord?.sampleRate)
+  const storage = getRecord(realRenderConfigurationRecord?.storage)
+  const firstTarget = getRecord(realRenderConfigurationRecord?.firstTarget)
+
+  const missingOrInvalidContractFields: string[] = []
+
+  if (!isRecord(rendererInputContract)) {
+    missingOrInvalidContractFields.push('rendererInputContract')
+  }
+
+  if (!isRecord(realRenderGate)) {
+    missingOrInvalidContractFields.push('realRenderGate')
+  }
+
+  if (!isRecord(firstRealRenderPlan)) {
+    missingOrInvalidContractFields.push('firstRealRenderPlan')
+  }
+
+  if (!isRecord(realRenderConfiguration)) {
+    missingOrInvalidContractFields.push('realRenderConfiguration')
+  }
+
+  if (requestedTarget !== 'clickTrack') {
+    missingOrInvalidContractFields.push('requestedTarget')
+  }
+
+  const missingOrInvalidConfigurationFields: string[] = []
+
+  if (!realRenderConfigurationRecord) {
+    missingOrInvalidConfigurationFields.push('realRenderConfiguration')
+  }
+
+  if (
+    getString(realRenderConfigurationRecord?.configurationStatus) !==
+    'dry-run-real-render-configuration-placeholder'
+  ) {
+    missingOrInvalidConfigurationFields.push('configurationStatus')
+  }
+
+  if (
+    getString(realRenderConfigurationRecord?.audioStatus) !== 'not-generated'
+  ) {
+    missingOrInvalidConfigurationFields.push('audioStatus')
+  }
+
+  if (getString(rendererImplementation?.status) !== 'not-connected') {
+    missingOrInvalidConfigurationFields.push('rendererImplementation.status')
+  }
+
+  if (
+    getString(rendererCandidatePlan?.status) !==
+    'candidate-declared-not-selected'
+  ) {
+    missingOrInvalidConfigurationFields.push('rendererCandidatePlan.status')
+  }
+
+  if (
+    getString(rendererCandidatePlan?.recommendedFirstRenderer) !==
+    'local-click-track-wav-renderer'
+  ) {
+    missingOrInvalidConfigurationFields.push(
+      'rendererCandidatePlan.recommendedFirstRenderer',
     )
-   const outputFormat = getRecord(realRenderConfigurationRecord?.outputFormat)
-   const sampleRate = getRecord(realRenderConfigurationRecord?.sampleRate)
-   const storage = getRecord(realRenderConfigurationRecord?.storage)
-   const firstTarget = getRecord(realRenderConfigurationRecord?.firstTarget)
-   const missingOrInvalidContractFields: string[] = []
+  }
 
-if (!isRecord(rendererInputContract)) {
-  missingOrInvalidContractFields.push('rendererInputContract')
-}
+  if (rendererCandidatePlan?.selectedRenderer !== null) {
+    missingOrInvalidConfigurationFields.push(
+      'rendererCandidatePlan.selectedRenderer',
+    )
+  }
 
-if (!isRecord(realRenderGate)) {
-  missingOrInvalidContractFields.push('realRenderGate')
-}
+  if (
+    getString(outputFormat?.status) !==
+    'format-candidate-declared-not-selected'
+  ) {
+    missingOrInvalidConfigurationFields.push('outputFormat.status')
+  }
 
-if (!isRecord(firstRealRenderPlan)) {
-  missingOrInvalidContractFields.push('firstRealRenderPlan')
-}
+  if (getString(outputFormat?.recommendedFirstFormat) !== 'wav') {
+    missingOrInvalidConfigurationFields.push(
+      'outputFormat.recommendedFirstFormat',
+    )
+  }
 
-if (!isRecord(realRenderConfiguration)) {
-  missingOrInvalidContractFields.push('realRenderConfiguration')
-}
+  if (outputFormat?.selectedFormat !== null) {
+    missingOrInvalidConfigurationFields.push('outputFormat.selectedFormat')
+  }
 
-if (requestedTarget !== 'clickTrack') {
-  missingOrInvalidContractFields.push('requestedTarget')
-}
-   const missingOrInvalidConfigurationFields: string[] = []
+  if (
+    getString(sampleRate?.status) !==
+    'sample-rate-candidate-declared-not-selected'
+  ) {
+    missingOrInvalidConfigurationFields.push('sampleRate.status')
+  }
 
-if (!realRenderConfigurationRecord) {
-  missingOrInvalidConfigurationFields.push('realRenderConfiguration')
-}
+  if (sampleRate?.recommendedFirstSampleRateHz !== 44100) {
+    missingOrInvalidConfigurationFields.push(
+      'sampleRate.recommendedFirstSampleRateHz',
+    )
+  }
 
-if (
-  getString(realRenderConfigurationRecord?.configurationStatus) !==
-  'dry-run-real-render-configuration-placeholder'
-) {
-  missingOrInvalidConfigurationFields.push('configurationStatus')
-}
+  if (sampleRate?.selectedSampleRateHz !== null) {
+    missingOrInvalidConfigurationFields.push('sampleRate.selectedSampleRateHz')
+  }
 
-if (getString(realRenderConfigurationRecord?.audioStatus) !== 'not-generated') {
-  missingOrInvalidConfigurationFields.push('audioStatus')
-}
+  if (
+    getString(storage?.status) !==
+    'storage-candidate-declared-not-configured'
+  ) {
+    missingOrInvalidConfigurationFields.push('storage.status')
+  }
 
-if (getString(rendererImplementation?.status) !== 'not-connected') {
-  missingOrInvalidConfigurationFields.push('rendererImplementation.status')
-}
+  if (getString(storage?.recommendedFirstProvider) !== 'browser-download') {
+    missingOrInvalidConfigurationFields.push(
+      'storage.recommendedFirstProvider',
+    )
+  }
 
-if (
-  getString(rendererCandidatePlan?.status) !==
-  'candidate-declared-not-selected'
-) {
-  missingOrInvalidConfigurationFields.push('rendererCandidatePlan.status')
-}
+  if (storage?.selectedProvider !== null) {
+    missingOrInvalidConfigurationFields.push('storage.selectedProvider')
+  }
 
-if (
-  getString(rendererCandidatePlan?.recommendedFirstRenderer) !==
-  'local-click-track-wav-renderer'
-) {
-  missingOrInvalidConfigurationFields.push(
-    'rendererCandidatePlan.recommendedFirstRenderer',
-  )
-}
-
-if (rendererCandidatePlan?.selectedRenderer !== null) {
-  missingOrInvalidConfigurationFields.push(
-    'rendererCandidatePlan.selectedRenderer',
-  )
-}
-
-if (
-  getString(outputFormat?.status) !==
-  'format-candidate-declared-not-selected'
-) {
-  missingOrInvalidConfigurationFields.push('outputFormat.status')
-}
-
-if (getString(outputFormat?.recommendedFirstFormat) !== 'wav') {
-  missingOrInvalidConfigurationFields.push(
-    'outputFormat.recommendedFirstFormat',
-  )
-}
-
-if (outputFormat?.selectedFormat !== null) {
-  missingOrInvalidConfigurationFields.push('outputFormat.selectedFormat')
-}
-
-if (
-  getString(sampleRate?.status) !==
-  'sample-rate-candidate-declared-not-selected'
-) {
-  missingOrInvalidConfigurationFields.push('sampleRate.status')
-}
-if (sampleRate?.recommendedFirstSampleRateHz !== 44100) {
-  missingOrInvalidConfigurationFields.push(
-    'sampleRate.recommendedFirstSampleRateHz',
-  )
-}
-
-if (sampleRate?.selectedSampleRateHz !== null) {
-  missingOrInvalidConfigurationFields.push('sampleRate.selectedSampleRateHz')
-}
-
-if (getString(storage?.status) !== 'not-configured') {
-  missingOrInvalidConfigurationFields.push('storage.status')
-}
-
-if (getString(firstTarget?.key) !== 'clickTrack') {
-  missingOrInvalidConfigurationFields.push('firstTarget.key')
-}
+  if (getString(firstTarget?.key) !== 'clickTrack') {
+    missingOrInvalidConfigurationFields.push('firstTarget.key')
+  }
 
   const response: RealRenderBlockedResponse = {
     ok: false,
@@ -229,10 +247,10 @@ if (getString(firstTarget?.key) !== 'clickTrack') {
       missingOrInvalid: missingOrInvalidContractFields,
     },
     receivedConfigurationSummary: {
-  configurationStatus: getString(
-    realRenderConfigurationRecord?.configurationStatus,
-  ),
-  audioStatus: getString(realRenderConfigurationRecord?.audioStatus),
+      configurationStatus: getString(
+        realRenderConfigurationRecord?.configurationStatus,
+      ),
+      audioStatus: getString(realRenderConfigurationRecord?.audioStatus),
       rendererStatus: getString(rendererImplementation?.status),
       rendererCandidateStatus: getString(rendererCandidatePlan?.status),
       recommendedFirstRenderer: getString(
@@ -246,21 +264,23 @@ if (getString(firstTarget?.key) !== 'clickTrack') {
       selectedFormat: getString(outputFormat?.selectedFormat),
       sampleRateStatus: getString(sampleRate?.status),
       recommendedFirstSampleRateHz:
-      typeof sampleRate?.recommendedFirstSampleRateHz === 'number'
-        ? sampleRate.recommendedFirstSampleRateHz
-        : null,
-        selectedSampleRateHz:
-          typeof sampleRate?.selectedSampleRateHz === 'number'
-            ? sampleRate.selectedSampleRateHz
-            : null,
-              storageStatus: getString(storage?.status),
-              firstTargetKey: getString(firstTarget?.key),
-            },
-            receivedConfigurationCheck: {
-              passed: missingOrInvalidConfigurationFields.length === 0,
-              missingOrInvalid: missingOrInvalidConfigurationFields,
-            },
-          }
+        typeof sampleRate?.recommendedFirstSampleRateHz === 'number'
+          ? sampleRate.recommendedFirstSampleRateHz
+          : null,
+      selectedSampleRateHz:
+        typeof sampleRate?.selectedSampleRateHz === 'number'
+          ? sampleRate.selectedSampleRateHz
+          : null,
+      storageStatus: getString(storage?.status),
+      recommendedFirstProvider: getString(storage?.recommendedFirstProvider),
+      selectedProvider: getString(storage?.selectedProvider),
+      firstTargetKey: getString(firstTarget?.key),
+    },
+    receivedConfigurationCheck: {
+      passed: missingOrInvalidConfigurationFields.length === 0,
+      missingOrInvalid: missingOrInvalidConfigurationFields,
+    },
+  }
 
   return Response.json(response, { status: 423 })
 }

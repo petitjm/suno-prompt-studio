@@ -2778,10 +2778,18 @@ const getRealRenderRouteReceivedConfigurationSummary = () => {
         ? receivedConfigurationSummary.selectedSampleRateHz
     : null,
 storageStatus:
-      typeof receivedConfigurationSummary.storageStatus === 'string'
-        ? receivedConfigurationSummary.storageStatus
-        : '',
-    firstTargetKey:
+  typeof receivedConfigurationSummary.storageStatus === 'string'
+    ? receivedConfigurationSummary.storageStatus
+    : '',
+recommendedFirstProvider:
+  typeof receivedConfigurationSummary.recommendedFirstProvider === 'string'
+    ? receivedConfigurationSummary.recommendedFirstProvider
+    : '',
+selectedProvider:
+  typeof receivedConfigurationSummary.selectedProvider === 'string'
+    ? receivedConfigurationSummary.selectedProvider
+    : null,
+firstTargetKey:
       typeof receivedConfigurationSummary.firstTargetKey === 'string'
         ? receivedConfigurationSummary.firstTargetKey
         : '',
@@ -2878,7 +2886,11 @@ const receivedContractCheck =
      'sample-rate-candidate-declared-not-selected' &&
    receivedConfigurationSummary.recommendedFirstSampleRateHz === 44100 &&
    receivedConfigurationSummary.selectedSampleRateHz === null &&
-    receivedConfigurationSummary.storageStatus === 'not-configured' &&
+    receivedConfigurationSummary.storageStatus ===
+  'storage-candidate-declared-not-configured' &&
+    receivedConfigurationSummary.recommendedFirstProvider ===
+      'browser-download' &&
+    receivedConfigurationSummary.selectedProvider === null &&
     receivedConfigurationSummary.firstTargetKey === 'clickTrack'
   )
 }
