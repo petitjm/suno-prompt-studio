@@ -1597,11 +1597,21 @@ realRenderConfiguration: {
         'Choose an initial sample rate. 44100 Hz is recommended for the first browser-downloadable proof of concept.',
 },
   storage: {
-    status: 'not-configured',
-    selectedProvider: null,
-    requiredDecision:
-      'Choose where generated audio files will be stored before enabling real render completion.',
-  },
+      status: 'storage-candidate-declared-not-configured',
+      recommendedFirstProvider: 'browser-download',
+      selectedProvider: null,
+      reason:
+        'Browser download is the safest first delivery option because it can prove file creation and user access before persistent cloud storage is configured.',
+      mustRemainBlockedUntil: [
+        'Storage or download delivery option is deliberately confirmed.',
+        'Renderer implementation is connected.',
+        'Output format selection is deliberately confirmed.',
+        'Sample rate selection is deliberately confirmed.',
+        'Generated file metadata is recorded only after a real file exists.',
+      ],
+      requiredDecision:
+        'Choose where generated audio files will be stored before enabling real render completion.',
+    },
   firstTarget: {
     key: 'clickTrack',
     status: 'planned',
@@ -3143,8 +3153,12 @@ if (!realRenderConfiguration) {
   if (!storage) {
     missing.push('realRenderConfiguration.storage')
   } else {
-    if (storage.status !== 'not-configured') {
+   if (storage?.status !== 'storage-candidate-declared-not-configured') {
       missing.push('realRenderConfiguration.storage.status')
+    }
+
+    if (storage?.recommendedFirstProvider !== 'browser-download') {
+      missing.push('realRenderConfiguration.storage.recommendedFirstProvider')
     }
 
     if (storage.selectedProvider !== null) {
