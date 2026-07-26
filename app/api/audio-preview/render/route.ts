@@ -1579,12 +1579,21 @@ realRenderConfiguration: {
     'Choose an initial output format. WAV is recommended for the first synthetic click-track render.',
 },
   sampleRate: {
-    status: 'not-selected',
-    selectedSampleRateHz: null,
-    allowedFirstSampleRatesHz: [44100],
-    requiredDecision:
-      'Choose an initial sample rate. 44100 Hz is recommended for the first browser-downloadable proof of concept.',
-  },
+      status: 'sample-rate-candidate-declared-not-selected',
+      recommendedFirstSampleRateHz: 44100,
+      selectedSampleRateHz: null,
+      allowedFirstSampleRatesHz: [44100],
+      reason:
+        '44100 Hz is the safest first sample rate because it is widely supported, browser-download friendly, and suitable for proving a timing-only click-track WAV render.',
+      mustRemainBlockedUntil: [
+        'Sample rate selection is deliberately confirmed.',
+        'Output format selection is deliberately confirmed.',
+        'Renderer implementation is connected.',
+        'Generated audio storage or browser download flow is selected.',
+      ],
+      requiredDecision:
+        'Choose an initial sample rate. 44100 Hz is recommended for the first browser-downloadable proof of concept.',
+},
   storage: {
     status: 'not-configured',
     selectedProvider: null,
@@ -3083,8 +3092,14 @@ if (!realRenderConfiguration) {
   if (!sampleRate) {
     missing.push('realRenderConfiguration.sampleRate')
   } else {
-    if (sampleRate.status !== 'not-selected') {
+    if (sampleRate?.status !== 'sample-rate-candidate-declared-not-selected') {
       missing.push('realRenderConfiguration.sampleRate.status')
+    }
+
+    if (sampleRate?.recommendedFirstSampleRateHz !== 44100) {
+      missing.push(
+        'realRenderConfiguration.sampleRate.recommendedFirstSampleRateHz',
+      )
     }
 
     if (sampleRate.selectedSampleRateHz !== null) {
