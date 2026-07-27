@@ -9,6 +9,15 @@ export type ClickTrackWavRenderInput = {
   totalDurationSeconds: number
 }
 
+export type ClickTrackWavDownloadArtifact = {
+  status: 'created-not-delivered'
+  audioDelivered: false
+  filename: string
+  contentType: 'audio/wav'
+  byteLength: number
+  bytes: Uint8Array
+}
+
 export type ClickTrackWavRenderBlockedResult = {
   ok: false
   status: 'blocked'
@@ -171,6 +180,21 @@ export function createClickTrackWavBytes(
   )
 }
 
+export function createClickTrackWavDownloadArtifact(
+  input: ClickTrackWavRenderInput,
+): ClickTrackWavDownloadArtifact {
+  const bytes = createClickTrackWavBytes(input)
+
+  return {
+    status: 'created-not-delivered',
+    audioDelivered: false,
+    filename: `${sanitizeFilename(input.renderJobId)}-${input.targetKey}.wav`,
+    contentType: 'audio/wav',
+    byteLength: bytes.length,
+    bytes,
+  }
+}
+
 export function renderClickTrackWav(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavRenderResult {
@@ -264,6 +288,16 @@ function createClickTrackWavPrimitiveSelfCheck(
     waveHeader,
     dataHeader,
   }
+}
+
+function sanitizeFilename(value: string) {
+  const safeValue = value
+    .trim()
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  return safeValue || 'click-track-render'
 }
 
 function getFirstBeatTimesSeconds(
