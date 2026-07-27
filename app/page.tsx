@@ -2727,6 +2727,54 @@ const getRealRenderRouteReceivedConfigurationSummary = () => {
     >
 
   return {
+    clickTrackRendererStatus:
+      typeof (
+        realRenderRouteTestResponse as Record<string, unknown>
+      ).clickTrackRendererResult === 'object' &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      ) &&
+      (
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult as Record<string, unknown>
+      ).status === 'blocked'
+        ? 'blocked'
+        : '',
+
+    clickTrackRendererAudioGenerated:
+      typeof (
+        realRenderRouteTestResponse as Record<string, unknown>
+      ).clickTrackRendererResult === 'object' &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      )
+        ? (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).audioGenerated
+        : null,
+
+    clickTrackRendererReason:
+      typeof (
+        realRenderRouteTestResponse as Record<string, unknown>
+      ).clickTrackRendererResult === 'object' &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      ) &&
+      typeof (
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult as Record<string, unknown>
+      ).reason === 'string'
+        ? String(
+            (
+              (realRenderRouteTestResponse as Record<string, unknown>)
+                .clickTrackRendererResult as Record<string, unknown>
+            ).reason,
+          )
+    : '',
     configurationStatus:
       typeof receivedConfigurationSummary.configurationStatus === 'string'
         ? receivedConfigurationSummary.configurationStatus
@@ -16462,7 +16510,7 @@ return (
 
     <div className="mt-2 grid gap-2 md:grid-cols-2">
       <div>
-        <div>
+                <div>
           Configuration status:{' '}
           {realRenderConfigurationSummary.configurationStatus || 'Unknown'}
         </div>
@@ -16475,6 +16523,23 @@ return (
           {realRenderConfigurationSummary.firstTarget.key || 'Unknown'} (
           {realRenderConfigurationSummary.firstTarget.status || 'Unknown'})
         </div>
+               <div>
+                  Click-track renderer status:{' '}
+                  {getRealRenderRouteReceivedConfigurationSummary()
+                    ?.clickTrackRendererStatus || 'unknown'}
+                </div>
+                <div>
+                  Click-track renderer audio generated:{' '}
+                  {getRealRenderRouteReceivedConfigurationSummary()
+                    ?.clickTrackRendererAudioGenerated === false
+                    ? 'false'
+                    : 'unknown'}
+                </div>
+                <div>
+                  Click-track renderer reason:{' '}
+                  {getRealRenderRouteReceivedConfigurationSummary()
+                    ?.clickTrackRendererReason || 'unknown'}
+                </div>
       </div>
 
       <div>
