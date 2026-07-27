@@ -18,6 +18,16 @@ export type ClickTrackWavRenderBlockedResult = {
   preview: ClickTrackWavPreview
 }
 
+export type ClickTrackWavPrimitiveSelfCheck = {
+  status: 'passed' | 'failed'
+  wavBytesCreated: boolean
+  audioDelivered: false
+  byteLength: number
+  riffHeader: string
+  waveHeader: string
+  dataHeader: string
+}
+
 export type ClickTrackWavPreview = {
   renderJobId: string
   targetKey: 'clickTrack'
@@ -32,6 +42,7 @@ export type ClickTrackWavPreview = {
   totalSamples: number
   estimatedWavByteLength: number
   firstBeatTimesSeconds: number[]
+  primitiveSelfCheck: ClickTrackWavPrimitiveSelfCheck
   implementationStatus: 'wav-primitives-ready-render-still-blocked'
 }
 
@@ -63,6 +74,7 @@ export function createClickTrackWavPreview(
     totalSamples,
     estimatedWavByteLength: 44 + totalSamples * BYTES_PER_SAMPLE,
     firstBeatTimesSeconds: getFirstBeatTimesSeconds(input.tempoBpm, 8),
+    primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: 'wav-primitives-ready-render-still-blocked',
   }
 }
@@ -229,6 +241,31 @@ export function renderClickTrackWav(
   }
 }
 
+function createClickTrackWavPrimitiveSelfCheck(
+  input: ClickTrackWavRenderInput,
+): ClickTrackWavPrimitiveSelfCheck {
+  const wavBytes = createClickTrackWavBytes(input)
+  const riffHeader = readAscii(wavBytes, 0, 4)
+  const waveHeader = readAscii(wavBytes, 8, 4)
+  const dataHeader = readAscii(wavBytes, 36, 4)
+
+  const passed =
+    wavBytes.length > 44 &&
+    riffHeader === 'RIFF' &&
+    waveHeader === 'WAVE' &&
+    dataHeader === 'data'
+
+  return {
+    status: passed ? 'passed' : 'failed',
+    wavBytesCreated: wavBytes.length > 44,
+    audioDelivered: false,
+    byteLength: wavBytes.length,
+    riffHeader,
+    waveHeader,
+    dataHeader,
+  }
+}
+
 function getFirstBeatTimesSeconds(
   tempoBpm: number,
   beatCount: number,
@@ -242,6 +279,12 @@ function getFirstBeatTimesSeconds(
   return Array.from({ length: beatCount }, (_, index) =>
     Number((index * secondsPerBeat).toFixed(3)),
   )
+}
+
+function readAscii(bytes: Uint8Array, offset: number, length: number) {
+  return Array.from(bytes.slice(offset, offset + length))
+    .map((byte) => String.fromCharCode(byte))
+    .join('')
 }
 
 function writeAscii(view: DataView, offset: number, value: string) {
