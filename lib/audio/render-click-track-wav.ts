@@ -34,6 +34,7 @@ export type ClickTrackWavRenderBlockedResult = {
   reason: string
   requiredBeforeEnablement: string[]
   preview: ClickTrackWavPreview
+  downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary
 }
 
 export type ClickTrackWavPrimitiveSelfCheck = {
@@ -224,6 +225,9 @@ export function renderClickTrackWav(
 ): ClickTrackWavRenderResult {
   const preview = createClickTrackWavPreview(input)
 
+  const downloadArtifactSummary =
+     createClickTrackWavDownloadArtifactSummary(input)
+
   const requiredBeforeEnablement = [
     'Connect createClickTrackWavBytes to the real-render route.',
     'Return the WAV bytes through a deliberate browser-download response.',
@@ -240,6 +244,7 @@ export function renderClickTrackWav(
       reason: 'Only the clickTrack target is allowed for the first renderer.',
       requiredBeforeEnablement,
       preview,
+      downloadArtifactSummary,
     }
   }
 
@@ -251,6 +256,7 @@ export function renderClickTrackWav(
       reason: 'Only WAV output is allowed for the first renderer candidate.',
       requiredBeforeEnablement,
       preview,
+      downloadArtifactSummary,
     }
   }
 
@@ -263,6 +269,7 @@ export function renderClickTrackWav(
         'Only 44.1 kHz sample rate is allowed for the first renderer candidate.',
       requiredBeforeEnablement,
       preview,
+      downloadArtifactSummary,
     }
   }
 
@@ -275,6 +282,7 @@ export function renderClickTrackWav(
         'Only browser-download delivery is allowed for the first renderer candidate.',
       requiredBeforeEnablement,
       preview,
+      downloadArtifactSummary,
     }
   }
 
@@ -285,7 +293,8 @@ export function renderClickTrackWav(
     reason:
       'Click-track WAV primitives are implemented, but the renderer remains intentionally blocked and is not connected to file output yet.',
     requiredBeforeEnablement,
-    preview,
+    preview,      
+    downloadArtifactSummary,
   }
 }
 
