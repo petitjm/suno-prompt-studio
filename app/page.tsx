@@ -9257,7 +9257,27 @@ const hasExpectedReceivedConfigurationSummary = Boolean(
           >
         ).expectedBlockedResponse as Record<string, unknown>
       ).receivedConfigurationSummary as Record<string, unknown>
-    ).storageStatus === 'not-configured' &&
+    ).storageStatus === 'storage-candidate-declared-not-configured' &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).recommendedFirstProvider === 'browser-download' &&
+(
+  (
+    (
+      dryRunArtifactPackage.realRenderRouteScaffold as Record<
+        string,
+        unknown
+      >
+    ).expectedBlockedResponse as Record<string, unknown>
+  ).receivedConfigurationSummary as Record<string, unknown>
+).selectedProvider === null &&
     (
       (
         (
@@ -9587,7 +9607,7 @@ const hasBlockedRealRenderRouteTestPassed =
 {
   label: 'Expected received-configuration summary',
   detail: hasExpectedReceivedConfigurationSummary
-    ? 'Blocked route scaffold declares the expected received-configuration summary, including renderer, WAV format, and 44.1 kHz sample-rate candidate fields, before any real renderer can be connected.'
+    ? 'Blocked route scaffold declares the expected received-configuration summary, including renderer, WAV format, 44.1 kHz sample-rate, and browser-download storage candidate fields, before any real renderer can be connected.'
     : 'Expected received-configuration summary is pending until the dry-run scaffold declares it in the expected blocked response.',
   complete: hasExpectedReceivedConfigurationSummary,
 },
