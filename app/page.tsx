@@ -2958,6 +2958,8 @@ export default function Page() {
       receivedConfigurationCheck.passed &&
       receivedConfigurationCheck.missingOrInvalid.length === 0 &&
       receivedConfigurationSummary !== null &&
+      receivedConfigurationSummary.clickTrackRendererStatus === 'blocked' &&
+      receivedConfigurationSummary.clickTrackRendererAudioGenerated === false &&
       receivedConfigurationSummary.configurationStatus ===
         "dry-run-real-render-configuration-placeholder" &&
       receivedConfigurationSummary.audioStatus === "not-generated" &&
