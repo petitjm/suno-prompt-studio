@@ -204,6 +204,7 @@ export default function Page() {
   const [submittingAudioPreviewRender, setSubmittingAudioPreviewRender] =
     useState(false);
   const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false);
+  const [clickTrackDownloadStatus, setClickTrackDownloadStatus] = useState("");
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -3123,12 +3124,18 @@ export default function Page() {
   };
 
     const downloadClickTrackWav = async () => {
-    if (!dryRunArtifactPackage) {
-      window.alert("Submit dry run before downloading the click-track WAV.");
-      return;
-    }
+        if (!dryRunArtifactPackage) {
+          setClickTrackDownloadStatus(
+            "Submit dry run before downloading the click-track WAV.",
+          );
+          return;
+        }
 
-    try {
+        setClickTrackDownloadStatus("Requesting click-track WAV download...");
+
+        
+
+        try {
       const response = await fetch("/api/audio-preview/real-render", {
         method: "POST",
         headers: {
@@ -3147,7 +3154,7 @@ export default function Page() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        window.alert(
+        setClickTrackDownloadStatus(
           `Click-track WAV download failed. HTTP ${response.status}: ${errorText}`,
         );
         return;
@@ -3169,13 +3176,15 @@ export default function Page() {
       link.remove();
 
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : "Click-track WAV download failed.",
-      );
-    }
+
+          setClickTrackDownloadStatus(`Downloaded click-track WAV: ${filename}`);
+        } catch (error) {
+          setClickTrackDownloadStatus(
+            error instanceof Error
+              ? error.message
+              : "Click-track WAV download failed.",
+          );
+        }
   };
 
   const getFilenameFromContentDisposition = (
@@ -14875,6 +14884,11 @@ ${buildRewriteInstruction(
                           >
                             Download click-track WAV
                           </button>
+                                                    {clickTrackDownloadStatus ? (
+                            <div className="text-xs text-green-200">
+                              {clickTrackDownloadStatus}
+                            </div>
+                          ) : null}
 
                           {realRenderRouteTestResponse ? (
                             <div className="mt-2 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
