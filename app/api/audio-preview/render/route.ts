@@ -1629,6 +1629,42 @@ realRenderConfiguration: {
   ],
 },
 
+firstRealRenderCandidateStack: {
+  stackStatus: 'candidate-stack-declared-not-enabled',
+  audioStatus: 'not-generated',
+  firstTargetKey: 'clickTrack',
+  renderer: {
+    status: 'candidate-declared-not-selected',
+    recommended: 'local-click-track-wav-renderer',
+    selected: null,
+  },
+  outputFormat: {
+    status: 'format-candidate-declared-not-selected',
+    recommended: 'wav',
+    selected: null,
+  },
+  sampleRate: {
+    status: 'sample-rate-candidate-declared-not-selected',
+    recommendedHz: 44100,
+    selectedHz: null,
+  },
+  storage: {
+    status: 'storage-candidate-declared-not-configured',
+    recommended: 'browser-download',
+    selected: null,
+  },
+  enablementStatus: 'blocked',
+  canGenerateAudio: false,
+  requiredBeforeEnablement: [
+    'Renderer implementation is written and tested.',
+    'Output format selection is deliberately confirmed.',
+    'Sample rate selection is deliberately confirmed.',
+    'Storage or browser download delivery is deliberately confirmed.',
+    'Blocked route scaffold is replaced by real execution.',
+    'A real audio file is written before any output is marked generated.',
+  ],
+},
+
     renderJob,
     dryRunRenderPlan,
     dryRunRenderPlanValidation,
@@ -1664,6 +1700,7 @@ function validateDryRunArtifactPackage(pkg: {
   firstRealRenderPlan?: unknown
   realRenderRouteScaffold?: unknown
   realRenderConfiguration?: unknown
+  firstRealRenderCandidateStack?: unknown
   renderJob?: unknown
   dryRunRenderPlan?: unknown
   dryRunRenderPlanValidation?: unknown
@@ -3016,6 +3053,8 @@ const realRenderConfiguration =
   !Array.isArray(pkg.realRenderConfiguration)
     ? (pkg.realRenderConfiguration as Record<string, unknown>)
     : null
+
+
 
 if (!realRenderConfiguration) {
   missing.push('realRenderConfiguration')
