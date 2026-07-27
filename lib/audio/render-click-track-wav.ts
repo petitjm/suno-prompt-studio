@@ -18,6 +18,15 @@ export type ClickTrackWavDownloadArtifact = {
   bytes: Uint8Array
 }
 
+export type ClickTrackWavDownloadArtifactSummary = {
+  status: 'created-not-delivered'
+  audioDelivered: false
+  filename: string
+  contentType: 'audio/wav'
+  byteLength: number
+  bytesIncludedInResponse: false
+}
+
 export type ClickTrackWavRenderBlockedResult = {
   ok: false
   status: 'blocked'
@@ -192,6 +201,21 @@ export function createClickTrackWavDownloadArtifact(
     contentType: 'audio/wav',
     byteLength: bytes.length,
     bytes,
+  }
+}
+
+export function createClickTrackWavDownloadArtifactSummary(
+  input: ClickTrackWavRenderInput,
+): ClickTrackWavDownloadArtifactSummary {
+  const artifact = createClickTrackWavDownloadArtifact(input)
+
+  return {
+    status: artifact.status,
+    audioDelivered: artifact.audioDelivered,
+    filename: artifact.filename,
+    contentType: artifact.contentType,
+    byteLength: artifact.byteLength,
+    bytesIncludedInResponse: false,
   }
 }
 
