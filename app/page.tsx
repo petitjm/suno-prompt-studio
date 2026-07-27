@@ -3122,6 +3122,74 @@ export default function Page() {
     }
   };
 
+    const downloadClickTrackWav = async () => {
+    if (!dryRunArtifactPackage) {
+      window.alert("Submit dry run before downloading the click-track WAV.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/audio-preview/real-render", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requestedTarget: "clickTrack",
+          enableRealClickTrackWavDownload: true,
+          rendererInputContract: dryRunArtifactPackage.rendererInputContract,
+          realRenderGate: dryRunArtifactPackage.realRenderGate,
+          firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
+          realRenderConfiguration:
+            dryRunArtifactPackage.realRenderConfiguration,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        window.alert(
+          `Click-track WAV download failed. HTTP ${response.status}: ${errorText}`,
+        );
+        return;
+      }
+
+      const blob = await response.blob();
+      const filename =
+        getFilenameFromContentDisposition(
+          response.headers.get("Content-Disposition"),
+        ) || "click-track.wav";
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Click-track WAV download failed.",
+      );
+    }
+  };
+
+  const getFilenameFromContentDisposition = (
+    contentDisposition: string | null,
+  ) => {
+    if (!contentDisposition) {
+      return "";
+    }
+
+    const match = contentDisposition.match(/filename="([^"]+)"/);
+
+    return match?.[1] || "";
+  };
+
   const getPreviewPlanValue = (key: string) => {
     if (!audioPreviewPlan) {
       return "";
@@ -14796,6 +14864,16 @@ ${buildRewriteInstruction(
                             {testingRealRenderRoute
                               ? "Testing blocked route..."
                               : "Test blocked route"}
+                          </button>
+
+                                                    <button
+                            type="button"
+                            onClick={() => downloadClickTrackWav()}
+                            disabled={!dryRunArtifactPackage}
+                            title="Generate and download the first local click-track WAV using the gated real-render route."
+                            className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                          >
+                            Download click-track WAV
                           </button>
 
                           {realRenderRouteTestResponse ? (
