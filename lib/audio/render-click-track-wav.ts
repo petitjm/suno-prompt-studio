@@ -37,6 +37,17 @@ export type ClickTrackWavRenderBlockedResult = {
   downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary
 }
 
+export type ClickTrackWavRenderSuccessResult = {
+  ok: true
+  status: 'ready-for-download'
+  audioGenerated: true
+  audioDelivered: false
+  reason: string
+  preview: ClickTrackWavPreview
+  downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary
+  downloadArtifact: ClickTrackWavDownloadArtifact
+}
+
 export type ClickTrackWavPrimitiveSelfCheck = {
   status: 'passed' | 'failed'
   wavBytesCreated: boolean
@@ -65,7 +76,9 @@ export type ClickTrackWavPreview = {
   implementationStatus: 'wav-primitives-ready-render-still-blocked'
 }
 
-export type ClickTrackWavRenderResult = ClickTrackWavRenderBlockedResult
+export type ClickTrackWavRenderResult =
+  | ClickTrackWavRenderBlockedResult
+  | ClickTrackWavRenderSuccessResult
 
 const CHANNEL_COUNT = 1
 const BITS_PER_SAMPLE = 16
@@ -217,6 +230,27 @@ export function createClickTrackWavDownloadArtifactSummary(
     contentType: artifact.contentType,
     byteLength: artifact.byteLength,
     bytesIncludedInResponse: false,
+  }
+}
+
+export function createReadyClickTrackWavDownload(
+  input: ClickTrackWavRenderInput,
+): ClickTrackWavRenderSuccessResult {
+  const preview = createClickTrackWavPreview(input)
+  const downloadArtifact = createClickTrackWavDownloadArtifact(input)
+  const downloadArtifactSummary =
+    createClickTrackWavDownloadArtifactSummary(input)
+
+  return {
+    ok: true,
+    status: 'ready-for-download',
+    audioGenerated: true,
+    audioDelivered: false,
+    reason:
+      'Click-track WAV bytes are ready for browser-download delivery, but the route has not delivered them yet.',
+    preview,
+    downloadArtifactSummary,
+    downloadArtifact,
   }
 }
 
