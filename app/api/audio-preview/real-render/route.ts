@@ -1,8 +1,11 @@
+import { renderClickTrackWav } from '@/lib/audio/render-click-track-wav'
+
 export const runtime = 'nodejs'
 
 type RealRenderBlockedResponse = {
   ok: false
   status: 'blocked'
+  clickTrackRendererResult: ReturnType<typeof renderClickTrackWav>
   audioStatus: 'not-generated'
   rendererStatus: 'not-connected'
   storageStatus: 'not-configured'
@@ -213,9 +216,34 @@ export async function POST(req: Request) {
     missingOrInvalidConfigurationFields.push('firstTarget.key')
   }
 
+  const requestBody =
+  body && typeof body === 'object' && !Array.isArray(body)
+    ? (body as Record<string, unknown>)
+    : {}
+
+const clickTrackRendererResult = renderClickTrackWav({
+  renderJobId:
+    typeof requestBody.renderJobId === 'string' &&
+    requestBody.renderJobId.trim()
+      ? requestBody.renderJobId
+      : 'blocked-real-render-route-test',
+  targetKey: 'clickTrack',
+  tempoBpm:
+    typeof requestBody.tempoBpm === 'number' &&
+    Number.isFinite(requestBody.tempoBpm)
+      ? requestBody.tempoBpm
+      : 80,
+  sampleRateHz: 44100,
+  outputFormat: 'wav',
+  storageProvider: 'browser-download',
+  countInBars: 1,
+  totalDurationSeconds: 10,
+})
+
   const response: RealRenderBlockedResponse = {
     ok: false,
     status: 'blocked',
+    clickTrackRendererResult,
     audioStatus: 'not-generated',
     rendererStatus: 'not-connected',
     storageStatus: 'not-configured',
