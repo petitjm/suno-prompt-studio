@@ -2816,6 +2816,87 @@ export default function Page() {
               ).reason,
             )
           : "",
+              clickTrackDownloadArtifactStatus:
+      typeof (realRenderRouteTestResponse as Record<string, unknown>)
+        .clickTrackRendererResult === 'object' &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      ) &&
+      typeof (
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary as Record<string, unknown> | undefined
+      ) === 'object' &&
+      !Array.isArray(
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary,
+      ) &&
+      (
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary as Record<string, unknown>
+      ).status === 'created-not-delivered'
+        ? 'created-not-delivered'
+        : '',
+
+    clickTrackDownloadArtifactAudioDelivered:
+      typeof (realRenderRouteTestResponse as Record<string, unknown>)
+        .clickTrackRendererResult === 'object' &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      ) &&
+      typeof (
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary as Record<string, unknown> | undefined
+      ) === 'object' &&
+      !Array.isArray(
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary,
+      )
+        ? (
+            (
+              (realRenderRouteTestResponse as Record<string, unknown>)
+                .clickTrackRendererResult as Record<string, unknown>
+            ).downloadArtifactSummary as Record<string, unknown>
+          ).audioDelivered
+        : null,
+
+    clickTrackDownloadArtifactBytesIncluded:
+      typeof (realRenderRouteTestResponse as Record<string, unknown>)
+        .clickTrackRendererResult === 'object' &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      ) &&
+      typeof (
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary as Record<string, unknown> | undefined
+      ) === 'object' &&
+      !Array.isArray(
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).downloadArtifactSummary,
+      )
+        ? (
+            (
+              (realRenderRouteTestResponse as Record<string, unknown>)
+                .clickTrackRendererResult as Record<string, unknown>
+            ).downloadArtifactSummary as Record<string, unknown>
+          ).bytesIncludedInResponse
+        : null,
       configurationStatus:
         typeof receivedConfigurationSummary.configurationStatus === "string"
           ? receivedConfigurationSummary.configurationStatus
@@ -2960,6 +3041,12 @@ export default function Page() {
       receivedConfigurationSummary !== null &&
       receivedConfigurationSummary.clickTrackRendererStatus === 'blocked' &&
       receivedConfigurationSummary.clickTrackRendererAudioGenerated === false &&
+      receivedConfigurationSummary.clickTrackDownloadArtifactStatus ===
+      'created-not-delivered' &&
+      receivedConfigurationSummary.clickTrackDownloadArtifactAudioDelivered ===
+      false &&
+      receivedConfigurationSummary.clickTrackDownloadArtifactBytesIncluded ===
+      false &&
       receivedConfigurationSummary.configurationStatus ===
         "dry-run-real-render-configuration-placeholder" &&
       receivedConfigurationSummary.audioStatus === "not-generated" &&
@@ -17338,6 +17425,25 @@ ${buildRewriteInstruction(
                                   {getRealRenderRouteReceivedConfigurationSummary()
                                     ?.clickTrackRendererReason || "unknown"}
                                 </div>
+                                        <div>
+                                          Click-track artifact status:{' '}
+                                          {getRealRenderRouteReceivedConfigurationSummary()
+                                            ?.clickTrackDownloadArtifactStatus || 'unknown'}
+                                        </div>
+                                        <div>
+                                          Click-track artifact audio delivered:{' '}
+                                          {getRealRenderRouteReceivedConfigurationSummary()
+                                            ?.clickTrackDownloadArtifactAudioDelivered === false
+                                            ? 'false'
+                                            : 'unknown'}
+                                        </div>
+                                        <div>
+                                          Click-track bytes included in response:{' '}
+                                          {getRealRenderRouteReceivedConfigurationSummary()
+                                            ?.clickTrackDownloadArtifactBytesIncluded === false
+                                            ? 'false'
+                                            : 'unknown'}
+                                        </div>
                               </div>
 
                               <div>
