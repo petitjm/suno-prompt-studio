@@ -3096,6 +3096,7 @@ export default function Page() {
         },
         body: JSON.stringify({
           requestedTarget: "clickTrack",
+          tempoBpm: previewTempo,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -3146,6 +3147,7 @@ export default function Page() {
         body: JSON.stringify({
           requestedTarget: "clickTrack",
           enableRealClickTrackWavDownload: true,
+          tempoBpm: previewTempo,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
