@@ -8937,6 +8937,88 @@ const hasRendererCandidatePlan = Boolean(
     ).selectedRenderer === null,
 )
 
+const hasRealRenderOutputCandidates = Boolean(
+  dryRunArtifactPackage &&
+    dryRunArtifactPackage.realRenderConfiguration &&
+    typeof dryRunArtifactPackage.realRenderConfiguration === 'object' &&
+    !Array.isArray(dryRunArtifactPackage.realRenderConfiguration) &&
+    (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).outputFormat &&
+    typeof (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).outputFormat === 'object' &&
+    !Array.isArray(
+      (dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>)
+        .outputFormat,
+    ) &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).outputFormat as Record<string, unknown>
+    ).status === 'format-candidate-declared-not-selected' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).outputFormat as Record<string, unknown>
+    ).recommendedFirstFormat === 'wav' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).outputFormat as Record<string, unknown>
+    ).selectedFormat === null &&
+    (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).sampleRate &&
+    typeof (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).sampleRate === 'object' &&
+    !Array.isArray(
+      (dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>)
+        .sampleRate,
+    ) &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).sampleRate as Record<string, unknown>
+    ).status === 'sample-rate-candidate-declared-not-selected' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).sampleRate as Record<string, unknown>
+    ).recommendedFirstSampleRateHz === 44100 &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).sampleRate as Record<string, unknown>
+    ).selectedSampleRateHz === null &&
+    (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).storage &&
+    typeof (
+      dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+    ).storage === 'object' &&
+    !Array.isArray(
+      (dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>)
+        .storage,
+    ) &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).storage as Record<string, unknown>
+    ).status === 'storage-candidate-declared-not-configured' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).storage as Record<string, unknown>
+    ).recommendedFirstProvider === 'browser-download' &&
+    (
+      (
+        dryRunArtifactPackage.realRenderConfiguration as Record<string, unknown>
+      ).storage as Record<string, unknown>
+    ).selectedProvider === null,
+)
+
 const hasExpectedReceivedContractSummary = Boolean(
   dryRunArtifactPackage &&
     dryRunArtifactPackage.realRenderRouteScaffold &&
@@ -9586,6 +9668,14 @@ const hasBlockedRealRenderRouteTestPassed =
     ? 'First renderer candidate placeholder is present, recommends the local click-track WAV renderer, and keeps it unselected.'
     : 'First renderer candidate placeholder is pending until dry run creates the real-render configuration.',
   complete: hasRendererCandidatePlan,
+},
+
+{
+  label: 'Real-render output candidates',
+  detail: hasRealRenderOutputCandidates
+    ? 'Real-render output candidates are present for WAV format, 44.1 kHz sample rate, and browser-download delivery while keeping all real selections unset.'
+    : 'Real-render output candidates are pending until dry run creates the real-render configuration.',
+  complete: hasRealRenderOutputCandidates,
 },
 
 {
