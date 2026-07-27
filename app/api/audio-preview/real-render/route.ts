@@ -258,17 +258,19 @@ export async function POST(req: Request) {
 
     return new Response(wavBody, {
       status: 200,
-      headers: {
-        "Content-Type": downloadArtifact.contentType,
-        "Content-Length": String(downloadArtifact.byteLength),
-        "Content-Disposition": `attachment; filename="${downloadArtifact.filename}"`,
-        "X-Audio-Generated": "true",
-        "X-Audio-Delivered": "true",
-        "X-Renderer-Status": readyDownload.status,
-        "X-Renderer-Name": "local-click-track-wav-renderer",
-        "X-Renderer-Target": "clickTrack",
-        "X-Renderer-Gate": "enableRealClickTrackWavDownload",
-      },
+     headers: {
+          "Content-Type": downloadArtifact.contentType,
+          "Content-Length": String(downloadArtifact.byteLength),
+          "Content-Disposition": `attachment; filename="${downloadArtifact.filename}"`,
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+          "X-Audio-Generated": "true",
+          "X-Audio-Delivered": "true",
+          "X-Renderer-Status": readyDownload.status,
+          "X-Renderer-Name": "local-click-track-wav-renderer",
+          "X-Renderer-Target": "clickTrack",
+          "X-Renderer-Gate": "enableRealClickTrackWavDownload",
+        },
     });
   }
 
