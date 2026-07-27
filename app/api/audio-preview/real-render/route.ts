@@ -1,4 +1,7 @@
-import { renderClickTrackWav } from "@/lib/audio/render-click-track-wav";
+import {
+  createReadyClickTrackWavDownload,
+  renderClickTrackWav,
+} from "@/lib/audio/render-click-track-wav";
 
 export const runtime = "nodejs";
 
@@ -219,24 +222,52 @@ export async function POST(req: Request) {
       ? (body as Record<string, unknown>)
       : {};
 
-  const clickTrackRendererResult = renderClickTrackWav({
+   const clickTrackRenderInput = {
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
         ? requestBody.renderJobId
         : "blocked-real-render-route-test",
-    targetKey: "clickTrack",
+    targetKey: "clickTrack" as const,
     tempoBpm:
       typeof requestBody.tempoBpm === "number" &&
       Number.isFinite(requestBody.tempoBpm)
         ? requestBody.tempoBpm
         : 80,
-    sampleRateHz: 44100,
-    outputFormat: "wav",
-    storageProvider: "browser-download",
+    sampleRateHz: 44100 as const,
+    outputFormat: "wav" as const,
+    storageProvider: "browser-download" as const,
     countInBars: 1,
     totalDurationSeconds: 10,
-  });
+  };
+
+  const clickTrackRendererResult = renderClickTrackWav(clickTrackRenderInput);
+
+  const realDownloadRequested =
+    requestBody.enableRealClickTrackWavDownload === true;
+
+  if (
+    realDownloadRequested &&
+    missingOrInvalidContractFields.length === 0 &&
+    missingOrInvalidConfigurationFields.length === 0
+  ) {
+       const readyDownload =
+          createReadyClickTrackWavDownload(clickTrackRenderInput);
+        const downloadArtifact = readyDownload.downloadArtifact;
+        const wavBody = new Uint8Array(downloadArtifact.bytes).buffer;
+
+    return new Response(wavBody, {
+      status: 200,
+      headers: {
+        "Content-Type": downloadArtifact.contentType,
+        "Content-Length": String(downloadArtifact.byteLength),
+        "Content-Disposition": `attachment; filename="${downloadArtifact.filename}"`,
+        "X-Audio-Generated": "true",
+        "X-Audio-Delivered": "true",
+        "X-Renderer-Status": readyDownload.status,
+      },
+    });
+  }
 
   const response: RealRenderBlockedResponse = {
     ok: false,
