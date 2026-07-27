@@ -265,6 +265,9 @@ export async function POST(req: Request) {
         "X-Audio-Generated": "true",
         "X-Audio-Delivered": "true",
         "X-Renderer-Status": readyDownload.status,
+        "X-Renderer-Name": "local-click-track-wav-renderer",
+        "X-Renderer-Target": "clickTrack",
+        "X-Renderer-Gate": "enableRealClickTrackWavDownload",
       },
     });
   }
