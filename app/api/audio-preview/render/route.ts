@@ -3056,7 +3056,152 @@ const realRenderConfiguration =
     ? (pkg.realRenderConfiguration as Record<string, unknown>)
     : null
 
+const firstRealRenderCandidateStack =
+  pkg.firstRealRenderCandidateStack &&
+  typeof pkg.firstRealRenderCandidateStack === 'object' &&
+  !Array.isArray(pkg.firstRealRenderCandidateStack)
+    ? (pkg.firstRealRenderCandidateStack as Record<string, unknown>)
+    : null
 
+if (!firstRealRenderCandidateStack) {
+  missing.push('firstRealRenderCandidateStack')
+} else {
+  if (
+    firstRealRenderCandidateStack.stackStatus !==
+    'candidate-stack-declared-not-enabled'
+  ) {
+    missing.push('firstRealRenderCandidateStack.stackStatus')
+  }
+
+  if (firstRealRenderCandidateStack.audioStatus !== 'not-generated') {
+    missing.push('firstRealRenderCandidateStack.audioStatus')
+  }
+
+  if (firstRealRenderCandidateStack.firstTargetKey !== 'clickTrack') {
+    missing.push('firstRealRenderCandidateStack.firstTargetKey')
+  }
+
+  const candidateRenderer =
+    firstRealRenderCandidateStack.renderer &&
+    typeof firstRealRenderCandidateStack.renderer === 'object' &&
+    !Array.isArray(firstRealRenderCandidateStack.renderer)
+      ? (firstRealRenderCandidateStack.renderer as Record<string, unknown>)
+      : null
+
+  if (!candidateRenderer) {
+    missing.push('firstRealRenderCandidateStack.renderer')
+  } else {
+    if (candidateRenderer.status !== 'candidate-declared-not-selected') {
+      missing.push('firstRealRenderCandidateStack.renderer.status')
+    }
+
+    if (
+      candidateRenderer.recommended !== 'local-click-track-wav-renderer'
+    ) {
+      missing.push('firstRealRenderCandidateStack.renderer.recommended')
+    }
+
+    if (candidateRenderer.selected !== null) {
+      missing.push('firstRealRenderCandidateStack.renderer.selected')
+    }
+  }
+
+  const candidateOutputFormat =
+    firstRealRenderCandidateStack.outputFormat &&
+    typeof firstRealRenderCandidateStack.outputFormat === 'object' &&
+    !Array.isArray(firstRealRenderCandidateStack.outputFormat)
+      ? (firstRealRenderCandidateStack.outputFormat as Record<
+          string,
+          unknown
+        >)
+      : null
+
+  if (!candidateOutputFormat) {
+    missing.push('firstRealRenderCandidateStack.outputFormat')
+  } else {
+    if (
+      candidateOutputFormat.status !==
+      'format-candidate-declared-not-selected'
+    ) {
+      missing.push('firstRealRenderCandidateStack.outputFormat.status')
+    }
+
+    if (candidateOutputFormat.recommended !== 'wav') {
+      missing.push('firstRealRenderCandidateStack.outputFormat.recommended')
+    }
+
+    if (candidateOutputFormat.selected !== null) {
+      missing.push('firstRealRenderCandidateStack.outputFormat.selected')
+    }
+  }
+
+  const candidateSampleRate =
+    firstRealRenderCandidateStack.sampleRate &&
+    typeof firstRealRenderCandidateStack.sampleRate === 'object' &&
+    !Array.isArray(firstRealRenderCandidateStack.sampleRate)
+      ? (firstRealRenderCandidateStack.sampleRate as Record<string, unknown>)
+      : null
+
+  if (!candidateSampleRate) {
+    missing.push('firstRealRenderCandidateStack.sampleRate')
+  } else {
+    if (
+      candidateSampleRate.status !==
+      'sample-rate-candidate-declared-not-selected'
+    ) {
+      missing.push('firstRealRenderCandidateStack.sampleRate.status')
+    }
+
+    if (candidateSampleRate.recommendedHz !== 44100) {
+      missing.push('firstRealRenderCandidateStack.sampleRate.recommendedHz')
+    }
+
+    if (candidateSampleRate.selectedHz !== null) {
+      missing.push('firstRealRenderCandidateStack.sampleRate.selectedHz')
+    }
+  }
+
+  const candidateStorage =
+    firstRealRenderCandidateStack.storage &&
+    typeof firstRealRenderCandidateStack.storage === 'object' &&
+    !Array.isArray(firstRealRenderCandidateStack.storage)
+      ? (firstRealRenderCandidateStack.storage as Record<string, unknown>)
+      : null
+
+  if (!candidateStorage) {
+    missing.push('firstRealRenderCandidateStack.storage')
+  } else {
+    if (
+      candidateStorage.status !==
+      'storage-candidate-declared-not-configured'
+    ) {
+      missing.push('firstRealRenderCandidateStack.storage.status')
+    }
+
+    if (candidateStorage.recommended !== 'browser-download') {
+      missing.push('firstRealRenderCandidateStack.storage.recommended')
+    }
+
+    if (candidateStorage.selected !== null) {
+      missing.push('firstRealRenderCandidateStack.storage.selected')
+    }
+  }
+
+  if (firstRealRenderCandidateStack.enablementStatus !== 'blocked') {
+    missing.push('firstRealRenderCandidateStack.enablementStatus')
+  }
+
+  if (firstRealRenderCandidateStack.canGenerateAudio !== false) {
+    missing.push('firstRealRenderCandidateStack.canGenerateAudio')
+  }
+
+  if (
+    !Array.isArray(firstRealRenderCandidateStack.requiredBeforeEnablement) ||
+    firstRealRenderCandidateStack.requiredBeforeEnablement.length === 0
+  ) {
+    missing.push('firstRealRenderCandidateStack.requiredBeforeEnablement')
+  }
+}
 
 if (!realRenderConfiguration) {
   missing.push('realRenderConfiguration')
@@ -3097,48 +3242,46 @@ if (!realRenderConfiguration) {
   }
 
   const rendererCandidatePlan =
-          realRenderConfiguration.rendererCandidatePlan &&
-          typeof realRenderConfiguration.rendererCandidatePlan === 'object' &&
-          !Array.isArray(realRenderConfiguration.rendererCandidatePlan)
-            ? (realRenderConfiguration.rendererCandidatePlan as Record<
-                string,
-                unknown
-              >)
-            : null
+    realRenderConfiguration.rendererCandidatePlan &&
+    typeof realRenderConfiguration.rendererCandidatePlan === 'object' &&
+    !Array.isArray(realRenderConfiguration.rendererCandidatePlan)
+      ? (realRenderConfiguration.rendererCandidatePlan as Record<
+          string,
+          unknown
+        >)
+      : null
 
-        if (!rendererCandidatePlan) {
-          missing.push('realRenderConfiguration.rendererCandidatePlan')
-        } else {
-          if (
-            rendererCandidatePlan.status !== 'candidate-declared-not-selected'
-          ) {
-            missing.push('realRenderConfiguration.rendererCandidatePlan.status')
-          }
+  if (!rendererCandidatePlan) {
+    missing.push('realRenderConfiguration.rendererCandidatePlan')
+  } else {
+    if (rendererCandidatePlan.status !== 'candidate-declared-not-selected') {
+      missing.push('realRenderConfiguration.rendererCandidatePlan.status')
+    }
 
-          if (
-            rendererCandidatePlan.recommendedFirstRenderer !==
-            'local-click-track-wav-renderer'
-          ) {
-            missing.push(
-              'realRenderConfiguration.rendererCandidatePlan.recommendedFirstRenderer',
-            )
-          }
+    if (
+      rendererCandidatePlan.recommendedFirstRenderer !==
+      'local-click-track-wav-renderer'
+    ) {
+      missing.push(
+        'realRenderConfiguration.rendererCandidatePlan.recommendedFirstRenderer',
+      )
+    }
 
-          if (rendererCandidatePlan.selectedRenderer !== null) {
-            missing.push(
-              'realRenderConfiguration.rendererCandidatePlan.selectedRenderer',
-            )
-          }
+    if (rendererCandidatePlan.selectedRenderer !== null) {
+      missing.push(
+        'realRenderConfiguration.rendererCandidatePlan.selectedRenderer',
+      )
+    }
 
-          if (
-            !Array.isArray(rendererCandidatePlan.mustRemainBlockedUntil) ||
-            rendererCandidatePlan.mustRemainBlockedUntil.length === 0
-          ) {
-            missing.push(
-              'realRenderConfiguration.rendererCandidatePlan.mustRemainBlockedUntil',
-            )
-          }
-        }
+    if (
+      !Array.isArray(rendererCandidatePlan.mustRemainBlockedUntil) ||
+      rendererCandidatePlan.mustRemainBlockedUntil.length === 0
+    ) {
+      missing.push(
+        'realRenderConfiguration.rendererCandidatePlan.mustRemainBlockedUntil',
+      )
+    }
+  }
 
   const outputFormat =
     realRenderConfiguration.outputFormat &&
@@ -3150,11 +3293,11 @@ if (!realRenderConfiguration) {
   if (!outputFormat) {
     missing.push('realRenderConfiguration.outputFormat')
   } else {
-    if (outputFormat?.status !== 'format-candidate-declared-not-selected') {
+    if (outputFormat.status !== 'format-candidate-declared-not-selected') {
       missing.push('realRenderConfiguration.outputFormat.status')
     }
 
-    if (outputFormat?.recommendedFirstFormat !== 'wav') {
+    if (outputFormat.recommendedFirstFormat !== 'wav') {
       missing.push('realRenderConfiguration.outputFormat.recommendedFirstFormat')
     }
 
@@ -3180,11 +3323,11 @@ if (!realRenderConfiguration) {
   if (!sampleRate) {
     missing.push('realRenderConfiguration.sampleRate')
   } else {
-    if (sampleRate?.status !== 'sample-rate-candidate-declared-not-selected') {
+    if (sampleRate.status !== 'sample-rate-candidate-declared-not-selected') {
       missing.push('realRenderConfiguration.sampleRate.status')
     }
 
-    if (sampleRate?.recommendedFirstSampleRateHz !== 44100) {
+    if (sampleRate.recommendedFirstSampleRateHz !== 44100) {
       missing.push(
         'realRenderConfiguration.sampleRate.recommendedFirstSampleRateHz',
       )
@@ -3214,11 +3357,11 @@ if (!realRenderConfiguration) {
   if (!storage) {
     missing.push('realRenderConfiguration.storage')
   } else {
-   if (storage?.status !== 'storage-candidate-declared-not-configured') {
+    if (storage.status !== 'storage-candidate-declared-not-configured') {
       missing.push('realRenderConfiguration.storage.status')
     }
 
-    if (storage?.recommendedFirstProvider !== 'browser-download') {
+    if (storage.recommendedFirstProvider !== 'browser-download') {
       missing.push('realRenderConfiguration.storage.recommendedFirstProvider')
     }
 
@@ -3427,7 +3570,7 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, includes real-render configuration placeholders, and declares the first real-render candidate without selecting it.'    
+? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, includes real-render configuration placeholders, declares the first real-render candidate without selecting it, and validates the blocked first real-render candidate stack summary.'    
 : `Dry-run artefact package needs review: ${missing.join(', ')}`,
   }
 }
