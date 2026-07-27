@@ -205,6 +205,7 @@ export default function Page() {
     useState(false);
   const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false);
   const [clickTrackDownloadStatus, setClickTrackDownloadStatus] = useState("");
+  const [downloadingClickTrackWav, setDownloadingClickTrackWav] = useState(false);
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -3132,6 +3133,7 @@ export default function Page() {
         }
 
         setClickTrackDownloadStatus("Requesting click-track WAV download...");
+        setDownloadingClickTrackWav(true);
 
         
 
@@ -3175,16 +3177,18 @@ export default function Page() {
       link.click();
       link.remove();
 
-      window.URL.revokeObjectURL(url);
+          window.URL.revokeObjectURL(url);
 
-          setClickTrackDownloadStatus(`Downloaded click-track WAV: ${filename}`);
-        } catch (error) {
-          setClickTrackDownloadStatus(
-            error instanceof Error
-              ? error.message
-              : "Click-track WAV download failed.",
-          );
-        }
+      setClickTrackDownloadStatus(`Downloaded click-track WAV: ${filename}`);
+    } catch (error) {
+      setClickTrackDownloadStatus(
+        error instanceof Error
+          ? error.message
+          : "Click-track WAV download failed.",
+      );
+    } finally {
+      setDownloadingClickTrackWav(false);
+    }
   };
 
   const getFilenameFromContentDisposition = (
@@ -14878,11 +14882,13 @@ ${buildRewriteInstruction(
                                                     <button
                             type="button"
                             onClick={() => downloadClickTrackWav()}
-                            disabled={!dryRunArtifactPackage}
+                            disabled={downloadingClickTrackWav || !dryRunArtifactPackage}
                             title="Generate and download the first local click-track WAV using the gated real-render route."
                             className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                           >
-                            Download click-track WAV
+                            {downloadingClickTrackWav
+                              ? "Downloading click-track WAV..."
+                              : "Download click-track WAV"}
                           </button>
                                                     {clickTrackDownloadStatus ? (
                             <div className="text-xs text-green-200">
