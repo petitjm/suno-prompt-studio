@@ -270,6 +270,8 @@ export async function POST(req: Request) {
           "X-Renderer-Name": "local-click-track-wav-renderer",
           "X-Renderer-Target": "clickTrack",
           "X-Renderer-Gate": "enableRealClickTrackWavDownload",
+          "X-Renderer-Tempo-BPM": String(clickTrackRenderInput.tempoBpm),
+          "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
         },
     });
   }
