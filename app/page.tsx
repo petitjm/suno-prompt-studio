@@ -2818,6 +2818,38 @@ export default function Page() {
               ).reason,
             )
           : "",
+              clickTrackRendererPreviewTempoBpm:
+      typeof (realRenderRouteTestResponse as Record<string, unknown>)
+        .clickTrackRendererResult === "object" &&
+      !Array.isArray(
+        (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult,
+      ) &&
+      typeof (
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).preview as Record<string, unknown> | undefined
+      ) === "object" &&
+      !Array.isArray(
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).preview,
+      ) &&
+      typeof (
+        (
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult as Record<string, unknown>
+        ).preview as Record<string, unknown>
+      ).tempoBpm === "number"
+        ? (
+            (
+              (realRenderRouteTestResponse as Record<string, unknown>)
+                .clickTrackRendererResult as Record<string, unknown>
+            ).preview as Record<string, unknown>
+          ).tempoBpm
+        : null,
               clickTrackDownloadArtifactStatus:
       typeof (realRenderRouteTestResponse as Record<string, unknown>)
         .clickTrackRendererResult === 'object' &&
@@ -11811,7 +11843,10 @@ export default function Page() {
     const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(chordData);
     const placedLines = getPlacedSongSheetLines(chordData);
 
-    const hasTempo = intentRows.some((row) => row.label === "Tempo");
+    const hasIntentTempo = intentRows.some((row) => row.label === "Tempo");
+    const hasPreviewTempo =
+      typeof previewTempo === "number" && Number.isFinite(previewTempo);
+    const hasTempo = hasIntentTempo || hasPreviewTempo;
     const hasGroove = intentRows.some((row) => row.label === "Groove");
     const hasPerformanceIntent = intentRows.length > 0;
     const hasGuideTrackPlan = guideTrackPlanRows.length > 0;
@@ -11826,13 +11861,15 @@ export default function Page() {
           ? "Tempo, feel, phrasing, or delivery information is available."
           : "Generate chords with performance intent.",
       },
-      {
-        label: "Tempo",
-        passed: hasTempo,
-        detail: hasTempo
-          ? "Tempo is available for guide-track timing."
+     {
+      label: "Tempo",
+      passed: hasTempo,
+      detail: hasIntentTempo
+        ? "Tempo is available from performance intent."
+        : hasPreviewTempo
+          ? `Tempo is available from preview tempo: ${previewTempo} BPM.`
           : "Tempo is missing.",
-      },
+    },
       {
         label: "Groove",
         passed: hasGroove,
@@ -17525,6 +17562,16 @@ ${buildRewriteInstruction(
                                   {getRealRenderRouteReceivedConfigurationSummary()
                                     ?.clickTrackRendererReason || "unknown"}
                                 </div>
+                                   <div>
+                                      Click-track renderer preview tempo:{' '}
+                                      {String(
+                                        typeof getRealRenderRouteReceivedConfigurationSummary()
+                                          ?.clickTrackRendererPreviewTempoBpm === 'number'
+                                          ? getRealRenderRouteReceivedConfigurationSummary()
+                                              ?.clickTrackRendererPreviewTempoBpm
+                                          : 'unknown',
+                                      )}
+                                    </div>
                                         <div>
                                           Click-track artifact status:{' '}
                                           {getRealRenderRouteReceivedConfigurationSummary()
