@@ -1,3 +1,12 @@
+export type ClickTrackCueSheetSection = {
+  order: number;
+  section: string;
+  estimatedBars: number;
+  estimatedSeconds: number;
+  startSeconds: number;
+  endSeconds: number;
+};
+
 export type ClickTrackWavRenderInput = {
   renderJobId: string;
   targetKey: "clickTrack";
@@ -10,6 +19,7 @@ export type ClickTrackWavRenderInput = {
   totalBars?: number;
   totalEstimatedSeconds?: number;
   cueSheetSectionCount?: number;
+  cueSheetSections?: ClickTrackCueSheetSection[];
 };
 
 export type ClickTrackWavDownloadArtifact = {
@@ -77,6 +87,8 @@ export type ClickTrackWavPreview = {
   firstBeatTimesSeconds: number[];
   primitiveSelfCheck: ClickTrackWavPrimitiveSelfCheck;
   implementationStatus: "wav-primitives-ready-render-still-blocked";
+  cueSheetSectionCount: number;
+  sectionStartTimesSeconds: number[];
 };
 
 export type ClickTrackWavRenderResult =
@@ -122,6 +134,7 @@ export function createClickTrackWavPreview(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
   );
+  const sectionStartTimesSeconds = getSectionStartTimesSeconds(input);
 
   return {
     renderJobId: input.renderJobId,
@@ -137,9 +150,34 @@ export function createClickTrackWavPreview(
     totalSamples,
     estimatedWavByteLength: 44 + totalSamples * BYTES_PER_SAMPLE,
     firstBeatTimesSeconds: getFirstBeatTimesSeconds(input.tempoBpm, 8),
+    cueSheetSectionCount: sectionStartTimesSeconds.length,
+    sectionStartTimesSeconds,
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: "wav-primitives-ready-render-still-blocked",
   };
+}
+
+function getSectionStartTimesSeconds(
+  input: ClickTrackWavRenderInput,
+): number[] {
+  return Array.isArray(input.cueSheetSections)
+    ? input.cueSheetSections
+        .map((section) => section.startSeconds)
+        .filter(
+          (startSeconds) => Number.isFinite(startSeconds) && startSeconds >= 0,
+        )
+    : [];
+}
+
+function isNearSectionStartSample(
+  sampleIndex: number,
+  sectionStartSamples: number[],
+  toleranceSamples: number,
+): boolean {
+  return sectionStartSamples.some(
+    (sectionStartSample) =>
+      Math.abs(sampleIndex - sectionStartSample) <= toleranceSamples,
+  );
 }
 
 export function createClickTrackPcm16Samples(
@@ -165,9 +203,22 @@ export function createClickTrackPcm16Samples(
     1,
     Math.round(input.sampleRateHz * 0.025),
   );
+  const sectionClickLengthSamples = Math.max(
+    1,
+    Math.round(input.sampleRateHz * 0.06),
+  );
   const accentAmplitude = 22000;
   const normalAmplitude = 14000;
+  const sectionAmplitude = 28000;
   const clickFrequencyHz = 1800;
+  const sectionClickFrequencyHz = 1200;
+  const sectionStartSamples = getSectionStartTimesSeconds(input).map(
+    (startSeconds) => Math.round(startSeconds * input.sampleRateHz),
+  );
+  const sectionStartToleranceSamples = Math.max(
+    1,
+    Math.round(input.sampleRateHz * 0.005),
+  );
 
   for (
     let beatStartSample = 0, beatIndex = 0;
@@ -175,18 +226,34 @@ export function createClickTrackPcm16Samples(
     beatStartSample += samplesPerBeat, beatIndex += 1
   ) {
     const isDownbeat = beatIndex % 4 === 0;
-    const amplitude = isDownbeat ? accentAmplitude : normalAmplitude;
+    const isSectionStart = isNearSectionStartSample(
+      beatStartSample,
+      sectionStartSamples,
+      sectionStartToleranceSamples,
+    );
+    const amplitude = isSectionStart
+      ? sectionAmplitude
+      : isDownbeat
+        ? accentAmplitude
+        : normalAmplitude;
+    const activeClickLengthSamples = isSectionStart
+      ? sectionClickLengthSamples
+      : clickLengthSamples;
+    const activeClickFrequencyHz = isSectionStart
+      ? sectionClickFrequencyHz
+      : clickFrequencyHz;
 
-    for (let offset = 0; offset < clickLengthSamples; offset += 1) {
+    for (let offset = 0; offset < activeClickLengthSamples; offset += 1) {
       const sampleIndex = beatStartSample + offset;
 
       if (sampleIndex >= totalSamples) {
         break;
       }
 
-      const fade = 1 - offset / clickLengthSamples;
+      const fade = 1 - offset / activeClickLengthSamples;
       const phase =
-        (2 * Math.PI * clickFrequencyHz * sampleIndex) / input.sampleRateHz;
+        (2 * Math.PI * activeClickFrequencyHz * sampleIndex) /
+        input.sampleRateHz;
 
       samples[sampleIndex] = Math.round(Math.sin(phase) * amplitude * fade);
     }

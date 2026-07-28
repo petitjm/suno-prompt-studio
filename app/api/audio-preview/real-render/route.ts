@@ -63,6 +63,45 @@ function getArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+function getCueSheetSections(value: unknown) {
+  return getArray(value)
+    .map((section) => {
+      const record = getRecord(section);
+
+      if (!record) {
+        return null;
+      }
+
+      const order = getNumber(record.order);
+      const sectionName = getString(record.section);
+      const estimatedBars = getNumber(record.estimatedBars);
+      const estimatedSeconds = getNumber(record.estimatedSeconds);
+      const startSeconds = getNumber(record.startSeconds);
+      const endSeconds = getNumber(record.endSeconds);
+
+      if (
+        order === null ||
+        !sectionName ||
+        estimatedBars === null ||
+        estimatedSeconds === null ||
+        startSeconds === null ||
+        endSeconds === null
+      ) {
+        return null;
+      }
+
+      return {
+        order,
+        section: sectionName,
+        estimatedBars,
+        estimatedSeconds,
+        startSeconds,
+        endSeconds,
+      };
+    })
+    .filter((section) => section !== null);
+}
+
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
@@ -240,6 +279,7 @@ export async function POST(req: Request) {
       getNumber(dryRunCueSheet?.totalEstimatedSeconds) || undefined,
     cueSheetSectionCount:
       getArray(dryRunCueSheet?.sections).length || undefined,
+    cueSheetSections: getCueSheetSections(dryRunCueSheet?.sections),
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
