@@ -129,12 +129,17 @@ function getResolvedTotalDurationSeconds(
 export function createClickTrackWavPreview(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavPreview {
-  const totalDurationSeconds = getResolvedTotalDurationSeconds(input);
+  const songDurationSeconds = getResolvedTotalDurationSeconds(input);
+  const countInDurationSeconds = getCountInDurationSeconds(input);
+  const totalDurationSeconds = songDurationSeconds + countInDurationSeconds;
   const totalSamples = Math.max(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
   );
-  const sectionStartTimesSeconds = getSectionStartTimesSeconds(input);
+  const sectionStartTimesSeconds = getSectionStartTimesSeconds(input).map(
+    (startSeconds) =>
+      Number((startSeconds + countInDurationSeconds).toFixed(3)),
+  );
 
   return {
     renderJobId: input.renderJobId,
@@ -155,6 +160,22 @@ export function createClickTrackWavPreview(
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: "wav-primitives-ready-render-still-blocked",
   };
+}
+
+function getCountInDurationSeconds(input: ClickTrackWavRenderInput): number {
+  const beatsPerBar = 4;
+
+  if (
+    typeof input.countInBars !== "number" ||
+    !Number.isFinite(input.countInBars) ||
+    input.countInBars <= 0 ||
+    input.tempoBpm <= 0 ||
+    !Number.isFinite(input.tempoBpm)
+  ) {
+    return 0;
+  }
+
+  return input.countInBars * beatsPerBar * (60 / input.tempoBpm);
 }
 
 function getSectionStartTimesSeconds(
@@ -183,7 +204,9 @@ function isNearSectionStartSample(
 export function createClickTrackPcm16Samples(
   input: ClickTrackWavRenderInput,
 ): Int16Array {
-  const totalDurationSeconds = getResolvedTotalDurationSeconds(input);
+  const songDurationSeconds = getResolvedTotalDurationSeconds(input);
+  const countInDurationSeconds = getCountInDurationSeconds(input);
+  const totalDurationSeconds = songDurationSeconds + countInDurationSeconds;
   const totalSamples = Math.max(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
@@ -213,7 +236,8 @@ export function createClickTrackPcm16Samples(
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;
   const sectionStartSamples = getSectionStartTimesSeconds(input).map(
-    (startSeconds) => Math.round(startSeconds * input.sampleRateHz),
+    (startSeconds) =>
+      Math.round((startSeconds + countInDurationSeconds) * input.sampleRateHz),
   );
   const sectionStartToleranceSamples = Math.max(
     1,
