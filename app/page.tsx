@@ -3196,6 +3196,9 @@ export default function Page() {
         return;
       }
 
+      const rendererTempoBpm = response.headers.get("X-Renderer-Tempo-BPM");
+      const rendererSampleRate = response.headers.get("X-Renderer-Sample-Rate");
+      const contentLength = response.headers.get("Content-Length");
       const blob = await response.blob();
       const filename =
         getFilenameFromContentDisposition(
@@ -3213,7 +3216,13 @@ export default function Page() {
 
           window.URL.revokeObjectURL(url);
 
-      setClickTrackDownloadStatus(`Downloaded click-track WAV: ${filename}`);
+      setClickTrackDownloadStatus(
+      `Downloaded click-track WAV: ${filename}${
+        rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
+      }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
+        contentLength ? ` | ${contentLength} bytes` : ""
+      }`,
+    );
     } catch (error) {
       setClickTrackDownloadStatus(
         error instanceof Error
