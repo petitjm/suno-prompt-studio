@@ -239,6 +239,37 @@ function isNearSectionStartSample(
   );
 }
 
+function addClickToSamples({
+  samples,
+  startSample,
+  sampleRateHz,
+  lengthSamples,
+  amplitude,
+  frequencyHz,
+}: {
+  samples: Int16Array;
+  startSample: number;
+  sampleRateHz: number;
+  lengthSamples: number;
+  amplitude: number;
+  frequencyHz: number;
+}) {
+  for (let offset = 0; offset < lengthSamples; offset += 1) {
+    const sampleIndex = startSample + offset;
+
+    if (sampleIndex < 0 || sampleIndex >= samples.length) {
+      break;
+    }
+
+    const fade = 1 - offset / lengthSamples;
+    const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
+    const value = Math.round(Math.sin(phase) * amplitude * fade);
+    const mixed = samples[sampleIndex] + value;
+
+    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+  }
+}
+
 export function createClickTrackPcm16Samples(
   input: ClickTrackWavRenderInput,
 ): Int16Array {
@@ -282,43 +313,61 @@ export function createClickTrackPcm16Samples(
     Math.round(input.sampleRateHz * 0.005),
   );
 
+  const countInEndSample = Math.round(
+    countInDurationSeconds * input.sampleRateHz,
+  );
+
   for (
     let beatStartSample = 0, beatIndex = 0;
     beatStartSample < totalSamples;
     beatStartSample += samplesPerBeat, beatIndex += 1
   ) {
+    const isCountIn = beatStartSample < countInEndSample;
     const isDownbeat = beatIndex % 4 === 0;
     const isSectionStart = isNearSectionStartSample(
       beatStartSample,
       sectionStartSamples,
       sectionStartToleranceSamples,
     );
-    const amplitude = isSectionStart
-      ? sectionAmplitude
-      : isDownbeat
-        ? accentAmplitude
-        : normalAmplitude;
-    const activeClickLengthSamples = isSectionStart
-      ? sectionClickLengthSamples
-      : clickLengthSamples;
-    const activeClickFrequencyHz = isSectionStart
-      ? sectionClickFrequencyHz
-      : clickFrequencyHz;
 
-    for (let offset = 0; offset < activeClickLengthSamples; offset += 1) {
-      const sampleIndex = beatStartSample + offset;
+    if (isSectionStart) {
+      addClickToSamples({
+        samples,
+        startSample: beatStartSample,
+        sampleRateHz: input.sampleRateHz,
+        lengthSamples: sectionClickLengthSamples,
+        amplitude: sectionAmplitude,
+        frequencyHz: sectionClickFrequencyHz,
+      });
 
-      if (sampleIndex >= totalSamples) {
-        break;
-      }
+      addClickToSamples({
+        samples,
+        startSample: beatStartSample + Math.round(input.sampleRateHz * 0.09),
+        sampleRateHz: input.sampleRateHz,
+        lengthSamples: sectionClickLengthSamples,
+        amplitude: sectionAmplitude,
+        frequencyHz: sectionClickFrequencyHz,
+      });
 
-      const fade = 1 - offset / activeClickLengthSamples;
-      const phase =
-        (2 * Math.PI * activeClickFrequencyHz * sampleIndex) /
-        input.sampleRateHz;
-
-      samples[sampleIndex] = Math.round(Math.sin(phase) * amplitude * fade);
+      continue;
     }
+
+    addClickToSamples({
+      samples,
+      startSample: beatStartSample,
+      sampleRateHz: input.sampleRateHz,
+      lengthSamples: isCountIn ? sectionClickLengthSamples : clickLengthSamples,
+      amplitude: isCountIn
+        ? sectionAmplitude
+        : isDownbeat
+          ? accentAmplitude
+          : normalAmplitude,
+      frequencyHz: isCountIn
+        ? sectionClickFrequencyHz
+        : isDownbeat
+          ? 1400
+          : clickFrequencyHz,
+    });
   }
 
   return samples;
