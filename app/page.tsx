@@ -3196,6 +3196,7 @@ export default function Page() {
 
       const rendererTempoBpm = response.headers.get("X-Renderer-Tempo-BPM");
       const rendererSampleRate = response.headers.get("X-Renderer-Sample-Rate");
+      const rendererJobId = response.headers.get("X-Renderer-Job-ID");
       const contentLength = response.headers.get("Content-Length");
       const blob = await response.blob();
       const filename =
@@ -3218,8 +3219,8 @@ export default function Page() {
         `Downloaded click-track WAV: ${filename}${
           rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
         }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
-          contentLength ? ` | ${contentLength} bytes` : ""
-        }`,
+          rendererJobId ? ` | job ${rendererJobId}` : ""
+        }${contentLength ? ` | ${contentLength} bytes` : ""}`,
       );
     } catch (error) {
       setClickTrackDownloadStatus(

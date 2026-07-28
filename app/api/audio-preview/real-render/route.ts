@@ -275,6 +275,7 @@ export async function POST(req: Request) {
         "X-Renderer-Gate": "enableRealClickTrackWavDownload",
         "X-Renderer-Tempo-BPM": String(clickTrackRenderInput.tempoBpm),
         "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
+        "X-Renderer-Job-ID": clickTrackRenderInput.renderJobId,
       },
     });
   }
