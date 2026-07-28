@@ -2734,6 +2734,73 @@ export default function Page() {
     };
   }, [clickTrackAudioUrl]);
 
+  const getClickTrackRendererPreviewSummary = () => {
+    const response = realRenderRouteTestResponse;
+
+    if (!response) {
+      return null;
+    }
+
+    const rendererResult =
+      typeof response.clickTrackRendererResult === "object" &&
+      response.clickTrackRendererResult !== null &&
+      !Array.isArray(response.clickTrackRendererResult)
+        ? (response.clickTrackRendererResult as Record<string, unknown>)
+        : null;
+
+    const preview =
+      rendererResult &&
+      typeof rendererResult.preview === "object" &&
+      rendererResult.preview !== null &&
+      !Array.isArray(rendererResult.preview)
+        ? (rendererResult.preview as Record<string, unknown>)
+        : null;
+
+    if (!preview) {
+      return null;
+    }
+
+    const sectionStartTimesSeconds = Array.isArray(
+      preview.sectionStartTimesSeconds,
+    )
+      ? preview.sectionStartTimesSeconds
+          .filter(
+            (startTime): startTime is number =>
+              typeof startTime === "number" && Number.isFinite(startTime),
+          )
+          .slice(0, 12)
+      : [];
+
+    return {
+      tempoBpm:
+        typeof preview.tempoBpm === "number" &&
+        Number.isFinite(preview.tempoBpm)
+          ? preview.tempoBpm
+          : null,
+      totalDurationSeconds:
+        typeof preview.totalDurationSeconds === "number" &&
+        Number.isFinite(preview.totalDurationSeconds)
+          ? preview.totalDurationSeconds
+          : null,
+      totalSamples:
+        typeof preview.totalSamples === "number" &&
+        Number.isFinite(preview.totalSamples)
+          ? preview.totalSamples
+          : null,
+      estimatedWavByteLength:
+        typeof preview.estimatedWavByteLength === "number" &&
+        Number.isFinite(preview.estimatedWavByteLength)
+          ? preview.estimatedWavByteLength
+          : null,
+      cueSheetSectionCount:
+        typeof preview.cueSheetSectionCount === "number" &&
+        Number.isFinite(preview.cueSheetSectionCount)
+          ? preview.cueSheetSectionCount
+          : null,
+      sectionStartTimesSeconds,
+    };
+  };
+
   const getRealRenderRouteReceivedConfigurationCheck = () => {
     if (
       !realRenderRouteTestResponse ||
@@ -14970,6 +15037,68 @@ ${buildRewriteInstruction(
                                 src={clickTrackAudioUrl}
                                 className="w-full"
                               />
+                            </div>
+                          ) : null}
+
+                          {getClickTrackRendererPreviewSummary() ? (
+                            <div className="mt-3 rounded border border-green-900 bg-green-950/30 p-3 text-xs text-green-100">
+                              <div className="mb-2 font-semibold">
+                                Click-track render summary
+                              </div>
+
+                              <div>
+                                Tempo:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.tempoBpm !== null
+                                  ? `${getClickTrackRendererPreviewSummary()?.tempoBpm} BPM`
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Duration:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.totalDurationSeconds !== null
+                                  ? `${getClickTrackRendererPreviewSummary()?.totalDurationSeconds}s`
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Sections:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.cueSheetSectionCount !== null
+                                  ? getClickTrackRendererPreviewSummary()
+                                      ?.cueSheetSectionCount
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Samples:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.totalSamples !== null
+                                  ? getClickTrackRendererPreviewSummary()
+                                      ?.totalSamples
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Estimated WAV size:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.estimatedWavByteLength !== null
+                                  ? `${getClickTrackRendererPreviewSummary()?.estimatedWavByteLength} bytes`
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Section starts:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.sectionStartTimesSeconds.length
+                                  ? getClickTrackRendererPreviewSummary()
+                                      ?.sectionStartTimesSeconds.map(
+                                        (startTime) => `${startTime}s`,
+                                      )
+                                      .join(", ")
+                                  : "none"}
+                              </div>
                             </div>
                           ) : null}
 
