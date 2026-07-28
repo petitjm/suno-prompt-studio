@@ -1,96 +1,127 @@
 export type ClickTrackWavRenderInput = {
-  renderJobId: string
-  targetKey: 'clickTrack'
-  tempoBpm: number
-  sampleRateHz: 44100
-  outputFormat: 'wav'
-  storageProvider: 'browser-download'
-  countInBars: number
-  totalDurationSeconds: number
-}
+  renderJobId: string;
+  targetKey: "clickTrack";
+  tempoBpm: number;
+  sampleRateHz: 44100;
+  outputFormat: "wav";
+  storageProvider: "browser-download";
+  countInBars: number;
+  totalDurationSeconds: number;
+  totalBars?: number;
+  totalEstimatedSeconds?: number;
+  cueSheetSectionCount?: number;
+};
 
 export type ClickTrackWavDownloadArtifact = {
-  status: 'created-not-delivered'
-  audioDelivered: false
-  filename: string
-  contentType: 'audio/wav'
-  byteLength: number
-  bytes: Uint8Array
-}
+  status: "created-not-delivered";
+  audioDelivered: false;
+  filename: string;
+  contentType: "audio/wav";
+  byteLength: number;
+  bytes: Uint8Array;
+};
 
 export type ClickTrackWavDownloadArtifactSummary = {
-  status: 'created-not-delivered'
-  audioDelivered: false
-  filename: string
-  contentType: 'audio/wav'
-  byteLength: number
-  bytesIncludedInResponse: false
-}
+  status: "created-not-delivered";
+  audioDelivered: false;
+  filename: string;
+  contentType: "audio/wav";
+  byteLength: number;
+  bytesIncludedInResponse: false;
+};
 
 export type ClickTrackWavRenderBlockedResult = {
-  ok: false
-  status: 'blocked'
-  audioGenerated: false
-  reason: string
-  requiredBeforeEnablement: string[]
-  preview: ClickTrackWavPreview
-  downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary
-}
+  ok: false;
+  status: "blocked";
+  audioGenerated: false;
+  reason: string;
+  requiredBeforeEnablement: string[];
+  preview: ClickTrackWavPreview;
+  downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary;
+};
 
 export type ClickTrackWavRenderSuccessResult = {
-  ok: true
-  status: 'ready-for-download'
-  audioGenerated: true
-  audioDelivered: false
-  reason: string
-  preview: ClickTrackWavPreview
-  downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary
-  downloadArtifact: ClickTrackWavDownloadArtifact
-}
+  ok: true;
+  status: "ready-for-download";
+  audioGenerated: true;
+  audioDelivered: false;
+  reason: string;
+  preview: ClickTrackWavPreview;
+  downloadArtifactSummary: ClickTrackWavDownloadArtifactSummary;
+  downloadArtifact: ClickTrackWavDownloadArtifact;
+};
 
 export type ClickTrackWavPrimitiveSelfCheck = {
-  status: 'passed' | 'failed'
-  wavBytesCreated: boolean
-  audioDelivered: false
-  byteLength: number
-  riffHeader: string
-  waveHeader: string
-  dataHeader: string
-}
+  status: "passed" | "failed";
+  wavBytesCreated: boolean;
+  audioDelivered: false;
+  byteLength: number;
+  riffHeader: string;
+  waveHeader: string;
+  dataHeader: string;
+};
 
 export type ClickTrackWavPreview = {
-  renderJobId: string
-  targetKey: 'clickTrack'
-  tempoBpm: number
-  sampleRateHz: 44100
-  outputFormat: 'wav'
-  storageProvider: 'browser-download'
-  countInBars: number
-  totalDurationSeconds: number
-  channelCount: 1
-  bitsPerSample: 16
-  totalSamples: number
-  estimatedWavByteLength: number
-  firstBeatTimesSeconds: number[]
-  primitiveSelfCheck: ClickTrackWavPrimitiveSelfCheck
-  implementationStatus: 'wav-primitives-ready-render-still-blocked'
-}
+  renderJobId: string;
+  targetKey: "clickTrack";
+  tempoBpm: number;
+  sampleRateHz: 44100;
+  outputFormat: "wav";
+  storageProvider: "browser-download";
+  countInBars: number;
+  totalDurationSeconds: number;
+  channelCount: 1;
+  bitsPerSample: 16;
+  totalSamples: number;
+  estimatedWavByteLength: number;
+  firstBeatTimesSeconds: number[];
+  primitiveSelfCheck: ClickTrackWavPrimitiveSelfCheck;
+  implementationStatus: "wav-primitives-ready-render-still-blocked";
+};
 
 export type ClickTrackWavRenderResult =
-  | ClickTrackWavRenderBlockedResult
-  | ClickTrackWavRenderSuccessResult
+  ClickTrackWavRenderBlockedResult | ClickTrackWavRenderSuccessResult;
 
-const CHANNEL_COUNT = 1
-const BITS_PER_SAMPLE = 16
-const BYTES_PER_SAMPLE = BITS_PER_SAMPLE / 8
+const CHANNEL_COUNT = 1;
+const BITS_PER_SAMPLE = 16;
+const BYTES_PER_SAMPLE = BITS_PER_SAMPLE / 8;
+function getResolvedTotalDurationSeconds(
+  input: ClickTrackWavRenderInput,
+): number {
+  const beatsPerBar = 4;
+  const secondsPerBar =
+    input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
+      ? (60 / input.tempoBpm) * beatsPerBar
+      : 0;
+
+  if (
+    typeof input.totalEstimatedSeconds === "number" &&
+    Number.isFinite(input.totalEstimatedSeconds) &&
+    input.totalEstimatedSeconds > 0
+  ) {
+    return input.totalEstimatedSeconds;
+  }
+
+  if (
+    typeof input.totalBars === "number" &&
+    Number.isFinite(input.totalBars) &&
+    input.totalBars > 0 &&
+    secondsPerBar > 0
+  ) {
+    return input.totalBars * secondsPerBar;
+  }
+
+  return input.totalDurationSeconds;
+}
 
 export function createClickTrackWavPreview(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavPreview {
+  const totalDurationSeconds = getResolvedTotalDurationSeconds(input);
   const totalSamples = Math.max(
     0,
-    Math.round(input.totalDurationSeconds * input.sampleRateHz),
-  )
+    Math.round(totalDurationSeconds * input.sampleRateHz),
+  );
 
   return {
     renderJobId: input.renderJobId,
@@ -100,98 +131,102 @@ export function createClickTrackWavPreview(
     outputFormat: input.outputFormat,
     storageProvider: input.storageProvider,
     countInBars: input.countInBars,
-    totalDurationSeconds: input.totalDurationSeconds,
+    totalDurationSeconds,
     channelCount: CHANNEL_COUNT,
     bitsPerSample: BITS_PER_SAMPLE,
     totalSamples,
     estimatedWavByteLength: 44 + totalSamples * BYTES_PER_SAMPLE,
     firstBeatTimesSeconds: getFirstBeatTimesSeconds(input.tempoBpm, 8),
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
-    implementationStatus: 'wav-primitives-ready-render-still-blocked',
-  }
+    implementationStatus: "wav-primitives-ready-render-still-blocked",
+  };
 }
 
 export function createClickTrackPcm16Samples(
   input: ClickTrackWavRenderInput,
 ): Int16Array {
+  const totalDurationSeconds = getResolvedTotalDurationSeconds(input);
   const totalSamples = Math.max(
     0,
-    Math.round(input.totalDurationSeconds * input.sampleRateHz),
-  )
-  const samples = new Int16Array(totalSamples)
+    Math.round(totalDurationSeconds * input.sampleRateHz),
+  );
+  const samples = new Int16Array(totalSamples);
 
   if (input.tempoBpm <= 0 || !Number.isFinite(input.tempoBpm)) {
-    return samples
+    return samples;
   }
 
-  const secondsPerBeat = 60 / input.tempoBpm
+  const secondsPerBeat = 60 / input.tempoBpm;
   const samplesPerBeat = Math.max(
     1,
     Math.round(secondsPerBeat * input.sampleRateHz),
-  )
-  const clickLengthSamples = Math.max(1, Math.round(input.sampleRateHz * 0.025))
-  const accentAmplitude = 22000
-  const normalAmplitude = 14000
-  const clickFrequencyHz = 1800
+  );
+  const clickLengthSamples = Math.max(
+    1,
+    Math.round(input.sampleRateHz * 0.025),
+  );
+  const accentAmplitude = 22000;
+  const normalAmplitude = 14000;
+  const clickFrequencyHz = 1800;
 
   for (
     let beatStartSample = 0, beatIndex = 0;
     beatStartSample < totalSamples;
     beatStartSample += samplesPerBeat, beatIndex += 1
   ) {
-    const isDownbeat = beatIndex % 4 === 0
-    const amplitude = isDownbeat ? accentAmplitude : normalAmplitude
+    const isDownbeat = beatIndex % 4 === 0;
+    const amplitude = isDownbeat ? accentAmplitude : normalAmplitude;
 
     for (let offset = 0; offset < clickLengthSamples; offset += 1) {
-      const sampleIndex = beatStartSample + offset
+      const sampleIndex = beatStartSample + offset;
 
       if (sampleIndex >= totalSamples) {
-        break
+        break;
       }
 
-      const fade = 1 - offset / clickLengthSamples
+      const fade = 1 - offset / clickLengthSamples;
       const phase =
-        (2 * Math.PI * clickFrequencyHz * sampleIndex) / input.sampleRateHz
+        (2 * Math.PI * clickFrequencyHz * sampleIndex) / input.sampleRateHz;
 
-      samples[sampleIndex] = Math.round(Math.sin(phase) * amplitude * fade)
+      samples[sampleIndex] = Math.round(Math.sin(phase) * amplitude * fade);
     }
   }
 
-  return samples
+  return samples;
 }
 
 export function encodePcm16MonoWav(
   samples: Int16Array,
   sampleRateHz: 44100,
 ): Uint8Array {
-  const dataSize = samples.length * BYTES_PER_SAMPLE
-  const buffer = new ArrayBuffer(44 + dataSize)
-  const view = new DataView(buffer)
+  const dataSize = samples.length * BYTES_PER_SAMPLE;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
 
-  writeAscii(view, 0, 'RIFF')
-  view.setUint32(4, 36 + dataSize, true)
-  writeAscii(view, 8, 'WAVE')
+  writeAscii(view, 0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeAscii(view, 8, "WAVE");
 
-  writeAscii(view, 12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, CHANNEL_COUNT, true)
-  view.setUint32(24, sampleRateHz, true)
-  view.setUint32(28, sampleRateHz * CHANNEL_COUNT * BYTES_PER_SAMPLE, true)
-  view.setUint16(32, CHANNEL_COUNT * BYTES_PER_SAMPLE, true)
-  view.setUint16(34, BITS_PER_SAMPLE, true)
+  writeAscii(view, 12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, CHANNEL_COUNT, true);
+  view.setUint32(24, sampleRateHz, true);
+  view.setUint32(28, sampleRateHz * CHANNEL_COUNT * BYTES_PER_SAMPLE, true);
+  view.setUint16(32, CHANNEL_COUNT * BYTES_PER_SAMPLE, true);
+  view.setUint16(34, BITS_PER_SAMPLE, true);
 
-  writeAscii(view, 36, 'data')
-  view.setUint32(40, dataSize, true)
+  writeAscii(view, 36, "data");
+  view.setUint32(40, dataSize, true);
 
-  let writeOffset = 44
+  let writeOffset = 44;
 
   for (const sample of samples) {
-    view.setInt16(writeOffset, sample, true)
-    writeOffset += BYTES_PER_SAMPLE
+    view.setInt16(writeOffset, sample, true);
+    writeOffset += BYTES_PER_SAMPLE;
   }
 
-  return new Uint8Array(buffer)
+  return new Uint8Array(buffer);
 }
 
 export function createClickTrackWavBytes(
@@ -200,30 +235,30 @@ export function createClickTrackWavBytes(
   return encodePcm16MonoWav(
     createClickTrackPcm16Samples(input),
     input.sampleRateHz,
-  )
+  );
 }
 
 export function createClickTrackWavDownloadArtifact(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavDownloadArtifact {
-  const bytes = createClickTrackWavBytes(input)
+  const bytes = createClickTrackWavBytes(input);
 
   return {
-    status: 'created-not-delivered',
+    status: "created-not-delivered",
     audioDelivered: false,
     filename: `${sanitizeFilename(input.renderJobId)}-${input.targetKey}-${sanitizeFilename(
       String(input.tempoBpm),
     )}bpm.wav`,
-    contentType: 'audio/wav',
+    contentType: "audio/wav",
     byteLength: bytes.length,
     bytes,
-  }
+  };
 }
 
 export function createClickTrackWavDownloadArtifactSummary(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavDownloadArtifactSummary {
-  const artifact = createClickTrackWavDownloadArtifact(input)
+  const artifact = createClickTrackWavDownloadArtifact(input);
 
   return {
     status: artifact.status,
@@ -232,141 +267,141 @@ export function createClickTrackWavDownloadArtifactSummary(
     contentType: artifact.contentType,
     byteLength: artifact.byteLength,
     bytesIncludedInResponse: false,
-  }
+  };
 }
 
 export function createReadyClickTrackWavDownload(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavRenderSuccessResult {
-  const preview = createClickTrackWavPreview(input)
-  const downloadArtifact = createClickTrackWavDownloadArtifact(input)
+  const preview = createClickTrackWavPreview(input);
+  const downloadArtifact = createClickTrackWavDownloadArtifact(input);
   const downloadArtifactSummary =
-    createClickTrackWavDownloadArtifactSummary(input)
+    createClickTrackWavDownloadArtifactSummary(input);
 
   return {
     ok: true,
-    status: 'ready-for-download',
+    status: "ready-for-download",
     audioGenerated: true,
     audioDelivered: false,
     reason:
-      'Click-track WAV bytes are ready for browser-download delivery, but the route has not delivered them yet.',
+      "Click-track WAV bytes are ready for browser-download delivery, but the route has not delivered them yet.",
     preview,
     downloadArtifactSummary,
     downloadArtifact,
-  }
+  };
 }
 
 export function renderClickTrackWav(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavRenderResult {
-  const preview = createClickTrackWavPreview(input)
+  const preview = createClickTrackWavPreview(input);
 
   const downloadArtifactSummary =
-     createClickTrackWavDownloadArtifactSummary(input)
+    createClickTrackWavDownloadArtifactSummary(input);
 
   const requiredBeforeEnablement = [
-    'Connect createClickTrackWavBytes to the real-render route.',
-    'Return the WAV bytes through a deliberate browser-download response.',
-    'Confirm browser-download delivery contract.',
-    'Add route-level safety checks so failed renders cannot be marked generated.',
-    'Add an audible browser/manual test before enabling real output.',
-  ]
+    "Connect createClickTrackWavBytes to the real-render route.",
+    "Return the WAV bytes through a deliberate browser-download response.",
+    "Confirm browser-download delivery contract.",
+    "Add route-level safety checks so failed renders cannot be marked generated.",
+    "Add an audible browser/manual test before enabling real output.",
+  ];
 
-  if (input.targetKey !== 'clickTrack') {
+  if (input.targetKey !== "clickTrack") {
     return {
       ok: false,
-      status: 'blocked',
+      status: "blocked",
       audioGenerated: false,
-      reason: 'Only the clickTrack target is allowed for the first renderer.',
+      reason: "Only the clickTrack target is allowed for the first renderer.",
       requiredBeforeEnablement,
       preview,
       downloadArtifactSummary,
-    }
+    };
   }
 
-  if (input.outputFormat !== 'wav') {
+  if (input.outputFormat !== "wav") {
     return {
       ok: false,
-      status: 'blocked',
+      status: "blocked",
       audioGenerated: false,
-      reason: 'Only WAV output is allowed for the first renderer candidate.',
+      reason: "Only WAV output is allowed for the first renderer candidate.",
       requiredBeforeEnablement,
       preview,
       downloadArtifactSummary,
-    }
+    };
   }
 
   if (input.sampleRateHz !== 44100) {
     return {
       ok: false,
-      status: 'blocked',
+      status: "blocked",
       audioGenerated: false,
       reason:
-        'Only 44.1 kHz sample rate is allowed for the first renderer candidate.',
+        "Only 44.1 kHz sample rate is allowed for the first renderer candidate.",
       requiredBeforeEnablement,
       preview,
       downloadArtifactSummary,
-    }
+    };
   }
 
-  if (input.storageProvider !== 'browser-download') {
+  if (input.storageProvider !== "browser-download") {
     return {
       ok: false,
-      status: 'blocked',
+      status: "blocked",
       audioGenerated: false,
       reason:
-        'Only browser-download delivery is allowed for the first renderer candidate.',
+        "Only browser-download delivery is allowed for the first renderer candidate.",
       requiredBeforeEnablement,
       preview,
       downloadArtifactSummary,
-    }
+    };
   }
 
   return {
     ok: false,
-    status: 'blocked',
+    status: "blocked",
     audioGenerated: false,
     reason:
-      'Click-track WAV primitives are implemented, but the renderer remains intentionally blocked and is not connected to file output yet.',
+      "Click-track WAV primitives are implemented, but the renderer remains intentionally blocked and is not connected to file output yet.",
     requiredBeforeEnablement,
-    preview,      
+    preview,
     downloadArtifactSummary,
-  }
+  };
 }
 
 function createClickTrackWavPrimitiveSelfCheck(
   input: ClickTrackWavRenderInput,
 ): ClickTrackWavPrimitiveSelfCheck {
-  const wavBytes = createClickTrackWavBytes(input)
-  const riffHeader = readAscii(wavBytes, 0, 4)
-  const waveHeader = readAscii(wavBytes, 8, 4)
-  const dataHeader = readAscii(wavBytes, 36, 4)
+  const wavBytes = createClickTrackWavBytes(input);
+  const riffHeader = readAscii(wavBytes, 0, 4);
+  const waveHeader = readAscii(wavBytes, 8, 4);
+  const dataHeader = readAscii(wavBytes, 36, 4);
 
   const passed =
     wavBytes.length > 44 &&
-    riffHeader === 'RIFF' &&
-    waveHeader === 'WAVE' &&
-    dataHeader === 'data'
+    riffHeader === "RIFF" &&
+    waveHeader === "WAVE" &&
+    dataHeader === "data";
 
   return {
-    status: passed ? 'passed' : 'failed',
+    status: passed ? "passed" : "failed",
     wavBytesCreated: wavBytes.length > 44,
     audioDelivered: false,
     byteLength: wavBytes.length,
     riffHeader,
     waveHeader,
     dataHeader,
-  }
+  };
 }
 
 function sanitizeFilename(value: string) {
   const safeValue = value
     .trim()
-    .replace(/[^a-zA-Z0-9-_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 
-  return safeValue || 'click-track-render'
+  return safeValue || "click-track-render";
 }
 
 function getFirstBeatTimesSeconds(
@@ -374,24 +409,24 @@ function getFirstBeatTimesSeconds(
   beatCount: number,
 ): number[] {
   if (tempoBpm <= 0 || !Number.isFinite(tempoBpm)) {
-    return []
+    return [];
   }
 
-  const secondsPerBeat = 60 / tempoBpm
+  const secondsPerBeat = 60 / tempoBpm;
 
   return Array.from({ length: beatCount }, (_, index) =>
     Number((index * secondsPerBeat).toFixed(3)),
-  )
+  );
 }
 
 function readAscii(bytes: Uint8Array, offset: number, length: number) {
   return Array.from(bytes.slice(offset, offset + length))
     .map((byte) => String.fromCharCode(byte))
-    .join('')
+    .join("");
 }
 
 function writeAscii(view: DataView, offset: number, value: string) {
   for (let index = 0; index < value.length; index += 1) {
-    view.setUint8(offset + index, value.charCodeAt(index))
+    view.setUint8(offset + index, value.charCodeAt(index));
   }
 }

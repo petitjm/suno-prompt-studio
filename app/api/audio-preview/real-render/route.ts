@@ -55,6 +55,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function getNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function getArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
@@ -80,6 +88,8 @@ export async function POST(req: Request) {
   const realRenderConfiguration = bodyRecord?.realRenderConfiguration;
 
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
+  const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
+  const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
 
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
@@ -225,6 +235,11 @@ export async function POST(req: Request) {
       : {};
 
   const clickTrackRenderInput = {
+    totalBars: getNumber(dryRunCueSheet?.totalEstimatedBars) || undefined,
+    totalEstimatedSeconds:
+      getNumber(dryRunCueSheet?.totalEstimatedSeconds) || undefined,
+    cueSheetSectionCount:
+      getArray(dryRunCueSheet?.sections).length || undefined,
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()

@@ -3129,6 +3129,7 @@ export default function Page() {
               ? audioPreviewRenderJob.id
               : undefined,
           tempoBpm: previewTempo,
+          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -3182,6 +3183,7 @@ export default function Page() {
               ? audioPreviewRenderJob.id
               : undefined,
           tempoBpm: previewTempo,
+          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
