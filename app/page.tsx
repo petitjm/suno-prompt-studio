@@ -3124,6 +3124,10 @@ export default function Page() {
         },
         body: JSON.stringify({
           requestedTarget: "clickTrack",
+          renderJobId:
+            typeof audioPreviewRenderJob?.id === "string"
+              ? audioPreviewRenderJob.id
+              : undefined,
           tempoBpm: previewTempo,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
