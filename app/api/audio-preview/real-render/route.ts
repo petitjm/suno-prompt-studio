@@ -79,6 +79,8 @@ export async function POST(req: Request) {
   const firstRealRenderPlan = bodyRecord?.firstRealRenderPlan;
   const realRenderConfiguration = bodyRecord?.realRenderConfiguration;
 
+  const requestedRenderJobId = getString(bodyRecord?.renderJobId);
+
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
     (isRecord(firstRealRenderPlan)
@@ -222,7 +224,7 @@ export async function POST(req: Request) {
       ? (body as Record<string, unknown>)
       : {};
 
-   const clickTrackRenderInput = {
+  const clickTrackRenderInput = {
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
@@ -251,28 +253,29 @@ export async function POST(req: Request) {
     missingOrInvalidContractFields.length === 0 &&
     missingOrInvalidConfigurationFields.length === 0
   ) {
-       const readyDownload =
-          createReadyClickTrackWavDownload(clickTrackRenderInput);
-        const downloadArtifact = readyDownload.downloadArtifact;
-        const wavBody = new Uint8Array(downloadArtifact.bytes).buffer;
+    const readyDownload = createReadyClickTrackWavDownload(
+      clickTrackRenderInput,
+    );
+    const downloadArtifact = readyDownload.downloadArtifact;
+    const wavBody = new Uint8Array(downloadArtifact.bytes).buffer;
 
     return new Response(wavBody, {
       status: 200,
-     headers: {
-          "Content-Type": downloadArtifact.contentType,
-          "Content-Length": String(downloadArtifact.byteLength),
-          "Content-Disposition": `attachment; filename="${downloadArtifact.filename}"`,
-          "Cache-Control": "no-store",
-          "X-Content-Type-Options": "nosniff",
-          "X-Audio-Generated": "true",
-          "X-Audio-Delivered": "true",
-          "X-Renderer-Status": readyDownload.status,
-          "X-Renderer-Name": "local-click-track-wav-renderer",
-          "X-Renderer-Target": "clickTrack",
-          "X-Renderer-Gate": "enableRealClickTrackWavDownload",
-          "X-Renderer-Tempo-BPM": String(clickTrackRenderInput.tempoBpm),
-          "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
-        },
+      headers: {
+        "Content-Type": downloadArtifact.contentType,
+        "Content-Length": String(downloadArtifact.byteLength),
+        "Content-Disposition": `attachment; filename="${downloadArtifact.filename}"`,
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Audio-Generated": "true",
+        "X-Audio-Delivered": "true",
+        "X-Renderer-Status": readyDownload.status,
+        "X-Renderer-Name": "local-click-track-wav-renderer",
+        "X-Renderer-Target": "clickTrack",
+        "X-Renderer-Gate": "enableRealClickTrackWavDownload",
+        "X-Renderer-Tempo-BPM": String(clickTrackRenderInput.tempoBpm),
+        "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
+      },
     });
   }
 

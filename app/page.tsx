@@ -205,7 +205,8 @@ export default function Page() {
     useState(false);
   const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false);
   const [clickTrackDownloadStatus, setClickTrackDownloadStatus] = useState("");
-  const [downloadingClickTrackWav, setDownloadingClickTrackWav] = useState(false);
+  const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
+    useState(false);
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -2818,119 +2819,114 @@ export default function Page() {
               ).reason,
             )
           : "",
-              clickTrackRendererPreviewTempoBpm:
-      typeof (realRenderRouteTestResponse as Record<string, unknown>)
-        .clickTrackRendererResult === "object" &&
-      !Array.isArray(
-        (realRenderRouteTestResponse as Record<string, unknown>)
-          .clickTrackRendererResult,
-      ) &&
-      typeof (
-        (
+      clickTrackRendererPreviewTempoBpm:
+        typeof (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult === "object" &&
+        !Array.isArray(
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult,
+        ) &&
+        typeof ((
           (realRenderRouteTestResponse as Record<string, unknown>)
             .clickTrackRendererResult as Record<string, unknown>
-        ).preview as Record<string, unknown> | undefined
-      ) === "object" &&
-      !Array.isArray(
-        (
+        ).preview as Record<string, unknown> | undefined) === "object" &&
+        !Array.isArray(
+          (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).preview,
+        ) &&
+        typeof (
+          (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).preview as Record<string, unknown>
+        ).tempoBpm === "number"
+          ? (
+              (
+                (realRenderRouteTestResponse as Record<string, unknown>)
+                  .clickTrackRendererResult as Record<string, unknown>
+              ).preview as Record<string, unknown>
+            ).tempoBpm
+          : null,
+      clickTrackDownloadArtifactStatus:
+        typeof (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult === "object" &&
+        !Array.isArray(
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult,
+        ) &&
+        typeof ((
           (realRenderRouteTestResponse as Record<string, unknown>)
             .clickTrackRendererResult as Record<string, unknown>
-        ).preview,
-      ) &&
-      typeof (
+        ).downloadArtifactSummary as Record<string, unknown> | undefined) ===
+          "object" &&
+        !Array.isArray(
+          (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).downloadArtifactSummary,
+        ) &&
         (
-          (realRenderRouteTestResponse as Record<string, unknown>)
-            .clickTrackRendererResult as Record<string, unknown>
-        ).preview as Record<string, unknown>
-      ).tempoBpm === "number"
-        ? (
-            (
-              (realRenderRouteTestResponse as Record<string, unknown>)
-                .clickTrackRendererResult as Record<string, unknown>
-            ).preview as Record<string, unknown>
-          ).tempoBpm
-        : null,
-              clickTrackDownloadArtifactStatus:
-      typeof (realRenderRouteTestResponse as Record<string, unknown>)
-        .clickTrackRendererResult === 'object' &&
-      !Array.isArray(
-        (realRenderRouteTestResponse as Record<string, unknown>)
-          .clickTrackRendererResult,
-      ) &&
-      typeof (
-        (
-          (realRenderRouteTestResponse as Record<string, unknown>)
-            .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary as Record<string, unknown> | undefined
-      ) === 'object' &&
-      !Array.isArray(
-        (
-          (realRenderRouteTestResponse as Record<string, unknown>)
-            .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary,
-      ) &&
-      (
-        (
-          (realRenderRouteTestResponse as Record<string, unknown>)
-            .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary as Record<string, unknown>
-      ).status === 'created-not-delivered'
-        ? 'created-not-delivered'
-        : '',
+          (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).downloadArtifactSummary as Record<string, unknown>
+        ).status === "created-not-delivered"
+          ? "created-not-delivered"
+          : "",
 
-    clickTrackDownloadArtifactAudioDelivered:
-      typeof (realRenderRouteTestResponse as Record<string, unknown>)
-        .clickTrackRendererResult === 'object' &&
-      !Array.isArray(
-        (realRenderRouteTestResponse as Record<string, unknown>)
-          .clickTrackRendererResult,
-      ) &&
-      typeof (
-        (
+      clickTrackDownloadArtifactAudioDelivered:
+        typeof (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult === "object" &&
+        !Array.isArray(
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult,
+        ) &&
+        typeof ((
           (realRenderRouteTestResponse as Record<string, unknown>)
             .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary as Record<string, unknown> | undefined
-      ) === 'object' &&
-      !Array.isArray(
-        (
-          (realRenderRouteTestResponse as Record<string, unknown>)
-            .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary,
-      )
-        ? (
-            (
-              (realRenderRouteTestResponse as Record<string, unknown>)
-                .clickTrackRendererResult as Record<string, unknown>
-            ).downloadArtifactSummary as Record<string, unknown>
-          ).audioDelivered
-        : null,
+        ).downloadArtifactSummary as Record<string, unknown> | undefined) ===
+          "object" &&
+        !Array.isArray(
+          (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).downloadArtifactSummary,
+        )
+          ? (
+              (
+                (realRenderRouteTestResponse as Record<string, unknown>)
+                  .clickTrackRendererResult as Record<string, unknown>
+              ).downloadArtifactSummary as Record<string, unknown>
+            ).audioDelivered
+          : null,
 
-    clickTrackDownloadArtifactBytesIncluded:
-      typeof (realRenderRouteTestResponse as Record<string, unknown>)
-        .clickTrackRendererResult === 'object' &&
-      !Array.isArray(
-        (realRenderRouteTestResponse as Record<string, unknown>)
-          .clickTrackRendererResult,
-      ) &&
-      typeof (
-        (
+      clickTrackDownloadArtifactBytesIncluded:
+        typeof (realRenderRouteTestResponse as Record<string, unknown>)
+          .clickTrackRendererResult === "object" &&
+        !Array.isArray(
+          (realRenderRouteTestResponse as Record<string, unknown>)
+            .clickTrackRendererResult,
+        ) &&
+        typeof ((
           (realRenderRouteTestResponse as Record<string, unknown>)
             .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary as Record<string, unknown> | undefined
-      ) === 'object' &&
-      !Array.isArray(
-        (
-          (realRenderRouteTestResponse as Record<string, unknown>)
-            .clickTrackRendererResult as Record<string, unknown>
-        ).downloadArtifactSummary,
-      )
-        ? (
-            (
-              (realRenderRouteTestResponse as Record<string, unknown>)
-                .clickTrackRendererResult as Record<string, unknown>
-            ).downloadArtifactSummary as Record<string, unknown>
-          ).bytesIncludedInResponse
-        : null,
+        ).downloadArtifactSummary as Record<string, unknown> | undefined) ===
+          "object" &&
+        !Array.isArray(
+          (
+            (realRenderRouteTestResponse as Record<string, unknown>)
+              .clickTrackRendererResult as Record<string, unknown>
+          ).downloadArtifactSummary,
+        )
+          ? (
+              (
+                (realRenderRouteTestResponse as Record<string, unknown>)
+                  .clickTrackRendererResult as Record<string, unknown>
+              ).downloadArtifactSummary as Record<string, unknown>
+            ).bytesIncludedInResponse
+          : null,
       configurationStatus:
         typeof receivedConfigurationSummary.configurationStatus === "string"
           ? receivedConfigurationSummary.configurationStatus
@@ -3073,14 +3069,14 @@ export default function Page() {
       receivedConfigurationCheck.passed &&
       receivedConfigurationCheck.missingOrInvalid.length === 0 &&
       receivedConfigurationSummary !== null &&
-      receivedConfigurationSummary.clickTrackRendererStatus === 'blocked' &&
+      receivedConfigurationSummary.clickTrackRendererStatus === "blocked" &&
       receivedConfigurationSummary.clickTrackRendererAudioGenerated === false &&
       receivedConfigurationSummary.clickTrackDownloadArtifactStatus ===
-      'created-not-delivered' &&
+        "created-not-delivered" &&
       receivedConfigurationSummary.clickTrackDownloadArtifactAudioDelivered ===
-      false &&
+        false &&
       receivedConfigurationSummary.clickTrackDownloadArtifactBytesIncluded ===
-      false &&
+        false &&
       receivedConfigurationSummary.configurationStatus ===
         "dry-run-real-render-configuration-placeholder" &&
       receivedConfigurationSummary.audioStatus === "not-generated" &&
@@ -3157,20 +3153,18 @@ export default function Page() {
     }
   };
 
-    const downloadClickTrackWav = async () => {
-        if (!dryRunArtifactPackage) {
-          setClickTrackDownloadStatus(
-            "Submit dry run before downloading the click-track WAV.",
-          );
-          return;
-        }
+  const downloadClickTrackWav = async () => {
+    if (!dryRunArtifactPackage) {
+      setClickTrackDownloadStatus(
+        "Submit dry run before downloading the click-track WAV.",
+      );
+      return;
+    }
 
-        setClickTrackDownloadStatus("Requesting click-track WAV download...");
-        setDownloadingClickTrackWav(true);
+    setClickTrackDownloadStatus("Requesting click-track WAV download...");
+    setDownloadingClickTrackWav(true);
 
-        
-
-        try {
+    try {
       const response = await fetch("/api/audio-preview/real-render", {
         method: "POST",
         headers: {
@@ -3179,6 +3173,10 @@ export default function Page() {
         body: JSON.stringify({
           requestedTarget: "clickTrack",
           enableRealClickTrackWavDownload: true,
+          renderJobId:
+            typeof audioPreviewRenderJob?.id === "string"
+              ? audioPreviewRenderJob.id
+              : undefined,
           tempoBpm: previewTempo,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
@@ -3214,15 +3212,15 @@ export default function Page() {
       link.click();
       link.remove();
 
-          window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(url);
 
       setClickTrackDownloadStatus(
-      `Downloaded click-track WAV: ${filename}${
-        rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
-      }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
-        contentLength ? ` | ${contentLength} bytes` : ""
-      }`,
-    );
+        `Downloaded click-track WAV: ${filename}${
+          rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
+        }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
+          contentLength ? ` | ${contentLength} bytes` : ""
+        }`,
+      );
     } catch (error) {
       setClickTrackDownloadStatus(
         error instanceof Error
@@ -11870,15 +11868,15 @@ export default function Page() {
           ? "Tempo, feel, phrasing, or delivery information is available."
           : "Generate chords with performance intent.",
       },
-     {
-      label: "Tempo",
-      passed: hasTempo,
-      detail: hasIntentTempo
-        ? "Tempo is available from performance intent."
-        : hasPreviewTempo
-          ? `Tempo is available from preview tempo: ${previewTempo} BPM.`
-          : "Tempo is missing.",
-    },
+      {
+        label: "Tempo",
+        passed: hasTempo,
+        detail: hasIntentTempo
+          ? "Tempo is available from performance intent."
+          : hasPreviewTempo
+            ? `Tempo is available from preview tempo: ${previewTempo} BPM.`
+            : "Tempo is missing.",
+      },
       {
         label: "Groove",
         passed: hasGroove,
@@ -14927,10 +14925,12 @@ ${buildRewriteInstruction(
                               : "Test blocked route"}
                           </button>
 
-                                                    <button
+                          <button
                             type="button"
                             onClick={() => downloadClickTrackWav()}
-                            disabled={downloadingClickTrackWav || !dryRunArtifactPackage}
+                            disabled={
+                              downloadingClickTrackWav || !dryRunArtifactPackage
+                            }
                             title="Generate and download the first local click-track WAV using the gated real-render route."
                             className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                           >
@@ -14938,7 +14938,7 @@ ${buildRewriteInstruction(
                               ? "Downloading click-track WAV..."
                               : "Download click-track WAV"}
                           </button>
-                                                    {clickTrackDownloadStatus ? (
+                          {clickTrackDownloadStatus ? (
                             <div className="text-xs text-green-200">
                               {clickTrackDownloadStatus}
                             </div>
@@ -17571,35 +17571,39 @@ ${buildRewriteInstruction(
                                   {getRealRenderRouteReceivedConfigurationSummary()
                                     ?.clickTrackRendererReason || "unknown"}
                                 </div>
-                                   <div>
-                                      Click-track renderer preview tempo:{' '}
-                                      {String(
-                                        typeof getRealRenderRouteReceivedConfigurationSummary()
-                                          ?.clickTrackRendererPreviewTempoBpm === 'number'
-                                          ? getRealRenderRouteReceivedConfigurationSummary()
-                                              ?.clickTrackRendererPreviewTempoBpm
-                                          : 'unknown',
-                                      )}
-                                    </div>
-                                        <div>
-                                          Click-track artifact status:{' '}
-                                          {getRealRenderRouteReceivedConfigurationSummary()
-                                            ?.clickTrackDownloadArtifactStatus || 'unknown'}
-                                        </div>
-                                        <div>
-                                          Click-track artifact audio delivered:{' '}
-                                          {getRealRenderRouteReceivedConfigurationSummary()
-                                            ?.clickTrackDownloadArtifactAudioDelivered === false
-                                            ? 'false'
-                                            : 'unknown'}
-                                        </div>
-                                        <div>
-                                          Click-track bytes included in response:{' '}
-                                          {getRealRenderRouteReceivedConfigurationSummary()
-                                            ?.clickTrackDownloadArtifactBytesIncluded === false
-                                            ? 'false'
-                                            : 'unknown'}
-                                        </div>
+                                <div>
+                                  Click-track renderer preview tempo:{" "}
+                                  {String(
+                                    typeof getRealRenderRouteReceivedConfigurationSummary()
+                                      ?.clickTrackRendererPreviewTempoBpm ===
+                                      "number"
+                                      ? getRealRenderRouteReceivedConfigurationSummary()
+                                          ?.clickTrackRendererPreviewTempoBpm
+                                      : "unknown",
+                                  )}
+                                </div>
+                                <div>
+                                  Click-track artifact status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.clickTrackDownloadArtifactStatus ||
+                                    "unknown"}
+                                </div>
+                                <div>
+                                  Click-track artifact audio delivered:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.clickTrackDownloadArtifactAudioDelivered ===
+                                  false
+                                    ? "false"
+                                    : "unknown"}
+                                </div>
+                                <div>
+                                  Click-track bytes included in response:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.clickTrackDownloadArtifactBytesIncluded ===
+                                  false
+                                    ? "false"
+                                    : "unknown"}
+                                </div>
                               </div>
 
                               <div>
