@@ -205,8 +205,10 @@ export default function Page() {
     useState(false);
   const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false);
   const [clickTrackDownloadStatus, setClickTrackDownloadStatus] = useState("");
+  const [clickTrackAudioUrl, setClickTrackAudioUrl] = useState("");
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
+  useState(false);
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -2724,6 +2726,14 @@ export default function Page() {
     };
   };
 
+  useEffect(() => {
+    return () => {
+      if (clickTrackAudioUrl) {
+        window.URL.revokeObjectURL(clickTrackAudioUrl);
+      }
+    };
+  }, [clickTrackAudioUrl]);
+
   const getRealRenderRouteReceivedConfigurationCheck = () => {
     if (
       !realRenderRouteTestResponse ||
@@ -3212,14 +3222,13 @@ export default function Page() {
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-
       link.href = url;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
 
-      window.URL.revokeObjectURL(url);
+      setClickTrackAudioUrl(url);
 
       setClickTrackDownloadStatus(
         `Downloaded click-track WAV: ${filename}${
@@ -14948,6 +14957,19 @@ ${buildRewriteInstruction(
                           {clickTrackDownloadStatus ? (
                             <div className="text-xs text-green-200">
                               {clickTrackDownloadStatus}
+                            </div>
+                          ) : null}
+
+                          {clickTrackAudioUrl ? (
+                            <div className="mt-2 space-y-1">
+                              <div className="text-xs font-medium text-green-100">
+                                Latest generated click-track WAV
+                              </div>
+                              <audio
+                                controls
+                                src={clickTrackAudioUrl}
+                                className="w-full"
+                              />
                             </div>
                           ) : null}
 
