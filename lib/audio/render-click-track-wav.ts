@@ -211,7 +211,9 @@ export function createClickTrackWavDownloadArtifact(
   return {
     status: 'created-not-delivered',
     audioDelivered: false,
-    filename: `${sanitizeFilename(input.renderJobId)}-${input.targetKey}.wav`,
+    filename: `${sanitizeFilename(input.renderJobId)}-${input.targetKey}-${sanitizeFilename(
+      String(input.tempoBpm),
+    )}bpm.wav`,
     contentType: 'audio/wav',
     byteLength: bytes.length,
     bytes,
