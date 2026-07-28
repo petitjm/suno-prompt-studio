@@ -2772,6 +2772,62 @@ export default function Page() {
       : [];
 
     return {
+      songDurationSeconds:
+        typeof preview.songDurationSeconds === "number" &&
+        Number.isFinite(preview.songDurationSeconds)
+          ? preview.songDurationSeconds
+          : null,
+      countInDurationSeconds:
+        typeof preview.countInDurationSeconds === "number" &&
+        Number.isFinite(preview.countInDurationSeconds)
+          ? preview.countInDurationSeconds
+          : null,
+      totalBars:
+        typeof preview.totalBars === "number" &&
+        Number.isFinite(preview.totalBars)
+          ? preview.totalBars
+          : null,
+      sectionSummaries: Array.isArray(preview.sectionSummaries)
+        ? preview.sectionSummaries
+            .map((section) => {
+              if (
+                !section ||
+                typeof section !== "object" ||
+                Array.isArray(section)
+              ) {
+                return null;
+              }
+
+              const record = section as Record<string, unknown>;
+
+              return {
+                order:
+                  typeof record.order === "number" &&
+                  Number.isFinite(record.order)
+                    ? record.order
+                    : null,
+                section:
+                  typeof record.section === "string" ? record.section : "",
+                estimatedBars:
+                  typeof record.estimatedBars === "number" &&
+                  Number.isFinite(record.estimatedBars)
+                    ? record.estimatedBars
+                    : null,
+                startSeconds:
+                  typeof record.startSeconds === "number" &&
+                  Number.isFinite(record.startSeconds)
+                    ? record.startSeconds
+                    : null,
+                endSeconds:
+                  typeof record.endSeconds === "number" &&
+                  Number.isFinite(record.endSeconds)
+                    ? record.endSeconds
+                    : null,
+              };
+            })
+            .filter((section) => section !== null)
+            .slice(0, 12)
+        : [],
       tempoBpm:
         typeof preview.tempoBpm === "number" &&
         Number.isFinite(preview.tempoBpm)
@@ -15063,6 +15119,31 @@ ${buildRewriteInstruction(
                               </div>
 
                               <div>
+                                Song duration:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.songDurationSeconds !== null
+                                  ? `${getClickTrackRendererPreviewSummary()?.songDurationSeconds}s`
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Count-in duration:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.countInDurationSeconds !== null
+                                  ? `${getClickTrackRendererPreviewSummary()?.countInDurationSeconds}s`
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Total bars:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.totalBars !== null
+                                  ? getClickTrackRendererPreviewSummary()
+                                      ?.totalBars
+                                  : "unknown"}
+                              </div>
+
+                              <div>
                                 Sections:{" "}
                                 {getClickTrackRendererPreviewSummary()
                                   ?.cueSheetSectionCount !== null
@@ -15099,6 +15180,24 @@ ${buildRewriteInstruction(
                                       .join(", ")
                                   : "none"}
                               </div>
+                            </div>
+                          ) : null}
+
+                          {getClickTrackRendererPreviewSummary()
+                            ?.sectionSummaries.length ? (
+                            <div className="mt-2 space-y-1">
+                              <div className="font-medium">Sections</div>
+                              {getClickTrackRendererPreviewSummary()?.sectionSummaries.map(
+                                (section, index) => (
+                                  <div key={`${section.section}-${index}`}>
+                                    {section.order ?? index + 1}.{" "}
+                                    {section.section || "Section"} —{" "}
+                                    {section.estimatedBars ?? "?"} bars,{" "}
+                                    {section.startSeconds ?? "?"}s to{" "}
+                                    {section.endSeconds ?? "?"}s
+                                  </div>
+                                ),
+                              )}
                             </div>
                           ) : null}
 

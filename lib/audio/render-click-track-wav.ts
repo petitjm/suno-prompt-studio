@@ -80,6 +80,9 @@ export type ClickTrackWavPreview = {
   storageProvider: "browser-download";
   countInBars: number;
   totalDurationSeconds: number;
+  songDurationSeconds: number;
+  countInDurationSeconds: number;
+  totalBars: number | null;
   channelCount: 1;
   bitsPerSample: 16;
   totalSamples: number;
@@ -89,6 +92,13 @@ export type ClickTrackWavPreview = {
   implementationStatus: "wav-primitives-ready-render-still-blocked";
   cueSheetSectionCount: number;
   sectionStartTimesSeconds: number[];
+  sectionSummaries: {
+    order: number;
+    section: string;
+    estimatedBars: number;
+    startSeconds: number;
+    endSeconds: number;
+  }[];
 };
 
 export type ClickTrackWavRenderResult =
@@ -140,6 +150,15 @@ export function createClickTrackWavPreview(
     (startSeconds) =>
       Number((startSeconds + countInDurationSeconds).toFixed(3)),
   );
+  const sectionSummaries = getSectionSummaries(input).map((section) => ({
+    ...section,
+    startSeconds: Number(
+      (section.startSeconds + countInDurationSeconds).toFixed(3),
+    ),
+    endSeconds: Number(
+      (section.endSeconds + countInDurationSeconds).toFixed(3),
+    ),
+  }));
 
   return {
     renderJobId: input.renderJobId,
@@ -150,6 +169,12 @@ export function createClickTrackWavPreview(
     storageProvider: input.storageProvider,
     countInBars: input.countInBars,
     totalDurationSeconds,
+    songDurationSeconds,
+    countInDurationSeconds,
+    totalBars:
+      typeof input.totalBars === "number" && Number.isFinite(input.totalBars)
+        ? input.totalBars
+        : null,
     channelCount: CHANNEL_COUNT,
     bitsPerSample: BITS_PER_SAMPLE,
     totalSamples,
@@ -157,6 +182,7 @@ export function createClickTrackWavPreview(
     firstBeatTimesSeconds: getFirstBeatTimesSeconds(input.tempoBpm, 8),
     cueSheetSectionCount: sectionStartTimesSeconds.length,
     sectionStartTimesSeconds,
+    sectionSummaries,
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: "wav-primitives-ready-render-still-blocked",
   };
@@ -187,6 +213,18 @@ function getSectionStartTimesSeconds(
         .filter(
           (startSeconds) => Number.isFinite(startSeconds) && startSeconds >= 0,
         )
+    : [];
+}
+
+function getSectionSummaries(input: ClickTrackWavRenderInput) {
+  return Array.isArray(input.cueSheetSections)
+    ? input.cueSheetSections.map((section) => ({
+        order: section.order,
+        section: section.section,
+        estimatedBars: section.estimatedBars,
+        startSeconds: section.startSeconds,
+        endSeconds: section.endSeconds,
+      }))
     : [];
 }
 
