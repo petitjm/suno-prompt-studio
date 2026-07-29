@@ -84,6 +84,7 @@ export type ClickTrackWavPreview = {
   chordMarkerSummaries: {
     section: string;
     chord: string;
+    root: string;
     timeSeconds: number;
   }[];
   renderJobId: string;
@@ -286,6 +287,7 @@ function getChordMarkerSummaries(input: ClickTrackWavRenderInput) {
         .map((marker) => ({
           section: marker.section,
           chord: marker.chord || "",
+          root: getChordRoot(marker.chord || ""),
           timeSeconds: marker.timeSeconds,
         }))
     : [];
@@ -302,36 +304,36 @@ function getChordRootFrequencyHz(chord: string): number {
 
   switch (root) {
     case "C":
-      return 523.25;
+      return 261.63;
     case "C#":
     case "DB":
-      return 554.37;
+      return 277.18;
     case "D":
-      return 587.33;
+      return 293.66;
     case "D#":
     case "EB":
-      return 622.25;
+      return 311.13;
     case "E":
-      return 659.25;
+      return 329.63;
     case "F":
-      return 698.46;
+      return 349.23;
     case "F#":
     case "GB":
-      return 739.99;
+      return 369.99;
     case "G":
-      return 783.99;
+      return 392;
     case "G#":
     case "AB":
-      return 830.61;
+      return 415.3;
     case "A":
-      return 880;
+      return 440;
     case "A#":
     case "BB":
-      return 932.33;
+      return 466.16;
     case "B":
-      return 987.77;
+      return 493.88;
     default:
-      return 650;
+      return 392;
   }
 }
 

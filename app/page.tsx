@@ -2802,6 +2802,7 @@ export default function Page() {
                 section:
                   typeof record.section === "string" ? record.section : "",
                 chord: typeof record.chord === "string" ? record.chord : "",
+                root: typeof record.root === "string" ? record.root : "",
                 timeSeconds:
                   typeof record.timeSeconds === "number" &&
                   Number.isFinite(record.timeSeconds)
@@ -15259,6 +15260,7 @@ ${buildRewriteInstruction(
                                         {marker.chord
                                           ? `— ${marker.chord}`
                                           : ""}
+                                        {marker.root ? ` (${marker.root})` : ""}
                                       </div>
                                     ),
                                   )}
