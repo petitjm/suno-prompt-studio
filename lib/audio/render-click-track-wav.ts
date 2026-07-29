@@ -9,6 +9,7 @@ export type ClickTrackCueSheetSection = {
 
 export type ClickTrackChordMarker = {
   section: string;
+  chord?: string;
   timeSeconds: number;
 };
 
@@ -80,6 +81,11 @@ export type ClickTrackWavPrimitiveSelfCheck = {
 export type ClickTrackWavPreview = {
   chordMarkerCount: number;
   chordMarkerTimesSeconds: number[];
+  chordMarkerSummaries: {
+    section: string;
+    chord: string;
+    timeSeconds: number;
+  }[];
   renderJobId: string;
   targetKey: "clickTrack";
   tempoBpm: number;
@@ -163,6 +169,14 @@ export function createClickTrackWavPreview(
       Number((timeSeconds + countInDurationSeconds).toFixed(3)),
     )
     .slice(0, 24);
+  const chordMarkerSummaries = getChordMarkerSummaries(input)
+    .map((marker) => ({
+      ...marker,
+      timeSeconds: Number(
+        (marker.timeSeconds + countInDurationSeconds).toFixed(3),
+      ),
+    }))
+    .slice(0, 24);
   const sectionSummaries = getSectionSummaries(input).map((section) => ({
     ...section,
     startSeconds: Number(
@@ -197,6 +211,7 @@ export function createClickTrackWavPreview(
     sectionStartTimesSeconds,
     chordMarkerCount: getChordMarkerTimesSeconds(input).length,
     chordMarkerTimesSeconds,
+    chordMarkerSummaries,
     sectionSummaries,
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: "wav-primitives-ready-render-still-blocked",
@@ -261,6 +276,18 @@ function getChordMarkerTimesSeconds(input: ClickTrackWavRenderInput): number[] {
         .filter(
           (timeSeconds) => Number.isFinite(timeSeconds) && timeSeconds >= 0,
         )
+    : [];
+}
+
+function getChordMarkerSummaries(input: ClickTrackWavRenderInput) {
+  return Array.isArray(input.chordMarkers)
+    ? input.chordMarkers
+        .filter((marker) => Number.isFinite(marker.timeSeconds))
+        .map((marker) => ({
+          section: marker.section,
+          chord: marker.chord || "",
+          timeSeconds: marker.timeSeconds,
+        }))
     : [];
 }
 

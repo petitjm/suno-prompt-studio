@@ -97,6 +97,7 @@ function getCueSheetSections(value: unknown) {
         estimatedSeconds,
         startSeconds,
         endSeconds,
+        chordPlacements: getArray(record.chordPlacements),
       };
     })
     .filter((section) => section !== null);
@@ -128,24 +129,17 @@ function getTimelineSections(value: unknown) {
     .filter((section) => section !== null);
 }
 
-function buildApproximateChordMarkers({
+function buildChordMarkersFromCueSheetSections({
   cueSheetSections,
-  timelineSections,
 }: {
   cueSheetSections: ReturnType<typeof getCueSheetSections>;
-  timelineSections: ReturnType<typeof getTimelineSections>;
 }) {
   return cueSheetSections.flatMap((cueSection) => {
-    const matchingTimelineSection = timelineSections.find(
-      (timelineSection) =>
-        timelineSection.order === cueSection.order ||
-        timelineSection.section === cueSection.section,
+    const chordPlacements = getArray(
+      (cueSection as Record<string, unknown>).chordPlacements,
     );
 
-    const chordPlacementCount =
-      matchingTimelineSection?.chordPlacementCount || 0;
-
-    if (chordPlacementCount <= 0) {
+    if (chordPlacements.length === 0) {
       return [];
     }
 
@@ -156,18 +150,53 @@ function buildApproximateChordMarkers({
       return [];
     }
 
-    return Array.from({ length: chordPlacementCount }, (_, index) => {
-      const fraction = (index + 1) / (chordPlacementCount + 1);
+    return chordPlacements
+      .map((placement, index) => {
+        const record = getRecord(placement);
 
-      return {
-        section: cueSection.section,
-        timeSeconds: Number(
-          (cueSection.startSeconds + sectionDurationSeconds * fraction).toFixed(
-            3,
+        if (!record) {
+          return null;
+        }
+
+        const chord = getString(record.chord);
+        const lineIndex = getNumber(record.lineIndex);
+        const charIndex = getNumber(record.charIndex);
+        const lyricLength = getNumber(record.lyricLength);
+
+        if (
+          !chord ||
+          lineIndex === null ||
+          charIndex === null ||
+          lyricLength === null ||
+          lyricLength <= 0
+        ) {
+          return null;
+        }
+
+        const lineFraction =
+          cueSection.estimatedBars > 0
+            ? Math.min(
+                0.98,
+                Math.max(
+                  0.02,
+                  (lineIndex + charIndex / lyricLength) /
+                    Math.max(1, chordPlacements.length),
+                ),
+              )
+            : (index + 1) / (chordPlacements.length + 1);
+
+        return {
+          section: cueSection.section,
+          chord,
+          timeSeconds: Number(
+            (
+              cueSection.startSeconds +
+              sectionDurationSeconds * lineFraction
+            ).toFixed(3),
           ),
-        ),
-      };
-    });
+        };
+      })
+      .filter((marker) => marker !== null);
   });
 }
 
@@ -199,10 +228,8 @@ export async function POST(req: Request) {
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
   const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
-  const timelineSections = getTimelineSections(dryRunRenderPlan?.timeline);
-  const chordMarkers = buildApproximateChordMarkers({
+  const chordMarkers = buildChordMarkersFromCueSheetSections({
     cueSheetSections,
-    timelineSections,
   });
 
   const requestedTarget =

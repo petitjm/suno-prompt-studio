@@ -1,80 +1,82 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 
 type RendererPayload = {
-  type?: string
-  version?: number
-  renderStatus?: string
-  project?: string
-  songVersion?: string
-  chordVersion?: string
-  key?: string
-  transposeSemitones?: number
-  songsheetStatus?: string
-  songsheetReview?: string
-  tempo?: string
-  groove?: string
-  instrumentation?: string
-  countIn?: string
-  vocalGuideStyle?: string
-  songsheetLines?: unknown[]
-  previewSongSheetText?: string
-  sectionGuideText?: string
-  renderSteps?: unknown[]
-  renderPrompt?: string
+  type?: string;
+  version?: number;
+  renderStatus?: string;
+  project?: string;
+  songVersion?: string;
+  chordVersion?: string;
+  key?: string;
+  transposeSemitones?: number;
+  songsheetStatus?: string;
+  songsheetReview?: string;
+  tempo?: string;
+  groove?: string;
+  instrumentation?: string;
+  countIn?: string;
+  vocalGuideStyle?: string;
+  songsheetLines?: unknown[];
+  previewSongSheetText?: string;
+  sectionGuideText?: string;
+  renderSteps?: unknown[];
+  renderPrompt?: string;
   validation?: {
-    ready?: boolean
-    missing?: string[]
-    detail?: string
-  }
-}
+    ready?: boolean;
+    missing?: string[];
+    detail?: string;
+  };
+};
 
 type RenderStep = {
-  step?: number
-  section?: string
-  goal?: string
-  guitarInstruction?: string
-  vocalInstruction?: string
-  dynamicInstruction?: string
-  notes?: string
-}
+  step?: number;
+  section?: string;
+  goal?: string;
+  guitarInstruction?: string;
+  vocalInstruction?: string;
+  dynamicInstruction?: string;
+  notes?: string;
+};
 
 type SongSheetLine = {
-  section?: string
-  lyric?: string
-  chords?: unknown[]
-}
+  section?: string;
+  lyric?: string;
+  chords?: {
+    chord: string;
+    charIndex: number;
+  }[];
+};
 
 type TimelineSection = {
-  order: number
-  section: string
-  lyricLineCount: number
-  chordPlacementCount: number
-  firstLyric: string
-  lastLyric: string
-  goal: string
-  guitarInstruction: string
-  vocalInstruction: string
-  dynamicInstruction: string
-}
-
+  order: number;
+  section: string;
+  lyricLineCount: number;
+  chordPlacementCount: number;
+  firstLyric: string;
+  lastLyric: string;
+  goal: string;
+  guitarInstruction: string;
+  vocalInstruction: string;
+  dynamicInstruction: string;
+};
 
 function getString(value: unknown) {
-  return typeof value === 'string' ? value.trim() : ''
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function normalizeRenderStep(item: unknown, index: number): RenderStep {
-  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) {
     return {
       step: index + 1,
       section: `Section ${index + 1}`,
-    }
+    };
   }
 
-  const record = item as Record<string, unknown>
+  const record = item as Record<string, unknown>;
 
   return {
     step:
-      typeof record.step === 'number' && Number.isFinite(record.step)
+      typeof record.step === "number" && Number.isFinite(record.step)
         ? record.step
         : index + 1,
     section: getString(record.section) || `Section ${index + 1}`,
@@ -83,129 +85,179 @@ function normalizeRenderStep(item: unknown, index: number): RenderStep {
     vocalInstruction: getString(record.vocalInstruction),
     dynamicInstruction: getString(record.dynamicInstruction),
     notes: getString(record.notes),
+  };
+}
+
+function normalizePlacedChord(item: unknown) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) {
+    return null;
   }
+
+  const record = item as Record<string, unknown>;
+  const chord = getString(record.chord);
+  const charIndex =
+    typeof record.charIndex === "number" && Number.isFinite(record.charIndex)
+      ? record.charIndex
+      : null;
+
+  if (!chord || charIndex === null || charIndex < 0) {
+    return null;
+  }
+
+  return {
+    chord,
+    charIndex,
+  };
 }
 
 function normalizeSongSheetLine(item: unknown, index: number): SongSheetLine {
-  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) {
     return {
       section: `Section ${index + 1}`,
-      lyric: '',
+      lyric: "",
       chords: [],
-    }
+    };
   }
 
-  const record = item as Record<string, unknown>
+  const record = item as Record<string, unknown>;
 
   return {
     section: getString(record.section) || `Section ${index + 1}`,
     lyric: getString(record.lyric),
-    chords: Array.isArray(record.chords) ? record.chords : [],
-  }
+    chords: Array.isArray(record.chords)
+      ? record.chords
+          .map((chord) => normalizePlacedChord(chord))
+          .filter((chord) => chord !== null)
+      : [],
+  };
 }
 
 function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
   const songSheetLines = Array.isArray(payload.songsheetLines)
-    ? payload.songsheetLines.map((item, index) => normalizeSongSheetLine(item, index))
-    : []
+    ? payload.songsheetLines.map((item, index) =>
+        normalizeSongSheetLine(item, index),
+      )
+    : [];
 
   const renderSteps = Array.isArray(payload.renderSteps)
     ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
-    : []
+    : [];
 
-  const sectionOrder: string[] = []
-  const linesBySection = new Map<string, SongSheetLine[]>()
+  const sectionOrder: string[] = [];
+  const linesBySection = new Map<string, SongSheetLine[]>();
 
   songSheetLines.forEach((line) => {
-    const section = line.section || 'Unknown section'
+    const section = line.section || "Unknown section";
 
     if (!linesBySection.has(section)) {
-      linesBySection.set(section, [])
-      sectionOrder.push(section)
+      linesBySection.set(section, []);
+      sectionOrder.push(section);
     }
 
-    linesBySection.get(section)?.push(line)
-  })
+    linesBySection.get(section)?.push(line);
+  });
 
   return sectionOrder.map((section, index) => {
-    const lines = linesBySection.get(section) || []
+    const lines = linesBySection.get(section) || [];
     const matchingStep =
-      renderSteps.find((step) => step.section === section) || renderSteps[index]
+      renderSteps.find((step) => step.section === section) ||
+      renderSteps[index];
 
     const chordPlacementCount = lines.reduce((total, line) => {
-      return total + (Array.isArray(line.chords) ? line.chords.length : 0)
-    }, 0)
+      return total + (Array.isArray(line.chords) ? line.chords.length : 0);
+    }, 0);
 
     return {
       order: index + 1,
       section,
       lyricLineCount: lines.length,
       chordPlacementCount,
-      firstLyric: lines[0]?.lyric || '',
-      lastLyric: lines[lines.length - 1]?.lyric || '',
+      firstLyric: lines[0]?.lyric || "",
+      lastLyric: lines[lines.length - 1]?.lyric || "",
       goal:
         matchingStep?.goal ||
-        'Preserve the section feel from the placed songsheet.',
+        "Preserve the section feel from the placed songsheet.",
       guitarInstruction:
         matchingStep?.guitarInstruction ||
-        'Use sparse acoustic guitar as the main timing and harmony reference.',
+        "Use sparse acoustic guitar as the main timing and harmony reference.",
       vocalInstruction:
         matchingStep?.vocalInstruction ||
-        'Use understated guide vocal or melody reference only.',
+        "Use understated guide vocal or melody reference only.",
       dynamicInstruction:
         matchingStep?.dynamicInstruction ||
-        'Keep dynamics clear and rehearsal-focused.',
-    }
-  })
+        "Keep dynamics clear and rehearsal-focused.",
+    };
+  });
 }
 
-
 function getTempoBpm(value: unknown) {
-  if (typeof value !== 'string') {
-    return 80
+  if (typeof value !== "string") {
+    return 80;
   }
 
-  const match = value.match(/(\d+(?:\.\d+)?)/)
-  const bpm = match ? Number(match[1]) : 80
+  const match = value.match(/(\d+(?:\.\d+)?)/);
+  const bpm = match ? Number(match[1]) : 80;
 
-  return Number.isFinite(bpm) && bpm > 0 ? bpm : 80
+  return Number.isFinite(bpm) && bpm > 0 ? bpm : 80;
 }
 
 function getBeatsPerBar(payload: RendererPayload) {
   const text = [
-    payload.groove || '',
-    payload.countIn || '',
-    payload.renderPrompt || '',
+    payload.groove || "",
+    payload.countIn || "",
+    payload.renderPrompt || "",
   ]
-    .join(' ')
-    .toLowerCase()
+    .join(" ")
+    .toLowerCase();
 
-  if (text.includes('6/8')) {
-    return 6
+  if (text.includes("6/8")) {
+    return 6;
   }
 
-  if (text.includes('3/4')) {
-    return 3
+  if (text.includes("3/4")) {
+    return 3;
   }
 
-  return 4
+  return 4;
 }
 
-function buildDryRunCueSheet(payload: RendererPayload, timeline: TimelineSection[]) {
-  const tempoBpm = getTempoBpm(payload.tempo)
-  const beatsPerBar = getBeatsPerBar(payload)
+function buildDryRunCueSheet(
+  payload: RendererPayload,
+  timeline: TimelineSection[],
+) {
+  const tempoBpm = getTempoBpm(payload.tempo);
+  const beatsPerBar = getBeatsPerBar(payload);
 
-  let cumulativeSeconds = 0
+  let cumulativeSeconds = 0;
 
   const sections = timeline.map((section) => {
-    const estimatedBars = Math.max(2, section.lyricLineCount * 2)
+    const estimatedBars = Math.max(2, section.lyricLineCount * 2);
     const estimatedSeconds = Number(
       (((estimatedBars * beatsPerBar) / tempoBpm) * 60).toFixed(1),
-    )
-    const startSeconds = Number(cumulativeSeconds.toFixed(1))
-    const endSeconds = Number((cumulativeSeconds + estimatedSeconds).toFixed(1))
+    );
+    const startSeconds = Number(cumulativeSeconds.toFixed(1));
+    const endSeconds = Number(
+      (cumulativeSeconds + estimatedSeconds).toFixed(1),
+    );
 
-    cumulativeSeconds += estimatedSeconds
+    cumulativeSeconds += estimatedSeconds;
+
+    const sectionLines = Array.isArray(payload.songsheetLines)
+      ? payload.songsheetLines
+          .map((item, index) => normalizeSongSheetLine(item, index))
+          .filter((line) => line.section === section.section)
+      : [];
+
+    const chordPlacements = sectionLines.flatMap((line, lineIndex) => {
+      const lyricLength = Math.max(1, line.lyric?.length || 1);
+
+      return (line.chords || []).map((chord) => ({
+        chord: chord.chord,
+        lineIndex,
+        charIndex: chord.charIndex,
+        lyricLength,
+      }));
+    });
 
     return {
       order: section.order,
@@ -216,13 +268,14 @@ function buildDryRunCueSheet(payload: RendererPayload, timeline: TimelineSection
       endSeconds,
       lyricLineCount: section.lyricLineCount,
       chordPlacementCount: section.chordPlacementCount,
-    }
-  })
+      chordPlacements,
+    };
+  });
 
   return {
-    type: 'audio-preview-dry-run-cue-sheet',
+    type: "audio-preview-dry-run-cue-sheet",
     version: 1,
-    timingStatus: 'estimated',
+    timingStatus: "estimated",
     tempoBpm,
     beatsPerBar,
     totalEstimatedSeconds: Number(cumulativeSeconds.toFixed(1)),
@@ -232,54 +285,57 @@ function buildDryRunCueSheet(payload: RendererPayload, timeline: TimelineSection
     ),
     sections,
     notes: [
-      'Timing is estimated from lyric line counts and detected tempo/groove.',
-      'This is not final musical timing.',
-      'Actual audio generation should revise these estimates from rendered audio or explicit bar counts.',
+      "Timing is estimated from lyric line counts and detected tempo/groove.",
+      "This is not final musical timing.",
+      "Actual audio generation should revise these estimates from rendered audio or explicit bar counts.",
     ],
-  }
+  };
 }
 
 function validateRendererPayload(payload: RendererPayload) {
-  const missing: string[] = []
+  const missing: string[] = [];
 
-  if (payload.type !== 'audio-preview-renderer-payload') {
-    missing.push('type')
+  if (payload.type !== "audio-preview-renderer-payload") {
+    missing.push("type");
   }
 
   if (!getString(payload.project)) {
-    missing.push('project')
+    missing.push("project");
   }
 
   if (!getString(payload.songVersion)) {
-    missing.push('songVersion')
+    missing.push("songVersion");
   }
 
   if (!getString(payload.chordVersion)) {
-    missing.push('chordVersion')
+    missing.push("chordVersion");
   }
 
   if (!getString(payload.renderPrompt)) {
-    missing.push('renderPrompt')
+    missing.push("renderPrompt");
   }
 
   if (!getString(payload.previewSongSheetText)) {
-    missing.push('previewSongSheetText')
+    missing.push("previewSongSheetText");
   }
 
   if (!getString(payload.sectionGuideText)) {
-    missing.push('sectionGuideText')
+    missing.push("sectionGuideText");
   }
 
-  if (!Array.isArray(payload.songsheetLines) || payload.songsheetLines.length === 0) {
-    missing.push('songsheetLines')
+  if (
+    !Array.isArray(payload.songsheetLines) ||
+    payload.songsheetLines.length === 0
+  ) {
+    missing.push("songsheetLines");
   }
 
   if (!Array.isArray(payload.renderSteps) || payload.renderSteps.length === 0) {
-    missing.push('renderSteps')
+    missing.push("renderSteps");
   }
 
   if (payload.validation?.ready !== true) {
-    missing.push('validation.ready')
+    missing.push("validation.ready");
   }
 
   return {
@@ -287,33 +343,33 @@ function validateRendererPayload(payload: RendererPayload) {
     missing,
     detail:
       missing.length === 0
-        ? 'Renderer payload is ready for dry-run audio preview handoff.'
-        : `Renderer payload cannot be handed off yet. Missing or invalid: ${missing.join(', ')}.`,
-  }
+        ? "Renderer payload is ready for dry-run audio preview handoff."
+        : `Renderer payload cannot be handed off yet. Missing or invalid: ${missing.join(", ")}.`,
+  };
 }
 
 function buildDryRunRenderPlan(payload: RendererPayload) {
   const renderSteps = Array.isArray(payload.renderSteps)
     ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
-    : []
+    : [];
 
-  const timeline = buildDryRunTimeline(payload)
-  const cueSheet = buildDryRunCueSheet(payload, timeline)
+  const timeline = buildDryRunTimeline(payload);
+  const cueSheet = buildDryRunCueSheet(payload, timeline);
 
   return {
-    type: 'audio-preview-dry-run-render-plan',
+    type: "audio-preview-dry-run-render-plan",
     version: 1,
-    renderMode: 'guide-track-preview',
-    audioStatus: 'not-generated',
-    project: payload.project || 'Untitled project',
-    songVersion: payload.songVersion || 'Untitled song version',
-    chordVersion: payload.chordVersion || 'Untitled chord version',
-    key: payload.key || '',
-    tempo: payload.tempo || '',
-    groove: payload.groove || '',
-    instrumentation: payload.instrumentation || '',
-    countIn: payload.countIn || '',
-    vocalGuideStyle: payload.vocalGuideStyle || '',
+    renderMode: "guide-track-preview",
+    audioStatus: "not-generated",
+    project: payload.project || "Untitled project",
+    songVersion: payload.songVersion || "Untitled song version",
+    chordVersion: payload.chordVersion || "Untitled chord version",
+    key: payload.key || "",
+    tempo: payload.tempo || "",
+    groove: payload.groove || "",
+    instrumentation: payload.instrumentation || "",
+    countIn: payload.countIn || "",
+    vocalGuideStyle: payload.vocalGuideStyle || "",
     songsheetLineCount: Array.isArray(payload.songsheetLines)
       ? payload.songsheetLines.length
       : 0,
@@ -322,89 +378,89 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
     sections: renderSteps.map((step, index) => ({
       order: index + 1,
       section: step.section || `Section ${index + 1}`,
-      goal: step.goal || 'Preserve the section feel from the renderer payload.',
+      goal: step.goal || "Preserve the section feel from the renderer payload.",
       guitarInstruction:
         step.guitarInstruction ||
-        'Use sparse acoustic guitar as the main timing and harmony reference.',
+        "Use sparse acoustic guitar as the main timing and harmony reference.",
       vocalInstruction:
         step.vocalInstruction ||
-        'Use understated guide vocal or melody reference only.',
+        "Use understated guide vocal or melody reference only.",
       dynamicInstruction:
-        step.dynamicInstruction || 'Keep dynamics clear and rehearsal-focused.',
-      notes: step.notes || '',
+        step.dynamicInstruction || "Keep dynamics clear and rehearsal-focused.",
+      notes: step.notes || "",
     })),
     timeline,
     cueSheet,
     rendererInstructions: [
-      'This is a dry-run plan only. No audio file is generated.',
-      'Use the count-in, tempo, groove, placed songsheet, and section instructions as the render source.',
-      'Prioritize rehearsal usefulness, timing clarity, and chord/lyric alignment over production quality.',
+      "This is a dry-run plan only. No audio file is generated.",
+      "Use the count-in, tempo, groove, placed songsheet, and section instructions as the render source.",
+      "Prioritize rehearsal usefulness, timing clarity, and chord/lyric alignment over production quality.",
     ],
-  }
+  };
 }
 
 function validateDryRunRenderPlan(plan: {
-  type?: string
-  renderMode?: string
-  audioStatus?: string
-  sections?: unknown[]
-  timeline?: unknown[]
-  rendererInstructions?: unknown[]
-  songsheetLineCount?: number
-  renderStepCount?: number
-  timelineSectionCount?: number
+  type?: string;
+  renderMode?: string;
+  audioStatus?: string;
+  sections?: unknown[];
+  timeline?: unknown[];
+  rendererInstructions?: unknown[];
+  songsheetLineCount?: number;
+  renderStepCount?: number;
+  timelineSectionCount?: number;
 }) {
-  const missing: string[] = []
+  const missing: string[] = [];
 
-  if (plan.type !== 'audio-preview-dry-run-render-plan') {
-    missing.push('type')
+  if (plan.type !== "audio-preview-dry-run-render-plan") {
+    missing.push("type");
   }
 
-  if (plan.renderMode !== 'guide-track-preview') {
-    missing.push('renderMode')
+  if (plan.renderMode !== "guide-track-preview") {
+    missing.push("renderMode");
   }
 
-  if (plan.audioStatus !== 'not-generated') {
-    missing.push('audioStatus')
+  if (plan.audioStatus !== "not-generated") {
+    missing.push("audioStatus");
   }
 
   if (!Array.isArray(plan.sections) || plan.sections.length === 0) {
-    missing.push('sections')
+    missing.push("sections");
   }
 
   if (!Array.isArray(plan.timeline) || plan.timeline.length === 0) {
-    missing.push('timeline')
+    missing.push("timeline");
   }
 
   if (
     !Array.isArray(plan.rendererInstructions) ||
     plan.rendererInstructions.length === 0
   ) {
-    missing.push('rendererInstructions')
+    missing.push("rendererInstructions");
   }
 
   if (
-    typeof plan.songsheetLineCount !== 'number' ||
+    typeof plan.songsheetLineCount !== "number" ||
     !Number.isFinite(plan.songsheetLineCount) ||
     plan.songsheetLineCount <= 0
   ) {
-    missing.push('songsheetLineCount')
+    missing.push("songsheetLineCount");
   }
 
   if (
-    typeof plan.renderStepCount !== 'number' ||
+    typeof plan.renderStepCount !== "number" ||
     !Number.isFinite(plan.renderStepCount) ||
     plan.renderStepCount <= 0
   ) {
-    missing.push('renderStepCount')
+    missing.push("renderStepCount");
   }
 
   if (
-    typeof plan.timelineSectionCount !== 'number' ||
+    typeof plan.timelineSectionCount !== "number" ||
     !Number.isFinite(plan.timelineSectionCount) ||
     plan.timelineSectionCount <= 0
   ) {
-    missing.push('timelineSectionCount')
+    missing.push("timelineSectionCount");
   }
 
   return {
@@ -412,90 +468,90 @@ function validateDryRunRenderPlan(plan: {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run render plan contains render steps, timeline, renderer instructions, songsheet count, and section counts.'
-        : `Dry-run render plan is missing or invalid: ${missing.join(', ')}.`,
-  }
+        ? "Dry-run render plan contains render steps, timeline, renderer instructions, songsheet count, and section counts."
+        : `Dry-run render plan is missing or invalid: ${missing.join(", ")}.`,
+  };
 }
 
 function validateDryRunCueSheet(cueSheet: {
-  type?: string
-  timingStatus?: string
-  tempoBpm?: number
-  beatsPerBar?: number
-  totalEstimatedSeconds?: number
-  totalEstimatedBars?: number
-  sections?: unknown[]
+  type?: string;
+  timingStatus?: string;
+  tempoBpm?: number;
+  beatsPerBar?: number;
+  totalEstimatedSeconds?: number;
+  totalEstimatedBars?: number;
+  sections?: unknown[];
 }) {
-  const missing: string[] = []
+  const missing: string[] = [];
 
-  if (cueSheet.type !== 'audio-preview-dry-run-cue-sheet') {
-    missing.push('type')
+  if (cueSheet.type !== "audio-preview-dry-run-cue-sheet") {
+    missing.push("type");
   }
 
-  if (cueSheet.timingStatus !== 'estimated') {
-    missing.push('timingStatus')
+  if (cueSheet.timingStatus !== "estimated") {
+    missing.push("timingStatus");
   }
 
   if (
-    typeof cueSheet.tempoBpm !== 'number' ||
+    typeof cueSheet.tempoBpm !== "number" ||
     !Number.isFinite(cueSheet.tempoBpm) ||
     cueSheet.tempoBpm <= 0
   ) {
-    missing.push('tempoBpm')
+    missing.push("tempoBpm");
   }
 
   if (
-    typeof cueSheet.beatsPerBar !== 'number' ||
+    typeof cueSheet.beatsPerBar !== "number" ||
     !Number.isFinite(cueSheet.beatsPerBar) ||
     cueSheet.beatsPerBar <= 0
   ) {
-    missing.push('beatsPerBar')
+    missing.push("beatsPerBar");
   }
 
   if (
-    typeof cueSheet.totalEstimatedSeconds !== 'number' ||
+    typeof cueSheet.totalEstimatedSeconds !== "number" ||
     !Number.isFinite(cueSheet.totalEstimatedSeconds) ||
     cueSheet.totalEstimatedSeconds <= 0
   ) {
-    missing.push('totalEstimatedSeconds')
+    missing.push("totalEstimatedSeconds");
   }
 
   if (
-    typeof cueSheet.totalEstimatedBars !== 'number' ||
+    typeof cueSheet.totalEstimatedBars !== "number" ||
     !Number.isFinite(cueSheet.totalEstimatedBars) ||
     cueSheet.totalEstimatedBars <= 0
   ) {
-    missing.push('totalEstimatedBars')
+    missing.push("totalEstimatedBars");
   }
 
   if (!Array.isArray(cueSheet.sections) || cueSheet.sections.length === 0) {
-    missing.push('sections')
+    missing.push("sections");
   }
 
   const sectionTimingInvalid = Array.isArray(cueSheet.sections)
     ? cueSheet.sections.some((section) => {
-        if (!section || typeof section !== 'object' || Array.isArray(section)) {
-          return true
+        if (!section || typeof section !== "object" || Array.isArray(section)) {
+          return true;
         }
 
-        const record = section as Record<string, unknown>
+        const record = section as Record<string, unknown>;
 
         return (
-          typeof record.section !== 'string' ||
+          typeof record.section !== "string" ||
           !record.section.trim() ||
-          typeof record.estimatedBars !== 'number' ||
+          typeof record.estimatedBars !== "number" ||
           record.estimatedBars <= 0 ||
-          typeof record.estimatedSeconds !== 'number' ||
+          typeof record.estimatedSeconds !== "number" ||
           record.estimatedSeconds <= 0 ||
-          typeof record.startSeconds !== 'number' ||
-          typeof record.endSeconds !== 'number' ||
+          typeof record.startSeconds !== "number" ||
+          typeof record.endSeconds !== "number" ||
           record.endSeconds <= record.startSeconds
-        )
+        );
       })
-    : true
+    : true;
 
   if (sectionTimingInvalid) {
-    missing.push('sectionTiming')
+    missing.push("sectionTiming");
   }
 
   return {
@@ -503,11 +559,10 @@ function validateDryRunCueSheet(cueSheet: {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run cue sheet contains estimated section timing, total bars, total seconds, tempo, and meter.'
-        : `Dry-run cue sheet is missing or invalid: ${missing.join(', ')}.`,
-  }
+        ? "Dry-run cue sheet contains estimated section timing, total bars, total seconds, tempo, and meter."
+        : `Dry-run cue sheet is missing or invalid: ${missing.join(", ")}.`,
+  };
 }
-
 
 function buildDryRunRenderManifest({
   payload,
@@ -516,28 +571,28 @@ function buildDryRunRenderManifest({
   dryRunRenderPlanValidation,
   dryRunCueSheetValidation,
 }: {
-  payload: RendererPayload
-  renderJob: Record<string, unknown>
-  dryRunRenderPlan: Record<string, unknown>
-  dryRunRenderPlanValidation: Record<string, unknown>
-  dryRunCueSheetValidation: Record<string, unknown>
+  payload: RendererPayload;
+  renderJob: Record<string, unknown>;
+  dryRunRenderPlan: Record<string, unknown>;
+  dryRunRenderPlanValidation: Record<string, unknown>;
+  dryRunCueSheetValidation: Record<string, unknown>;
 }) {
   const cueSheet =
     dryRunRenderPlan.cueSheet &&
-    typeof dryRunRenderPlan.cueSheet === 'object' &&
+    typeof dryRunRenderPlan.cueSheet === "object" &&
     !Array.isArray(dryRunRenderPlan.cueSheet)
       ? (dryRunRenderPlan.cueSheet as Record<string, unknown>)
-      : null
+      : null;
 
   return {
-    type: 'audio-preview-dry-run-render-manifest',
+    type: "audio-preview-dry-run-render-manifest",
     version: 1,
-    manifestStatus: 'dry-run-ready',
-    audioStatus: 'not-generated',
+    manifestStatus: "dry-run-ready",
+    audioStatus: "not-generated",
     createdAt: new Date().toISOString(),
-    project: payload.project || 'Untitled project',
-    songVersion: payload.songVersion || 'Untitled song version',
-    chordVersion: payload.chordVersion || 'Untitled chord version',
+    project: payload.project || "Untitled project",
+    songVersion: payload.songVersion || "Untitled song version",
+    chordVersion: payload.chordVersion || "Untitled chord version",
     renderJob,
     validation: {
       rendererPayloadReady: payload.validation?.ready === true,
@@ -545,12 +600,12 @@ function buildDryRunRenderManifest({
       dryRunCueSheetReady: dryRunCueSheetValidation.ready === true,
     },
     sourceSummary: {
-      key: payload.key || '',
-      tempo: payload.tempo || '',
-      groove: payload.groove || '',
-      instrumentation: payload.instrumentation || '',
-      countIn: payload.countIn || '',
-      vocalGuideStyle: payload.vocalGuideStyle || '',
+      key: payload.key || "",
+      tempo: payload.tempo || "",
+      groove: payload.groove || "",
+      instrumentation: payload.instrumentation || "",
+      countIn: payload.countIn || "",
+      vocalGuideStyle: payload.vocalGuideStyle || "",
       songsheetLineCount: dryRunRenderPlan.songsheetLineCount || 0,
       renderStepCount: dryRunRenderPlan.renderStepCount || 0,
       timelineSectionCount: dryRunRenderPlan.timelineSectionCount || 0,
@@ -559,298 +614,293 @@ function buildDryRunRenderManifest({
           ? cueSheet.sections.length
           : 0,
       totalEstimatedSeconds:
-        cueSheet && typeof cueSheet.totalEstimatedSeconds === 'number'
+        cueSheet && typeof cueSheet.totalEstimatedSeconds === "number"
           ? cueSheet.totalEstimatedSeconds
           : 0,
       totalEstimatedBars:
-        cueSheet && typeof cueSheet.totalEstimatedBars === 'number'
+        cueSheet && typeof cueSheet.totalEstimatedBars === "number"
           ? cueSheet.totalEstimatedBars
           : 0,
     },
     rendererContract: {
-  contractStatus: 'dry-run-contract-ready',
-  rendererMode: 'guide-track-preview',
-  consumes: [
-    'rendererPayload',
-    'dryRunRenderPlan',
-    'dryRunCueSheet',
-    'expectedOutputs',
-  ],
-  produces: [
-    'guideTrackAudio',
-    'clickTrack',
-    'chordReferenceTrack',
-    'vocalGuideTrack',
-  ],
-  requiredBeforeRealRender: [
-    'Confirm cue sheet timings or replace estimates with final bar/time data.',
-    'Choose actual output audio format.',
-    'Connect an audio renderer capable of using the placed songsheet and section instructions.',
-    'Persist generated audio URLs after render completion.',
-  ],
-  safetyNotes: [
-    'Dry-run mode must not claim that audio has been generated.',
-    'All expected output slots should remain not-generated until a real renderer writes files.',
-  ],
-},
+      contractStatus: "dry-run-contract-ready",
+      rendererMode: "guide-track-preview",
+      consumes: [
+        "rendererPayload",
+        "dryRunRenderPlan",
+        "dryRunCueSheet",
+        "expectedOutputs",
+      ],
+      produces: [
+        "guideTrackAudio",
+        "clickTrack",
+        "chordReferenceTrack",
+        "vocalGuideTrack",
+      ],
+      requiredBeforeRealRender: [
+        "Confirm cue sheet timings or replace estimates with final bar/time data.",
+        "Choose actual output audio format.",
+        "Connect an audio renderer capable of using the placed songsheet and section instructions.",
+        "Persist generated audio URLs after render completion.",
+      ],
+      safetyNotes: [
+        "Dry-run mode must not claim that audio has been generated.",
+        "All expected output slots should remain not-generated until a real renderer writes files.",
+      ],
+    },
     expectedOutputs: {
-  guideTrackAudio: {
-    status: 'not-generated',
-    role: 'main-guide-track',
-    description:
-      'Combined rehearsal guide track using the placed songsheet, cue sheet, and render plan.',
-    suggestedFileName: 'guide-track-preview.wav',
-    format: 'unknown',
-    url: null,
-  },
-  clickTrack: {
-    status: 'not-generated',
-    role: 'timing-reference',
-    description:
-      'Simple timing reference aligned to the cue sheet and section timing estimates.',
-    suggestedFileName: 'click-track.wav',
-    format: 'unknown',
-    url: null,
-  },
-  chordReferenceTrack: {
-    status: 'not-generated',
-    role: 'chord-reference',
-    description:
-      'Sparse chord reference track for checking harmony and chord-change timing.',
-    suggestedFileName: 'chord-reference-track.wav',
-    format: 'unknown',
-    url: null,
-  },
-  vocalGuideTrack: {
-    status: 'not-generated',
-    role: 'vocal-guide-reference',
-    description:
-      'Optional simple vocal guide or melody-reference track for rehearsal use.',
-    suggestedFileName: 'vocal-guide-track.wav',
-    format: 'unknown',
-    url: null,
-  },
-},
+      guideTrackAudio: {
+        status: "not-generated",
+        role: "main-guide-track",
+        description:
+          "Combined rehearsal guide track using the placed songsheet, cue sheet, and render plan.",
+        suggestedFileName: "guide-track-preview.wav",
+        format: "unknown",
+        url: null,
+      },
+      clickTrack: {
+        status: "not-generated",
+        role: "timing-reference",
+        description:
+          "Simple timing reference aligned to the cue sheet and section timing estimates.",
+        suggestedFileName: "click-track.wav",
+        format: "unknown",
+        url: null,
+      },
+      chordReferenceTrack: {
+        status: "not-generated",
+        role: "chord-reference",
+        description:
+          "Sparse chord reference track for checking harmony and chord-change timing.",
+        suggestedFileName: "chord-reference-track.wav",
+        format: "unknown",
+        url: null,
+      },
+      vocalGuideTrack: {
+        status: "not-generated",
+        role: "vocal-guide-reference",
+        description:
+          "Optional simple vocal guide or melody-reference track for rehearsal use.",
+        suggestedFileName: "vocal-guide-track.wav",
+        format: "unknown",
+        url: null,
+      },
+    },
     notes: [
-      'This manifest describes a dry-run audio preview job only.',
-      'No audio files have been generated.',
-      'The expected output slots are placeholders for a future renderer.',
+      "This manifest describes a dry-run audio preview job only.",
+      "No audio files have been generated.",
+      "The expected output slots are placeholders for a future renderer.",
     ],
-  }
+  };
 }
 
-
 function validateDryRunRenderManifest(manifest: {
-  type?: string
-  manifestStatus?: string
-  audioStatus?: string
-  renderJob?: unknown
-  validation?: unknown
-  sourceSummary?: unknown
-  rendererContract?: unknown
-  expectedOutputs?: unknown
+  type?: string;
+  manifestStatus?: string;
+  audioStatus?: string;
+  renderJob?: unknown;
+  validation?: unknown;
+  sourceSummary?: unknown;
+  rendererContract?: unknown;
+  expectedOutputs?: unknown;
 }) {
-  const missing: string[] = []
+  const missing: string[] = [];
 
-  if (manifest.type !== 'audio-preview-dry-run-render-manifest') {
-    missing.push('type')
+  if (manifest.type !== "audio-preview-dry-run-render-manifest") {
+    missing.push("type");
   }
 
-  if (manifest.manifestStatus !== 'dry-run-ready') {
-    missing.push('manifestStatus')
+  if (manifest.manifestStatus !== "dry-run-ready") {
+    missing.push("manifestStatus");
   }
 
-  if (manifest.audioStatus !== 'not-generated') {
-    missing.push('audioStatus')
+  if (manifest.audioStatus !== "not-generated") {
+    missing.push("audioStatus");
   }
 
   if (
     !manifest.renderJob ||
-    typeof manifest.renderJob !== 'object' ||
+    typeof manifest.renderJob !== "object" ||
     Array.isArray(manifest.renderJob)
   ) {
-    missing.push('renderJob')
+    missing.push("renderJob");
   }
 
   const validation =
     manifest.validation &&
-    typeof manifest.validation === 'object' &&
+    typeof manifest.validation === "object" &&
     !Array.isArray(manifest.validation)
       ? (manifest.validation as Record<string, unknown>)
-      : null
+      : null;
 
   if (!validation) {
-    missing.push('validation')
+    missing.push("validation");
   } else {
     if (validation.rendererPayloadReady !== true) {
-      missing.push('validation.rendererPayloadReady')
+      missing.push("validation.rendererPayloadReady");
     }
 
     if (validation.dryRunRenderPlanReady !== true) {
-      missing.push('validation.dryRunRenderPlanReady')
+      missing.push("validation.dryRunRenderPlanReady");
     }
 
     if (validation.dryRunCueSheetReady !== true) {
-      missing.push('validation.dryRunCueSheetReady')
+      missing.push("validation.dryRunCueSheetReady");
     }
   }
 
   const sourceSummary =
     manifest.sourceSummary &&
-    typeof manifest.sourceSummary === 'object' &&
+    typeof manifest.sourceSummary === "object" &&
     !Array.isArray(manifest.sourceSummary)
       ? (manifest.sourceSummary as Record<string, unknown>)
-      : null
+      : null;
 
   if (!sourceSummary) {
-    missing.push('sourceSummary')
+    missing.push("sourceSummary");
   } else {
     if (
-      typeof sourceSummary.songsheetLineCount !== 'number' ||
+      typeof sourceSummary.songsheetLineCount !== "number" ||
       sourceSummary.songsheetLineCount <= 0
     ) {
-      missing.push('sourceSummary.songsheetLineCount')
+      missing.push("sourceSummary.songsheetLineCount");
     }
 
     if (
-      typeof sourceSummary.renderStepCount !== 'number' ||
+      typeof sourceSummary.renderStepCount !== "number" ||
       sourceSummary.renderStepCount <= 0
     ) {
-      missing.push('sourceSummary.renderStepCount')
+      missing.push("sourceSummary.renderStepCount");
     }
 
     if (
-      typeof sourceSummary.timelineSectionCount !== 'number' ||
+      typeof sourceSummary.timelineSectionCount !== "number" ||
       sourceSummary.timelineSectionCount <= 0
     ) {
-      missing.push('sourceSummary.timelineSectionCount')
+      missing.push("sourceSummary.timelineSectionCount");
     }
 
     if (
-      typeof sourceSummary.cueSheetSectionCount !== 'number' ||
+      typeof sourceSummary.cueSheetSectionCount !== "number" ||
       sourceSummary.cueSheetSectionCount <= 0
     ) {
-      missing.push('sourceSummary.cueSheetSectionCount')
+      missing.push("sourceSummary.cueSheetSectionCount");
     }
 
     if (
-      typeof sourceSummary.totalEstimatedSeconds !== 'number' ||
+      typeof sourceSummary.totalEstimatedSeconds !== "number" ||
       sourceSummary.totalEstimatedSeconds <= 0
     ) {
-      missing.push('sourceSummary.totalEstimatedSeconds')
+      missing.push("sourceSummary.totalEstimatedSeconds");
     }
 
     if (
-      typeof sourceSummary.totalEstimatedBars !== 'number' ||
+      typeof sourceSummary.totalEstimatedBars !== "number" ||
       sourceSummary.totalEstimatedBars <= 0
     ) {
-      missing.push('sourceSummary.totalEstimatedBars')
+      missing.push("sourceSummary.totalEstimatedBars");
     }
   }
 
   const rendererContract =
-  manifest.rendererContract &&
-  typeof manifest.rendererContract === 'object' &&
-  !Array.isArray(manifest.rendererContract)
-    ? (manifest.rendererContract as Record<string, unknown>)
-    : null
+    manifest.rendererContract &&
+    typeof manifest.rendererContract === "object" &&
+    !Array.isArray(manifest.rendererContract)
+      ? (manifest.rendererContract as Record<string, unknown>)
+      : null;
 
-if (!rendererContract) {
-  missing.push('rendererContract')
-} else {
-  if (rendererContract.contractStatus !== 'dry-run-contract-ready') {
-    missing.push('rendererContract.contractStatus')
-  }
+  if (!rendererContract) {
+    missing.push("rendererContract");
+  } else {
+    if (rendererContract.contractStatus !== "dry-run-contract-ready") {
+      missing.push("rendererContract.contractStatus");
+    }
 
-  if (rendererContract.rendererMode !== 'guide-track-preview') {
-    missing.push('rendererContract.rendererMode')
-  }
+    if (rendererContract.rendererMode !== "guide-track-preview") {
+      missing.push("rendererContract.rendererMode");
+    }
 
-  if (
-    !Array.isArray(rendererContract.consumes) ||
-    rendererContract.consumes.length === 0
-  ) {
-    missing.push('rendererContract.consumes')
-  }
+    if (
+      !Array.isArray(rendererContract.consumes) ||
+      rendererContract.consumes.length === 0
+    ) {
+      missing.push("rendererContract.consumes");
+    }
 
-  if (
-    !Array.isArray(rendererContract.produces) ||
-    rendererContract.produces.length === 0
-  ) {
-    missing.push('rendererContract.produces')
-  }
+    if (
+      !Array.isArray(rendererContract.produces) ||
+      rendererContract.produces.length === 0
+    ) {
+      missing.push("rendererContract.produces");
+    }
 
-  if (
-    !Array.isArray(rendererContract.requiredBeforeRealRender) ||
-    rendererContract.requiredBeforeRealRender.length === 0
-  ) {
-    missing.push('rendererContract.requiredBeforeRealRender')
-  }
+    if (
+      !Array.isArray(rendererContract.requiredBeforeRealRender) ||
+      rendererContract.requiredBeforeRealRender.length === 0
+    ) {
+      missing.push("rendererContract.requiredBeforeRealRender");
+    }
 
-  if (
-    !Array.isArray(rendererContract.safetyNotes) ||
-    rendererContract.safetyNotes.length === 0
-  ) {
-    missing.push('rendererContract.safetyNotes')
+    if (
+      !Array.isArray(rendererContract.safetyNotes) ||
+      rendererContract.safetyNotes.length === 0
+    ) {
+      missing.push("rendererContract.safetyNotes");
+    }
   }
-}
 
   const expectedOutputs =
-  manifest.expectedOutputs &&
-  typeof manifest.expectedOutputs === 'object' &&
-  !Array.isArray(manifest.expectedOutputs)
-    ? (manifest.expectedOutputs as Record<string, unknown>)
-    : null
+    manifest.expectedOutputs &&
+    typeof manifest.expectedOutputs === "object" &&
+    !Array.isArray(manifest.expectedOutputs)
+      ? (manifest.expectedOutputs as Record<string, unknown>)
+      : null;
 
-if (!expectedOutputs) {
-  missing.push('expectedOutputs')
-} else {
-  const outputSlots = Object.values(expectedOutputs).filter(
-    (item): item is Record<string, unknown> =>
-      Boolean(item) && typeof item === 'object' && !Array.isArray(item),
-  )
+  if (!expectedOutputs) {
+    missing.push("expectedOutputs");
+  } else {
+    const outputSlots = Object.values(expectedOutputs).filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === "object" && !Array.isArray(item),
+    );
 
-  if (outputSlots.length === 0) {
-    missing.push('expectedOutputs.slots')
+    if (outputSlots.length === 0) {
+      missing.push("expectedOutputs.slots");
+    }
+
+    const invalidOutputStatus = outputSlots.some(
+      (slot) => slot.status !== "not-generated",
+    );
+
+    if (invalidOutputStatus) {
+      missing.push("expectedOutputs.status");
+    }
+
+    const missingOutputMetadata = outputSlots.some((slot) => {
+      return (
+        typeof slot.role !== "string" ||
+        !slot.role.trim() ||
+        typeof slot.description !== "string" ||
+        !slot.description.trim() ||
+        typeof slot.suggestedFileName !== "string" ||
+        !slot.suggestedFileName.trim()
+      );
+    });
+
+    if (missingOutputMetadata) {
+      missing.push("expectedOutputs.metadata");
+    }
   }
-
-  const invalidOutputStatus = outputSlots.some(
-    (slot) => slot.status !== 'not-generated',
-  )
-
-  if (invalidOutputStatus) {
-    missing.push('expectedOutputs.status')
-  }
-
-  const missingOutputMetadata = outputSlots.some((slot) => {
-    return (
-      typeof slot.role !== 'string' ||
-      !slot.role.trim() ||
-      typeof slot.description !== 'string' ||
-      !slot.description.trim() ||
-      typeof slot.suggestedFileName !== 'string' ||
-      !slot.suggestedFileName.trim()
-    )
-  })
-
-  if (missingOutputMetadata) {
-    missing.push('expectedOutputs.metadata')
-  }
-}
 
   return {
     ready: missing.length === 0,
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run render manifest contains validated source summary, renderer contract, expected output placeholders, output metadata, and not-generated audio status.'
-        : `Dry-run render manifest is missing or invalid: ${missing.join(', ')}.`,
-      }
-    }
-
-
-
-
+        ? "Dry-run render manifest contains validated source summary, renderer contract, expected output placeholders, output metadata, and not-generated audio status."
+        : `Dry-run render manifest is missing or invalid: ${missing.join(", ")}.`,
+  };
+}
 
 function buildDryRunHandoffBundle({
   renderJob,
@@ -858,126 +908,128 @@ function buildDryRunHandoffBundle({
   dryRunCueSheetValidation,
   dryRunRenderManifestValidation,
 }: {
-  renderJob: Record<string, unknown>
-  dryRunRenderPlanValidation: Record<string, unknown>
-  dryRunCueSheetValidation: Record<string, unknown>
-  dryRunRenderManifestValidation: Record<string, unknown>
+  renderJob: Record<string, unknown>;
+  dryRunRenderPlanValidation: Record<string, unknown>;
+  dryRunCueSheetValidation: Record<string, unknown>;
+  dryRunRenderManifestValidation: Record<string, unknown>;
 }) {
   const allValidationsPassed =
     dryRunRenderPlanValidation.ready === true &&
     dryRunCueSheetValidation.ready === true &&
-    dryRunRenderManifestValidation.ready === true
+    dryRunRenderManifestValidation.ready === true;
 
   return {
-    type: 'audio-preview-dry-run-handoff-bundle',
+    type: "audio-preview-dry-run-handoff-bundle",
     version: 1,
     handoffStatus: allValidationsPassed
-      ? 'dry-run-handoff-ready'
-      : 'dry-run-handoff-needs-review',
-    audioStatus: 'not-generated',
+      ? "dry-run-handoff-ready"
+      : "dry-run-handoff-needs-review",
+    audioStatus: "not-generated",
     createdAt: new Date().toISOString(),
     renderJobId:
-      typeof renderJob.id === 'string' ? renderJob.id : 'unknown-render-job',
+      typeof renderJob.id === "string" ? renderJob.id : "unknown-render-job",
     includedArtifacts: [
-      'rendererPayload',
-      'dryRunRenderPlan',
-      'dryRunCueSheet',
-      'dryRunRenderManifest',
-      'rendererContract',
-      'expectedOutputs',
-      'validationResults',
+      "rendererPayload",
+      "dryRunRenderPlan",
+      "dryRunCueSheet",
+      "dryRunRenderManifest",
+      "rendererContract",
+      "expectedOutputs",
+      "validationResults",
     ],
     validationSummary: {
       dryRunRenderPlanReady: dryRunRenderPlanValidation.ready === true,
       dryRunCueSheetReady: dryRunCueSheetValidation.ready === true,
-      dryRunRenderManifestReady:
-        dryRunRenderManifestValidation.ready === true,
+      dryRunRenderManifestReady: dryRunRenderManifestValidation.ready === true,
       allValidationsPassed,
     },
     nextActions: allValidationsPassed
       ? [
-          'Review the dry-run cue sheet timing estimates.',
-          'Choose real audio output formats.',
-          'Connect a renderer that can consume the manifest contract.',
-          'Keep all output slots not-generated until files are actually written.',
+          "Review the dry-run cue sheet timing estimates.",
+          "Choose real audio output formats.",
+          "Connect a renderer that can consume the manifest contract.",
+          "Keep all output slots not-generated until files are actually written.",
         ]
       : [
-          'Review validation messages before connecting a renderer.',
-          'Do not generate or claim audio until the handoff bundle is ready.',
+          "Review validation messages before connecting a renderer.",
+          "Do not generate or claim audio until the handoff bundle is ready.",
         ],
     notes: [
-      'This is a dry-run handoff bundle only.',
-      'No audio files have been generated.',
-      'This bundle summarises renderer-facing artefacts for future integration.',
+      "This is a dry-run handoff bundle only.",
+      "No audio files have been generated.",
+      "This bundle summarises renderer-facing artefacts for future integration.",
     ],
-  }
+  };
 }
 
 function validateDryRunHandoffBundle(bundle: {
-  type?: unknown
-  handoffStatus?: unknown
-  audioStatus?: unknown
-  renderJobId?: unknown
-  includedArtifacts?: unknown
-  validationSummary?: unknown
-  nextActions?: unknown
-  notes?: unknown
+  type?: unknown;
+  handoffStatus?: unknown;
+  audioStatus?: unknown;
+  renderJobId?: unknown;
+  includedArtifacts?: unknown;
+  validationSummary?: unknown;
+  nextActions?: unknown;
+  notes?: unknown;
 }) {
-  const missing: string[] = []
+  const missing: string[] = [];
 
-  if (bundle.type !== 'audio-preview-dry-run-handoff-bundle') {
-    missing.push('type')
+  if (bundle.type !== "audio-preview-dry-run-handoff-bundle") {
+    missing.push("type");
   }
 
-  if (bundle.handoffStatus !== 'dry-run-handoff-ready') {
-    missing.push('handoffStatus')
+  if (bundle.handoffStatus !== "dry-run-handoff-ready") {
+    missing.push("handoffStatus");
   }
 
-  if (bundle.audioStatus !== 'not-generated') {
-    missing.push('audioStatus')
+  if (bundle.audioStatus !== "not-generated") {
+    missing.push("audioStatus");
   }
 
-  if (typeof bundle.renderJobId !== 'string' || !bundle.renderJobId.trim()) {
-    missing.push('renderJobId')
+  if (typeof bundle.renderJobId !== "string" || !bundle.renderJobId.trim()) {
+    missing.push("renderJobId");
   }
 
-  if (!Array.isArray(bundle.includedArtifacts) || bundle.includedArtifacts.length === 0) {
-    missing.push('includedArtifacts')
+  if (
+    !Array.isArray(bundle.includedArtifacts) ||
+    bundle.includedArtifacts.length === 0
+  ) {
+    missing.push("includedArtifacts");
   }
 
   const validationSummary =
     bundle.validationSummary &&
-    typeof bundle.validationSummary === 'object' &&
+    typeof bundle.validationSummary === "object" &&
     !Array.isArray(bundle.validationSummary)
       ? (bundle.validationSummary as Record<string, unknown>)
-      : null
+      : null;
 
   if (!validationSummary) {
-    missing.push('validationSummary')
+    missing.push("validationSummary");
   } else {
     if (validationSummary.dryRunRenderPlanReady !== true) {
-      missing.push('validationSummary.dryRunRenderPlanReady')
+      missing.push("validationSummary.dryRunRenderPlanReady");
     }
 
     if (validationSummary.dryRunCueSheetReady !== true) {
-      missing.push('validationSummary.dryRunCueSheetReady')
+      missing.push("validationSummary.dryRunCueSheetReady");
     }
 
     if (validationSummary.dryRunRenderManifestReady !== true) {
-      missing.push('validationSummary.dryRunRenderManifestReady')
+      missing.push("validationSummary.dryRunRenderManifestReady");
     }
 
     if (validationSummary.allValidationsPassed !== true) {
-      missing.push('validationSummary.allValidationsPassed')
+      missing.push("validationSummary.allValidationsPassed");
     }
   }
 
   if (!Array.isArray(bundle.nextActions) || bundle.nextActions.length === 0) {
-    missing.push('nextActions')
+    missing.push("nextActions");
   }
 
   if (!Array.isArray(bundle.notes) || bundle.notes.length === 0) {
-    missing.push('notes')
+    missing.push("notes");
   }
 
   return {
@@ -985,9 +1037,9 @@ function validateDryRunHandoffBundle(bundle: {
     missing,
     detail:
       missing.length === 0
-        ? 'Dry-run handoff bundle is validated and confirms no audio has been generated.'
-        : `Dry-run handoff bundle needs review: ${missing.join(', ')}`,
-  }
+        ? "Dry-run handoff bundle is validated and confirms no audio has been generated."
+        : `Dry-run handoff bundle needs review: ${missing.join(", ")}`,
+  };
 }
 
 function buildDryRunArtifactPackage({
@@ -1000,672 +1052,669 @@ function buildDryRunArtifactPackage({
   dryRunHandoffBundle,
   dryRunHandoffBundleValidation,
 }: {
-  renderJob: Record<string, unknown>
-  dryRunRenderPlan: Record<string, unknown>
-  dryRunRenderPlanValidation: Record<string, unknown>
-  dryRunCueSheetValidation: Record<string, unknown>
-  dryRunRenderManifest: Record<string, unknown>
-  dryRunRenderManifestValidation: Record<string, unknown>
-  dryRunHandoffBundle: Record<string, unknown>
-  dryRunHandoffBundleValidation: Record<string, unknown>
+  renderJob: Record<string, unknown>;
+  dryRunRenderPlan: Record<string, unknown>;
+  dryRunRenderPlanValidation: Record<string, unknown>;
+  dryRunCueSheetValidation: Record<string, unknown>;
+  dryRunRenderManifest: Record<string, unknown>;
+  dryRunRenderManifestValidation: Record<string, unknown>;
+  dryRunHandoffBundle: Record<string, unknown>;
+  dryRunHandoffBundleValidation: Record<string, unknown>;
 }) {
   return {
-    type: 'audio-preview-dry-run-artifact-package',
+    type: "audio-preview-dry-run-artifact-package",
     version: 1,
     packageStatus:
       dryRunHandoffBundleValidation.ready === true
-        ? 'dry-run-package-ready'
-        : 'dry-run-package-needs-review',
-    audioStatus: 'not-generated',
+        ? "dry-run-package-ready"
+        : "dry-run-package-needs-review",
+    audioStatus: "not-generated",
     createdAt: new Date().toISOString(),
     packageContents: [
-      'renderJob',
-      'dryRunRenderPlan',
-      'dryRunRenderPlanValidation',
-      'dryRunCueSheetValidation',
-      'dryRunRenderManifest',
-      'dryRunRenderManifestValidation',
-      'dryRunHandoffBundle',
-      'dryRunHandoffBundleValidation',
+      "renderJob",
+      "dryRunRenderPlan",
+      "dryRunRenderPlanValidation",
+      "dryRunCueSheetValidation",
+      "dryRunRenderManifest",
+      "dryRunRenderManifestValidation",
+      "dryRunHandoffBundle",
+      "dryRunHandoffBundleValidation",
     ],
     realRenderReadiness: {
       readyForRealRender: false,
-      readinessStatus: 'blocked-until-renderer-connected',
+      readinessStatus: "blocked-until-renderer-connected",
       blockers: [
-        'No real audio renderer is connected yet.',
-        'Output audio format has not been selected.',
-        'Generated audio file storage has not been configured.',
-        'Cue sheet timings are still estimated and need final confirmation before real rendering.',
+        "No real audio renderer is connected yet.",
+        "Output audio format has not been selected.",
+        "Generated audio file storage has not been configured.",
+        "Cue sheet timings are still estimated and need final confirmation before real rendering.",
       ],
       requiredDecisions: [
-        'Choose renderer implementation.',
-        'Choose audio output format.',
-        'Choose generated file storage location.',
-        'Decide whether to render guide track, click track, chord reference track, vocal guide track, or all outputs.',
+        "Choose renderer implementation.",
+        "Choose audio output format.",
+        "Choose generated file storage location.",
+        "Decide whether to render guide track, click track, chord reference track, vocal guide track, or all outputs.",
       ],
       safetyNotes: [
-        'A validated dry-run artefact package is not the same as generated audio.',
-        'Do not mark any expected output as generated until a real renderer writes and stores the file.',
+        "A validated dry-run artefact package is not the same as generated audio.",
+        "Do not mark any expected output as generated until a real renderer writes and stores the file.",
       ],
     },
     renderTargets: {
-  targetStatus: 'dry-run-targets-declared',
-  selectedOutputs: [
-    {
-      key: 'guideTrackAudio',
-      label: 'Guide track audio',
-      priority: 1,
-      selected: true,
-      reason:
-        'Primary rehearsal output combining placed songsheet, render plan, cue sheet, and performance guidance.',
-    },
-    {
-      key: 'clickTrack',
-      label: 'Click track',
-      priority: 2,
-      selected: true,
-      reason:
-        'Timing reference for checking section lengths, count-in, and cue sheet estimates.',
-    },
-    {
-      key: 'chordReferenceTrack',
-      label: 'Chord reference track',
-      priority: 3,
-      selected: true,
-      reason:
-        'Sparse harmony reference for checking chord changes and song structure.',
-    },
-    {
-      key: 'vocalGuideTrack',
-      label: 'Vocal guide track',
-      priority: 4,
-      selected: false,
-      reason:
-        'Optional future melody or vocal-reference output; left off by default until a vocal guide strategy is chosen.',
-    },
-  ],
-  notes: [
-    'Render targets are declared for future renderer integration only.',
-    'Selected targets must remain not-generated until a real renderer creates and stores audio files.',
-  ],
-},
-guideTrackRenderRecipe: {
-  recipeStatus: 'dry-run-guide-track-recipe-declared',
-  targetKey: 'guideTrackAudio',
-  outputStatus: 'not-generated',
-  rendererRequirement:
-    'Future renderer must create an audible guide track from the validated preview spec, render plan, cue sheet, and chord-aware payload.',
-  countIn: {
-    enabled: true,
-    bars: 1,
-    description:
-      'Add a one-bar count-in before the first musical section so the performer can enter confidently.',
-  },
-  timing: {
-    tempoSource: 'audioPreviewSpec',
-    sectionTimingSource: 'dryRunCueSheet',
-    description:
-      'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
-  },
-  musicalBed: {
-    primaryInstrument: 'warm acoustic guitar',
-    supportInstruments: [
-      'soft bass reference',
-      'light brushed percussion or click-supported pulse',
-      'subtle pad only if needed for section continuity',
-    ],
-    description:
-      'Create a simple, performance-focused guide bed that supports rehearsal without over-producing the song.',
-  },
-  chordHandling: {
-    source: 'rendererPayload.chordSections',
-    description:
-      'Follow the chord section structure from the renderer payload. Chord changes should be clear enough for rehearsal and arrangement testing.',
-  },
-  vocalGuide: {
-    status: 'placeholder-only',
-    description:
-      'No generated vocal audio is produced in dry run. Future renderer may add a simple melody guide only when a melody source exists.',
-  },
-  mixPriorities: [
-    'Keep rhythm and chord changes clear.',
-    'Keep the arrangement sparse enough for songwriting decisions.',
-    'Avoid final-production polish at preview stage.',
-    'Make the output useful for rehearsal, revision, and song-structure testing.',
-  ],
-  completionCriteria: [
-    'Audio file exists.',
-    'Audio duration matches the cue-sheet structure closely enough for rehearsal.',
-    'Count-in is present when enabled.',
-    'Chord changes are audible or clearly implied.',
-    'Output file path or storage reference is recorded in the artefact package.',
-  ],
-},
-
-
-  clickTrackRenderRecipe: {
-    recipeStatus: 'dry-run-click-track-recipe-declared',
-    targetKey: 'clickTrack',
-    outputStatus: 'not-generated',
-    rendererRequirement:
-      'Future renderer must create a timing-only click track from the validated preview tempo, cue sheet, and render plan.',
-    countIn: {
-      enabled: true,
-      bars: 1,
-      description:
-        'Use the same one-bar count-in as the guide track so all future preview outputs align.',
-    },
-    timing: {
-      tempoSource: 'audioPreviewSpec',
-      sectionTimingSource: 'dryRunCueSheet',
-      description:
-        'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
-    },
-    clickSound: {
-      downbeatEmphasis: true,
-      subdivision: 'quarter-note',
-      description:
-        'Use a clear downbeat accent and simple quarter-note pulse suitable for rehearsal and structure testing.',
-    },
-    sectionMarkers: {
-      enabled: true,
-      description:
-        'Future renderer may add subtle section marker tones or metadata at section boundaries, but dry run only declares the requirement.',
-    },
-    mixPriorities: [
-      'Keep timing clear and uncluttered.',
-      'Make downbeats easy to identify.',
-      'Avoid musical arrangement elements in the click-only output.',
-      'Keep the click track aligned with the guide-track count-in and cue sheet.',
-    ],
-    completionCriteria: [
-      'Audio file exists.',
-      'Click starts after the declared count-in.',
-      'Tempo matches the preview spec.',
-      'Section length follows the cue-sheet structure.',
-      'Output file path or storage reference is recorded in the artefact package.',
-    ],
-  },
-
-  vocalGuideRenderRecipe: {
-  recipeStatus: 'dry-run-vocal-guide-recipe-declared',
-  targetKey: 'vocalGuideTrack',
-  targetSelection: 'optional',
-  outputStatus: 'not-generated',
-  rendererRequirement:
-    'Future renderer must create a vocal guide only after a melody source, vocal guide strategy, and performer-safe range have been confirmed.',
-  activationRequirements: [
-    'A melody source exists.',
-    'A vocal guide strategy has been selected.',
-    'The target vocal range is confirmed for the performer.',
-    'Lyrics-to-section alignment has been reviewed.',
-  ],
-  countIn: {
-    enabled: true,
-    bars: 1,
-    description:
-      'Use the same one-bar count-in as the other preview outputs so all future tracks align.',
-  },
-  timing: {
-    tempoSource: 'audioPreviewSpec',
-    sectionTimingSource: 'dryRunCueSheet',
-    description:
-      'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
-  },
-  melodySource: {
-    status: 'not-provided',
-    acceptedSources: [
-      'manual melody notes',
-      'recorded scratch vocal',
-      'MIDI melody line',
-      'approved generated melody contour',
-    ],
-    description:
-      'Dry run does not invent a vocal melody. A future renderer must wait for an explicit melody source before creating vocal guide audio.',
-  },
-  vocalStyle: {
-    status: 'not-selected',
-    defaultReference:
-      'clear, simple guide vocal or guide synth suitable for rehearsal only',
-    description:
-      'The future vocal guide should support songwriting decisions, not imitate a final artist performance.',
-  },
-  mixPriorities: [
-    'Keep the vocal guide clear and simple.',
-    'Avoid final-production vocal styling.',
-    'Do not generate a melody unless a melody source is supplied.',
-    'Keep the vocal guide aligned with the count-in, cue sheet, and guide track.',
-  ],
-  completionCriteria: [
-    'Audio file exists only after the optional target is enabled.',
-    'Melody source is recorded in the artefact package.',
-    'Vocal guide stays within the confirmed performer range.',
-    'Lyrics align with the cue-sheet section structure.',
-    'Output file path or storage reference is recorded in the artefact package.',
-  ],
-},
-
-  chordReferenceRenderRecipe: {
-  recipeStatus: 'dry-run-chord-reference-recipe-declared',
-  targetKey: 'chordReferenceTrack',
-  outputStatus: 'not-generated',
-  rendererRequirement:
-    'Future renderer must create a sparse chord-reference track from the renderer payload chord sections, cue sheet, and render plan.',
-  countIn: {
-    enabled: true,
-    bars: 1,
-    description:
-      'Use the same one-bar count-in as the guide and click tracks so all future preview outputs align.',
-  },
-  timing: {
-    tempoSource: 'audioPreviewSpec',
-    sectionTimingSource: 'dryRunCueSheet',
-    description:
-      'Use the requested preview tempo and cue-sheet section order as the timing source of truth.',
-  },
-  chordSource: {
-    source: 'rendererPayload.chordSections',
-    description:
-      'Use chord sections from the renderer payload as the source of truth for harmony changes.',
-  },
-  voicing: {
-    primaryInstrument: 'clean acoustic guitar or simple piano',
-    density: 'sparse',
-    description:
-      'Play clear chord changes with minimal rhythmic decoration so harmony can be checked quickly.',
-  },
-  sectionMarkers: {
-    enabled: true,
-    description:
-      'Future renderer may add subtle section markers or metadata at section boundaries to help review song structure.',
-  },
-  mixPriorities: [
-    'Make chord changes clear.',
-    'Keep the harmonic reference sparse and uncluttered.',
-    'Avoid final-production arrangement detail.',
-    'Keep the chord reference aligned with the count-in, cue sheet, and click track.',
-  ],
-  completionCriteria: [
-    'Audio file exists.',
-    'Chord changes follow the renderer payload chord sections.',
-    'Tempo matches the preview spec.',
-    'Section length follows the cue-sheet structure.',
-    'Output file path or storage reference is recorded in the artefact package.',
-  ],
-},
-expectedOutputFiles: {
-  outputStatus: 'not-generated',
-  storageStatus: 'not-configured',
-  formatStatus: 'not-selected',
-  outputs: [
-    {
-      key: 'guideTrackAudio',
-      label: 'Guide track audio',
-      selected: true,
-      status: 'not-generated',
-      requiredBeforeGenerated: [
-        'Real renderer is connected.',
-        'Audio output format is selected.',
-        'Storage location is configured.',
-        'Guide-track render recipe is accepted.',
+      targetStatus: "dry-run-targets-declared",
+      selectedOutputs: [
+        {
+          key: "guideTrackAudio",
+          label: "Guide track audio",
+          priority: 1,
+          selected: true,
+          reason:
+            "Primary rehearsal output combining placed songsheet, render plan, cue sheet, and performance guidance.",
+        },
+        {
+          key: "clickTrack",
+          label: "Click track",
+          priority: 2,
+          selected: true,
+          reason:
+            "Timing reference for checking section lengths, count-in, and cue sheet estimates.",
+        },
+        {
+          key: "chordReferenceTrack",
+          label: "Chord reference track",
+          priority: 3,
+          selected: true,
+          reason:
+            "Sparse harmony reference for checking chord changes and song structure.",
+        },
+        {
+          key: "vocalGuideTrack",
+          label: "Vocal guide track",
+          priority: 4,
+          selected: false,
+          reason:
+            "Optional future melody or vocal-reference output; left off by default until a vocal guide strategy is chosen.",
+        },
       ],
-      file: null,
-    },
-    {
-      key: 'clickTrack',
-      label: 'Click track',
-      selected: true,
-      status: 'not-generated',
-      requiredBeforeGenerated: [
-        'Real renderer is connected.',
-        'Audio output format is selected.',
-        'Storage location is configured.',
-        'Click-track render recipe is accepted.',
+      notes: [
+        "Render targets are declared for future renderer integration only.",
+        "Selected targets must remain not-generated until a real renderer creates and stores audio files.",
       ],
-      file: null,
     },
-    {
-      key: 'chordReferenceTrack',
-      label: 'Chord reference track',
-      selected: true,
-      status: 'not-generated',
-      requiredBeforeGenerated: [
-        'Real renderer is connected.',
-        'Audio output format is selected.',
-        'Storage location is configured.',
-        'Chord-reference render recipe is accepted.',
+    guideTrackRenderRecipe: {
+      recipeStatus: "dry-run-guide-track-recipe-declared",
+      targetKey: "guideTrackAudio",
+      outputStatus: "not-generated",
+      rendererRequirement:
+        "Future renderer must create an audible guide track from the validated preview spec, render plan, cue sheet, and chord-aware payload.",
+      countIn: {
+        enabled: true,
+        bars: 1,
+        description:
+          "Add a one-bar count-in before the first musical section so the performer can enter confidently.",
+      },
+      timing: {
+        tempoSource: "audioPreviewSpec",
+        sectionTimingSource: "dryRunCueSheet",
+        description:
+          "Use the requested preview tempo and cue-sheet section order as the timing source of truth.",
+      },
+      musicalBed: {
+        primaryInstrument: "warm acoustic guitar",
+        supportInstruments: [
+          "soft bass reference",
+          "light brushed percussion or click-supported pulse",
+          "subtle pad only if needed for section continuity",
+        ],
+        description:
+          "Create a simple, performance-focused guide bed that supports rehearsal without over-producing the song.",
+      },
+      chordHandling: {
+        source: "rendererPayload.chordSections",
+        description:
+          "Follow the chord section structure from the renderer payload. Chord changes should be clear enough for rehearsal and arrangement testing.",
+      },
+      vocalGuide: {
+        status: "placeholder-only",
+        description:
+          "No generated vocal audio is produced in dry run. Future renderer may add a simple melody guide only when a melody source exists.",
+      },
+      mixPriorities: [
+        "Keep rhythm and chord changes clear.",
+        "Keep the arrangement sparse enough for songwriting decisions.",
+        "Avoid final-production polish at preview stage.",
+        "Make the output useful for rehearsal, revision, and song-structure testing.",
       ],
-      file: null,
-    },
-    {
-      key: 'vocalGuideTrack',
-      label: 'Optional vocal guide track',
-      selected: false,
-      status: 'not-generated',
-      requiredBeforeGenerated: [
-        'Optional vocal-guide target is enabled.',
-        'A melody source is provided.',
-        'A vocal guide strategy is selected.',
-        'Performer-safe vocal range is confirmed.',
-        'Real renderer, output format, and storage are configured.',
+      completionCriteria: [
+        "Audio file exists.",
+        "Audio duration matches the cue-sheet structure closely enough for rehearsal.",
+        "Count-in is present when enabled.",
+        "Chord changes are audible or clearly implied.",
+        "Output file path or storage reference is recorded in the artefact package.",
       ],
-      file: null,
     },
-  ],
-  notes: [
-    'Expected output file records are placeholders only.',
-    'No output should be marked generated until a real renderer writes and stores the audio file.',
-    'The file field must remain null during dry run.',
-  ],
-},
 
-rendererInputContract: {
-  contractStatus: 'dry-run-renderer-input-contract-declared',
-  audioStatus: 'not-generated',
-  rendererStatus: 'not-connected',
-  storageStatus: 'not-configured',
-  formatStatus: 'not-selected',
-  purpose:
-    'Define the complete dry-run input contract that a future real audio renderer must consume before generating any audio files.',
-  requiredInputObjects: [
-    'renderJob',
-    'dryRunRenderPlan',
-    'dryRunRenderPlanValidation',
-    'dryRunCueSheetValidation',
-    'dryRunRenderManifest',
-    'dryRunRenderManifestValidation',
-    'dryRunHandoffBundle',
-    'dryRunHandoffBundleValidation',
-    'renderTargets',
-    'guideTrackRenderRecipe',
-    'clickTrackRenderRecipe',
-    'chordReferenceRenderRecipe',
-    'vocalGuideRenderRecipe',
-    'expectedOutputFiles',
-  ],
-  selectedOutputKeys: [
-    'guideTrackAudio',
-    'clickTrack',
-    'chordReferenceTrack',
-  ],
-  optionalOutputKeys: ['vocalGuideTrack'],
-  requiredBeforeRealRender: [
-    'Real renderer implementation is connected.',
-    'Audio output format is selected.',
-    'Generated audio storage is configured.',
-    'Renderer input contract is accepted.',
-    'Expected output file placeholders are ready.',
-    'Selected render recipes are accepted.',
-  ],
-  handoffRules: [
-    'Do not generate audio from partial input objects.',
-    'Do not mark any output as generated until a real audio file exists.',
-    'Do not replace dry-run placeholders with file metadata until storage succeeds.',
-    'Use the cue sheet and render plan as the timing source of truth.',
-    'Keep optional vocal-guide output disabled until melody source and vocal strategy are confirmed.',
-  ],
-},
-
-realRenderGate: {
-  gateStatus: 'blocked',
-  canRenderAudio: false,
-  audioStatus: 'not-generated',
-  rendererStatus: 'not-connected',
-  storageStatus: 'not-configured',
-  formatStatus: 'not-selected',
-  dryRunReady:
-    dryRunRenderPlanValidation.ready === true &&
-    dryRunCueSheetValidation.ready === true &&
-    dryRunRenderManifestValidation.ready === true &&
-    dryRunHandoffBundleValidation.ready === true,
-  blockedReasons: [
-    'Real audio renderer is not connected.',
-    'Audio output format has not been selected.',
-    'Generated audio storage has not been configured.',
-    'Real render execution is still blocked; the route scaffold exists but does not generate audio.',
-  ],
-  requiredToUnlock: [
-    'Connect a real renderer implementation.',
-    'Choose an audio output format.',
-    'Configure generated audio storage.',
-    'Replace the blocked route scaffold with a real render execution implementation.',
-    'Require all selected output files to be written before marking them generated.',
-  ],
-  safetyRules: [
-    'The dry-run package may be copied, inspected, and validated.',
-    'The dry-run package must not create audio files.',
-    'The app must not show download links until stored output files exist.',
-    'The app must not mark the preview as generated while this gate is blocked.',
-  ],
-},
-
-firstRealRenderPlan: {
-  planStatus: 'dry-run-first-real-render-plan-declared',
-  audioStatus: 'not-generated',
-  recommendedFirstTarget: 'clickTrack',
-  recommendedReason:
-    'A click track is the safest first real audio output because tempo, count-in, duration, and section alignment can be checked objectively before musical rendering is attempted.',
-  rendererStrategy: {
-    strategyType: 'server-side-synthetic-click-track',
-    implementationStatus: 'not-implemented',
-    description:
-      'Future implementation should generate a simple timing-only click track from tempo, count-in, cue sheet, and render plan data before attempting guide-track or chord-reference audio.',
-  },
-  firstUnlockRequirements: [
-    'Blocked real-render route scaffold is replaced by a real execution implementation.',
-    'Audio output format is selected.',
-    'Generated audio storage is configured.',
-    'Click-track render recipe is accepted.',
-    'Expected output placeholder for clickTrack can be replaced only after a real file exists.',
-  ],
-  firstValidationChecks: [
-    'Output file exists.',
-    'Output file path or storage reference is recorded.',
-    'Audio duration follows the cue-sheet section structure.',
-    'One-bar count-in is present.',
-    'Tempo matches the audio preview spec.',
-    'Output remains timing-only with no musical arrangement elements.',
-  ],
-  laterTargets: [
-    'chordReferenceTrack',
-    'guideTrackAudio',
-    'vocalGuideTrack',
-  ],
-  notes: [
-    'Do not attempt all render targets at once.',
-    'Do not start with vocal guide audio because no melody source or vocal strategy exists yet.',
-    'Do not start with full guide-track audio until click-track timing has been proven.',
-  ],
-},
-
-realRenderRouteScaffold: {
-  routeStatus: 'blocked-scaffold-declared',
-  method: 'POST',
-  path: '/api/audio-preview/real-render',
-  expectedBlockedStatusCode: 423,
-  audioStatus: 'not-generated',
-  rendererStatus: 'not-connected',
-  purpose:
-    'Reserve the future real-render endpoint while keeping all audio generation blocked until renderer, format, storage, and execution are implemented.',
-  expectedRequestShape: {
-      requestedTarget: 'clickTrack',
-      rendererInputContract: 'required-before-real-render',
-      realRenderGate: 'required-before-real-render',
-      firstRealRenderPlan: 'required-before-real-render',
-      realRenderConfiguration: 'required-before-real-render',
+    clickTrackRenderRecipe: {
+      recipeStatus: "dry-run-click-track-recipe-declared",
+      targetKey: "clickTrack",
+      outputStatus: "not-generated",
+      rendererRequirement:
+        "Future renderer must create a timing-only click track from the validated preview tempo, cue sheet, and render plan.",
+      countIn: {
+        enabled: true,
+        bars: 1,
+        description:
+          "Use the same one-bar count-in as the guide track so all future preview outputs align.",
+      },
+      timing: {
+        tempoSource: "audioPreviewSpec",
+        sectionTimingSource: "dryRunCueSheet",
+        description:
+          "Use the requested preview tempo and cue-sheet section order as the timing source of truth.",
+      },
+      clickSound: {
+        downbeatEmphasis: true,
+        subdivision: "quarter-note",
+        description:
+          "Use a clear downbeat accent and simple quarter-note pulse suitable for rehearsal and structure testing.",
+      },
+      sectionMarkers: {
+        enabled: true,
+        description:
+          "Future renderer may add subtle section marker tones or metadata at section boundaries, but dry run only declares the requirement.",
+      },
+      mixPriorities: [
+        "Keep timing clear and uncluttered.",
+        "Make downbeats easy to identify.",
+        "Avoid musical arrangement elements in the click-only output.",
+        "Keep the click track aligned with the guide-track count-in and cue sheet.",
+      ],
+      completionCriteria: [
+        "Audio file exists.",
+        "Click starts after the declared count-in.",
+        "Tempo matches the preview spec.",
+        "Section length follows the cue-sheet structure.",
+        "Output file path or storage reference is recorded in the artefact package.",
+      ],
     },
-  expectedBlockedResponse: {
-      ok: false,
-      status: 'blocked',
-      audioStatus: 'not-generated',
-      rendererStatus: 'not-connected',
-      storageStatus: 'not-configured',
-      formatStatus: 'not-selected',
-      receivedContractSummary: {
-      hasRendererInputContract: true,
-      hasRealRenderGate: true,
-      hasFirstRealRenderPlan: true,
-      hasRealRenderConfiguration: true,
-      requestedTarget: 'clickTrack',
+
+    vocalGuideRenderRecipe: {
+      recipeStatus: "dry-run-vocal-guide-recipe-declared",
+      targetKey: "vocalGuideTrack",
+      targetSelection: "optional",
+      outputStatus: "not-generated",
+      rendererRequirement:
+        "Future renderer must create a vocal guide only after a melody source, vocal guide strategy, and performer-safe range have been confirmed.",
+      activationRequirements: [
+        "A melody source exists.",
+        "A vocal guide strategy has been selected.",
+        "The target vocal range is confirmed for the performer.",
+        "Lyrics-to-section alignment has been reviewed.",
+      ],
+      countIn: {
+        enabled: true,
+        bars: 1,
+        description:
+          "Use the same one-bar count-in as the other preview outputs so all future tracks align.",
+      },
+      timing: {
+        tempoSource: "audioPreviewSpec",
+        sectionTimingSource: "dryRunCueSheet",
+        description:
+          "Use the requested preview tempo and cue-sheet section order as the timing source of truth.",
+      },
+      melodySource: {
+        status: "not-provided",
+        acceptedSources: [
+          "manual melody notes",
+          "recorded scratch vocal",
+          "MIDI melody line",
+          "approved generated melody contour",
+        ],
+        description:
+          "Dry run does not invent a vocal melody. A future renderer must wait for an explicit melody source before creating vocal guide audio.",
+      },
+      vocalStyle: {
+        status: "not-selected",
+        defaultReference:
+          "clear, simple guide vocal or guide synth suitable for rehearsal only",
+        description:
+          "The future vocal guide should support songwriting decisions, not imitate a final artist performance.",
+      },
+      mixPriorities: [
+        "Keep the vocal guide clear and simple.",
+        "Avoid final-production vocal styling.",
+        "Do not generate a melody unless a melody source is supplied.",
+        "Keep the vocal guide aligned with the count-in, cue sheet, and guide track.",
+      ],
+      completionCriteria: [
+        "Audio file exists only after the optional target is enabled.",
+        "Melody source is recorded in the artefact package.",
+        "Vocal guide stays within the confirmed performer range.",
+        "Lyrics align with the cue-sheet section structure.",
+        "Output file path or storage reference is recorded in the artefact package.",
+      ],
     },
-      receivedContractCheck: {
+
+    chordReferenceRenderRecipe: {
+      recipeStatus: "dry-run-chord-reference-recipe-declared",
+      targetKey: "chordReferenceTrack",
+      outputStatus: "not-generated",
+      rendererRequirement:
+        "Future renderer must create a sparse chord-reference track from the renderer payload chord sections, cue sheet, and render plan.",
+      countIn: {
+        enabled: true,
+        bars: 1,
+        description:
+          "Use the same one-bar count-in as the guide and click tracks so all future preview outputs align.",
+      },
+      timing: {
+        tempoSource: "audioPreviewSpec",
+        sectionTimingSource: "dryRunCueSheet",
+        description:
+          "Use the requested preview tempo and cue-sheet section order as the timing source of truth.",
+      },
+      chordSource: {
+        source: "rendererPayload.chordSections",
+        description:
+          "Use chord sections from the renderer payload as the source of truth for harmony changes.",
+      },
+      voicing: {
+        primaryInstrument: "clean acoustic guitar or simple piano",
+        density: "sparse",
+        description:
+          "Play clear chord changes with minimal rhythmic decoration so harmony can be checked quickly.",
+      },
+      sectionMarkers: {
+        enabled: true,
+        description:
+          "Future renderer may add subtle section markers or metadata at section boundaries to help review song structure.",
+      },
+      mixPriorities: [
+        "Make chord changes clear.",
+        "Keep the harmonic reference sparse and uncluttered.",
+        "Avoid final-production arrangement detail.",
+        "Keep the chord reference aligned with the count-in, cue sheet, and click track.",
+      ],
+      completionCriteria: [
+        "Audio file exists.",
+        "Chord changes follow the renderer payload chord sections.",
+        "Tempo matches the preview spec.",
+        "Section length follows the cue-sheet structure.",
+        "Output file path or storage reference is recorded in the artefact package.",
+      ],
+    },
+    expectedOutputFiles: {
+      outputStatus: "not-generated",
+      storageStatus: "not-configured",
+      formatStatus: "not-selected",
+      outputs: [
+        {
+          key: "guideTrackAudio",
+          label: "Guide track audio",
+          selected: true,
+          status: "not-generated",
+          requiredBeforeGenerated: [
+            "Real renderer is connected.",
+            "Audio output format is selected.",
+            "Storage location is configured.",
+            "Guide-track render recipe is accepted.",
+          ],
+          file: null,
+        },
+        {
+          key: "clickTrack",
+          label: "Click track",
+          selected: true,
+          status: "not-generated",
+          requiredBeforeGenerated: [
+            "Real renderer is connected.",
+            "Audio output format is selected.",
+            "Storage location is configured.",
+            "Click-track render recipe is accepted.",
+          ],
+          file: null,
+        },
+        {
+          key: "chordReferenceTrack",
+          label: "Chord reference track",
+          selected: true,
+          status: "not-generated",
+          requiredBeforeGenerated: [
+            "Real renderer is connected.",
+            "Audio output format is selected.",
+            "Storage location is configured.",
+            "Chord-reference render recipe is accepted.",
+          ],
+          file: null,
+        },
+        {
+          key: "vocalGuideTrack",
+          label: "Optional vocal guide track",
+          selected: false,
+          status: "not-generated",
+          requiredBeforeGenerated: [
+            "Optional vocal-guide target is enabled.",
+            "A melody source is provided.",
+            "A vocal guide strategy is selected.",
+            "Performer-safe vocal range is confirmed.",
+            "Real renderer, output format, and storage are configured.",
+          ],
+          file: null,
+        },
+      ],
+      notes: [
+        "Expected output file records are placeholders only.",
+        "No output should be marked generated until a real renderer writes and stores the audio file.",
+        "The file field must remain null during dry run.",
+      ],
+    },
+
+    rendererInputContract: {
+      contractStatus: "dry-run-renderer-input-contract-declared",
+      audioStatus: "not-generated",
+      rendererStatus: "not-connected",
+      storageStatus: "not-configured",
+      formatStatus: "not-selected",
+      purpose:
+        "Define the complete dry-run input contract that a future real audio renderer must consume before generating any audio files.",
+      requiredInputObjects: [
+        "renderJob",
+        "dryRunRenderPlan",
+        "dryRunRenderPlanValidation",
+        "dryRunCueSheetValidation",
+        "dryRunRenderManifest",
+        "dryRunRenderManifestValidation",
+        "dryRunHandoffBundle",
+        "dryRunHandoffBundleValidation",
+        "renderTargets",
+        "guideTrackRenderRecipe",
+        "clickTrackRenderRecipe",
+        "chordReferenceRenderRecipe",
+        "vocalGuideRenderRecipe",
+        "expectedOutputFiles",
+      ],
+      selectedOutputKeys: [
+        "guideTrackAudio",
+        "clickTrack",
+        "chordReferenceTrack",
+      ],
+      optionalOutputKeys: ["vocalGuideTrack"],
+      requiredBeforeRealRender: [
+        "Real renderer implementation is connected.",
+        "Audio output format is selected.",
+        "Generated audio storage is configured.",
+        "Renderer input contract is accepted.",
+        "Expected output file placeholders are ready.",
+        "Selected render recipes are accepted.",
+      ],
+      handoffRules: [
+        "Do not generate audio from partial input objects.",
+        "Do not mark any output as generated until a real audio file exists.",
+        "Do not replace dry-run placeholders with file metadata until storage succeeds.",
+        "Use the cue sheet and render plan as the timing source of truth.",
+        "Keep optional vocal-guide output disabled until melody source and vocal strategy are confirmed.",
+      ],
+    },
+
+    realRenderGate: {
+      gateStatus: "blocked",
+      canRenderAudio: false,
+      audioStatus: "not-generated",
+      rendererStatus: "not-connected",
+      storageStatus: "not-configured",
+      formatStatus: "not-selected",
+      dryRunReady:
+        dryRunRenderPlanValidation.ready === true &&
+        dryRunCueSheetValidation.ready === true &&
+        dryRunRenderManifestValidation.ready === true &&
+        dryRunHandoffBundleValidation.ready === true,
+      blockedReasons: [
+        "Real audio renderer is not connected.",
+        "Audio output format has not been selected.",
+        "Generated audio storage has not been configured.",
+        "Real render execution is still blocked; the route scaffold exists but does not generate audio.",
+      ],
+      requiredToUnlock: [
+        "Connect a real renderer implementation.",
+        "Choose an audio output format.",
+        "Configure generated audio storage.",
+        "Replace the blocked route scaffold with a real render execution implementation.",
+        "Require all selected output files to be written before marking them generated.",
+      ],
+      safetyRules: [
+        "The dry-run package may be copied, inspected, and validated.",
+        "The dry-run package must not create audio files.",
+        "The app must not show download links until stored output files exist.",
+        "The app must not mark the preview as generated while this gate is blocked.",
+      ],
+    },
+
+    firstRealRenderPlan: {
+      planStatus: "dry-run-first-real-render-plan-declared",
+      audioStatus: "not-generated",
+      recommendedFirstTarget: "clickTrack",
+      recommendedReason:
+        "A click track is the safest first real audio output because tempo, count-in, duration, and section alignment can be checked objectively before musical rendering is attempted.",
+      rendererStrategy: {
+        strategyType: "server-side-synthetic-click-track",
+        implementationStatus: "not-implemented",
+        description:
+          "Future implementation should generate a simple timing-only click track from tempo, count-in, cue sheet, and render plan data before attempting guide-track or chord-reference audio.",
+      },
+      firstUnlockRequirements: [
+        "Blocked real-render route scaffold is replaced by a real execution implementation.",
+        "Audio output format is selected.",
+        "Generated audio storage is configured.",
+        "Click-track render recipe is accepted.",
+        "Expected output placeholder for clickTrack can be replaced only after a real file exists.",
+      ],
+      firstValidationChecks: [
+        "Output file exists.",
+        "Output file path or storage reference is recorded.",
+        "Audio duration follows the cue-sheet section structure.",
+        "One-bar count-in is present.",
+        "Tempo matches the audio preview spec.",
+        "Output remains timing-only with no musical arrangement elements.",
+      ],
+      laterTargets: [
+        "chordReferenceTrack",
+        "guideTrackAudio",
+        "vocalGuideTrack",
+      ],
+      notes: [
+        "Do not attempt all render targets at once.",
+        "Do not start with vocal guide audio because no melody source or vocal strategy exists yet.",
+        "Do not start with full guide-track audio until click-track timing has been proven.",
+      ],
+    },
+
+    realRenderRouteScaffold: {
+      routeStatus: "blocked-scaffold-declared",
+      method: "POST",
+      path: "/api/audio-preview/real-render",
+      expectedBlockedStatusCode: 423,
+      audioStatus: "not-generated",
+      rendererStatus: "not-connected",
+      purpose:
+        "Reserve the future real-render endpoint while keeping all audio generation blocked until renderer, format, storage, and execution are implemented.",
+      expectedRequestShape: {
+        requestedTarget: "clickTrack",
+        rendererInputContract: "required-before-real-render",
+        realRenderGate: "required-before-real-render",
+        firstRealRenderPlan: "required-before-real-render",
+        realRenderConfiguration: "required-before-real-render",
+      },
+      expectedBlockedResponse: {
+        ok: false,
+        status: "blocked",
+        audioStatus: "not-generated",
+        rendererStatus: "not-connected",
+        storageStatus: "not-configured",
+        formatStatus: "not-selected",
+        receivedContractSummary: {
+          hasRendererInputContract: true,
+          hasRealRenderGate: true,
+          hasFirstRealRenderPlan: true,
+          hasRealRenderConfiguration: true,
+          requestedTarget: "clickTrack",
+        },
+        receivedContractCheck: {
           passed: true,
           missingOrInvalid: [],
         },
         receivedConfigurationSummary: {
-          configurationStatus: 'dry-run-real-render-configuration-placeholder',
-          audioStatus: 'not-generated',
-          rendererStatus: 'not-connected',
-          rendererCandidateStatus: 'candidate-declared-not-selected',
-          recommendedFirstRenderer: 'local-click-track-wav-renderer',
+          configurationStatus: "dry-run-real-render-configuration-placeholder",
+          audioStatus: "not-generated",
+          rendererStatus: "not-connected",
+          rendererCandidateStatus: "candidate-declared-not-selected",
+          recommendedFirstRenderer: "local-click-track-wav-renderer",
           rendererCandidateSelectedRenderer: null,
-          outputFormatStatus: 'format-candidate-declared-not-selected',
-          recommendedFirstFormat: 'wav',
+          outputFormatStatus: "format-candidate-declared-not-selected",
+          recommendedFirstFormat: "wav",
           selectedFormat: null,
-          sampleRateStatus: 'sample-rate-candidate-declared-not-selected',
+          sampleRateStatus: "sample-rate-candidate-declared-not-selected",
           recommendedFirstSampleRateHz: 44100,
           selectedSampleRateHz: null,
-          storageStatus: 'storage-candidate-declared-not-configured',
-          recommendedFirstProvider: 'browser-download',
+          storageStatus: "storage-candidate-declared-not-configured",
+          recommendedFirstProvider: "browser-download",
           selectedProvider: null,
-          firstTargetKey: 'clickTrack',
+          firstTargetKey: "clickTrack",
         },
-      receivedConfigurationCheck: {
-        passed: true,
-        missingOrInvalid: [],
+        receivedConfigurationCheck: {
+          passed: true,
+          missingOrInvalid: [],
+        },
       },
-    },
-  safetyRules: [
-    'The route scaffold may be called for blocked-status testing only.',
-    'The route scaffold must not generate audio files.',
-    'The route scaffold must return blocked status until real render execution is implemented.',
-    'The UI must not treat a blocked response as generated audio.',
-  ],
-},
-
-realRenderConfiguration: {
-  configurationStatus: 'dry-run-real-render-configuration-placeholder',
-  audioStatus: 'not-generated',
-  rendererImplementation: {
-    status: 'not-connected',
-    selectedRenderer: null,
-    requiredDecision:
-      'Choose and connect the first real renderer implementation before audio generation can be enabled.',
-  },
-  rendererCandidatePlan: {
-  status: 'candidate-declared-not-selected',
-  recommendedFirstRenderer: 'local-click-track-wav-renderer',
-  selectedRenderer: null,
-  reason:
-    'A deterministic local click-track WAV renderer is the safest first real-render candidate because it can prove timing, format, storage, and download flow before any musical audio is attempted.',
-  mustRemainBlockedUntil: [
-    'Renderer implementation is written and tested.',
-    'Output format is selected.',
-    'Sample rate is selected.',
-    'Generated audio storage or browser download flow is selected.',
-    'Blocked route scaffold is replaced by real execution.',
-  ],
-},
-  outputFormat: {
-  status: 'format-candidate-declared-not-selected',
-  recommendedFirstFormat: 'wav',
-  selectedFormat: null,
-  allowedFirstFormats: ['wav'],
-  reason:
-    'WAV is the safest first output format because it is uncompressed, easy to validate locally, and suitable for proving timing-only click-track generation before musical audio is attempted.',
-  mustRemainBlockedUntil: [
-    'Output format selection is deliberately confirmed.',
-    'Sample rate is selected.',
-    'Renderer implementation is connected.',
-    'Generated audio storage or browser download flow is selected.',
-  ],
-  requiredDecision:
-    'Choose an initial output format. WAV is recommended for the first synthetic click-track render.',
-},
-  sampleRate: {
-      status: 'sample-rate-candidate-declared-not-selected',
-      recommendedFirstSampleRateHz: 44100,
-      selectedSampleRateHz: null,
-      allowedFirstSampleRatesHz: [44100],
-      reason:
-        '44100 Hz is the safest first sample rate because it is widely supported, browser-download friendly, and suitable for proving a timing-only click-track WAV render.',
-      mustRemainBlockedUntil: [
-        'Sample rate selection is deliberately confirmed.',
-        'Output format selection is deliberately confirmed.',
-        'Renderer implementation is connected.',
-        'Generated audio storage or browser download flow is selected.',
+      safetyRules: [
+        "The route scaffold may be called for blocked-status testing only.",
+        "The route scaffold must not generate audio files.",
+        "The route scaffold must return blocked status until real render execution is implemented.",
+        "The UI must not treat a blocked response as generated audio.",
       ],
-      requiredDecision:
-        'Choose an initial sample rate. 44100 Hz is recommended for the first browser-downloadable proof of concept.',
-},
-  storage: {
-      status: 'storage-candidate-declared-not-configured',
-      recommendedFirstProvider: 'browser-download',
-      selectedProvider: null,
-      reason:
-        'Browser download is the safest first delivery option because it can prove file creation and user access before persistent cloud storage is configured.',
-      mustRemainBlockedUntil: [
-        'Storage or download delivery option is deliberately confirmed.',
-        'Renderer implementation is connected.',
-        'Output format selection is deliberately confirmed.',
-        'Sample rate selection is deliberately confirmed.',
-        'Generated file metadata is recorded only after a real file exists.',
-      ],
-      requiredDecision:
-        'Choose where generated audio files will be stored before enabling real render completion.',
     },
-  firstTarget: {
-    key: 'clickTrack',
-    status: 'planned',
-    requiredDecision:
-      'Keep clickTrack as the first real-render target until timing-only audio generation has been proven.',
-  },
-  unlockRequirements: [
-    'Renderer implementation is connected.',
-    'Output format is selected.',
-    'Sample rate is selected.',
-    'Generated audio storage is configured.',
-    'Blocked route scaffold is replaced by real execution.',
-  ],
-},
 
-firstRealRenderCandidateStack: {
-  stackStatus: 'candidate-stack-declared-not-enabled',
-  audioStatus: 'not-generated',
-  firstTargetKey: 'clickTrack',
-  renderer: {
-    status: 'candidate-declared-not-selected',
-    recommended: 'local-click-track-wav-renderer',
-    selected: null,
-  },
-  outputFormat: {
-    status: 'format-candidate-declared-not-selected',
-    recommended: 'wav',
-    selected: null,
-  },
-  sampleRate: {
-    status: 'sample-rate-candidate-declared-not-selected',
-    recommendedHz: 44100,
-    selectedHz: null,
-  },
-  storage: {
-    status: 'storage-candidate-declared-not-configured',
-    recommended: 'browser-download',
-    selected: null,
-  },
-  enablementStatus: 'blocked',
-  canGenerateAudio: false,
-  requiredBeforeEnablement: [
-    'Renderer implementation is written and tested.',
-    'Output format selection is deliberately confirmed.',
-    'Sample rate selection is deliberately confirmed.',
-    'Storage or browser download delivery is deliberately confirmed.',
-    'Blocked route scaffold is replaced by real execution.',
-    'A real audio file is written before any output is marked generated.',
-  ],
-},
+    realRenderConfiguration: {
+      configurationStatus: "dry-run-real-render-configuration-placeholder",
+      audioStatus: "not-generated",
+      rendererImplementation: {
+        status: "not-connected",
+        selectedRenderer: null,
+        requiredDecision:
+          "Choose and connect the first real renderer implementation before audio generation can be enabled.",
+      },
+      rendererCandidatePlan: {
+        status: "candidate-declared-not-selected",
+        recommendedFirstRenderer: "local-click-track-wav-renderer",
+        selectedRenderer: null,
+        reason:
+          "A deterministic local click-track WAV renderer is the safest first real-render candidate because it can prove timing, format, storage, and download flow before any musical audio is attempted.",
+        mustRemainBlockedUntil: [
+          "Renderer implementation is written and tested.",
+          "Output format is selected.",
+          "Sample rate is selected.",
+          "Generated audio storage or browser download flow is selected.",
+          "Blocked route scaffold is replaced by real execution.",
+        ],
+      },
+      outputFormat: {
+        status: "format-candidate-declared-not-selected",
+        recommendedFirstFormat: "wav",
+        selectedFormat: null,
+        allowedFirstFormats: ["wav"],
+        reason:
+          "WAV is the safest first output format because it is uncompressed, easy to validate locally, and suitable for proving timing-only click-track generation before musical audio is attempted.",
+        mustRemainBlockedUntil: [
+          "Output format selection is deliberately confirmed.",
+          "Sample rate is selected.",
+          "Renderer implementation is connected.",
+          "Generated audio storage or browser download flow is selected.",
+        ],
+        requiredDecision:
+          "Choose an initial output format. WAV is recommended for the first synthetic click-track render.",
+      },
+      sampleRate: {
+        status: "sample-rate-candidate-declared-not-selected",
+        recommendedFirstSampleRateHz: 44100,
+        selectedSampleRateHz: null,
+        allowedFirstSampleRatesHz: [44100],
+        reason:
+          "44100 Hz is the safest first sample rate because it is widely supported, browser-download friendly, and suitable for proving a timing-only click-track WAV render.",
+        mustRemainBlockedUntil: [
+          "Sample rate selection is deliberately confirmed.",
+          "Output format selection is deliberately confirmed.",
+          "Renderer implementation is connected.",
+          "Generated audio storage or browser download flow is selected.",
+        ],
+        requiredDecision:
+          "Choose an initial sample rate. 44100 Hz is recommended for the first browser-downloadable proof of concept.",
+      },
+      storage: {
+        status: "storage-candidate-declared-not-configured",
+        recommendedFirstProvider: "browser-download",
+        selectedProvider: null,
+        reason:
+          "Browser download is the safest first delivery option because it can prove file creation and user access before persistent cloud storage is configured.",
+        mustRemainBlockedUntil: [
+          "Storage or download delivery option is deliberately confirmed.",
+          "Renderer implementation is connected.",
+          "Output format selection is deliberately confirmed.",
+          "Sample rate selection is deliberately confirmed.",
+          "Generated file metadata is recorded only after a real file exists.",
+        ],
+        requiredDecision:
+          "Choose where generated audio files will be stored before enabling real render completion.",
+      },
+      firstTarget: {
+        key: "clickTrack",
+        status: "planned",
+        requiredDecision:
+          "Keep clickTrack as the first real-render target until timing-only audio generation has been proven.",
+      },
+      unlockRequirements: [
+        "Renderer implementation is connected.",
+        "Output format is selected.",
+        "Sample rate is selected.",
+        "Generated audio storage is configured.",
+        "Blocked route scaffold is replaced by real execution.",
+      ],
+    },
 
-
+    firstRealRenderCandidateStack: {
+      stackStatus: "candidate-stack-declared-not-enabled",
+      audioStatus: "not-generated",
+      firstTargetKey: "clickTrack",
+      renderer: {
+        status: "candidate-declared-not-selected",
+        recommended: "local-click-track-wav-renderer",
+        selected: null,
+      },
+      outputFormat: {
+        status: "format-candidate-declared-not-selected",
+        recommended: "wav",
+        selected: null,
+      },
+      sampleRate: {
+        status: "sample-rate-candidate-declared-not-selected",
+        recommendedHz: 44100,
+        selectedHz: null,
+      },
+      storage: {
+        status: "storage-candidate-declared-not-configured",
+        recommended: "browser-download",
+        selected: null,
+      },
+      enablementStatus: "blocked",
+      canGenerateAudio: false,
+      requiredBeforeEnablement: [
+        "Renderer implementation is written and tested.",
+        "Output format selection is deliberately confirmed.",
+        "Sample rate selection is deliberately confirmed.",
+        "Storage or browser download delivery is deliberately confirmed.",
+        "Blocked route scaffold is replaced by real execution.",
+        "A real audio file is written before any output is marked generated.",
+      ],
+    },
 
     renderJob,
     dryRunRenderPlan,
@@ -1676,1893 +1725,1915 @@ firstRealRenderCandidateStack: {
     dryRunHandoffBundle,
     dryRunHandoffBundleValidation,
     notes: [
-      'This package is a machine-readable dry-run artefact bundle.',
-      'No audio files have been generated.',
-      'Future renderer integration should consume this package only after validation is ready.',
+      "This package is a machine-readable dry-run artefact bundle.",
+      "No audio files have been generated.",
+      "Future renderer integration should consume this package only after validation is ready.",
     ],
-  }
+  };
 }
-  
-
 
 function validateDryRunArtifactPackage(pkg: {
-  type?: unknown
-  packageStatus?: unknown
-  audioStatus?: unknown
-  packageContents?: unknown
-  realRenderReadiness?: unknown
-  renderTargets?: unknown
-  guideTrackRenderRecipe?: unknown
-  clickTrackRenderRecipe?: unknown
-  chordReferenceRenderRecipe?: unknown
-  vocalGuideRenderRecipe?: unknown
-  expectedOutputFiles?: unknown
-  rendererInputContract?: unknown
-  realRenderGate?: unknown
-  firstRealRenderPlan?: unknown
-  realRenderRouteScaffold?: unknown
-  realRenderConfiguration?: unknown
-  firstRealRenderCandidateStack?: unknown
-  renderJob?: unknown
-  dryRunRenderPlan?: unknown
-  dryRunRenderPlanValidation?: unknown
-  dryRunCueSheetValidation?: unknown
-  dryRunRenderManifest?: unknown
-  dryRunRenderManifestValidation?: unknown
-  dryRunHandoffBundle?: unknown
-  dryRunHandoffBundleValidation?: unknown
-  notes?: unknown
+  type?: unknown;
+  packageStatus?: unknown;
+  audioStatus?: unknown;
+  packageContents?: unknown;
+  realRenderReadiness?: unknown;
+  renderTargets?: unknown;
+  guideTrackRenderRecipe?: unknown;
+  clickTrackRenderRecipe?: unknown;
+  chordReferenceRenderRecipe?: unknown;
+  vocalGuideRenderRecipe?: unknown;
+  expectedOutputFiles?: unknown;
+  rendererInputContract?: unknown;
+  realRenderGate?: unknown;
+  firstRealRenderPlan?: unknown;
+  realRenderRouteScaffold?: unknown;
+  realRenderConfiguration?: unknown;
+  firstRealRenderCandidateStack?: unknown;
+  renderJob?: unknown;
+  dryRunRenderPlan?: unknown;
+  dryRunRenderPlanValidation?: unknown;
+  dryRunCueSheetValidation?: unknown;
+  dryRunRenderManifest?: unknown;
+  dryRunRenderManifestValidation?: unknown;
+  dryRunHandoffBundle?: unknown;
+  dryRunHandoffBundleValidation?: unknown;
+  notes?: unknown;
 }) {
-  const missing: string[] = []
+  const missing: string[] = [];
 
-  if (pkg.type !== 'audio-preview-dry-run-artifact-package') {
-    missing.push('type')
+  if (pkg.type !== "audio-preview-dry-run-artifact-package") {
+    missing.push("type");
   }
 
-  if (pkg.packageStatus !== 'dry-run-package-ready') {
-    missing.push('packageStatus')
+  if (pkg.packageStatus !== "dry-run-package-ready") {
+    missing.push("packageStatus");
   }
 
-  if (pkg.audioStatus !== 'not-generated') {
-    missing.push('audioStatus')
+  if (pkg.audioStatus !== "not-generated") {
+    missing.push("audioStatus");
   }
 
   if (!Array.isArray(pkg.packageContents) || pkg.packageContents.length === 0) {
-    missing.push('packageContents')
+    missing.push("packageContents");
   }
 
   const realRenderReadiness =
-  pkg.realRenderReadiness &&
-  typeof pkg.realRenderReadiness === 'object' &&
-  !Array.isArray(pkg.realRenderReadiness)
-    ? (pkg.realRenderReadiness as Record<string, unknown>)
-    : null
+    pkg.realRenderReadiness &&
+    typeof pkg.realRenderReadiness === "object" &&
+    !Array.isArray(pkg.realRenderReadiness)
+      ? (pkg.realRenderReadiness as Record<string, unknown>)
+      : null;
 
-if (!realRenderReadiness) {
-  missing.push('realRenderReadiness')
-} else {
-  if (realRenderReadiness.readyForRealRender !== false) {
-    missing.push('realRenderReadiness.readyForRealRender')
-  }
-
-  if (
-    realRenderReadiness.readinessStatus !==
-    'blocked-until-renderer-connected'
-  ) {
-    missing.push('realRenderReadiness.readinessStatus')
-  }
-
-  if (
-    !Array.isArray(realRenderReadiness.blockers) ||
-    realRenderReadiness.blockers.length === 0
-  ) {
-    missing.push('realRenderReadiness.blockers')
-  }
-
-  if (
-    !Array.isArray(realRenderReadiness.requiredDecisions) ||
-    realRenderReadiness.requiredDecisions.length === 0
-  ) {
-    missing.push('realRenderReadiness.requiredDecisions')
-  }
-
-  if (
-    !Array.isArray(realRenderReadiness.safetyNotes) ||
-    realRenderReadiness.safetyNotes.length === 0
-  ) {
-    missing.push('realRenderReadiness.safetyNotes')
-  }
-}
-
-const renderTargets =
-  pkg.renderTargets &&
-  typeof pkg.renderTargets === 'object' &&
-  !Array.isArray(pkg.renderTargets)
-    ? (pkg.renderTargets as Record<string, unknown>)
-    : null
-
-if (!renderTargets) {
-  missing.push('renderTargets')
-} else {
-  if (renderTargets.targetStatus !== 'dry-run-targets-declared') {
-    missing.push('renderTargets.targetStatus')
-  }
-
-  const selectedOutputs = Array.isArray(renderTargets.selectedOutputs)
-    ? renderTargets.selectedOutputs
-    : []
-
-  if (selectedOutputs.length === 0) {
-    missing.push('renderTargets.selectedOutputs')
+  if (!realRenderReadiness) {
+    missing.push("realRenderReadiness");
   } else {
-    selectedOutputs.forEach((output, index) => {
-      const target =
-        output && typeof output === 'object' && !Array.isArray(output)
-          ? (output as Record<string, unknown>)
-          : null
+    if (realRenderReadiness.readyForRealRender !== false) {
+      missing.push("realRenderReadiness.readyForRealRender");
+    }
 
-      if (!target) {
-        missing.push(`renderTargets.selectedOutputs.${index}`)
-        return
-      }
+    if (
+      realRenderReadiness.readinessStatus !== "blocked-until-renderer-connected"
+    ) {
+      missing.push("realRenderReadiness.readinessStatus");
+    }
 
-      if (typeof target.key !== 'string' || !target.key.trim()) {
-        missing.push(`renderTargets.selectedOutputs.${index}.key`)
-      }
+    if (
+      !Array.isArray(realRenderReadiness.blockers) ||
+      realRenderReadiness.blockers.length === 0
+    ) {
+      missing.push("realRenderReadiness.blockers");
+    }
 
-      if (typeof target.label !== 'string' || !target.label.trim()) {
-        missing.push(`renderTargets.selectedOutputs.${index}.label`)
-      }
+    if (
+      !Array.isArray(realRenderReadiness.requiredDecisions) ||
+      realRenderReadiness.requiredDecisions.length === 0
+    ) {
+      missing.push("realRenderReadiness.requiredDecisions");
+    }
 
-      if (typeof target.priority !== 'number') {
-        missing.push(`renderTargets.selectedOutputs.${index}.priority`)
-      }
-
-      if (typeof target.selected !== 'boolean') {
-        missing.push(`renderTargets.selectedOutputs.${index}.selected`)
-      }
-
-      if (typeof target.reason !== 'string' || !target.reason.trim()) {
-        missing.push(`renderTargets.selectedOutputs.${index}.reason`)
-      }
-    })
+    if (
+      !Array.isArray(realRenderReadiness.safetyNotes) ||
+      realRenderReadiness.safetyNotes.length === 0
+    ) {
+      missing.push("realRenderReadiness.safetyNotes");
+    }
   }
 
-  if (!Array.isArray(renderTargets.notes) || renderTargets.notes.length === 0) {
-    missing.push('renderTargets.notes')
-  }
-}
+  const renderTargets =
+    pkg.renderTargets &&
+    typeof pkg.renderTargets === "object" &&
+    !Array.isArray(pkg.renderTargets)
+      ? (pkg.renderTargets as Record<string, unknown>)
+      : null;
 
-const guideTrackRenderRecipe =
-  pkg.guideTrackRenderRecipe &&
-  typeof pkg.guideTrackRenderRecipe === 'object' &&
-  !Array.isArray(pkg.guideTrackRenderRecipe)
-    ? (pkg.guideTrackRenderRecipe as Record<string, unknown>)
-    : null
-
-if (!guideTrackRenderRecipe) {
-  missing.push('guideTrackRenderRecipe')
-} else {
-  if (
-    guideTrackRenderRecipe.recipeStatus !==
-    'dry-run-guide-track-recipe-declared'
-  ) {
-    missing.push('guideTrackRenderRecipe.recipeStatus')
-  }
-
-  if (guideTrackRenderRecipe.targetKey !== 'guideTrackAudio') {
-    missing.push('guideTrackRenderRecipe.targetKey')
-  }
-
-  if (guideTrackRenderRecipe.outputStatus !== 'not-generated') {
-    missing.push('guideTrackRenderRecipe.outputStatus')
-  }
-
-  if (
-    typeof guideTrackRenderRecipe.rendererRequirement !== 'string' ||
-    !guideTrackRenderRecipe.rendererRequirement.trim()
-  ) {
-    missing.push('guideTrackRenderRecipe.rendererRequirement')
-  }
-
-  const countIn =
-    guideTrackRenderRecipe.countIn &&
-    typeof guideTrackRenderRecipe.countIn === 'object' &&
-    !Array.isArray(guideTrackRenderRecipe.countIn)
-      ? (guideTrackRenderRecipe.countIn as Record<string, unknown>)
-      : null
-
-  if (!countIn) {
-    missing.push('guideTrackRenderRecipe.countIn')
+  if (!renderTargets) {
+    missing.push("renderTargets");
   } else {
-    if (countIn.enabled !== true) {
-      missing.push('guideTrackRenderRecipe.countIn.enabled')
+    if (renderTargets.targetStatus !== "dry-run-targets-declared") {
+      missing.push("renderTargets.targetStatus");
     }
 
-    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
-      missing.push('guideTrackRenderRecipe.countIn.bars')
-    }
-
-    if (
-      typeof countIn.description !== 'string' ||
-      !countIn.description.trim()
-    ) {
-      missing.push('guideTrackRenderRecipe.countIn.description')
-    }
-  }
-
-
-
-  const timing =
-    guideTrackRenderRecipe.timing &&
-    typeof guideTrackRenderRecipe.timing === 'object' &&
-    !Array.isArray(guideTrackRenderRecipe.timing)
-      ? (guideTrackRenderRecipe.timing as Record<string, unknown>)
-      : null
-
-  if (!timing) {
-    missing.push('guideTrackRenderRecipe.timing')
-  } else {
-    if (timing.tempoSource !== 'audioPreviewSpec') {
-      missing.push('guideTrackRenderRecipe.timing.tempoSource')
-    }
-
-    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
-      missing.push('guideTrackRenderRecipe.timing.sectionTimingSource')
-    }
-
-    if (
-      typeof timing.description !== 'string' ||
-      !timing.description.trim()
-    ) {
-      missing.push('guideTrackRenderRecipe.timing.description')
-    }
-  }
-
-  const musicalBed =
-    guideTrackRenderRecipe.musicalBed &&
-    typeof guideTrackRenderRecipe.musicalBed === 'object' &&
-    !Array.isArray(guideTrackRenderRecipe.musicalBed)
-      ? (guideTrackRenderRecipe.musicalBed as Record<string, unknown>)
-      : null
-
-  if (!musicalBed) {
-    missing.push('guideTrackRenderRecipe.musicalBed')
-  } else {
-    if (musicalBed.primaryInstrument !== 'warm acoustic guitar') {
-      missing.push('guideTrackRenderRecipe.musicalBed.primaryInstrument')
-    }
-
-    if (
-      !Array.isArray(musicalBed.supportInstruments) ||
-      musicalBed.supportInstruments.length === 0
-    ) {
-      missing.push('guideTrackRenderRecipe.musicalBed.supportInstruments')
-    }
-
-    if (
-      typeof musicalBed.description !== 'string' ||
-      !musicalBed.description.trim()
-    ) {
-      missing.push('guideTrackRenderRecipe.musicalBed.description')
-    }
-  }
-
-  const chordHandling =
-    guideTrackRenderRecipe.chordHandling &&
-    typeof guideTrackRenderRecipe.chordHandling === 'object' &&
-    !Array.isArray(guideTrackRenderRecipe.chordHandling)
-      ? (guideTrackRenderRecipe.chordHandling as Record<string, unknown>)
-      : null
-
-  if (!chordHandling) {
-    missing.push('guideTrackRenderRecipe.chordHandling')
-  } else {
-    if (chordHandling.source !== 'rendererPayload.chordSections') {
-      missing.push('guideTrackRenderRecipe.chordHandling.source')
-    }
-
-    if (
-      typeof chordHandling.description !== 'string' ||
-      !chordHandling.description.trim()
-    ) {
-      missing.push('guideTrackRenderRecipe.chordHandling.description')
-    }
-  }
-
-  const vocalGuide =
-    guideTrackRenderRecipe.vocalGuide &&
-    typeof guideTrackRenderRecipe.vocalGuide === 'object' &&
-    !Array.isArray(guideTrackRenderRecipe.vocalGuide)
-      ? (guideTrackRenderRecipe.vocalGuide as Record<string, unknown>)
-      : null
-
-  if (!vocalGuide) {
-    missing.push('guideTrackRenderRecipe.vocalGuide')
-  } else {
-    if (vocalGuide.status !== 'placeholder-only') {
-      missing.push('guideTrackRenderRecipe.vocalGuide.status')
-    }
-
-    if (
-      typeof vocalGuide.description !== 'string' ||
-      !vocalGuide.description.trim()
-    ) {
-      missing.push('guideTrackRenderRecipe.vocalGuide.description')
-    }
-  }
-
-  if (
-    !Array.isArray(guideTrackRenderRecipe.mixPriorities) ||
-    guideTrackRenderRecipe.mixPriorities.length === 0
-  ) {
-    missing.push('guideTrackRenderRecipe.mixPriorities')
-  }
-
-  if (
-    !Array.isArray(guideTrackRenderRecipe.completionCriteria) ||
-    guideTrackRenderRecipe.completionCriteria.length === 0
-  ) {
-    missing.push('guideTrackRenderRecipe.completionCriteria')
-  }
-}
-
-const chordReferenceRenderRecipe =
-  pkg.chordReferenceRenderRecipe &&
-  typeof pkg.chordReferenceRenderRecipe === 'object' &&
-  !Array.isArray(pkg.chordReferenceRenderRecipe)
-    ? (pkg.chordReferenceRenderRecipe as Record<string, unknown>)
-    : null
-
-if (!chordReferenceRenderRecipe) {
-  missing.push('chordReferenceRenderRecipe')
-} else {
-  if (
-    chordReferenceRenderRecipe.recipeStatus !==
-    'dry-run-chord-reference-recipe-declared'
-  ) {
-    missing.push('chordReferenceRenderRecipe.recipeStatus')
-  }
-
-  if (chordReferenceRenderRecipe.targetKey !== 'chordReferenceTrack') {
-    missing.push('chordReferenceRenderRecipe.targetKey')
-  }
-
-  if (chordReferenceRenderRecipe.outputStatus !== 'not-generated') {
-    missing.push('chordReferenceRenderRecipe.outputStatus')
-  }
-
-  if (
-    typeof chordReferenceRenderRecipe.rendererRequirement !== 'string' ||
-    !chordReferenceRenderRecipe.rendererRequirement.trim()
-  ) {
-    missing.push('chordReferenceRenderRecipe.rendererRequirement')
-  }
-
-  const countIn =
-    chordReferenceRenderRecipe.countIn &&
-    typeof chordReferenceRenderRecipe.countIn === 'object' &&
-    !Array.isArray(chordReferenceRenderRecipe.countIn)
-      ? (chordReferenceRenderRecipe.countIn as Record<string, unknown>)
-      : null
-
-  if (!countIn) {
-    missing.push('chordReferenceRenderRecipe.countIn')
-  } else {
-    if (countIn.enabled !== true) {
-      missing.push('chordReferenceRenderRecipe.countIn.enabled')
-    }
-
-    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
-      missing.push('chordReferenceRenderRecipe.countIn.bars')
-    }
-
-    if (
-      typeof countIn.description !== 'string' ||
-      !countIn.description.trim()
-    ) {
-      missing.push('chordReferenceRenderRecipe.countIn.description')
-    }
-  }
-
-  const timing =
-    chordReferenceRenderRecipe.timing &&
-    typeof chordReferenceRenderRecipe.timing === 'object' &&
-    !Array.isArray(chordReferenceRenderRecipe.timing)
-      ? (chordReferenceRenderRecipe.timing as Record<string, unknown>)
-      : null
-
-  if (!timing) {
-    missing.push('chordReferenceRenderRecipe.timing')
-  } else {
-    if (timing.tempoSource !== 'audioPreviewSpec') {
-      missing.push('chordReferenceRenderRecipe.timing.tempoSource')
-    }
-
-    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
-      missing.push('chordReferenceRenderRecipe.timing.sectionTimingSource')
-    }
-
-    if (
-      typeof timing.description !== 'string' ||
-      !timing.description.trim()
-    ) {
-      missing.push('chordReferenceRenderRecipe.timing.description')
-    }
-  }
-
-  const chordSource =
-    chordReferenceRenderRecipe.chordSource &&
-    typeof chordReferenceRenderRecipe.chordSource === 'object' &&
-    !Array.isArray(chordReferenceRenderRecipe.chordSource)
-      ? (chordReferenceRenderRecipe.chordSource as Record<string, unknown>)
-      : null
-
-  if (!chordSource) {
-    missing.push('chordReferenceRenderRecipe.chordSource')
-  } else {
-    if (chordSource.source !== 'rendererPayload.chordSections') {
-      missing.push('chordReferenceRenderRecipe.chordSource.source')
-    }
-
-    if (
-      typeof chordSource.description !== 'string' ||
-      !chordSource.description.trim()
-    ) {
-      missing.push('chordReferenceRenderRecipe.chordSource.description')
-    }
-  }
-
-  const voicing =
-    chordReferenceRenderRecipe.voicing &&
-    typeof chordReferenceRenderRecipe.voicing === 'object' &&
-    !Array.isArray(chordReferenceRenderRecipe.voicing)
-      ? (chordReferenceRenderRecipe.voicing as Record<string, unknown>)
-      : null
-
-  if (!voicing) {
-    missing.push('chordReferenceRenderRecipe.voicing')
-  } else {
-    if (voicing.primaryInstrument !== 'clean acoustic guitar or simple piano') {
-      missing.push('chordReferenceRenderRecipe.voicing.primaryInstrument')
-    }
-
-    if (voicing.density !== 'sparse') {
-      missing.push('chordReferenceRenderRecipe.voicing.density')
-    }
-
-    if (
-      typeof voicing.description !== 'string' ||
-      !voicing.description.trim()
-    ) {
-      missing.push('chordReferenceRenderRecipe.voicing.description')
-    }
-  }
-
-  const sectionMarkers =
-    chordReferenceRenderRecipe.sectionMarkers &&
-    typeof chordReferenceRenderRecipe.sectionMarkers === 'object' &&
-    !Array.isArray(chordReferenceRenderRecipe.sectionMarkers)
-      ? (chordReferenceRenderRecipe.sectionMarkers as Record<string, unknown>)
-      : null
-
-  if (!sectionMarkers) {
-    missing.push('chordReferenceRenderRecipe.sectionMarkers')
-  } else {
-    if (sectionMarkers.enabled !== true) {
-      missing.push('chordReferenceRenderRecipe.sectionMarkers.enabled')
-    }
-
-    if (
-      typeof sectionMarkers.description !== 'string' ||
-      !sectionMarkers.description.trim()
-    ) {
-      missing.push('chordReferenceRenderRecipe.sectionMarkers.description')
-    }
-  }
-
-  if (
-    !Array.isArray(chordReferenceRenderRecipe.mixPriorities) ||
-    chordReferenceRenderRecipe.mixPriorities.length === 0
-  ) {
-    missing.push('chordReferenceRenderRecipe.mixPriorities')
-  }
-
-  if (
-    !Array.isArray(chordReferenceRenderRecipe.completionCriteria) ||
-    chordReferenceRenderRecipe.completionCriteria.length === 0
-  ) {
-    missing.push('chordReferenceRenderRecipe.completionCriteria')
-  }
-}
-
-const vocalGuideRenderRecipe =
-  pkg.vocalGuideRenderRecipe &&
-  typeof pkg.vocalGuideRenderRecipe === 'object' &&
-  !Array.isArray(pkg.vocalGuideRenderRecipe)
-    ? (pkg.vocalGuideRenderRecipe as Record<string, unknown>)
-    : null
-
-if (!vocalGuideRenderRecipe) {
-  missing.push('vocalGuideRenderRecipe')
-} else {
-  if (
-    vocalGuideRenderRecipe.recipeStatus !==
-    'dry-run-vocal-guide-recipe-declared'
-  ) {
-    missing.push('vocalGuideRenderRecipe.recipeStatus')
-  }
-
-  if (vocalGuideRenderRecipe.targetKey !== 'vocalGuideTrack') {
-    missing.push('vocalGuideRenderRecipe.targetKey')
-  }
-
-  if (vocalGuideRenderRecipe.targetSelection !== 'optional') {
-    missing.push('vocalGuideRenderRecipe.targetSelection')
-  }
-
-  if (vocalGuideRenderRecipe.outputStatus !== 'not-generated') {
-    missing.push('vocalGuideRenderRecipe.outputStatus')
-  }
-
-  if (
-    typeof vocalGuideRenderRecipe.rendererRequirement !== 'string' ||
-    !vocalGuideRenderRecipe.rendererRequirement.trim()
-  ) {
-    missing.push('vocalGuideRenderRecipe.rendererRequirement')
-  }
-
-  if (
-    !Array.isArray(vocalGuideRenderRecipe.activationRequirements) ||
-    vocalGuideRenderRecipe.activationRequirements.length === 0
-  ) {
-    missing.push('vocalGuideRenderRecipe.activationRequirements')
-  }
-
-  const countIn =
-    vocalGuideRenderRecipe.countIn &&
-    typeof vocalGuideRenderRecipe.countIn === 'object' &&
-    !Array.isArray(vocalGuideRenderRecipe.countIn)
-      ? (vocalGuideRenderRecipe.countIn as Record<string, unknown>)
-      : null
-
-  if (!countIn) {
-    missing.push('vocalGuideRenderRecipe.countIn')
-  } else {
-    if (countIn.enabled !== true) {
-      missing.push('vocalGuideRenderRecipe.countIn.enabled')
-    }
-
-    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
-      missing.push('vocalGuideRenderRecipe.countIn.bars')
-    }
-
-    if (
-      typeof countIn.description !== 'string' ||
-      !countIn.description.trim()
-    ) {
-      missing.push('vocalGuideRenderRecipe.countIn.description')
-    }
-  }
-
-  const timing =
-    vocalGuideRenderRecipe.timing &&
-    typeof vocalGuideRenderRecipe.timing === 'object' &&
-    !Array.isArray(vocalGuideRenderRecipe.timing)
-      ? (vocalGuideRenderRecipe.timing as Record<string, unknown>)
-      : null
-
-  if (!timing) {
-    missing.push('vocalGuideRenderRecipe.timing')
-  } else {
-    if (timing.tempoSource !== 'audioPreviewSpec') {
-      missing.push('vocalGuideRenderRecipe.timing.tempoSource')
-    }
-
-    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
-      missing.push('vocalGuideRenderRecipe.timing.sectionTimingSource')
-    }
-
-    if (
-      typeof timing.description !== 'string' ||
-      !timing.description.trim()
-    ) {
-      missing.push('vocalGuideRenderRecipe.timing.description')
-    }
-  }
-
-  const melodySource =
-    vocalGuideRenderRecipe.melodySource &&
-    typeof vocalGuideRenderRecipe.melodySource === 'object' &&
-    !Array.isArray(vocalGuideRenderRecipe.melodySource)
-      ? (vocalGuideRenderRecipe.melodySource as Record<string, unknown>)
-      : null
-
-  if (!melodySource) {
-    missing.push('vocalGuideRenderRecipe.melodySource')
-  } else {
-    if (melodySource.status !== 'not-provided') {
-      missing.push('vocalGuideRenderRecipe.melodySource.status')
-    }
-
-    if (
-      !Array.isArray(melodySource.acceptedSources) ||
-      melodySource.acceptedSources.length === 0
-    ) {
-      missing.push('vocalGuideRenderRecipe.melodySource.acceptedSources')
-    }
-
-    if (
-      typeof melodySource.description !== 'string' ||
-      !melodySource.description.trim()
-    ) {
-      missing.push('vocalGuideRenderRecipe.melodySource.description')
-    }
-  }
-
-  const vocalStyle =
-    vocalGuideRenderRecipe.vocalStyle &&
-    typeof vocalGuideRenderRecipe.vocalStyle === 'object' &&
-    !Array.isArray(vocalGuideRenderRecipe.vocalStyle)
-      ? (vocalGuideRenderRecipe.vocalStyle as Record<string, unknown>)
-      : null
-
-  if (!vocalStyle) {
-    missing.push('vocalGuideRenderRecipe.vocalStyle')
-  } else {
-    if (vocalStyle.status !== 'not-selected') {
-      missing.push('vocalGuideRenderRecipe.vocalStyle.status')
-    }
-
-    if (
-      typeof vocalStyle.defaultReference !== 'string' ||
-      !vocalStyle.defaultReference.trim()
-    ) {
-      missing.push('vocalGuideRenderRecipe.vocalStyle.defaultReference')
-    }
-
-    if (
-      typeof vocalStyle.description !== 'string' ||
-      !vocalStyle.description.trim()
-    ) {
-      missing.push('vocalGuideRenderRecipe.vocalStyle.description')
-    }
-  }
-
-  if (
-    !Array.isArray(vocalGuideRenderRecipe.mixPriorities) ||
-    vocalGuideRenderRecipe.mixPriorities.length === 0
-  ) {
-    missing.push('vocalGuideRenderRecipe.mixPriorities')
-  }
-
-  if (
-    !Array.isArray(vocalGuideRenderRecipe.completionCriteria) ||
-    vocalGuideRenderRecipe.completionCriteria.length === 0
-  ) {
-    missing.push('vocalGuideRenderRecipe.completionCriteria')
-  }
-}
-const expectedOutputFiles =
-  pkg.expectedOutputFiles &&
-  typeof pkg.expectedOutputFiles === 'object' &&
-  !Array.isArray(pkg.expectedOutputFiles)
-    ? (pkg.expectedOutputFiles as Record<string, unknown>)
-    : null
-
-if (!expectedOutputFiles) {
-  missing.push('expectedOutputFiles')
-} else {
-  if (expectedOutputFiles.outputStatus !== 'not-generated') {
-    missing.push('expectedOutputFiles.outputStatus')
-  }
-
-  if (expectedOutputFiles.storageStatus !== 'not-configured') {
-    missing.push('expectedOutputFiles.storageStatus')
-  }
-
-  if (expectedOutputFiles.formatStatus !== 'not-selected') {
-    missing.push('expectedOutputFiles.formatStatus')
-  }
-
-  const outputs = Array.isArray(expectedOutputFiles.outputs)
-    ? expectedOutputFiles.outputs
-    : []
-
-  if (outputs.length !== 4) {
-    missing.push('expectedOutputFiles.outputs')
-  }
-
-  const requiredOutputKeys = [
-    'guideTrackAudio',
-    'clickTrack',
-    'chordReferenceTrack',
-    'vocalGuideTrack',
-  ]
-
-  for (const requiredOutputKey of requiredOutputKeys) {
-    const output = outputs.find(
-      (item) =>
-        item &&
-        typeof item === 'object' &&
-        !Array.isArray(item) &&
-        (item as Record<string, unknown>).key === requiredOutputKey,
-    )
-
-    if (!output || typeof output !== 'object' || Array.isArray(output)) {
-      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}`)
-      continue
-    }
-
-    const outputRecord = output as Record<string, unknown>
-
-    if (outputRecord.status !== 'not-generated') {
-      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.status`)
-    }
-
-    if (outputRecord.file !== null) {
-      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.file`)
-    }
-
-    if (
-      typeof outputRecord.label !== 'string' ||
-      !outputRecord.label.trim()
-    ) {
-      missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.label`)
-    }
-
-    if (
-      !Array.isArray(outputRecord.requiredBeforeGenerated) ||
-      outputRecord.requiredBeforeGenerated.length === 0
-    ) {
-      missing.push(
-        `expectedOutputFiles.outputs.${requiredOutputKey}.requiredBeforeGenerated`,
-      )
-    }
-  }
-
-  if (
-    !Array.isArray(expectedOutputFiles.notes) ||
-    expectedOutputFiles.notes.length === 0
-  ) {
-    missing.push('expectedOutputFiles.notes')
-  }
-}
-
-const rendererInputContract =
-  pkg.rendererInputContract &&
-  typeof pkg.rendererInputContract === 'object' &&
-  !Array.isArray(pkg.rendererInputContract)
-    ? (pkg.rendererInputContract as Record<string, unknown>)
-    : null
-
-if (!rendererInputContract) {
-  missing.push('rendererInputContract')
-} else {
-  if (
-    rendererInputContract.contractStatus !==
-    'dry-run-renderer-input-contract-declared'
-  ) {
-    missing.push('rendererInputContract.contractStatus')
-  }
-
-  if (rendererInputContract.audioStatus !== 'not-generated') {
-    missing.push('rendererInputContract.audioStatus')
-  }
-
-  if (rendererInputContract.rendererStatus !== 'not-connected') {
-    missing.push('rendererInputContract.rendererStatus')
-  }
-
-  if (rendererInputContract.storageStatus !== 'not-configured') {
-    missing.push('rendererInputContract.storageStatus')
-  }
-
-  if (rendererInputContract.formatStatus !== 'not-selected') {
-    missing.push('rendererInputContract.formatStatus')
-  }
-
-  if (
-    typeof rendererInputContract.purpose !== 'string' ||
-    !rendererInputContract.purpose.trim()
-  ) {
-    missing.push('rendererInputContract.purpose')
-  }
-
-  if (
-    !Array.isArray(rendererInputContract.requiredInputObjects) ||
-    rendererInputContract.requiredInputObjects.length === 0
-  ) {
-    missing.push('rendererInputContract.requiredInputObjects')
-  }
-
-  if (
-    !Array.isArray(rendererInputContract.selectedOutputKeys) ||
-    rendererInputContract.selectedOutputKeys.length === 0
-  ) {
-    missing.push('rendererInputContract.selectedOutputKeys')
-  }
-
-  if (
-    !Array.isArray(rendererInputContract.optionalOutputKeys) ||
-    rendererInputContract.optionalOutputKeys.length === 0
-  ) {
-    missing.push('rendererInputContract.optionalOutputKeys')
-  }
-
-  if (
-    !Array.isArray(rendererInputContract.requiredBeforeRealRender) ||
-    rendererInputContract.requiredBeforeRealRender.length === 0
-  ) {
-    missing.push('rendererInputContract.requiredBeforeRealRender')
-  }
-
-  if (
-    !Array.isArray(rendererInputContract.handoffRules) ||
-    rendererInputContract.handoffRules.length === 0
-  ) {
-    missing.push('rendererInputContract.handoffRules')
-  }
-}
-
-const realRenderGate =
-  pkg.realRenderGate &&
-  typeof pkg.realRenderGate === 'object' &&
-  !Array.isArray(pkg.realRenderGate)
-    ? (pkg.realRenderGate as Record<string, unknown>)
-    : null
-
-if (!realRenderGate) {
-  missing.push('realRenderGate')
-} else {
-  if (realRenderGate.gateStatus !== 'blocked') {
-    missing.push('realRenderGate.gateStatus')
-  }
-
-  if (realRenderGate.canRenderAudio !== false) {
-    missing.push('realRenderGate.canRenderAudio')
-  }
-
-  if (realRenderGate.audioStatus !== 'not-generated') {
-    missing.push('realRenderGate.audioStatus')
-  }
-
-  if (realRenderGate.rendererStatus !== 'not-connected') {
-    missing.push('realRenderGate.rendererStatus')
-  }
-
-  if (realRenderGate.storageStatus !== 'not-configured') {
-    missing.push('realRenderGate.storageStatus')
-  }
-
-  if (realRenderGate.formatStatus !== 'not-selected') {
-    missing.push('realRenderGate.formatStatus')
-  }
-
-  if (typeof realRenderGate.dryRunReady !== 'boolean') {
-    missing.push('realRenderGate.dryRunReady')
-  }
-
-  if (
-    !Array.isArray(realRenderGate.blockedReasons) ||
-    realRenderGate.blockedReasons.length === 0
-  ) {
-    missing.push('realRenderGate.blockedReasons')
-  }
-
-  if (
-    !Array.isArray(realRenderGate.requiredToUnlock) ||
-    realRenderGate.requiredToUnlock.length === 0
-  ) {
-    missing.push('realRenderGate.requiredToUnlock')
-  }
-
-  if (
-    !Array.isArray(realRenderGate.safetyRules) ||
-    realRenderGate.safetyRules.length === 0
-  ) {
-    missing.push('realRenderGate.safetyRules')
-  }
-}
-
-const firstRealRenderPlan =
-  pkg.firstRealRenderPlan &&
-  typeof pkg.firstRealRenderPlan === 'object' &&
-  !Array.isArray(pkg.firstRealRenderPlan)
-    ? (pkg.firstRealRenderPlan as Record<string, unknown>)
-    : null
-
-if (!firstRealRenderPlan) {
-  missing.push('firstRealRenderPlan')
-} else {
-  if (
-    firstRealRenderPlan.planStatus !==
-    'dry-run-first-real-render-plan-declared'
-  ) {
-    missing.push('firstRealRenderPlan.planStatus')
-  }
-
-  if (firstRealRenderPlan.audioStatus !== 'not-generated') {
-    missing.push('firstRealRenderPlan.audioStatus')
-  }
-
-  if (firstRealRenderPlan.recommendedFirstTarget !== 'clickTrack') {
-    missing.push('firstRealRenderPlan.recommendedFirstTarget')
-  }
-
-  if (
-    typeof firstRealRenderPlan.recommendedReason !== 'string' ||
-    !firstRealRenderPlan.recommendedReason.trim()
-  ) {
-    missing.push('firstRealRenderPlan.recommendedReason')
-  }
-
-  const rendererStrategy =
-    firstRealRenderPlan.rendererStrategy &&
-    typeof firstRealRenderPlan.rendererStrategy === 'object' &&
-    !Array.isArray(firstRealRenderPlan.rendererStrategy)
-      ? (firstRealRenderPlan.rendererStrategy as Record<string, unknown>)
-      : null
-
-  if (!rendererStrategy) {
-    missing.push('firstRealRenderPlan.rendererStrategy')
-  } else {
-    if (
-      rendererStrategy.strategyType !== 'server-side-synthetic-click-track'
-    ) {
-      missing.push('firstRealRenderPlan.rendererStrategy.strategyType')
-    }
-
-    if (rendererStrategy.implementationStatus !== 'not-implemented') {
-      missing.push(
-        'firstRealRenderPlan.rendererStrategy.implementationStatus',
-      )
-    }
-
-    if (
-      typeof rendererStrategy.description !== 'string' ||
-      !rendererStrategy.description.trim()
-    ) {
-      missing.push('firstRealRenderPlan.rendererStrategy.description')
-    }
-  }
-
-  if (
-    !Array.isArray(firstRealRenderPlan.firstUnlockRequirements) ||
-    firstRealRenderPlan.firstUnlockRequirements.length === 0
-  ) {
-    missing.push('firstRealRenderPlan.firstUnlockRequirements')
-  }
-
-  if (
-    !Array.isArray(firstRealRenderPlan.firstValidationChecks) ||
-    firstRealRenderPlan.firstValidationChecks.length === 0
-  ) {
-    missing.push('firstRealRenderPlan.firstValidationChecks')
-  }
-
-  if (
-    !Array.isArray(firstRealRenderPlan.laterTargets) ||
-    firstRealRenderPlan.laterTargets.length === 0
-  ) {
-    missing.push('firstRealRenderPlan.laterTargets')
-  }
-
-  if (
-    !Array.isArray(firstRealRenderPlan.notes) ||
-    firstRealRenderPlan.notes.length === 0
-  ) {
-    missing.push('firstRealRenderPlan.notes')
-  }
-}
-
-const realRenderRouteScaffold =
-  pkg.realRenderRouteScaffold &&
-  typeof pkg.realRenderRouteScaffold === 'object' &&
-  !Array.isArray(pkg.realRenderRouteScaffold)
-    ? (pkg.realRenderRouteScaffold as Record<string, unknown>)
-    : null
-
-if (!realRenderRouteScaffold) {
-  missing.push('realRenderRouteScaffold')
-} else {
-  if (realRenderRouteScaffold.routeStatus !== 'blocked-scaffold-declared') {
-    missing.push('realRenderRouteScaffold.routeStatus')
-  }
-
-  if (realRenderRouteScaffold.method !== 'POST') {
-    missing.push('realRenderRouteScaffold.method')
-  }
-
-  if (realRenderRouteScaffold.path !== '/api/audio-preview/real-render') {
-    missing.push('realRenderRouteScaffold.path')
-  }
-
-  if (realRenderRouteScaffold.expectedBlockedStatusCode !== 423) {
-    missing.push('realRenderRouteScaffold.expectedBlockedStatusCode')
-  }
-
-  if (realRenderRouteScaffold.audioStatus !== 'not-generated') {
-    missing.push('realRenderRouteScaffold.audioStatus')
-  }
-
-  if (realRenderRouteScaffold.rendererStatus !== 'not-connected') {
-    missing.push('realRenderRouteScaffold.rendererStatus')
-  }
-
-  if (
-    typeof realRenderRouteScaffold.purpose !== 'string' ||
-    !realRenderRouteScaffold.purpose.trim()
-  ) {
-    missing.push('realRenderRouteScaffold.purpose')
-  }
-
-  const expectedRequestShape =
-    realRenderRouteScaffold.expectedRequestShape &&
-    typeof realRenderRouteScaffold.expectedRequestShape === 'object' &&
-    !Array.isArray(realRenderRouteScaffold.expectedRequestShape)
-      ? (realRenderRouteScaffold.expectedRequestShape as Record<
-          string,
-          unknown
-        >)
-      : null
-
-  if (!expectedRequestShape) {
-    missing.push('realRenderRouteScaffold.expectedRequestShape')
-  } else {
-    if (expectedRequestShape.requestedTarget !== 'clickTrack') {
-      missing.push(
-        'realRenderRouteScaffold.expectedRequestShape.requestedTarget',
-      )
-    }
-
-    if (
-      expectedRequestShape.rendererInputContract !==
-      'required-before-real-render'
-    ) {
-      missing.push(
-        'realRenderRouteScaffold.expectedRequestShape.rendererInputContract',
-      )
-    }
-
-    if (
-  expectedRequestShape.realRenderConfiguration !==
-      'required-before-real-render'
-    ) {
-      missing.push(
-        'realRenderRouteScaffold.expectedRequestShape.realRenderConfiguration',
-      )
-    }
-
-    if (expectedRequestShape.realRenderGate !== 'required-before-real-render') {
-      missing.push(
-        'realRenderRouteScaffold.expectedRequestShape.realRenderGate',
-      )
-    }
-
-    if (
-      expectedRequestShape.firstRealRenderPlan !==
-      'required-before-real-render'
-    ) {
-      missing.push(
-        'realRenderRouteScaffold.expectedRequestShape.firstRealRenderPlan',
-      )
-    }
-  }
-
-  const expectedBlockedResponse =
-    realRenderRouteScaffold.expectedBlockedResponse &&
-    typeof realRenderRouteScaffold.expectedBlockedResponse === 'object' &&
-    !Array.isArray(realRenderRouteScaffold.expectedBlockedResponse)
-      ? (realRenderRouteScaffold.expectedBlockedResponse as Record<
-          string,
-          unknown
-        >)
-      : null
-
-  if (!expectedBlockedResponse) {
-    missing.push('realRenderRouteScaffold.expectedBlockedResponse')
-  } else {
-    if (expectedBlockedResponse.ok !== false) {
-      missing.push('realRenderRouteScaffold.expectedBlockedResponse.ok')
-    }
-
-    if (expectedBlockedResponse.status !== 'blocked') {
-      missing.push('realRenderRouteScaffold.expectedBlockedResponse.status')
-    }
-
-    if (expectedBlockedResponse.audioStatus !== 'not-generated') {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.audioStatus',
-      )
-    }
-
-    if (expectedBlockedResponse.rendererStatus !== 'not-connected') {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.rendererStatus',
-      )
-    }
-
-    if (expectedBlockedResponse.storageStatus !== 'not-configured') {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.storageStatus',
-      )
-    }
-
-    if (expectedBlockedResponse.formatStatus !== 'not-selected') {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.formatStatus',
-      )
-    }
-
-    const expectedReceivedContractSummary =
-      expectedBlockedResponse.receivedContractSummary &&
-      typeof expectedBlockedResponse.receivedContractSummary === 'object' &&
-      !Array.isArray(expectedBlockedResponse.receivedContractSummary)
-        ? (expectedBlockedResponse.receivedContractSummary as Record<
-            string,
-            unknown
-      >)
-    : null
-
-    if (!expectedReceivedContractSummary) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary',
-      )
+    const selectedOutputs = Array.isArray(renderTargets.selectedOutputs)
+      ? renderTargets.selectedOutputs
+      : [];
+
+    if (selectedOutputs.length === 0) {
+      missing.push("renderTargets.selectedOutputs");
     } else {
-      if (expectedReceivedContractSummary.hasRendererInputContract !== true) {
-        missing.push(
-          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRendererInputContract',
-        )
+      selectedOutputs.forEach((output, index) => {
+        const target =
+          output && typeof output === "object" && !Array.isArray(output)
+            ? (output as Record<string, unknown>)
+            : null;
+
+        if (!target) {
+          missing.push(`renderTargets.selectedOutputs.${index}`);
+          return;
+        }
+
+        if (typeof target.key !== "string" || !target.key.trim()) {
+          missing.push(`renderTargets.selectedOutputs.${index}.key`);
+        }
+
+        if (typeof target.label !== "string" || !target.label.trim()) {
+          missing.push(`renderTargets.selectedOutputs.${index}.label`);
+        }
+
+        if (typeof target.priority !== "number") {
+          missing.push(`renderTargets.selectedOutputs.${index}.priority`);
+        }
+
+        if (typeof target.selected !== "boolean") {
+          missing.push(`renderTargets.selectedOutputs.${index}.selected`);
+        }
+
+        if (typeof target.reason !== "string" || !target.reason.trim()) {
+          missing.push(`renderTargets.selectedOutputs.${index}.reason`);
+        }
+      });
+    }
+
+    if (
+      !Array.isArray(renderTargets.notes) ||
+      renderTargets.notes.length === 0
+    ) {
+      missing.push("renderTargets.notes");
+    }
+  }
+
+  const guideTrackRenderRecipe =
+    pkg.guideTrackRenderRecipe &&
+    typeof pkg.guideTrackRenderRecipe === "object" &&
+    !Array.isArray(pkg.guideTrackRenderRecipe)
+      ? (pkg.guideTrackRenderRecipe as Record<string, unknown>)
+      : null;
+
+  if (!guideTrackRenderRecipe) {
+    missing.push("guideTrackRenderRecipe");
+  } else {
+    if (
+      guideTrackRenderRecipe.recipeStatus !==
+      "dry-run-guide-track-recipe-declared"
+    ) {
+      missing.push("guideTrackRenderRecipe.recipeStatus");
+    }
+
+    if (guideTrackRenderRecipe.targetKey !== "guideTrackAudio") {
+      missing.push("guideTrackRenderRecipe.targetKey");
+    }
+
+    if (guideTrackRenderRecipe.outputStatus !== "not-generated") {
+      missing.push("guideTrackRenderRecipe.outputStatus");
+    }
+
+    if (
+      typeof guideTrackRenderRecipe.rendererRequirement !== "string" ||
+      !guideTrackRenderRecipe.rendererRequirement.trim()
+    ) {
+      missing.push("guideTrackRenderRecipe.rendererRequirement");
+    }
+
+    const countIn =
+      guideTrackRenderRecipe.countIn &&
+      typeof guideTrackRenderRecipe.countIn === "object" &&
+      !Array.isArray(guideTrackRenderRecipe.countIn)
+        ? (guideTrackRenderRecipe.countIn as Record<string, unknown>)
+        : null;
+
+    if (!countIn) {
+      missing.push("guideTrackRenderRecipe.countIn");
+    } else {
+      if (countIn.enabled !== true) {
+        missing.push("guideTrackRenderRecipe.countIn.enabled");
       }
 
-      if (expectedReceivedContractSummary.hasRealRenderGate !== true) {
-        missing.push(
-          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRealRenderGate',
-        )
+      if (typeof countIn.bars !== "number" || countIn.bars <= 0) {
+        missing.push("guideTrackRenderRecipe.countIn.bars");
       }
 
-      if (expectedReceivedContractSummary.hasFirstRealRenderPlan !== true) {
-        missing.push(
-          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasFirstRealRenderPlan',
-        )
-      }
-
-      if (expectedReceivedContractSummary.hasRealRenderConfiguration !== true) {
-        missing.push(
-          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRealRenderConfiguration',
-        )
-      }
-
-      if (expectedReceivedContractSummary.requestedTarget !== 'clickTrack') {
-        missing.push(
-          'realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.requestedTarget',
-        )
+      if (
+        typeof countIn.description !== "string" ||
+        !countIn.description.trim()
+      ) {
+        missing.push("guideTrackRenderRecipe.countIn.description");
       }
     }
 
-    const expectedReceivedContractCheck =
-      expectedBlockedResponse.receivedContractCheck &&
-      typeof expectedBlockedResponse.receivedContractCheck === 'object' &&
-      !Array.isArray(expectedBlockedResponse.receivedContractCheck)
-        ? (expectedBlockedResponse.receivedContractCheck as Record<
+    const timing =
+      guideTrackRenderRecipe.timing &&
+      typeof guideTrackRenderRecipe.timing === "object" &&
+      !Array.isArray(guideTrackRenderRecipe.timing)
+        ? (guideTrackRenderRecipe.timing as Record<string, unknown>)
+        : null;
+
+    if (!timing) {
+      missing.push("guideTrackRenderRecipe.timing");
+    } else {
+      if (timing.tempoSource !== "audioPreviewSpec") {
+        missing.push("guideTrackRenderRecipe.timing.tempoSource");
+      }
+
+      if (timing.sectionTimingSource !== "dryRunCueSheet") {
+        missing.push("guideTrackRenderRecipe.timing.sectionTimingSource");
+      }
+
+      if (
+        typeof timing.description !== "string" ||
+        !timing.description.trim()
+      ) {
+        missing.push("guideTrackRenderRecipe.timing.description");
+      }
+    }
+
+    const musicalBed =
+      guideTrackRenderRecipe.musicalBed &&
+      typeof guideTrackRenderRecipe.musicalBed === "object" &&
+      !Array.isArray(guideTrackRenderRecipe.musicalBed)
+        ? (guideTrackRenderRecipe.musicalBed as Record<string, unknown>)
+        : null;
+
+    if (!musicalBed) {
+      missing.push("guideTrackRenderRecipe.musicalBed");
+    } else {
+      if (musicalBed.primaryInstrument !== "warm acoustic guitar") {
+        missing.push("guideTrackRenderRecipe.musicalBed.primaryInstrument");
+      }
+
+      if (
+        !Array.isArray(musicalBed.supportInstruments) ||
+        musicalBed.supportInstruments.length === 0
+      ) {
+        missing.push("guideTrackRenderRecipe.musicalBed.supportInstruments");
+      }
+
+      if (
+        typeof musicalBed.description !== "string" ||
+        !musicalBed.description.trim()
+      ) {
+        missing.push("guideTrackRenderRecipe.musicalBed.description");
+      }
+    }
+
+    const chordHandling =
+      guideTrackRenderRecipe.chordHandling &&
+      typeof guideTrackRenderRecipe.chordHandling === "object" &&
+      !Array.isArray(guideTrackRenderRecipe.chordHandling)
+        ? (guideTrackRenderRecipe.chordHandling as Record<string, unknown>)
+        : null;
+
+    if (!chordHandling) {
+      missing.push("guideTrackRenderRecipe.chordHandling");
+    } else {
+      if (chordHandling.source !== "rendererPayload.chordSections") {
+        missing.push("guideTrackRenderRecipe.chordHandling.source");
+      }
+
+      if (
+        typeof chordHandling.description !== "string" ||
+        !chordHandling.description.trim()
+      ) {
+        missing.push("guideTrackRenderRecipe.chordHandling.description");
+      }
+    }
+
+    const vocalGuide =
+      guideTrackRenderRecipe.vocalGuide &&
+      typeof guideTrackRenderRecipe.vocalGuide === "object" &&
+      !Array.isArray(guideTrackRenderRecipe.vocalGuide)
+        ? (guideTrackRenderRecipe.vocalGuide as Record<string, unknown>)
+        : null;
+
+    if (!vocalGuide) {
+      missing.push("guideTrackRenderRecipe.vocalGuide");
+    } else {
+      if (vocalGuide.status !== "placeholder-only") {
+        missing.push("guideTrackRenderRecipe.vocalGuide.status");
+      }
+
+      if (
+        typeof vocalGuide.description !== "string" ||
+        !vocalGuide.description.trim()
+      ) {
+        missing.push("guideTrackRenderRecipe.vocalGuide.description");
+      }
+    }
+
+    if (
+      !Array.isArray(guideTrackRenderRecipe.mixPriorities) ||
+      guideTrackRenderRecipe.mixPriorities.length === 0
+    ) {
+      missing.push("guideTrackRenderRecipe.mixPriorities");
+    }
+
+    if (
+      !Array.isArray(guideTrackRenderRecipe.completionCriteria) ||
+      guideTrackRenderRecipe.completionCriteria.length === 0
+    ) {
+      missing.push("guideTrackRenderRecipe.completionCriteria");
+    }
+  }
+
+  const chordReferenceRenderRecipe =
+    pkg.chordReferenceRenderRecipe &&
+    typeof pkg.chordReferenceRenderRecipe === "object" &&
+    !Array.isArray(pkg.chordReferenceRenderRecipe)
+      ? (pkg.chordReferenceRenderRecipe as Record<string, unknown>)
+      : null;
+
+  if (!chordReferenceRenderRecipe) {
+    missing.push("chordReferenceRenderRecipe");
+  } else {
+    if (
+      chordReferenceRenderRecipe.recipeStatus !==
+      "dry-run-chord-reference-recipe-declared"
+    ) {
+      missing.push("chordReferenceRenderRecipe.recipeStatus");
+    }
+
+    if (chordReferenceRenderRecipe.targetKey !== "chordReferenceTrack") {
+      missing.push("chordReferenceRenderRecipe.targetKey");
+    }
+
+    if (chordReferenceRenderRecipe.outputStatus !== "not-generated") {
+      missing.push("chordReferenceRenderRecipe.outputStatus");
+    }
+
+    if (
+      typeof chordReferenceRenderRecipe.rendererRequirement !== "string" ||
+      !chordReferenceRenderRecipe.rendererRequirement.trim()
+    ) {
+      missing.push("chordReferenceRenderRecipe.rendererRequirement");
+    }
+
+    const countIn =
+      chordReferenceRenderRecipe.countIn &&
+      typeof chordReferenceRenderRecipe.countIn === "object" &&
+      !Array.isArray(chordReferenceRenderRecipe.countIn)
+        ? (chordReferenceRenderRecipe.countIn as Record<string, unknown>)
+        : null;
+
+    if (!countIn) {
+      missing.push("chordReferenceRenderRecipe.countIn");
+    } else {
+      if (countIn.enabled !== true) {
+        missing.push("chordReferenceRenderRecipe.countIn.enabled");
+      }
+
+      if (typeof countIn.bars !== "number" || countIn.bars <= 0) {
+        missing.push("chordReferenceRenderRecipe.countIn.bars");
+      }
+
+      if (
+        typeof countIn.description !== "string" ||
+        !countIn.description.trim()
+      ) {
+        missing.push("chordReferenceRenderRecipe.countIn.description");
+      }
+    }
+
+    const timing =
+      chordReferenceRenderRecipe.timing &&
+      typeof chordReferenceRenderRecipe.timing === "object" &&
+      !Array.isArray(chordReferenceRenderRecipe.timing)
+        ? (chordReferenceRenderRecipe.timing as Record<string, unknown>)
+        : null;
+
+    if (!timing) {
+      missing.push("chordReferenceRenderRecipe.timing");
+    } else {
+      if (timing.tempoSource !== "audioPreviewSpec") {
+        missing.push("chordReferenceRenderRecipe.timing.tempoSource");
+      }
+
+      if (timing.sectionTimingSource !== "dryRunCueSheet") {
+        missing.push("chordReferenceRenderRecipe.timing.sectionTimingSource");
+      }
+
+      if (
+        typeof timing.description !== "string" ||
+        !timing.description.trim()
+      ) {
+        missing.push("chordReferenceRenderRecipe.timing.description");
+      }
+    }
+
+    const chordSource =
+      chordReferenceRenderRecipe.chordSource &&
+      typeof chordReferenceRenderRecipe.chordSource === "object" &&
+      !Array.isArray(chordReferenceRenderRecipe.chordSource)
+        ? (chordReferenceRenderRecipe.chordSource as Record<string, unknown>)
+        : null;
+
+    if (!chordSource) {
+      missing.push("chordReferenceRenderRecipe.chordSource");
+    } else {
+      if (chordSource.source !== "rendererPayload.chordSections") {
+        missing.push("chordReferenceRenderRecipe.chordSource.source");
+      }
+
+      if (
+        typeof chordSource.description !== "string" ||
+        !chordSource.description.trim()
+      ) {
+        missing.push("chordReferenceRenderRecipe.chordSource.description");
+      }
+    }
+
+    const voicing =
+      chordReferenceRenderRecipe.voicing &&
+      typeof chordReferenceRenderRecipe.voicing === "object" &&
+      !Array.isArray(chordReferenceRenderRecipe.voicing)
+        ? (chordReferenceRenderRecipe.voicing as Record<string, unknown>)
+        : null;
+
+    if (!voicing) {
+      missing.push("chordReferenceRenderRecipe.voicing");
+    } else {
+      if (
+        voicing.primaryInstrument !== "clean acoustic guitar or simple piano"
+      ) {
+        missing.push("chordReferenceRenderRecipe.voicing.primaryInstrument");
+      }
+
+      if (voicing.density !== "sparse") {
+        missing.push("chordReferenceRenderRecipe.voicing.density");
+      }
+
+      if (
+        typeof voicing.description !== "string" ||
+        !voicing.description.trim()
+      ) {
+        missing.push("chordReferenceRenderRecipe.voicing.description");
+      }
+    }
+
+    const sectionMarkers =
+      chordReferenceRenderRecipe.sectionMarkers &&
+      typeof chordReferenceRenderRecipe.sectionMarkers === "object" &&
+      !Array.isArray(chordReferenceRenderRecipe.sectionMarkers)
+        ? (chordReferenceRenderRecipe.sectionMarkers as Record<string, unknown>)
+        : null;
+
+    if (!sectionMarkers) {
+      missing.push("chordReferenceRenderRecipe.sectionMarkers");
+    } else {
+      if (sectionMarkers.enabled !== true) {
+        missing.push("chordReferenceRenderRecipe.sectionMarkers.enabled");
+      }
+
+      if (
+        typeof sectionMarkers.description !== "string" ||
+        !sectionMarkers.description.trim()
+      ) {
+        missing.push("chordReferenceRenderRecipe.sectionMarkers.description");
+      }
+    }
+
+    if (
+      !Array.isArray(chordReferenceRenderRecipe.mixPriorities) ||
+      chordReferenceRenderRecipe.mixPriorities.length === 0
+    ) {
+      missing.push("chordReferenceRenderRecipe.mixPriorities");
+    }
+
+    if (
+      !Array.isArray(chordReferenceRenderRecipe.completionCriteria) ||
+      chordReferenceRenderRecipe.completionCriteria.length === 0
+    ) {
+      missing.push("chordReferenceRenderRecipe.completionCriteria");
+    }
+  }
+
+  const vocalGuideRenderRecipe =
+    pkg.vocalGuideRenderRecipe &&
+    typeof pkg.vocalGuideRenderRecipe === "object" &&
+    !Array.isArray(pkg.vocalGuideRenderRecipe)
+      ? (pkg.vocalGuideRenderRecipe as Record<string, unknown>)
+      : null;
+
+  if (!vocalGuideRenderRecipe) {
+    missing.push("vocalGuideRenderRecipe");
+  } else {
+    if (
+      vocalGuideRenderRecipe.recipeStatus !==
+      "dry-run-vocal-guide-recipe-declared"
+    ) {
+      missing.push("vocalGuideRenderRecipe.recipeStatus");
+    }
+
+    if (vocalGuideRenderRecipe.targetKey !== "vocalGuideTrack") {
+      missing.push("vocalGuideRenderRecipe.targetKey");
+    }
+
+    if (vocalGuideRenderRecipe.targetSelection !== "optional") {
+      missing.push("vocalGuideRenderRecipe.targetSelection");
+    }
+
+    if (vocalGuideRenderRecipe.outputStatus !== "not-generated") {
+      missing.push("vocalGuideRenderRecipe.outputStatus");
+    }
+
+    if (
+      typeof vocalGuideRenderRecipe.rendererRequirement !== "string" ||
+      !vocalGuideRenderRecipe.rendererRequirement.trim()
+    ) {
+      missing.push("vocalGuideRenderRecipe.rendererRequirement");
+    }
+
+    if (
+      !Array.isArray(vocalGuideRenderRecipe.activationRequirements) ||
+      vocalGuideRenderRecipe.activationRequirements.length === 0
+    ) {
+      missing.push("vocalGuideRenderRecipe.activationRequirements");
+    }
+
+    const countIn =
+      vocalGuideRenderRecipe.countIn &&
+      typeof vocalGuideRenderRecipe.countIn === "object" &&
+      !Array.isArray(vocalGuideRenderRecipe.countIn)
+        ? (vocalGuideRenderRecipe.countIn as Record<string, unknown>)
+        : null;
+
+    if (!countIn) {
+      missing.push("vocalGuideRenderRecipe.countIn");
+    } else {
+      if (countIn.enabled !== true) {
+        missing.push("vocalGuideRenderRecipe.countIn.enabled");
+      }
+
+      if (typeof countIn.bars !== "number" || countIn.bars <= 0) {
+        missing.push("vocalGuideRenderRecipe.countIn.bars");
+      }
+
+      if (
+        typeof countIn.description !== "string" ||
+        !countIn.description.trim()
+      ) {
+        missing.push("vocalGuideRenderRecipe.countIn.description");
+      }
+    }
+
+    const timing =
+      vocalGuideRenderRecipe.timing &&
+      typeof vocalGuideRenderRecipe.timing === "object" &&
+      !Array.isArray(vocalGuideRenderRecipe.timing)
+        ? (vocalGuideRenderRecipe.timing as Record<string, unknown>)
+        : null;
+
+    if (!timing) {
+      missing.push("vocalGuideRenderRecipe.timing");
+    } else {
+      if (timing.tempoSource !== "audioPreviewSpec") {
+        missing.push("vocalGuideRenderRecipe.timing.tempoSource");
+      }
+
+      if (timing.sectionTimingSource !== "dryRunCueSheet") {
+        missing.push("vocalGuideRenderRecipe.timing.sectionTimingSource");
+      }
+
+      if (
+        typeof timing.description !== "string" ||
+        !timing.description.trim()
+      ) {
+        missing.push("vocalGuideRenderRecipe.timing.description");
+      }
+    }
+
+    const melodySource =
+      vocalGuideRenderRecipe.melodySource &&
+      typeof vocalGuideRenderRecipe.melodySource === "object" &&
+      !Array.isArray(vocalGuideRenderRecipe.melodySource)
+        ? (vocalGuideRenderRecipe.melodySource as Record<string, unknown>)
+        : null;
+
+    if (!melodySource) {
+      missing.push("vocalGuideRenderRecipe.melodySource");
+    } else {
+      if (melodySource.status !== "not-provided") {
+        missing.push("vocalGuideRenderRecipe.melodySource.status");
+      }
+
+      if (
+        !Array.isArray(melodySource.acceptedSources) ||
+        melodySource.acceptedSources.length === 0
+      ) {
+        missing.push("vocalGuideRenderRecipe.melodySource.acceptedSources");
+      }
+
+      if (
+        typeof melodySource.description !== "string" ||
+        !melodySource.description.trim()
+      ) {
+        missing.push("vocalGuideRenderRecipe.melodySource.description");
+      }
+    }
+
+    const vocalStyle =
+      vocalGuideRenderRecipe.vocalStyle &&
+      typeof vocalGuideRenderRecipe.vocalStyle === "object" &&
+      !Array.isArray(vocalGuideRenderRecipe.vocalStyle)
+        ? (vocalGuideRenderRecipe.vocalStyle as Record<string, unknown>)
+        : null;
+
+    if (!vocalStyle) {
+      missing.push("vocalGuideRenderRecipe.vocalStyle");
+    } else {
+      if (vocalStyle.status !== "not-selected") {
+        missing.push("vocalGuideRenderRecipe.vocalStyle.status");
+      }
+
+      if (
+        typeof vocalStyle.defaultReference !== "string" ||
+        !vocalStyle.defaultReference.trim()
+      ) {
+        missing.push("vocalGuideRenderRecipe.vocalStyle.defaultReference");
+      }
+
+      if (
+        typeof vocalStyle.description !== "string" ||
+        !vocalStyle.description.trim()
+      ) {
+        missing.push("vocalGuideRenderRecipe.vocalStyle.description");
+      }
+    }
+
+    if (
+      !Array.isArray(vocalGuideRenderRecipe.mixPriorities) ||
+      vocalGuideRenderRecipe.mixPriorities.length === 0
+    ) {
+      missing.push("vocalGuideRenderRecipe.mixPriorities");
+    }
+
+    if (
+      !Array.isArray(vocalGuideRenderRecipe.completionCriteria) ||
+      vocalGuideRenderRecipe.completionCriteria.length === 0
+    ) {
+      missing.push("vocalGuideRenderRecipe.completionCriteria");
+    }
+  }
+  const expectedOutputFiles =
+    pkg.expectedOutputFiles &&
+    typeof pkg.expectedOutputFiles === "object" &&
+    !Array.isArray(pkg.expectedOutputFiles)
+      ? (pkg.expectedOutputFiles as Record<string, unknown>)
+      : null;
+
+  if (!expectedOutputFiles) {
+    missing.push("expectedOutputFiles");
+  } else {
+    if (expectedOutputFiles.outputStatus !== "not-generated") {
+      missing.push("expectedOutputFiles.outputStatus");
+    }
+
+    if (expectedOutputFiles.storageStatus !== "not-configured") {
+      missing.push("expectedOutputFiles.storageStatus");
+    }
+
+    if (expectedOutputFiles.formatStatus !== "not-selected") {
+      missing.push("expectedOutputFiles.formatStatus");
+    }
+
+    const outputs = Array.isArray(expectedOutputFiles.outputs)
+      ? expectedOutputFiles.outputs
+      : [];
+
+    if (outputs.length !== 4) {
+      missing.push("expectedOutputFiles.outputs");
+    }
+
+    const requiredOutputKeys = [
+      "guideTrackAudio",
+      "clickTrack",
+      "chordReferenceTrack",
+      "vocalGuideTrack",
+    ];
+
+    for (const requiredOutputKey of requiredOutputKeys) {
+      const output = outputs.find(
+        (item) =>
+          item &&
+          typeof item === "object" &&
+          !Array.isArray(item) &&
+          (item as Record<string, unknown>).key === requiredOutputKey,
+      );
+
+      if (!output || typeof output !== "object" || Array.isArray(output)) {
+        missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}`);
+        continue;
+      }
+
+      const outputRecord = output as Record<string, unknown>;
+
+      if (outputRecord.status !== "not-generated") {
+        missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.status`);
+      }
+
+      if (outputRecord.file !== null) {
+        missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.file`);
+      }
+
+      if (
+        typeof outputRecord.label !== "string" ||
+        !outputRecord.label.trim()
+      ) {
+        missing.push(`expectedOutputFiles.outputs.${requiredOutputKey}.label`);
+      }
+
+      if (
+        !Array.isArray(outputRecord.requiredBeforeGenerated) ||
+        outputRecord.requiredBeforeGenerated.length === 0
+      ) {
+        missing.push(
+          `expectedOutputFiles.outputs.${requiredOutputKey}.requiredBeforeGenerated`,
+        );
+      }
+    }
+
+    if (
+      !Array.isArray(expectedOutputFiles.notes) ||
+      expectedOutputFiles.notes.length === 0
+    ) {
+      missing.push("expectedOutputFiles.notes");
+    }
+  }
+
+  const rendererInputContract =
+    pkg.rendererInputContract &&
+    typeof pkg.rendererInputContract === "object" &&
+    !Array.isArray(pkg.rendererInputContract)
+      ? (pkg.rendererInputContract as Record<string, unknown>)
+      : null;
+
+  if (!rendererInputContract) {
+    missing.push("rendererInputContract");
+  } else {
+    if (
+      rendererInputContract.contractStatus !==
+      "dry-run-renderer-input-contract-declared"
+    ) {
+      missing.push("rendererInputContract.contractStatus");
+    }
+
+    if (rendererInputContract.audioStatus !== "not-generated") {
+      missing.push("rendererInputContract.audioStatus");
+    }
+
+    if (rendererInputContract.rendererStatus !== "not-connected") {
+      missing.push("rendererInputContract.rendererStatus");
+    }
+
+    if (rendererInputContract.storageStatus !== "not-configured") {
+      missing.push("rendererInputContract.storageStatus");
+    }
+
+    if (rendererInputContract.formatStatus !== "not-selected") {
+      missing.push("rendererInputContract.formatStatus");
+    }
+
+    if (
+      typeof rendererInputContract.purpose !== "string" ||
+      !rendererInputContract.purpose.trim()
+    ) {
+      missing.push("rendererInputContract.purpose");
+    }
+
+    if (
+      !Array.isArray(rendererInputContract.requiredInputObjects) ||
+      rendererInputContract.requiredInputObjects.length === 0
+    ) {
+      missing.push("rendererInputContract.requiredInputObjects");
+    }
+
+    if (
+      !Array.isArray(rendererInputContract.selectedOutputKeys) ||
+      rendererInputContract.selectedOutputKeys.length === 0
+    ) {
+      missing.push("rendererInputContract.selectedOutputKeys");
+    }
+
+    if (
+      !Array.isArray(rendererInputContract.optionalOutputKeys) ||
+      rendererInputContract.optionalOutputKeys.length === 0
+    ) {
+      missing.push("rendererInputContract.optionalOutputKeys");
+    }
+
+    if (
+      !Array.isArray(rendererInputContract.requiredBeforeRealRender) ||
+      rendererInputContract.requiredBeforeRealRender.length === 0
+    ) {
+      missing.push("rendererInputContract.requiredBeforeRealRender");
+    }
+
+    if (
+      !Array.isArray(rendererInputContract.handoffRules) ||
+      rendererInputContract.handoffRules.length === 0
+    ) {
+      missing.push("rendererInputContract.handoffRules");
+    }
+  }
+
+  const realRenderGate =
+    pkg.realRenderGate &&
+    typeof pkg.realRenderGate === "object" &&
+    !Array.isArray(pkg.realRenderGate)
+      ? (pkg.realRenderGate as Record<string, unknown>)
+      : null;
+
+  if (!realRenderGate) {
+    missing.push("realRenderGate");
+  } else {
+    if (realRenderGate.gateStatus !== "blocked") {
+      missing.push("realRenderGate.gateStatus");
+    }
+
+    if (realRenderGate.canRenderAudio !== false) {
+      missing.push("realRenderGate.canRenderAudio");
+    }
+
+    if (realRenderGate.audioStatus !== "not-generated") {
+      missing.push("realRenderGate.audioStatus");
+    }
+
+    if (realRenderGate.rendererStatus !== "not-connected") {
+      missing.push("realRenderGate.rendererStatus");
+    }
+
+    if (realRenderGate.storageStatus !== "not-configured") {
+      missing.push("realRenderGate.storageStatus");
+    }
+
+    if (realRenderGate.formatStatus !== "not-selected") {
+      missing.push("realRenderGate.formatStatus");
+    }
+
+    if (typeof realRenderGate.dryRunReady !== "boolean") {
+      missing.push("realRenderGate.dryRunReady");
+    }
+
+    if (
+      !Array.isArray(realRenderGate.blockedReasons) ||
+      realRenderGate.blockedReasons.length === 0
+    ) {
+      missing.push("realRenderGate.blockedReasons");
+    }
+
+    if (
+      !Array.isArray(realRenderGate.requiredToUnlock) ||
+      realRenderGate.requiredToUnlock.length === 0
+    ) {
+      missing.push("realRenderGate.requiredToUnlock");
+    }
+
+    if (
+      !Array.isArray(realRenderGate.safetyRules) ||
+      realRenderGate.safetyRules.length === 0
+    ) {
+      missing.push("realRenderGate.safetyRules");
+    }
+  }
+
+  const firstRealRenderPlan =
+    pkg.firstRealRenderPlan &&
+    typeof pkg.firstRealRenderPlan === "object" &&
+    !Array.isArray(pkg.firstRealRenderPlan)
+      ? (pkg.firstRealRenderPlan as Record<string, unknown>)
+      : null;
+
+  if (!firstRealRenderPlan) {
+    missing.push("firstRealRenderPlan");
+  } else {
+    if (
+      firstRealRenderPlan.planStatus !==
+      "dry-run-first-real-render-plan-declared"
+    ) {
+      missing.push("firstRealRenderPlan.planStatus");
+    }
+
+    if (firstRealRenderPlan.audioStatus !== "not-generated") {
+      missing.push("firstRealRenderPlan.audioStatus");
+    }
+
+    if (firstRealRenderPlan.recommendedFirstTarget !== "clickTrack") {
+      missing.push("firstRealRenderPlan.recommendedFirstTarget");
+    }
+
+    if (
+      typeof firstRealRenderPlan.recommendedReason !== "string" ||
+      !firstRealRenderPlan.recommendedReason.trim()
+    ) {
+      missing.push("firstRealRenderPlan.recommendedReason");
+    }
+
+    const rendererStrategy =
+      firstRealRenderPlan.rendererStrategy &&
+      typeof firstRealRenderPlan.rendererStrategy === "object" &&
+      !Array.isArray(firstRealRenderPlan.rendererStrategy)
+        ? (firstRealRenderPlan.rendererStrategy as Record<string, unknown>)
+        : null;
+
+    if (!rendererStrategy) {
+      missing.push("firstRealRenderPlan.rendererStrategy");
+    } else {
+      if (
+        rendererStrategy.strategyType !== "server-side-synthetic-click-track"
+      ) {
+        missing.push("firstRealRenderPlan.rendererStrategy.strategyType");
+      }
+
+      if (rendererStrategy.implementationStatus !== "not-implemented") {
+        missing.push(
+          "firstRealRenderPlan.rendererStrategy.implementationStatus",
+        );
+      }
+
+      if (
+        typeof rendererStrategy.description !== "string" ||
+        !rendererStrategy.description.trim()
+      ) {
+        missing.push("firstRealRenderPlan.rendererStrategy.description");
+      }
+    }
+
+    if (
+      !Array.isArray(firstRealRenderPlan.firstUnlockRequirements) ||
+      firstRealRenderPlan.firstUnlockRequirements.length === 0
+    ) {
+      missing.push("firstRealRenderPlan.firstUnlockRequirements");
+    }
+
+    if (
+      !Array.isArray(firstRealRenderPlan.firstValidationChecks) ||
+      firstRealRenderPlan.firstValidationChecks.length === 0
+    ) {
+      missing.push("firstRealRenderPlan.firstValidationChecks");
+    }
+
+    if (
+      !Array.isArray(firstRealRenderPlan.laterTargets) ||
+      firstRealRenderPlan.laterTargets.length === 0
+    ) {
+      missing.push("firstRealRenderPlan.laterTargets");
+    }
+
+    if (
+      !Array.isArray(firstRealRenderPlan.notes) ||
+      firstRealRenderPlan.notes.length === 0
+    ) {
+      missing.push("firstRealRenderPlan.notes");
+    }
+  }
+
+  const realRenderRouteScaffold =
+    pkg.realRenderRouteScaffold &&
+    typeof pkg.realRenderRouteScaffold === "object" &&
+    !Array.isArray(pkg.realRenderRouteScaffold)
+      ? (pkg.realRenderRouteScaffold as Record<string, unknown>)
+      : null;
+
+  if (!realRenderRouteScaffold) {
+    missing.push("realRenderRouteScaffold");
+  } else {
+    if (realRenderRouteScaffold.routeStatus !== "blocked-scaffold-declared") {
+      missing.push("realRenderRouteScaffold.routeStatus");
+    }
+
+    if (realRenderRouteScaffold.method !== "POST") {
+      missing.push("realRenderRouteScaffold.method");
+    }
+
+    if (realRenderRouteScaffold.path !== "/api/audio-preview/real-render") {
+      missing.push("realRenderRouteScaffold.path");
+    }
+
+    if (realRenderRouteScaffold.expectedBlockedStatusCode !== 423) {
+      missing.push("realRenderRouteScaffold.expectedBlockedStatusCode");
+    }
+
+    if (realRenderRouteScaffold.audioStatus !== "not-generated") {
+      missing.push("realRenderRouteScaffold.audioStatus");
+    }
+
+    if (realRenderRouteScaffold.rendererStatus !== "not-connected") {
+      missing.push("realRenderRouteScaffold.rendererStatus");
+    }
+
+    if (
+      typeof realRenderRouteScaffold.purpose !== "string" ||
+      !realRenderRouteScaffold.purpose.trim()
+    ) {
+      missing.push("realRenderRouteScaffold.purpose");
+    }
+
+    const expectedRequestShape =
+      realRenderRouteScaffold.expectedRequestShape &&
+      typeof realRenderRouteScaffold.expectedRequestShape === "object" &&
+      !Array.isArray(realRenderRouteScaffold.expectedRequestShape)
+        ? (realRenderRouteScaffold.expectedRequestShape as Record<
             string,
             unknown
-      >)
-    : null
+          >)
+        : null;
 
-if (!expectedReceivedContractCheck) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck',
-  )
-} else {
-  if (expectedReceivedContractCheck.passed !== true) {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck.passed',
-    )
-  }
+    if (!expectedRequestShape) {
+      missing.push("realRenderRouteScaffold.expectedRequestShape");
+    } else {
+      if (expectedRequestShape.requestedTarget !== "clickTrack") {
+        missing.push(
+          "realRenderRouteScaffold.expectedRequestShape.requestedTarget",
+        );
+      }
 
-  if (
-    !Array.isArray(expectedReceivedContractCheck.missingOrInvalid) ||
-    expectedReceivedContractCheck.missingOrInvalid.length !== 0
-  ) {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck.missingOrInvalid',
-    )
-  }
-}
+      if (
+        expectedRequestShape.rendererInputContract !==
+        "required-before-real-render"
+      ) {
+        missing.push(
+          "realRenderRouteScaffold.expectedRequestShape.rendererInputContract",
+        );
+      }
 
-const expectedReceivedConfigurationSummary =
-  expectedBlockedResponse.receivedConfigurationSummary &&
-  typeof expectedBlockedResponse.receivedConfigurationSummary === 'object' &&
-  !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary)
-    ? (expectedBlockedResponse.receivedConfigurationSummary as Record<
-        string,
-        unknown
-      >)
-    : null
+      if (
+        expectedRequestShape.realRenderConfiguration !==
+        "required-before-real-render"
+      ) {
+        missing.push(
+          "realRenderRouteScaffold.expectedRequestShape.realRenderConfiguration",
+        );
+      }
 
-if (!expectedReceivedConfigurationSummary) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary',
-  )
-} else {
-  if (
-    expectedReceivedConfigurationSummary.configurationStatus !==
-    'dry-run-real-render-configuration-placeholder'
-  ) {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.configurationStatus',
-    )
-  }
+      if (
+        expectedRequestShape.realRenderGate !== "required-before-real-render"
+      ) {
+        missing.push(
+          "realRenderRouteScaffold.expectedRequestShape.realRenderGate",
+        );
+      }
 
-  if (expectedReceivedConfigurationSummary.audioStatus !== 'not-generated') {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.audioStatus',
-    )
-  }
-
-  if (expectedReceivedConfigurationSummary.rendererStatus !== 'not-connected') {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererStatus',
-    )
-  }
-
-if (
-  expectedReceivedConfigurationSummary.rendererCandidateStatus !==
-  'candidate-declared-not-selected'
-) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererCandidateStatus',
-  )
-}
-
-if (
-  expectedReceivedConfigurationSummary.recommendedFirstRenderer !==
-  'local-click-track-wav-renderer'
-) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstRenderer',
-  )
-}
-
-if (
-  expectedReceivedConfigurationSummary.rendererCandidateSelectedRenderer !==
-  null
-) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererCandidateSelectedRenderer',
-  )
-}
-
-  if (
-      expectedReceivedConfigurationSummary.outputFormatStatus !==
-      'format-candidate-declared-not-selected'
-    ) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.outputFormatStatus',
-      )
+      if (
+        expectedRequestShape.firstRealRenderPlan !==
+        "required-before-real-render"
+      ) {
+        missing.push(
+          "realRenderRouteScaffold.expectedRequestShape.firstRealRenderPlan",
+        );
+      }
     }
 
-    if (expectedReceivedConfigurationSummary.recommendedFirstFormat !== 'wav') {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstFormat',
-      )
-    }
+    const expectedBlockedResponse =
+      realRenderRouteScaffold.expectedBlockedResponse &&
+      typeof realRenderRouteScaffold.expectedBlockedResponse === "object" &&
+      !Array.isArray(realRenderRouteScaffold.expectedBlockedResponse)
+        ? (realRenderRouteScaffold.expectedBlockedResponse as Record<
+            string,
+            unknown
+          >)
+        : null;
 
-    if (expectedReceivedConfigurationSummary.selectedFormat !== null) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedFormat',
-      )
-    }
+    if (!expectedBlockedResponse) {
+      missing.push("realRenderRouteScaffold.expectedBlockedResponse");
+    } else {
+      if (expectedBlockedResponse.ok !== false) {
+        missing.push("realRenderRouteScaffold.expectedBlockedResponse.ok");
+      }
 
-  if (
-      expectedReceivedConfigurationSummary.sampleRateStatus !==
-      'sample-rate-candidate-declared-not-selected'
-    ) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.sampleRateStatus',
-      )
-    }
+      if (expectedBlockedResponse.status !== "blocked") {
+        missing.push("realRenderRouteScaffold.expectedBlockedResponse.status");
+      }
 
-    if (expectedReceivedConfigurationSummary.recommendedFirstSampleRateHz !== 44100) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstSampleRateHz',
-      )
-    }
+      if (expectedBlockedResponse.audioStatus !== "not-generated") {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.audioStatus",
+        );
+      }
 
-    if (expectedReceivedConfigurationSummary.selectedSampleRateHz !== null) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedSampleRateHz',
-      )
-    }
+      if (expectedBlockedResponse.rendererStatus !== "not-connected") {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.rendererStatus",
+        );
+      }
 
-  if (
-      expectedReceivedConfigurationSummary.storageStatus !==
-      'storage-candidate-declared-not-configured'
-    ) {
-      missing.push(
-        'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.storageStatus',
-      )
-    }
+      if (expectedBlockedResponse.storageStatus !== "not-configured") {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.storageStatus",
+        );
+      }
 
-    if (
-  expectedReceivedConfigurationSummary.recommendedFirstProvider !==
-  'browser-download'
-) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstProvider',
-  )
-}
+      if (expectedBlockedResponse.formatStatus !== "not-selected") {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.formatStatus",
+        );
+      }
 
-if (expectedReceivedConfigurationSummary.selectedProvider !== null) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedProvider',
-  )
-}
+      const expectedReceivedContractSummary =
+        expectedBlockedResponse.receivedContractSummary &&
+        typeof expectedBlockedResponse.receivedContractSummary === "object" &&
+        !Array.isArray(expectedBlockedResponse.receivedContractSummary)
+          ? (expectedBlockedResponse.receivedContractSummary as Record<
+              string,
+              unknown
+            >)
+          : null;
 
-  if (expectedReceivedConfigurationSummary.firstTargetKey !== 'clickTrack') {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.firstTargetKey',
-    )
-  }
-}
+      if (!expectedReceivedContractSummary) {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary",
+        );
+      } else {
+        if (expectedReceivedContractSummary.hasRendererInputContract !== true) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRendererInputContract",
+          );
+        }
 
-    const expectedReceivedConfigurationCheck =
-      expectedBlockedResponse.receivedConfigurationCheck &&
-      typeof expectedBlockedResponse.receivedConfigurationCheck === 'object' &&
-      !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck)
-        ? (expectedBlockedResponse.receivedConfigurationCheck as Record<
-        string,
-        unknown
-      >)
-    : null
+        if (expectedReceivedContractSummary.hasRealRenderGate !== true) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRealRenderGate",
+          );
+        }
 
-if (!expectedReceivedConfigurationCheck) {
-  missing.push(
-    'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck',
-  )
-} else {
-  if (expectedReceivedConfigurationCheck.passed !== true) {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck.passed',
-    )
-  }
+        if (expectedReceivedContractSummary.hasFirstRealRenderPlan !== true) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasFirstRealRenderPlan",
+          );
+        }
 
-  if (
-    !Array.isArray(expectedReceivedConfigurationCheck.missingOrInvalid) ||
-    expectedReceivedConfigurationCheck.missingOrInvalid.length !== 0
-  ) {
-    missing.push(
-      'realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid',
-    )
-  }
-}
+        if (
+          expectedReceivedContractSummary.hasRealRenderConfiguration !== true
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.hasRealRenderConfiguration",
+          );
+        }
 
-  }
+        if (expectedReceivedContractSummary.requestedTarget !== "clickTrack") {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractSummary.requestedTarget",
+          );
+        }
+      }
 
-  if (
-    !Array.isArray(realRenderRouteScaffold.safetyRules) ||
-    realRenderRouteScaffold.safetyRules.length === 0
-  ) {
-    missing.push('realRenderRouteScaffold.safetyRules')
-  }
-}
+      const expectedReceivedContractCheck =
+        expectedBlockedResponse.receivedContractCheck &&
+        typeof expectedBlockedResponse.receivedContractCheck === "object" &&
+        !Array.isArray(expectedBlockedResponse.receivedContractCheck)
+          ? (expectedBlockedResponse.receivedContractCheck as Record<
+              string,
+              unknown
+            >)
+          : null;
 
-const realRenderConfiguration =
-  pkg.realRenderConfiguration &&
-  typeof pkg.realRenderConfiguration === 'object' &&
-  !Array.isArray(pkg.realRenderConfiguration)
-    ? (pkg.realRenderConfiguration as Record<string, unknown>)
-    : null
+      if (!expectedReceivedContractCheck) {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck",
+        );
+      } else {
+        if (expectedReceivedContractCheck.passed !== true) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck.passed",
+          );
+        }
 
-const firstRealRenderCandidateStack =
-  pkg.firstRealRenderCandidateStack &&
-  typeof pkg.firstRealRenderCandidateStack === 'object' &&
-  !Array.isArray(pkg.firstRealRenderCandidateStack)
-    ? (pkg.firstRealRenderCandidateStack as Record<string, unknown>)
-    : null
+        if (
+          !Array.isArray(expectedReceivedContractCheck.missingOrInvalid) ||
+          expectedReceivedContractCheck.missingOrInvalid.length !== 0
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedContractCheck.missingOrInvalid",
+          );
+        }
+      }
 
-if (!firstRealRenderCandidateStack) {
-  missing.push('firstRealRenderCandidateStack')
-} else {
-  if (
-    firstRealRenderCandidateStack.stackStatus !==
-    'candidate-stack-declared-not-enabled'
-  ) {
-    missing.push('firstRealRenderCandidateStack.stackStatus')
-  }
+      const expectedReceivedConfigurationSummary =
+        expectedBlockedResponse.receivedConfigurationSummary &&
+        typeof expectedBlockedResponse.receivedConfigurationSummary ===
+          "object" &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationSummary)
+          ? (expectedBlockedResponse.receivedConfigurationSummary as Record<
+              string,
+              unknown
+            >)
+          : null;
 
-  if (firstRealRenderCandidateStack.audioStatus !== 'not-generated') {
-    missing.push('firstRealRenderCandidateStack.audioStatus')
-  }
+      if (!expectedReceivedConfigurationSummary) {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary",
+        );
+      } else {
+        if (
+          expectedReceivedConfigurationSummary.configurationStatus !==
+          "dry-run-real-render-configuration-placeholder"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.configurationStatus",
+          );
+        }
 
-  if (firstRealRenderCandidateStack.firstTargetKey !== 'clickTrack') {
-    missing.push('firstRealRenderCandidateStack.firstTargetKey')
-  }
+        if (
+          expectedReceivedConfigurationSummary.audioStatus !== "not-generated"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.audioStatus",
+          );
+        }
 
-  const candidateRenderer =
-    firstRealRenderCandidateStack.renderer &&
-    typeof firstRealRenderCandidateStack.renderer === 'object' &&
-    !Array.isArray(firstRealRenderCandidateStack.renderer)
-      ? (firstRealRenderCandidateStack.renderer as Record<string, unknown>)
-      : null
+        if (
+          expectedReceivedConfigurationSummary.rendererStatus !==
+          "not-connected"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererStatus",
+          );
+        }
 
-  if (!candidateRenderer) {
-    missing.push('firstRealRenderCandidateStack.renderer')
-  } else {
-    if (candidateRenderer.status !== 'candidate-declared-not-selected') {
-      missing.push('firstRealRenderCandidateStack.renderer.status')
-    }
+        if (
+          expectedReceivedConfigurationSummary.rendererCandidateStatus !==
+          "candidate-declared-not-selected"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererCandidateStatus",
+          );
+        }
 
-    if (
-      candidateRenderer.recommended !== 'local-click-track-wav-renderer'
-    ) {
-      missing.push('firstRealRenderCandidateStack.renderer.recommended')
-    }
+        if (
+          expectedReceivedConfigurationSummary.recommendedFirstRenderer !==
+          "local-click-track-wav-renderer"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstRenderer",
+          );
+        }
 
-    if (candidateRenderer.selected !== null) {
-      missing.push('firstRealRenderCandidateStack.renderer.selected')
-    }
-  }
+        if (
+          expectedReceivedConfigurationSummary.rendererCandidateSelectedRenderer !==
+          null
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.rendererCandidateSelectedRenderer",
+          );
+        }
 
-  const candidateOutputFormat =
-    firstRealRenderCandidateStack.outputFormat &&
-    typeof firstRealRenderCandidateStack.outputFormat === 'object' &&
-    !Array.isArray(firstRealRenderCandidateStack.outputFormat)
-      ? (firstRealRenderCandidateStack.outputFormat as Record<
-          string,
-          unknown
-        >)
-      : null
+        if (
+          expectedReceivedConfigurationSummary.outputFormatStatus !==
+          "format-candidate-declared-not-selected"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.outputFormatStatus",
+          );
+        }
 
-  if (!candidateOutputFormat) {
-    missing.push('firstRealRenderCandidateStack.outputFormat')
-  } else {
-    if (
-      candidateOutputFormat.status !==
-      'format-candidate-declared-not-selected'
-    ) {
-      missing.push('firstRealRenderCandidateStack.outputFormat.status')
-    }
+        if (
+          expectedReceivedConfigurationSummary.recommendedFirstFormat !== "wav"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstFormat",
+          );
+        }
 
-    if (candidateOutputFormat.recommended !== 'wav') {
-      missing.push('firstRealRenderCandidateStack.outputFormat.recommended')
-    }
+        if (expectedReceivedConfigurationSummary.selectedFormat !== null) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedFormat",
+          );
+        }
 
-    if (candidateOutputFormat.selected !== null) {
-      missing.push('firstRealRenderCandidateStack.outputFormat.selected')
-    }
-  }
+        if (
+          expectedReceivedConfigurationSummary.sampleRateStatus !==
+          "sample-rate-candidate-declared-not-selected"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.sampleRateStatus",
+          );
+        }
 
-  const candidateSampleRate =
-    firstRealRenderCandidateStack.sampleRate &&
-    typeof firstRealRenderCandidateStack.sampleRate === 'object' &&
-    !Array.isArray(firstRealRenderCandidateStack.sampleRate)
-      ? (firstRealRenderCandidateStack.sampleRate as Record<string, unknown>)
-      : null
+        if (
+          expectedReceivedConfigurationSummary.recommendedFirstSampleRateHz !==
+          44100
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstSampleRateHz",
+          );
+        }
 
-  if (!candidateSampleRate) {
-    missing.push('firstRealRenderCandidateStack.sampleRate')
-  } else {
-    if (
-      candidateSampleRate.status !==
-      'sample-rate-candidate-declared-not-selected'
-    ) {
-      missing.push('firstRealRenderCandidateStack.sampleRate.status')
-    }
+        if (
+          expectedReceivedConfigurationSummary.selectedSampleRateHz !== null
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedSampleRateHz",
+          );
+        }
 
-    if (candidateSampleRate.recommendedHz !== 44100) {
-      missing.push('firstRealRenderCandidateStack.sampleRate.recommendedHz')
-    }
+        if (
+          expectedReceivedConfigurationSummary.storageStatus !==
+          "storage-candidate-declared-not-configured"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.storageStatus",
+          );
+        }
 
-    if (candidateSampleRate.selectedHz !== null) {
-      missing.push('firstRealRenderCandidateStack.sampleRate.selectedHz')
-    }
-  }
+        if (
+          expectedReceivedConfigurationSummary.recommendedFirstProvider !==
+          "browser-download"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.recommendedFirstProvider",
+          );
+        }
 
-  const candidateStorage =
-    firstRealRenderCandidateStack.storage &&
-    typeof firstRealRenderCandidateStack.storage === 'object' &&
-    !Array.isArray(firstRealRenderCandidateStack.storage)
-      ? (firstRealRenderCandidateStack.storage as Record<string, unknown>)
-      : null
+        if (expectedReceivedConfigurationSummary.selectedProvider !== null) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.selectedProvider",
+          );
+        }
 
-  if (!candidateStorage) {
-    missing.push('firstRealRenderCandidateStack.storage')
-  } else {
-    if (
-      candidateStorage.status !==
-      'storage-candidate-declared-not-configured'
-    ) {
-      missing.push('firstRealRenderCandidateStack.storage.status')
-    }
+        if (
+          expectedReceivedConfigurationSummary.firstTargetKey !== "clickTrack"
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationSummary.firstTargetKey",
+          );
+        }
+      }
 
-    if (candidateStorage.recommended !== 'browser-download') {
-      missing.push('firstRealRenderCandidateStack.storage.recommended')
-    }
+      const expectedReceivedConfigurationCheck =
+        expectedBlockedResponse.receivedConfigurationCheck &&
+        typeof expectedBlockedResponse.receivedConfigurationCheck ===
+          "object" &&
+        !Array.isArray(expectedBlockedResponse.receivedConfigurationCheck)
+          ? (expectedBlockedResponse.receivedConfigurationCheck as Record<
+              string,
+              unknown
+            >)
+          : null;
 
-    if (candidateStorage.selected !== null) {
-      missing.push('firstRealRenderCandidateStack.storage.selected')
-    }
-  }
+      if (!expectedReceivedConfigurationCheck) {
+        missing.push(
+          "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck",
+        );
+      } else {
+        if (expectedReceivedConfigurationCheck.passed !== true) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck.passed",
+          );
+        }
 
-  if (firstRealRenderCandidateStack.enablementStatus !== 'blocked') {
-    missing.push('firstRealRenderCandidateStack.enablementStatus')
-  }
-
-  if (firstRealRenderCandidateStack.canGenerateAudio !== false) {
-    missing.push('firstRealRenderCandidateStack.canGenerateAudio')
-  }
-
-  if (
-    !Array.isArray(firstRealRenderCandidateStack.requiredBeforeEnablement) ||
-    firstRealRenderCandidateStack.requiredBeforeEnablement.length === 0
-  ) {
-    missing.push('firstRealRenderCandidateStack.requiredBeforeEnablement')
-  }
-}
-
-if (!realRenderConfiguration) {
-  missing.push('realRenderConfiguration')
-} else {
-  if (
-    realRenderConfiguration.configurationStatus !==
-    'dry-run-real-render-configuration-placeholder'
-  ) {
-    missing.push('realRenderConfiguration.configurationStatus')
-  }
-
-  if (realRenderConfiguration.audioStatus !== 'not-generated') {
-    missing.push('realRenderConfiguration.audioStatus')
-  }
-
-  const rendererImplementation =
-    realRenderConfiguration.rendererImplementation &&
-    typeof realRenderConfiguration.rendererImplementation === 'object' &&
-    !Array.isArray(realRenderConfiguration.rendererImplementation)
-      ? (realRenderConfiguration.rendererImplementation as Record<
-          string,
-          unknown
-        >)
-      : null
-
-  if (!rendererImplementation) {
-    missing.push('realRenderConfiguration.rendererImplementation')
-  } else {
-    if (rendererImplementation.status !== 'not-connected') {
-      missing.push('realRenderConfiguration.rendererImplementation.status')
-    }
-
-    if (rendererImplementation.selectedRenderer !== null) {
-      missing.push(
-        'realRenderConfiguration.rendererImplementation.selectedRenderer',
-      )
-    }
-  }
-
-  const rendererCandidatePlan =
-    realRenderConfiguration.rendererCandidatePlan &&
-    typeof realRenderConfiguration.rendererCandidatePlan === 'object' &&
-    !Array.isArray(realRenderConfiguration.rendererCandidatePlan)
-      ? (realRenderConfiguration.rendererCandidatePlan as Record<
-          string,
-          unknown
-        >)
-      : null
-
-  if (!rendererCandidatePlan) {
-    missing.push('realRenderConfiguration.rendererCandidatePlan')
-  } else {
-    if (rendererCandidatePlan.status !== 'candidate-declared-not-selected') {
-      missing.push('realRenderConfiguration.rendererCandidatePlan.status')
+        if (
+          !Array.isArray(expectedReceivedConfigurationCheck.missingOrInvalid) ||
+          expectedReceivedConfigurationCheck.missingOrInvalid.length !== 0
+        ) {
+          missing.push(
+            "realRenderRouteScaffold.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid",
+          );
+        }
+      }
     }
 
     if (
-      rendererCandidatePlan.recommendedFirstRenderer !==
-      'local-click-track-wav-renderer'
+      !Array.isArray(realRenderRouteScaffold.safetyRules) ||
+      realRenderRouteScaffold.safetyRules.length === 0
     ) {
-      missing.push(
-        'realRenderConfiguration.rendererCandidatePlan.recommendedFirstRenderer',
-      )
+      missing.push("realRenderRouteScaffold.safetyRules");
+    }
+  }
+
+  const realRenderConfiguration =
+    pkg.realRenderConfiguration &&
+    typeof pkg.realRenderConfiguration === "object" &&
+    !Array.isArray(pkg.realRenderConfiguration)
+      ? (pkg.realRenderConfiguration as Record<string, unknown>)
+      : null;
+
+  const firstRealRenderCandidateStack =
+    pkg.firstRealRenderCandidateStack &&
+    typeof pkg.firstRealRenderCandidateStack === "object" &&
+    !Array.isArray(pkg.firstRealRenderCandidateStack)
+      ? (pkg.firstRealRenderCandidateStack as Record<string, unknown>)
+      : null;
+
+  if (!firstRealRenderCandidateStack) {
+    missing.push("firstRealRenderCandidateStack");
+  } else {
+    if (
+      firstRealRenderCandidateStack.stackStatus !==
+      "candidate-stack-declared-not-enabled"
+    ) {
+      missing.push("firstRealRenderCandidateStack.stackStatus");
     }
 
-    if (rendererCandidatePlan.selectedRenderer !== null) {
-      missing.push(
-        'realRenderConfiguration.rendererCandidatePlan.selectedRenderer',
-      )
+    if (firstRealRenderCandidateStack.audioStatus !== "not-generated") {
+      missing.push("firstRealRenderCandidateStack.audioStatus");
+    }
+
+    if (firstRealRenderCandidateStack.firstTargetKey !== "clickTrack") {
+      missing.push("firstRealRenderCandidateStack.firstTargetKey");
+    }
+
+    const candidateRenderer =
+      firstRealRenderCandidateStack.renderer &&
+      typeof firstRealRenderCandidateStack.renderer === "object" &&
+      !Array.isArray(firstRealRenderCandidateStack.renderer)
+        ? (firstRealRenderCandidateStack.renderer as Record<string, unknown>)
+        : null;
+
+    if (!candidateRenderer) {
+      missing.push("firstRealRenderCandidateStack.renderer");
+    } else {
+      if (candidateRenderer.status !== "candidate-declared-not-selected") {
+        missing.push("firstRealRenderCandidateStack.renderer.status");
+      }
+
+      if (candidateRenderer.recommended !== "local-click-track-wav-renderer") {
+        missing.push("firstRealRenderCandidateStack.renderer.recommended");
+      }
+
+      if (candidateRenderer.selected !== null) {
+        missing.push("firstRealRenderCandidateStack.renderer.selected");
+      }
+    }
+
+    const candidateOutputFormat =
+      firstRealRenderCandidateStack.outputFormat &&
+      typeof firstRealRenderCandidateStack.outputFormat === "object" &&
+      !Array.isArray(firstRealRenderCandidateStack.outputFormat)
+        ? (firstRealRenderCandidateStack.outputFormat as Record<
+            string,
+            unknown
+          >)
+        : null;
+
+    if (!candidateOutputFormat) {
+      missing.push("firstRealRenderCandidateStack.outputFormat");
+    } else {
+      if (
+        candidateOutputFormat.status !==
+        "format-candidate-declared-not-selected"
+      ) {
+        missing.push("firstRealRenderCandidateStack.outputFormat.status");
+      }
+
+      if (candidateOutputFormat.recommended !== "wav") {
+        missing.push("firstRealRenderCandidateStack.outputFormat.recommended");
+      }
+
+      if (candidateOutputFormat.selected !== null) {
+        missing.push("firstRealRenderCandidateStack.outputFormat.selected");
+      }
+    }
+
+    const candidateSampleRate =
+      firstRealRenderCandidateStack.sampleRate &&
+      typeof firstRealRenderCandidateStack.sampleRate === "object" &&
+      !Array.isArray(firstRealRenderCandidateStack.sampleRate)
+        ? (firstRealRenderCandidateStack.sampleRate as Record<string, unknown>)
+        : null;
+
+    if (!candidateSampleRate) {
+      missing.push("firstRealRenderCandidateStack.sampleRate");
+    } else {
+      if (
+        candidateSampleRate.status !==
+        "sample-rate-candidate-declared-not-selected"
+      ) {
+        missing.push("firstRealRenderCandidateStack.sampleRate.status");
+      }
+
+      if (candidateSampleRate.recommendedHz !== 44100) {
+        missing.push("firstRealRenderCandidateStack.sampleRate.recommendedHz");
+      }
+
+      if (candidateSampleRate.selectedHz !== null) {
+        missing.push("firstRealRenderCandidateStack.sampleRate.selectedHz");
+      }
+    }
+
+    const candidateStorage =
+      firstRealRenderCandidateStack.storage &&
+      typeof firstRealRenderCandidateStack.storage === "object" &&
+      !Array.isArray(firstRealRenderCandidateStack.storage)
+        ? (firstRealRenderCandidateStack.storage as Record<string, unknown>)
+        : null;
+
+    if (!candidateStorage) {
+      missing.push("firstRealRenderCandidateStack.storage");
+    } else {
+      if (
+        candidateStorage.status !== "storage-candidate-declared-not-configured"
+      ) {
+        missing.push("firstRealRenderCandidateStack.storage.status");
+      }
+
+      if (candidateStorage.recommended !== "browser-download") {
+        missing.push("firstRealRenderCandidateStack.storage.recommended");
+      }
+
+      if (candidateStorage.selected !== null) {
+        missing.push("firstRealRenderCandidateStack.storage.selected");
+      }
+    }
+
+    if (firstRealRenderCandidateStack.enablementStatus !== "blocked") {
+      missing.push("firstRealRenderCandidateStack.enablementStatus");
+    }
+
+    if (firstRealRenderCandidateStack.canGenerateAudio !== false) {
+      missing.push("firstRealRenderCandidateStack.canGenerateAudio");
     }
 
     if (
-      !Array.isArray(rendererCandidatePlan.mustRemainBlockedUntil) ||
-      rendererCandidatePlan.mustRemainBlockedUntil.length === 0
+      !Array.isArray(firstRealRenderCandidateStack.requiredBeforeEnablement) ||
+      firstRealRenderCandidateStack.requiredBeforeEnablement.length === 0
     ) {
-      missing.push(
-        'realRenderConfiguration.rendererCandidatePlan.mustRemainBlockedUntil',
-      )
+      missing.push("firstRealRenderCandidateStack.requiredBeforeEnablement");
     }
   }
 
-  const outputFormat =
-    realRenderConfiguration.outputFormat &&
-    typeof realRenderConfiguration.outputFormat === 'object' &&
-    !Array.isArray(realRenderConfiguration.outputFormat)
-      ? (realRenderConfiguration.outputFormat as Record<string, unknown>)
-      : null
-
-  if (!outputFormat) {
-    missing.push('realRenderConfiguration.outputFormat')
+  if (!realRenderConfiguration) {
+    missing.push("realRenderConfiguration");
   } else {
-    if (outputFormat.status !== 'format-candidate-declared-not-selected') {
-      missing.push('realRenderConfiguration.outputFormat.status')
+    if (
+      realRenderConfiguration.configurationStatus !==
+      "dry-run-real-render-configuration-placeholder"
+    ) {
+      missing.push("realRenderConfiguration.configurationStatus");
     }
 
-    if (outputFormat.recommendedFirstFormat !== 'wav') {
-      missing.push('realRenderConfiguration.outputFormat.recommendedFirstFormat')
+    if (realRenderConfiguration.audioStatus !== "not-generated") {
+      missing.push("realRenderConfiguration.audioStatus");
     }
 
-    if (outputFormat.selectedFormat !== null) {
-      missing.push('realRenderConfiguration.outputFormat.selectedFormat')
+    const rendererImplementation =
+      realRenderConfiguration.rendererImplementation &&
+      typeof realRenderConfiguration.rendererImplementation === "object" &&
+      !Array.isArray(realRenderConfiguration.rendererImplementation)
+        ? (realRenderConfiguration.rendererImplementation as Record<
+            string,
+            unknown
+          >)
+        : null;
+
+    if (!rendererImplementation) {
+      missing.push("realRenderConfiguration.rendererImplementation");
+    } else {
+      if (rendererImplementation.status !== "not-connected") {
+        missing.push("realRenderConfiguration.rendererImplementation.status");
+      }
+
+      if (rendererImplementation.selectedRenderer !== null) {
+        missing.push(
+          "realRenderConfiguration.rendererImplementation.selectedRenderer",
+        );
+      }
+    }
+
+    const rendererCandidatePlan =
+      realRenderConfiguration.rendererCandidatePlan &&
+      typeof realRenderConfiguration.rendererCandidatePlan === "object" &&
+      !Array.isArray(realRenderConfiguration.rendererCandidatePlan)
+        ? (realRenderConfiguration.rendererCandidatePlan as Record<
+            string,
+            unknown
+          >)
+        : null;
+
+    if (!rendererCandidatePlan) {
+      missing.push("realRenderConfiguration.rendererCandidatePlan");
+    } else {
+      if (rendererCandidatePlan.status !== "candidate-declared-not-selected") {
+        missing.push("realRenderConfiguration.rendererCandidatePlan.status");
+      }
+
+      if (
+        rendererCandidatePlan.recommendedFirstRenderer !==
+        "local-click-track-wav-renderer"
+      ) {
+        missing.push(
+          "realRenderConfiguration.rendererCandidatePlan.recommendedFirstRenderer",
+        );
+      }
+
+      if (rendererCandidatePlan.selectedRenderer !== null) {
+        missing.push(
+          "realRenderConfiguration.rendererCandidatePlan.selectedRenderer",
+        );
+      }
+
+      if (
+        !Array.isArray(rendererCandidatePlan.mustRemainBlockedUntil) ||
+        rendererCandidatePlan.mustRemainBlockedUntil.length === 0
+      ) {
+        missing.push(
+          "realRenderConfiguration.rendererCandidatePlan.mustRemainBlockedUntil",
+        );
+      }
+    }
+
+    const outputFormat =
+      realRenderConfiguration.outputFormat &&
+      typeof realRenderConfiguration.outputFormat === "object" &&
+      !Array.isArray(realRenderConfiguration.outputFormat)
+        ? (realRenderConfiguration.outputFormat as Record<string, unknown>)
+        : null;
+
+    if (!outputFormat) {
+      missing.push("realRenderConfiguration.outputFormat");
+    } else {
+      if (outputFormat.status !== "format-candidate-declared-not-selected") {
+        missing.push("realRenderConfiguration.outputFormat.status");
+      }
+
+      if (outputFormat.recommendedFirstFormat !== "wav") {
+        missing.push(
+          "realRenderConfiguration.outputFormat.recommendedFirstFormat",
+        );
+      }
+
+      if (outputFormat.selectedFormat !== null) {
+        missing.push("realRenderConfiguration.outputFormat.selectedFormat");
+      }
+
+      if (
+        !Array.isArray(outputFormat.allowedFirstFormats) ||
+        outputFormat.allowedFirstFormats.length === 0
+      ) {
+        missing.push(
+          "realRenderConfiguration.outputFormat.allowedFirstFormats",
+        );
+      }
+    }
+
+    const sampleRate =
+      realRenderConfiguration.sampleRate &&
+      typeof realRenderConfiguration.sampleRate === "object" &&
+      !Array.isArray(realRenderConfiguration.sampleRate)
+        ? (realRenderConfiguration.sampleRate as Record<string, unknown>)
+        : null;
+
+    if (!sampleRate) {
+      missing.push("realRenderConfiguration.sampleRate");
+    } else {
+      if (sampleRate.status !== "sample-rate-candidate-declared-not-selected") {
+        missing.push("realRenderConfiguration.sampleRate.status");
+      }
+
+      if (sampleRate.recommendedFirstSampleRateHz !== 44100) {
+        missing.push(
+          "realRenderConfiguration.sampleRate.recommendedFirstSampleRateHz",
+        );
+      }
+
+      if (sampleRate.selectedSampleRateHz !== null) {
+        missing.push("realRenderConfiguration.sampleRate.selectedSampleRateHz");
+      }
+
+      if (
+        !Array.isArray(sampleRate.allowedFirstSampleRatesHz) ||
+        sampleRate.allowedFirstSampleRatesHz.length === 0
+      ) {
+        missing.push(
+          "realRenderConfiguration.sampleRate.allowedFirstSampleRatesHz",
+        );
+      }
+    }
+
+    const storage =
+      realRenderConfiguration.storage &&
+      typeof realRenderConfiguration.storage === "object" &&
+      !Array.isArray(realRenderConfiguration.storage)
+        ? (realRenderConfiguration.storage as Record<string, unknown>)
+        : null;
+
+    if (!storage) {
+      missing.push("realRenderConfiguration.storage");
+    } else {
+      if (storage.status !== "storage-candidate-declared-not-configured") {
+        missing.push("realRenderConfiguration.storage.status");
+      }
+
+      if (storage.recommendedFirstProvider !== "browser-download") {
+        missing.push(
+          "realRenderConfiguration.storage.recommendedFirstProvider",
+        );
+      }
+
+      if (storage.selectedProvider !== null) {
+        missing.push("realRenderConfiguration.storage.selectedProvider");
+      }
+    }
+
+    const firstTarget =
+      realRenderConfiguration.firstTarget &&
+      typeof realRenderConfiguration.firstTarget === "object" &&
+      !Array.isArray(realRenderConfiguration.firstTarget)
+        ? (realRenderConfiguration.firstTarget as Record<string, unknown>)
+        : null;
+
+    if (!firstTarget) {
+      missing.push("realRenderConfiguration.firstTarget");
+    } else {
+      if (firstTarget.key !== "clickTrack") {
+        missing.push("realRenderConfiguration.firstTarget.key");
+      }
+
+      if (firstTarget.status !== "planned") {
+        missing.push("realRenderConfiguration.firstTarget.status");
+      }
     }
 
     if (
-      !Array.isArray(outputFormat.allowedFirstFormats) ||
-      outputFormat.allowedFirstFormats.length === 0
+      !Array.isArray(realRenderConfiguration.unlockRequirements) ||
+      realRenderConfiguration.unlockRequirements.length === 0
     ) {
-      missing.push('realRenderConfiguration.outputFormat.allowedFirstFormats')
+      missing.push("realRenderConfiguration.unlockRequirements");
     }
   }
-
-  const sampleRate =
-    realRenderConfiguration.sampleRate &&
-    typeof realRenderConfiguration.sampleRate === 'object' &&
-    !Array.isArray(realRenderConfiguration.sampleRate)
-      ? (realRenderConfiguration.sampleRate as Record<string, unknown>)
-      : null
-
-  if (!sampleRate) {
-    missing.push('realRenderConfiguration.sampleRate')
-  } else {
-    if (sampleRate.status !== 'sample-rate-candidate-declared-not-selected') {
-      missing.push('realRenderConfiguration.sampleRate.status')
-    }
-
-    if (sampleRate.recommendedFirstSampleRateHz !== 44100) {
-      missing.push(
-        'realRenderConfiguration.sampleRate.recommendedFirstSampleRateHz',
-      )
-    }
-
-    if (sampleRate.selectedSampleRateHz !== null) {
-      missing.push('realRenderConfiguration.sampleRate.selectedSampleRateHz')
-    }
-
-    if (
-      !Array.isArray(sampleRate.allowedFirstSampleRatesHz) ||
-      sampleRate.allowedFirstSampleRatesHz.length === 0
-    ) {
-      missing.push(
-        'realRenderConfiguration.sampleRate.allowedFirstSampleRatesHz',
-      )
-    }
-  }
-
-  const storage =
-    realRenderConfiguration.storage &&
-    typeof realRenderConfiguration.storage === 'object' &&
-    !Array.isArray(realRenderConfiguration.storage)
-      ? (realRenderConfiguration.storage as Record<string, unknown>)
-      : null
-
-  if (!storage) {
-    missing.push('realRenderConfiguration.storage')
-  } else {
-    if (storage.status !== 'storage-candidate-declared-not-configured') {
-      missing.push('realRenderConfiguration.storage.status')
-    }
-
-    if (storage.recommendedFirstProvider !== 'browser-download') {
-      missing.push('realRenderConfiguration.storage.recommendedFirstProvider')
-    }
-
-    if (storage.selectedProvider !== null) {
-      missing.push('realRenderConfiguration.storage.selectedProvider')
-    }
-  }
-
-  const firstTarget =
-    realRenderConfiguration.firstTarget &&
-    typeof realRenderConfiguration.firstTarget === 'object' &&
-    !Array.isArray(realRenderConfiguration.firstTarget)
-      ? (realRenderConfiguration.firstTarget as Record<string, unknown>)
-      : null
-
-  if (!firstTarget) {
-    missing.push('realRenderConfiguration.firstTarget')
-  } else {
-    if (firstTarget.key !== 'clickTrack') {
-      missing.push('realRenderConfiguration.firstTarget.key')
-    }
-
-    if (firstTarget.status !== 'planned') {
-      missing.push('realRenderConfiguration.firstTarget.status')
-    }
-  }
-
-  if (
-    !Array.isArray(realRenderConfiguration.unlockRequirements) ||
-    realRenderConfiguration.unlockRequirements.length === 0
-  ) {
-    missing.push('realRenderConfiguration.unlockRequirements')
-  }
-}
 
   const requiredObjects: Array<[string, unknown]> = [
-    ['renderJob', pkg.renderJob],
-    ['dryRunRenderPlan', pkg.dryRunRenderPlan],
-    ['dryRunRenderPlanValidation', pkg.dryRunRenderPlanValidation],
-    ['dryRunCueSheetValidation', pkg.dryRunCueSheetValidation],
-    ['dryRunRenderManifest', pkg.dryRunRenderManifest],
-    ['dryRunRenderManifestValidation', pkg.dryRunRenderManifestValidation],
-    ['dryRunHandoffBundle', pkg.dryRunHandoffBundle],
-    ['dryRunHandoffBundleValidation', pkg.dryRunHandoffBundleValidation],
-  ]
+    ["renderJob", pkg.renderJob],
+    ["dryRunRenderPlan", pkg.dryRunRenderPlan],
+    ["dryRunRenderPlanValidation", pkg.dryRunRenderPlanValidation],
+    ["dryRunCueSheetValidation", pkg.dryRunCueSheetValidation],
+    ["dryRunRenderManifest", pkg.dryRunRenderManifest],
+    ["dryRunRenderManifestValidation", pkg.dryRunRenderManifestValidation],
+    ["dryRunHandoffBundle", pkg.dryRunHandoffBundle],
+    ["dryRunHandoffBundleValidation", pkg.dryRunHandoffBundleValidation],
+  ];
 
   const clickTrackRenderRecipe =
-  pkg.clickTrackRenderRecipe &&
-  typeof pkg.clickTrackRenderRecipe === 'object' &&
-  !Array.isArray(pkg.clickTrackRenderRecipe)
-    ? (pkg.clickTrackRenderRecipe as Record<string, unknown>)
-    : null
+    pkg.clickTrackRenderRecipe &&
+    typeof pkg.clickTrackRenderRecipe === "object" &&
+    !Array.isArray(pkg.clickTrackRenderRecipe)
+      ? (pkg.clickTrackRenderRecipe as Record<string, unknown>)
+      : null;
 
-if (!clickTrackRenderRecipe) {
-  missing.push('clickTrackRenderRecipe')
-} else {
-  if (
-    clickTrackRenderRecipe.recipeStatus !==
-    'dry-run-click-track-recipe-declared'
-  ) {
-    missing.push('clickTrackRenderRecipe.recipeStatus')
-  }
-
-  if (clickTrackRenderRecipe.targetKey !== 'clickTrack') {
-    missing.push('clickTrackRenderRecipe.targetKey')
-  }
-
-  if (clickTrackRenderRecipe.outputStatus !== 'not-generated') {
-    missing.push('clickTrackRenderRecipe.outputStatus')
-  }
-
-  if (
-    typeof clickTrackRenderRecipe.rendererRequirement !== 'string' ||
-    !clickTrackRenderRecipe.rendererRequirement.trim()
-  ) {
-    missing.push('clickTrackRenderRecipe.rendererRequirement')
-  }
-
-  const countIn =
-    clickTrackRenderRecipe.countIn &&
-    typeof clickTrackRenderRecipe.countIn === 'object' &&
-    !Array.isArray(clickTrackRenderRecipe.countIn)
-      ? (clickTrackRenderRecipe.countIn as Record<string, unknown>)
-      : null
-
-  if (!countIn) {
-    missing.push('clickTrackRenderRecipe.countIn')
+  if (!clickTrackRenderRecipe) {
+    missing.push("clickTrackRenderRecipe");
   } else {
-    if (countIn.enabled !== true) {
-      missing.push('clickTrackRenderRecipe.countIn.enabled')
+    if (
+      clickTrackRenderRecipe.recipeStatus !==
+      "dry-run-click-track-recipe-declared"
+    ) {
+      missing.push("clickTrackRenderRecipe.recipeStatus");
     }
 
-    if (typeof countIn.bars !== 'number' || countIn.bars <= 0) {
-      missing.push('clickTrackRenderRecipe.countIn.bars')
+    if (clickTrackRenderRecipe.targetKey !== "clickTrack") {
+      missing.push("clickTrackRenderRecipe.targetKey");
+    }
+
+    if (clickTrackRenderRecipe.outputStatus !== "not-generated") {
+      missing.push("clickTrackRenderRecipe.outputStatus");
     }
 
     if (
-      typeof countIn.description !== 'string' ||
-      !countIn.description.trim()
+      typeof clickTrackRenderRecipe.rendererRequirement !== "string" ||
+      !clickTrackRenderRecipe.rendererRequirement.trim()
     ) {
-      missing.push('clickTrackRenderRecipe.countIn.description')
-    }
-  }
-
-  const timing =
-    clickTrackRenderRecipe.timing &&
-    typeof clickTrackRenderRecipe.timing === 'object' &&
-    !Array.isArray(clickTrackRenderRecipe.timing)
-      ? (clickTrackRenderRecipe.timing as Record<string, unknown>)
-      : null
-
-  if (!timing) {
-    missing.push('clickTrackRenderRecipe.timing')
-  } else {
-    if (timing.tempoSource !== 'audioPreviewSpec') {
-      missing.push('clickTrackRenderRecipe.timing.tempoSource')
+      missing.push("clickTrackRenderRecipe.rendererRequirement");
     }
 
-    if (timing.sectionTimingSource !== 'dryRunCueSheet') {
-      missing.push('clickTrackRenderRecipe.timing.sectionTimingSource')
+    const countIn =
+      clickTrackRenderRecipe.countIn &&
+      typeof clickTrackRenderRecipe.countIn === "object" &&
+      !Array.isArray(clickTrackRenderRecipe.countIn)
+        ? (clickTrackRenderRecipe.countIn as Record<string, unknown>)
+        : null;
+
+    if (!countIn) {
+      missing.push("clickTrackRenderRecipe.countIn");
+    } else {
+      if (countIn.enabled !== true) {
+        missing.push("clickTrackRenderRecipe.countIn.enabled");
+      }
+
+      if (typeof countIn.bars !== "number" || countIn.bars <= 0) {
+        missing.push("clickTrackRenderRecipe.countIn.bars");
+      }
+
+      if (
+        typeof countIn.description !== "string" ||
+        !countIn.description.trim()
+      ) {
+        missing.push("clickTrackRenderRecipe.countIn.description");
+      }
+    }
+
+    const timing =
+      clickTrackRenderRecipe.timing &&
+      typeof clickTrackRenderRecipe.timing === "object" &&
+      !Array.isArray(clickTrackRenderRecipe.timing)
+        ? (clickTrackRenderRecipe.timing as Record<string, unknown>)
+        : null;
+
+    if (!timing) {
+      missing.push("clickTrackRenderRecipe.timing");
+    } else {
+      if (timing.tempoSource !== "audioPreviewSpec") {
+        missing.push("clickTrackRenderRecipe.timing.tempoSource");
+      }
+
+      if (timing.sectionTimingSource !== "dryRunCueSheet") {
+        missing.push("clickTrackRenderRecipe.timing.sectionTimingSource");
+      }
+
+      if (
+        typeof timing.description !== "string" ||
+        !timing.description.trim()
+      ) {
+        missing.push("clickTrackRenderRecipe.timing.description");
+      }
+    }
+
+    const clickSound =
+      clickTrackRenderRecipe.clickSound &&
+      typeof clickTrackRenderRecipe.clickSound === "object" &&
+      !Array.isArray(clickTrackRenderRecipe.clickSound)
+        ? (clickTrackRenderRecipe.clickSound as Record<string, unknown>)
+        : null;
+
+    if (!clickSound) {
+      missing.push("clickTrackRenderRecipe.clickSound");
+    } else {
+      if (clickSound.downbeatEmphasis !== true) {
+        missing.push("clickTrackRenderRecipe.clickSound.downbeatEmphasis");
+      }
+
+      if (clickSound.subdivision !== "quarter-note") {
+        missing.push("clickTrackRenderRecipe.clickSound.subdivision");
+      }
+
+      if (
+        typeof clickSound.description !== "string" ||
+        !clickSound.description.trim()
+      ) {
+        missing.push("clickTrackRenderRecipe.clickSound.description");
+      }
+    }
+
+    const sectionMarkers =
+      clickTrackRenderRecipe.sectionMarkers &&
+      typeof clickTrackRenderRecipe.sectionMarkers === "object" &&
+      !Array.isArray(clickTrackRenderRecipe.sectionMarkers)
+        ? (clickTrackRenderRecipe.sectionMarkers as Record<string, unknown>)
+        : null;
+
+    if (!sectionMarkers) {
+      missing.push("clickTrackRenderRecipe.sectionMarkers");
+    } else {
+      if (sectionMarkers.enabled !== true) {
+        missing.push("clickTrackRenderRecipe.sectionMarkers.enabled");
+      }
+
+      if (
+        typeof sectionMarkers.description !== "string" ||
+        !sectionMarkers.description.trim()
+      ) {
+        missing.push("clickTrackRenderRecipe.sectionMarkers.description");
+      }
     }
 
     if (
-      typeof timing.description !== 'string' ||
-      !timing.description.trim()
+      !Array.isArray(clickTrackRenderRecipe.mixPriorities) ||
+      clickTrackRenderRecipe.mixPriorities.length === 0
     ) {
-      missing.push('clickTrackRenderRecipe.timing.description')
-    }
-  }
-
-  const clickSound =
-    clickTrackRenderRecipe.clickSound &&
-    typeof clickTrackRenderRecipe.clickSound === 'object' &&
-    !Array.isArray(clickTrackRenderRecipe.clickSound)
-      ? (clickTrackRenderRecipe.clickSound as Record<string, unknown>)
-      : null
-
-  if (!clickSound) {
-    missing.push('clickTrackRenderRecipe.clickSound')
-  } else {
-    if (clickSound.downbeatEmphasis !== true) {
-      missing.push('clickTrackRenderRecipe.clickSound.downbeatEmphasis')
-    }
-
-    if (clickSound.subdivision !== 'quarter-note') {
-      missing.push('clickTrackRenderRecipe.clickSound.subdivision')
+      missing.push("clickTrackRenderRecipe.mixPriorities");
     }
 
     if (
-      typeof clickSound.description !== 'string' ||
-      !clickSound.description.trim()
+      !Array.isArray(clickTrackRenderRecipe.completionCriteria) ||
+      clickTrackRenderRecipe.completionCriteria.length === 0
     ) {
-      missing.push('clickTrackRenderRecipe.clickSound.description')
+      missing.push("clickTrackRenderRecipe.completionCriteria");
     }
   }
-
-  const sectionMarkers =
-    clickTrackRenderRecipe.sectionMarkers &&
-    typeof clickTrackRenderRecipe.sectionMarkers === 'object' &&
-    !Array.isArray(clickTrackRenderRecipe.sectionMarkers)
-      ? (clickTrackRenderRecipe.sectionMarkers as Record<string, unknown>)
-      : null
-
-  if (!sectionMarkers) {
-    missing.push('clickTrackRenderRecipe.sectionMarkers')
-  } else {
-    if (sectionMarkers.enabled !== true) {
-      missing.push('clickTrackRenderRecipe.sectionMarkers.enabled')
-    }
-
-    if (
-      typeof sectionMarkers.description !== 'string' ||
-      !sectionMarkers.description.trim()
-    ) {
-      missing.push('clickTrackRenderRecipe.sectionMarkers.description')
-    }
-  }
-
-  if (
-    !Array.isArray(clickTrackRenderRecipe.mixPriorities) ||
-    clickTrackRenderRecipe.mixPriorities.length === 0
-  ) {
-    missing.push('clickTrackRenderRecipe.mixPriorities')
-  }
-
-  if (
-    !Array.isArray(clickTrackRenderRecipe.completionCriteria) ||
-    clickTrackRenderRecipe.completionCriteria.length === 0
-  ) {
-    missing.push('clickTrackRenderRecipe.completionCriteria')
-  }
-}
 
   requiredObjects.forEach(([label, value]) => {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      missing.push(label)
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      missing.push(label);
     }
-  })
+  });
 
   if (!Array.isArray(pkg.notes) || pkg.notes.length === 0) {
-    missing.push('notes')
+    missing.push("notes");
   }
 
   return {
@@ -3570,65 +3641,65 @@ if (!clickTrackRenderRecipe) {
     missing,
     detail:
       missing.length === 0
-? 'Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, includes real-render configuration placeholders, declares the first real-render candidate without selecting it, and validates the blocked first real-render candidate stack summary.'    
-: `Dry-run artefact package needs review: ${missing.join(', ')}`,
-  }
+        ? "Dry-run artefact package is validated, confirms no audio has been generated, lists real-render readiness blockers, declares future render targets, includes all render recipes, defines expected output file placeholders, includes the renderer input contract, keeps real rendering blocked behind a safety gate, declares click track as the first real-render target, declares the blocked real-render route scaffold with real-render configuration in its expected request shape and expected blocked response contract/configuration summaries plus contract/configuration checks, includes real-render configuration placeholders, declares the first real-render candidate without selecting it, and validates the blocked first real-render candidate stack summary."
+        : `Dry-run artefact package needs review: ${missing.join(", ")}`,
+  };
 }
 
 function createRenderJobId() {
   return `audio-preview-${Date.now()}-${Math.random()
     .toString(36)
-    .slice(2, 8)}`
+    .slice(2, 8)}`;
 }
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as RendererPayload
+    const body = (await req.json()) as RendererPayload;
 
-    const validation = validateRendererPayload(body)
+    const validation = validateRendererPayload(body);
 
     if (!validation.ready) {
       return NextResponse.json(
         {
-          status: 'rejected',
-          renderStatus: 'not-started',
+          status: "rejected",
+          renderStatus: "not-started",
           validation,
         },
         { status: 400 },
-      )
+      );
     }
 
-    const dryRunRenderPlan = buildDryRunRenderPlan(body)
+    const dryRunRenderPlan = buildDryRunRenderPlan(body);
 
-const dryRunRenderPlanValidation =
-  validateDryRunRenderPlan(dryRunRenderPlan)
+    const dryRunRenderPlanValidation =
+      validateDryRunRenderPlan(dryRunRenderPlan);
 
-const dryRunCueSheet =
-  dryRunRenderPlan.cueSheet &&
-  typeof dryRunRenderPlan.cueSheet === 'object' &&
-  !Array.isArray(dryRunRenderPlan.cueSheet)
-    ? dryRunRenderPlan.cueSheet
-    : {}
+    const dryRunCueSheet =
+      dryRunRenderPlan.cueSheet &&
+      typeof dryRunRenderPlan.cueSheet === "object" &&
+      !Array.isArray(dryRunRenderPlan.cueSheet)
+        ? dryRunRenderPlan.cueSheet
+        : {};
 
-const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
+    const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet);
 
     const renderJob = {
       id: createRenderJobId(),
-      status: 'dry-run-ready',
-      renderer: 'local-audio-preview-dry-run',
+      status: "dry-run-ready",
+      renderer: "local-audio-preview-dry-run",
       createdAt: new Date().toISOString(),
-      project: body.project || 'Untitled project',
-      songVersion: body.songVersion || 'Untitled song version',
-      chordVersion: body.chordVersion || 'Untitled chord version',
-      renderMode: 'guide-track-preview',
-      audioStatus: 'not-generated',
+      project: body.project || "Untitled project",
+      songVersion: body.songVersion || "Untitled song version",
+      chordVersion: body.chordVersion || "Untitled chord version",
+      renderMode: "guide-track-preview",
+      audioStatus: "not-generated",
       nextStep:
-        'Connect this dry-run handoff to an audio generation service or local guide-track renderer.',
+        "Connect this dry-run handoff to an audio generation service or local guide-track renderer.",
       summary: {
-        key: body.key || '',
-        tempo: body.tempo || '',
-        groove: body.groove || '',
-        instrumentation: body.instrumentation || '',
+        key: body.key || "",
+        tempo: body.tempo || "",
+        groove: body.groove || "",
+        instrumentation: body.instrumentation || "",
         songsheetLineCount: Array.isArray(body.songsheetLines)
           ? body.songsheetLines.length
           : 0,
@@ -3636,7 +3707,7 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
           ? body.renderSteps.length
           : 0,
       },
-    }
+    };
 
     const dryRunRenderManifest = buildDryRunRenderManifest({
       payload: body,
@@ -3644,37 +3715,38 @@ const dryRunCueSheetValidation = validateDryRunCueSheet(dryRunCueSheet)
       dryRunRenderPlan,
       dryRunRenderPlanValidation,
       dryRunCueSheetValidation,
-    })
+    });
 
     const dryRunRenderManifestValidation =
-        validateDryRunRenderManifest(dryRunRenderManifest)
+      validateDryRunRenderManifest(dryRunRenderManifest);
 
     const dryRunHandoffBundle = buildDryRunHandoffBundle({
       renderJob,
       dryRunRenderPlanValidation,
       dryRunCueSheetValidation,
       dryRunRenderManifestValidation,
-    })
+    });
 
-const dryRunHandoffBundleValidation =
-  validateDryRunHandoffBundle(dryRunHandoffBundle)
-const dryRunArtifactPackage = buildDryRunArtifactPackage({
-  renderJob,
-  dryRunRenderPlan,
-  dryRunRenderPlanValidation,
-  dryRunCueSheetValidation,
-  dryRunRenderManifest,
-  dryRunRenderManifestValidation,
-  dryRunHandoffBundle,
-  dryRunHandoffBundleValidation,
-})
+    const dryRunHandoffBundleValidation =
+      validateDryRunHandoffBundle(dryRunHandoffBundle);
+    const dryRunArtifactPackage = buildDryRunArtifactPackage({
+      renderJob,
+      dryRunRenderPlan,
+      dryRunRenderPlanValidation,
+      dryRunCueSheetValidation,
+      dryRunRenderManifest,
+      dryRunRenderManifestValidation,
+      dryRunHandoffBundle,
+      dryRunHandoffBundleValidation,
+    });
 
-const dryRunArtifactPackageValidation =
-  validateDryRunArtifactPackage(dryRunArtifactPackage)
+    const dryRunArtifactPackageValidation = validateDryRunArtifactPackage(
+      dryRunArtifactPackage,
+    );
 
     return NextResponse.json({
-      status: 'accepted',
-      renderStatus: 'dry-run-ready',
+      status: "accepted",
+      renderStatus: "dry-run-ready",
       validation,
       renderJob,
       dryRunRenderPlan,
@@ -3687,12 +3759,12 @@ const dryRunArtifactPackageValidation =
       dryRunArtifactPackage,
       dryRunArtifactPackageValidation,
       message:
-        'Renderer payload accepted. Dry-run render job created; no audio file generated yet.',
-    })
+        "Renderer payload accepted. Dry-run render job created; no audio file generated yet.",
+    });
   } catch {
     return NextResponse.json(
-      { error: 'Could not parse renderer payload.' },
+      { error: "Could not parse renderer payload." },
       { status: 400 },
-    )
+    );
   }
 }

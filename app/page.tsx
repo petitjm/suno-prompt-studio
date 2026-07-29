@@ -2785,6 +2785,33 @@ export default function Page() {
             )
             .slice(0, 24)
         : [],
+      chordMarkerSummaries: Array.isArray(preview.chordMarkerSummaries)
+        ? preview.chordMarkerSummaries
+            .map((marker) => {
+              if (
+                !marker ||
+                typeof marker !== "object" ||
+                Array.isArray(marker)
+              ) {
+                return null;
+              }
+
+              const record = marker as Record<string, unknown>;
+
+              return {
+                section:
+                  typeof record.section === "string" ? record.section : "",
+                chord: typeof record.chord === "string" ? record.chord : "",
+                timeSeconds:
+                  typeof record.timeSeconds === "number" &&
+                  Number.isFinite(record.timeSeconds)
+                    ? record.timeSeconds
+                    : null,
+              };
+            })
+            .filter((marker) => marker !== null)
+            .slice(0, 24)
+        : [],
       songDurationSeconds:
         typeof preview.songDurationSeconds === "number" &&
         Number.isFinite(preview.songDurationSeconds)
@@ -2841,6 +2868,7 @@ export default function Page() {
             .filter((section) => section !== null)
             .slice(0, 12)
         : [],
+
       tempoBpm:
         typeof preview.tempoBpm === "number" &&
         Number.isFinite(preview.tempoBpm)
@@ -15214,6 +15242,28 @@ ${buildRewriteInstruction(
                                       .join(", ")
                                   : "none"}
                               </div>
+
+                              {getClickTrackRendererPreviewSummary()
+                                ?.chordMarkerSummaries.length ? (
+                                <div className="mt-2 space-y-1">
+                                  <div className="font-medium">
+                                    Chord marker detail
+                                  </div>
+                                  {getClickTrackRendererPreviewSummary()?.chordMarkerSummaries.map(
+                                    (marker, index) => (
+                                      <div
+                                        key={`${marker.section}-${marker.chord}-${index}`}
+                                      >
+                                        {marker.timeSeconds ?? "?"}s —{" "}
+                                        {marker.section || "Section"}{" "}
+                                        {marker.chord
+                                          ? `— ${marker.chord}`
+                                          : ""}
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              ) : null}
                             </div>
                           ) : null}
 
