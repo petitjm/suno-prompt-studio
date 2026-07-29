@@ -90,6 +90,8 @@ export type ClickTrackWavPreview = {
     root: string;
     timeSeconds: number;
   }[];
+  chordToneGuideSegmentCount: number;
+  chordToneGuideStatus: "available" | "not-available";
   renderJobId: string;
   targetKey: "clickTrack";
   tempoBpm: number;
@@ -189,6 +191,11 @@ export function createClickTrackWavPreview(
             ),
           }))
           .slice(0, 24);
+  const chordToneGuideSegments = getChordToneGuideSegments({
+    input,
+    countInDurationSeconds,
+    totalDurationSeconds,
+  });
   const sectionSummaries = getSectionSummaries(input).map((section) => ({
     ...section,
     startSeconds: Number(
@@ -224,6 +231,9 @@ export function createClickTrackWavPreview(
     chordMarkerCount: getChordMarkerTimesSeconds(input).length,
     chordMarkerTimesSeconds,
     chordMarkerSummaries,
+    chordToneGuideSegmentCount: chordToneGuideSegments.length,
+    chordToneGuideStatus:
+      chordToneGuideSegments.length > 0 ? "available" : "not-available",
     sectionSummaries,
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: "wav-primitives-ready-render-still-blocked",
@@ -352,6 +362,110 @@ function getChordRootFrequencyHz(chord: string): number {
   }
 }
 
+type ChordToneGuideSegment = {
+  startSeconds: number;
+  endSeconds: number;
+  frequencyHz: number;
+};
+
+function getChordToneGuideSegments({
+  input,
+  countInDurationSeconds,
+  totalDurationSeconds,
+}: {
+  input: ClickTrackWavRenderInput;
+  countInDurationSeconds: number;
+  totalDurationSeconds: number;
+}): ChordToneGuideSegment[] {
+  if (
+    input.includeChordMarkers === false ||
+    !Array.isArray(input.chordMarkers) ||
+    input.chordMarkers.length === 0
+  ) {
+    return [];
+  }
+
+  const markers = input.chordMarkers
+    .filter(
+      (marker) =>
+        typeof marker.chord === "string" &&
+        marker.chord.trim() &&
+        Number.isFinite(marker.timeSeconds) &&
+        marker.timeSeconds >= 0,
+    )
+    .map((marker) => ({
+      chord: marker.chord || "",
+      startSeconds: marker.timeSeconds + countInDurationSeconds,
+      frequencyHz: getChordRootFrequencyHz(marker.chord || ""),
+    }))
+    .sort((first, second) => first.startSeconds - second.startSeconds);
+
+  return markers
+    .map((marker, index) => {
+      const nextMarker = markers[index + 1];
+      const endSeconds = nextMarker
+        ? nextMarker.startSeconds
+        : totalDurationSeconds;
+
+      if (endSeconds <= marker.startSeconds) {
+        return null;
+      }
+
+      return {
+        startSeconds: marker.startSeconds,
+        endSeconds,
+        frequencyHz: marker.frequencyHz,
+      };
+    })
+    .filter((segment) => segment !== null);
+}
+
+function addToneToSamples({
+  samples,
+  startSample,
+  endSample,
+  sampleRateHz,
+  amplitude,
+  frequencyHz,
+}: {
+  samples: Int16Array;
+  startSample: number;
+  endSample: number;
+  sampleRateHz: number;
+  amplitude: number;
+  frequencyHz: number;
+}) {
+  const safeStartSample = Math.max(0, startSample);
+  const safeEndSample = Math.min(samples.length, endSample);
+  const lengthSamples = safeEndSample - safeStartSample;
+
+  if (lengthSamples <= 0) {
+    return;
+  }
+
+  const fadeInSamples = Math.max(1, Math.round(sampleRateHz * 0.04));
+  const fadeOutSamples = Math.max(1, Math.round(sampleRateHz * 0.12));
+
+  for (
+    let sampleIndex = safeStartSample;
+    sampleIndex < safeEndSample;
+    sampleIndex += 1
+  ) {
+    const offset = sampleIndex - safeStartSample;
+    const remaining = safeEndSample - sampleIndex;
+
+    const fadeIn = Math.min(1, offset / fadeInSamples);
+    const fadeOut = Math.min(1, remaining / fadeOutSamples);
+    const envelope = Math.min(fadeIn, fadeOut);
+
+    const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
+    const value = Math.round(Math.sin(phase) * amplitude * envelope);
+    const mixed = samples[sampleIndex] + value;
+
+    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+  }
+}
+
 function addClickToSamples({
   samples,
   startSample,
@@ -393,6 +507,11 @@ export function createClickTrackPcm16Samples(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
   );
+  const chordToneGuideSegments = getChordToneGuideSegments({
+    input,
+    countInDurationSeconds,
+    totalDurationSeconds,
+  });
   const samples = new Int16Array(totalSamples);
 
   if (input.tempoBpm <= 0 || !Number.isFinite(input.tempoBpm)) {
@@ -514,6 +633,17 @@ export function createClickTrackPcm16Samples(
       lengthSamples: chordMarkerLengthSamples,
       amplitude: chordMarkerAmplitude,
       frequencyHz: chordMarkerEvent.frequencyHz,
+    });
+  }
+
+  for (const segment of chordToneGuideSegments) {
+    addToneToSamples({
+      samples,
+      startSample: Math.round(segment.startSeconds * input.sampleRateHz),
+      endSample: Math.round(segment.endSeconds * input.sampleRateHz),
+      sampleRateHz: input.sampleRateHz,
+      amplitude: 1800,
+      frequencyHz: segment.frequencyHz,
     });
   }
 
