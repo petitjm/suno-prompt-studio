@@ -2904,6 +2904,27 @@ export default function Page() {
     };
   };
 
+  const applyClickTrackLayerPreset = ({
+    countIn,
+    sectionMarkers,
+    chordMarkers,
+  }: {
+    countIn: boolean;
+    sectionMarkers: boolean;
+    chordMarkers: boolean;
+  }) => {
+    setIncludeClickTrackCountIn(countIn);
+    setIncludeClickTrackSectionMarkers(sectionMarkers);
+    setIncludeClickTrackChordMarkers(chordMarkers);
+    setClickTrackDownloadStatus(
+      `Click-track layers set: ${
+        countIn ? "count-in" : "no count-in"
+      }, ${sectionMarkers ? "section markers" : "no section markers"}, ${
+        chordMarkers ? "chord markers" : "no chord markers"
+      }.`,
+    );
+  };
+
   const getRealRenderRouteReceivedConfigurationCheck = () => {
     if (
       !realRenderRouteTestResponse ||
@@ -15116,6 +15137,70 @@ ${buildRewriteInstruction(
                               ? "Testing blocked route..."
                               : "Test blocked route"}
                           </button>
+
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium text-gray-200">
+                              Click-track layer presets
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyClickTrackLayerPreset({
+                                    countIn: false,
+                                    sectionMarkers: false,
+                                    chordMarkers: false,
+                                  })
+                                }
+                                className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                              >
+                                Plain click
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyClickTrackLayerPreset({
+                                    countIn: true,
+                                    sectionMarkers: false,
+                                    chordMarkers: false,
+                                  })
+                                }
+                                className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                              >
+                                Basic count-in
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyClickTrackLayerPreset({
+                                    countIn: true,
+                                    sectionMarkers: true,
+                                    chordMarkers: false,
+                                  })
+                                }
+                                className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                              >
+                                Structure guide
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyClickTrackLayerPreset({
+                                    countIn: true,
+                                    sectionMarkers: true,
+                                    chordMarkers: true,
+                                  })
+                                }
+                                className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
+                              >
+                                Full rehearsal
+                              </button>
+                            </div>
+                          </div>
 
                           <div className="flex flex-wrap gap-3 text-xs text-gray-300">
                             <label className="flex items-center gap-2">
