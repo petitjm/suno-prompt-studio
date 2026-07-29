@@ -264,16 +264,6 @@ function getChordMarkerTimesSeconds(input: ClickTrackWavRenderInput): number[] {
     : [];
 }
 
-function isNearChordMarkerSample(
-  sampleIndex: number,
-  chordMarkerSamples: number[],
-  toleranceSamples: number,
-): boolean {
-  return chordMarkerSamples.some(
-    (markerSample) => Math.abs(sampleIndex - markerSample) <= toleranceSamples,
-  );
-}
-
 function addClickToSamples({
   samples,
   startSample,
@@ -339,8 +329,8 @@ export function createClickTrackPcm16Samples(
   const sectionAmplitude = 28000;
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;
-  const chordMarkerAmplitude = 18000;
-  const chordMarkerFrequencyHz = 900;
+  const chordMarkerAmplitude = 24000;
+  const chordMarkerFrequencyHz = 650;
   const chordMarkerLengthSamples = Math.max(
     1,
     Math.round(input.sampleRateHz * 0.04),
@@ -349,13 +339,11 @@ export function createClickTrackPcm16Samples(
     (startSeconds) =>
       Math.round((startSeconds + countInDurationSeconds) * input.sampleRateHz),
   );
+  const chordMarkerOffsetSamples = Math.round(input.sampleRateHz * 0.055);
   const chordMarkerSamples = getChordMarkerTimesSeconds(input).map(
     (timeSeconds) =>
-      Math.round((timeSeconds + countInDurationSeconds) * input.sampleRateHz),
-  );
-  const chordMarkerToleranceSamples = Math.max(
-    1,
-    Math.round(input.sampleRateHz * 0.01),
+      Math.round((timeSeconds + countInDurationSeconds) * input.sampleRateHz) +
+      chordMarkerOffsetSamples,
   );
   const sectionStartToleranceSamples = Math.max(
     1,
@@ -379,12 +367,6 @@ export function createClickTrackPcm16Samples(
       sectionStartToleranceSamples,
     );
 
-    const isChordMarker = isNearChordMarkerSample(
-      beatStartSample,
-      chordMarkerSamples,
-      chordMarkerToleranceSamples,
-    );
-
     if (isSectionStart) {
       addClickToSamples({
         samples,
@@ -394,17 +376,6 @@ export function createClickTrackPcm16Samples(
         amplitude: sectionAmplitude,
         frequencyHz: sectionClickFrequencyHz,
       });
-
-      if (isChordMarker) {
-        addClickToSamples({
-          samples,
-          startSample: beatStartSample,
-          sampleRateHz: input.sampleRateHz,
-          lengthSamples: chordMarkerLengthSamples,
-          amplitude: chordMarkerAmplitude,
-          frequencyHz: chordMarkerFrequencyHz,
-        });
-      }
 
       addClickToSamples({
         samples,
@@ -433,6 +404,17 @@ export function createClickTrackPcm16Samples(
         : isDownbeat
           ? 1400
           : clickFrequencyHz,
+    });
+  }
+
+  for (const chordMarkerSample of chordMarkerSamples) {
+    addClickToSamples({
+      samples,
+      startSample: chordMarkerSample,
+      sampleRateHz: input.sampleRateHz,
+      lengthSamples: chordMarkerLengthSamples,
+      amplitude: chordMarkerAmplitude,
+      frequencyHz: chordMarkerFrequencyHz,
     });
   }
 
