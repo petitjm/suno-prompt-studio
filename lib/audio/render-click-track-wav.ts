@@ -291,6 +291,50 @@ function getChordMarkerSummaries(input: ClickTrackWavRenderInput) {
     : [];
 }
 
+function getChordRoot(chord: string): string {
+  const match = chord.trim().match(/^([A-G](?:#|b)?)/i);
+
+  return match ? match[1].toUpperCase() : "";
+}
+
+function getChordRootFrequencyHz(chord: string): number {
+  const root = getChordRoot(chord);
+
+  switch (root) {
+    case "C":
+      return 523.25;
+    case "C#":
+    case "DB":
+      return 554.37;
+    case "D":
+      return 587.33;
+    case "D#":
+    case "EB":
+      return 622.25;
+    case "E":
+      return 659.25;
+    case "F":
+      return 698.46;
+    case "F#":
+    case "GB":
+      return 739.99;
+    case "G":
+      return 783.99;
+    case "G#":
+    case "AB":
+      return 830.61;
+    case "A":
+      return 880;
+    case "A#":
+    case "BB":
+      return 932.33;
+    case "B":
+      return 987.77;
+    default:
+      return 650;
+  }
+}
+
 function addClickToSamples({
   samples,
   startSample,
@@ -357,7 +401,6 @@ export function createClickTrackPcm16Samples(
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;
   const chordMarkerAmplitude = 24000;
-  const chordMarkerFrequencyHz = 650;
   const chordMarkerLengthSamples = Math.max(
     1,
     Math.round(input.sampleRateHz * 0.04),
@@ -367,11 +410,18 @@ export function createClickTrackPcm16Samples(
       Math.round((startSeconds + countInDurationSeconds) * input.sampleRateHz),
   );
   const chordMarkerOffsetSamples = Math.round(input.sampleRateHz * 0.055);
-  const chordMarkerSamples = getChordMarkerTimesSeconds(input).map(
-    (timeSeconds) =>
-      Math.round((timeSeconds + countInDurationSeconds) * input.sampleRateHz) +
-      chordMarkerOffsetSamples,
-  );
+  const chordMarkerEvents = Array.isArray(input.chordMarkers)
+    ? input.chordMarkers
+        .filter((marker) => Number.isFinite(marker.timeSeconds))
+        .map((marker) => ({
+          startSample:
+            Math.round(
+              (marker.timeSeconds + countInDurationSeconds) *
+                input.sampleRateHz,
+            ) + chordMarkerOffsetSamples,
+          frequencyHz: getChordRootFrequencyHz(marker.chord || ""),
+        }))
+    : [];
   const sectionStartToleranceSamples = Math.max(
     1,
     Math.round(input.sampleRateHz * 0.005),
@@ -434,14 +484,14 @@ export function createClickTrackPcm16Samples(
     });
   }
 
-  for (const chordMarkerSample of chordMarkerSamples) {
+  for (const chordMarkerEvent of chordMarkerEvents) {
     addClickToSamples({
       samples,
-      startSample: chordMarkerSample,
+      startSample: chordMarkerEvent.startSample,
       sampleRateHz: input.sampleRateHz,
       lengthSamples: chordMarkerLengthSamples,
       amplitude: chordMarkerAmplitude,
-      frequencyHz: chordMarkerFrequencyHz,
+      frequencyHz: chordMarkerEvent.frequencyHz,
     });
   }
 
