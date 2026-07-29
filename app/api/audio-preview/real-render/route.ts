@@ -78,6 +78,7 @@ function getCueSheetSections(value: unknown) {
       const estimatedSeconds = getNumber(record.estimatedSeconds);
       const startSeconds = getNumber(record.startSeconds);
       const endSeconds = getNumber(record.endSeconds);
+      const lyricLineCount = getNumber(record.lyricLineCount);
 
       if (
         order === null ||
@@ -97,6 +98,7 @@ function getCueSheetSections(value: unknown) {
         estimatedSeconds,
         startSeconds,
         endSeconds,
+        lyricLineCount,
         chordPlacements: getArray(record.chordPlacements),
       };
     })
@@ -173,17 +175,25 @@ function buildChordMarkersFromCueSheetSections({
           return null;
         }
 
+        const lyricLineCount =
+          typeof cueSection.lyricLineCount === "number" &&
+          Number.isFinite(cueSection.lyricLineCount) &&
+          cueSection.lyricLineCount > 0
+            ? cueSection.lyricLineCount
+            : Math.max(1, chordPlacements.length);
+
+        const linePosition = Math.min(
+          0.98,
+          Math.max(
+            0.02,
+            (lineIndex + charIndex / lyricLength) / lyricLineCount,
+          ),
+        );
+
+        const fallbackPosition = (index + 1) / (chordPlacements.length + 1);
+
         const lineFraction =
-          cueSection.estimatedBars > 0
-            ? Math.min(
-                0.98,
-                Math.max(
-                  0.02,
-                  (lineIndex + charIndex / lyricLength) /
-                    Math.max(1, chordPlacements.length),
-                ),
-              )
-            : (index + 1) / (chordPlacements.length + 1);
+          cueSection.estimatedBars > 0 ? linePosition : fallbackPosition;
 
         return {
           section: cueSection.section,
