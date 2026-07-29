@@ -208,7 +208,12 @@ export default function Page() {
   const [clickTrackAudioUrl, setClickTrackAudioUrl] = useState("");
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
-  useState(false);
+  const [includeClickTrackCountIn, setIncludeClickTrackCountIn] =
+    useState(true);
+  const [includeClickTrackSectionMarkers, setIncludeClickTrackSectionMarkers] =
+    useState(true);
+  const [includeClickTrackChordMarkers, setIncludeClickTrackChordMarkers] =
+    useState(true);
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -3305,6 +3310,9 @@ export default function Page() {
               : undefined,
           tempoBpm: previewTempo,
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+          includeCountIn: includeClickTrackCountIn,
+          includeSectionMarkers: includeClickTrackSectionMarkers,
+          includeChordMarkers: includeClickTrackChordMarkers,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -3359,6 +3367,9 @@ export default function Page() {
               : undefined,
           tempoBpm: previewTempo,
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+          includeCountIn: includeClickTrackCountIn,
+          includeSectionMarkers: includeClickTrackSectionMarkers,
+          includeChordMarkers: includeClickTrackChordMarkers,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -15105,6 +15116,47 @@ ${buildRewriteInstruction(
                               ? "Testing blocked route..."
                               : "Test blocked route"}
                           </button>
+
+                          <div className="flex flex-wrap gap-3 text-xs text-gray-300">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={includeClickTrackCountIn}
+                                onChange={(event) =>
+                                  setIncludeClickTrackCountIn(
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              Count-in
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={includeClickTrackSectionMarkers}
+                                onChange={(event) =>
+                                  setIncludeClickTrackSectionMarkers(
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              Section markers
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={includeClickTrackChordMarkers}
+                                onChange={(event) =>
+                                  setIncludeClickTrackChordMarkers(
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              Chord markers
+                            </label>
+                          </div>
 
                           <button
                             type="button"

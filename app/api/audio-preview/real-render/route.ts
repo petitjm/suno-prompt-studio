@@ -233,7 +233,9 @@ export async function POST(req: Request) {
   const realRenderGate = bodyRecord?.realRenderGate;
   const firstRealRenderPlan = bodyRecord?.firstRealRenderPlan;
   const realRenderConfiguration = bodyRecord?.realRenderConfiguration;
-
+  const includeCountIn = bodyRecord?.includeCountIn !== false;
+  const includeSectionMarkers = bodyRecord?.includeSectionMarkers !== false;
+  const includeChordMarkers = bodyRecord?.includeChordMarkers !== false;
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
@@ -393,6 +395,9 @@ export async function POST(req: Request) {
       getArray(dryRunCueSheet?.sections).length || undefined,
     cueSheetSections,
     chordMarkers,
+    includeCountIn,
+    includeSectionMarkers,
+    includeChordMarkers,
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()

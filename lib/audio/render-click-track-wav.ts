@@ -27,6 +27,9 @@ export type ClickTrackWavRenderInput = {
   cueSheetSectionCount?: number;
   cueSheetSections?: ClickTrackCueSheetSection[];
   chordMarkers?: ClickTrackChordMarker[];
+  includeCountIn?: boolean;
+  includeSectionMarkers?: boolean;
+  includeChordMarkers?: boolean;
 };
 
 export type ClickTrackWavDownloadArtifact = {
@@ -161,23 +164,31 @@ export function createClickTrackWavPreview(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
   );
-  const sectionStartTimesSeconds = getSectionStartTimesSeconds(input).map(
-    (startSeconds) =>
-      Number((startSeconds + countInDurationSeconds).toFixed(3)),
-  );
-  const chordMarkerTimesSeconds = getChordMarkerTimesSeconds(input)
-    .map((timeSeconds) =>
-      Number((timeSeconds + countInDurationSeconds).toFixed(3)),
-    )
-    .slice(0, 24);
-  const chordMarkerSummaries = getChordMarkerSummaries(input)
-    .map((marker) => ({
-      ...marker,
-      timeSeconds: Number(
-        (marker.timeSeconds + countInDurationSeconds).toFixed(3),
-      ),
-    }))
-    .slice(0, 24);
+  const sectionStartTimesSeconds =
+    input.includeSectionMarkers === false
+      ? []
+      : getSectionStartTimesSeconds(input).map((startSeconds) =>
+          Number((startSeconds + countInDurationSeconds).toFixed(3)),
+        );
+  const chordMarkerTimesSeconds =
+    input.includeChordMarkers === false
+      ? []
+      : getChordMarkerTimesSeconds(input)
+          .map((timeSeconds) =>
+            Number((timeSeconds + countInDurationSeconds).toFixed(3)),
+          )
+          .slice(0, 24);
+  const chordMarkerSummaries =
+    input.includeChordMarkers === false
+      ? []
+      : getChordMarkerSummaries(input)
+          .map((marker) => ({
+            ...marker,
+            timeSeconds: Number(
+              (marker.timeSeconds + countInDurationSeconds).toFixed(3),
+            ),
+          }))
+          .slice(0, 24);
   const sectionSummaries = getSectionSummaries(input).map((section) => ({
     ...section,
     startSeconds: Number(
@@ -220,6 +231,10 @@ export function createClickTrackWavPreview(
 }
 
 function getCountInDurationSeconds(input: ClickTrackWavRenderInput): number {
+  if (input.includeCountIn === false) {
+    return 0;
+  }
+
   const beatsPerBar = 4;
 
   if (
@@ -407,10 +422,15 @@ export function createClickTrackPcm16Samples(
     1,
     Math.round(input.sampleRateHz * 0.04),
   );
-  const sectionStartSamples = getSectionStartTimesSeconds(input).map(
-    (startSeconds) =>
-      Math.round((startSeconds + countInDurationSeconds) * input.sampleRateHz),
-  );
+  const sectionStartSamples =
+    input.includeSectionMarkers === false
+      ? []
+      : getSectionStartTimesSeconds(input).map((startSeconds) =>
+          Math.round(
+            (startSeconds + countInDurationSeconds) * input.sampleRateHz,
+          ),
+        );
+
   const chordMarkerOffsetSamples = Math.round(input.sampleRateHz * 0.055);
   const chordMarkerEvents = Array.isArray(input.chordMarkers)
     ? input.chordMarkers
