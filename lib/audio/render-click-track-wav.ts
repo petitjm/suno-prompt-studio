@@ -362,10 +362,83 @@ function getChordRootFrequencyHz(chord: string): number {
   }
 }
 
+function getChordRootSemitone(chord: string): number | null {
+  const root = getChordRoot(chord);
+
+  switch (root) {
+    case "C":
+      return 0;
+    case "C#":
+    case "DB":
+      return 1;
+    case "D":
+      return 2;
+    case "D#":
+    case "EB":
+      return 3;
+    case "E":
+      return 4;
+    case "F":
+      return 5;
+    case "F#":
+    case "GB":
+      return 6;
+    case "G":
+      return 7;
+    case "G#":
+    case "AB":
+      return 8;
+    case "A":
+      return 9;
+    case "A#":
+    case "BB":
+      return 10;
+    case "B":
+      return 11;
+    default:
+      return null;
+  }
+}
+
+function getFrequencyFromMidiNote(midiNote: number): number {
+  return 440 * 2 ** ((midiNote - 69) / 12);
+}
+
+function getChordToneFrequenciesHz(chord: string): number[] {
+  const rootSemitone = getChordRootSemitone(chord);
+
+  if (rootSemitone === null) {
+    return [getChordRootFrequencyHz(chord)];
+  }
+
+  const normalizedChord = chord.trim().toLowerCase();
+  const isMinor =
+    normalizedChord.includes("m") && !normalizedChord.includes("maj");
+  const isDiminished = normalizedChord.includes("dim");
+  const isSuspendedSecond = normalizedChord.includes("sus2");
+  const isSuspendedFourth = normalizedChord.includes("sus4");
+
+  const intervals = isDiminished
+    ? [0, 3, 6]
+    : isSuspendedSecond
+      ? [0, 2, 7]
+      : isSuspendedFourth
+        ? [0, 5, 7]
+        : isMinor
+          ? [0, 3, 7]
+          : [0, 4, 7];
+
+  const rootMidiNote = 48 + rootSemitone;
+
+  return intervals.map((interval) =>
+    getFrequencyFromMidiNote(rootMidiNote + interval),
+  );
+}
+
 type ChordToneGuideSegment = {
   startSeconds: number;
   endSeconds: number;
-  frequencyHz: number;
+  frequenciesHz: number[];
 };
 
 function getChordToneGuideSegments({
@@ -396,7 +469,7 @@ function getChordToneGuideSegments({
     .map((marker) => ({
       chord: marker.chord || "",
       startSeconds: marker.timeSeconds + countInDurationSeconds,
-      frequencyHz: getChordRootFrequencyHz(marker.chord || ""),
+      frequenciesHz: getChordToneFrequenciesHz(marker.chord || ""),
     }))
     .sort((first, second) => first.startSeconds - second.startSeconds);
 
@@ -414,7 +487,7 @@ function getChordToneGuideSegments({
       return {
         startSeconds: marker.startSeconds,
         endSeconds,
-        frequencyHz: marker.frequencyHz,
+        frequenciesHz: marker.frequenciesHz,
       };
     })
     .filter((segment) => segment !== null);
@@ -637,13 +710,15 @@ export function createClickTrackPcm16Samples(
   }
 
   for (const segment of chordToneGuideSegments) {
-    addToneToSamples({
-      samples,
-      startSample: Math.round(segment.startSeconds * input.sampleRateHz),
-      endSample: Math.round(segment.endSeconds * input.sampleRateHz),
-      sampleRateHz: input.sampleRateHz,
-      amplitude: 1800,
-      frequencyHz: segment.frequencyHz,
+    segment.frequenciesHz.forEach((frequencyHz) => {
+      addToneToSamples({
+        samples,
+        startSample: Math.round(segment.startSeconds * input.sampleRateHz),
+        endSample: Math.round(segment.endSeconds * input.sampleRateHz),
+        sampleRateHz: input.sampleRateHz,
+        amplitude: 700,
+        frequencyHz,
+      });
     });
   }
 
