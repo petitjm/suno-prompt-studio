@@ -2772,6 +2772,19 @@ export default function Page() {
       : [];
 
     return {
+      chordMarkerCount:
+        typeof preview.chordMarkerCount === "number" &&
+        Number.isFinite(preview.chordMarkerCount)
+          ? preview.chordMarkerCount
+          : null,
+      chordMarkerTimesSeconds: Array.isArray(preview.chordMarkerTimesSeconds)
+        ? preview.chordMarkerTimesSeconds
+            .filter(
+              (startTime): startTime is number =>
+                typeof startTime === "number" && Number.isFinite(startTime),
+            )
+            .slice(0, 24)
+        : [],
       songDurationSeconds:
         typeof preview.songDurationSeconds === "number" &&
         Number.isFinite(preview.songDurationSeconds)
@@ -15175,6 +15188,27 @@ ${buildRewriteInstruction(
                                   ?.sectionStartTimesSeconds.length
                                   ? getClickTrackRendererPreviewSummary()
                                       ?.sectionStartTimesSeconds.map(
+                                        (startTime) => `${startTime}s`,
+                                      )
+                                      .join(", ")
+                                  : "none"}
+                              </div>
+
+                              <div>
+                                Chord markers:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.chordMarkerCount !== null
+                                  ? getClickTrackRendererPreviewSummary()
+                                      ?.chordMarkerCount
+                                  : "unknown"}
+                              </div>
+
+                              <div>
+                                Chord marker times:{" "}
+                                {getClickTrackRendererPreviewSummary()
+                                  ?.chordMarkerTimesSeconds.length
+                                  ? getClickTrackRendererPreviewSummary()
+                                      ?.chordMarkerTimesSeconds.map(
                                         (startTime) => `${startTime}s`,
                                       )
                                       .join(", ")

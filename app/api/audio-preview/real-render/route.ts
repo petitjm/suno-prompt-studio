@@ -102,6 +102,75 @@ function getCueSheetSections(value: unknown) {
     .filter((section) => section !== null);
 }
 
+function getTimelineSections(value: unknown) {
+  return getArray(value)
+    .map((section) => {
+      const record = getRecord(section);
+
+      if (!record) {
+        return null;
+      }
+
+      const order = getNumber(record.order);
+      const sectionName = getString(record.section);
+      const chordPlacementCount = getNumber(record.chordPlacementCount);
+
+      if (order === null || !sectionName || chordPlacementCount === null) {
+        return null;
+      }
+
+      return {
+        order,
+        section: sectionName,
+        chordPlacementCount,
+      };
+    })
+    .filter((section) => section !== null);
+}
+
+function buildApproximateChordMarkers({
+  cueSheetSections,
+  timelineSections,
+}: {
+  cueSheetSections: ReturnType<typeof getCueSheetSections>;
+  timelineSections: ReturnType<typeof getTimelineSections>;
+}) {
+  return cueSheetSections.flatMap((cueSection) => {
+    const matchingTimelineSection = timelineSections.find(
+      (timelineSection) =>
+        timelineSection.order === cueSection.order ||
+        timelineSection.section === cueSection.section,
+    );
+
+    const chordPlacementCount =
+      matchingTimelineSection?.chordPlacementCount || 0;
+
+    if (chordPlacementCount <= 0) {
+      return [];
+    }
+
+    const sectionDurationSeconds =
+      cueSection.endSeconds - cueSection.startSeconds;
+
+    if (sectionDurationSeconds <= 0) {
+      return [];
+    }
+
+    return Array.from({ length: chordPlacementCount }, (_, index) => {
+      const fraction = (index + 1) / (chordPlacementCount + 1);
+
+      return {
+        section: cueSection.section,
+        timeSeconds: Number(
+          (cueSection.startSeconds + sectionDurationSeconds * fraction).toFixed(
+            3,
+          ),
+        ),
+      };
+    });
+  });
+}
+
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
@@ -129,6 +198,12 @@ export async function POST(req: Request) {
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
+  const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
+  const timelineSections = getTimelineSections(dryRunRenderPlan?.timeline);
+  const chordMarkers = buildApproximateChordMarkers({
+    cueSheetSections,
+    timelineSections,
+  });
 
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
@@ -279,7 +354,8 @@ export async function POST(req: Request) {
       getNumber(dryRunCueSheet?.totalEstimatedSeconds) || undefined,
     cueSheetSectionCount:
       getArray(dryRunCueSheet?.sections).length || undefined,
-    cueSheetSections: getCueSheetSections(dryRunCueSheet?.sections),
+    cueSheetSections,
+    chordMarkers,
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
