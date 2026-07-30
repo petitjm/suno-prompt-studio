@@ -92,6 +92,8 @@ export type ClickTrackWavPreview = {
   }[];
   chordToneGuideSegmentCount: number;
   chordToneGuideStatus: "available" | "not-available";
+  chordArpeggioGuideStatus: "available" | "not-available";
+  chordArpeggioGuideNoteCount: number;
   renderJobId: string;
   targetKey: "clickTrack";
   tempoBpm: number;
@@ -196,6 +198,10 @@ export function createClickTrackWavPreview(
     countInDurationSeconds,
     totalDurationSeconds,
   });
+  const chordArpeggioGuideNoteCount = getChordArpeggioGuideNoteCount({
+    segments: chordToneGuideSegments,
+    tempoBpm: input.tempoBpm,
+  });
   const sectionSummaries = getSectionSummaries(input).map((section) => ({
     ...section,
     startSeconds: Number(
@@ -235,6 +241,9 @@ export function createClickTrackWavPreview(
     chordToneGuideStatus:
       chordToneGuideSegments.length > 0 ? "available" : "not-available",
     sectionSummaries,
+    chordArpeggioGuideStatus:
+      chordArpeggioGuideNoteCount > 0 ? "available" : "not-available",
+    chordArpeggioGuideNoteCount,
     primitiveSelfCheck: createClickTrackWavPrimitiveSelfCheck(input),
     implementationStatus: "wav-primitives-ready-render-still-blocked",
   };
@@ -458,6 +467,31 @@ function getChordToneGuideSegments({
     return [];
   }
 
+  function getChordArpeggioGuideNoteCount({
+    segments,
+    tempoBpm,
+  }: {
+    segments: ChordToneGuideSegment[];
+    tempoBpm: number;
+  }): number {
+    if (tempoBpm <= 0 || !Number.isFinite(tempoBpm)) {
+      return 0;
+    }
+
+    const secondsPerBeat = 60 / tempoBpm;
+    const secondsPerArpeggioNote = secondsPerBeat / 2;
+
+    return segments.reduce((total, segment) => {
+      const durationSeconds = segment.endSeconds - segment.startSeconds;
+
+      if (durationSeconds <= 0 || segment.frequenciesHz.length === 0) {
+        return total;
+      }
+
+      return total + Math.floor(durationSeconds / secondsPerArpeggioNote);
+    }, 0);
+  }
+
   const markers = input.chordMarkers
     .filter(
       (marker) =>
@@ -492,6 +526,30 @@ function getChordToneGuideSegments({
     })
     .filter((segment) => segment !== null);
 }
+function getChordArpeggioGuideNoteCount({
+  segments,
+  tempoBpm,
+}: {
+  segments: ChordToneGuideSegment[];
+  tempoBpm: number;
+}): number {
+  if (tempoBpm <= 0 || !Number.isFinite(tempoBpm)) {
+    return 0;
+  }
+
+  const secondsPerBeat = 60 / tempoBpm;
+  const secondsPerArpeggioNote = secondsPerBeat / 2;
+
+  return segments.reduce((total, segment) => {
+    const durationSeconds = segment.endSeconds - segment.startSeconds;
+
+    if (durationSeconds <= 0 || segment.frequenciesHz.length === 0) {
+      return total;
+    }
+
+    return total + Math.floor(durationSeconds / secondsPerArpeggioNote);
+  }, 0);
+}
 
 function addToneToSamples({
   samples,
@@ -518,6 +576,55 @@ function addToneToSamples({
 
   const fadeInSamples = Math.max(1, Math.round(sampleRateHz * 0.04));
   const fadeOutSamples = Math.max(1, Math.round(sampleRateHz * 0.12));
+
+  for (
+    let sampleIndex = safeStartSample;
+    sampleIndex < safeEndSample;
+    sampleIndex += 1
+  ) {
+    const offset = sampleIndex - safeStartSample;
+    const remaining = safeEndSample - sampleIndex;
+
+    const fadeIn = Math.min(1, offset / fadeInSamples);
+    const fadeOut = Math.min(1, remaining / fadeOutSamples);
+    const envelope = Math.min(fadeIn, fadeOut);
+
+    const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
+    const value = Math.round(Math.sin(phase) * amplitude * envelope);
+    const mixed = samples[sampleIndex] + value;
+
+    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+  }
+}
+
+function addTonePulseToSamples({
+  samples,
+  startSample,
+  durationSamples,
+  sampleRateHz,
+  amplitude,
+  frequencyHz,
+}: {
+  samples: Int16Array;
+  startSample: number;
+  durationSamples: number;
+  sampleRateHz: number;
+  amplitude: number;
+  frequencyHz: number;
+}) {
+  const safeStartSample = Math.max(0, startSample);
+  const safeEndSample = Math.min(
+    samples.length,
+    safeStartSample + durationSamples,
+  );
+  const lengthSamples = safeEndSample - safeStartSample;
+
+  if (lengthSamples <= 0) {
+    return;
+  }
+
+  const fadeInSamples = Math.max(1, Math.round(sampleRateHz * 0.015));
+  const fadeOutSamples = Math.max(1, Math.round(sampleRateHz * 0.08));
 
   for (
     let sampleIndex = safeStartSample;
@@ -720,6 +827,43 @@ export function createClickTrackPcm16Samples(
         frequencyHz,
       });
     });
+  }
+  const secondsPerArpeggioNote =
+    input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
+      ? 60 / input.tempoBpm / 2
+      : 0;
+  const arpeggioNoteDurationSeconds = secondsPerArpeggioNote * 0.82;
+
+  if (secondsPerArpeggioNote > 0) {
+    for (const segment of chordToneGuideSegments) {
+      if (segment.frequenciesHz.length === 0) {
+        continue;
+      }
+
+      let noteIndex = 0;
+
+      for (
+        let noteStartSeconds = segment.startSeconds;
+        noteStartSeconds < segment.endSeconds;
+        noteStartSeconds += secondsPerArpeggioNote
+      ) {
+        const frequencyHz =
+          segment.frequenciesHz[noteIndex % segment.frequenciesHz.length];
+
+        addTonePulseToSamples({
+          samples,
+          startSample: Math.round(noteStartSeconds * input.sampleRateHz),
+          durationSamples: Math.round(
+            arpeggioNoteDurationSeconds * input.sampleRateHz,
+          ),
+          sampleRateHz: input.sampleRateHz,
+          amplitude: 950,
+          frequencyHz,
+        });
+
+        noteIndex += 1;
+      }
+    }
   }
 
   return samples;
