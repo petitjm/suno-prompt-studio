@@ -372,6 +372,10 @@ function getChordRootFrequencyHz(chord: string): number {
   }
 }
 
+function getChordRootBassFrequencyHz(chord: string): number {
+  return getChordRootFrequencyHz(chord) / 2;
+}
+
 function getChordRootSemitone(chord: string): number | null {
   const root = getChordRoot(chord);
 
@@ -449,6 +453,7 @@ type ChordToneGuideSegment = {
   startSeconds: number;
   endSeconds: number;
   frequenciesHz: number[];
+  bassFrequencyHz: number;
 };
 
 function getChordToneGuideSegments({
@@ -505,6 +510,7 @@ function getChordToneGuideSegments({
       chord: marker.chord || "",
       startSeconds: marker.timeSeconds + countInDurationSeconds,
       frequenciesHz: getChordToneFrequenciesHz(marker.chord || ""),
+      bassFrequencyHz: getChordRootBassFrequencyHz(marker.chord || ""),
     }))
     .sort((first, second) => first.startSeconds - second.startSeconds);
 
@@ -523,6 +529,7 @@ function getChordToneGuideSegments({
         startSeconds: marker.startSeconds,
         endSeconds,
         frequenciesHz: marker.frequenciesHz,
+        bassFrequencyHz: marker.bassFrequencyHz,
       };
     })
     .filter((segment) => segment !== null);
@@ -863,6 +870,33 @@ export function createClickTrackPcm16Samples(
         });
 
         noteIndex += 1;
+      }
+    }
+  }
+
+  const secondsPerBassPulse =
+    input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
+      ? 60 / input.tempoBpm
+      : 0;
+  const bassPulseDurationSeconds = secondsPerBassPulse * 0.72;
+
+  if (secondsPerBassPulse > 0) {
+    for (const segment of chordToneGuideSegments) {
+      for (
+        let pulseStartSeconds = segment.startSeconds;
+        pulseStartSeconds < segment.endSeconds;
+        pulseStartSeconds += secondsPerBassPulse
+      ) {
+        addTonePulseToSamples({
+          samples,
+          startSample: Math.round(pulseStartSeconds * input.sampleRateHz),
+          durationSamples: Math.round(
+            bassPulseDurationSeconds * input.sampleRateHz,
+          ),
+          sampleRateHz: input.sampleRateHz,
+          amplitude: 850,
+          frequencyHz: segment.bassFrequencyHz,
+        });
       }
     }
   }
