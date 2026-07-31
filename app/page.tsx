@@ -214,6 +214,8 @@ export default function Page() {
     useState(true);
   const [includeClickTrackChordMarkers, setIncludeClickTrackChordMarkers] =
     useState(true);
+  const [includeClickTrackChordToneGuide, setIncludeClickTrackChordToneGuide] =
+    useState(true);
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -2908,20 +2910,23 @@ export default function Page() {
     countIn,
     sectionMarkers,
     chordMarkers,
+    chordToneGuide,
   }: {
     countIn: boolean;
     sectionMarkers: boolean;
     chordMarkers: boolean;
+    chordToneGuide: boolean;
   }) => {
     setIncludeClickTrackCountIn(countIn);
     setIncludeClickTrackSectionMarkers(sectionMarkers);
     setIncludeClickTrackChordMarkers(chordMarkers);
+    setIncludeClickTrackChordToneGuide(chordToneGuide);
     setClickTrackDownloadStatus(
       `Click-track layers set: ${
         countIn ? "count-in" : "no count-in"
       }, ${sectionMarkers ? "section markers" : "no section markers"}, ${
         chordMarkers ? "chord markers" : "no chord markers"
-      }.`,
+      }, ${chordToneGuide ? "chord guide tones" : "no chord guide tones"}.`,
     );
   };
 
@@ -3330,10 +3335,11 @@ export default function Page() {
               ? audioPreviewRenderJob.id
               : undefined,
           tempoBpm: previewTempo,
-          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           includeCountIn: includeClickTrackCountIn,
           includeSectionMarkers: includeClickTrackSectionMarkers,
           includeChordMarkers: includeClickTrackChordMarkers,
+          includeChordToneGuide: includeClickTrackChordToneGuide,
+          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -3387,10 +3393,11 @@ export default function Page() {
               ? audioPreviewRenderJob.id
               : undefined,
           tempoBpm: previewTempo,
-          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           includeCountIn: includeClickTrackCountIn,
           includeSectionMarkers: includeClickTrackSectionMarkers,
           includeChordMarkers: includeClickTrackChordMarkers,
+          includeChordToneGuide: includeClickTrackChordToneGuide,
+          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -15151,6 +15158,7 @@ ${buildRewriteInstruction(
                                     countIn: false,
                                     sectionMarkers: false,
                                     chordMarkers: false,
+                                    chordToneGuide: false,
                                   })
                                 }
                                 className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
@@ -15165,6 +15173,7 @@ ${buildRewriteInstruction(
                                     countIn: true,
                                     sectionMarkers: false,
                                     chordMarkers: false,
+                                    chordToneGuide: false,
                                   })
                                 }
                                 className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
@@ -15179,6 +15188,7 @@ ${buildRewriteInstruction(
                                     countIn: true,
                                     sectionMarkers: true,
                                     chordMarkers: false,
+                                    chordToneGuide: false,
                                   })
                                 }
                                 className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
@@ -15193,6 +15203,7 @@ ${buildRewriteInstruction(
                                     countIn: true,
                                     sectionMarkers: true,
                                     chordMarkers: true,
+                                    chordToneGuide: false,
                                   })
                                 }
                                 className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
@@ -15240,6 +15251,19 @@ ${buildRewriteInstruction(
                                 }
                               />
                               Chord markers
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={includeClickTrackChordToneGuide}
+                                onChange={(event) =>
+                                  setIncludeClickTrackChordToneGuide(
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              Chord guide tones
                             </label>
                           </div>
 

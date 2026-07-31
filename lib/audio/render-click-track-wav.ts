@@ -30,6 +30,7 @@ export type ClickTrackWavRenderInput = {
   includeCountIn?: boolean;
   includeSectionMarkers?: boolean;
   includeChordMarkers?: boolean;
+  includeChordToneGuide?: boolean;
 };
 
 export type ClickTrackWavDownloadArtifact = {
@@ -460,7 +461,7 @@ function getChordToneGuideSegments({
   totalDurationSeconds: number;
 }): ChordToneGuideSegment[] {
   if (
-    input.includeChordMarkers === false ||
+    input.includeChordToneGuide === false ||
     !Array.isArray(input.chordMarkers) ||
     input.chordMarkers.length === 0
   ) {

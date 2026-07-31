@@ -236,6 +236,7 @@ export async function POST(req: Request) {
   const includeCountIn = bodyRecord?.includeCountIn !== false;
   const includeSectionMarkers = bodyRecord?.includeSectionMarkers !== false;
   const includeChordMarkers = bodyRecord?.includeChordMarkers !== false;
+  const includeChordToneGuide = bodyRecord?.includeChordToneGuide !== false;
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
@@ -398,6 +399,7 @@ export async function POST(req: Request) {
     includeCountIn,
     includeSectionMarkers,
     includeChordMarkers,
+    includeChordToneGuide,
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
