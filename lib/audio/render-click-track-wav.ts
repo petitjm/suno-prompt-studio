@@ -28,6 +28,7 @@ export type ClickTrackWavRenderInput = {
   cueSheetSections?: ClickTrackCueSheetSection[];
   chordMarkers?: ClickTrackChordMarker[];
   includeCountIn?: boolean;
+  includeBeatClicks?: boolean;
   includeSectionMarkers?: boolean;
   includeChordMarkers?: boolean;
   includeChordToneGuide?: boolean;
@@ -816,6 +817,10 @@ export function createClickTrackPcm16Samples(
         frequencyHz: sectionClickFrequencyHz,
       });
 
+      continue;
+    }
+
+    if (!isCountIn && input.includeBeatClicks === false) {
       continue;
     }
 

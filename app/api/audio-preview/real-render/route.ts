@@ -234,6 +234,7 @@ export async function POST(req: Request) {
   const firstRealRenderPlan = bodyRecord?.firstRealRenderPlan;
   const realRenderConfiguration = bodyRecord?.realRenderConfiguration;
   const includeCountIn = bodyRecord?.includeCountIn !== false;
+  const includeBeatClicks = bodyRecord?.includeBeatClicks !== false;
   const includeSectionMarkers = bodyRecord?.includeSectionMarkers !== false;
   const includeChordMarkers = bodyRecord?.includeChordMarkers !== false;
   const includeChordToneGuide = bodyRecord?.includeChordToneGuide !== false;
@@ -400,6 +401,7 @@ export async function POST(req: Request) {
     cueSheetSections,
     chordMarkers,
     includeCountIn,
+    includeBeatClicks,
     includeSectionMarkers,
     includeChordMarkers,
     includeChordToneGuide,

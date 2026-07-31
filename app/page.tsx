@@ -212,6 +212,8 @@ export default function Page() {
     useState(false);
   const [includeClickTrackCountIn, setIncludeClickTrackCountIn] =
     useState(true);
+  const [includeClickTrackBeatClicks, setIncludeClickTrackBeatClicks] =
+    useState(true);
   const [includeClickTrackSectionMarkers, setIncludeClickTrackSectionMarkers] =
     useState(true);
   const [includeClickTrackChordMarkers, setIncludeClickTrackChordMarkers] =
@@ -2910,16 +2912,19 @@ export default function Page() {
 
   const applyClickTrackLayerPreset = ({
     countIn,
+    beatClicks,
     sectionMarkers,
     chordMarkers,
     chordToneGuide,
   }: {
     countIn: boolean;
+    beatClicks: boolean;
     sectionMarkers: boolean;
     chordMarkers: boolean;
     chordToneGuide: boolean;
   }) => {
     setIncludeClickTrackCountIn(countIn);
+    setIncludeClickTrackBeatClicks(beatClicks);
     setIncludeClickTrackSectionMarkers(sectionMarkers);
     setIncludeClickTrackChordMarkers(chordMarkers);
     setIncludeClickTrackChordToneGuide(chordToneGuide);
@@ -3338,9 +3343,10 @@ export default function Page() {
               : undefined,
           tempoBpm: previewTempo,
           includeCountIn: includeClickTrackCountIn,
+          includeBeatClicks: includeClickTrackBeatClicks,
           includeSectionMarkers: includeClickTrackSectionMarkers,
-          includeChordMarkers: false,
-          includeChordToneGuide: true,
+          includeChordMarkers: includeClickTrackChordMarkers,
+          includeChordToneGuide: includeClickTrackChordToneGuide,
           mixProfile: "musical-guide",
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
 
@@ -3398,9 +3404,10 @@ export default function Page() {
               : undefined,
           tempoBpm: previewTempo,
           includeCountIn: includeClickTrackCountIn,
+          includeBeatClicks: includeClickTrackBeatClicks,
           includeSectionMarkers: includeClickTrackSectionMarkers,
           includeChordMarkers: includeClickTrackChordMarkers,
-          includeChordToneGuide: includeClickTrackChordToneGuide,
+          includeChordToneGuide: true,
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
@@ -3574,9 +3581,10 @@ export default function Page() {
               ? audioPreviewRenderJob.id
               : undefined,
           tempoBpm: previewTempo,
-          includeCountIn: true,
-          includeSectionMarkers: true,
-          includeChordMarkers: false,
+          includeCountIn: includeClickTrackCountIn,
+          includeBeatClicks: includeClickTrackBeatClicks,
+          includeSectionMarkers: includeClickTrackSectionMarkers,
+          includeChordMarkers: includeClickTrackChordMarkers,
           includeChordToneGuide: true,
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
@@ -15254,6 +15262,7 @@ ${buildRewriteInstruction(
                                     sectionMarkers: false,
                                     chordMarkers: false,
                                     chordToneGuide: false,
+                                    beatClicks: true,
                                   })
                                 }
                                 className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
@@ -15269,6 +15278,7 @@ ${buildRewriteInstruction(
                                     sectionMarkers: false,
                                     chordMarkers: false,
                                     chordToneGuide: false,
+                                    beatClicks: true,
                                   })
                                 }
                                 className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
@@ -15284,6 +15294,7 @@ ${buildRewriteInstruction(
                                     sectionMarkers: true,
                                     chordMarkers: false,
                                     chordToneGuide: false,
+                                    beatClicks: true,
                                   })
                                 }
                                 className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
@@ -15299,11 +15310,28 @@ ${buildRewriteInstruction(
                                     sectionMarkers: true,
                                     chordMarkers: false,
                                     chordToneGuide: true,
+                                    beatClicks: true,
                                   })
                                 }
                                 className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
                               >
                                 Musical guide
+                              </button>
+
+                              <button
+                                type="button"
+                                className="rounded-md border border-slate-500 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={() =>
+                                  applyClickTrackLayerPreset({
+                                    countIn: false,
+                                    beatClicks: false,
+                                    sectionMarkers: false,
+                                    chordMarkers: false,
+                                    chordToneGuide: true,
+                                  })
+                                }
+                              >
+                                Music only
                               </button>
 
                               <button
@@ -15314,6 +15342,7 @@ ${buildRewriteInstruction(
                                     sectionMarkers: true,
                                     chordMarkers: true,
                                     chordToneGuide: true,
+                                    beatClicks: true,
                                   })
                                 }
                                 className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
@@ -15335,6 +15364,19 @@ ${buildRewriteInstruction(
                                 }
                               />
                               Count-in
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={includeClickTrackBeatClicks}
+                                onChange={(event) =>
+                                  setIncludeClickTrackBeatClicks(
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              Beat clicks
                             </label>
 
                             <label className="flex items-center gap-2">
