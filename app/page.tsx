@@ -208,6 +208,8 @@ export default function Page() {
   const [clickTrackAudioUrl, setClickTrackAudioUrl] = useState("");
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
+  const [downloadingMusicalGuideWav, setDownloadingMusicalGuideWav] =
+    useState(false);
   const [includeClickTrackCountIn, setIncludeClickTrackCountIn] =
     useState(true);
   const [includeClickTrackSectionMarkers, setIncludeClickTrackSectionMarkers] =
@@ -3541,6 +3543,91 @@ export default function Page() {
         return lines[index - 1] !== "";
       })
       .join("\n");
+  };
+
+  const downloadMusicalGuideWav = async () => {
+    if (!dryRunArtifactPackage) {
+      setClickTrackDownloadStatus(
+        "Submit dry run before downloading the musical guide WAV.",
+      );
+      return;
+    }
+
+    setClickTrackDownloadStatus("Requesting musical guide WAV download...");
+    setDownloadingMusicalGuideWav(true);
+
+    try {
+      const response = await fetch("/api/audio-preview/real-render", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requestedTarget: "clickTrack",
+          enableRealClickTrackWavDownload: true,
+          renderJobId:
+            typeof audioPreviewRenderJob?.id === "string"
+              ? audioPreviewRenderJob.id
+              : undefined,
+          tempoBpm: previewTempo,
+          includeCountIn: true,
+          includeSectionMarkers: true,
+          includeChordMarkers: false,
+          includeChordToneGuide: true,
+          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+          rendererInputContract: dryRunArtifactPackage.rendererInputContract,
+          realRenderGate: dryRunArtifactPackage.realRenderGate,
+          firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
+          realRenderConfiguration:
+            dryRunArtifactPackage.realRenderConfiguration,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        setClickTrackDownloadStatus(
+          `Musical guide WAV download failed. HTTP ${response.status}: ${errorText}`,
+        );
+        return;
+      }
+
+      const rendererTempoBpm = response.headers.get("X-Renderer-Tempo-BPM");
+      const rendererSampleRate = response.headers.get("X-Renderer-Sample-Rate");
+      const rendererJobId = response.headers.get("X-Renderer-Job-ID");
+      const contentLength = response.headers.get("Content-Length");
+
+      const blob = await response.blob();
+      const filename =
+        getFilenameFromContentDisposition(
+          response.headers.get("Content-Disposition"),
+        ) || "musical-guide.wav";
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename.replace("clickTrack", "musicalGuide");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setClickTrackAudioUrl(url);
+
+      setClickTrackDownloadStatus(
+        `Downloaded musical guide WAV: ${link.download}${
+          rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
+        }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
+          rendererJobId ? ` | job ${rendererJobId}` : ""
+        }${contentLength ? ` | ${contentLength} bytes` : ""}`,
+      );
+    } catch (error) {
+      setClickTrackDownloadStatus(
+        error instanceof Error
+          ? error.message
+          : "Musical guide WAV download failed.",
+      );
+    } finally {
+      setDownloadingMusicalGuideWav(false);
+    }
   };
 
   const buildSongsheetReviewCopyText = () => {
@@ -15295,6 +15382,22 @@ ${buildRewriteInstruction(
                               ? "Downloading click-track WAV..."
                               : "Download click-track WAV"}
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={() => downloadMusicalGuideWav()}
+                            disabled={
+                              downloadingMusicalGuideWav ||
+                              !dryRunArtifactPackage
+                            }
+                            title="Generate and download a more musical guide WAV using chord tones, arpeggio, and bass root layers."
+                            className="rounded border border-blue-800 px-3 py-1 text-xs font-medium text-blue-100 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                          >
+                            {downloadingMusicalGuideWav
+                              ? "Downloading musical guide WAV..."
+                              : "Download musical guide WAV"}
+                          </button>
+
                           {clickTrackDownloadStatus ? (
                             <div className="text-xs text-green-200">
                               {clickTrackDownloadStatus}
