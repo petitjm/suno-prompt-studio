@@ -724,7 +724,7 @@ export function createClickTrackPcm16Samples(
   const sectionAmplitude = 28000;
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;
-  const chordMarkerAmplitude = 24000;
+  const chordMarkerAmplitude = 18000;
   const chordMarkerLengthSamples = Math.max(
     1,
     Math.round(input.sampleRateHz * 0.04),
@@ -831,7 +831,7 @@ export function createClickTrackPcm16Samples(
         startSample: Math.round(segment.startSeconds * input.sampleRateHz),
         endSample: Math.round(segment.endSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: 700,
+        amplitude: 1200,
         frequencyHz,
       });
     });
@@ -865,7 +865,7 @@ export function createClickTrackPcm16Samples(
             arpeggioNoteDurationSeconds * input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: 950,
+          amplitude: 1500,
           frequencyHz,
         });
 
@@ -894,7 +894,7 @@ export function createClickTrackPcm16Samples(
             bassPulseDurationSeconds * input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: 850,
+          amplitude: 1350,
           frequencyHz: segment.bassFrequencyHz,
         });
       }
