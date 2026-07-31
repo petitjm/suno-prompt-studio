@@ -31,6 +31,7 @@ export type ClickTrackWavRenderInput = {
   includeSectionMarkers?: boolean;
   includeChordMarkers?: boolean;
   includeChordToneGuide?: boolean;
+  mixProfile?: "click-track" | "musical-guide";
 };
 
 export type ClickTrackWavDownloadArtifact = {
@@ -654,6 +655,24 @@ function addTonePulseToSamples({
   }
 }
 
+function limitSamplesToPeak(samples: Int16Array, targetPeak: number) {
+  let peak = 0;
+
+  for (const sample of samples) {
+    peak = Math.max(peak, Math.abs(sample));
+  }
+
+  if (peak <= targetPeak || peak <= 0) {
+    return;
+  }
+
+  const scale = targetPeak / peak;
+
+  for (let index = 0; index < samples.length; index += 1) {
+    samples[index] = Math.round(samples[index] * scale);
+  }
+}
+
 function addClickToSamples({
   samples,
   startSample,
@@ -719,12 +738,20 @@ export function createClickTrackPcm16Samples(
     1,
     Math.round(input.sampleRateHz * 0.06),
   );
-  const accentAmplitude = 22000;
-  const normalAmplitude = 14000;
-  const sectionAmplitude = 28000;
+  const isMusicalGuideMix = input.mixProfile === "musical-guide";
+
+  const accentAmplitude = isMusicalGuideMix ? 50 : 22000;
+  const normalAmplitude = isMusicalGuideMix ? 100 : 14000;
+  const sectionAmplitude = isMusicalGuideMix ? 80 : 28000;
+  const chordMarkerAmplitude = isMusicalGuideMix ? 100 : 18000;
+
+  const chordPadAmplitude = isMusicalGuideMix ? 3600 : 1200;
+  const arpeggioAmplitude = isMusicalGuideMix ? 4600 : 1500;
+  const bassAmplitude = isMusicalGuideMix ? 4200 : 1350;
+
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;
-  const chordMarkerAmplitude = 18000;
+
   const chordMarkerLengthSamples = Math.max(
     1,
     Math.round(input.sampleRateHz * 0.04),
@@ -739,18 +766,21 @@ export function createClickTrackPcm16Samples(
         );
 
   const chordMarkerOffsetSamples = Math.round(input.sampleRateHz * 0.055);
-  const chordMarkerEvents = Array.isArray(input.chordMarkers)
-    ? input.chordMarkers
-        .filter((marker) => Number.isFinite(marker.timeSeconds))
-        .map((marker) => ({
-          startSample:
-            Math.round(
-              (marker.timeSeconds + countInDurationSeconds) *
-                input.sampleRateHz,
-            ) + chordMarkerOffsetSamples,
-          frequencyHz: getChordRootFrequencyHz(marker.chord || ""),
-        }))
-    : [];
+  const chordMarkerEvents =
+    input.includeChordMarkers === false
+      ? []
+      : Array.isArray(input.chordMarkers)
+        ? input.chordMarkers
+            .filter((marker) => Number.isFinite(marker.timeSeconds))
+            .map((marker) => ({
+              startSample:
+                Math.round(
+                  (marker.timeSeconds + countInDurationSeconds) *
+                    input.sampleRateHz,
+                ) + chordMarkerOffsetSamples,
+              frequencyHz: getChordRootFrequencyHz(marker.chord || ""),
+            }))
+        : [];
   const sectionStartToleranceSamples = Math.max(
     1,
     Math.round(input.sampleRateHz * 0.005),
@@ -831,7 +861,7 @@ export function createClickTrackPcm16Samples(
         startSample: Math.round(segment.startSeconds * input.sampleRateHz),
         endSample: Math.round(segment.endSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: 1200,
+        amplitude: chordPadAmplitude,
         frequencyHz,
       });
     });
@@ -865,7 +895,7 @@ export function createClickTrackPcm16Samples(
             arpeggioNoteDurationSeconds * input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: 1500,
+          amplitude: arpeggioAmplitude,
           frequencyHz,
         });
 
@@ -899,6 +929,10 @@ export function createClickTrackPcm16Samples(
         });
       }
     }
+  }
+
+  if (isMusicalGuideMix) {
+    limitSamplesToPeak(samples, 26000);
   }
 
   return samples;

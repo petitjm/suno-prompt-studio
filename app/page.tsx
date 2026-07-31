@@ -3339,9 +3339,11 @@ export default function Page() {
           tempoBpm: previewTempo,
           includeCountIn: includeClickTrackCountIn,
           includeSectionMarkers: includeClickTrackSectionMarkers,
-          includeChordMarkers: includeClickTrackChordMarkers,
-          includeChordToneGuide: includeClickTrackChordToneGuide,
+          includeChordMarkers: false,
+          includeChordToneGuide: true,
+          mixProfile: "musical-guide",
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -3419,6 +3421,7 @@ export default function Page() {
       const rendererTempoBpm = response.headers.get("X-Renderer-Tempo-BPM");
       const rendererSampleRate = response.headers.get("X-Renderer-Sample-Rate");
       const rendererJobId = response.headers.get("X-Renderer-Job-ID");
+      const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
       const contentLength = response.headers.get("Content-Length");
       const blob = await response.blob();
       const filename =
@@ -3565,6 +3568,7 @@ export default function Page() {
         body: JSON.stringify({
           requestedTarget: "clickTrack",
           enableRealClickTrackWavDownload: true,
+          mixProfile: "musical-guide",
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id
@@ -3612,12 +3616,16 @@ export default function Page() {
 
       setClickTrackAudioUrl(url);
 
+      const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
+
       setClickTrackDownloadStatus(
         `Downloaded musical guide WAV: ${link.download}${
           rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
         }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
           rendererJobId ? ` | job ${rendererJobId}` : ""
-        }${contentLength ? ` | ${contentLength} bytes` : ""}`,
+        }${rendererMixProfile ? ` | mix ${rendererMixProfile}` : ""}${
+          contentLength ? ` | ${contentLength} bytes` : ""
+        }`,
       );
     } catch (error) {
       setClickTrackDownloadStatus(

@@ -237,6 +237,9 @@ export async function POST(req: Request) {
   const includeSectionMarkers = bodyRecord?.includeSectionMarkers !== false;
   const includeChordMarkers = bodyRecord?.includeChordMarkers !== false;
   const includeChordToneGuide = bodyRecord?.includeChordToneGuide !== false;
+  const requestedMixProfile = getString(bodyRecord?.mixProfile);
+  const mixProfile: "click-track" | "musical-guide" =
+    requestedMixProfile === "musical-guide" ? "musical-guide" : "click-track";
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
@@ -400,6 +403,7 @@ export async function POST(req: Request) {
     includeSectionMarkers,
     includeChordMarkers,
     includeChordToneGuide,
+    mixProfile,
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
@@ -451,6 +455,8 @@ export async function POST(req: Request) {
         "X-Renderer-Tempo-BPM": String(clickTrackRenderInput.tempoBpm),
         "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
         "X-Renderer-Job-ID": clickTrackRenderInput.renderJobId,
+        "X-Renderer-Mix-Profile":
+          clickTrackRenderInput.mixProfile || "click-track",
       },
     });
   }
