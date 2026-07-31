@@ -15202,8 +15202,23 @@ ${buildRewriteInstruction(
                                   applyClickTrackLayerPreset({
                                     countIn: true,
                                     sectionMarkers: true,
+                                    chordMarkers: false,
+                                    chordToneGuide: true,
+                                  })
+                                }
+                                className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
+                              >
+                                Musical guide
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyClickTrackLayerPreset({
+                                    countIn: true,
+                                    sectionMarkers: true,
                                     chordMarkers: true,
-                                    chordToneGuide: false,
+                                    chordToneGuide: true,
                                   })
                                 }
                                 className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
