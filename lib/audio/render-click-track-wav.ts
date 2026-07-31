@@ -474,31 +474,6 @@ function getChordToneGuideSegments({
     return [];
   }
 
-  function getChordArpeggioGuideNoteCount({
-    segments,
-    tempoBpm,
-  }: {
-    segments: ChordToneGuideSegment[];
-    tempoBpm: number;
-  }): number {
-    if (tempoBpm <= 0 || !Number.isFinite(tempoBpm)) {
-      return 0;
-    }
-
-    const secondsPerBeat = 60 / tempoBpm;
-    const secondsPerArpeggioNote = secondsPerBeat / 2;
-
-    return segments.reduce((total, segment) => {
-      const durationSeconds = segment.endSeconds - segment.startSeconds;
-
-      if (durationSeconds <= 0 || segment.frequenciesHz.length === 0) {
-        return total;
-      }
-
-      return total + Math.floor(durationSeconds / secondsPerArpeggioNote);
-    }, 0);
-  }
-
   const markers = input.chordMarkers
     .filter(
       (marker) =>
@@ -515,9 +490,27 @@ function getChordToneGuideSegments({
     }))
     .sort((first, second) => first.startSeconds - second.startSeconds);
 
-  return markers
+  if (markers.length === 0) {
+    return [];
+  }
+
+  const songStartSeconds = countInDurationSeconds;
+  const firstMarker = markers[0];
+
+  const markersWithOpeningChord =
+    firstMarker.startSeconds > songStartSeconds
+      ? [
+          {
+            ...firstMarker,
+            startSeconds: songStartSeconds,
+          },
+          ...markers,
+        ]
+      : markers;
+
+  return markersWithOpeningChord
     .map((marker, index) => {
-      const nextMarker = markers[index + 1];
+      const nextMarker = markersWithOpeningChord[index + 1];
       const endSeconds = nextMarker
         ? nextMarker.startSeconds
         : totalDurationSeconds;
@@ -533,8 +526,9 @@ function getChordToneGuideSegments({
         bassFrequencyHz: marker.bassFrequencyHz,
       };
     })
-    .filter((segment) => segment !== null);
+    .filter((segment): segment is ChordToneGuideSegment => segment !== null);
 }
+
 function getChordArpeggioGuideNoteCount({
   segments,
   tempoBpm,
