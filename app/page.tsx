@@ -214,6 +214,7 @@ export default function Page() {
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
+  const musicalGuideAuditionAudioContextRef = useRef<AudioContext | null>(null);
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
 
@@ -304,6 +305,152 @@ export default function Page() {
       ...currentLevels,
       [key]: nextValue,
     }));
+  };
+
+  const getMusicalGuideAuditionAudioContext = () => {
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (
+        window as unknown as {
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).webkitAudioContext;
+
+    if (!AudioContextConstructor) {
+      return null;
+    }
+
+    if (!musicalGuideAuditionAudioContextRef.current) {
+      musicalGuideAuditionAudioContextRef.current =
+        new AudioContextConstructor();
+    }
+
+    return musicalGuideAuditionAudioContextRef.current;
+  };
+
+  const playMusicalGuideToneAudition = ({
+    frequencyHz,
+    startSeconds,
+    durationSeconds,
+    gainValue,
+    waveform = "sine",
+  }: {
+    frequencyHz: number;
+    startSeconds: number;
+    durationSeconds: number;
+    gainValue: number;
+    waveform?: OscillatorType;
+  }) => {
+    const audioContext = getMusicalGuideAuditionAudioContext();
+
+    if (!audioContext || gainValue <= 0) {
+      return;
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const startTime = audioContext.currentTime + startSeconds;
+    const endTime = startTime + durationSeconds;
+
+    oscillator.type = waveform;
+    oscillator.frequency.setValueAtTime(frequencyHz, startTime);
+
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(gainValue, startTime + 0.015);
+    gain.gain.linearRampToValueAtTime(gainValue * 0.7, endTime - 0.03);
+    gain.gain.linearRampToValueAtTime(0, endTime);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.start(startTime);
+    oscillator.stop(endTime + 0.02);
+  };
+
+  const playMusicalGuideMixAudition = (
+    key: "click" | "section" | "chordMarker" | "pad" | "arpeggio" | "bass",
+  ) => {
+    const level = musicalGuideMixLevels[key];
+
+    if (!Number.isFinite(level) || level <= 0) {
+      return;
+    }
+
+    const gainValue = Math.min(0.12, 0.045 * level);
+
+    if (key === "click") {
+      playMusicalGuideToneAudition({
+        frequencyHz: 1800,
+        startSeconds: 0,
+        durationSeconds: 0.045,
+        gainValue,
+        waveform: "square",
+      });
+      return;
+    }
+
+    if (key === "section") {
+      playMusicalGuideToneAudition({
+        frequencyHz: 1200,
+        startSeconds: 0,
+        durationSeconds: 0.06,
+        gainValue,
+        waveform: "square",
+      });
+      playMusicalGuideToneAudition({
+        frequencyHz: 1200,
+        startSeconds: 0.12,
+        durationSeconds: 0.06,
+        gainValue,
+        waveform: "square",
+      });
+      return;
+    }
+
+    if (key === "chordMarker") {
+      playMusicalGuideToneAudition({
+        frequencyHz: 261.63,
+        startSeconds: 0,
+        durationSeconds: 0.09,
+        gainValue,
+        waveform: "triangle",
+      });
+      return;
+    }
+
+    if (key === "pad") {
+      [261.63, 329.63, 392].forEach((frequencyHz) => {
+        playMusicalGuideToneAudition({
+          frequencyHz,
+          startSeconds: 0,
+          durationSeconds: 0.85,
+          gainValue: gainValue * 0.7,
+          waveform: "sine",
+        });
+      });
+      return;
+    }
+
+    if (key === "arpeggio") {
+      [261.63, 329.63, 392, 523.25].forEach((frequencyHz, index) => {
+        playMusicalGuideToneAudition({
+          frequencyHz,
+          startSeconds: index * 0.14,
+          durationSeconds: 0.16,
+          gainValue,
+          waveform: "triangle",
+        });
+      });
+      return;
+    }
+
+    playMusicalGuideToneAudition({
+      frequencyHz: 130.81,
+      startSeconds: 0,
+      durationSeconds: 0.35,
+      gainValue: gainValue * 1.2,
+      waveform: "sine",
+    });
   };
 
   const formatGeneratedAudioTime = (seconds: number) => {
@@ -15723,7 +15870,22 @@ ${buildRewriteInstruction(
                                     >
                                       <div className="flex items-center justify-between gap-3">
                                         <span>{label}</span>
-                                        <span>{Math.round(value * 100)}%</span>
+                                        <div className="flex items-center gap-2">
+                                          <span>
+                                            {Math.round(value * 100)}%
+                                          </span>
+                                          <button
+                                            type="button"
+                                            className="rounded border border-blue-700 px-2 py-0.5 text-[10px] text-blue-100 hover:bg-blue-950"
+                                            onClick={() =>
+                                              playMusicalGuideMixAudition(
+                                                typedKey,
+                                              )
+                                            }
+                                          >
+                                            Audition
+                                          </button>
+                                        </div>
                                       </div>
                                       <input
                                         type="range"
@@ -15737,6 +15899,21 @@ ${buildRewriteInstruction(
                                             Number(event.target.value),
                                           )
                                         }
+                                        onPointerUp={() =>
+                                          playMusicalGuideMixAudition(typedKey)
+                                        }
+                                        onKeyUp={(event) => {
+                                          if (
+                                            event.key === "ArrowLeft" ||
+                                            event.key === "ArrowRight" ||
+                                            event.key === "Home" ||
+                                            event.key === "End"
+                                          ) {
+                                            playMusicalGuideMixAudition(
+                                              typedKey,
+                                            );
+                                          }
+                                        }}
                                         className="w-full"
                                       />
                                     </label>
