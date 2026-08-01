@@ -209,9 +209,11 @@ export default function Page() {
   const [clickTrackAudioLabel, setClickTrackAudioLabel] = useState(
     "Latest generated WAV",
   );
-  const [generatedAudioCurrentTime, setGeneratedAudioCurrentTime] = useState(0);
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
   const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
+  const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
+  const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
 
@@ -227,6 +229,148 @@ export default function Page() {
     return `${String(minutes).padStart(2, "0")}:${String(
       remainingSeconds,
     ).padStart(2, "0")}`;
+  };
+
+  const updateGeneratedAudioPlaybackUi = ({
+    currentTime,
+    duration,
+  }: {
+    currentTime: number;
+    duration: number;
+  }) => {
+    const safeCurrentTime =
+      Number.isFinite(currentTime) && currentTime > 0 ? currentTime : 0;
+    const safeDuration =
+      Number.isFinite(duration) && duration > 0 ? duration : 0;
+
+    if (generatedAudioCurrentTimeTextRef.current) {
+      generatedAudioCurrentTimeTextRef.current.textContent =
+        formatGeneratedAudioTime(safeCurrentTime);
+    }
+
+    if (generatedAudioDurationTextRef.current) {
+      generatedAudioDurationTextRef.current.textContent =
+        formatGeneratedAudioTime(safeDuration);
+    }
+
+    if (generatedAudioSeekInputRef.current) {
+      generatedAudioSeekInputRef.current.max = String(safeDuration);
+      generatedAudioSeekInputRef.current.value = String(
+        safeDuration > 0 ? Math.min(safeCurrentTime, safeDuration) : 0,
+      );
+    }
+  };
+
+  const getGeneratedAudioSectionJumpSummaries = () => {
+    const dryRunCueSheet =
+      typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
+      audioPreviewDryRunRenderPlan?.cueSheet !== null &&
+      !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+        ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+        : null;
+
+    const dryRunSections = Array.isArray(dryRunCueSheet?.sections)
+      ? dryRunCueSheet.sections
+          .map((section, index) => {
+            if (
+              typeof section !== "object" ||
+              section === null ||
+              Array.isArray(section)
+            ) {
+              return null;
+            }
+
+            const sectionRecord = section as Record<string, unknown>;
+            const sectionName =
+              typeof sectionRecord.section === "string" &&
+              sectionRecord.section.trim()
+                ? sectionRecord.section
+                : `Section ${index + 1}`;
+            const startSeconds =
+              typeof sectionRecord.startSeconds === "number" &&
+              Number.isFinite(sectionRecord.startSeconds)
+                ? sectionRecord.startSeconds
+                : null;
+
+            if (startSeconds === null) {
+              return null;
+            }
+
+            return {
+              order:
+                typeof sectionRecord.order === "number"
+                  ? sectionRecord.order
+                  : index + 1,
+              section: sectionName,
+              startSeconds,
+            };
+          })
+          .filter(
+            (
+              section,
+            ): section is {
+              order: number;
+              section: string;
+              startSeconds: number;
+            } => section !== null,
+          )
+      : [];
+
+    if (dryRunSections.length > 0) {
+      return dryRunSections;
+    }
+
+    return (
+      getClickTrackRendererPreviewSummary()
+        ?.sectionSummaries?.map((section, index) => {
+          const startSeconds =
+            typeof section.startSeconds === "number" &&
+            Number.isFinite(section.startSeconds)
+              ? section.startSeconds
+              : null;
+
+          if (startSeconds === null) {
+            return null;
+          }
+
+          return {
+            order:
+              typeof section.order === "number" ? section.order : index + 1,
+            section: section.section || `Section ${index + 1}`,
+            startSeconds,
+          };
+        })
+        .filter(
+          (
+            section,
+          ): section is {
+            order: number;
+            section: string;
+            startSeconds: number;
+          } => section !== null,
+        ) || []
+    );
+  };
+
+  const seekGeneratedAudio = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+      return;
+    }
+
+    const audioElement = clickTrackAudioRef.current;
+    const nextTime =
+      generatedAudioDuration > 0
+        ? Math.min(seconds, generatedAudioDuration)
+        : seconds;
+
+    if (audioElement) {
+      audioElement.currentTime = nextTime;
+    }
+
+    updateGeneratedAudioPlaybackUi({
+      currentTime: nextTime,
+      duration: generatedAudioDuration,
+    });
   };
 
   const [downloadingMusicalGuideWav, setDownloadingMusicalGuideWav] =
@@ -3467,8 +3611,11 @@ export default function Page() {
 
       setClickTrackAudioUrl(url);
       setClickTrackAudioLabel("Latest generated click-track WAV");
-      setGeneratedAudioCurrentTime(0);
       setGeneratedAudioDuration(0);
+      updateGeneratedAudioPlaybackUi({
+        currentTime: 0,
+        duration: 0,
+      });
 
       setClickTrackDownloadStatus(
         `Downloaded click-track WAV: ${filename}${
@@ -3655,8 +3802,11 @@ export default function Page() {
           ? "Latest generated music-only guide WAV"
           : "Latest generated musical guide WAV",
       );
-      setGeneratedAudioCurrentTime(0);
       setGeneratedAudioDuration(0);
+      updateGeneratedAudioPlaybackUi({
+        currentTime: 0,
+        duration: 0,
+      });
 
       const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
 
@@ -15501,36 +15651,40 @@ ${buildRewriteInstruction(
                                 className="w-full"
                                 onLoadedMetadata={(event) => {
                                   const duration = event.currentTarget.duration;
-
-                                  setGeneratedAudioDuration(
+                                  const safeDuration =
                                     Number.isFinite(duration) && duration > 0
                                       ? duration
-                                      : 0,
-                                  );
-                                  setGeneratedAudioCurrentTime(
-                                    event.currentTarget.currentTime || 0,
-                                  );
+                                      : 0;
+
+                                  setGeneratedAudioDuration(safeDuration);
+                                  updateGeneratedAudioPlaybackUi({
+                                    currentTime:
+                                      event.currentTarget.currentTime || 0,
+                                    duration: safeDuration,
+                                  });
                                 }}
                                 onTimeUpdate={(event) => {
-                                  setGeneratedAudioCurrentTime(
-                                    event.currentTarget.currentTime || 0,
-                                  );
+                                  updateGeneratedAudioPlaybackUi({
+                                    currentTime:
+                                      event.currentTarget.currentTime || 0,
+                                    duration: generatedAudioDuration,
+                                  });
                                 }}
                                 onEnded={(event) => {
-                                  setGeneratedAudioCurrentTime(
-                                    event.currentTarget.currentTime || 0,
-                                  );
+                                  updateGeneratedAudioPlaybackUi({
+                                    currentTime:
+                                      event.currentTarget.currentTime || 0,
+                                    duration: generatedAudioDuration,
+                                  });
                                 }}
                               />
 
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between text-[11px] text-green-200">
-                                  <span>
-                                    {formatGeneratedAudioTime(
-                                      generatedAudioCurrentTime,
-                                    )}
+                                  <span ref={generatedAudioCurrentTimeTextRef}>
+                                    00:00
                                   </span>
-                                  <span>
+                                  <span ref={generatedAudioDurationTextRef}>
                                     {formatGeneratedAudioTime(
                                       generatedAudioDuration,
                                     )}
@@ -15538,6 +15692,7 @@ ${buildRewriteInstruction(
                                 </div>
 
                                 <input
+                                  ref={generatedAudioSeekInputRef}
                                   type="range"
                                   min={0}
                                   max={
@@ -15546,31 +15701,77 @@ ${buildRewriteInstruction(
                                       : 0
                                   }
                                   step={0.01}
-                                  value={
-                                    generatedAudioDuration > 0
-                                      ? Math.min(
-                                          generatedAudioCurrentTime,
-                                          generatedAudioDuration,
-                                        )
-                                      : 0
-                                  }
+                                  defaultValue={0}
                                   disabled={generatedAudioDuration <= 0}
                                   onChange={(event) => {
-                                    const nextTime = Number(event.target.value);
-
-                                    if (!Number.isFinite(nextTime)) {
-                                      return;
+                                    updateGeneratedAudioPlaybackUi({
+                                      currentTime: Number(event.target.value),
+                                      duration: generatedAudioDuration,
+                                    });
+                                  }}
+                                  onPointerUp={(event) => {
+                                    seekGeneratedAudio(
+                                      Number(event.currentTarget.value),
+                                    );
+                                  }}
+                                  onKeyUp={(event) => {
+                                    if (
+                                      event.key === "ArrowLeft" ||
+                                      event.key === "ArrowRight" ||
+                                      event.key === "Home" ||
+                                      event.key === "End"
+                                    ) {
+                                      seekGeneratedAudio(
+                                        Number(event.currentTarget.value),
+                                      );
                                     }
-
-                                    if (clickTrackAudioRef.current) {
-                                      clickTrackAudioRef.current.currentTime =
-                                        nextTime;
-                                    }
-
-                                    setGeneratedAudioCurrentTime(nextTime);
                                   }}
                                   className="w-full"
                                 />
+
+                                {getGeneratedAudioSectionJumpSummaries()
+                                  .length ? (
+                                  <div className="pt-2">
+                                    <div className="mb-1 text-[11px] font-medium text-green-100">
+                                      Jump to section
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {getGeneratedAudioSectionJumpSummaries()
+                                        .slice(0, 16)
+                                        .map((section) => (
+                                          <button
+                                            key={`${section.order}-${section.section}-${section.startSeconds}`}
+                                            type="button"
+                                            className="rounded border border-green-800 px-2 py-1 text-[11px] text-green-100 hover:bg-green-950"
+                                            onClick={() => {
+                                              if (
+                                                typeof section.startSeconds ===
+                                                "number"
+                                              ) {
+                                                seekGeneratedAudio(
+                                                  section.startSeconds,
+                                                );
+                                              }
+                                            }}
+                                            title={`Jump to ${section.section} at ${formatGeneratedAudioTime(
+                                              typeof section.startSeconds ===
+                                                "number"
+                                                ? section.startSeconds
+                                                : 0,
+                                            )}`}
+                                          >
+                                            {section.section} ·{" "}
+                                            {formatGeneratedAudioTime(
+                                              typeof section.startSeconds ===
+                                                "number"
+                                                ? section.startSeconds
+                                                : 0,
+                                            )}
+                                          </button>
+                                        ))}
+                                    </div>
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
                           ) : null}
