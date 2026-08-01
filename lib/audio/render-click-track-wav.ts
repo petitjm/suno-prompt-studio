@@ -33,6 +33,14 @@ export type ClickTrackWavRenderInput = {
   includeChordMarkers?: boolean;
   includeChordToneGuide?: boolean;
   mixProfile?: "click-track" | "musical-guide";
+  musicalGuideMixLevels?: {
+    click?: number;
+    section?: number;
+    chordMarker?: number;
+    pad?: number;
+    arpeggio?: number;
+    bass?: number;
+  };
 };
 
 export type ClickTrackWavDownloadArtifact = {
@@ -668,6 +676,14 @@ function limitSamplesToPeak(samples: Int16Array, targetPeak: number) {
   }
 }
 
+function getMusicalGuideMixLevel(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return 1;
+  }
+
+  return Math.max(0, Math.min(2, value));
+}
+
 function addClickToSamples({
   samples,
   startSample,
@@ -735,14 +751,47 @@ export function createClickTrackPcm16Samples(
   );
   const isMusicalGuideMix = input.mixProfile === "musical-guide";
 
-  const accentAmplitude = isMusicalGuideMix ? 50 : 22000;
-  const normalAmplitude = isMusicalGuideMix ? 100 : 14000;
-  const sectionAmplitude = isMusicalGuideMix ? 80 : 28000;
-  const chordMarkerAmplitude = isMusicalGuideMix ? 100 : 18000;
+  const musicalGuideClickLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.click,
+  );
+  const musicalGuideSectionLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.section,
+  );
+  const musicalGuideChordMarkerLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.chordMarker,
+  );
+  const musicalGuidePadLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.pad,
+  );
+  const musicalGuideArpeggioLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.arpeggio,
+  );
+  const musicalGuideBassLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.bass,
+  );
 
-  const chordPadAmplitude = isMusicalGuideMix ? 3600 : 1200;
-  const arpeggioAmplitude = isMusicalGuideMix ? 4600 : 1500;
-  const bassAmplitude = isMusicalGuideMix ? 4200 : 1350;
+  const accentAmplitude = isMusicalGuideMix
+    ? Math.round(50 * musicalGuideClickLevel)
+    : 22000;
+  const normalAmplitude = isMusicalGuideMix
+    ? Math.round(100 * musicalGuideClickLevel)
+    : 14000;
+  const sectionAmplitude = isMusicalGuideMix
+    ? Math.round(80 * musicalGuideSectionLevel)
+    : 28000;
+  const chordMarkerAmplitude = isMusicalGuideMix
+    ? Math.round(100 * musicalGuideChordMarkerLevel)
+    : 18000;
+
+  const chordPadAmplitude = isMusicalGuideMix
+    ? Math.round(3600 * musicalGuidePadLevel)
+    : 1200;
+  const arpeggioAmplitude = isMusicalGuideMix
+    ? Math.round(4600 * musicalGuideArpeggioLevel)
+    : 1500;
+  const bassAmplitude = isMusicalGuideMix
+    ? Math.round(4200 * musicalGuideBassLevel)
+    : 1350;
 
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;

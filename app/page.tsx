@@ -217,6 +217,95 @@ export default function Page() {
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
 
+  const musicalGuideMixStorageKey =
+    "suno-prompt-studio-musical-guide-mix-levels-v1";
+  const [musicalGuideMixLevels, setMusicalGuideMixLevels] = useState({
+    click: 1,
+    section: 1,
+    chordMarker: 1,
+    pad: 1,
+    arpeggio: 1,
+    bass: 1,
+  });
+
+  useEffect(() => {
+    try {
+      const storedMixLevels = window.localStorage.getItem(
+        musicalGuideMixStorageKey,
+      );
+
+      if (!storedMixLevels) {
+        return;
+      }
+
+      const parsedMixLevels = JSON.parse(storedMixLevels);
+
+      if (
+        typeof parsedMixLevels !== "object" ||
+        parsedMixLevels === null ||
+        Array.isArray(parsedMixLevels)
+      ) {
+        return;
+      }
+
+      setMusicalGuideMixLevels((currentLevels) => ({
+        click:
+          typeof parsedMixLevels.click === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.click))
+            : currentLevels.click,
+        section:
+          typeof parsedMixLevels.section === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.section))
+            : currentLevels.section,
+        chordMarker:
+          typeof parsedMixLevels.chordMarker === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.chordMarker))
+            : currentLevels.chordMarker,
+        pad:
+          typeof parsedMixLevels.pad === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.pad))
+            : currentLevels.pad,
+        arpeggio:
+          typeof parsedMixLevels.arpeggio === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.arpeggio))
+            : currentLevels.arpeggio,
+        bass:
+          typeof parsedMixLevels.bass === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.bass))
+            : currentLevels.bass,
+      }));
+    } catch {
+      // Ignore invalid stored mix settings.
+    }
+  }, [musicalGuideMixStorageKey]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        musicalGuideMixStorageKey,
+        JSON.stringify(musicalGuideMixLevels),
+      );
+    } catch {
+      // Ignore localStorage write failures.
+    }
+  }, [musicalGuideMixLevels, musicalGuideMixStorageKey]);
+
+  const updateMusicalGuideMixLevel = (
+    key: "click" | "section" | "chordMarker" | "pad" | "arpeggio" | "bass",
+    value: number,
+  ) => {
+    if (!Number.isFinite(value)) {
+      return;
+    }
+
+    const nextValue = Math.max(0, Math.min(2, value));
+
+    setMusicalGuideMixLevels((currentLevels) => ({
+      ...currentLevels,
+      [key]: nextValue,
+    }));
+  };
+
   const formatGeneratedAudioTime = (seconds: number) => {
     if (!Number.isFinite(seconds) || seconds < 0) {
       return "00:00";
@@ -385,6 +474,7 @@ export default function Page() {
     useState(true);
   const [includeClickTrackChordToneGuide, setIncludeClickTrackChordToneGuide] =
     useState(true);
+
   const [realRenderRouteTestResponse, setRealRenderRouteTestResponse] =
     useState<Record<string, unknown> | null>(null);
   const [audioPreviewRenderMessage, setAudioPreviewRenderMessage] =
@@ -3747,6 +3837,7 @@ export default function Page() {
           requestedTarget: "clickTrack",
           enableRealClickTrackWavDownload: true,
           mixProfile: "musical-guide",
+          musicalGuideMixLevels,
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id
@@ -15601,6 +15692,65 @@ ${buildRewriteInstruction(
                               />
                               Chord guide tones
                             </label>
+
+                            <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
+                              <div className="mb-2 text-xs font-semibold text-blue-100">
+                                Musical guide mix for next render
+                              </div>
+
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {[
+                                  ["click", "Beat click"],
+                                  ["section", "Section marker"],
+                                  ["chordMarker", "Chord tick"],
+                                  ["pad", "Chord pad"],
+                                  ["arpeggio", "Arpeggio"],
+                                  ["bass", "Bass root"],
+                                ].map(([key, label]) => {
+                                  const typedKey = key as
+                                    | "click"
+                                    | "section"
+                                    | "chordMarker"
+                                    | "pad"
+                                    | "arpeggio"
+                                    | "bass";
+                                  const value = musicalGuideMixLevels[typedKey];
+
+                                  return (
+                                    <label
+                                      key={key}
+                                      className="space-y-1 text-[11px] text-blue-100"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span>{label}</span>
+                                        <span>{Math.round(value * 100)}%</span>
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min={0}
+                                        max={2}
+                                        step={0.05}
+                                        value={value}
+                                        onChange={(event) =>
+                                          updateMusicalGuideMixLevel(
+                                            typedKey,
+                                            Number(event.target.value),
+                                          )
+                                        }
+                                        className="w-full"
+                                      />
+                                    </label>
+                                  );
+                                })}
+                              </div>
+
+                              <div className="mt-2 text-[11px] text-blue-200">
+                                These levels are saved in this browser and apply
+                                when you generate the next musical guide WAV.
+                                They do not change an already-rendered WAV
+                                during playback.
+                              </div>
+                            </div>
                           </div>
 
                           <button

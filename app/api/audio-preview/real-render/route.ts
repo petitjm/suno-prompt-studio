@@ -241,6 +241,18 @@ export async function POST(req: Request) {
   const requestedMixProfile = getString(bodyRecord?.mixProfile);
   const mixProfile: "click-track" | "musical-guide" =
     requestedMixProfile === "musical-guide" ? "musical-guide" : "click-track";
+  const requestedMusicalGuideMixLevels = getRecord(
+    bodyRecord?.musicalGuideMixLevels,
+  );
+
+  const musicalGuideMixLevels = {
+    click: getNumber(requestedMusicalGuideMixLevels?.click) ?? 1,
+    section: getNumber(requestedMusicalGuideMixLevels?.section) ?? 1,
+    chordMarker: getNumber(requestedMusicalGuideMixLevels?.chordMarker) ?? 1,
+    pad: getNumber(requestedMusicalGuideMixLevels?.pad) ?? 1,
+    arpeggio: getNumber(requestedMusicalGuideMixLevels?.arpeggio) ?? 1,
+    bass: getNumber(requestedMusicalGuideMixLevels?.bass) ?? 1,
+  };
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
@@ -406,6 +418,7 @@ export async function POST(req: Request) {
     includeChordMarkers,
     includeChordToneGuide,
     mixProfile,
+    musicalGuideMixLevels,
     renderJobId:
       typeof requestBody.renderJobId === "string" &&
       requestBody.renderJobId.trim()
