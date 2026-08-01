@@ -206,8 +206,29 @@ export default function Page() {
   const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false);
   const [clickTrackDownloadStatus, setClickTrackDownloadStatus] = useState("");
   const [clickTrackAudioUrl, setClickTrackAudioUrl] = useState("");
+  const [clickTrackAudioLabel, setClickTrackAudioLabel] = useState(
+    "Latest generated WAV",
+  );
+  const [generatedAudioCurrentTime, setGeneratedAudioCurrentTime] = useState(0);
+  const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
+  const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
+
+  const formatGeneratedAudioTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+      return "00:00";
+    }
+
+    const wholeSeconds = Math.floor(seconds);
+    const minutes = Math.floor(wholeSeconds / 60);
+    const remainingSeconds = wholeSeconds % 60;
+
+    return `${String(minutes).padStart(2, "0")}:${String(
+      remainingSeconds,
+    ).padStart(2, "0")}`;
+  };
+
   const [downloadingMusicalGuideWav, setDownloadingMusicalGuideWav] =
     useState(false);
   const [includeClickTrackCountIn, setIncludeClickTrackCountIn] =
@@ -3445,6 +3466,9 @@ export default function Page() {
       link.remove();
 
       setClickTrackAudioUrl(url);
+      setClickTrackAudioLabel("Latest generated click-track WAV");
+      setGeneratedAudioCurrentTime(0);
+      setGeneratedAudioDuration(0);
 
       setClickTrackDownloadStatus(
         `Downloaded click-track WAV: ${filename}${
@@ -3623,6 +3647,16 @@ export default function Page() {
       link.remove();
 
       setClickTrackAudioUrl(url);
+      setClickTrackAudioLabel(
+        !includeClickTrackCountIn &&
+          !includeClickTrackBeatClicks &&
+          !includeClickTrackSectionMarkers &&
+          !includeClickTrackChordMarkers
+          ? "Latest generated music-only guide WAV"
+          : "Latest generated musical guide WAV",
+      );
+      setGeneratedAudioCurrentTime(0);
+      setGeneratedAudioDuration(0);
 
       const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
 
@@ -15455,15 +15489,89 @@ ${buildRewriteInstruction(
                           ) : null}
 
                           {clickTrackAudioUrl ? (
-                            <div className="mt-2 space-y-1">
+                            <div className="mt-2 space-y-2 rounded border border-green-900 bg-green-950/20 p-3">
                               <div className="text-xs font-medium text-green-100">
-                                Latest generated click-track WAV
+                                {clickTrackAudioLabel}
                               </div>
+
                               <audio
+                                ref={clickTrackAudioRef}
                                 controls
                                 src={clickTrackAudioUrl}
                                 className="w-full"
+                                onLoadedMetadata={(event) => {
+                                  const duration = event.currentTarget.duration;
+
+                                  setGeneratedAudioDuration(
+                                    Number.isFinite(duration) && duration > 0
+                                      ? duration
+                                      : 0,
+                                  );
+                                  setGeneratedAudioCurrentTime(
+                                    event.currentTarget.currentTime || 0,
+                                  );
+                                }}
+                                onTimeUpdate={(event) => {
+                                  setGeneratedAudioCurrentTime(
+                                    event.currentTarget.currentTime || 0,
+                                  );
+                                }}
+                                onEnded={(event) => {
+                                  setGeneratedAudioCurrentTime(
+                                    event.currentTarget.currentTime || 0,
+                                  );
+                                }}
                               />
+
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-[11px] text-green-200">
+                                  <span>
+                                    {formatGeneratedAudioTime(
+                                      generatedAudioCurrentTime,
+                                    )}
+                                  </span>
+                                  <span>
+                                    {formatGeneratedAudioTime(
+                                      generatedAudioDuration,
+                                    )}
+                                  </span>
+                                </div>
+
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={
+                                    generatedAudioDuration > 0
+                                      ? generatedAudioDuration
+                                      : 0
+                                  }
+                                  step={0.01}
+                                  value={
+                                    generatedAudioDuration > 0
+                                      ? Math.min(
+                                          generatedAudioCurrentTime,
+                                          generatedAudioDuration,
+                                        )
+                                      : 0
+                                  }
+                                  disabled={generatedAudioDuration <= 0}
+                                  onChange={(event) => {
+                                    const nextTime = Number(event.target.value);
+
+                                    if (!Number.isFinite(nextTime)) {
+                                      return;
+                                    }
+
+                                    if (clickTrackAudioRef.current) {
+                                      clickTrackAudioRef.current.currentTime =
+                                        nextTime;
+                                    }
+
+                                    setGeneratedAudioCurrentTime(nextTime);
+                                  }}
+                                  className="w-full"
+                                />
+                              </div>
                             </div>
                           ) : null}
 
