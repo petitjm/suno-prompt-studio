@@ -658,6 +658,68 @@ function addTonePulseToSamples({
   }
 }
 
+function addWarmToneToSamples({
+  samples,
+  startSample,
+  endSample,
+  sampleRateHz,
+  amplitude,
+  frequencyHz,
+  secondHarmonicLevel = 0.28,
+  thirdHarmonicLevel = 0.12,
+  fadeInSeconds = 0.08,
+  fadeOutSeconds = 0.18,
+}: {
+  samples: Int16Array;
+  startSample: number;
+  endSample: number;
+  sampleRateHz: number;
+  amplitude: number;
+  frequencyHz: number;
+  secondHarmonicLevel?: number;
+  thirdHarmonicLevel?: number;
+  fadeInSeconds?: number;
+  fadeOutSeconds?: number;
+}) {
+  const safeStartSample = Math.max(0, startSample);
+  const safeEndSample = Math.min(samples.length, endSample);
+  const lengthSamples = safeEndSample - safeStartSample;
+
+  if (lengthSamples <= 0 || amplitude <= 0 || frequencyHz <= 0) {
+    return;
+  }
+
+  const fadeInSamples = Math.max(1, Math.round(sampleRateHz * fadeInSeconds));
+  const fadeOutSamples = Math.max(1, Math.round(sampleRateHz * fadeOutSeconds));
+  const harmonicNormaliser =
+    1 + Math.abs(secondHarmonicLevel) + Math.abs(thirdHarmonicLevel);
+
+  for (
+    let sampleIndex = safeStartSample;
+    sampleIndex < safeEndSample;
+    sampleIndex += 1
+  ) {
+    const offset = sampleIndex - safeStartSample;
+    const remaining = safeEndSample - sampleIndex;
+
+    const fadeIn = Math.min(1, offset / fadeInSamples);
+    const fadeOut = Math.min(1, remaining / fadeOutSamples);
+    const envelope = Math.min(fadeIn, fadeOut);
+    const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
+
+    const shapedTone =
+      (Math.sin(phase) +
+        Math.sin(phase * 2) * secondHarmonicLevel +
+        Math.sin(phase * 3) * thirdHarmonicLevel) /
+      harmonicNormaliser;
+
+    const value = Math.round(shapedTone * amplitude * envelope);
+    const mixed = samples[sampleIndex] + value;
+
+    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+  }
+}
+
 function limitSamplesToPeak(samples: Int16Array, targetPeak: number) {
   let peak = 0;
 
@@ -904,13 +966,17 @@ export function createClickTrackPcm16Samples(
 
   for (const segment of chordToneGuideSegments) {
     segment.frequenciesHz.forEach((frequencyHz) => {
-      addToneToSamples({
+      addWarmToneToSamples({
         samples,
         startSample: Math.round(segment.startSeconds * input.sampleRateHz),
         endSample: Math.round(segment.endSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
         amplitude: chordPadAmplitude,
         frequencyHz,
+        secondHarmonicLevel: 0.22,
+        thirdHarmonicLevel: 0.08,
+        fadeInSeconds: 0.12,
+        fadeOutSeconds: 0.24,
       });
     });
   }
@@ -936,15 +1002,20 @@ export function createClickTrackPcm16Samples(
         const frequencyHz =
           segment.frequenciesHz[noteIndex % segment.frequenciesHz.length];
 
-        addTonePulseToSamples({
+        addWarmToneToSamples({
           samples,
           startSample: Math.round(noteStartSeconds * input.sampleRateHz),
-          durationSamples: Math.round(
-            arpeggioNoteDurationSeconds * input.sampleRateHz,
+          endSample: Math.round(
+            (noteStartSeconds + arpeggioNoteDurationSeconds) *
+              input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
           amplitude: arpeggioAmplitude,
           frequencyHz,
+          secondHarmonicLevel: 0.18,
+          thirdHarmonicLevel: 0.06,
+          fadeInSeconds: 0.018,
+          fadeOutSeconds: 0.11,
         });
 
         noteIndex += 1;
@@ -965,15 +1036,19 @@ export function createClickTrackPcm16Samples(
         pulseStartSeconds < segment.endSeconds;
         pulseStartSeconds += secondsPerBassPulse
       ) {
-        addTonePulseToSamples({
+        addWarmToneToSamples({
           samples,
           startSample: Math.round(pulseStartSeconds * input.sampleRateHz),
-          durationSamples: Math.round(
-            bassPulseDurationSeconds * input.sampleRateHz,
+          endSample: Math.round(
+            (pulseStartSeconds + bassPulseDurationSeconds) * input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: 1350,
+          amplitude: bassAmplitude,
           frequencyHz: segment.bassFrequencyHz,
+          secondHarmonicLevel: 0.35,
+          thirdHarmonicLevel: 0.1,
+          fadeInSeconds: 0.025,
+          fadeOutSeconds: 0.16,
         });
       }
     }
