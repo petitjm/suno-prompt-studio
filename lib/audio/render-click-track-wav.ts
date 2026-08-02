@@ -460,6 +460,7 @@ function getChordToneFrequenciesHz(chord: string): number[] {
 }
 
 type ChordToneGuideSegment = {
+  section: string;
   startSeconds: number;
   endSeconds: number;
   frequenciesHz: number[];
@@ -492,6 +493,7 @@ function getChordToneGuideSegments({
         marker.timeSeconds >= 0,
     )
     .map((marker) => ({
+      section: marker.section || "",
       chord: marker.chord || "",
       startSeconds: marker.timeSeconds + countInDurationSeconds,
       frequenciesHz: getChordToneFrequenciesHz(marker.chord || ""),
@@ -529,6 +531,7 @@ function getChordToneGuideSegments({
       }
 
       return {
+        section: marker.section,
         startSeconds: marker.startSeconds,
         endSeconds,
         frequenciesHz: marker.frequenciesHz,
@@ -656,6 +659,47 @@ function addTonePulseToSamples({
 
     samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
   }
+}
+
+function getMusicalGuideSectionLevel(section: string) {
+  const normalizedSection = section.trim().toLowerCase();
+
+  if (
+    normalizedSection.includes("chorus") ||
+    normalizedSection.includes("hook") ||
+    normalizedSection.includes("refrain")
+  ) {
+    return 1.75;
+  }
+
+  if (
+    normalizedSection.includes("pre-chorus") ||
+    normalizedSection.includes("prechorus") ||
+    normalizedSection.includes("lift")
+  ) {
+    return 1.35;
+  }
+
+  if (
+    normalizedSection.includes("bridge") ||
+    normalizedSection.includes("middle")
+  ) {
+    return 1.45;
+  }
+
+  if (
+    normalizedSection.includes("intro") ||
+    normalizedSection.includes("outro") ||
+    normalizedSection.includes("ending")
+  ) {
+    return 0.55;
+  }
+
+  if (normalizedSection.includes("verse")) {
+    return 0.72;
+  }
+
+  return 1;
 }
 
 function addWarmToneToSamples({
@@ -965,13 +1009,17 @@ export function createClickTrackPcm16Samples(
   }
 
   for (const segment of chordToneGuideSegments) {
+    const sectionLevel = isMusicalGuideMix
+      ? getMusicalGuideSectionLevel(segment.section)
+      : 1;
+
     segment.frequenciesHz.forEach((frequencyHz) => {
       addWarmToneToSamples({
         samples,
         startSample: Math.round(segment.startSeconds * input.sampleRateHz),
         endSample: Math.round(segment.endSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: chordPadAmplitude,
+        amplitude: Math.round(chordPadAmplitude * sectionLevel),
         frequencyHz,
         secondHarmonicLevel: 0.22,
         thirdHarmonicLevel: 0.08,
@@ -980,6 +1028,7 @@ export function createClickTrackPcm16Samples(
       });
     });
   }
+
   const secondsPerArpeggioNote =
     input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
       ? 60 / input.tempoBpm / 2
@@ -1010,7 +1059,12 @@ export function createClickTrackPcm16Samples(
               input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: arpeggioAmplitude,
+          amplitude: Math.round(
+            arpeggioAmplitude *
+              (isMusicalGuideMix
+                ? getMusicalGuideSectionLevel(segment.section)
+                : 1),
+          ),
           frequencyHz,
           secondHarmonicLevel: 0.18,
           thirdHarmonicLevel: 0.06,
