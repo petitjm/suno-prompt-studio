@@ -702,6 +702,82 @@ function getMusicalGuideSectionLevel(section: string) {
   return 1;
 }
 
+function getMusicalGuideArpeggioPattern(section: string, noteCount: number) {
+  if (noteCount <= 0) {
+    return [];
+  }
+
+  const normalizedSection = section.trim().toLowerCase();
+
+  if (
+    normalizedSection.includes("intro") ||
+    normalizedSection.includes("outro") ||
+    normalizedSection.includes("ending")
+  ) {
+    return noteCount >= 3 ? [0, 2, 1, 2] : [0, noteCount - 1];
+  }
+
+  if (normalizedSection.includes("verse")) {
+    return noteCount >= 3 ? [0, 1, 2, 1] : [0, 1];
+  }
+
+  if (
+    normalizedSection.includes("chorus") ||
+    normalizedSection.includes("hook") ||
+    normalizedSection.includes("refrain")
+  ) {
+    return noteCount >= 3 ? [0, 1, 2, 1, 2, 1, 0, 2] : [0, 1, 0, 1];
+  }
+
+  if (
+    normalizedSection.includes("bridge") ||
+    normalizedSection.includes("middle")
+  ) {
+    return noteCount >= 3 ? [0, 2, 1, 2, 0, 1] : [0, 1, 1, 0];
+  }
+
+  return Array.from({ length: noteCount }, (_, index) => index);
+}
+
+function getMusicalGuideArpeggioStepSeconds({
+  section,
+  defaultStepSeconds,
+}: {
+  section: string;
+  defaultStepSeconds: number;
+}) {
+  const normalizedSection = section.trim().toLowerCase();
+
+  if (
+    normalizedSection.includes("intro") ||
+    normalizedSection.includes("outro") ||
+    normalizedSection.includes("ending")
+  ) {
+    return defaultStepSeconds * 2;
+  }
+
+  if (normalizedSection.includes("verse")) {
+    return defaultStepSeconds * 1.5;
+  }
+
+  if (
+    normalizedSection.includes("chorus") ||
+    normalizedSection.includes("hook") ||
+    normalizedSection.includes("refrain")
+  ) {
+    return defaultStepSeconds;
+  }
+
+  if (
+    normalizedSection.includes("bridge") ||
+    normalizedSection.includes("middle")
+  ) {
+    return defaultStepSeconds * 1.25;
+  }
+
+  return defaultStepSeconds;
+}
+
 function addWarmToneToSamples({
   samples,
   startSample,
@@ -1041,30 +1117,54 @@ export function createClickTrackPcm16Samples(
         continue;
       }
 
+      const sectionLevel = isMusicalGuideMix
+        ? getMusicalGuideSectionLevel(segment.section)
+        : 1;
+      const arpeggioPattern = isMusicalGuideMix
+        ? getMusicalGuideArpeggioPattern(
+            segment.section,
+            segment.frequenciesHz.length,
+          )
+        : Array.from(
+            { length: segment.frequenciesHz.length },
+            (_, index) => index,
+          );
+      const arpeggioStepSeconds = isMusicalGuideMix
+        ? getMusicalGuideArpeggioStepSeconds({
+            section: segment.section,
+            defaultStepSeconds: secondsPerArpeggioNote,
+          })
+        : secondsPerArpeggioNote;
+      const sectionArpeggioNoteDurationSeconds = Math.min(
+        arpeggioNoteDurationSeconds,
+        arpeggioStepSeconds * 0.82,
+      );
+
+      if (arpeggioPattern.length === 0) {
+        continue;
+      }
+
       let noteIndex = 0;
 
       for (
         let noteStartSeconds = segment.startSeconds;
         noteStartSeconds < segment.endSeconds;
-        noteStartSeconds += secondsPerArpeggioNote
+        noteStartSeconds += arpeggioStepSeconds
       ) {
+        const patternIndex =
+          arpeggioPattern[noteIndex % arpeggioPattern.length];
         const frequencyHz =
-          segment.frequenciesHz[noteIndex % segment.frequenciesHz.length];
+          segment.frequenciesHz[patternIndex % segment.frequenciesHz.length];
 
         addWarmToneToSamples({
           samples,
           startSample: Math.round(noteStartSeconds * input.sampleRateHz),
           endSample: Math.round(
-            (noteStartSeconds + arpeggioNoteDurationSeconds) *
+            (noteStartSeconds + sectionArpeggioNoteDurationSeconds) *
               input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: Math.round(
-            arpeggioAmplitude *
-              (isMusicalGuideMix
-                ? getMusicalGuideSectionLevel(segment.section)
-                : 1),
-          ),
+          amplitude: Math.round(arpeggioAmplitude * sectionLevel),
           frequencyHz,
           secondHarmonicLevel: 0.18,
           thirdHarmonicLevel: 0.06,
