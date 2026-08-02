@@ -214,6 +214,11 @@ export default function Page() {
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
+  const generatedAudioWaveformCanvasRef = useRef<HTMLCanvasElement | null>(
+    null,
+  );
+  const generatedAudioWaveformPeaksRef = useRef<number[]>([]);
+  const generatedAudioWaveformProgressRef = useRef(0);
   const musicalGuideAuditionAudioContextRef = useRef<AudioContext | null>(null);
   const [downloadingClickTrackWav, setDownloadingClickTrackWav] =
     useState(false);
@@ -467,6 +472,128 @@ export default function Page() {
     ).padStart(2, "0")}`;
   };
 
+  const drawGeneratedAudioWaveform = (progress = 0) => {
+    const canvas = generatedAudioWaveformCanvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    const canvasWidth = Math.max(1, canvas.clientWidth);
+    const canvasHeight = Math.max(48, canvas.clientHeight || 72);
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    canvas.width = Math.round(canvasWidth * pixelRatio);
+    canvas.height = Math.round(canvasHeight * pixelRatio);
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    context.scale(pixelRatio, pixelRatio);
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    const peaks = generatedAudioWaveformPeaksRef.current;
+    const centerY = canvasHeight / 2;
+
+    context.fillStyle = "rgba(34, 197, 94, 0.12)";
+    context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    if (peaks.length === 0) {
+      context.fillStyle = "rgba(187, 247, 208, 0.55)";
+      context.font = "11px sans-serif";
+      context.fillText(
+        "Waveform will appear after audio is generated.",
+        10,
+        24,
+      );
+      return;
+    }
+
+    const barWidth = canvasWidth / peaks.length;
+
+    context.fillStyle = "rgba(187, 247, 208, 0.55)";
+
+    peaks.forEach((peak, index) => {
+      const safePeak = Math.max(0.02, Math.min(1, peak));
+      const barHeight = safePeak * (canvasHeight - 12);
+      const x = index * barWidth;
+      const y = centerY - barHeight / 2;
+
+      context.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
+    });
+
+    const safeProgress = Math.max(0, Math.min(1, progress));
+
+    context.fillStyle = "rgba(74, 222, 128, 0.25)";
+    context.fillRect(0, 0, canvasWidth * safeProgress, canvasHeight);
+
+    context.fillStyle = "rgba(240, 253, 244, 0.9)";
+    context.fillRect(canvasWidth * safeProgress, 0, 2, canvasHeight);
+  };
+
+  const loadGeneratedAudioWaveform = async (audioUrl: string) => {
+    generatedAudioWaveformPeaksRef.current = [];
+    generatedAudioWaveformProgressRef.current = 0;
+    drawGeneratedAudioWaveform(0);
+
+    try {
+      const response = await fetch(audioUrl);
+      const arrayBuffer = await response.arrayBuffer();
+
+      const AudioContextConstructor =
+        window.AudioContext ||
+        (
+          window as unknown as {
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
+
+      if (!AudioContextConstructor) {
+        return;
+      }
+
+      const audioContext = new AudioContextConstructor();
+      const audioBuffer = await audioContext.decodeAudioData(
+        arrayBuffer.slice(0),
+      );
+      const channelData = audioBuffer.getChannelData(0);
+      const barCount = 180;
+      const samplesPerBar = Math.max(
+        1,
+        Math.floor(channelData.length / barCount),
+      );
+      const peaks: number[] = [];
+
+      for (let barIndex = 0; barIndex < barCount; barIndex += 1) {
+        const start = barIndex * samplesPerBar;
+        const end = Math.min(channelData.length, start + samplesPerBar);
+        let peak = 0;
+
+        for (let sampleIndex = start; sampleIndex < end; sampleIndex += 1) {
+          peak = Math.max(peak, Math.abs(channelData[sampleIndex] || 0));
+        }
+
+        peaks.push(peak);
+      }
+
+      const largestPeak = Math.max(...peaks, 0.001);
+
+      generatedAudioWaveformPeaksRef.current = peaks.map((peak) =>
+        Math.min(1, peak / largestPeak),
+      );
+
+      drawGeneratedAudioWaveform(generatedAudioWaveformProgressRef.current);
+
+      await audioContext.close();
+    } catch {
+      generatedAudioWaveformPeaksRef.current = [];
+      drawGeneratedAudioWaveform(0);
+    }
+  };
+
   const updateGeneratedAudioPlaybackUi = ({
     currentTime,
     duration,
@@ -495,8 +622,12 @@ export default function Page() {
         safeDuration > 0 ? Math.min(safeCurrentTime, safeDuration) : 0,
       );
     }
-  };
 
+    generatedAudioWaveformProgressRef.current =
+      safeDuration > 0 ? Math.min(safeCurrentTime / safeDuration, 1) : 0;
+
+    drawGeneratedAudioWaveform(generatedAudioWaveformProgressRef.current);
+  };
   const getGeneratedAudioSectionJumpSummaries = () => {
     const dryRunCueSheet =
       typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
@@ -3853,6 +3984,7 @@ export default function Page() {
         currentTime: 0,
         duration: 0,
       });
+      void loadGeneratedAudioWaveform(url);
 
       setClickTrackDownloadStatus(
         `Downloaded click-track WAV: ${filename}${
@@ -4040,11 +4172,14 @@ export default function Page() {
           ? "Latest generated music-only guide WAV"
           : "Latest generated musical guide WAV",
       );
+
       setGeneratedAudioDuration(0);
       updateGeneratedAudioPlaybackUi({
         currentTime: 0,
         duration: 0,
       });
+
+      void loadGeneratedAudioWaveform(url);
 
       const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
 
@@ -15989,6 +16124,16 @@ ${buildRewriteInstruction(
                                       event.currentTarget.currentTime || 0,
                                     duration: safeDuration,
                                   });
+
+                                  drawGeneratedAudioWaveform(
+                                    safeDuration > 0
+                                      ? Math.min(
+                                          (event.currentTarget.currentTime ||
+                                            0) / safeDuration,
+                                          1,
+                                        )
+                                      : 0,
+                                  );
                                 }}
                                 onTimeUpdate={(event) => {
                                   updateGeneratedAudioPlaybackUi({
@@ -16003,6 +16148,25 @@ ${buildRewriteInstruction(
                                       event.currentTarget.currentTime || 0,
                                     duration: generatedAudioDuration,
                                   });
+                                }}
+                              />
+
+                              <canvas
+                                ref={generatedAudioWaveformCanvasRef}
+                                className="h-20 w-full cursor-pointer rounded border border-green-900 bg-green-950/40"
+                                onClick={(event) => {
+                                  if (generatedAudioDuration <= 0) {
+                                    return;
+                                  }
+
+                                  const rect =
+                                    event.currentTarget.getBoundingClientRect();
+                                  const clickPosition =
+                                    (event.clientX - rect.left) / rect.width;
+
+                                  seekGeneratedAudio(
+                                    generatedAudioDuration * clickPosition,
+                                  );
                                 }}
                               />
 
