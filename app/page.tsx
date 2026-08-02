@@ -530,6 +530,27 @@ export default function Page() {
     context.fillStyle = "rgba(74, 222, 128, 0.25)";
     context.fillRect(0, 0, canvasWidth * safeProgress, canvasHeight);
 
+    if (generatedAudioDuration > 0) {
+      const sectionSummaries = getGeneratedAudioSectionJumpSummaries();
+
+      context.font = "10px sans-serif";
+      context.textBaseline = "top";
+
+      sectionSummaries.slice(0, 32).forEach((section) => {
+        const markerProgress = Math.max(
+          0,
+          Math.min(1, section.startSeconds / generatedAudioDuration),
+        );
+        const markerX = markerProgress * canvasWidth;
+
+        context.fillStyle = "rgba(191, 219, 254, 0.7)";
+        context.fillRect(markerX, 0, 1, canvasHeight);
+
+        context.fillStyle = "rgba(219, 234, 254, 0.85)";
+        context.fillText(section.section, markerX + 3, 4);
+      });
+    }
+
     context.fillStyle = "rgba(240, 253, 244, 0.9)";
     context.fillRect(canvasWidth * safeProgress, 0, 2, canvasHeight);
   };
@@ -16169,6 +16190,12 @@ ${buildRewriteInstruction(
                                   );
                                 }}
                               />
+
+                              <div className="text-[11px] text-green-200">
+                                Waveform shows generated audio shape, section
+                                markers, and current playback position. Click
+                                the waveform to jump.
+                              </div>
 
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between text-[11px] text-green-200">
