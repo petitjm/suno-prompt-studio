@@ -14915,273 +14915,260 @@ ${buildRewriteInstruction(
             />
           </div>
 
-          {mode === "chords" && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-xl font-semibold text-gray-100">
-                  Chords Workshop
-                </h1>
-                <p className="mt-2 text-sm text-gray-400">
-                  Generate, inspect, edit, and save harmonic structure for the
-                  current song.
-                </p>
+          <div className={mode === "chords" ? "space-y-6" : "hidden"}>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-100">
+                Chords Workshop
+              </h1>
+              <p className="mt-2 text-sm text-gray-400">
+                Generate, inspect, edit, and save harmonic structure for the
+                current song.
+              </p>
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                Current song context
+              </h2>
+
+              <div className="mt-3 grid gap-3 text-sm text-gray-300 md:grid-cols-2">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                    Project
+                  </div>
+                  <div className="mt-1">
+                    {activeProject?.title || "No project selected"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                    Song version
+                  </div>
+                  <div className="mt-1">
+                    {activeSongVersion?.title ||
+                      songVersionTitle ||
+                      "Unsaved or untitled version"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                    Active chord version
+                  </div>
+                  <div className="mt-1">
+                    {chordVersionTitle || "No chord version selected"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                    Saved chord versions
+                  </div>
+                  <div className="mt-1">{chordVersions.length}</div>
+                </div>
               </div>
+            </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                  Current song context
-                </h2>
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Saved chord versions
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Load a saved harmonic version into the editor.
+                  </p>
+                </div>
 
-                <div className="mt-3 grid gap-3 text-sm text-gray-300 md:grid-cols-2">
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                      Project
-                    </div>
-                    <div className="mt-1">
-                      {activeProject?.title || "No project selected"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                      Song version
-                    </div>
-                    <div className="mt-1">
-                      {activeSongVersion?.title ||
-                        songVersionTitle ||
-                        "Unsaved or untitled version"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                      Active chord version
-                    </div>
-                    <div className="mt-1">
-                      {chordVersionTitle || "No chord version selected"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                      Saved chord versions
-                    </div>
-                    <div className="mt-1">{chordVersions.length}</div>
-                  </div>
+                <div className="text-xs text-gray-500">
+                  {chordVersions.length} saved
                 </div>
               </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Saved chord versions
-                    </h2>
-                    <p className="mt-1 text-sm text-gray-400">
-                      Load a saved harmonic version into the editor.
-                    </p>
-                  </div>
+              {chordVersions.length > 0 ? (
+                <select
+                  value={activeChordVersionId || ""}
+                  onChange={(event) =>
+                    loadChordVersionIntoEditor(event.target.value)
+                  }
+                  className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
+                >
+                  <option value="">Select a saved chord version</option>
+                  {chordVersions.map((version) => (
+                    <option key={version.id} value={version.id}>
+                      {version.title || "Untitled chord version"}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
+                  No saved chord versions yet.
+                </div>
+              )}
+            </div>
 
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                Chord editor status
+              </div>
+
+              <div className="mt-2 text-gray-300">
+                {chordEditorStatus.label}
+              </div>
+
+              <div className="mt-1 text-sm text-gray-500">
+                {chordEditorStatus.detail}
+              </div>
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Chord summary
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    A readable view of the currently loaded or generated chord
+                    data.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="text-xs text-gray-500">
-                    {chordVersions.length} saved
-                  </div>
-                </div>
-
-                {chordVersions.length > 0 ? (
-                  <select
-                    value={activeChordVersionId || ""}
-                    onChange={(event) =>
-                      loadChordVersionIntoEditor(event.target.value)
-                    }
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
-                  >
-                    <option value="">Select a saved chord version</option>
-                    {chordVersions.map((version) => (
-                      <option key={version.id} value={version.id}>
-                        {version.title || "Untitled chord version"}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
-                    No saved chord versions yet.
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                  Chord editor status
-                </div>
-
-                <div className="mt-2 text-gray-300">
-                  {chordEditorStatus.label}
-                </div>
-
-                <div className="mt-1 text-sm text-gray-500">
-                  {chordEditorStatus.detail}
-                </div>
-              </div>
-
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Chord summary
-                    </h2>
-                    <p className="mt-1 text-sm text-gray-400">
-                      A readable view of the currently loaded or generated chord
-                      data.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-xs text-gray-500">
-                      {chordSummaryRows.length} sections
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => copyChordSummary()}
-                      disabled={chordSummaryRows.length === 0}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedChordSummary ? "Copied ✓" : "Copy summary"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyChordSheet()}
-                      disabled={!hasUsableChordData()}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedChordSheet ? "Copied ✓" : "Copy chord sheet"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyChordPracticePack()}
-                      disabled={!hasUsableChordData()}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedChordPracticePack
-                        ? "Copied ✓"
-                        : "Copy practice pack"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyChordPacket()}
-                      disabled={!hasUsableChordData()}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedChordPacket ? "Copied ✓" : "Copy packet"}
-                    </button>
-                  </div>
-                </div>
-
-                {chordSummaryRows.length > 0 ? (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {chordSummaryRows.map((row) => (
-                      <div
-                        key={`${row.label}-${row.value}`}
-                        className="rounded border border-gray-800 bg-gray-900 p-3"
-                      >
-                        <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                          {row.label}
-                        </div>
-
-                        <pre className="mt-2 whitespace-pre-wrap font-mono text-sm leading-6 text-gray-100">
-                          {row.value}
-                        </pre>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
-                    No chord data loaded yet. Generate chords, load a saved
-                    version, or paste valid chord JSON.
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                    Performance intent
+                    {chordSummaryRows.length} sections
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => copyPerformanceIntent()}
-                    disabled={performanceIntentRows.length === 0}
+                    onClick={() => copyChordSummary()}
+                    disabled={chordSummaryRows.length === 0}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
-                    {justCopiedPerformanceIntent ? "Copied ✓" : "Copy intent"}
+                    {justCopiedChordSummary ? "Copied ✓" : "Copy summary"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => copyChordSheet()}
+                    disabled={!hasUsableChordData()}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {justCopiedChordSheet ? "Copied ✓" : "Copy chord sheet"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => copyChordPracticePack()}
+                    disabled={!hasUsableChordData()}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {justCopiedChordPracticePack
+                      ? "Copied ✓"
+                      : "Copy practice pack"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => copyChordPacket()}
+                    disabled={!hasUsableChordData()}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {justCopiedChordPacket ? "Copied ✓" : "Copy packet"}
                   </button>
                 </div>
-
-                {performanceIntentRows.length > 0 ? (
-                  <div className="mt-3 space-y-3">
-                    {performanceIntentRows.map((row) => (
-                      <div
-                        key={row.label}
-                        className="rounded border border-gray-800 bg-gray-900 p-3"
-                      >
-                        <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                          {row.label}
-                        </div>
-                        <div className="mt-1 text-sm leading-6 text-gray-200">
-                          {row.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-sm text-gray-500">
-                    No performance intent yet. Generate chords to include tempo,
-                    groove, phrasing, vocal delivery, and guitar pattern.
-                  </p>
-                )}
               </div>
 
-              <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Key and chord consistency
-                </div>
-
-                <div className="mt-1 text-sm text-gray-200">
-                  {keyChordConsistency.label}
-                </div>
-
-                <div className="mt-1 text-xs leading-5 text-gray-500">
-                  {keyChordConsistency.detail}
-                </div>
-
-                {keyChordConsistency.warning && (
-                  <div className="mt-2 rounded border border-yellow-900/60 bg-yellow-950/30 p-2 text-xs text-yellow-200">
-                    {keyChordConsistency.warning}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Guide track plan
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => copyGuideTrackPlan()}
-                      disabled={!guideTrackPlanPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+              {chordSummaryRows.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {chordSummaryRows.map((row) => (
+                    <div
+                      key={`${row.label}-${row.value}`}
+                      className="rounded border border-gray-800 bg-gray-900 p-3"
                     >
-                      {justCopiedGuideTrackPlan
-                        ? "Copied ✓"
-                        : "Copy guide plan"}
-                    </button>
+                      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        {row.label}
+                      </div>
+
+                      <pre className="mt-2 whitespace-pre-wrap font-mono text-sm leading-6 text-gray-100">
+                        {row.value}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
+                  No chord data loaded yet. Generate chords, load a saved
+                  version, or paste valid chord JSON.
+                </div>
+              )}
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                  Performance intent
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => copyPerformanceIntent()}
+                  disabled={performanceIntentRows.length === 0}
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  {justCopiedPerformanceIntent ? "Copied ✓" : "Copy intent"}
+                </button>
+              </div>
+
+              {performanceIntentRows.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {performanceIntentRows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="rounded border border-gray-800 bg-gray-900 p-3"
+                    >
+                      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        {row.label}
+                      </div>
+                      <div className="mt-1 text-sm leading-6 text-gray-200">
+                        {row.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">
+                  No performance intent yet. Generate chords to include tempo,
+                  groove, phrasing, vocal delivery, and guitar pattern.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Key and chord consistency
+              </div>
+
+              <div className="mt-1 text-sm text-gray-200">
+                {keyChordConsistency.label}
+              </div>
+
+              <div className="mt-1 text-xs leading-5 text-gray-500">
+                {keyChordConsistency.detail}
+              </div>
+
+              {keyChordConsistency.warning && (
+                <div className="mt-2 rounded border border-yellow-900/60 bg-yellow-950/30 p-2 text-xs text-yellow-200">
+                  {keyChordConsistency.warning}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Guide track plan
                   </div>
 
                   <button
@@ -15194,2220 +15181,1824 @@ ${buildRewriteInstruction(
                   </button>
                 </div>
 
-                {guideTrackPlanRows.length > 0 ||
-                guideTrackSectionPlanRows.length > 0 ? (
-                  <div className="mt-3 space-y-4">
-                    {guideTrackPlanRows.length > 0 && (
-                      <div className="grid gap-3 lg:grid-cols-2">
-                        {guideTrackPlanRows.map((row) => (
-                          <div
-                            key={row.label}
-                            className="rounded border border-gray-800 bg-gray-900 p-3"
-                          >
-                            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                              {row.label}
-                            </div>
-                            <div className="mt-1 text-sm leading-6 text-gray-200">
-                              {row.value}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {guideTrackSectionPlanRows.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                          Section plan
-                        </div>
-
-                        {guideTrackSectionPlanRows.map((row, index) => (
-                          <div
-                            key={`${row.section}-${index}`}
-                            className="rounded border border-gray-800 bg-gray-900 p-3"
-                          >
-                            <div className="font-medium text-gray-200">
-                              {row.section}
-                            </div>
-
-                            <div className="mt-2 space-y-1 text-sm leading-6 text-gray-400">
-                              {row.feel && <div>Feel: {row.feel}</div>}
-                              {row.guitarApproach && (
-                                <div>Guitar: {row.guitarApproach}</div>
-                              )}
-                              {row.vocalApproach && (
-                                <div>Vocal: {row.vocalApproach}</div>
-                              )}
-                              {row.dynamicShape && (
-                                <div>Dynamics: {row.dynamicShape}</div>
-                              )}
-                              {row.notes && <div>Notes: {row.notes}</div>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-sm text-gray-500">
-                    No guide track plan yet. Generate chords to include a
-                    structured plan for a future audio guide.
-                  </p>
-                )}
+                <button
+                  type="button"
+                  onClick={() => copyGuideTrackPlan()}
+                  disabled={!guideTrackPlanPreview}
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  {justCopiedGuideTrackPlan ? "Copied ✓" : "Copy guide plan"}
+                </button>
               </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                    Audio guide readiness
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => copyAudioGuideSummary()}
-                      disabled={!audioGuideSummaryPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedAudioGuideSummary
-                        ? "Copied ✓"
-                        : "Copy audio summary"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyAudioPreviewSpec()}
-                      disabled={!audioPreviewSpecPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedAudioPreviewSpec
-                        ? "Copied ✓"
-                        : "Copy preview spec"}
-                    </button>
-
-                    <div
-                      className={`w-full rounded border px-3 py-2 text-xs leading-5 ${
-                        audioPreviewHandoffStatus.tone === "ready"
-                          ? "border-green-900 bg-green-950/20 text-green-100"
-                          : audioPreviewHandoffStatus.tone === "review"
-                            ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                            : "border-gray-800 bg-gray-950 text-gray-400"
-                      }`}
-                    >
-                      <div className="font-medium">
-                        {audioPreviewHandoffStatus.label}
-                      </div>
-                      <div className="mt-1">
-                        {audioPreviewHandoffStatus.detail}
-                      </div>
-                    </div>
-
-                    {renderAudioPreviewReadinessCard()}
-
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      {audioPreviewChecklist.map((item) => (
+              {guideTrackPlanRows.length > 0 ||
+              guideTrackSectionPlanRows.length > 0 ? (
+                <div className="mt-3 space-y-4">
+                  {guideTrackPlanRows.length > 0 && (
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      {guideTrackPlanRows.map((row) => (
                         <div
-                          key={item.label}
+                          key={row.label}
                           className="rounded border border-gray-800 bg-gray-900 p-3"
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="text-sm font-medium text-gray-200">
-                              {item.label}
-                            </div>
-
-                            <div
-                              className={`text-xs ${
-                                item.complete
-                                  ? "text-green-300"
-                                  : "text-yellow-300"
-                              }`}
-                            >
-                              {item.complete ? "Done" : "Needed"}
-                            </div>
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            {row.label}
                           </div>
-
-                          <div className="mt-1 text-xs leading-5 text-gray-500">
-                            {item.detail}
+                          <div className="mt-1 text-sm leading-6 text-gray-200">
+                            {row.value}
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
+                  )}
 
+                  {guideTrackSectionPlanRows.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Section plan
+                      </div>
+
+                      {guideTrackSectionPlanRows.map((row, index) => (
+                        <div
+                          key={`${row.section}-${index}`}
+                          className="rounded border border-gray-800 bg-gray-900 p-3"
+                        >
+                          <div className="font-medium text-gray-200">
+                            {row.section}
+                          </div>
+
+                          <div className="mt-2 space-y-1 text-sm leading-6 text-gray-400">
+                            {row.feel && <div>Feel: {row.feel}</div>}
+                            {row.guitarApproach && (
+                              <div>Guitar: {row.guitarApproach}</div>
+                            )}
+                            {row.vocalApproach && (
+                              <div>Vocal: {row.vocalApproach}</div>
+                            )}
+                            {row.dynamicShape && (
+                              <div>Dynamics: {row.dynamicShape}</div>
+                            )}
+                            {row.notes && <div>Notes: {row.notes}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">
+                  No guide track plan yet. Generate chords to include a
+                  structured plan for a future audio guide.
+                </p>
+              )}
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                  Audio guide readiness
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => requestAudioPreview()}
-                    disabled={
-                      !audioPreviewSpecPreview || requestingAudioPreview
-                    }
-                    className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
-                  >
-                    {requestingAudioPreview
-                      ? "Requesting..."
-                      : "Request preview"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => clearAudioPreviewOutput()}
-                    disabled={
-                      !audioPreviewResponse &&
-                      !audioPreviewPlan &&
-                      !audioPreviewRenderPrompt &&
-                      audioPreviewRenderSteps.length === 0 &&
-                      !audioPreviewSongSheetText &&
-                      !audioPreviewSectionGuideText &&
-                      !audioPreviewRendererPayload &&
-                      !audioPreviewRendererPayloadValidation &&
-                      !audioPreviewMeta
-                    }
+                    onClick={() => copyAudioGuideSummary()}
+                    disabled={!audioGuideSummaryPreview}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
-                    Clear preview output
+                    {justCopiedAudioGuideSummary
+                      ? "Copied ✓"
+                      : "Copy audio summary"}
                   </button>
-                </div>
-              </div>
 
-              <div className="mt-2 text-gray-300">
-                {audioGuideReadiness.label}
-              </div>
-
-              <div className="mt-1 text-sm text-gray-500">
-                {audioGuideReadiness.detail}
-              </div>
-
-              <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-gray-200">
-                    Audio preview spec
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyAudioPreviewSpec()}
+                    disabled={!audioPreviewSpecPreview}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {justCopiedAudioPreviewSpec
+                      ? "Copied ✓"
+                      : "Copy preview spec"}
+                  </button>
 
                   <div
-                    className={`text-xs ${
-                      audioPreviewSpecStatus.isValid
-                        ? "text-green-300"
-                        : "text-yellow-300"
+                    className={`w-full rounded border px-3 py-2 text-xs leading-5 ${
+                      audioPreviewHandoffStatus.tone === "ready"
+                        ? "border-green-900 bg-green-950/20 text-green-100"
+                        : audioPreviewHandoffStatus.tone === "review"
+                          ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          : "border-gray-800 bg-gray-950 text-gray-400"
                     }`}
                   >
-                    {audioPreviewSpecStatus.isValid
-                      ? "Valid JSON"
-                      : "Not ready"}
+                    <div className="font-medium">
+                      {audioPreviewHandoffStatus.label}
+                    </div>
+                    <div className="mt-1">
+                      {audioPreviewHandoffStatus.detail}
+                    </div>
+                  </div>
+
+                  {renderAudioPreviewReadinessCard()}
+
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    {audioPreviewChecklist.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded border border-gray-800 bg-gray-900 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-sm font-medium text-gray-200">
+                            {item.label}
+                          </div>
+
+                          <div
+                            className={`text-xs ${
+                              item.complete
+                                ? "text-green-300"
+                                : "text-yellow-300"
+                            }`}
+                          >
+                            {item.complete ? "Done" : "Needed"}
+                          </div>
+                        </div>
+
+                        <div className="mt-1 text-xs leading-5 text-gray-500">
+                          {item.detail}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="mt-1 text-xs leading-5 text-gray-500">
-                  {audioPreviewSpecStatus.label}
+                <button
+                  type="button"
+                  onClick={() => requestAudioPreview()}
+                  disabled={!audioPreviewSpecPreview || requestingAudioPreview}
+                  className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                >
+                  {requestingAudioPreview ? "Requesting..." : "Request preview"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => clearAudioPreviewOutput()}
+                  disabled={
+                    !audioPreviewResponse &&
+                    !audioPreviewPlan &&
+                    !audioPreviewRenderPrompt &&
+                    audioPreviewRenderSteps.length === 0 &&
+                    !audioPreviewSongSheetText &&
+                    !audioPreviewSectionGuideText &&
+                    !audioPreviewRendererPayload &&
+                    !audioPreviewRendererPayloadValidation &&
+                    !audioPreviewMeta
+                  }
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  Clear preview output
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-2 text-gray-300">
+              {audioGuideReadiness.label}
+            </div>
+
+            <div className="mt-1 text-sm text-gray-500">
+              {audioGuideReadiness.detail}
+            </div>
+
+            <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium text-gray-200">
+                  Audio preview spec
                 </div>
 
-                <div className="mt-1 text-xs leading-5 text-gray-500">
-                  {audioPreviewSpecStatus.detail}
+                <div
+                  className={`text-xs ${
+                    audioPreviewSpecStatus.isValid
+                      ? "text-green-300"
+                      : "text-yellow-300"
+                  }`}
+                >
+                  {audioPreviewSpecStatus.isValid ? "Valid JSON" : "Not ready"}
                 </div>
+              </div>
 
-                {audioPreviewMessage ? (
-                  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
-                    <div className="text-sm font-medium text-gray-200">
-                      Audio preview request
+              <div className="mt-1 text-xs leading-5 text-gray-500">
+                {audioPreviewSpecStatus.label}
+              </div>
+
+              <div className="mt-1 text-xs leading-5 text-gray-500">
+                {audioPreviewSpecStatus.detail}
+              </div>
+
+              {audioPreviewMessage ? (
+                <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+                  <div className="text-sm font-medium text-gray-200">
+                    Audio preview request
+                  </div>
+
+                  <div className="mt-1 text-xs leading-5 text-gray-500">
+                    {audioPreviewMessage}
+                  </div>
+
+                  {audioPreviewPlan ? (
+                    <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                      {[
+                        ["Render mode", getPreviewPlanValue("renderMode")],
+                        ["Render status", getPreviewPlanValue("renderStatus")],
+                        ["Key", getPreviewPlanValue("key")],
+                        ["Tempo", getPreviewPlanValue("tempo")],
+                        [
+                          "Instrumentation",
+                          getPreviewPlanValue("instrumentation"),
+                        ],
+                        ["Count-in", getPreviewPlanValue("countIn")],
+                        [
+                          "Songsheet lines",
+                          getPreviewPlanValue("songsheetLineCount"),
+                        ],
+                        [
+                          "Section plans",
+                          getPreviewPlanValue("sectionPlanCount"),
+                        ],
+                      ]
+                        .filter((row) => row[1])
+                        .map(([label, value]) => (
+                          <div
+                            key={label}
+                            className="rounded border border-gray-800 bg-gray-950 p-2"
+                          >
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              {label}
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {value}
+                            </div>
+                          </div>
+                        ))}
                     </div>
+                  ) : null}
 
-                    <div className="mt-1 text-xs leading-5 text-gray-500">
-                      {audioPreviewMessage}
-                    </div>
+                  {audioPreviewMeta ? (
+                    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview planner
+                      </div>
 
-                    {audioPreviewPlan ? (
-                      <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                      <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                         {[
-                          ["Render mode", getPreviewPlanValue("renderMode")],
-                          [
-                            "Render status",
-                            getPreviewPlanValue("renderStatus"),
-                          ],
-                          ["Key", getPreviewPlanValue("key")],
-                          ["Tempo", getPreviewPlanValue("tempo")],
-                          [
-                            "Instrumentation",
-                            getPreviewPlanValue("instrumentation"),
-                          ],
-                          ["Count-in", getPreviewPlanValue("countIn")],
-                          [
-                            "Songsheet lines",
-                            getPreviewPlanValue("songsheetLineCount"),
-                          ],
-                          [
-                            "Section plans",
-                            getPreviewPlanValue("sectionPlanCount"),
-                          ],
+                          {
+                            label: "Route",
+                            value:
+                              typeof audioPreviewMeta.route === "string"
+                                ? audioPreviewMeta.route
+                                : "",
+                          },
+                          {
+                            label: "Planner",
+                            value:
+                              typeof audioPreviewMeta.planner === "string"
+                                ? audioPreviewMeta.planner
+                                : "",
+                          },
+                          {
+                            label: "Model",
+                            value:
+                              typeof audioPreviewMeta.model === "string"
+                                ? audioPreviewMeta.model
+                                : "",
+                          },
+                          {
+                            label: "Duration",
+                            value:
+                              typeof audioPreviewMeta.durationSeconds ===
+                              "number"
+                                ? `${audioPreviewMeta.durationSeconds}s`
+                                : "",
+                          },
+                          {
+                            label: "Input tokens",
+                            value:
+                              typeof audioPreviewMeta.inputTokens === "number"
+                                ? audioPreviewMeta.inputTokens.toLocaleString()
+                                : "",
+                          },
+                          {
+                            label: "Output tokens",
+                            value:
+                              typeof audioPreviewMeta.outputTokens === "number"
+                                ? audioPreviewMeta.outputTokens.toLocaleString()
+                                : "",
+                          },
+                          {
+                            label: "Total tokens",
+                            value:
+                              typeof audioPreviewMeta.totalTokens === "number"
+                                ? audioPreviewMeta.totalTokens.toLocaleString()
+                                : "",
+                          },
+                          {
+                            label: "Generated at",
+                            value:
+                              typeof audioPreviewMeta.generatedAt === "string"
+                                ? new Date(
+                                    audioPreviewMeta.generatedAt,
+                                  ).toLocaleString()
+                                : "",
+                          },
                         ]
-                          .filter((row) => row[1])
-                          .map(([label, value]) => (
+                          .filter((row) => row.value)
+                          .map((row) => (
                             <div
-                              key={label}
-                              className="rounded border border-gray-800 bg-gray-950 p-2"
+                              key={row.label}
+                              className="rounded border border-gray-800 bg-gray-900 p-3"
                             >
                               <div className="text-xs uppercase tracking-wide text-gray-500">
-                                {label}
+                                {row.label}
                               </div>
+
                               <div className="mt-1 text-sm text-gray-300">
-                                {value}
+                                {row.value}
                               </div>
                             </div>
                           ))}
                       </div>
-                    ) : null}
+                    </div>
+                  ) : null}
 
-                    {audioPreviewMeta ? (
-                      <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview planner
+                  {audioPreviewSongSheetText ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview placed songsheet
+                      </summary>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Exact chord-over-lyric songsheet included in the audio
+                          preview render prompt.
                         </div>
 
-                        <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-                          {[
-                            {
-                              label: "Route",
-                              value:
-                                typeof audioPreviewMeta.route === "string"
-                                  ? audioPreviewMeta.route
-                                  : "",
-                            },
-                            {
-                              label: "Planner",
-                              value:
-                                typeof audioPreviewMeta.planner === "string"
-                                  ? audioPreviewMeta.planner
-                                  : "",
-                            },
-                            {
-                              label: "Model",
-                              value:
-                                typeof audioPreviewMeta.model === "string"
-                                  ? audioPreviewMeta.model
-                                  : "",
-                            },
-                            {
-                              label: "Duration",
-                              value:
-                                typeof audioPreviewMeta.durationSeconds ===
-                                "number"
-                                  ? `${audioPreviewMeta.durationSeconds}s`
-                                  : "",
-                            },
-                            {
-                              label: "Input tokens",
-                              value:
-                                typeof audioPreviewMeta.inputTokens === "number"
-                                  ? audioPreviewMeta.inputTokens.toLocaleString()
-                                  : "",
-                            },
-                            {
-                              label: "Output tokens",
-                              value:
-                                typeof audioPreviewMeta.outputTokens ===
-                                "number"
-                                  ? audioPreviewMeta.outputTokens.toLocaleString()
-                                  : "",
-                            },
-                            {
-                              label: "Total tokens",
-                              value:
-                                typeof audioPreviewMeta.totalTokens === "number"
-                                  ? audioPreviewMeta.totalTokens.toLocaleString()
-                                  : "",
-                            },
-                            {
-                              label: "Generated at",
-                              value:
-                                typeof audioPreviewMeta.generatedAt === "string"
-                                  ? new Date(
-                                      audioPreviewMeta.generatedAt,
-                                    ).toLocaleString()
-                                  : "",
-                            },
-                          ]
-                            .filter((row) => row.value)
-                            .map((row) => (
-                              <div
-                                key={row.label}
-                                className="rounded border border-gray-800 bg-gray-900 p-3"
-                              >
-                                <div className="text-xs uppercase tracking-wide text-gray-500">
-                                  {row.label}
-                                </div>
+                        <button
+                          type="button"
+                          onClick={() => copyAudioPreviewSongSheet()}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                        >
+                          {justCopiedAudioPreviewSongSheet
+                            ? "Copied ✓"
+                            : "Copy placed songsheet"}
+                        </button>
+                      </div>
 
-                                <div className="mt-1 text-sm text-gray-300">
-                                  {row.value}
-                                </div>
-                              </div>
-                            ))}
+                      <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                        {audioPreviewSongSheetText}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  <div
+                    className={`rounded border px-4 py-3 text-sm ${
+                      audioPreviewPipelineStatus.tone === "ready"
+                        ? "border-green-900 bg-green-950/20 text-green-100"
+                        : audioPreviewPipelineStatus.tone === "review"
+                          ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          : "border-gray-800 bg-gray-950 text-gray-300"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="font-medium">
+                          {audioPreviewPipelineStatus.label}
+                        </div>
+                        <div className="mt-1 text-xs leading-5 opacity-80">
+                          {audioPreviewPipelineStatus.detail}
                         </div>
                       </div>
-                    ) : null}
 
-                    {audioPreviewSongSheetText ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview placed songsheet
-                        </summary>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Exact chord-over-lyric songsheet included in the
-                            audio preview render prompt.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewSongSheet()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewSongSheet
-                              ? "Copied ✓"
-                              : "Copy placed songsheet"}
-                          </button>
-                        </div>
-
-                        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-                          {audioPreviewSongSheetText}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    <div
-                      className={`rounded border px-4 py-3 text-sm ${
-                        audioPreviewPipelineStatus.tone === "ready"
-                          ? "border-green-900 bg-green-950/20 text-green-100"
-                          : audioPreviewPipelineStatus.tone === "review"
-                            ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                            : "border-gray-800 bg-gray-950 text-gray-300"
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="text-right text-xs leading-5 opacity-80">
                         <div>
-                          <div className="font-medium">
-                            {audioPreviewPipelineStatus.label}
-                          </div>
-                          <div className="mt-1 text-xs leading-5 opacity-80">
-                            {audioPreviewPipelineStatus.detail}
-                          </div>
+                          {audioPreviewPipelineStatus.completeCount}/
+                          {audioPreviewPipelineStatus.totalCount} complete
                         </div>
-
-                        <div className="text-right text-xs leading-5 opacity-80">
-                          <div>
-                            {audioPreviewPipelineStatus.completeCount}/
-                            {audioPreviewPipelineStatus.totalCount} complete
-                          </div>
-                          <div>
-                            Next: {audioPreviewPipelineStatus.nextAction}
-                          </div>
-                        </div>
+                        <div>Next: {audioPreviewPipelineStatus.nextAction}</div>
                       </div>
                     </div>
+                  </div>
 
-                    {audioPreviewSectionGuideText ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview section guide
-                        </summary>
+                  {audioPreviewSectionGuideText ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview section guide
+                      </summary>
 
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Section-by-section render guidance derived from the
-                            guide track plan.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewSectionGuide()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewSectionGuide
-                              ? "Copied ✓"
-                              : "Copy section guide"}
-                          </button>
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Section-by-section render guidance derived from the
+                          guide track plan.
                         </div>
 
-                        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-                          {audioPreviewSectionGuideText}
-                        </pre>
-                      </details>
-                    ) : null}
+                        <button
+                          type="button"
+                          onClick={() => copyAudioPreviewSectionGuide()}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                        >
+                          {justCopiedAudioPreviewSectionGuide
+                            ? "Copied ✓"
+                            : "Copy section guide"}
+                        </button>
+                      </div>
 
-                    {audioPreviewRenderSteps.length > 0 ? (
-                      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                        <summary className="cursor-pointer text-xs font-medium text-gray-300">
-                          Show render steps
-                        </summary>
+                      <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                        {audioPreviewSectionGuideText}
+                      </pre>
+                    </details>
+                  ) : null}
 
-                        <div className="mt-3 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() => copyAudioRenderSteps()}
-                            disabled={audioPreviewRenderSteps.length === 0}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                          >
-                            {justCopiedAudioRenderSteps
-                              ? "Copied ✓"
-                              : "Copy render steps"}
-                          </button>
-                        </div>
+                  {audioPreviewRenderSteps.length > 0 ? (
+                    <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                      <summary className="cursor-pointer text-xs font-medium text-gray-300">
+                        Show render steps
+                      </summary>
 
-                        <div className="mt-3 grid gap-3">
-                          {audioPreviewRenderSteps.map((step, index) => {
-                            const stepNumber =
-                              getRenderStepValue(step, "step") ||
-                              String(index + 1);
-                            const section =
-                              getRenderStepValue(step, "section") ||
-                              `Section ${stepNumber}`;
-                            const goal = getRenderStepValue(step, "goal");
-                            const guitarInstruction = getRenderStepValue(
-                              step,
-                              "guitarInstruction",
-                            );
-                            const vocalInstruction = getRenderStepValue(
-                              step,
-                              "vocalInstruction",
-                            );
-                            const dynamicInstruction = getRenderStepValue(
-                              step,
-                              "dynamicInstruction",
-                            );
-                            const notes = getRenderStepValue(step, "notes");
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => copyAudioRenderSteps()}
+                          disabled={audioPreviewRenderSteps.length === 0}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                        >
+                          {justCopiedAudioRenderSteps
+                            ? "Copied ✓"
+                            : "Copy render steps"}
+                        </button>
+                      </div>
 
-                            return (
-                              <div
-                                key={`${stepNumber}-${section}`}
-                                className="rounded border border-gray-800 bg-gray-900 p-3"
-                              >
-                                <div className="text-xs uppercase tracking-wide text-gray-500">
-                                  Step {stepNumber}
-                                </div>
+                      <div className="mt-3 grid gap-3">
+                        {audioPreviewRenderSteps.map((step, index) => {
+                          const stepNumber =
+                            getRenderStepValue(step, "step") ||
+                            String(index + 1);
+                          const section =
+                            getRenderStepValue(step, "section") ||
+                            `Section ${stepNumber}`;
+                          const goal = getRenderStepValue(step, "goal");
+                          const guitarInstruction = getRenderStepValue(
+                            step,
+                            "guitarInstruction",
+                          );
+                          const vocalInstruction = getRenderStepValue(
+                            step,
+                            "vocalInstruction",
+                          );
+                          const dynamicInstruction = getRenderStepValue(
+                            step,
+                            "dynamicInstruction",
+                          );
+                          const notes = getRenderStepValue(step, "notes");
 
-                                <div className="mt-1 text-sm font-medium text-gray-200">
-                                  {section}
-                                </div>
-
-                                <div className="mt-2 grid gap-2 text-xs leading-5 text-gray-500">
-                                  {goal ? (
-                                    <div>
-                                      <span className="text-gray-400">
-                                        Goal:
-                                      </span>{" "}
-                                      {goal}
-                                    </div>
-                                  ) : null}
-                                  {guitarInstruction ? (
-                                    <div>
-                                      <span className="text-gray-400">
-                                        Guitar:
-                                      </span>{" "}
-                                      {guitarInstruction}
-                                    </div>
-                                  ) : null}
-                                  {vocalInstruction ? (
-                                    <div>
-                                      <span className="text-gray-400">
-                                        Vocal:
-                                      </span>{" "}
-                                      {vocalInstruction}
-                                    </div>
-                                  ) : null}
-                                  {dynamicInstruction ? (
-                                    <div>
-                                      <span className="text-gray-400">
-                                        Dynamics:
-                                      </span>{" "}
-                                      {dynamicInstruction}
-                                    </div>
-                                  ) : null}
-                                  {notes ? (
-                                    <div>
-                                      <span className="text-gray-400">
-                                        Notes:
-                                      </span>{" "}
-                                      {notes}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </details>
-                    ) : null}
-
-                    {audioPreviewRenderPrompt ? (
-                      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview render prompt
-                        </summary>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Full renderer-ready prompt containing performance
-                            intent, placed songsheet, and section guidance.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioRenderPrompt()}
-                            disabled={!audioPreviewRenderPrompt}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                          >
-                            {justCopiedAudioRenderPrompt
-                              ? "Copied ✓"
-                              : "Copy render prompt"}
-                          </button>
-                        </div>
-
-                        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-                          {audioPreviewRenderPrompt}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    {audioPreviewRendererPayload ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview renderer payload
-                        </summary>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Structured machine-readable payload intended for a
-                            future audio preview renderer.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewRendererPayload()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewRendererPayload
-                              ? "Copied ✓"
-                              : "Copy renderer payload"}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => submitAudioPreviewRendererPayload()}
-                            disabled={
-                              submittingAudioPreviewRender ||
-                              !audioPreviewRendererPayload ||
-                              audioPreviewRendererPayloadValidation?.ready !==
-                                true
-                            }
-                            className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
-                          >
-                            {submittingAudioPreviewRender
-                              ? "Submitting..."
-                              : "Submit dry run"}
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled
-                            title="Real audio rendering is blocked until a renderer, output format, storage, and execution endpoint are configured."
-                            className="rounded border border-red-800 px-3 py-1 text-xs font-medium text-red-200 opacity-70 disabled:cursor-not-allowed"
-                          >
-                            Generate audio blocked
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => testBlockedRealRenderRoute()}
-                            disabled={
-                              testingRealRenderRoute || !dryRunArtifactPackage
-                            }
-                            title="Safely call the blocked real-render route and confirm it returns blocked status."
-                            className="rounded border border-purple-800 px-3 py-1 text-xs font-medium text-purple-200 hover:bg-purple-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
-                          >
-                            {testingRealRenderRoute
-                              ? "Testing blocked route..."
-                              : "Test blocked route"}
-                          </button>
-
-                          <div className="space-y-2">
-                            <div className="text-xs font-medium text-gray-200">
-                              Click-track layer presets
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyClickTrackLayerPreset({
-                                    countIn: false,
-                                    sectionMarkers: false,
-                                    chordMarkers: false,
-                                    chordToneGuide: false,
-                                    beatClicks: true,
-                                  })
-                                }
-                                className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                              >
-                                Plain click
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyClickTrackLayerPreset({
-                                    countIn: true,
-                                    sectionMarkers: false,
-                                    chordMarkers: false,
-                                    chordToneGuide: false,
-                                    beatClicks: true,
-                                  })
-                                }
-                                className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                              >
-                                Basic count-in
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyClickTrackLayerPreset({
-                                    countIn: true,
-                                    sectionMarkers: true,
-                                    chordMarkers: false,
-                                    chordToneGuide: false,
-                                    beatClicks: true,
-                                  })
-                                }
-                                className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                              >
-                                Structure guide
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyClickTrackLayerPreset({
-                                    countIn: true,
-                                    sectionMarkers: true,
-                                    chordMarkers: false,
-                                    chordToneGuide: true,
-                                    beatClicks: true,
-                                  })
-                                }
-                                className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
-                              >
-                                Musical guide
-                              </button>
-
-                              <button
-                                type="button"
-                                className="rounded-md border border-slate-500 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                onClick={() =>
-                                  applyClickTrackLayerPreset({
-                                    countIn: false,
-                                    beatClicks: false,
-                                    sectionMarkers: false,
-                                    chordMarkers: false,
-                                    chordToneGuide: true,
-                                  })
-                                }
-                              >
-                                Music only
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyClickTrackLayerPreset({
-                                    countIn: true,
-                                    sectionMarkers: true,
-                                    chordMarkers: true,
-                                    chordToneGuide: true,
-                                    beatClicks: true,
-                                  })
-                                }
-                                className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
-                              >
-                                Full rehearsal
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-3 text-xs text-gray-300">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={includeClickTrackCountIn}
-                                onChange={(event) =>
-                                  setIncludeClickTrackCountIn(
-                                    event.target.checked,
-                                  )
-                                }
-                              />
-                              Count-in
-                            </label>
-
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={includeClickTrackBeatClicks}
-                                onChange={(event) =>
-                                  setIncludeClickTrackBeatClicks(
-                                    event.target.checked,
-                                  )
-                                }
-                              />
-                              Beat clicks
-                            </label>
-
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={includeClickTrackSectionMarkers}
-                                onChange={(event) =>
-                                  setIncludeClickTrackSectionMarkers(
-                                    event.target.checked,
-                                  )
-                                }
-                              />
-                              Section markers
-                            </label>
-
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={includeClickTrackChordMarkers}
-                                onChange={(event) =>
-                                  setIncludeClickTrackChordMarkers(
-                                    event.target.checked,
-                                  )
-                                }
-                              />
-                              Chord markers
-                            </label>
-
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={includeClickTrackChordToneGuide}
-                                onChange={(event) =>
-                                  setIncludeClickTrackChordToneGuide(
-                                    event.target.checked,
-                                  )
-                                }
-                              />
-                              Chord guide tones
-                            </label>
-
-                            <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
-                              <div className="mb-2 text-xs font-semibold text-blue-100">
-                                Musical guide mix for next render
+                          return (
+                            <div
+                              key={`${stepNumber}-${section}`}
+                              className="rounded border border-gray-800 bg-gray-900 p-3"
+                            >
+                              <div className="text-xs uppercase tracking-wide text-gray-500">
+                                Step {stepNumber}
                               </div>
 
-                              <div className="grid gap-3 md:grid-cols-2">
-                                {[
-                                  ["click", "Beat click"],
-                                  ["section", "Section marker"],
-                                  ["chordMarker", "Chord tick"],
-                                  ["pad", "Chord pad"],
-                                  ["arpeggio", "Arpeggio"],
-                                  ["bass", "Bass root"],
-                                ].map(([key, label]) => {
-                                  const typedKey = key as
-                                    | "click"
-                                    | "section"
-                                    | "chordMarker"
-                                    | "pad"
-                                    | "arpeggio"
-                                    | "bass";
-                                  const value = musicalGuideMixLevels[typedKey];
+                              <div className="mt-1 text-sm font-medium text-gray-200">
+                                {section}
+                              </div>
 
-                                  return (
-                                    <label
-                                      key={key}
-                                      className="space-y-1 text-[11px] text-blue-100"
-                                    >
-                                      <div className="flex items-center justify-between gap-3">
-                                        <span>{label}</span>
-                                        <div className="flex items-center gap-2">
-                                          <span>
-                                            {Math.round(value * 100)}%
-                                          </span>
-                                          <button
-                                            type="button"
-                                            className="rounded border border-blue-700 px-2 py-0.5 text-[10px] text-blue-100 hover:bg-blue-950"
-                                            onClick={() =>
-                                              playMusicalGuideMixAudition(
-                                                typedKey,
-                                              )
-                                            }
-                                          >
-                                            Audition
-                                          </button>
-                                        </div>
-                                      </div>
-                                      <input
-                                        type="range"
-                                        min={0}
-                                        max={2}
-                                        step={0.05}
-                                        value={value}
-                                        onChange={(event) =>
-                                          updateMusicalGuideMixLevel(
-                                            typedKey,
-                                            Number(event.target.value),
-                                          )
-                                        }
-                                        onPointerUp={() =>
-                                          playMusicalGuideMixAudition(typedKey)
-                                        }
-                                        onKeyUp={(event) => {
-                                          if (
-                                            event.key === "ArrowLeft" ||
-                                            event.key === "ArrowRight" ||
-                                            event.key === "Home" ||
-                                            event.key === "End"
-                                          ) {
+                              <div className="mt-2 grid gap-2 text-xs leading-5 text-gray-500">
+                                {goal ? (
+                                  <div>
+                                    <span className="text-gray-400">Goal:</span>{" "}
+                                    {goal}
+                                  </div>
+                                ) : null}
+                                {guitarInstruction ? (
+                                  <div>
+                                    <span className="text-gray-400">
+                                      Guitar:
+                                    </span>{" "}
+                                    {guitarInstruction}
+                                  </div>
+                                ) : null}
+                                {vocalInstruction ? (
+                                  <div>
+                                    <span className="text-gray-400">
+                                      Vocal:
+                                    </span>{" "}
+                                    {vocalInstruction}
+                                  </div>
+                                ) : null}
+                                {dynamicInstruction ? (
+                                  <div>
+                                    <span className="text-gray-400">
+                                      Dynamics:
+                                    </span>{" "}
+                                    {dynamicInstruction}
+                                  </div>
+                                ) : null}
+                                {notes ? (
+                                  <div>
+                                    <span className="text-gray-400">
+                                      Notes:
+                                    </span>{" "}
+                                    {notes}
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  ) : null}
+
+                  {audioPreviewRenderPrompt ? (
+                    <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview render prompt
+                      </summary>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Full renderer-ready prompt containing performance
+                          intent, placed songsheet, and section guidance.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => copyAudioRenderPrompt()}
+                          disabled={!audioPreviewRenderPrompt}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                        >
+                          {justCopiedAudioRenderPrompt
+                            ? "Copied ✓"
+                            : "Copy render prompt"}
+                        </button>
+                      </div>
+
+                      <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                        {audioPreviewRenderPrompt}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  {audioPreviewRendererPayload ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview renderer payload
+                      </summary>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Structured machine-readable payload intended for a
+                          future audio preview renderer.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => copyAudioPreviewRendererPayload()}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                        >
+                          {justCopiedAudioPreviewRendererPayload
+                            ? "Copied ✓"
+                            : "Copy renderer payload"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => submitAudioPreviewRendererPayload()}
+                          disabled={
+                            submittingAudioPreviewRender ||
+                            !audioPreviewRendererPayload ||
+                            audioPreviewRendererPayloadValidation?.ready !==
+                              true
+                          }
+                          className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                        >
+                          {submittingAudioPreviewRender
+                            ? "Submitting..."
+                            : "Submit dry run"}
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled
+                          title="Real audio rendering is blocked until a renderer, output format, storage, and execution endpoint are configured."
+                          className="rounded border border-red-800 px-3 py-1 text-xs font-medium text-red-200 opacity-70 disabled:cursor-not-allowed"
+                        >
+                          Generate audio blocked
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => testBlockedRealRenderRoute()}
+                          disabled={
+                            testingRealRenderRoute || !dryRunArtifactPackage
+                          }
+                          title="Safely call the blocked real-render route and confirm it returns blocked status."
+                          className="rounded border border-purple-800 px-3 py-1 text-xs font-medium text-purple-200 hover:bg-purple-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                        >
+                          {testingRealRenderRoute
+                            ? "Testing blocked route..."
+                            : "Test blocked route"}
+                        </button>
+
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium text-gray-200">
+                            Click-track layer presets
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyClickTrackLayerPreset({
+                                  countIn: false,
+                                  sectionMarkers: false,
+                                  chordMarkers: false,
+                                  chordToneGuide: false,
+                                  beatClicks: true,
+                                })
+                              }
+                              className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                            >
+                              Plain click
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyClickTrackLayerPreset({
+                                  countIn: true,
+                                  sectionMarkers: false,
+                                  chordMarkers: false,
+                                  chordToneGuide: false,
+                                  beatClicks: true,
+                                })
+                              }
+                              className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                            >
+                              Basic count-in
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyClickTrackLayerPreset({
+                                  countIn: true,
+                                  sectionMarkers: true,
+                                  chordMarkers: false,
+                                  chordToneGuide: false,
+                                  beatClicks: true,
+                                })
+                              }
+                              className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                            >
+                              Structure guide
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyClickTrackLayerPreset({
+                                  countIn: true,
+                                  sectionMarkers: true,
+                                  chordMarkers: false,
+                                  chordToneGuide: true,
+                                  beatClicks: true,
+                                })
+                              }
+                              className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
+                            >
+                              Musical guide
+                            </button>
+
+                            <button
+                              type="button"
+                              className="rounded-md border border-slate-500 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              onClick={() =>
+                                applyClickTrackLayerPreset({
+                                  countIn: false,
+                                  beatClicks: false,
+                                  sectionMarkers: false,
+                                  chordMarkers: false,
+                                  chordToneGuide: true,
+                                })
+                              }
+                            >
+                              Music only
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyClickTrackLayerPreset({
+                                  countIn: true,
+                                  sectionMarkers: true,
+                                  chordMarkers: true,
+                                  chordToneGuide: true,
+                                  beatClicks: true,
+                                })
+                              }
+                              className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
+                            >
+                              Full rehearsal
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3 text-xs text-gray-300">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={includeClickTrackCountIn}
+                              onChange={(event) =>
+                                setIncludeClickTrackCountIn(
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            Count-in
+                          </label>
+
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={includeClickTrackBeatClicks}
+                              onChange={(event) =>
+                                setIncludeClickTrackBeatClicks(
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            Beat clicks
+                          </label>
+
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={includeClickTrackSectionMarkers}
+                              onChange={(event) =>
+                                setIncludeClickTrackSectionMarkers(
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            Section markers
+                          </label>
+
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={includeClickTrackChordMarkers}
+                              onChange={(event) =>
+                                setIncludeClickTrackChordMarkers(
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            Chord markers
+                          </label>
+
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={includeClickTrackChordToneGuide}
+                              onChange={(event) =>
+                                setIncludeClickTrackChordToneGuide(
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            Chord guide tones
+                          </label>
+
+                          <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
+                            <div className="mb-2 text-xs font-semibold text-blue-100">
+                              Musical guide mix for next render
+                            </div>
+
+                            <div className="grid gap-3 md:grid-cols-2">
+                              {[
+                                ["click", "Beat click"],
+                                ["section", "Section marker"],
+                                ["chordMarker", "Chord tick"],
+                                ["pad", "Chord pad"],
+                                ["arpeggio", "Arpeggio"],
+                                ["bass", "Bass root"],
+                              ].map(([key, label]) => {
+                                const typedKey = key as
+                                  | "click"
+                                  | "section"
+                                  | "chordMarker"
+                                  | "pad"
+                                  | "arpeggio"
+                                  | "bass";
+                                const value = musicalGuideMixLevels[typedKey];
+
+                                return (
+                                  <label
+                                    key={key}
+                                    className="space-y-1 text-[11px] text-blue-100"
+                                  >
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span>{label}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span>{Math.round(value * 100)}%</span>
+                                        <button
+                                          type="button"
+                                          className="rounded border border-blue-700 px-2 py-0.5 text-[10px] text-blue-100 hover:bg-blue-950"
+                                          onClick={() =>
                                             playMusicalGuideMixAudition(
                                               typedKey,
-                                            );
+                                            )
                                           }
-                                        }}
-                                        className="w-full"
-                                      />
-                                    </label>
-                                  );
-                                })}
-                              </div>
+                                        >
+                                          Audition
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min={0}
+                                      max={2}
+                                      step={0.05}
+                                      value={value}
+                                      onChange={(event) =>
+                                        updateMusicalGuideMixLevel(
+                                          typedKey,
+                                          Number(event.target.value),
+                                        )
+                                      }
+                                      onPointerUp={() =>
+                                        playMusicalGuideMixAudition(typedKey)
+                                      }
+                                      onKeyUp={(event) => {
+                                        if (
+                                          event.key === "ArrowLeft" ||
+                                          event.key === "ArrowRight" ||
+                                          event.key === "Home" ||
+                                          event.key === "End"
+                                        ) {
+                                          playMusicalGuideMixAudition(typedKey);
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                  </label>
+                                );
+                              })}
+                            </div>
 
-                              <div className="mt-2 text-[11px] text-blue-200">
-                                These levels are saved in this browser and apply
-                                when you generate the next musical guide WAV.
-                                They do not change an already-rendered WAV
-                                during playback.
-                              </div>
+                            <div className="mt-2 text-[11px] text-blue-200">
+                              These levels are saved in this browser and apply
+                              when you generate the next musical guide WAV. They
+                              do not change an already-rendered WAV during
+                              playback.
                             </div>
                           </div>
+                        </div>
 
-                          <button
-                            type="button"
-                            onClick={() => downloadClickTrackWav()}
-                            disabled={
-                              downloadingClickTrackWav || !dryRunArtifactPackage
-                            }
-                            title="Generate and download the first local click-track WAV using the gated real-render route."
-                            className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
-                          >
-                            {downloadingClickTrackWav
-                              ? "Downloading click-track WAV..."
-                              : "Download click-track WAV"}
-                          </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadClickTrackWav()}
+                          disabled={
+                            downloadingClickTrackWav || !dryRunArtifactPackage
+                          }
+                          title="Generate and download the first local click-track WAV using the gated real-render route."
+                          className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                        >
+                          {downloadingClickTrackWav
+                            ? "Downloading click-track WAV..."
+                            : "Download click-track WAV"}
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => downloadMusicalGuideWav()}
-                            disabled={
-                              downloadingMusicalGuideWav ||
-                              !dryRunArtifactPackage
-                            }
-                            title="Generate and download a more musical guide WAV using chord tones, arpeggio, and bass root layers."
-                            className="rounded border border-blue-800 px-3 py-1 text-xs font-medium text-blue-100 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
-                          >
-                            {downloadingMusicalGuideWav
-                              ? "Downloading musical guide WAV..."
-                              : "Download musical guide WAV"}
-                          </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadMusicalGuideWav()}
+                          disabled={
+                            downloadingMusicalGuideWav || !dryRunArtifactPackage
+                          }
+                          title="Generate and download a more musical guide WAV using chord tones, arpeggio, and bass root layers."
+                          className="rounded border border-blue-800 px-3 py-1 text-xs font-medium text-blue-100 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                        >
+                          {downloadingMusicalGuideWav
+                            ? "Downloading musical guide WAV..."
+                            : "Download musical guide WAV"}
+                        </button>
 
-                          {clickTrackDownloadStatus ? (
-                            <div className="text-xs text-green-200">
-                              {clickTrackDownloadStatus}
+                        {clickTrackDownloadStatus ? (
+                          <div className="text-xs text-green-200">
+                            {clickTrackDownloadStatus}
+                          </div>
+                        ) : null}
+
+                        {clickTrackAudioUrl ? (
+                          <div className="mt-2 space-y-2 rounded border border-green-900 bg-green-950/20 p-3">
+                            <div className="text-xs font-medium text-green-100">
+                              {clickTrackAudioLabel}
                             </div>
-                          ) : null}
 
-                          {clickTrackAudioUrl ? (
-                            <div className="mt-2 space-y-2 rounded border border-green-900 bg-green-950/20 p-3">
-                              <div className="text-xs font-medium text-green-100">
-                                {clickTrackAudioLabel}
+                            <audio
+                              ref={clickTrackAudioRef}
+                              controls
+                              src={clickTrackAudioUrl}
+                              className="w-full"
+                              onLoadedMetadata={(event) => {
+                                const duration = event.currentTarget.duration;
+                                const safeDuration =
+                                  Number.isFinite(duration) && duration > 0
+                                    ? duration
+                                    : 0;
+
+                                setGeneratedAudioDuration(safeDuration);
+                                updateGeneratedAudioPlaybackUi({
+                                  currentTime:
+                                    event.currentTarget.currentTime || 0,
+                                  duration: safeDuration,
+                                });
+
+                                drawGeneratedAudioWaveform(
+                                  safeDuration > 0
+                                    ? Math.min(
+                                        (event.currentTarget.currentTime || 0) /
+                                          safeDuration,
+                                        1,
+                                      )
+                                    : 0,
+                                );
+                              }}
+                              onTimeUpdate={(event) => {
+                                updateGeneratedAudioPlaybackUi({
+                                  currentTime:
+                                    event.currentTarget.currentTime || 0,
+                                  duration: generatedAudioDuration,
+                                });
+                              }}
+                              onEnded={(event) => {
+                                updateGeneratedAudioPlaybackUi({
+                                  currentTime:
+                                    event.currentTarget.currentTime || 0,
+                                  duration: generatedAudioDuration,
+                                });
+                              }}
+                            />
+
+                            <canvas
+                              ref={generatedAudioWaveformCanvasRef}
+                              className="h-20 w-full cursor-pointer rounded border border-green-900 bg-green-950/40"
+                              onClick={(event) => {
+                                if (generatedAudioDuration <= 0) {
+                                  return;
+                                }
+
+                                const rect =
+                                  event.currentTarget.getBoundingClientRect();
+                                const clickPosition =
+                                  (event.clientX - rect.left) / rect.width;
+
+                                seekGeneratedAudio(
+                                  generatedAudioDuration * clickPosition,
+                                );
+                              }}
+                            />
+
+                            <div className="text-[11px] text-green-200">
+                              Waveform shows generated audio shape, section
+                              markers, and current playback position. Click the
+                              waveform to jump.
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[11px] text-green-200">
+                                <span ref={generatedAudioCurrentTimeTextRef}>
+                                  00:00
+                                </span>
+                                <span ref={generatedAudioDurationTextRef}>
+                                  {formatGeneratedAudioTime(
+                                    generatedAudioDuration,
+                                  )}
+                                </span>
                               </div>
 
-                              <audio
-                                ref={clickTrackAudioRef}
-                                controls
-                                src={clickTrackAudioUrl}
-                                className="w-full"
-                                onLoadedMetadata={(event) => {
-                                  const duration = event.currentTarget.duration;
-                                  const safeDuration =
-                                    Number.isFinite(duration) && duration > 0
-                                      ? duration
-                                      : 0;
-
-                                  setGeneratedAudioDuration(safeDuration);
+                              <input
+                                ref={generatedAudioSeekInputRef}
+                                type="range"
+                                min={0}
+                                max={
+                                  generatedAudioDuration > 0
+                                    ? generatedAudioDuration
+                                    : 0
+                                }
+                                step={0.01}
+                                defaultValue={0}
+                                disabled={generatedAudioDuration <= 0}
+                                onChange={(event) => {
                                   updateGeneratedAudioPlaybackUi({
-                                    currentTime:
-                                      event.currentTarget.currentTime || 0,
-                                    duration: safeDuration,
-                                  });
-
-                                  drawGeneratedAudioWaveform(
-                                    safeDuration > 0
-                                      ? Math.min(
-                                          (event.currentTarget.currentTime ||
-                                            0) / safeDuration,
-                                          1,
-                                        )
-                                      : 0,
-                                  );
-                                }}
-                                onTimeUpdate={(event) => {
-                                  updateGeneratedAudioPlaybackUi({
-                                    currentTime:
-                                      event.currentTarget.currentTime || 0,
+                                    currentTime: Number(event.target.value),
                                     duration: generatedAudioDuration,
                                   });
                                 }}
-                                onEnded={(event) => {
-                                  updateGeneratedAudioPlaybackUi({
-                                    currentTime:
-                                      event.currentTarget.currentTime || 0,
-                                    duration: generatedAudioDuration,
-                                  });
-                                }}
-                              />
-
-                              <canvas
-                                ref={generatedAudioWaveformCanvasRef}
-                                className="h-20 w-full cursor-pointer rounded border border-green-900 bg-green-950/40"
-                                onClick={(event) => {
-                                  if (generatedAudioDuration <= 0) {
-                                    return;
-                                  }
-
-                                  const rect =
-                                    event.currentTarget.getBoundingClientRect();
-                                  const clickPosition =
-                                    (event.clientX - rect.left) / rect.width;
-
+                                onPointerUp={(event) => {
                                   seekGeneratedAudio(
-                                    generatedAudioDuration * clickPosition,
+                                    Number(event.currentTarget.value),
                                   );
                                 }}
-                              />
-
-                              <div className="text-[11px] text-green-200">
-                                Waveform shows generated audio shape, section
-                                markers, and current playback position. Click
-                                the waveform to jump.
-                              </div>
-
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-[11px] text-green-200">
-                                  <span ref={generatedAudioCurrentTimeTextRef}>
-                                    00:00
-                                  </span>
-                                  <span ref={generatedAudioDurationTextRef}>
-                                    {formatGeneratedAudioTime(
-                                      generatedAudioDuration,
-                                    )}
-                                  </span>
-                                </div>
-
-                                <input
-                                  ref={generatedAudioSeekInputRef}
-                                  type="range"
-                                  min={0}
-                                  max={
-                                    generatedAudioDuration > 0
-                                      ? generatedAudioDuration
-                                      : 0
-                                  }
-                                  step={0.01}
-                                  defaultValue={0}
-                                  disabled={generatedAudioDuration <= 0}
-                                  onChange={(event) => {
-                                    updateGeneratedAudioPlaybackUi({
-                                      currentTime: Number(event.target.value),
-                                      duration: generatedAudioDuration,
-                                    });
-                                  }}
-                                  onPointerUp={(event) => {
+                                onKeyUp={(event) => {
+                                  if (
+                                    event.key === "ArrowLeft" ||
+                                    event.key === "ArrowRight" ||
+                                    event.key === "Home" ||
+                                    event.key === "End"
+                                  ) {
                                     seekGeneratedAudio(
                                       Number(event.currentTarget.value),
                                     );
-                                  }}
-                                  onKeyUp={(event) => {
-                                    if (
-                                      event.key === "ArrowLeft" ||
-                                      event.key === "ArrowRight" ||
-                                      event.key === "Home" ||
-                                      event.key === "End"
-                                    ) {
-                                      seekGeneratedAudio(
-                                        Number(event.currentTarget.value),
-                                      );
-                                    }
-                                  }}
-                                  className="w-full"
-                                />
+                                  }
+                                }}
+                                className="w-full"
+                              />
 
-                                {getGeneratedAudioSectionJumpSummaries()
-                                  .length ? (
-                                  <div className="pt-2">
-                                    <div className="mb-1 text-[11px] font-medium text-green-100">
-                                      Jump to section
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {getGeneratedAudioSectionJumpSummaries()
-                                        .slice(0, 16)
-                                        .map((section) => (
-                                          <button
-                                            key={`${section.order}-${section.section}-${section.startSeconds}`}
-                                            type="button"
-                                            className="rounded border border-green-800 px-2 py-1 text-[11px] text-green-100 hover:bg-green-950"
-                                            onClick={() => {
-                                              if (
-                                                typeof section.startSeconds ===
-                                                "number"
-                                              ) {
-                                                seekGeneratedAudio(
-                                                  section.startSeconds,
-                                                );
-                                              }
-                                            }}
-                                            title={`Jump to ${section.section} at ${formatGeneratedAudioTime(
-                                              typeof section.startSeconds ===
-                                                "number"
-                                                ? section.startSeconds
-                                                : 0,
-                                            )}`}
-                                          >
-                                            {section.section} ·{" "}
-                                            {formatGeneratedAudioTime(
-                                              typeof section.startSeconds ===
-                                                "number"
-                                                ? section.startSeconds
-                                                : 0,
-                                            )}
-                                          </button>
-                                        ))}
-                                    </div>
+                              {getGeneratedAudioSectionJumpSummaries()
+                                .length ? (
+                                <div className="pt-2">
+                                  <div className="mb-1 text-[11px] font-medium text-green-100">
+                                    Jump to section
                                   </div>
-                                ) : null}
-                              </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {getGeneratedAudioSectionJumpSummaries()
+                                      .slice(0, 16)
+                                      .map((section) => (
+                                        <button
+                                          key={`${section.order}-${section.section}-${section.startSeconds}`}
+                                          type="button"
+                                          className="rounded border border-green-800 px-2 py-1 text-[11px] text-green-100 hover:bg-green-950"
+                                          onClick={() => {
+                                            if (
+                                              typeof section.startSeconds ===
+                                              "number"
+                                            ) {
+                                              seekGeneratedAudio(
+                                                section.startSeconds,
+                                              );
+                                            }
+                                          }}
+                                          title={`Jump to ${section.section} at ${formatGeneratedAudioTime(
+                                            typeof section.startSeconds ===
+                                              "number"
+                                              ? section.startSeconds
+                                              : 0,
+                                          )}`}
+                                        >
+                                          {section.section} ·{" "}
+                                          {formatGeneratedAudioTime(
+                                            typeof section.startSeconds ===
+                                              "number"
+                                              ? section.startSeconds
+                                              : 0,
+                                          )}
+                                        </button>
+                                      ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null}
+                          </div>
+                        ) : null}
 
-                          {getClickTrackRendererPreviewSummary() ? (
-                            <div className="mt-3 rounded border border-green-900 bg-green-950/30 p-3 text-xs text-green-100">
-                              <div className="mb-2 font-semibold">
-                                Click-track render summary
-                              </div>
+                        {getClickTrackRendererPreviewSummary() ? (
+                          <div className="mt-3 rounded border border-green-900 bg-green-950/30 p-3 text-xs text-green-100">
+                            <div className="mb-2 font-semibold">
+                              Click-track render summary
+                            </div>
 
-                              <div>
-                                Tempo:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.tempoBpm !== null
-                                  ? `${getClickTrackRendererPreviewSummary()?.tempoBpm} BPM`
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Duration:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.totalDurationSeconds !== null
-                                  ? `${getClickTrackRendererPreviewSummary()?.totalDurationSeconds}s`
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Song duration:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.songDurationSeconds !== null
-                                  ? `${getClickTrackRendererPreviewSummary()?.songDurationSeconds}s`
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Count-in duration:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.countInDurationSeconds !== null
-                                  ? `${getClickTrackRendererPreviewSummary()?.countInDurationSeconds}s`
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Total bars:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.totalBars !== null
-                                  ? getClickTrackRendererPreviewSummary()
-                                      ?.totalBars
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Sections:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.cueSheetSectionCount !== null
-                                  ? getClickTrackRendererPreviewSummary()
-                                      ?.cueSheetSectionCount
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Samples:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.totalSamples !== null
-                                  ? getClickTrackRendererPreviewSummary()
-                                      ?.totalSamples
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Estimated WAV size:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.estimatedWavByteLength !== null
-                                  ? `${getClickTrackRendererPreviewSummary()?.estimatedWavByteLength} bytes`
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Section starts:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.sectionStartTimesSeconds.length
-                                  ? getClickTrackRendererPreviewSummary()
-                                      ?.sectionStartTimesSeconds.map(
-                                        (startTime) => `${startTime}s`,
-                                      )
-                                      .join(", ")
-                                  : "none"}
-                              </div>
-
-                              <div>
-                                Chord markers:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.chordMarkerCount !== null
-                                  ? getClickTrackRendererPreviewSummary()
-                                      ?.chordMarkerCount
-                                  : "unknown"}
-                              </div>
-
-                              <div>
-                                Chord marker times:{" "}
-                                {getClickTrackRendererPreviewSummary()
-                                  ?.chordMarkerTimesSeconds.length
-                                  ? getClickTrackRendererPreviewSummary()
-                                      ?.chordMarkerTimesSeconds.map(
-                                        (startTime) => `${startTime}s`,
-                                      )
-                                      .join(", ")
-                                  : "none"}
-                              </div>
-
+                            <div>
+                              Tempo:{" "}
                               {getClickTrackRendererPreviewSummary()
-                                ?.chordMarkerSummaries.length ? (
-                                <div className="mt-2 space-y-1">
-                                  <div className="font-medium">
-                                    Chord marker detail
-                                  </div>
-                                  {getClickTrackRendererPreviewSummary()?.chordMarkerSummaries.map(
-                                    (marker, index) => (
-                                      <div
-                                        key={`${marker.section}-${marker.chord}-${index}`}
-                                      >
-                                        {marker.timeSeconds ?? "?"}s —{" "}
-                                        {marker.section || "Section"}{" "}
-                                        {marker.chord
-                                          ? `— ${marker.chord}`
-                                          : ""}
-                                        {marker.root ? ` (${marker.root})` : ""}
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              ) : null}
+                                ?.tempoBpm !== null
+                                ? `${getClickTrackRendererPreviewSummary()?.tempoBpm} BPM`
+                                : "unknown"}
                             </div>
-                          ) : null}
 
-                          {getClickTrackRendererPreviewSummary()
-                            ?.sectionSummaries.length ? (
-                            <div className="mt-2 space-y-1">
-                              <div className="font-medium">Sections</div>
-                              {getClickTrackRendererPreviewSummary()?.sectionSummaries.map(
-                                (section, index) => (
-                                  <div key={`${section.section}-${index}`}>
-                                    {section.order ?? index + 1}.{" "}
-                                    {section.section || "Section"} —{" "}
-                                    {section.estimatedBars ?? "?"} bars,{" "}
-                                    {section.startSeconds ?? "?"}s to{" "}
-                                    {section.endSeconds ?? "?"}s
-                                  </div>
-                                ),
-                              )}
+                            <div>
+                              Duration:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.totalDurationSeconds !== null
+                                ? `${getClickTrackRendererPreviewSummary()?.totalDurationSeconds}s`
+                                : "unknown"}
                             </div>
-                          ) : null}
 
-                          {realRenderRouteTestResponse ? (
-                            <div className="mt-2 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
-                              <div className="font-medium">
-                                Blocked real-render route test
-                              </div>
+                            <div>
+                              Song duration:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.songDurationSeconds !== null
+                                ? `${getClickTrackRendererPreviewSummary()?.songDurationSeconds}s`
+                                : "unknown"}
+                            </div>
 
-                              <div className="mt-1 text-purple-100/80">
-                                HTTP status:{" "}
-                                {typeof realRenderRouteTestResponse.httpStatus ===
-                                "number"
-                                  ? realRenderRouteTestResponse.httpStatus
-                                  : "not available"}
-                              </div>
+                            <div>
+                              Count-in duration:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.countInDurationSeconds !== null
+                                ? `${getClickTrackRendererPreviewSummary()?.countInDurationSeconds}s`
+                                : "unknown"}
+                            </div>
 
-                              <div className="mt-1 text-purple-100/80">
-                                Status:{" "}
-                                {typeof realRenderRouteTestResponse.status ===
-                                "string"
-                                  ? realRenderRouteTestResponse.status
-                                  : "unknown"}
-                              </div>
+                            <div>
+                              Total bars:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.totalBars !== null
+                                ? getClickTrackRendererPreviewSummary()
+                                    ?.totalBars
+                                : "unknown"}
+                            </div>
 
-                              <div className="mt-1 text-purple-100/80">
-                                Audio status:{" "}
-                                {typeof realRenderRouteTestResponse.audioStatus ===
-                                "string"
-                                  ? realRenderRouteTestResponse.audioStatus
-                                  : "unknown"}
-                              </div>
+                            <div>
+                              Sections:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.cueSheetSectionCount !== null
+                                ? getClickTrackRendererPreviewSummary()
+                                    ?.cueSheetSectionCount
+                                : "unknown"}
+                            </div>
 
-                              <div className="mt-1 text-purple-100/80">
-                                Renderer status:{" "}
-                                {typeof realRenderRouteTestResponse.rendererStatus ===
-                                "string"
-                                  ? realRenderRouteTestResponse.rendererStatus
-                                  : "unknown"}
-                              </div>
+                            <div>
+                              Samples:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.totalSamples !== null
+                                ? getClickTrackRendererPreviewSummary()
+                                    ?.totalSamples
+                                : "unknown"}
+                            </div>
 
-                              <div className="mt-1 text-purple-100/80">
-                                Real-render configuration received:{" "}
-                                {getRealRenderRouteReceivedConfigurationStatus()}
-                              </div>
+                            <div>
+                              Estimated WAV size:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.estimatedWavByteLength !== null
+                                ? `${getClickTrackRendererPreviewSummary()?.estimatedWavByteLength} bytes`
+                                : "unknown"}
+                            </div>
 
-                              <div className="mt-2 text-purple-100/80">
-                                Result:{" "}
-                                {getBlockedRealRenderRouteTestPassed()
-                                  ? "Passed — route returned 423 blocked, verified received contract/configuration summaries including the renderer, WAV format, 44.1 kHz sample-rate, and browser-download storage candidates, verified checks, and generated no audio."
-                                  : "Not passed — confirm the route returns 423 blocked and receives the configuration placeholders without generating audio."}
-                              </div>
+                            <div>
+                              Section starts:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.sectionStartTimesSeconds.length
+                                ? getClickTrackRendererPreviewSummary()
+                                    ?.sectionStartTimesSeconds.map(
+                                      (startTime) => `${startTime}s`,
+                                    )
+                                    .join(", ")
+                                : "none"}
+                            </div>
 
-                              {getRealRenderRouteReceivedConfigurationSummary() ? (
-                                <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
-                                  <div className="font-medium text-purple-100">
-                                    Received configuration summary
-                                  </div>
+                            <div>
+                              Chord markers:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.chordMarkerCount !== null
+                                ? getClickTrackRendererPreviewSummary()
+                                    ?.chordMarkerCount
+                                : "unknown"}
+                            </div>
 
-                                  <div className="mt-1 text-purple-100/80">
-                                    Configuration status:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.configurationStatus || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Audio status:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.audioStatus || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Renderer candidate status:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.rendererCandidateStatus || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Recommended first renderer:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.recommendedFirstRenderer || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Renderer candidate selected:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.rendererCandidateSelectedRenderer ||
-                                      "none"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Output format status:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.outputFormatStatus || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Recommended first format:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.recommendedFirstFormat || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Selected format:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.selectedFormat || "none"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Sample rate status:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.sampleRateStatus || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Recommended first sample rate:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.recommendedFirstSampleRateHz ??
-                                      "unknown"}{" "}
-                                    Hz
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Selected sample rate:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.selectedSampleRateHz ?? "none"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Storage status:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.storageStatus || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Recommended first storage:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.recommendedFirstProvider || "unknown"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    Selected storage:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.selectedProvider || "none"}
-                                  </div>
-                                  <div className="mt-1 text-purple-100/80">
-                                    First target:{" "}
-                                    {getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.firstTargetKey || "unknown"}
-                                  </div>
+                            <div>
+                              Chord marker times:{" "}
+                              {getClickTrackRendererPreviewSummary()
+                                ?.chordMarkerTimesSeconds.length
+                                ? getClickTrackRendererPreviewSummary()
+                                    ?.chordMarkerTimesSeconds.map(
+                                      (startTime) => `${startTime}s`,
+                                    )
+                                    .join(", ")
+                                : "none"}
+                            </div>
+
+                            {getClickTrackRendererPreviewSummary()
+                              ?.chordMarkerSummaries.length ? (
+                              <div className="mt-2 space-y-1">
+                                <div className="font-medium">
+                                  Chord marker detail
                                 </div>
-                              ) : null}
-
-                              {getRealRenderRouteReceivedConfigurationCheck() ? (
-                                <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
-                                  <div className="font-medium text-purple-100">
-                                    Received configuration check
-                                  </div>
-
-                                  <div className="mt-1 text-purple-100/80">
-                                    Passed:{" "}
-                                    {getRealRenderRouteReceivedConfigurationCheck()
-                                      ?.passed
-                                      ? "yes"
-                                      : "no"}
-                                  </div>
-
-                                  {getRealRenderRouteReceivedConfigurationCheck()
-                                    ?.missingOrInvalid.length ? (
-                                    <div className="mt-2">
-                                      <div className="font-medium text-purple-100">
-                                        Missing or invalid:
-                                      </div>
-                                      <ul className="mt-1 list-disc space-y-1 pl-5 text-purple-100/80">
-                                        {getRealRenderRouteReceivedConfigurationCheck()?.missingOrInvalid.map(
-                                          (item) => (
-                                            <li key={item}>{item}</li>
-                                          ),
-                                        )}
-                                      </ul>
+                                {getClickTrackRendererPreviewSummary()?.chordMarkerSummaries.map(
+                                  (marker, index) => (
+                                    <div
+                                      key={`${marker.section}-${marker.chord}-${index}`}
+                                    >
+                                      {marker.timeSeconds ?? "?"}s —{" "}
+                                      {marker.section || "Section"}{" "}
+                                      {marker.chord ? `— ${marker.chord}` : ""}
+                                      {marker.root ? ` (${marker.root})` : ""}
                                     </div>
-                                  ) : (
-                                    <div className="mt-1 text-purple-100/80">
-                                      Missing or invalid: none
-                                    </div>
-                                  )}
-                                </div>
-                              ) : null}
-
-                              <details className="mt-2">
-                                <summary className="cursor-pointer text-purple-200">
-                                  Raw blocked route response
-                                </summary>
-                                <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-[11px] text-purple-100/80">
-                                  {JSON.stringify(
-                                    realRenderRouteTestResponse,
-                                    null,
-                                    2,
-                                  )}
-                                </pre>
-                              </details>
-                            </div>
-                          ) : null}
-
-                          {getRealRenderRouteReceivedContractSummary() ? (
-                            <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
-                              <div className="font-medium text-purple-100">
-                                Received contract summary
+                                  ),
+                                )}
                               </div>
-
-                              <div className="mt-1 text-purple-100/80">
-                                rendererInputContract:{" "}
-                                {getRealRenderRouteReceivedContractSummary()
-                                  ?.hasRendererInputContract
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                realRenderGate:{" "}
-                                {getRealRenderRouteReceivedContractSummary()
-                                  ?.hasRealRenderGate
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                firstRealRenderPlan:{" "}
-                                {getRealRenderRouteReceivedContractSummary()
-                                  ?.hasFirstRealRenderPlan
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                realRenderConfiguration:{" "}
-                                {getRealRenderRouteReceivedContractSummary()
-                                  ?.hasRealRenderConfiguration
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                requestedTarget:{" "}
-                                {getRealRenderRouteReceivedContractSummary()
-                                  ?.requestedTarget || "unknown"}
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {getRealRenderRouteReceivedContractCheck() ? (
-                            <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
-                              <div className="font-medium text-purple-100">
-                                Received contract check
-                              </div>
-
-                              <div className="mt-1 text-purple-100/80">
-                                Passed:{" "}
-                                {getRealRenderRouteReceivedContractCheck()
-                                  ?.passed
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-
-                              {getRealRenderRouteReceivedContractCheck()
-                                ?.missingOrInvalid.length ? (
-                                <div className="mt-2">
-                                  <div className="font-medium text-purple-100">
-                                    Missing or invalid:
-                                  </div>
-                                  <ul className="mt-1 list-disc space-y-1 pl-5 text-purple-100/80">
-                                    {getRealRenderRouteReceivedContractCheck()?.missingOrInvalid.map(
-                                      (item) => (
-                                        <li key={item}>{item}</li>
-                                      ),
-                                    )}
-                                  </ul>
-                                </div>
-                              ) : (
-                                <div className="mt-1 text-purple-100/80">
-                                  Missing or invalid: none
-                                </div>
-                              )}
-                            </div>
-                          ) : null}
-
-                          {dryRunRealRenderGateSummary ? (
-                            <div className="mt-2 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
-                              <div className="font-medium">
-                                Real audio rendering is blocked
-                              </div>
-                              <div className="mt-1 text-red-100/80">
-                                Gate status:{" "}
-                                {dryRunRealRenderGateSummary.gateStatus ||
-                                  "Unknown"}
-                                . Renderer:{" "}
-                                {dryRunRealRenderGateSummary.rendererStatus ||
-                                  "Unknown"}
-                                . Storage:{" "}
-                                {dryRunRealRenderGateSummary.storageStatus ||
-                                  "Unknown"}
-                                . Format:{" "}
-                                {dryRunRealRenderGateSummary.formatStatus ||
-                                  "Unknown"}
-                                .
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {!dryRunHandoffBundle || !dryRunArtifactPackage ? (
-                            <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-6 text-yellow-100">
-                              <div className="font-medium">
-                                Audio preview dry-run packages pending
-                              </div>
-
-                              <div className="mt-2 text-yellow-100/80">
-                                Submit dry run to generate the deterministic
-                                handoff bundle, artefact package, manifest,
-                                real-render blockers, render targets, validation
-                                outputs, and future audio output placeholders.
-                              </div>
-
-                              <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-yellow-100/70">
-                                {!dryRunHandoffBundle ? (
-                                  <li>Handoff bundle pending</li>
-                                ) : null}
-
-                                {!dryRunArtifactPackage ? (
-                                  <li>Artefact package pending</li>
-                                ) : null}
-                              </ul>
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {audioPreviewRendererPayloadSummary.hasPayload ? (
-                          <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Type
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewRendererPayloadSummary.type ||
-                                  "Unknown"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Status
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewRendererPayloadSummary.renderStatus ||
-                                  "Unknown"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Songsheet lines
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewRendererPayloadSummary.songsheetLineCount
-                                }
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Render steps
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewRendererPayloadSummary.renderStepCount
-                                }
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Render prompt
-                              </div>
-                              <div
-                                className={`mt-1 text-sm ${
-                                  audioPreviewRendererPayloadSummary.hasRenderPrompt
-                                    ? "text-green-300"
-                                    : "text-yellow-300"
-                                }`}
-                              >
-                                {audioPreviewRendererPayloadSummary.hasRenderPrompt
-                                  ? "Included"
-                                  : "Missing"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Placed songsheet
-                              </div>
-                              <div
-                                className={`mt-1 text-sm ${
-                                  audioPreviewRendererPayloadSummary.hasPreviewSongSheetText
-                                    ? "text-green-300"
-                                    : "text-yellow-300"
-                                }`}
-                              >
-                                {audioPreviewRendererPayloadSummary.hasPreviewSongSheetText
-                                  ? "Included"
-                                  : "Missing"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Section guide
-                              </div>
-                              <div
-                                className={`mt-1 text-sm ${
-                                  audioPreviewRendererPayloadSummary.hasSectionGuideText
-                                    ? "text-green-300"
-                                    : "text-yellow-300"
-                                }`}
-                              >
-                                {audioPreviewRendererPayloadSummary.hasSectionGuideText
-                                  ? "Included"
-                                  : "Missing"}
-                              </div>
-                            </div>
+                            ) : null}
                           </div>
                         ) : null}
 
-                        {audioPreviewRendererPayloadValidation ? (
-                          <div
-                            className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
-                              audioPreviewRendererPayloadValidation.ready ===
-                              true
-                                ? "border-green-900 bg-green-950/20 text-green-100"
-                                : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                            }`}
-                          >
-                            <div className="font-medium">
-                              {audioPreviewRendererPayloadValidation.ready ===
-                              true
-                                ? "Renderer payload validation passed"
-                                : "Renderer payload validation needs review"}
-                            </div>
-
-                            <div className="mt-1">
-                              {typeof audioPreviewRendererPayloadValidation.detail ===
-                              "string"
-                                ? audioPreviewRendererPayloadValidation.detail
-                                : "Validation details unavailable."}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-                          {JSON.stringify(audioPreviewRendererPayload, null, 2)}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    {audioPreviewRenderMessage ? (
-                      <div className="rounded border border-gray-800 bg-gray-950 px-3 py-2 text-xs leading-5 text-gray-300">
-                        {audioPreviewRenderMessage}
-                      </div>
-                    ) : null}
-
-                    {showRealRenderBlockedBanner ? (
-                      <div className="rounded border border-amber-900/60 bg-amber-950/20 p-4 text-sm leading-6 text-amber-100">
-                        <div className="font-semibold uppercase tracking-wide text-amber-300">
-                          Dry-run only — real rendering is blocked
-                        </div>
-
-                        <div className="mt-2 text-xs text-amber-100">
-                          The audio preview dry run is validated, but no audio
-                          has been generated. Real rendering remains blocked
-                          until renderer, format, storage, and timing decisions
-                          are made.
-                        </div>
-
-                        {dryRunRealRenderReadinessSummary.blockers.length >
-                        0 ? (
-                          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-amber-100">
-                            {dryRunRealRenderReadinessSummary.blockers.map(
-                              (item) => (
-                                <li key={item}>{item}</li>
+                        {getClickTrackRendererPreviewSummary()?.sectionSummaries
+                          .length ? (
+                          <div className="mt-2 space-y-1">
+                            <div className="font-medium">Sections</div>
+                            {getClickTrackRendererPreviewSummary()?.sectionSummaries.map(
+                              (section, index) => (
+                                <div key={`${section.section}-${index}`}>
+                                  {section.order ?? index + 1}.{" "}
+                                  {section.section || "Section"} —{" "}
+                                  {section.estimatedBars ?? "?"} bars,{" "}
+                                  {section.startSeconds ?? "?"}s to{" "}
+                                  {section.endSeconds ?? "?"}s
+                                </div>
                               ),
                             )}
-                          </ul>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {audioPreviewRenderJob ? (
-                      <div className="rounded border border-green-900 bg-green-950/20 p-4">
-                        <div className="text-sm font-medium uppercase tracking-wide text-green-200">
-                          Audio preview dry-run job
-                        </div>
-
-                        <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-                          {[
-                            {
-                              label: "Status",
-                              value:
-                                typeof audioPreviewRenderJob.status === "string"
-                                  ? audioPreviewRenderJob.status
-                                  : "",
-                            },
-                            {
-                              label: "Renderer",
-                              value:
-                                typeof audioPreviewRenderJob.renderer ===
-                                "string"
-                                  ? audioPreviewRenderJob.renderer
-                                  : "",
-                            },
-                            {
-                              label: "Audio status",
-                              value:
-                                typeof audioPreviewRenderJob.audioStatus ===
-                                "string"
-                                  ? audioPreviewRenderJob.audioStatus
-                                  : "",
-                            },
-                            {
-                              label: "Render mode",
-                              value:
-                                typeof audioPreviewRenderJob.renderMode ===
-                                "string"
-                                  ? audioPreviewRenderJob.renderMode
-                                  : "",
-                            },
-                            {
-                              label: "Created at",
-                              value:
-                                typeof audioPreviewRenderJob.createdAt ===
-                                "string"
-                                  ? new Date(
-                                      audioPreviewRenderJob.createdAt,
-                                    ).toLocaleString()
-                                  : "",
-                            },
-                          ]
-                            .filter((row) => row.value)
-                            .map((row) => (
-                              <div
-                                key={row.label}
-                                className="rounded border border-green-900 bg-gray-950 p-3"
-                              >
-                                <div className="text-xs uppercase tracking-wide text-green-300">
-                                  {row.label}
-                                </div>
-                                <div className="mt-1 text-sm text-green-100">
-                                  {row.value}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {audioPreviewDryRunRenderPlan ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview dry-run render plan
-                        </summary>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Structured section-by-section plan returned by the
-                            dry-run renderer route. No audio file is generated
-                            yet.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewDryRunPlan()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewDryRunPlan
-                              ? "Copied ✓"
-                              : "Copy dry-run plan"}
-                          </button>
-                        </div>
-
-                        {audioPreviewDryRunPlanSummary.hasPlan ? (
-                          <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Type
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewDryRunPlanSummary.type ||
-                                  "Unknown"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Render mode
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewDryRunPlanSummary.renderMode ||
-                                  "Unknown"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Audio status
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewDryRunPlanSummary.audioStatus ||
-                                  "Unknown"}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Sections
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewDryRunPlanSummary.sectionCount}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Songsheet lines
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewDryRunPlanSummary.songsheetLineCount
-                                }
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Render steps
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {audioPreviewDryRunPlanSummary.renderStepCount}
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Timeline sections
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewDryRunPlanSummary.timelineSectionCount
-                                }
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Cue sections
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewDryRunPlanSummary.cueSheetSectionCount
-                                }
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Estimated bars
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewDryRunPlanSummary.totalEstimatedBars
-                                }
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Estimated length
-                              </div>
-                              <div className="mt-1 text-sm text-gray-300">
-                                {
-                                  audioPreviewDryRunPlanSummary.totalEstimatedSeconds
-                                }
-                                s
-                              </div>
-                            </div>
-
-                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Instructions
-                              </div>
-                              <div
-                                className={`mt-1 text-sm ${
-                                  audioPreviewDryRunPlanSummary.hasInstructions
-                                    ? "text-green-300"
-                                    : "text-yellow-300"
-                                }`}
-                              >
-                                {audioPreviewDryRunPlanSummary.hasInstructions
-                                  ? "Included"
-                                  : "Missing"}
-                              </div>
-                            </div>
                           </div>
                         ) : null}
 
-                        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-                          {JSON.stringify(
-                            audioPreviewDryRunRenderPlan,
-                            null,
-                            2,
-                          )}
-                        </pre>
-                      </details>
-                    ) : null}
+                        {realRenderRouteTestResponse ? (
+                          <div className="mt-2 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
+                            <div className="font-medium">
+                              Blocked real-render route test
+                            </div>
 
-                    {audioPreviewDryRunTimelineRows.length > 0 ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview dry-run timeline
-                        </summary>
+                            <div className="mt-1 text-purple-100/80">
+                              HTTP status:{" "}
+                              {typeof realRenderRouteTestResponse.httpStatus ===
+                              "number"
+                                ? realRenderRouteTestResponse.httpStatus
+                                : "not available"}
+                            </div>
 
-                        <div className="mt-3 text-xs leading-5 text-gray-500">
-                          Renderer-style section timeline grouped from the
-                          placed songsheet.
-                        </div>
+                            <div className="mt-1 text-purple-100/80">
+                              Status:{" "}
+                              {typeof realRenderRouteTestResponse.status ===
+                              "string"
+                                ? realRenderRouteTestResponse.status
+                                : "unknown"}
+                            </div>
 
-                        <div className="mt-3 grid gap-3">
-                          {audioPreviewDryRunTimelineRows.map((row) => (
-                            <div
-                              key={`${row.order}-${row.section}`}
-                              className="rounded border border-gray-800 bg-gray-900 p-3"
-                            >
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-200">
-                                    {row.order}. {row.section}
-                                  </div>
-                                  <div className="mt-1 text-xs text-gray-500">
-                                    {row.lyricLineCount} lyric line
-                                    {row.lyricLineCount === 1 ? "" : "s"} ·{" "}
-                                    {row.chordPlacementCount} chord placement
-                                    {row.chordPlacementCount === 1 ? "" : "s"}
-                                  </div>
+                            <div className="mt-1 text-purple-100/80">
+                              Audio status:{" "}
+                              {typeof realRenderRouteTestResponse.audioStatus ===
+                              "string"
+                                ? realRenderRouteTestResponse.audioStatus
+                                : "unknown"}
+                            </div>
+
+                            <div className="mt-1 text-purple-100/80">
+                              Renderer status:{" "}
+                              {typeof realRenderRouteTestResponse.rendererStatus ===
+                              "string"
+                                ? realRenderRouteTestResponse.rendererStatus
+                                : "unknown"}
+                            </div>
+
+                            <div className="mt-1 text-purple-100/80">
+                              Real-render configuration received:{" "}
+                              {getRealRenderRouteReceivedConfigurationStatus()}
+                            </div>
+
+                            <div className="mt-2 text-purple-100/80">
+                              Result:{" "}
+                              {getBlockedRealRenderRouteTestPassed()
+                                ? "Passed — route returned 423 blocked, verified received contract/configuration summaries including the renderer, WAV format, 44.1 kHz sample-rate, and browser-download storage candidates, verified checks, and generated no audio."
+                                : "Not passed — confirm the route returns 423 blocked and receives the configuration placeholders without generating audio."}
+                            </div>
+
+                            {getRealRenderRouteReceivedConfigurationSummary() ? (
+                              <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+                                <div className="font-medium text-purple-100">
+                                  Received configuration summary
+                                </div>
+
+                                <div className="mt-1 text-purple-100/80">
+                                  Configuration status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.configurationStatus || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Audio status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.audioStatus || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Renderer candidate status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.rendererCandidateStatus || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Recommended first renderer:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.recommendedFirstRenderer || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Renderer candidate selected:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.rendererCandidateSelectedRenderer ||
+                                    "none"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Output format status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.outputFormatStatus || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Recommended first format:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.recommendedFirstFormat || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Selected format:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.selectedFormat || "none"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Sample rate status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.sampleRateStatus || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Recommended first sample rate:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.recommendedFirstSampleRateHz ??
+                                    "unknown"}{" "}
+                                  Hz
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Selected sample rate:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.selectedSampleRateHz ?? "none"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Storage status:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.storageStatus || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Recommended first storage:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.recommendedFirstProvider || "unknown"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  Selected storage:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.selectedProvider || "none"}
+                                </div>
+                                <div className="mt-1 text-purple-100/80">
+                                  First target:{" "}
+                                  {getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.firstTargetKey || "unknown"}
                                 </div>
                               </div>
+                            ) : null}
 
-                              {row.firstLyric || row.lastLyric ? (
-                                <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3 text-xs leading-5 text-gray-300">
-                                  {row.firstLyric ? (
-                                    <div>
-                                      <span className="text-gray-500">
-                                        First:
-                                      </span>{" "}
-                                      {row.firstLyric}
-                                    </div>
-                                  ) : null}
-                                  {row.lastLyric &&
-                                  row.lastLyric !== row.firstLyric ? (
-                                    <div className="mt-1">
-                                      <span className="text-gray-500">
-                                        Last:
-                                      </span>{" "}
-                                      {row.lastLyric}
-                                    </div>
-                                  ) : null}
+                            {getRealRenderRouteReceivedConfigurationCheck() ? (
+                              <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+                                <div className="font-medium text-purple-100">
+                                  Received configuration check
                                 </div>
+
+                                <div className="mt-1 text-purple-100/80">
+                                  Passed:{" "}
+                                  {getRealRenderRouteReceivedConfigurationCheck()
+                                    ?.passed
+                                    ? "yes"
+                                    : "no"}
+                                </div>
+
+                                {getRealRenderRouteReceivedConfigurationCheck()
+                                  ?.missingOrInvalid.length ? (
+                                  <div className="mt-2">
+                                    <div className="font-medium text-purple-100">
+                                      Missing or invalid:
+                                    </div>
+                                    <ul className="mt-1 list-disc space-y-1 pl-5 text-purple-100/80">
+                                      {getRealRenderRouteReceivedConfigurationCheck()?.missingOrInvalid.map(
+                                        (item) => (
+                                          <li key={item}>{item}</li>
+                                        ),
+                                      )}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <div className="mt-1 text-purple-100/80">
+                                    Missing or invalid: none
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+
+                            <details className="mt-2">
+                              <summary className="cursor-pointer text-purple-200">
+                                Raw blocked route response
+                              </summary>
+                              <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-[11px] text-purple-100/80">
+                                {JSON.stringify(
+                                  realRenderRouteTestResponse,
+                                  null,
+                                  2,
+                                )}
+                              </pre>
+                            </details>
+                          </div>
+                        ) : null}
+
+                        {getRealRenderRouteReceivedContractSummary() ? (
+                          <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+                            <div className="font-medium text-purple-100">
+                              Received contract summary
+                            </div>
+
+                            <div className="mt-1 text-purple-100/80">
+                              rendererInputContract:{" "}
+                              {getRealRenderRouteReceivedContractSummary()
+                                ?.hasRendererInputContract
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              realRenderGate:{" "}
+                              {getRealRenderRouteReceivedContractSummary()
+                                ?.hasRealRenderGate
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              firstRealRenderPlan:{" "}
+                              {getRealRenderRouteReceivedContractSummary()
+                                ?.hasFirstRealRenderPlan
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              realRenderConfiguration:{" "}
+                              {getRealRenderRouteReceivedContractSummary()
+                                ?.hasRealRenderConfiguration
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              requestedTarget:{" "}
+                              {getRealRenderRouteReceivedContractSummary()
+                                ?.requestedTarget || "unknown"}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {getRealRenderRouteReceivedContractCheck() ? (
+                          <div className="mt-2 rounded border border-purple-900 bg-gray-950 p-3">
+                            <div className="font-medium text-purple-100">
+                              Received contract check
+                            </div>
+
+                            <div className="mt-1 text-purple-100/80">
+                              Passed:{" "}
+                              {getRealRenderRouteReceivedContractCheck()?.passed
+                                ? "yes"
+                                : "no"}
+                            </div>
+
+                            {getRealRenderRouteReceivedContractCheck()
+                              ?.missingOrInvalid.length ? (
+                              <div className="mt-2">
+                                <div className="font-medium text-purple-100">
+                                  Missing or invalid:
+                                </div>
+                                <ul className="mt-1 list-disc space-y-1 pl-5 text-purple-100/80">
+                                  {getRealRenderRouteReceivedContractCheck()?.missingOrInvalid.map(
+                                    (item) => (
+                                      <li key={item}>{item}</li>
+                                    ),
+                                  )}
+                                </ul>
+                              </div>
+                            ) : (
+                              <div className="mt-1 text-purple-100/80">
+                                Missing or invalid: none
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+
+                        {dryRunRealRenderGateSummary ? (
+                          <div className="mt-2 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
+                            <div className="font-medium">
+                              Real audio rendering is blocked
+                            </div>
+                            <div className="mt-1 text-red-100/80">
+                              Gate status:{" "}
+                              {dryRunRealRenderGateSummary.gateStatus ||
+                                "Unknown"}
+                              . Renderer:{" "}
+                              {dryRunRealRenderGateSummary.rendererStatus ||
+                                "Unknown"}
+                              . Storage:{" "}
+                              {dryRunRealRenderGateSummary.storageStatus ||
+                                "Unknown"}
+                              . Format:{" "}
+                              {dryRunRealRenderGateSummary.formatStatus ||
+                                "Unknown"}
+                              .
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {!dryRunHandoffBundle || !dryRunArtifactPackage ? (
+                          <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-6 text-yellow-100">
+                            <div className="font-medium">
+                              Audio preview dry-run packages pending
+                            </div>
+
+                            <div className="mt-2 text-yellow-100/80">
+                              Submit dry run to generate the deterministic
+                              handoff bundle, artefact package, manifest,
+                              real-render blockers, render targets, validation
+                              outputs, and future audio output placeholders.
+                            </div>
+
+                            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-yellow-100/70">
+                              {!dryRunHandoffBundle ? (
+                                <li>Handoff bundle pending</li>
                               ) : null}
 
-                              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                                {row.goal ? (
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Goal
-                                    </div>
-                                    <div className="mt-1 text-xs leading-5 text-gray-300">
-                                      {row.goal}
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {row.guitarInstruction ? (
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Guitar
-                                    </div>
-                                    <div className="mt-1 text-xs leading-5 text-gray-300">
-                                      {row.guitarInstruction}
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {row.vocalInstruction ? (
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Vocal
-                                    </div>
-                                    <div className="mt-1 text-xs leading-5 text-gray-300">
-                                      {row.vocalInstruction}
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {row.dynamicInstruction ? (
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Dynamics
-                                    </div>
-                                    <div className="mt-1 text-xs leading-5 text-gray-300">
-                                      {row.dynamicInstruction}
-                                    </div>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    ) : null}
-
-                    {audioPreviewDryRunCueSheetRows.length > 0 ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview dry-run cue sheet
-                        </summary>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Estimated timing cue sheet derived from the dry-run
-                            timeline. These timings are approximate and are not
-                            final rendered audio timings.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewCueSheet()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewCueSheet
-                              ? "Copied ✓"
-                              : "Copy cue sheet"}
-                          </button>
-                        </div>
-
-                        {dryRunCueSheetValidation ? (
-                          <div
-                            className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
-                              dryRunCueSheetValidation.ready === true
-                                ? "border-green-900 bg-green-950/20 text-green-100"
-                                : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                            }`}
-                          >
-                            <div className="font-medium">
-                              {dryRunCueSheetValidation.ready === true
-                                ? "Dry-run cue sheet validation passed"
-                                : "Dry-run cue sheet validation needs review"}
-                            </div>
-                            <div className="mt-1">
-                              {typeof dryRunCueSheetValidation.detail ===
-                              "string"
-                                ? dryRunCueSheetValidation.detail
-                                : "Validation details unavailable."}
-                            </div>
+                              {!dryRunArtifactPackage ? (
+                                <li>Artefact package pending</li>
+                              ) : null}
+                            </ul>
                           </div>
                         ) : null}
+                      </div>
 
-                        <div className="mt-3 grid gap-3">
-                          {audioPreviewDryRunCueSheetRows.map((row) => (
-                            <div
-                              key={`${row.order}-${row.section}`}
-                              className="rounded border border-gray-800 bg-gray-900 p-3"
-                            >
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-200">
-                                    {row.order}. {row.section}
-                                  </div>
-                                  <div className="mt-1 text-xs text-gray-500">
-                                    {row.lyricLineCount} lyric line
-                                    {row.lyricLineCount === 1 ? "" : "s"} ·{" "}
-                                    {row.chordPlacementCount} chord placement
-                                    {row.chordPlacementCount === 1 ? "" : "s"}
-                                  </div>
-                                </div>
-
-                                <div className="text-xs leading-5 text-gray-400">
-                                  {row.startSeconds.toFixed(1)}s →{" "}
-                                  {row.endSeconds.toFixed(1)}s
-                                </div>
-                              </div>
-
-                              <div className="mt-3 grid gap-2 md:grid-cols-3">
-                                <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                  <div className="text-xs uppercase tracking-wide text-gray-500">
-                                    Estimated bars
-                                  </div>
-                                  <div className="mt-1 text-sm text-gray-300">
-                                    {row.estimatedBars}
-                                  </div>
-                                </div>
-
-                                <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                  <div className="text-xs uppercase tracking-wide text-gray-500">
-                                    Estimated seconds
-                                  </div>
-                                  <div className="mt-1 text-sm text-gray-300">
-                                    {row.estimatedSeconds.toFixed(1)}s
-                                  </div>
-                                </div>
-
-                                <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                  <div className="text-xs uppercase tracking-wide text-gray-500">
-                                    Time range
-                                  </div>
-                                  <div className="mt-1 text-sm text-gray-300">
-                                    {row.startSeconds.toFixed(1)}s–
-                                    {row.endSeconds.toFixed(1)}s
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    ) : null}
-
-                    {dryRunRenderManifest ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview dry-run render manifest
-                        </summary>
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Renderer-facing dry-run manifest with validation
-                            status and future audio output placeholders. No
-                            audio file is generated yet.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewRenderManifest()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewRenderManifest
-                              ? "Copied ✓"
-                              : "Copy manifest"}
-                          </button>
-                        </div>
-
-                        {dryRunRenderManifestValidation ? (
-                          <div
-                            className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
-                              dryRunRenderManifestValidation.ready === true
-                                ? "border-green-900 bg-green-950/20 text-green-100"
-                                : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                            }`}
-                          >
-                            <div className="font-medium">
-                              {dryRunRenderManifestValidation.ready === true
-                                ? "Dry-run render manifest validation passed"
-                                : "Dry-run render manifest validation needs review"}
-                            </div>
-                            <div className="mt-1">
-                              {typeof dryRunRenderManifestValidation.detail ===
-                              "string"
-                                ? dryRunRenderManifestValidation.detail
-                                : "Validation details unavailable."}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <div className="mt-3 grid gap-3 md:grid-cols-4">
+                      {audioPreviewRendererPayloadSummary.hasPayload ? (
+                        <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                           <div className="rounded border border-gray-800 bg-gray-900 p-3">
                             <div className="text-xs uppercase tracking-wide text-gray-500">
-                              Manifest status
+                              Type
                             </div>
                             <div className="mt-1 text-sm text-gray-300">
-                              {dryRunRenderManifestSummary.manifestStatus ||
+                              {audioPreviewRendererPayloadSummary.type ||
+                                "Unknown"}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Status
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {audioPreviewRendererPayloadSummary.renderStatus ||
+                                "Unknown"}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Songsheet lines
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {
+                                audioPreviewRendererPayloadSummary.songsheetLineCount
+                              }
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Render steps
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {
+                                audioPreviewRendererPayloadSummary.renderStepCount
+                              }
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Render prompt
+                            </div>
+                            <div
+                              className={`mt-1 text-sm ${
+                                audioPreviewRendererPayloadSummary.hasRenderPrompt
+                                  ? "text-green-300"
+                                  : "text-yellow-300"
+                              }`}
+                            >
+                              {audioPreviewRendererPayloadSummary.hasRenderPrompt
+                                ? "Included"
+                                : "Missing"}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Placed songsheet
+                            </div>
+                            <div
+                              className={`mt-1 text-sm ${
+                                audioPreviewRendererPayloadSummary.hasPreviewSongSheetText
+                                  ? "text-green-300"
+                                  : "text-yellow-300"
+                              }`}
+                            >
+                              {audioPreviewRendererPayloadSummary.hasPreviewSongSheetText
+                                ? "Included"
+                                : "Missing"}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Section guide
+                            </div>
+                            <div
+                              className={`mt-1 text-sm ${
+                                audioPreviewRendererPayloadSummary.hasSectionGuideText
+                                  ? "text-green-300"
+                                  : "text-yellow-300"
+                              }`}
+                            >
+                              {audioPreviewRendererPayloadSummary.hasSectionGuideText
+                                ? "Included"
+                                : "Missing"}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {audioPreviewRendererPayloadValidation ? (
+                        <div
+                          className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+                            audioPreviewRendererPayloadValidation.ready === true
+                              ? "border-green-900 bg-green-950/20 text-green-100"
+                              : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          }`}
+                        >
+                          <div className="font-medium">
+                            {audioPreviewRendererPayloadValidation.ready ===
+                            true
+                              ? "Renderer payload validation passed"
+                              : "Renderer payload validation needs review"}
+                          </div>
+
+                          <div className="mt-1">
+                            {typeof audioPreviewRendererPayloadValidation.detail ===
+                            "string"
+                              ? audioPreviewRendererPayloadValidation.detail
+                              : "Validation details unavailable."}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                        {JSON.stringify(audioPreviewRendererPayload, null, 2)}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  {audioPreviewRenderMessage ? (
+                    <div className="rounded border border-gray-800 bg-gray-950 px-3 py-2 text-xs leading-5 text-gray-300">
+                      {audioPreviewRenderMessage}
+                    </div>
+                  ) : null}
+
+                  {showRealRenderBlockedBanner ? (
+                    <div className="rounded border border-amber-900/60 bg-amber-950/20 p-4 text-sm leading-6 text-amber-100">
+                      <div className="font-semibold uppercase tracking-wide text-amber-300">
+                        Dry-run only — real rendering is blocked
+                      </div>
+
+                      <div className="mt-2 text-xs text-amber-100">
+                        The audio preview dry run is validated, but no audio has
+                        been generated. Real rendering remains blocked until
+                        renderer, format, storage, and timing decisions are
+                        made.
+                      </div>
+
+                      {dryRunRealRenderReadinessSummary.blockers.length > 0 ? (
+                        <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-amber-100">
+                          {dryRunRealRenderReadinessSummary.blockers.map(
+                            (item) => (
+                              <li key={item}>{item}</li>
+                            ),
+                          )}
+                        </ul>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {audioPreviewRenderJob ? (
+                    <div className="rounded border border-green-900 bg-green-950/20 p-4">
+                      <div className="text-sm font-medium uppercase tracking-wide text-green-200">
+                        Audio preview dry-run job
+                      </div>
+
+                      <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+                        {[
+                          {
+                            label: "Status",
+                            value:
+                              typeof audioPreviewRenderJob.status === "string"
+                                ? audioPreviewRenderJob.status
+                                : "",
+                          },
+                          {
+                            label: "Renderer",
+                            value:
+                              typeof audioPreviewRenderJob.renderer === "string"
+                                ? audioPreviewRenderJob.renderer
+                                : "",
+                          },
+                          {
+                            label: "Audio status",
+                            value:
+                              typeof audioPreviewRenderJob.audioStatus ===
+                              "string"
+                                ? audioPreviewRenderJob.audioStatus
+                                : "",
+                          },
+                          {
+                            label: "Render mode",
+                            value:
+                              typeof audioPreviewRenderJob.renderMode ===
+                              "string"
+                                ? audioPreviewRenderJob.renderMode
+                                : "",
+                          },
+                          {
+                            label: "Created at",
+                            value:
+                              typeof audioPreviewRenderJob.createdAt ===
+                              "string"
+                                ? new Date(
+                                    audioPreviewRenderJob.createdAt,
+                                  ).toLocaleString()
+                                : "",
+                          },
+                        ]
+                          .filter((row) => row.value)
+                          .map((row) => (
+                            <div
+                              key={row.label}
+                              className="rounded border border-green-900 bg-gray-950 p-3"
+                            >
+                              <div className="text-xs uppercase tracking-wide text-green-300">
+                                {row.label}
+                              </div>
+                              <div className="mt-1 text-sm text-green-100">
+                                {row.value}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {audioPreviewDryRunRenderPlan ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview dry-run render plan
+                      </summary>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Structured section-by-section plan returned by the
+                          dry-run renderer route. No audio file is generated
+                          yet.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => copyAudioPreviewDryRunPlan()}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                        >
+                          {justCopiedAudioPreviewDryRunPlan
+                            ? "Copied ✓"
+                            : "Copy dry-run plan"}
+                        </button>
+                      </div>
+
+                      {audioPreviewDryRunPlanSummary.hasPlan ? (
+                        <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Type
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {audioPreviewDryRunPlanSummary.type || "Unknown"}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Render mode
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {audioPreviewDryRunPlanSummary.renderMode ||
                                 "Unknown"}
                             </div>
                           </div>
@@ -17417,21 +17008,46 @@ ${buildRewriteInstruction(
                               Audio status
                             </div>
                             <div className="mt-1 text-sm text-gray-300">
-                              {dryRunRenderManifestSummary.audioStatus ||
+                              {audioPreviewDryRunPlanSummary.audioStatus ||
                                 "Unknown"}
                             </div>
                           </div>
 
                           <div className="rounded border border-gray-800 bg-gray-900 p-3">
                             <div className="text-xs uppercase tracking-wide text-gray-500">
-                              Output slots
+                              Sections
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {audioPreviewDryRunPlanSummary.sectionCount}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Songsheet lines
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {audioPreviewDryRunPlanSummary.songsheetLineCount}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Render steps
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {audioPreviewDryRunPlanSummary.renderStepCount}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Timeline sections
                             </div>
                             <div className="mt-1 text-sm text-gray-300">
                               {
-                                dryRunRenderManifestSummary.notGeneratedOutputCount
+                                audioPreviewDryRunPlanSummary.timelineSectionCount
                               }
-                              /{dryRunRenderManifestSummary.outputSlotCount} not
-                              generated
                             </div>
                           </div>
 
@@ -17440,7 +17056,9 @@ ${buildRewriteInstruction(
                               Cue sections
                             </div>
                             <div className="mt-1 text-sm text-gray-300">
-                              {dryRunRenderManifestSummary.cueSheetSectionCount}
+                              {
+                                audioPreviewDryRunPlanSummary.cueSheetSectionCount
+                              }
                             </div>
                           </div>
 
@@ -17449,7 +17067,7 @@ ${buildRewriteInstruction(
                               Estimated bars
                             </div>
                             <div className="mt-1 text-sm text-gray-300">
-                              {dryRunRenderManifestSummary.totalEstimatedBars}
+                              {audioPreviewDryRunPlanSummary.totalEstimatedBars}
                             </div>
                           </div>
 
@@ -17459,7 +17077,7 @@ ${buildRewriteInstruction(
                             </div>
                             <div className="mt-1 text-sm text-gray-300">
                               {
-                                dryRunRenderManifestSummary.totalEstimatedSeconds
+                                audioPreviewDryRunPlanSummary.totalEstimatedSeconds
                               }
                               s
                             </div>
@@ -17467,2170 +17085,2458 @@ ${buildRewriteInstruction(
 
                           <div className="rounded border border-gray-800 bg-gray-900 p-3">
                             <div className="text-xs uppercase tracking-wide text-gray-500">
-                              Plan validation
+                              Instructions
                             </div>
-                            <div className="mt-1 text-sm text-gray-300">
-                              {dryRunRenderManifestSummary.dryRunRenderPlanReady
-                                ? "Passed"
-                                : "Needs review"}
-                            </div>
-                          </div>
-
-                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                            <div className="text-xs uppercase tracking-wide text-gray-500">
-                              Cue validation
-                            </div>
-                            <div className="mt-1 text-sm text-gray-300">
-                              {dryRunRenderManifestSummary.dryRunCueSheetReady
-                                ? "Passed"
-                                : "Needs review"}
+                            <div
+                              className={`mt-1 text-sm ${
+                                audioPreviewDryRunPlanSummary.hasInstructions
+                                  ? "text-green-300"
+                                  : "text-yellow-300"
+                              }`}
+                            >
+                              {audioPreviewDryRunPlanSummary.hasInstructions
+                                ? "Included"
+                                : "Missing"}
                             </div>
                           </div>
                         </div>
+                      ) : null}
 
-                        {dryRunRendererContractSummary.contractStatus ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                              Renderer contract
-                            </div>
+                      <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                        {JSON.stringify(audioPreviewDryRunRenderPlan, null, 2)}
+                      </pre>
+                    </details>
+                  ) : null}
 
-                            <div className="mt-3 grid gap-3 md:grid-cols-2">
-                              <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                                <div className="text-xs uppercase tracking-wide text-gray-500">
-                                  Contract status
-                                </div>
-                                <div className="mt-1 text-sm text-gray-300">
-                                  {dryRunRendererContractSummary.contractStatus}
-                                </div>
-                              </div>
+                  {audioPreviewDryRunTimelineRows.length > 0 ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview dry-run timeline
+                      </summary>
 
-                              <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                                <div className="text-xs uppercase tracking-wide text-gray-500">
-                                  Renderer mode
-                                </div>
-                                <div className="mt-1 text-sm text-gray-300">
-                                  {dryRunRendererContractSummary.rendererMode ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-                            </div>
+                      <div className="mt-3 text-xs leading-5 text-gray-500">
+                        Renderer-style section timeline grouped from the placed
+                        songsheet.
+                      </div>
 
-                            <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <div className="mt-3 grid gap-3">
+                        {audioPreviewDryRunTimelineRows.map((row) => (
+                          <div
+                            key={`${row.order}-${row.section}`}
+                            className="rounded border border-gray-800 bg-gray-900 p-3"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
                               <div>
-                                <div className="text-xs uppercase tracking-wide text-gray-500">
-                                  Consumes
+                                <div className="text-sm font-medium text-gray-200">
+                                  {row.order}. {row.section}
                                 </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
-                                  {dryRunRendererContractSummary.consumes.map(
-                                    (item) => (
-                                      <li key={item}>{item}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-
-                              <div>
-                                <div className="text-xs uppercase tracking-wide text-gray-500">
-                                  Produces
+                                <div className="mt-1 text-xs text-gray-500">
+                                  {row.lyricLineCount} lyric line
+                                  {row.lyricLineCount === 1 ? "" : "s"} ·{" "}
+                                  {row.chordPlacementCount} chord placement
+                                  {row.chordPlacementCount === 1 ? "" : "s"}
                                 </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
-                                  {dryRunRendererContractSummary.produces.map(
-                                    (item) => (
-                                      <li key={item}>{item}</li>
-                                    ),
-                                  )}
-                                </ul>
                               </div>
                             </div>
 
-                            <div className="mt-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Required before real render
+                            {row.firstLyric || row.lastLyric ? (
+                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+                                {row.firstLyric ? (
+                                  <div>
+                                    <span className="text-gray-500">
+                                      First:
+                                    </span>{" "}
+                                    {row.firstLyric}
+                                  </div>
+                                ) : null}
+                                {row.lastLyric &&
+                                row.lastLyric !== row.firstLyric ? (
+                                  <div className="mt-1">
+                                    <span className="text-gray-500">Last:</span>{" "}
+                                    {row.lastLyric}
+                                  </div>
+                                ) : null}
                               </div>
-                              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
-                                {dryRunRendererContractSummary.requiredBeforeRealRender.map(
-                                  (item) => (
-                                    <li key={item}>{item}</li>
-                                  ),
-                                )}
-                              </ul>
-                            </div>
-
-                            <div className="mt-3">
-                              <div className="text-xs uppercase tracking-wide text-gray-500">
-                                Safety notes
-                              </div>
-                              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
-                                {dryRunRendererContractSummary.safetyNotes.map(
-                                  (item) => (
-                                    <li key={item}>{item}</li>
-                                  ),
-                                )}
-                              </ul>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {dryRunExpectedOutputRows.length > 0 ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                              Expected audio outputs
-                            </div>
+                            ) : null}
 
                             <div className="mt-3 grid gap-2 md:grid-cols-2">
-                              {dryRunExpectedOutputRows.map((output) => (
-                                <div
-                                  key={output.key}
-                                  className="rounded border border-gray-800 bg-gray-900 p-3"
-                                >
-                                  <div className="text-sm font-medium text-gray-200">
-                                    {output.label}
+                              {row.goal ? (
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Goal
                                   </div>
-
-                                  {output.description ? (
-                                    <div className="mt-1 text-xs leading-5 text-gray-500">
-                                      {output.description}
-                                    </div>
-                                  ) : null}
-
-                                  <div className="mt-2 grid gap-1 text-xs leading-5 text-gray-400">
-                                    {output.role ? (
-                                      <div>
-                                        <span className="text-gray-500">
-                                          Role:
-                                        </span>{" "}
-                                        {output.role}
-                                      </div>
-                                    ) : null}
-
-                                    {output.suggestedFileName ? (
-                                      <div>
-                                        <span className="text-gray-500">
-                                          Suggested file:
-                                        </span>{" "}
-                                        {output.suggestedFileName}
-                                      </div>
-                                    ) : null}
-
-                                    <div>
-                                      <span className="text-gray-500">
-                                        Status:
-                                      </span>{" "}
-                                      {output.status}
-                                    </div>
-
-                                    <div>
-                                      <span className="text-gray-500">
-                                        Format:
-                                      </span>{" "}
-                                      {output.format}
-                                    </div>
-
-                                    <div>
-                                      <span className="text-gray-500">
-                                        URL:
-                                      </span>{" "}
-                                      {output.url || "Not generated"}
-                                    </div>
+                                  <div className="mt-1 text-xs leading-5 text-gray-300">
+                                    {row.goal}
                                   </div>
                                 </div>
-                              ))}
+                              ) : null}
+
+                              {row.guitarInstruction ? (
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Guitar
+                                  </div>
+                                  <div className="mt-1 text-xs leading-5 text-gray-300">
+                                    {row.guitarInstruction}
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {row.vocalInstruction ? (
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Vocal
+                                  </div>
+                                  <div className="mt-1 text-xs leading-5 text-gray-300">
+                                    {row.vocalInstruction}
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {row.dynamicInstruction ? (
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Dynamics
+                                  </div>
+                                  <div className="mt-1 text-xs leading-5 text-gray-300">
+                                    {row.dynamicInstruction}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           </div>
-                        ) : null}
-
-                        <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
-                          {JSON.stringify(dryRunRenderManifest, null, 2)}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    {dryRunHandoffBundle ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview dry-run handoff bundle
-                        </summary>
-
-                        {renderAudioPreviewReadinessCard("compact")}
-
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs leading-5 text-gray-500">
-                            Consolidated dry-run handoff summary for future
-                            renderer integration. No audio file is generated
-                            yet.
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => copyAudioPreviewHandoffBundle()}
-                            className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                          >
-                            {justCopiedAudioPreviewHandoffBundle
-                              ? "Copied ✓"
-                              : "Copy handoff bundle"}
-                          </button>
-                        </div>
-
-                        {dryRunHandoffBundleValidation ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Handoff bundle validation
-                            </div>
-                            <div className="mt-2">
-                              {dryRunHandoffBundleValidation.ready === true
-                                ? "Passed"
-                                : "Needs review"}
-                            </div>
-                            <div className="mt-1 text-gray-500">
-                              {typeof dryRunHandoffBundleValidation.detail ===
-                              "string"
-                                ? dryRunHandoffBundleValidation.detail
-                                : "Validation details unavailable."}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
-                          {JSON.stringify(dryRunHandoffBundle, null, 2)}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    {renderAudioPreviewReadinessCard("compact")}
-
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-xs leading-5 text-gray-500">
-                        Machine-readable package containing the dry-run render
-                        job, render plan, cue sheet, manifest, handoff bundle,
-                        and validations. No audio file is generated yet.
+                        ))}
                       </div>
-                    </div>
+                    </details>
+                  ) : null}
 
-                    {dryRunArtifactPackageValidation ? (
-                      <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                        <div className="font-medium uppercase tracking-wide text-gray-500">
-                          Artefact package validation
-                        </div>
-                        <div className="mt-2">
-                          {dryRunArtifactPackageValidation.ready === true
-                            ? "Passed"
-                            : "Needs review"}
-                        </div>
-                        <div className="mt-1 text-gray-500">
-                          {typeof dryRunArtifactPackageValidation.detail ===
-                          "string"
-                            ? dryRunArtifactPackageValidation.detail
-                            : "Validation details unavailable."}
-                        </div>
-                      </div>
-                    ) : null}
+                  {audioPreviewDryRunCueSheetRows.length > 0 ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview dry-run cue sheet
+                      </summary>
 
-                    {dryRunRealRenderReadinessSummary.readinessStatus ? (
-                      <div className="mt-3 rounded border border-amber-900/60 bg-amber-950/20 p-3 text-xs leading-5 text-amber-100">
-                        <div className="font-medium uppercase tracking-wide text-amber-300">
-                          Real-render readiness
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Estimated timing cue sheet derived from the dry-run
+                          timeline. These timings are approximate and are not
+                          final rendered audio timings.
                         </div>
 
-                        <div className="mt-2">
-                          Ready for real render:{" "}
-                          {dryRunRealRenderReadinessSummary.readyForRealRender ===
-                          true
-                            ? "Yes"
-                            : "No"}
-                        </div>
-
-                        <div className="mt-1 text-amber-200">
-                          Status:{" "}
-                          {dryRunRealRenderReadinessSummary.readinessStatus}
-                        </div>
-
-                        {dryRunRealRenderReadinessSummary.blockers.length >
-                        0 ? (
-                          <div className="mt-3">
-                            <div className="font-medium text-amber-300">
-                              Blockers
-                            </div>
-                            <ul className="mt-1 list-disc space-y-1 pl-5">
-                              {dryRunRealRenderReadinessSummary.blockers.map(
-                                (item) => (
-                                  <li key={item}>{item}</li>
-                                ),
-                              )}
-                            </ul>
-                          </div>
-                        ) : null}
-
-                        {dryRunRealRenderReadinessSummary.requiredDecisions
-                          .length > 0 ? (
-                          <div className="mt-3">
-                            <div className="font-medium text-amber-300">
-                              Required decisions
-                            </div>
-                            <ul className="mt-1 list-disc space-y-1 pl-5">
-                              {dryRunRealRenderReadinessSummary.requiredDecisions.map(
-                                (item) => (
-                                  <li key={item}>{item}</li>
-                                ),
-                              )}
-                            </ul>
-                          </div>
-                        ) : null}
-
-                        {dryRunRealRenderReadinessSummary.safetyNotes.length >
-                        0 ? (
-                          <div className="mt-3">
-                            <div className="font-medium text-amber-300">
-                              Safety notes
-                            </div>
-                            <ul className="mt-1 list-disc space-y-1 pl-5">
-                              {dryRunRealRenderReadinessSummary.safetyNotes.map(
-                                (item) => (
-                                  <li key={item}>{item}</li>
-                                ),
-                              )}
-                            </ul>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {dryRunArtifactPackage ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
                         <button
                           type="button"
-                          onClick={() => copyAudioPreviewArtifactPackage()}
+                          onClick={() => copyAudioPreviewCueSheet()}
                           className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
                         >
-                          {justCopiedAudioPreviewArtifactPackage
+                          {justCopiedAudioPreviewCueSheet
                             ? "Copied ✓"
-                            : "Copy artefact package"}
+                            : "Copy cue sheet"}
                         </button>
+                      </div>
 
-                        <summary className="cursor-pointer text-sm font-medium text-gray-200">
-                          Audio preview dry-run artefact package
-                        </summary>
-
-                        {renderAudioPreviewReadinessCard("compact")}
-
-                        {dryRunRenderTargetRows.length > 0 ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Declared render targets
-                            </div>
-
-                            <div className="mt-2 grid gap-2">
-                              {dryRunRenderTargetRows.map((target) => (
-                                <div
-                                  key={target.key || target.label}
-                                  className="rounded border border-gray-800 bg-gray-950 p-3"
-                                >
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="font-medium text-gray-300">
-                                      {target.priority}. {target.label}
-                                    </div>
-
-                                    <div
-                                      className={
-                                        target.selected
-                                          ? "text-green-300"
-                                          : "text-gray-500"
-                                      }
-                                    >
-                                      {target.selected
-                                        ? "Selected"
-                                        : "Optional"}
-                                    </div>
-                                  </div>
-
-                                  {target.reason ? (
-                                    <div className="mt-2 text-gray-500">
-                                      {target.reason}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {dryRunGuideTrackRenderRecipeSummary ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Guide-track render recipe
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Target
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunGuideTrackRenderRecipeSummary.targetKey ||
-                                    "No target key"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Output status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunGuideTrackRenderRecipeSummary.outputStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Count-in
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunGuideTrackRenderRecipeSummary.countIn
-                                    .enabled
-                                    ? `${dryRunGuideTrackRenderRecipeSummary.countIn.bars} bar count-in`
-                                    : "No count-in declared"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Primary bed
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunGuideTrackRenderRecipeSummary
-                                    .musicalBed.primaryInstrument ||
-                                    "No primary instrument declared"}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunGuideTrackRenderRecipeSummary.rendererRequirement ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Renderer requirement
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {
-                                    dryRunGuideTrackRenderRecipeSummary.rendererRequirement
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunGuideTrackRenderRecipeSummary.musicalBed
-                              .supportInstruments.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Support instruments
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunGuideTrackRenderRecipeSummary.musicalBed.supportInstruments.map(
-                                    (instrument) => (
-                                      <li key={instrument}>{instrument}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunGuideTrackRenderRecipeSummary.mixPriorities
-                              .length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Mix priorities
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunGuideTrackRenderRecipeSummary.mixPriorities.map(
-                                    (priority) => (
-                                      <li key={priority}>{priority}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {dryRunClickTrackRenderRecipeSummary ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Click-track render recipe
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Target
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunClickTrackRenderRecipeSummary.targetKey ||
-                                    "No target key"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Output status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunClickTrackRenderRecipeSummary.outputStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Count-in
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunClickTrackRenderRecipeSummary.countIn
-                                    .enabled
-                                    ? `${dryRunClickTrackRenderRecipeSummary.countIn.bars} bar count-in`
-                                    : "No count-in declared"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Click sound
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunClickTrackRenderRecipeSummary
-                                    .clickSound.subdivision ||
-                                    "No subdivision declared"}
-                                  {dryRunClickTrackRenderRecipeSummary
-                                    .clickSound.downbeatEmphasis
-                                    ? " with downbeat emphasis"
-                                    : ""}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunClickTrackRenderRecipeSummary.rendererRequirement ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Renderer requirement
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {
-                                    dryRunClickTrackRenderRecipeSummary.rendererRequirement
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunClickTrackRenderRecipeSummary.sectionMarkers
-                              .enabled ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Section markers
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunClickTrackRenderRecipeSummary
-                                    .sectionMarkers.description ||
-                                    "Section markers declared."}
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunClickTrackRenderRecipeSummary.mixPriorities
-                              .length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Mix priorities
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunClickTrackRenderRecipeSummary.mixPriorities.map(
-                                    (priority) => (
-                                      <li key={priority}>{priority}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {dryRunChordReferenceRenderRecipeSummary ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Chord-reference render recipe
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Target
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunChordReferenceRenderRecipeSummary.targetKey ||
-                                    "No target key"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Output status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunChordReferenceRenderRecipeSummary.outputStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Count-in
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunChordReferenceRenderRecipeSummary
-                                    .countIn.enabled
-                                    ? `${dryRunChordReferenceRenderRecipeSummary.countIn.bars} bar count-in`
-                                    : "No count-in declared"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Voicing
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunChordReferenceRenderRecipeSummary
-                                    .voicing.primaryInstrument ||
-                                    "No voicing declared"}
-                                  {dryRunChordReferenceRenderRecipeSummary
-                                    .voicing.density
-                                    ? `, ${dryRunChordReferenceRenderRecipeSummary.voicing.density}`
-                                    : ""}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunChordReferenceRenderRecipeSummary.rendererRequirement ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Renderer requirement
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {
-                                    dryRunChordReferenceRenderRecipeSummary.rendererRequirement
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunChordReferenceRenderRecipeSummary.chordSource
-                              .description ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Chord source
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {
-                                    dryRunChordReferenceRenderRecipeSummary
-                                      .chordSource.description
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunChordReferenceRenderRecipeSummary
-                              .mixPriorities.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Mix priorities
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunChordReferenceRenderRecipeSummary.mixPriorities.map(
-                                    (priority) => (
-                                      <li key={priority}>{priority}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {dryRunVocalGuideRenderRecipeSummary ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Optional vocal-guide render recipe
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Target
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary.targetKey ||
-                                    "No target key"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Selection
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary.targetSelection ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Output status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary.outputStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Melody source
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary
-                                    .melodySource.status || "Unknown"}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunVocalGuideRenderRecipeSummary.rendererRequirement ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Renderer requirement
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {
-                                    dryRunVocalGuideRenderRecipeSummary.rendererRequirement
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunVocalGuideRenderRecipeSummary
-                              .activationRequirements.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Activation requirements
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary.activationRequirements.map(
-                                    (requirement) => (
-                                      <li key={requirement}>{requirement}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunVocalGuideRenderRecipeSummary.melodySource
-                              .acceptedSources.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Accepted melody sources
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary.melodySource.acceptedSources.map(
-                                    (source) => (
-                                      <li key={source}>{source}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunVocalGuideRenderRecipeSummary.vocalStyle
-                              .defaultReference ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Vocal style placeholder
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {
-                                    dryRunVocalGuideRenderRecipeSummary
-                                      .vocalStyle.defaultReference
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunVocalGuideRenderRecipeSummary.mixPriorities
-                              .length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Mix priorities
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunVocalGuideRenderRecipeSummary.mixPriorities.map(
-                                    (priority) => (
-                                      <li key={priority}>{priority}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {dryRunExpectedOutputFileRows.length > 0 ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Expected output file placeholders
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              {dryRunExpectedOutputFileRows.map((output) => (
-                                <div
-                                  key={output.key || output.label}
-                                  className="rounded border border-gray-800 bg-gray-950 p-3"
-                                >
-                                  <div className="font-medium text-gray-300">
-                                    {output.label ||
-                                      output.key ||
-                                      "Unnamed output"}
-                                  </div>
-
-                                  <div className="mt-1 text-gray-500">
-                                    Key: {output.key || "Unknown"}
-                                  </div>
-
-                                  <div className="mt-1 text-gray-500">
-                                    Selected: {output.selected ? "yes" : "no"}
-                                  </div>
-
-                                  <div className="mt-1 text-gray-500">
-                                    Status: {output.status || "Unknown"}
-                                  </div>
-
-                                  <div className="mt-1 text-gray-500">
-                                    File:{" "}
-                                    {output.file === null
-                                      ? "null"
-                                      : "unexpected file value"}
-                                  </div>
-
-                                  {output.requiredBeforeGenerated.length > 0 ? (
-                                    <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                      {output.requiredBeforeGenerated.map(
-                                        (requirement) => (
-                                          <li key={requirement}>
-                                            {requirement}
-                                          </li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  ) : null}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {dryRunRendererInputContractSummary ? (
-                          <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
-                            <div className="font-medium uppercase tracking-wide text-gray-500">
-                              Renderer input contract
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Contract status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunRendererInputContractSummary.contractStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Audio status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunRendererInputContractSummary.audioStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Renderer status
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunRendererInputContractSummary.rendererStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Storage / format
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunRendererInputContractSummary.storageStatus ||
-                                    "Unknown"}{" "}
-                                  /{" "}
-                                  {dryRunRendererInputContractSummary.formatStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunRendererInputContractSummary.purpose ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Purpose
-                                </div>
-                                <div className="mt-1 text-gray-500">
-                                  {dryRunRendererInputContractSummary.purpose}
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunRendererInputContractSummary
-                              .requiredBeforeRealRender.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Required before real render
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunRendererInputContractSummary.requiredBeforeRealRender.map(
-                                    (requirement) => (
-                                      <li key={requirement}>{requirement}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunRendererInputContractSummary
-                              .selectedOutputKeys.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Selected outputs
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunRendererInputContractSummary.selectedOutputKeys.map(
-                                    (key) => (
-                                      <li key={key}>{key}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunRendererInputContractSummary
-                              .optionalOutputKeys.length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Optional outputs
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunRendererInputContractSummary.optionalOutputKeys.map(
-                                    (key) => (
-                                      <li key={key}>{key}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunRendererInputContractSummary.handoffRules
-                              .length > 0 ? (
-                              <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                                <div className="font-medium text-gray-300">
-                                  Handoff rules
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
-                                  {dryRunRendererInputContractSummary.handoffRules.map(
-                                    (rule) => (
-                                      <li key={rule}>{rule}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {dryRunRealRenderGateSummary ? (
-                          <div className="mt-3 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
-                            <div className="font-medium uppercase tracking-wide text-red-200">
-                              Real-render safety gate
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Gate status
-                                </div>
-                                <div className="mt-1 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.gateStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Can render audio
-                                </div>
-                                <div className="mt-1 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.canRenderAudio
-                                    ? "yes"
-                                    : "no"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Audio status
-                                </div>
-                                <div className="mt-1 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.audioStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Renderer status
-                                </div>
-                                <div className="mt-1 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.rendererStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Storage / format
-                                </div>
-                                <div className="mt-1 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.storageStatus ||
-                                    "Unknown"}{" "}
-                                  /{" "}
-                                  {dryRunRealRenderGateSummary.formatStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Dry run ready
-                                </div>
-                                <div className="mt-1 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.dryRunReady
-                                    ? "yes"
-                                    : "no"}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunRealRenderGateSummary.blockedReasons.length >
-                            0 ? (
-                              <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Blocked reasons
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.blockedReasons.map(
-                                    (reason) => (
-                                      <li key={reason}>{reason}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunRealRenderGateSummary.requiredToUnlock
-                              .length > 0 ? (
-                              <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Required to unlock
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.requiredToUnlock.map(
-                                    (requirement) => (
-                                      <li key={requirement}>{requirement}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunRealRenderGateSummary.safetyRules.length >
-                            0 ? (
-                              <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
-                                <div className="font-medium text-red-100">
-                                  Safety rules
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
-                                  {dryRunRealRenderGateSummary.safetyRules.map(
-                                    (rule) => (
-                                      <li key={rule}>{rule}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {dryRunFirstRealRenderPlanSummary ? (
-                          <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-3 text-xs leading-5 text-yellow-100">
-                            <div className="font-medium uppercase tracking-wide text-yellow-200">
-                              First real-render plan
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div className="rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  Recommended first target
-                                </div>
-                                <div className="mt-1 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary.recommendedFirstTarget ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  Audio status
-                                </div>
-                                <div className="mt-1 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary.audioStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  Strategy
-                                </div>
-                                <div className="mt-1 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary
-                                    .rendererStrategy.strategyType || "Unknown"}
-                                </div>
-                              </div>
-
-                              <div className="rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  Implementation
-                                </div>
-                                <div className="mt-1 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary
-                                    .rendererStrategy.implementationStatus ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-                            </div>
-
-                            {dryRunFirstRealRenderPlanSummary.recommendedReason ? (
-                              <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  Reason
-                                </div>
-                                <div className="mt-1 text-yellow-100/80">
-                                  {
-                                    dryRunFirstRealRenderPlanSummary.recommendedReason
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {dryRunFirstRealRenderPlanSummary
-                              .firstUnlockRequirements.length > 0 ? (
-                              <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  First unlock requirements
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary.firstUnlockRequirements.map(
-                                    (requirement) => (
-                                      <li key={requirement}>{requirement}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunFirstRealRenderPlanSummary
-                              .firstValidationChecks.length > 0 ? (
-                              <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  First validation checks
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary.firstValidationChecks.map(
-                                    (check) => (
-                                      <li key={check}>{check}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {dryRunFirstRealRenderPlanSummary.laterTargets
-                              .length > 0 ? (
-                              <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
-                                <div className="font-medium text-yellow-100">
-                                  Later targets
-                                </div>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
-                                  {dryRunFirstRealRenderPlanSummary.laterTargets.map(
-                                    (target) => (
-                                      <li key={target}>{target}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {realRenderRouteScaffoldSummary ? (
-                          <div className="mt-3 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
-                            <div className="font-medium">
-                              Blocked real-render route scaffold
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div>
-                                <div>
-                                  Route status:{" "}
-                                  {realRenderRouteScaffoldSummary.routeStatus ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  Method:{" "}
-                                  {realRenderRouteScaffoldSummary.method ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  Path:{" "}
-                                  {realRenderRouteScaffoldSummary.path ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  Expected blocked status code:{" "}
-                                  {realRenderRouteScaffoldSummary.expectedBlockedStatusCode ||
-                                    "Unknown"}
-                                </div>
-                              </div>
-
-                              <div>
-                                <div>
-                                  Audio status:{" "}
-                                  {realRenderRouteScaffoldSummary.audioStatus ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  Renderer status:{" "}
-                                  {realRenderRouteScaffoldSummary.rendererStatus ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  Expected contract check:{" "}
-                                  {realRenderRouteScaffoldSummary
-                                    .expectedBlockedResponse
-                                    .receivedContractCheck.passed
-                                    ? "passed"
-                                    : "not passed"}
-                                </div>
-                                <div>
-                                  Expected contract missing/invalid:{" "}
-                                  {realRenderRouteScaffoldSummary
-                                    .expectedBlockedResponse
-                                    .receivedContractCheck.missingOrInvalid
-                                    .length > 0
-                                    ? realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedContractCheck.missingOrInvalid.join(
-                                        ", ",
-                                      )
-                                    : "none"}
-                                </div>
-                                <div>
-                                  Expected configuration check:{" "}
-                                  {realRenderRouteScaffoldSummary
-                                    .expectedBlockedResponse
-                                    .receivedConfigurationCheck.passed
-                                    ? "passed"
-                                    : "not passed"}
-                                </div>
-                                <div>
-                                  Expected configuration missing/invalid:{" "}
-                                  {realRenderRouteScaffoldSummary
-                                    .expectedBlockedResponse
-                                    .receivedConfigurationCheck.missingOrInvalid
-                                    .length > 0
-                                    ? realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid.join(
-                                        ", ",
-                                      )
-                                    : "none"}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 rounded border border-purple-900 bg-gray-950 p-3">
-                              <div className="font-medium text-purple-100">
-                                Expected request shape
-                              </div>
-
-                              <div className="mt-1 text-purple-100/80">
-                                requestedTarget:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedRequestShape.requestedTarget ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                rendererInputContract:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedRequestShape.rendererInputContract ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                realRenderGate:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedRequestShape.realRenderGate ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                firstRealRenderPlan:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedRequestShape.firstRealRenderPlan ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                realRenderConfiguration:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedRequestShape
-                                  .realRenderConfiguration || "Unknown"}
-                              </div>
-                            </div>
-
-                            <div className="mt-3 rounded border border-purple-900 bg-gray-950 p-3">
-                              <div className="font-medium text-purple-100">
-                                Expected blocked response
-                              </div>
-
-                              <div className="mt-1 text-purple-100/80">
-                                status:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse.status || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                audioStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse.audioStatus ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                rendererStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse.rendererStatus ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                storageStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse.storageStatus ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                formatStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse.formatStatus ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-3 font-medium text-purple-100">
-                                Expected received contract summary
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                rendererInputContract:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedContractSummary
-                                  .hasRendererInputContract
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                realRenderGate:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedContractSummary.hasRealRenderGate
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                firstRealRenderPlan:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedContractSummary
-                                  .hasFirstRealRenderPlan
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                realRenderConfiguration:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedContractSummary
-                                  .hasRealRenderConfiguration
-                                  ? "yes"
-                                  : "no"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                requestedTarget:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedContractSummary.requestedTarget ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-3 font-medium text-purple-100">
-                                Expected received configuration summary
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                configurationStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .configurationStatus || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                audioStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary.audioStatus ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                rendererStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .rendererStatus || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                rendererCandidateStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .rendererCandidateStatus || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                recommendedFirstRenderer:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .recommendedFirstRenderer || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                rendererCandidateSelectedRenderer:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .rendererCandidateSelectedRenderer || "none"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                outputFormatStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .outputFormatStatus || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                recommendedFirstFormat:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .recommendedFirstFormat || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                selectedFormat:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .selectedFormat || "none"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                sampleRateStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .sampleRateStatus || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                recommendedFirstSampleRateHz:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .recommendedFirstSampleRateHz ?? "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                selectedSampleRateHz:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .selectedSampleRateHz ?? "none"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                storageStatus:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary.storageStatus ||
-                                  "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                recommendedFirstProvider:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .recommendedFirstProvider || "Unknown"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                selectedProvider:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .selectedProvider || "none"}
-                              </div>
-                              <div className="mt-1 text-purple-100/80">
-                                firstTargetKey:{" "}
-                                {realRenderRouteScaffoldSummary
-                                  .expectedBlockedResponse
-                                  .receivedConfigurationSummary
-                                  .firstTargetKey || "Unknown"}
-                              </div>
-                            </div>
-
-                            {realRenderRouteScaffoldSummary.safetyRules.length >
-                            0 ? (
-                              <div className="mt-3">
-                                <div className="font-medium">Safety rules:</div>
-                                <ul className="mt-1 list-disc space-y-1 pl-5">
-                                  {realRenderRouteScaffoldSummary.safetyRules.map(
-                                    (rule) => (
-                                      <li key={rule}>{rule}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {realRenderConfigurationSummary ? (
-                          <div className="mt-3 rounded border border-cyan-900 bg-cyan-950/20 p-3 text-xs leading-5 text-cyan-100">
-                            <div className="font-medium">
-                              Real-render configuration placeholders
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <div>
-                                <div>
-                                  Configuration status:{" "}
-                                  {realRenderConfigurationSummary.configurationStatus ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  Audio status:{" "}
-                                  {realRenderConfigurationSummary.audioStatus ||
-                                    "Unknown"}
-                                </div>
-                                <div>
-                                  First target:{" "}
-                                  {realRenderConfigurationSummary.firstTarget
-                                    .key || "Unknown"}{" "}
-                                  (
-                                  {realRenderConfigurationSummary.firstTarget
-                                    .status || "Unknown"}
-                                  )
-                                </div>
-                                <div>
-                                  Click-track renderer status:{" "}
-                                  {getRealRenderRouteReceivedConfigurationSummary()
-                                    ?.clickTrackRendererStatus || "unknown"}
-                                </div>
-                                <div>
-                                  Click-track renderer audio generated:{" "}
-                                  {getRealRenderRouteReceivedConfigurationSummary()
-                                    ?.clickTrackRendererAudioGenerated === false
-                                    ? "false"
-                                    : "unknown"}
-                                </div>
-                                <div>
-                                  Click-track renderer reason:{" "}
-                                  {getRealRenderRouteReceivedConfigurationSummary()
-                                    ?.clickTrackRendererReason || "unknown"}
-                                </div>
-                                <div>
-                                  Click-track renderer preview tempo:{" "}
-                                  {String(
-                                    typeof getRealRenderRouteReceivedConfigurationSummary()
-                                      ?.clickTrackRendererPreviewTempoBpm ===
-                                      "number"
-                                      ? getRealRenderRouteReceivedConfigurationSummary()
-                                          ?.clickTrackRendererPreviewTempoBpm
-                                      : "unknown",
-                                  )}
-                                </div>
-                                <div>
-                                  Click-track artifact status:{" "}
-                                  {getRealRenderRouteReceivedConfigurationSummary()
-                                    ?.clickTrackDownloadArtifactStatus ||
-                                    "unknown"}
-                                </div>
-                                <div>
-                                  Click-track artifact audio delivered:{" "}
-                                  {getRealRenderRouteReceivedConfigurationSummary()
-                                    ?.clickTrackDownloadArtifactAudioDelivered ===
-                                  false
-                                    ? "false"
-                                    : "unknown"}
-                                </div>
-                                <div>
-                                  Click-track bytes included in response:{" "}
-                                  {getRealRenderRouteReceivedConfigurationSummary()
-                                    ?.clickTrackDownloadArtifactBytesIncluded ===
-                                  false
-                                    ? "false"
-                                    : "unknown"}
-                                </div>
-                              </div>
-
-                              <div>
-                                <div>
-                                  Renderer:{" "}
-                                  {realRenderConfigurationSummary
-                                    .rendererImplementation.selectedRenderer ||
-                                    "not connected"}{" "}
-                                  (
-                                  {realRenderConfigurationSummary
-                                    .rendererImplementation.status || "Unknown"}
-                                  )
-                                </div>
-                                <div>
-                                  Renderer candidate:{" "}
-                                  {realRenderConfigurationSummary
-                                    .rendererCandidatePlan
-                                    .recommendedFirstRenderer ||
-                                    "not declared"}{" "}
-                                  (
-                                  {realRenderConfigurationSummary
-                                    .rendererCandidatePlan.status || "Unknown"}
-                                  )
-                                </div>
-                                <div>
-                                  Format candidate:{" "}
-                                  {realRenderConfigurationSummary.outputFormat
-                                    .recommendedFirstFormat ||
-                                    "not declared"}{" "}
-                                  (
-                                  {realRenderConfigurationSummary.outputFormat
-                                    .status || "Unknown"}
-                                  )
-                                </div>
-                                <div>
-                                  Format selected:{" "}
-                                  {realRenderConfigurationSummary.outputFormat
-                                    .selectedFormat || "not selected"}
-                                </div>
-                                {realRenderConfigurationSummary.outputFormat
-                                  .reason ? (
-                                  <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                    <div className="font-medium text-cyan-100">
-                                      Output format candidate reason
-                                    </div>
-                                    <div className="mt-1 text-cyan-100/80">
-                                      {
-                                        realRenderConfigurationSummary
-                                          .outputFormat.reason
-                                      }
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {realRenderConfigurationSummary.outputFormat
-                                  .mustRemainBlockedUntil.length > 0 ? (
-                                  <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                    <div className="font-medium text-cyan-100">
-                                      Output format must remain blocked until
-                                    </div>
-                                    <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
-                                      {realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
-                                        (item) => (
-                                          <li key={item}>{item}</li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  </div>
-                                ) : null}
-                                <div>
-                                  Sample-rate candidate:{" "}
-                                  {realRenderConfigurationSummary.sampleRate
-                                    .recommendedFirstSampleRateHz ??
-                                    "not declared"}{" "}
-                                  Hz (
-                                  {realRenderConfigurationSummary.sampleRate
-                                    .status || "Unknown"}
-                                  )
-                                </div>
-                                <div>
-                                  Sample rate selected:{" "}
-                                  {realRenderConfigurationSummary.sampleRate
-                                    .selectedSampleRateHz ?? "not selected"}
-                                </div>
-                                {realRenderConfigurationSummary.sampleRate
-                                  .reason ? (
-                                  <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                    <div className="font-medium text-cyan-100">
-                                      Sample-rate candidate reason
-                                    </div>
-                                    <div className="mt-1 text-cyan-100/80">
-                                      {
-                                        realRenderConfigurationSummary
-                                          .sampleRate.reason
-                                      }
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {realRenderConfigurationSummary.sampleRate
-                                  .mustRemainBlockedUntil.length > 0 ? (
-                                  <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                    <div className="font-medium text-cyan-100">
-                                      Sample rate must remain blocked until
-                                    </div>
-                                    <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
-                                      {realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil.map(
-                                        (item) => (
-                                          <li key={item}>{item}</li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  </div>
-                                ) : null}
-                                <div>
-                                  Storage candidate:{" "}
-                                  {realRenderConfigurationSummary.storage
-                                    .recommendedFirstProvider ||
-                                    "not declared"}{" "}
-                                  (
-                                  {realRenderConfigurationSummary.storage
-                                    .status || "Unknown"}
-                                  )
-                                </div>
-                                <div>
-                                  Storage selected:{" "}
-                                  {realRenderConfigurationSummary.storage
-                                    .selectedProvider || "not configured"}
-                                </div>
-                                {realRenderConfigurationSummary.storage
-                                  .reason ? (
-                                  <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                    <div className="font-medium text-cyan-100">
-                                      Storage candidate reason
-                                    </div>
-                                    <div className="mt-1 text-cyan-100/80">
-                                      {
-                                        realRenderConfigurationSummary.storage
-                                          .reason
-                                      }
-                                    </div>
-                                  </div>
-                                ) : null}
-
-                                {realRenderConfigurationSummary.storage
-                                  .mustRemainBlockedUntil.length > 0 ? (
-                                  <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                    <div className="font-medium text-cyan-100">
-                                      Storage must remain blocked until
-                                    </div>
-                                    <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
-                                      {realRenderConfigurationSummary.storage.mustRemainBlockedUntil.map(
-                                        (item) => (
-                                          <li key={item}>{item}</li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
-
-                            {realRenderConfigurationSummary
-                              .rendererCandidatePlan.reason ? (
-                              <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                <div className="font-medium text-cyan-100">
-                                  Renderer candidate reason
-                                </div>
-                                <div className="mt-1 text-cyan-100/80">
-                                  {
-                                    realRenderConfigurationSummary
-                                      .rendererCandidatePlan.reason
-                                  }
-                                </div>
-                              </div>
-                            ) : null}
-
-                            {realRenderConfigurationSummary
-                              .rendererCandidatePlan.mustRemainBlockedUntil
-                              .length > 0 ? (
-                              <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
-                                <div className="font-medium text-cyan-100">
-                                  Must remain blocked until
-                                </div>
-                                <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
-                                  {realRenderConfigurationSummary.rendererCandidatePlan.mustRemainBlockedUntil.map(
-                                    (item) => (
-                                      <li key={item}>{item}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-
-                            {realRenderConfigurationSummary.unlockRequirements
-                              .length > 0 ? (
-                              <div className="mt-2">
-                                <div className="font-medium">
-                                  Unlock requirements:
-                                </div>
-                                <ul className="mt-1 list-disc space-y-1 pl-5">
-                                  {realRenderConfigurationSummary.unlockRequirements.map(
-                                    (requirement) => (
-                                      <li key={requirement}>{requirement}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
-                          {JSON.stringify(dryRunArtifactPackage, null, 2)}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    {audioPreviewRenderResponse ? (
-                      <details className="rounded border border-gray-800 bg-gray-950 p-4">
-                        <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
-                          Audio preview dry-run response
-                        </summary>
-
-                        <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
-                          {audioPreviewRenderResponse}
-                        </pre>
-                      </details>
-                    ) : null}
-
-                    {audioPreviewResponse ? (
-                      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                        <summary className="cursor-pointer text-xs font-medium text-gray-300">
-                          Show raw preview response JSON
-                        </summary>
-
-                        <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
-                          {audioPreviewResponse}
-                        </pre>
-                      </details>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {audioPreviewSpecPreview ? (
-                  <details className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
-                    <summary className="cursor-pointer text-sm font-medium text-gray-200">
-                      Preview audio spec JSON
-                    </summary>
-
-                    <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
-                      {audioPreviewSpecPreview}
-                    </pre>
-                  </details>
-                ) : null}
-              </div>
-
-              <>
-                <div className="mt-3 grid gap-2 lg:grid-cols-2">
-                  {audioGuideReadiness.checks.map((check) => (
-                    <div
-                      key={check.label}
-                      className="rounded border border-gray-800 bg-gray-900 p-3"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-gray-200">
-                          {check.label}
-                        </div>
+                      {dryRunCueSheetValidation ? (
                         <div
-                          className={`text-xs ${
-                            check.passed ? "text-green-300" : "text-yellow-300"
+                          className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+                            dryRunCueSheetValidation.ready === true
+                              ? "border-green-900 bg-green-950/20 text-green-100"
+                              : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
                           }`}
                         >
-                          {check.passed ? "Available" : "Needs attention"}
+                          <div className="font-medium">
+                            {dryRunCueSheetValidation.ready === true
+                              ? "Dry-run cue sheet validation passed"
+                              : "Dry-run cue sheet validation needs review"}
+                          </div>
+                          <div className="mt-1">
+                            {typeof dryRunCueSheetValidation.detail === "string"
+                              ? dryRunCueSheetValidation.detail
+                              : "Validation details unavailable."}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 grid gap-3">
+                        {audioPreviewDryRunCueSheetRows.map((row) => (
+                          <div
+                            key={`${row.order}-${row.section}`}
+                            className="rounded border border-gray-800 bg-gray-900 p-3"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <div className="text-sm font-medium text-gray-200">
+                                  {row.order}. {row.section}
+                                </div>
+                                <div className="mt-1 text-xs text-gray-500">
+                                  {row.lyricLineCount} lyric line
+                                  {row.lyricLineCount === 1 ? "" : "s"} ·{" "}
+                                  {row.chordPlacementCount} chord placement
+                                  {row.chordPlacementCount === 1 ? "" : "s"}
+                                </div>
+                              </div>
+
+                              <div className="text-xs leading-5 text-gray-400">
+                                {row.startSeconds.toFixed(1)}s →{" "}
+                                {row.endSeconds.toFixed(1)}s
+                              </div>
+                            </div>
+
+                            <div className="mt-3 grid gap-2 md:grid-cols-3">
+                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                                <div className="text-xs uppercase tracking-wide text-gray-500">
+                                  Estimated bars
+                                </div>
+                                <div className="mt-1 text-sm text-gray-300">
+                                  {row.estimatedBars}
+                                </div>
+                              </div>
+
+                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                                <div className="text-xs uppercase tracking-wide text-gray-500">
+                                  Estimated seconds
+                                </div>
+                                <div className="mt-1 text-sm text-gray-300">
+                                  {row.estimatedSeconds.toFixed(1)}s
+                                </div>
+                              </div>
+
+                              <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                                <div className="text-xs uppercase tracking-wide text-gray-500">
+                                  Time range
+                                </div>
+                                <div className="mt-1 text-sm text-gray-300">
+                                  {row.startSeconds.toFixed(1)}s–
+                                  {row.endSeconds.toFixed(1)}s
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  ) : null}
+
+                  {dryRunRenderManifest ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview dry-run render manifest
+                      </summary>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Renderer-facing dry-run manifest with validation
+                          status and future audio output placeholders. No audio
+                          file is generated yet.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => copyAudioPreviewRenderManifest()}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                        >
+                          {justCopiedAudioPreviewRenderManifest
+                            ? "Copied ✓"
+                            : "Copy manifest"}
+                        </button>
+                      </div>
+
+                      {dryRunRenderManifestValidation ? (
+                        <div
+                          className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+                            dryRunRenderManifestValidation.ready === true
+                              ? "border-green-900 bg-green-950/20 text-green-100"
+                              : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          }`}
+                        >
+                          <div className="font-medium">
+                            {dryRunRenderManifestValidation.ready === true
+                              ? "Dry-run render manifest validation passed"
+                              : "Dry-run render manifest validation needs review"}
+                          </div>
+                          <div className="mt-1">
+                            {typeof dryRunRenderManifestValidation.detail ===
+                            "string"
+                              ? dryRunRenderManifestValidation.detail
+                              : "Validation details unavailable."}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-4">
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Manifest status
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.manifestStatus ||
+                              "Unknown"}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Audio status
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.audioStatus ||
+                              "Unknown"}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Output slots
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {
+                              dryRunRenderManifestSummary.notGeneratedOutputCount
+                            }
+                            /{dryRunRenderManifestSummary.outputSlotCount} not
+                            generated
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Cue sections
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.cueSheetSectionCount}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Estimated bars
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.totalEstimatedBars}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Estimated length
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.totalEstimatedSeconds}s
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Plan validation
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.dryRunRenderPlanReady
+                              ? "Passed"
+                              : "Needs review"}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs uppercase tracking-wide text-gray-500">
+                            Cue validation
+                          </div>
+                          <div className="mt-1 text-sm text-gray-300">
+                            {dryRunRenderManifestSummary.dryRunCueSheetReady
+                              ? "Passed"
+                              : "Needs review"}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-1 text-xs leading-5 text-gray-500">
-                        {check.detail}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      {dryRunRendererContractSummary.contractStatus ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Renderer contract
+                          </div>
 
-                <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                        Performance design notes
-                      </div>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Human-readable notes for remembering how the song is
-                        intended to be performed.
-                      </p>
-                    </div>
+                          <div className="mt-3 grid gap-3 md:grid-cols-2">
+                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                              <div className="text-xs uppercase tracking-wide text-gray-500">
+                                Contract status
+                              </div>
+                              <div className="mt-1 text-sm text-gray-300">
+                                {dryRunRendererContractSummary.contractStatus}
+                              </div>
+                            </div>
 
-                    <button
-                      type="button"
-                      onClick={() => copyPerformanceDesignNotes()}
-                      disabled={!performanceDesignNotesPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedPerformanceDesignNotes
-                        ? "Copied ✓"
-                        : "Copy design notes"}
-                    </button>
+                            <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                              <div className="text-xs uppercase tracking-wide text-gray-500">
+                                Renderer mode
+                              </div>
+                              <div className="mt-1 text-sm text-gray-300">
+                                {dryRunRendererContractSummary.rendererMode ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 grid gap-3 md:grid-cols-2">
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-gray-500">
+                                Consumes
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+                                {dryRunRendererContractSummary.consumes.map(
+                                  (item) => (
+                                    <li key={item}>{item}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-gray-500">
+                                Produces
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+                                {dryRunRendererContractSummary.produces.map(
+                                  (item) => (
+                                    <li key={item}>{item}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Required before real render
+                            </div>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+                              {dryRunRendererContractSummary.requiredBeforeRealRender.map(
+                                (item) => (
+                                  <li key={item}>{item}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+
+                          <div className="mt-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Safety notes
+                            </div>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-gray-400">
+                              {dryRunRendererContractSummary.safetyNotes.map(
+                                (item) => (
+                                  <li key={item}>{item}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {dryRunExpectedOutputRows.length > 0 ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Expected audio outputs
+                          </div>
+
+                          <div className="mt-3 grid gap-2 md:grid-cols-2">
+                            {dryRunExpectedOutputRows.map((output) => (
+                              <div
+                                key={output.key}
+                                className="rounded border border-gray-800 bg-gray-900 p-3"
+                              >
+                                <div className="text-sm font-medium text-gray-200">
+                                  {output.label}
+                                </div>
+
+                                {output.description ? (
+                                  <div className="mt-1 text-xs leading-5 text-gray-500">
+                                    {output.description}
+                                  </div>
+                                ) : null}
+
+                                <div className="mt-2 grid gap-1 text-xs leading-5 text-gray-400">
+                                  {output.role ? (
+                                    <div>
+                                      <span className="text-gray-500">
+                                        Role:
+                                      </span>{" "}
+                                      {output.role}
+                                    </div>
+                                  ) : null}
+
+                                  {output.suggestedFileName ? (
+                                    <div>
+                                      <span className="text-gray-500">
+                                        Suggested file:
+                                      </span>{" "}
+                                      {output.suggestedFileName}
+                                    </div>
+                                  ) : null}
+
+                                  <div>
+                                    <span className="text-gray-500">
+                                      Status:
+                                    </span>{" "}
+                                    {output.status}
+                                  </div>
+
+                                  <div>
+                                    <span className="text-gray-500">
+                                      Format:
+                                    </span>{" "}
+                                    {output.format}
+                                  </div>
+
+                                  <div>
+                                    <span className="text-gray-500">URL:</span>{" "}
+                                    {output.url || "Not generated"}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
+                        {JSON.stringify(dryRunRenderManifest, null, 2)}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  {dryRunHandoffBundle ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview dry-run handoff bundle
+                      </summary>
+
+                      {renderAudioPreviewReadinessCard("compact")}
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs leading-5 text-gray-500">
+                          Consolidated dry-run handoff summary for future
+                          renderer integration. No audio file is generated yet.
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => copyAudioPreviewHandoffBundle()}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                        >
+                          {justCopiedAudioPreviewHandoffBundle
+                            ? "Copied ✓"
+                            : "Copy handoff bundle"}
+                        </button>
+                      </div>
+
+                      {dryRunHandoffBundleValidation ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Handoff bundle validation
+                          </div>
+                          <div className="mt-2">
+                            {dryRunHandoffBundleValidation.ready === true
+                              ? "Passed"
+                              : "Needs review"}
+                          </div>
+                          <div className="mt-1 text-gray-500">
+                            {typeof dryRunHandoffBundleValidation.detail ===
+                            "string"
+                              ? dryRunHandoffBundleValidation.detail
+                              : "Validation details unavailable."}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
+                        {JSON.stringify(dryRunHandoffBundle, null, 2)}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  {renderAudioPreviewReadinessCard("compact")}
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-xs leading-5 text-gray-500">
+                      Machine-readable package containing the dry-run render
+                      job, render plan, cue sheet, manifest, handoff bundle, and
+                      validations. No audio file is generated yet.
+                    </div>
                   </div>
 
-                  <pre className="mt-4 max-h-[360px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
-                    {performanceDesignNotesPreview ||
-                      "No performance design notes yet. Generate chords with performance intent to create this summary."}
-                  </pre>
+                  {dryRunArtifactPackageValidation ? (
+                    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                      <div className="font-medium uppercase tracking-wide text-gray-500">
+                        Artefact package validation
+                      </div>
+                      <div className="mt-2">
+                        {dryRunArtifactPackageValidation.ready === true
+                          ? "Passed"
+                          : "Needs review"}
+                      </div>
+                      <div className="mt-1 text-gray-500">
+                        {typeof dryRunArtifactPackageValidation.detail ===
+                        "string"
+                          ? dryRunArtifactPackageValidation.detail
+                          : "Validation details unavailable."}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {dryRunRealRenderReadinessSummary.readinessStatus ? (
+                    <div className="mt-3 rounded border border-amber-900/60 bg-amber-950/20 p-3 text-xs leading-5 text-amber-100">
+                      <div className="font-medium uppercase tracking-wide text-amber-300">
+                        Real-render readiness
+                      </div>
+
+                      <div className="mt-2">
+                        Ready for real render:{" "}
+                        {dryRunRealRenderReadinessSummary.readyForRealRender ===
+                        true
+                          ? "Yes"
+                          : "No"}
+                      </div>
+
+                      <div className="mt-1 text-amber-200">
+                        Status:{" "}
+                        {dryRunRealRenderReadinessSummary.readinessStatus}
+                      </div>
+
+                      {dryRunRealRenderReadinessSummary.blockers.length > 0 ? (
+                        <div className="mt-3">
+                          <div className="font-medium text-amber-300">
+                            Blockers
+                          </div>
+                          <ul className="mt-1 list-disc space-y-1 pl-5">
+                            {dryRunRealRenderReadinessSummary.blockers.map(
+                              (item) => (
+                                <li key={item}>{item}</li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {dryRunRealRenderReadinessSummary.requiredDecisions
+                        .length > 0 ? (
+                        <div className="mt-3">
+                          <div className="font-medium text-amber-300">
+                            Required decisions
+                          </div>
+                          <ul className="mt-1 list-disc space-y-1 pl-5">
+                            {dryRunRealRenderReadinessSummary.requiredDecisions.map(
+                              (item) => (
+                                <li key={item}>{item}</li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {dryRunRealRenderReadinessSummary.safetyNotes.length >
+                      0 ? (
+                        <div className="mt-3">
+                          <div className="font-medium text-amber-300">
+                            Safety notes
+                          </div>
+                          <ul className="mt-1 list-disc space-y-1 pl-5">
+                            {dryRunRealRenderReadinessSummary.safetyNotes.map(
+                              (item) => (
+                                <li key={item}>{item}</li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {dryRunArtifactPackage ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <button
+                        type="button"
+                        onClick={() => copyAudioPreviewArtifactPackage()}
+                        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                      >
+                        {justCopiedAudioPreviewArtifactPackage
+                          ? "Copied ✓"
+                          : "Copy artefact package"}
+                      </button>
+
+                      <summary className="cursor-pointer text-sm font-medium text-gray-200">
+                        Audio preview dry-run artefact package
+                      </summary>
+
+                      {renderAudioPreviewReadinessCard("compact")}
+
+                      {dryRunRenderTargetRows.length > 0 ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Declared render targets
+                          </div>
+
+                          <div className="mt-2 grid gap-2">
+                            {dryRunRenderTargetRows.map((target) => (
+                              <div
+                                key={target.key || target.label}
+                                className="rounded border border-gray-800 bg-gray-950 p-3"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="font-medium text-gray-300">
+                                    {target.priority}. {target.label}
+                                  </div>
+
+                                  <div
+                                    className={
+                                      target.selected
+                                        ? "text-green-300"
+                                        : "text-gray-500"
+                                    }
+                                  >
+                                    {target.selected ? "Selected" : "Optional"}
+                                  </div>
+                                </div>
+
+                                {target.reason ? (
+                                  <div className="mt-2 text-gray-500">
+                                    {target.reason}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {dryRunGuideTrackRenderRecipeSummary ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Guide-track render recipe
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Target
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunGuideTrackRenderRecipeSummary.targetKey ||
+                                  "No target key"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Output status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunGuideTrackRenderRecipeSummary.outputStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Count-in
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunGuideTrackRenderRecipeSummary.countIn
+                                  .enabled
+                                  ? `${dryRunGuideTrackRenderRecipeSummary.countIn.bars} bar count-in`
+                                  : "No count-in declared"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Primary bed
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunGuideTrackRenderRecipeSummary.musicalBed
+                                  .primaryInstrument ||
+                                  "No primary instrument declared"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunGuideTrackRenderRecipeSummary.rendererRequirement ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Renderer requirement
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {
+                                  dryRunGuideTrackRenderRecipeSummary.rendererRequirement
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunGuideTrackRenderRecipeSummary.musicalBed
+                            .supportInstruments.length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Support instruments
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunGuideTrackRenderRecipeSummary.musicalBed.supportInstruments.map(
+                                  (instrument) => (
+                                    <li key={instrument}>{instrument}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunGuideTrackRenderRecipeSummary.mixPriorities
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Mix priorities
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunGuideTrackRenderRecipeSummary.mixPriorities.map(
+                                  (priority) => (
+                                    <li key={priority}>{priority}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {dryRunClickTrackRenderRecipeSummary ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Click-track render recipe
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Target
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunClickTrackRenderRecipeSummary.targetKey ||
+                                  "No target key"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Output status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunClickTrackRenderRecipeSummary.outputStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Count-in
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunClickTrackRenderRecipeSummary.countIn
+                                  .enabled
+                                  ? `${dryRunClickTrackRenderRecipeSummary.countIn.bars} bar count-in`
+                                  : "No count-in declared"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Click sound
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunClickTrackRenderRecipeSummary.clickSound
+                                  .subdivision || "No subdivision declared"}
+                                {dryRunClickTrackRenderRecipeSummary.clickSound
+                                  .downbeatEmphasis
+                                  ? " with downbeat emphasis"
+                                  : ""}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunClickTrackRenderRecipeSummary.rendererRequirement ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Renderer requirement
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {
+                                  dryRunClickTrackRenderRecipeSummary.rendererRequirement
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunClickTrackRenderRecipeSummary.sectionMarkers
+                            .enabled ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Section markers
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunClickTrackRenderRecipeSummary
+                                  .sectionMarkers.description ||
+                                  "Section markers declared."}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunClickTrackRenderRecipeSummary.mixPriorities
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Mix priorities
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunClickTrackRenderRecipeSummary.mixPriorities.map(
+                                  (priority) => (
+                                    <li key={priority}>{priority}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {dryRunChordReferenceRenderRecipeSummary ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Chord-reference render recipe
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Target
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunChordReferenceRenderRecipeSummary.targetKey ||
+                                  "No target key"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Output status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunChordReferenceRenderRecipeSummary.outputStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Count-in
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunChordReferenceRenderRecipeSummary.countIn
+                                  .enabled
+                                  ? `${dryRunChordReferenceRenderRecipeSummary.countIn.bars} bar count-in`
+                                  : "No count-in declared"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Voicing
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunChordReferenceRenderRecipeSummary.voicing
+                                  .primaryInstrument || "No voicing declared"}
+                                {dryRunChordReferenceRenderRecipeSummary.voicing
+                                  .density
+                                  ? `, ${dryRunChordReferenceRenderRecipeSummary.voicing.density}`
+                                  : ""}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunChordReferenceRenderRecipeSummary.rendererRequirement ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Renderer requirement
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {
+                                  dryRunChordReferenceRenderRecipeSummary.rendererRequirement
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunChordReferenceRenderRecipeSummary.chordSource
+                            .description ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Chord source
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {
+                                  dryRunChordReferenceRenderRecipeSummary
+                                    .chordSource.description
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunChordReferenceRenderRecipeSummary.mixPriorities
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Mix priorities
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunChordReferenceRenderRecipeSummary.mixPriorities.map(
+                                  (priority) => (
+                                    <li key={priority}>{priority}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {dryRunVocalGuideRenderRecipeSummary ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Optional vocal-guide render recipe
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Target
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary.targetKey ||
+                                  "No target key"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Selection
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary.targetSelection ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Output status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary.outputStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Melody source
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary
+                                  .melodySource.status || "Unknown"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunVocalGuideRenderRecipeSummary.rendererRequirement ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Renderer requirement
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {
+                                  dryRunVocalGuideRenderRecipeSummary.rendererRequirement
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunVocalGuideRenderRecipeSummary
+                            .activationRequirements.length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Activation requirements
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary.activationRequirements.map(
+                                  (requirement) => (
+                                    <li key={requirement}>{requirement}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunVocalGuideRenderRecipeSummary.melodySource
+                            .acceptedSources.length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Accepted melody sources
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary.melodySource.acceptedSources.map(
+                                  (source) => (
+                                    <li key={source}>{source}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunVocalGuideRenderRecipeSummary.vocalStyle
+                            .defaultReference ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Vocal style placeholder
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {
+                                  dryRunVocalGuideRenderRecipeSummary.vocalStyle
+                                    .defaultReference
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunVocalGuideRenderRecipeSummary.mixPriorities
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Mix priorities
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunVocalGuideRenderRecipeSummary.mixPriorities.map(
+                                  (priority) => (
+                                    <li key={priority}>{priority}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {dryRunExpectedOutputFileRows.length > 0 ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Expected output file placeholders
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            {dryRunExpectedOutputFileRows.map((output) => (
+                              <div
+                                key={output.key || output.label}
+                                className="rounded border border-gray-800 bg-gray-950 p-3"
+                              >
+                                <div className="font-medium text-gray-300">
+                                  {output.label ||
+                                    output.key ||
+                                    "Unnamed output"}
+                                </div>
+
+                                <div className="mt-1 text-gray-500">
+                                  Key: {output.key || "Unknown"}
+                                </div>
+
+                                <div className="mt-1 text-gray-500">
+                                  Selected: {output.selected ? "yes" : "no"}
+                                </div>
+
+                                <div className="mt-1 text-gray-500">
+                                  Status: {output.status || "Unknown"}
+                                </div>
+
+                                <div className="mt-1 text-gray-500">
+                                  File:{" "}
+                                  {output.file === null
+                                    ? "null"
+                                    : "unexpected file value"}
+                                </div>
+
+                                {output.requiredBeforeGenerated.length > 0 ? (
+                                  <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                    {output.requiredBeforeGenerated.map(
+                                      (requirement) => (
+                                        <li key={requirement}>{requirement}</li>
+                                      ),
+                                    )}
+                                  </ul>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {dryRunRendererInputContractSummary ? (
+                        <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-400">
+                          <div className="font-medium uppercase tracking-wide text-gray-500">
+                            Renderer input contract
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Contract status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunRendererInputContractSummary.contractStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Audio status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunRendererInputContractSummary.audioStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Renderer status
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunRendererInputContractSummary.rendererStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Storage / format
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunRendererInputContractSummary.storageStatus ||
+                                  "Unknown"}{" "}
+                                /{" "}
+                                {dryRunRendererInputContractSummary.formatStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunRendererInputContractSummary.purpose ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Purpose
+                              </div>
+                              <div className="mt-1 text-gray-500">
+                                {dryRunRendererInputContractSummary.purpose}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunRendererInputContractSummary
+                            .requiredBeforeRealRender.length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Required before real render
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunRendererInputContractSummary.requiredBeforeRealRender.map(
+                                  (requirement) => (
+                                    <li key={requirement}>{requirement}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunRendererInputContractSummary.selectedOutputKeys
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Selected outputs
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunRendererInputContractSummary.selectedOutputKeys.map(
+                                  (key) => (
+                                    <li key={key}>{key}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunRendererInputContractSummary.optionalOutputKeys
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Optional outputs
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunRendererInputContractSummary.optionalOutputKeys.map(
+                                  (key) => (
+                                    <li key={key}>{key}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunRendererInputContractSummary.handoffRules
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                              <div className="font-medium text-gray-300">
+                                Handoff rules
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-500">
+                                {dryRunRendererInputContractSummary.handoffRules.map(
+                                  (rule) => (
+                                    <li key={rule}>{rule}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {dryRunRealRenderGateSummary ? (
+                        <div className="mt-3 rounded border border-red-900 bg-red-950/20 p-3 text-xs leading-5 text-red-100">
+                          <div className="font-medium uppercase tracking-wide text-red-200">
+                            Real-render safety gate
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Gate status
+                              </div>
+                              <div className="mt-1 text-red-100/80">
+                                {dryRunRealRenderGateSummary.gateStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Can render audio
+                              </div>
+                              <div className="mt-1 text-red-100/80">
+                                {dryRunRealRenderGateSummary.canRenderAudio
+                                  ? "yes"
+                                  : "no"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Audio status
+                              </div>
+                              <div className="mt-1 text-red-100/80">
+                                {dryRunRealRenderGateSummary.audioStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Renderer status
+                              </div>
+                              <div className="mt-1 text-red-100/80">
+                                {dryRunRealRenderGateSummary.rendererStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Storage / format
+                              </div>
+                              <div className="mt-1 text-red-100/80">
+                                {dryRunRealRenderGateSummary.storageStatus ||
+                                  "Unknown"}{" "}
+                                /{" "}
+                                {dryRunRealRenderGateSummary.formatStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Dry run ready
+                              </div>
+                              <div className="mt-1 text-red-100/80">
+                                {dryRunRealRenderGateSummary.dryRunReady
+                                  ? "yes"
+                                  : "no"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunRealRenderGateSummary.blockedReasons.length >
+                          0 ? (
+                            <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Blocked reasons
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
+                                {dryRunRealRenderGateSummary.blockedReasons.map(
+                                  (reason) => (
+                                    <li key={reason}>{reason}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunRealRenderGateSummary.requiredToUnlock.length >
+                          0 ? (
+                            <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Required to unlock
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
+                                {dryRunRealRenderGateSummary.requiredToUnlock.map(
+                                  (requirement) => (
+                                    <li key={requirement}>{requirement}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunRealRenderGateSummary.safetyRules.length >
+                          0 ? (
+                            <div className="mt-3 rounded border border-red-900 bg-gray-950 p-3">
+                              <div className="font-medium text-red-100">
+                                Safety rules
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-red-100/80">
+                                {dryRunRealRenderGateSummary.safetyRules.map(
+                                  (rule) => (
+                                    <li key={rule}>{rule}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {dryRunFirstRealRenderPlanSummary ? (
+                        <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 p-3 text-xs leading-5 text-yellow-100">
+                          <div className="font-medium uppercase tracking-wide text-yellow-200">
+                            First real-render plan
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                Recommended first target
+                              </div>
+                              <div className="mt-1 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary.recommendedFirstTarget ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                Audio status
+                              </div>
+                              <div className="mt-1 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary.audioStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                Strategy
+                              </div>
+                              <div className="mt-1 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary
+                                  .rendererStrategy.strategyType || "Unknown"}
+                              </div>
+                            </div>
+
+                            <div className="rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                Implementation
+                              </div>
+                              <div className="mt-1 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary
+                                  .rendererStrategy.implementationStatus ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {dryRunFirstRealRenderPlanSummary.recommendedReason ? (
+                            <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                Reason
+                              </div>
+                              <div className="mt-1 text-yellow-100/80">
+                                {
+                                  dryRunFirstRealRenderPlanSummary.recommendedReason
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {dryRunFirstRealRenderPlanSummary
+                            .firstUnlockRequirements.length > 0 ? (
+                            <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                First unlock requirements
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary.firstUnlockRequirements.map(
+                                  (requirement) => (
+                                    <li key={requirement}>{requirement}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunFirstRealRenderPlanSummary
+                            .firstValidationChecks.length > 0 ? (
+                            <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                First validation checks
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary.firstValidationChecks.map(
+                                  (check) => (
+                                    <li key={check}>{check}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {dryRunFirstRealRenderPlanSummary.laterTargets
+                            .length > 0 ? (
+                            <div className="mt-3 rounded border border-yellow-900 bg-gray-950 p-3">
+                              <div className="font-medium text-yellow-100">
+                                Later targets
+                              </div>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-yellow-100/80">
+                                {dryRunFirstRealRenderPlanSummary.laterTargets.map(
+                                  (target) => (
+                                    <li key={target}>{target}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {realRenderRouteScaffoldSummary ? (
+                        <div className="mt-3 rounded border border-purple-900 bg-purple-950/20 p-3 text-xs leading-5 text-purple-100">
+                          <div className="font-medium">
+                            Blocked real-render route scaffold
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div>
+                              <div>
+                                Route status:{" "}
+                                {realRenderRouteScaffoldSummary.routeStatus ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                Method:{" "}
+                                {realRenderRouteScaffoldSummary.method ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                Path:{" "}
+                                {realRenderRouteScaffoldSummary.path ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                Expected blocked status code:{" "}
+                                {realRenderRouteScaffoldSummary.expectedBlockedStatusCode ||
+                                  "Unknown"}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div>
+                                Audio status:{" "}
+                                {realRenderRouteScaffoldSummary.audioStatus ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                Renderer status:{" "}
+                                {realRenderRouteScaffoldSummary.rendererStatus ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                Expected contract check:{" "}
+                                {realRenderRouteScaffoldSummary
+                                  .expectedBlockedResponse.receivedContractCheck
+                                  .passed
+                                  ? "passed"
+                                  : "not passed"}
+                              </div>
+                              <div>
+                                Expected contract missing/invalid:{" "}
+                                {realRenderRouteScaffoldSummary
+                                  .expectedBlockedResponse.receivedContractCheck
+                                  .missingOrInvalid.length > 0
+                                  ? realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedContractCheck.missingOrInvalid.join(
+                                      ", ",
+                                    )
+                                  : "none"}
+                              </div>
+                              <div>
+                                Expected configuration check:{" "}
+                                {realRenderRouteScaffoldSummary
+                                  .expectedBlockedResponse
+                                  .receivedConfigurationCheck.passed
+                                  ? "passed"
+                                  : "not passed"}
+                              </div>
+                              <div>
+                                Expected configuration missing/invalid:{" "}
+                                {realRenderRouteScaffoldSummary
+                                  .expectedBlockedResponse
+                                  .receivedConfigurationCheck.missingOrInvalid
+                                  .length > 0
+                                  ? realRenderRouteScaffoldSummary.expectedBlockedResponse.receivedConfigurationCheck.missingOrInvalid.join(
+                                      ", ",
+                                    )
+                                  : "none"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 rounded border border-purple-900 bg-gray-950 p-3">
+                            <div className="font-medium text-purple-100">
+                              Expected request shape
+                            </div>
+
+                            <div className="mt-1 text-purple-100/80">
+                              requestedTarget:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedRequestShape.requestedTarget ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              rendererInputContract:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedRequestShape.rendererInputContract ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              realRenderGate:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedRequestShape.realRenderGate ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              firstRealRenderPlan:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedRequestShape.firstRealRenderPlan ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              realRenderConfiguration:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedRequestShape.realRenderConfiguration ||
+                                "Unknown"}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 rounded border border-purple-900 bg-gray-950 p-3">
+                            <div className="font-medium text-purple-100">
+                              Expected blocked response
+                            </div>
+
+                            <div className="mt-1 text-purple-100/80">
+                              status:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.status || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              audioStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.audioStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              rendererStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.rendererStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              storageStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.storageStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              formatStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.formatStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-3 font-medium text-purple-100">
+                              Expected received contract summary
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              rendererInputContract:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.receivedContractSummary
+                                .hasRendererInputContract
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              realRenderGate:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.receivedContractSummary
+                                .hasRealRenderGate
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              firstRealRenderPlan:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.receivedContractSummary
+                                .hasFirstRealRenderPlan
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              realRenderConfiguration:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.receivedContractSummary
+                                .hasRealRenderConfiguration
+                                ? "yes"
+                                : "no"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              requestedTarget:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse.receivedContractSummary
+                                .requestedTarget || "Unknown"}
+                            </div>
+                            <div className="mt-3 font-medium text-purple-100">
+                              Expected received configuration summary
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              configurationStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .configurationStatus || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              audioStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary.audioStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              rendererStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary.rendererStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              rendererCandidateStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .rendererCandidateStatus || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              recommendedFirstRenderer:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .recommendedFirstRenderer || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              rendererCandidateSelectedRenderer:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .rendererCandidateSelectedRenderer || "none"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              outputFormatStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .outputFormatStatus || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              recommendedFirstFormat:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .recommendedFirstFormat || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              selectedFormat:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary.selectedFormat ||
+                                "none"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              sampleRateStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .sampleRateStatus || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              recommendedFirstSampleRateHz:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .recommendedFirstSampleRateHz ?? "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              selectedSampleRateHz:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .selectedSampleRateHz ?? "none"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              storageStatus:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary.storageStatus ||
+                                "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              recommendedFirstProvider:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .recommendedFirstProvider || "Unknown"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              selectedProvider:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary
+                                .selectedProvider || "none"}
+                            </div>
+                            <div className="mt-1 text-purple-100/80">
+                              firstTargetKey:{" "}
+                              {realRenderRouteScaffoldSummary
+                                .expectedBlockedResponse
+                                .receivedConfigurationSummary.firstTargetKey ||
+                                "Unknown"}
+                            </div>
+                          </div>
+
+                          {realRenderRouteScaffoldSummary.safetyRules.length >
+                          0 ? (
+                            <div className="mt-3">
+                              <div className="font-medium">Safety rules:</div>
+                              <ul className="mt-1 list-disc space-y-1 pl-5">
+                                {realRenderRouteScaffoldSummary.safetyRules.map(
+                                  (rule) => (
+                                    <li key={rule}>{rule}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {realRenderConfigurationSummary ? (
+                        <div className="mt-3 rounded border border-cyan-900 bg-cyan-950/20 p-3 text-xs leading-5 text-cyan-100">
+                          <div className="font-medium">
+                            Real-render configuration placeholders
+                          </div>
+
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <div>
+                              <div>
+                                Configuration status:{" "}
+                                {realRenderConfigurationSummary.configurationStatus ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                Audio status:{" "}
+                                {realRenderConfigurationSummary.audioStatus ||
+                                  "Unknown"}
+                              </div>
+                              <div>
+                                First target:{" "}
+                                {realRenderConfigurationSummary.firstTarget
+                                  .key || "Unknown"}{" "}
+                                (
+                                {realRenderConfigurationSummary.firstTarget
+                                  .status || "Unknown"}
+                                )
+                              </div>
+                              <div>
+                                Click-track renderer status:{" "}
+                                {getRealRenderRouteReceivedConfigurationSummary()
+                                  ?.clickTrackRendererStatus || "unknown"}
+                              </div>
+                              <div>
+                                Click-track renderer audio generated:{" "}
+                                {getRealRenderRouteReceivedConfigurationSummary()
+                                  ?.clickTrackRendererAudioGenerated === false
+                                  ? "false"
+                                  : "unknown"}
+                              </div>
+                              <div>
+                                Click-track renderer reason:{" "}
+                                {getRealRenderRouteReceivedConfigurationSummary()
+                                  ?.clickTrackRendererReason || "unknown"}
+                              </div>
+                              <div>
+                                Click-track renderer preview tempo:{" "}
+                                {String(
+                                  typeof getRealRenderRouteReceivedConfigurationSummary()
+                                    ?.clickTrackRendererPreviewTempoBpm ===
+                                    "number"
+                                    ? getRealRenderRouteReceivedConfigurationSummary()
+                                        ?.clickTrackRendererPreviewTempoBpm
+                                    : "unknown",
+                                )}
+                              </div>
+                              <div>
+                                Click-track artifact status:{" "}
+                                {getRealRenderRouteReceivedConfigurationSummary()
+                                  ?.clickTrackDownloadArtifactStatus ||
+                                  "unknown"}
+                              </div>
+                              <div>
+                                Click-track artifact audio delivered:{" "}
+                                {getRealRenderRouteReceivedConfigurationSummary()
+                                  ?.clickTrackDownloadArtifactAudioDelivered ===
+                                false
+                                  ? "false"
+                                  : "unknown"}
+                              </div>
+                              <div>
+                                Click-track bytes included in response:{" "}
+                                {getRealRenderRouteReceivedConfigurationSummary()
+                                  ?.clickTrackDownloadArtifactBytesIncluded ===
+                                false
+                                  ? "false"
+                                  : "unknown"}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div>
+                                Renderer:{" "}
+                                {realRenderConfigurationSummary
+                                  .rendererImplementation.selectedRenderer ||
+                                  "not connected"}{" "}
+                                (
+                                {realRenderConfigurationSummary
+                                  .rendererImplementation.status || "Unknown"}
+                                )
+                              </div>
+                              <div>
+                                Renderer candidate:{" "}
+                                {realRenderConfigurationSummary
+                                  .rendererCandidatePlan
+                                  .recommendedFirstRenderer ||
+                                  "not declared"}{" "}
+                                (
+                                {realRenderConfigurationSummary
+                                  .rendererCandidatePlan.status || "Unknown"}
+                                )
+                              </div>
+                              <div>
+                                Format candidate:{" "}
+                                {realRenderConfigurationSummary.outputFormat
+                                  .recommendedFirstFormat ||
+                                  "not declared"}{" "}
+                                (
+                                {realRenderConfigurationSummary.outputFormat
+                                  .status || "Unknown"}
+                                )
+                              </div>
+                              <div>
+                                Format selected:{" "}
+                                {realRenderConfigurationSummary.outputFormat
+                                  .selectedFormat || "not selected"}
+                              </div>
+                              {realRenderConfigurationSummary.outputFormat
+                                .reason ? (
+                                <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                                  <div className="font-medium text-cyan-100">
+                                    Output format candidate reason
+                                  </div>
+                                  <div className="mt-1 text-cyan-100/80">
+                                    {
+                                      realRenderConfigurationSummary
+                                        .outputFormat.reason
+                                    }
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {realRenderConfigurationSummary.outputFormat
+                                .mustRemainBlockedUntil.length > 0 ? (
+                                <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                                  <div className="font-medium text-cyan-100">
+                                    Output format must remain blocked until
+                                  </div>
+                                  <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+                                    {realRenderConfigurationSummary.outputFormat.mustRemainBlockedUntil.map(
+                                      (item) => (
+                                        <li key={item}>{item}</li>
+                                      ),
+                                    )}
+                                  </ul>
+                                </div>
+                              ) : null}
+                              <div>
+                                Sample-rate candidate:{" "}
+                                {realRenderConfigurationSummary.sampleRate
+                                  .recommendedFirstSampleRateHz ??
+                                  "not declared"}{" "}
+                                Hz (
+                                {realRenderConfigurationSummary.sampleRate
+                                  .status || "Unknown"}
+                                )
+                              </div>
+                              <div>
+                                Sample rate selected:{" "}
+                                {realRenderConfigurationSummary.sampleRate
+                                  .selectedSampleRateHz ?? "not selected"}
+                              </div>
+                              {realRenderConfigurationSummary.sampleRate
+                                .reason ? (
+                                <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                                  <div className="font-medium text-cyan-100">
+                                    Sample-rate candidate reason
+                                  </div>
+                                  <div className="mt-1 text-cyan-100/80">
+                                    {
+                                      realRenderConfigurationSummary.sampleRate
+                                        .reason
+                                    }
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {realRenderConfigurationSummary.sampleRate
+                                .mustRemainBlockedUntil.length > 0 ? (
+                                <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                                  <div className="font-medium text-cyan-100">
+                                    Sample rate must remain blocked until
+                                  </div>
+                                  <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+                                    {realRenderConfigurationSummary.sampleRate.mustRemainBlockedUntil.map(
+                                      (item) => (
+                                        <li key={item}>{item}</li>
+                                      ),
+                                    )}
+                                  </ul>
+                                </div>
+                              ) : null}
+                              <div>
+                                Storage candidate:{" "}
+                                {realRenderConfigurationSummary.storage
+                                  .recommendedFirstProvider ||
+                                  "not declared"}{" "}
+                                (
+                                {realRenderConfigurationSummary.storage
+                                  .status || "Unknown"}
+                                )
+                              </div>
+                              <div>
+                                Storage selected:{" "}
+                                {realRenderConfigurationSummary.storage
+                                  .selectedProvider || "not configured"}
+                              </div>
+                              {realRenderConfigurationSummary.storage.reason ? (
+                                <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                                  <div className="font-medium text-cyan-100">
+                                    Storage candidate reason
+                                  </div>
+                                  <div className="mt-1 text-cyan-100/80">
+                                    {
+                                      realRenderConfigurationSummary.storage
+                                        .reason
+                                    }
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {realRenderConfigurationSummary.storage
+                                .mustRemainBlockedUntil.length > 0 ? (
+                                <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                                  <div className="font-medium text-cyan-100">
+                                    Storage must remain blocked until
+                                  </div>
+                                  <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+                                    {realRenderConfigurationSummary.storage.mustRemainBlockedUntil.map(
+                                      (item) => (
+                                        <li key={item}>{item}</li>
+                                      ),
+                                    )}
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          {realRenderConfigurationSummary.rendererCandidatePlan
+                            .reason ? (
+                            <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                              <div className="font-medium text-cyan-100">
+                                Renderer candidate reason
+                              </div>
+                              <div className="mt-1 text-cyan-100/80">
+                                {
+                                  realRenderConfigurationSummary
+                                    .rendererCandidatePlan.reason
+                                }
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {realRenderConfigurationSummary.rendererCandidatePlan
+                            .mustRemainBlockedUntil.length > 0 ? (
+                            <div className="mt-2 rounded border border-cyan-900 bg-gray-950 p-3">
+                              <div className="font-medium text-cyan-100">
+                                Must remain blocked until
+                              </div>
+                              <ul className="mt-1 list-disc space-y-1 pl-5 text-cyan-100/80">
+                                {realRenderConfigurationSummary.rendererCandidatePlan.mustRemainBlockedUntil.map(
+                                  (item) => (
+                                    <li key={item}>{item}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+
+                          {realRenderConfigurationSummary.unlockRequirements
+                            .length > 0 ? (
+                            <div className="mt-2">
+                              <div className="font-medium">
+                                Unlock requirements:
+                              </div>
+                              <ul className="mt-1 list-disc space-y-1 pl-5">
+                                {realRenderConfigurationSummary.unlockRequirements.map(
+                                  (requirement) => (
+                                    <li key={requirement}>{requirement}</li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      <pre className="mt-3 max-h-96 overflow-auto rounded bg-black p-3 text-xs leading-5 text-gray-300">
+                        {JSON.stringify(dryRunArtifactPackage, null, 2)}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  {audioPreviewRenderResponse ? (
+                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                        Audio preview dry-run response
+                      </summary>
+
+                      <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-3 text-xs leading-5 text-gray-300">
+                        {audioPreviewRenderResponse}
+                      </pre>
+                    </details>
+                  ) : null}
+
+                  {audioPreviewResponse ? (
+                    <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                      <summary className="cursor-pointer text-xs font-medium text-gray-300">
+                        Show raw preview response JSON
+                      </summary>
+
+                      <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+                        {audioPreviewResponse}
+                      </pre>
+                    </details>
+                  ) : null}
                 </div>
-              </>
+              ) : null}
+
+              {audioPreviewSpecPreview ? (
+                <details className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-gray-200">
+                    Preview audio spec JSON
+                  </summary>
+
+                  <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-950 p-3 text-xs leading-5 text-gray-300">
+                    {audioPreviewSpecPreview}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
+
+            <>
+              <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                {audioGuideReadiness.checks.map((check) => (
+                  <div
+                    key={check.label}
+                    className="rounded border border-gray-800 bg-gray-900 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-gray-200">
+                        {check.label}
+                      </div>
+                      <div
+                        className={`text-xs ${
+                          check.passed ? "text-green-300" : "text-yellow-300"
+                        }`}
+                      >
+                        {check.passed ? "Available" : "Needs attention"}
+                      </div>
+                    </div>
+
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      {check.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                        Performance songsheet quality
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        Checks placement, lyric match, server validation, and
-                        source coverage.
-                      </div>
+                  <div>
+                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                      Performance design notes
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => copySongsheetReview()}
-                      disabled={!hasUsableChordData()}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedSongsheetReview ? "Copied ✓" : "Copy review"}
-                    </button>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Human-readable notes for remembering how the song is
+                      intended to be performed.
+                    </p>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => fixOutOfRangeChordPlacements()}
-                    disabled={placedSongSheetQuality.outOfRangeChords === 0}
+                    onClick={() => copyPerformanceDesignNotes()}
+                    disabled={!performanceDesignNotesPreview}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
-                    Move after-lyric chords inside line
+                    {justCopiedPerformanceDesignNotes
+                      ? "Copied ✓"
+                      : "Copy design notes"}
                   </button>
                 </div>
 
-                <div className="mt-2 text-gray-300">
-                  {placedSongSheetQuality.label}
-                </div>
+                <pre className="mt-4 max-h-[360px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+                  {performanceDesignNotesPreview ||
+                    "No performance design notes yet. Generate chords with performance intent to create this summary."}
+                </pre>
+              </div>
+            </>
 
-                <div className="mt-1 text-sm text-gray-500">
-                  {placedSongSheetQuality.detail}
-                </div>
-
-                <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                    Lines: {placedSongSheetQuality.totalLines}
-                  </div>
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                    Lines with chords: {placedSongSheetQuality.linesWithChords}
-                  </div>
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                    Total chords: {placedSongSheetQuality.totalChords}
-                  </div>
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                    Start-of-line chords:{" "}
-                    {placedSongSheetQuality.zeroIndexChords}
-                  </div>
-                  <div className="rounded border border-gray-800 bg-gray-900 p-3">
-                    After-lyric chords:{" "}
-                    {placedSongSheetQuality.outOfRangeChords ?? 0}
-                  </div>
-                </div>
-
-                {placedSongSheetQuality.warning && (
-                  <div className="mt-3 rounded border border-yellow-900/60 bg-yellow-950/30 p-3 text-sm text-yellow-200">
-                    {placedSongSheetQuality.warning}
-                  </div>
-                )}
-                {placedSongSheetQuality.placementIssues.length > 0 && (
-                  <div className="mt-3 rounded border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
-                    <div className="font-medium">Placement review items</div>
-
-                    <div className="mt-2 space-y-2">
-                      {placedSongSheetQuality.placementIssues
-                        .slice(0, 5)
-                        .map((issue) => (
-                          <div
-                            key={`${issue.lineNumber}-${issue.chord}-${issue.charIndex}`}
-                            className="rounded border border-red-900/50 bg-red-950/30 p-2"
-                          >
-                            <div>
-                              Line {issue.lineNumber} · {issue.section} · chord{" "}
-                              {issue.chord}
-                            </div>
-                            <div className="mt-1 text-xs text-red-300">
-                              charIndex {issue.charIndex} falls after the final
-                              lyric character index {issue.maxIndex}
-                            </div>
-                            <div className="mt-1 text-xs text-red-300">
-                              {issue.lyric}
-                            </div>
-                          </div>
-                        ))}
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                      Performance songsheet quality
                     </div>
-
-                    {placedSongSheetQuality.placementIssues.length > 5 && (
-                      <div className="mt-2 text-xs text-red-300">
-                        Showing first 5 of{" "}
-                        {placedSongSheetQuality.placementIssues.length} issues.
-                      </div>
-                    )}
+                    <div className="mt-1 text-xs text-gray-500">
+                      Checks placement, lyric match, server validation, and
+                      source coverage.
+                    </div>
                   </div>
-                )}
+
+                  <button
+                    type="button"
+                    onClick={() => copySongsheetReview()}
+                    disabled={!hasUsableChordData()}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {justCopiedSongsheetReview ? "Copied ✓" : "Copy review"}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => fixOutOfRangeChordPlacements()}
+                  disabled={placedSongSheetQuality.outOfRangeChords === 0}
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  Move after-lyric chords inside line
+                </button>
               </div>
 
-              <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-gray-200">
-                    Source lyric match
+              <div className="mt-2 text-gray-300">
+                {placedSongSheetQuality.label}
+              </div>
+
+              <div className="mt-1 text-sm text-gray-500">
+                {placedSongSheetQuality.detail}
+              </div>
+
+              <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                  Lines: {placedSongSheetQuality.totalLines}
+                </div>
+                <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                  Lines with chords: {placedSongSheetQuality.linesWithChords}
+                </div>
+                <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                  Total chords: {placedSongSheetQuality.totalChords}
+                </div>
+                <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                  Start-of-line chords: {placedSongSheetQuality.zeroIndexChords}
+                </div>
+                <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                  After-lyric chords:{" "}
+                  {placedSongSheetQuality.outOfRangeChords ?? 0}
+                </div>
+              </div>
+
+              {placedSongSheetQuality.warning && (
+                <div className="mt-3 rounded border border-yellow-900/60 bg-yellow-950/30 p-3 text-sm text-yellow-200">
+                  {placedSongSheetQuality.warning}
+                </div>
+              )}
+              {placedSongSheetQuality.placementIssues.length > 0 && (
+                <div className="mt-3 rounded border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
+                  <div className="font-medium">Placement review items</div>
+
+                  <div className="mt-2 space-y-2">
+                    {placedSongSheetQuality.placementIssues
+                      .slice(0, 5)
+                      .map((issue) => (
+                        <div
+                          key={`${issue.lineNumber}-${issue.chord}-${issue.charIndex}`}
+                          className="rounded border border-red-900/50 bg-red-950/30 p-2"
+                        >
+                          <div>
+                            Line {issue.lineNumber} · {issue.section} · chord{" "}
+                            {issue.chord}
+                          </div>
+                          <div className="mt-1 text-xs text-red-300">
+                            charIndex {issue.charIndex} falls after the final
+                            lyric character index {issue.maxIndex}
+                          </div>
+                          <div className="mt-1 text-xs text-red-300">
+                            {issue.lyric}
+                          </div>
+                        </div>
+                      ))}
                   </div>
 
-                  <div
-                    className={`text-xs ${
-                      placedSongsheetSourceMatch.isChecking
-                        ? "text-blue-300"
-                        : placedSongsheetSourceMatch.unmatchedCount > 0
-                          ? "text-yellow-300"
-                          : "text-green-300"
-                    }`}
-                  >
-                    {placedSongsheetSourceMatch.isChecking
-                      ? "Checking"
+                  {placedSongSheetQuality.placementIssues.length > 5 && (
+                    <div className="mt-2 text-xs text-red-300">
+                      Showing first 5 of{" "}
+                      {placedSongSheetQuality.placementIssues.length} issues.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium text-gray-200">
+                  Source lyric match
+                </div>
+
+                <div
+                  className={`text-xs ${
+                    placedSongsheetSourceMatch.isChecking
+                      ? "text-blue-300"
                       : placedSongsheetSourceMatch.unmatchedCount > 0
-                        ? "Review"
-                        : "OK"}
-                  </div>
+                        ? "text-yellow-300"
+                        : "text-green-300"
+                  }`}
+                >
+                  {placedSongsheetSourceMatch.isChecking
+                    ? "Checking"
+                    : placedSongsheetSourceMatch.unmatchedCount > 0
+                      ? "Review"
+                      : "OK"}
+                </div>
 
-                  {songsheetServerValidation.hasValidation ? (
+                {songsheetServerValidation.hasValidation ? (
+                  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-gray-200">
+                        Server validation
+                      </div>
+
+                      <div
+                        className={`text-xs ${
+                          songsheetServerValidation.rejectedLineCount > 0
+                            ? "text-yellow-300"
+                            : "text-green-300"
+                        }`}
+                      >
+                        {songsheetServerValidation.rejectedLineCount > 0
+                          ? "Rejected lines"
+                          : "Accepted"}
+                      </div>
+                    </div>
+
                     <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm font-medium text-gray-200">
-                          Server validation
+                          Source lyric coverage
                         </div>
 
                         <div
                           className={`text-xs ${
-                            songsheetServerValidation.rejectedLineCount > 0
-                              ? "text-yellow-300"
-                              : "text-green-300"
-                          }`}
-                        >
-                          {songsheetServerValidation.rejectedLineCount > 0
-                            ? "Rejected lines"
-                            : "Accepted"}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="text-sm font-medium text-gray-200">
-                            Source lyric coverage
-                          </div>
-
-                          <div
-                            className={`text-xs ${
-                              placedSongsheetSourceCoverage.isChecking
-                                ? "text-blue-300"
-                                : placedSongsheetSourceCoverage.missingLineCount >
-                                    0
-                                  ? "text-yellow-300"
-                                  : "text-green-300"
-                            }`}
-                          >
-                            {placedSongsheetSourceCoverage.isChecking
-                              ? "Checking"
+                            placedSongsheetSourceCoverage.isChecking
+                              ? "text-blue-300"
                               : placedSongsheetSourceCoverage.missingLineCount >
                                   0
-                                ? "Incomplete"
-                                : "Covered"}
-                          </div>
+                                ? "text-yellow-300"
+                                : "text-green-300"
+                          }`}
+                        >
+                          {placedSongsheetSourceCoverage.isChecking
+                            ? "Checking"
+                            : placedSongsheetSourceCoverage.missingLineCount > 0
+                              ? "Incomplete"
+                              : "Covered"}
                         </div>
-
-                        <div className="mt-1 text-xs leading-5 text-gray-500">
-                          {placedSongsheetSourceCoverage.label}
-                        </div>
-
-                        <div className="mt-1 text-xs leading-5 text-gray-500">
-                          {placedSongsheetSourceCoverage.detail}
-                        </div>
-
-                        {placedSongsheetSourceCoverage.missingLines.length >
-                        0 ? (
-                          <div className="mt-3 grid gap-2">
-                            {placedSongsheetSourceCoverage.missingLines.map(
-                              (line, index) => (
-                                <div
-                                  key={`${line}-${index}`}
-                                  className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
-                                >
-                                  {line}
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        ) : null}
                       </div>
 
                       <div className="mt-1 text-xs leading-5 text-gray-500">
-                        Source lines:{" "}
-                        {songsheetServerValidation.sourceLineCount}
+                        {placedSongsheetSourceCoverage.label}
                       </div>
 
                       <div className="mt-1 text-xs leading-5 text-gray-500">
-                        Accepted placed lines:{" "}
-                        {songsheetServerValidation.acceptedLineCount}
+                        {placedSongsheetSourceCoverage.detail}
                       </div>
 
-                      <div className="mt-1 text-xs leading-5 text-gray-500">
-                        Rejected rewritten lines:{" "}
-                        {songsheetServerValidation.rejectedLineCount}
-                      </div>
-
-                      {songsheetServerValidation.rejectedLines.length > 0 ? (
+                      {placedSongsheetSourceCoverage.missingLines.length > 0 ? (
                         <div className="mt-3 grid gap-2">
-                          {songsheetServerValidation.rejectedLines.map(
+                          {placedSongsheetSourceCoverage.missingLines.map(
                             (line, index) => (
                               <div
                                 key={`${line}-${index}`}
@@ -19643,726 +19549,749 @@ ${buildRewriteInstruction(
                         </div>
                       ) : null}
                     </div>
-                  ) : null}
-                </div>
 
-                <div className="mt-1 text-xs leading-5 text-gray-500">
-                  {placedSongsheetSourceMatch.label}
-                </div>
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      Source lines: {songsheetServerValidation.sourceLineCount}
+                    </div>
 
-                <div className="mt-1 text-xs leading-5 text-gray-500">
-                  {placedSongsheetSourceMatch.detail}
-                </div>
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      Accepted placed lines:{" "}
+                      {songsheetServerValidation.acceptedLineCount}
+                    </div>
 
-                {placedSongsheetSourceMatch.unmatchedLines.length > 0 ? (
-                  <div className="mt-3 grid gap-2">
-                    {placedSongsheetSourceMatch.unmatchedLines.map(
-                      (line, index) => (
-                        <div
-                          key={`${line.section}-${line.lyric}-${index}`}
-                          className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
-                        >
-                          <div className="font-medium">
-                            {line.section || "Unknown section"}
-                          </div>
-                          <div className="mt-1 text-yellow-200">
-                            {line.lyric}
-                          </div>
-                        </div>
-                      ),
-                    )}
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      Rejected rewritten lines:{" "}
+                      {songsheetServerValidation.rejectedLineCount}
+                    </div>
+
+                    {songsheetServerValidation.rejectedLines.length > 0 ? (
+                      <div className="mt-3 grid gap-2">
+                        {songsheetServerValidation.rejectedLines.map(
+                          (line, index) => (
+                            <div
+                              key={`${line}-${index}`}
+                              className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
+                            >
+                              {line}
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Performance songsheet preview
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Chords placed above the lyric position where the change
-                      happens.
-                      {getOriginalKeyLabel()
-                        ? ` Key metadata: ${getOriginalKeyLabel()}. Use transpose controls to change actual chord symbols.`
-                        : ""}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setChordTransposeSemitones((value) => value - 1)
-                      }
-                      disabled={!placedSongSheetPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      Transpose −
-                    </button>
-
-                    <div className="min-w-[110px] text-center text-xs text-gray-400">
-                      {getTransposeLabel()}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setChordTransposeSemitones((value) => value + 1)
-                      }
-                      disabled={!placedSongSheetPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      Transpose +
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => resetOrUndoChordTranspose()}
-                      disabled={
-                        !placedSongSheetPreview ||
-                        (chordTransposeSemitones === 0 &&
-                          !lastAppliedTransposeSnapshot)
-                      }
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {chordTransposeSemitones !== 0
-                        ? "Reset"
-                        : lastAppliedTransposeSnapshot
-                          ? "Undo apply"
-                          : "Reset"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => applyTransposeToChordEditor()}
-                      disabled={
-                        !placedSongSheetPreview || chordTransposeSemitones === 0
-                      }
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      Apply transpose
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyAudioGuidePrompt()}
-                      disabled={!placedSongSheetPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedAudioGuidePrompt
-                        ? "Copied ✓"
-                        : "Copy audio guide prompt"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyPlacedSongSheet()}
-                      disabled={!placedSongSheetPreview}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedPlacedSongSheet
-                        ? "Copied ✓"
-                        : "Copy songsheet"}
-                    </button>
-                  </div>
-                </div>
-
-                <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100">
-                  {placedSongSheetPreview ||
-                    "No performance songsheet preview yet. Generate or paste chord JSON that includes placed chord positions. The next step is to make Generate chords create this automatically."}
-                </pre>
-
-                {!placedSongSheetPreview && (
-                  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs text-gray-500">
-                    This preview needs chord placement data. For now, the test
-                    JSON works manually. Next we will update Generate chords so
-                    this is created for you.
-                  </div>
-                )}
+              <div className="mt-1 text-xs leading-5 text-gray-500">
+                {placedSongsheetSourceMatch.label}
               </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Audio guide prompt preview
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      A sparse guide-track prompt designed to preserve tempo,
-                      groove, phrasing, and chord timing.
-                    </p>
+              <div className="mt-1 text-xs leading-5 text-gray-500">
+                {placedSongsheetSourceMatch.detail}
+              </div>
+
+              {placedSongsheetSourceMatch.unmatchedLines.length > 0 ? (
+                <div className="mt-3 grid gap-2">
+                  {placedSongsheetSourceMatch.unmatchedLines.map(
+                    (line, index) => (
+                      <div
+                        key={`${line.section}-${line.lyric}-${index}`}
+                        className="rounded border border-yellow-900 bg-yellow-950/20 p-2 text-xs leading-5 text-yellow-100"
+                      >
+                        <div className="font-medium">
+                          {line.section || "Unknown section"}
+                        </div>
+                        <div className="mt-1 text-yellow-200">{line.lyric}</div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Performance songsheet preview
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Chords placed above the lyric position where the change
+                    happens.
+                    {getOriginalKeyLabel()
+                      ? ` Key metadata: ${getOriginalKeyLabel()}. Use transpose controls to change actual chord symbols.`
+                      : ""}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChordTransposeSemitones((value) => value - 1)
+                    }
+                    disabled={!placedSongSheetPreview}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    Transpose −
+                  </button>
+
+                  <div className="min-w-[110px] text-center text-xs text-gray-400">
+                    {getTransposeLabel()}
                   </div>
 
                   <button
                     type="button"
+                    onClick={() =>
+                      setChordTransposeSemitones((value) => value + 1)
+                    }
+                    disabled={!placedSongSheetPreview}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    Transpose +
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => resetOrUndoChordTranspose()}
+                    disabled={
+                      !placedSongSheetPreview ||
+                      (chordTransposeSemitones === 0 &&
+                        !lastAppliedTransposeSnapshot)
+                    }
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {chordTransposeSemitones !== 0
+                      ? "Reset"
+                      : lastAppliedTransposeSnapshot
+                        ? "Undo apply"
+                        : "Reset"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => applyTransposeToChordEditor()}
+                    disabled={
+                      !placedSongSheetPreview || chordTransposeSemitones === 0
+                    }
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    Apply transpose
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => copyAudioGuidePrompt()}
-                    disabled={!audioGuidePromptPreview}
+                    disabled={!placedSongSheetPreview}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
                     {justCopiedAudioGuidePrompt
                       ? "Copied ✓"
                       : "Copy audio guide prompt"}
                   </button>
-                </div>
 
-                <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
-                  {audioGuidePromptPreview ||
-                    "No audio guide prompt yet. Generate or paste chord JSON with performance songsheet placement data."}
-                </pre>
+                  <button
+                    type="button"
+                    onClick={() => copyPlacedSongSheet()}
+                    disabled={!placedSongSheetPreview}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                  >
+                    {justCopiedPlacedSongSheet ? "Copied ✓" : "Copy songsheet"}
+                  </button>
+                </div>
               </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div
-                  className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
-                    fullPackAudioPreviewStatus.tone === "ready"
-                      ? "border-green-900 bg-green-950/20 text-green-100"
-                      : fullPackAudioPreviewStatus.tone === "review"
-                        ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                        : "border-gray-800 bg-gray-950 text-gray-400"
-                  }`}
+              <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100">
+                {placedSongSheetPreview ||
+                  "No performance songsheet preview yet. Generate or paste chord JSON that includes placed chord positions. The next step is to make Generate chords create this automatically."}
+              </pre>
+
+              {!placedSongSheetPreview && (
+                <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-xs text-gray-500">
+                  This preview needs chord placement data. For now, the test
+                  JSON works manually. Next we will update Generate chords so
+                  this is created for you.
+                </div>
+              )}
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Audio guide prompt preview
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    A sparse guide-track prompt designed to preserve tempo,
+                    groove, phrasing, and chord timing.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => copyAudioGuidePrompt()}
+                  disabled={!audioGuidePromptPreview}
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                 >
-                  <div className="font-medium">
-                    {fullPackAudioPreviewStatus.label}
-                  </div>
-                  <div className="mt-1">
-                    {fullPackAudioPreviewStatus.detail}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Full performance pack
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Combined copy of songsheet, design notes, and audio guide
-                      prompt for rehearsal or archiving.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => copyFullPerformancePack()}
-                    disabled={!fullPerformancePackPreview}
-                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                  >
-                    {justCopiedFullPerformancePack
-                      ? "Copied ✓"
-                      : "Copy full pack"}
-                  </button>
-                </div>
-
-                <pre className="mt-4 max-h-[360px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
-                  {fullPerformancePackPreview ||
-                    "No full performance pack yet. Generate chords with performance songsheet placement data to create this bundle."}
-                </pre>
+                  {justCopiedAudioGuidePrompt
+                    ? "Copied ✓"
+                    : "Copy audio guide prompt"}
+                </button>
               </div>
 
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Chord sheet preview
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Musician-facing chord-only output. This is what Copy chord
-                      sheet will copy.
-                    </p>
-                  </div>
+              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+                {audioGuidePromptPreview ||
+                  "No audio guide prompt yet. Generate or paste chord JSON with performance songsheet placement data."}
+              </pre>
+            </div>
 
-                  <button
-                    type="button"
-                    onClick={() => copyChordSheet()}
-                    disabled={!hasUsableChordData()}
-                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                  >
-                    {justCopiedChordSheet ? "Copied ✓" : "Copy chord sheet"}
-                  </button>
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div
+                className={`mt-3 rounded border px-3 py-2 text-xs leading-5 ${
+                  fullPackAudioPreviewStatus.tone === "ready"
+                    ? "border-green-900 bg-green-950/20 text-green-100"
+                    : fullPackAudioPreviewStatus.tone === "review"
+                      ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                      : "border-gray-800 bg-gray-950 text-gray-400"
+                }`}
+              >
+                <div className="font-medium">
+                  {fullPackAudioPreviewStatus.label}
+                </div>
+                <div className="mt-1">{fullPackAudioPreviewStatus.detail}</div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Full performance pack
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Combined copy of songsheet, design notes, and audio guide
+                    prompt for rehearsal or archiving.
+                  </p>
                 </div>
 
-                <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
-                  {chordSheetPreview ||
-                    "No usable chord sheet preview yet. Paste, generate, or load valid chord JSON."}
-                </pre>
+                <button
+                  type="button"
+                  onClick={() => copyFullPerformancePack()}
+                  disabled={!fullPerformancePackPreview}
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  {justCopiedFullPerformancePack
+                    ? "Copied ✓"
+                    : "Copy full pack"}
+                </button>
               </div>
 
+              <pre className="mt-4 max-h-[360px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+                {fullPerformancePackPreview ||
+                  "No full performance pack yet. Generate chords with performance songsheet placement data to create this bundle."}
+              </pre>
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Chord sheet preview
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Musician-facing chord-only output. This is what Copy chord
+                    sheet will copy.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => copyChordSheet()}
+                  disabled={!hasUsableChordData()}
+                  className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  {justCopiedChordSheet ? "Copied ✓" : "Copy chord sheet"}
+                </button>
+              </div>
+
+              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-900 p-4 text-sm leading-6 text-gray-100">
+                {chordSheetPreview ||
+                  "No usable chord sheet preview yet. Paste, generate, or load valid chord JSON."}
+              </pre>
+            </div>
+
+            <div className="rounded border border-gray-800 bg-gray-950 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                  Chord workflow status
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => nextChordWorkflowAction.action?.()}
+                  disabled={nextChordWorkflowAction.disabled}
+                  className="rounded border border-blue-600 bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-transparent disabled:text-gray-500"
+                >
+                  {nextChordWorkflowAction.label}
+                </button>
+              </div>
+
+              {nextChordWorkflowAction.label.includes("anyway") ? (
+                <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
+                  The placed songsheet has review warnings. You can continue to
+                  the guide plan, but check lyric match, validation, and
+                  coverage before treating the songsheet as final.
+                </div>
+              ) : null}
+
+              {songsheetReviewSummaryLine ? (
+                <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
+                  {songsheetReviewSummaryLine}
+                </div>
+              ) : null}
+
+              <div
+                className={`mt-2 ${
+                  chordWorkflowStatus.activeProcess
+                    ? "text-blue-300"
+                    : "text-gray-300"
+                }`}
+              >
+                {chordWorkflowStatus.label}
+              </div>
+
+              <div className="mt-1 text-sm text-gray-500">
+                {chordWorkflowStatus.detail}
+              </div>
+
+              {chordWorkflowStatus.activeProcess ? (
+                <div className="mt-3 rounded border border-blue-900 bg-blue-950/40 px-3 py-2 text-sm text-blue-200">
+                  {chordWorkflowStatus.activeProcess}
+                </div>
+              ) : null}
+
+              <div className="mt-3 grid gap-2 lg:grid-cols-3">
+                {chordWorkflowStatus.steps.map((step) => (
+                  <div
+                    key={step.label}
+                    className="rounded border border-gray-800 bg-gray-900 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-gray-200">
+                        {step.label}
+                      </div>
+
+                      <div
+                        className={`text-xs ${
+                          step.working
+                            ? "text-blue-300"
+                            : step.review
+                              ? "text-yellow-300"
+                              : step.complete
+                                ? "text-green-300"
+                                : "text-yellow-300"
+                        }`}
+                      >
+                        {step.working
+                          ? "Working"
+                          : step.review
+                            ? "Review"
+                            : step.complete
+                              ? "Done"
+                              : "Next"}
+                      </div>
+                    </div>
+
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      {step.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {chordGenerationMetaRows.length > 0 ? (
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                    Chord workflow status
+                    Last staged generation
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => nextChordWorkflowAction.action?.()}
-                    disabled={nextChordWorkflowAction.disabled}
-                    className="rounded border border-blue-600 bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-transparent disabled:text-gray-500"
+                    onClick={() => copyChordGenerationUsage()}
+                    disabled={!chordGenerationHistorySummary.hasHistory}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
-                    {nextChordWorkflowAction.label}
+                    {justCopiedGenerationUsage ? "Copied ✓" : "Copy usage"}
                   </button>
                 </div>
 
-                {nextChordWorkflowAction.label.includes("anyway") ? (
-                  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
-                    The placed songsheet has review warnings. You can continue
-                    to the guide plan, but check lyric match, validation, and
-                    coverage before treating the songsheet as final.
-                  </div>
-                ) : null}
-
-                {songsheetReviewSummaryLine ? (
-                  <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
-                    {songsheetReviewSummaryLine}
-                  </div>
-                ) : null}
-
-                <div
-                  className={`mt-2 ${
-                    chordWorkflowStatus.activeProcess
-                      ? "text-blue-300"
-                      : "text-gray-300"
-                  }`}
-                >
-                  {chordWorkflowStatus.label}
-                </div>
-
-                <div className="mt-1 text-sm text-gray-500">
-                  {chordWorkflowStatus.detail}
-                </div>
-
-                {chordWorkflowStatus.activeProcess ? (
-                  <div className="mt-3 rounded border border-blue-900 bg-blue-950/40 px-3 py-2 text-sm text-blue-200">
-                    {chordWorkflowStatus.activeProcess}
-                  </div>
-                ) : null}
-
-                <div className="mt-3 grid gap-2 lg:grid-cols-3">
-                  {chordWorkflowStatus.steps.map((step) => (
+                <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+                  {chordGenerationMetaRows.map((row) => (
                     <div
-                      key={step.label}
+                      key={row.label}
                       className="rounded border border-gray-800 bg-gray-900 p-3"
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-gray-200">
-                          {step.label}
-                        </div>
-
-                        <div
-                          className={`text-xs ${
-                            step.working
-                              ? "text-blue-300"
-                              : step.review
-                                ? "text-yellow-300"
-                                : step.complete
-                                  ? "text-green-300"
-                                  : "text-yellow-300"
-                          }`}
-                        >
-                          {step.working
-                            ? "Working"
-                            : step.review
-                              ? "Review"
-                              : step.complete
-                                ? "Done"
-                                : "Next"}
-                        </div>
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        {row.label}
                       </div>
 
-                      <div className="mt-1 text-xs leading-5 text-gray-500">
-                        {step.detail}
+                      <div className="mt-1 text-sm text-gray-300">
+                        {row.value}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {chordGenerationMetaRows.length > 0 ? (
-                <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Last staged generation
+                {chordGenerationHistorySummary.hasHistory ? (
+                  <div className="mt-4 rounded border border-gray-800 bg-gray-900 p-3">
+                    <div className="text-sm font-medium text-gray-200">
+                      Staged workflow totals
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => copyChordGenerationUsage()}
-                      disabled={!chordGenerationHistorySummary.hasHistory}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedGenerationUsage ? "Copied ✓" : "Copy usage"}
-                    </button>
-                  </div>
-
-                  <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-                    {chordGenerationMetaRows.map((row) => (
-                      <div
-                        key={row.label}
-                        className="rounded border border-gray-800 bg-gray-900 p-3"
-                      >
+                    <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-5">
+                      <div className="rounded border border-gray-800 bg-gray-950 p-3">
                         <div className="text-xs uppercase tracking-wide text-gray-500">
-                          {row.label}
+                          Stages run
                         </div>
-
                         <div className="mt-1 text-sm text-gray-300">
-                          {row.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {chordGenerationHistorySummary.hasHistory ? (
-                    <div className="mt-4 rounded border border-gray-800 bg-gray-900 p-3">
-                      <div className="text-sm font-medium text-gray-200">
-                        Staged workflow totals
-                      </div>
-
-                      <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-5">
-                        <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500">
-                            Stages run
-                          </div>
-                          <div className="mt-1 text-sm text-gray-300">
-                            {chordGenerationHistorySummary.stageCount}
-                          </div>
-                        </div>
-
-                        <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500">
-                            Total duration
-                          </div>
-                          <div className="mt-1 text-sm text-gray-300">
-                            {chordGenerationHistorySummary.totalDurationSeconds.toFixed(
-                              1,
-                            )}
-                            s
-                          </div>
-                        </div>
-
-                        <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500">
-                            Input tokens
-                          </div>
-                          <div className="mt-1 text-sm text-gray-300">
-                            {chordGenerationHistorySummary.totalInputTokens.toLocaleString()}
-                          </div>
-                        </div>
-
-                        <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500">
-                            Output tokens
-                          </div>
-                          <div className="mt-1 text-sm text-gray-300">
-                            {chordGenerationHistorySummary.totalOutputTokens.toLocaleString()}
-                          </div>
-                        </div>
-
-                        <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500">
-                            Total tokens
-                          </div>
-                          <div className="mt-1 text-sm text-gray-300">
-                            {chordGenerationHistorySummary.totalTokens.toLocaleString()}
-                          </div>
+                          {chordGenerationHistorySummary.stageCount}
                         </div>
                       </div>
 
-                      {chordGenerationUsageWarning.hasWarning ? (
-                        <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
-                          <div className="font-medium">
-                            {chordGenerationUsageWarning.label}
-                          </div>
-                          <div className="mt-1 text-yellow-200">
-                            {chordGenerationUsageWarning.detail}
-                          </div>
+                      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Total duration
                         </div>
-                      ) : null}
-
-                      {chordGenerationHistorySummary.routes.length > 0 ? (
-                        <div className="mt-3 text-xs leading-5 text-gray-500">
-                          Routes:{" "}
-                          {chordGenerationHistorySummary.routes.join(" → ")}
+                        <div className="mt-1 text-sm text-gray-300">
+                          {chordGenerationHistorySummary.totalDurationSeconds.toFixed(
+                            1,
+                          )}
+                          s
                         </div>
-                      ) : null}
+                      </div>
 
-                      {chordGenerationHistoryRows.length > 0 ? (
-                        <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
-                          <summary className="cursor-pointer text-xs font-medium text-gray-300">
-                            Show staged generation history
-                          </summary>
+                      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Input tokens
+                        </div>
+                        <div className="mt-1 text-sm text-gray-300">
+                          {chordGenerationHistorySummary.totalInputTokens.toLocaleString()}
+                        </div>
+                      </div>
 
-                          <div className="mt-3 grid gap-3">
-                            {chordGenerationHistoryRows.map((row) => (
-                              <div
-                                key={`${row.stage}-${row.route}-${row.generatedAt}`}
-                                className="rounded border border-gray-800 bg-gray-900 p-3"
-                              >
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                  <div className="text-sm font-medium text-gray-200">
-                                    Stage {row.stage}: {row.route}
+                      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Output tokens
+                        </div>
+                        <div className="mt-1 text-sm text-gray-300">
+                          {chordGenerationHistorySummary.totalOutputTokens.toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Total tokens
+                        </div>
+                        <div className="mt-1 text-sm text-gray-300">
+                          {chordGenerationHistorySummary.totalTokens.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {chordGenerationUsageWarning.hasWarning ? (
+                      <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
+                        <div className="font-medium">
+                          {chordGenerationUsageWarning.label}
+                        </div>
+                        <div className="mt-1 text-yellow-200">
+                          {chordGenerationUsageWarning.detail}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {chordGenerationHistorySummary.routes.length > 0 ? (
+                      <div className="mt-3 text-xs leading-5 text-gray-500">
+                        Routes:{" "}
+                        {chordGenerationHistorySummary.routes.join(" → ")}
+                      </div>
+                    ) : null}
+
+                    {chordGenerationHistoryRows.length > 0 ? (
+                      <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-3">
+                        <summary className="cursor-pointer text-xs font-medium text-gray-300">
+                          Show staged generation history
+                        </summary>
+
+                        <div className="mt-3 grid gap-3">
+                          {chordGenerationHistoryRows.map((row) => (
+                            <div
+                              key={`${row.stage}-${row.route}-${row.generatedAt}`}
+                              className="rounded border border-gray-800 bg-gray-900 p-3"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="text-sm font-medium text-gray-200">
+                                  Stage {row.stage}: {row.route}
+                                </div>
+
+                                <div className="text-xs text-gray-500">
+                                  {row.generatedAt}
+                                </div>
+                              </div>
+
+                              <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-5">
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Model
                                   </div>
-
-                                  <div className="text-xs text-gray-500">
-                                    {row.generatedAt}
+                                  <div className="mt-1 text-sm text-gray-300">
+                                    {row.model}
                                   </div>
                                 </div>
 
-                                <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-5">
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Model
-                                    </div>
-                                    <div className="mt-1 text-sm text-gray-300">
-                                      {row.model}
-                                    </div>
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Duration
                                   </div>
-
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Duration
-                                    </div>
-                                    <div className="mt-1 text-sm text-gray-300">
-                                      {row.duration}
-                                    </div>
+                                  <div className="mt-1 text-sm text-gray-300">
+                                    {row.duration}
                                   </div>
+                                </div>
 
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Input
-                                    </div>
-                                    <div className="mt-1 text-sm text-gray-300">
-                                      {row.inputTokens}
-                                    </div>
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Input
                                   </div>
-
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Output
-                                    </div>
-                                    <div className="mt-1 text-sm text-gray-300">
-                                      {row.outputTokens}
-                                    </div>
+                                  <div className="mt-1 text-sm text-gray-300">
+                                    {row.inputTokens}
                                   </div>
+                                </div>
 
-                                  <div>
-                                    <div className="text-xs uppercase tracking-wide text-gray-500">
-                                      Total
-                                    </div>
-                                    <div className="mt-1 text-sm text-gray-300">
-                                      {row.totalTokens}
-                                    </div>
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Output
+                                  </div>
+                                  <div className="mt-1 text-sm text-gray-300">
+                                    {row.outputTokens}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                                    Total
+                                  </div>
+                                  <div className="mt-1 text-sm text-gray-300">
+                                    {row.totalTokens}
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </details>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Source lyrics
-                    </h2>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Source lyrics
+                  </h2>
+
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("write")}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                  >
+                    Edit lyrics
+                  </button>
+                </div>
+
+                <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100">
+                  {performanceSheet || "No lyrics available yet."}
+                </pre>
+              </div>
+
+              <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Chord JSON
+                  </h2>
+
+                  <div className="flex flex-wrap gap-2">
+                    <div className="mb-3 rounded border border-gray-800 bg-gray-900 px-3 py-2 text-xs leading-5 text-gray-400">
+                      Manual generation controls. The recommended path is the
+                      Chord workflow status button above. Generate full draft is
+                      an advanced all-in-one option and may take longer.
+                    </div>
 
                     <button
                       type="button"
-                      onClick={() => handleModeChange("write")}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                      onClick={() => generateChords()}
+                      disabled={generatingChords || !performanceSheet.trim()}
+                      className="rounded border border-gray-800 px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-600"
                     >
-                      Edit lyrics
+                      {generatingChords
+                        ? "Generating full draft..."
+                        : "Generate full draft"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => generateBasicChords()}
+                      disabled={
+                        generatingBasicChords ||
+                        generatingChords ||
+                        !performanceSheet.trim()
+                      }
+                      className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {generatingBasicChords
+                        ? "Generating basic..."
+                        : "Generate basic draft"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => generatePlacedSongsheet()}
+                      disabled={
+                        generatingPlacedSongsheet ||
+                        generatingBasicChords ||
+                        generatingChords ||
+                        !performanceSheet.trim() ||
+                        !hasUsableChordData()
+                      }
+                      className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {generatingPlacedSongsheet
+                        ? "Generating songsheet..."
+                        : "Generate placed songsheet"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => generateGuideTrackPlan()}
+                      disabled={
+                        generatingGuideTrackPlan ||
+                        generatingPlacedSongsheet ||
+                        generatingBasicChords ||
+                        generatingChords ||
+                        !performanceSheet.trim() ||
+                        !hasUsableChordData()
+                      }
+                      className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {generatingGuideTrackPlan
+                        ? "Generating guide plan..."
+                        : "Generate guide plan"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => copyChordJson()}
+                      disabled={!chordsText.trim()}
+                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {justCopiedChordJson ? "Copied ✓" : "Copy JSON"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => clearChordEditor()}
+                      disabled={
+                        generatingChords ||
+                        savingChords ||
+                        !hasChordEditorContent()
+                      }
+                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {justClearedChords ? "Cleared ✓" : "Clear editor"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={saveChords}
+                      disabled={
+                        !activeProject || savingChords || !chordsText.trim()
+                      }
+                      className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
+                    >
+                      {savingChords
+                        ? "Saving..."
+                        : justSavedChords
+                          ? "Saved ✓"
+                          : "Save chords"}
                     </button>
                   </div>
-
-                  <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100">
-                    {performanceSheet || "No lyrics available yet."}
-                  </pre>
                 </div>
 
-                <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Chord JSON
-                    </h2>
-
-                    <div className="flex flex-wrap gap-2">
-                      <div className="mb-3 rounded border border-gray-800 bg-gray-900 px-3 py-2 text-xs leading-5 text-gray-400">
-                        Manual generation controls. The recommended path is the
-                        Chord workflow status button above. Generate full draft
-                        is an advanced all-in-one option and may take longer.
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => generateChords()}
-                        disabled={generatingChords || !performanceSheet.trim()}
-                        className="rounded border border-gray-800 px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-600"
-                      >
-                        {generatingChords
-                          ? "Generating full draft..."
-                          : "Generate full draft"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => generateBasicChords()}
-                        disabled={
-                          generatingBasicChords ||
-                          generatingChords ||
-                          !performanceSheet.trim()
-                        }
-                        className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                      >
-                        {generatingBasicChords
-                          ? "Generating basic..."
-                          : "Generate basic draft"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => generatePlacedSongsheet()}
-                        disabled={
-                          generatingPlacedSongsheet ||
-                          generatingBasicChords ||
-                          generatingChords ||
-                          !performanceSheet.trim() ||
-                          !hasUsableChordData()
-                        }
-                        className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                      >
-                        {generatingPlacedSongsheet
-                          ? "Generating songsheet..."
-                          : "Generate placed songsheet"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => generateGuideTrackPlan()}
-                        disabled={
-                          generatingGuideTrackPlan ||
-                          generatingPlacedSongsheet ||
-                          generatingBasicChords ||
-                          generatingChords ||
-                          !performanceSheet.trim() ||
-                          !hasUsableChordData()
-                        }
-                        className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                      >
-                        {generatingGuideTrackPlan
-                          ? "Generating guide plan..."
-                          : "Generate guide plan"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => copyChordJson()}
-                        disabled={!chordsText.trim()}
-                        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                      >
-                        {justCopiedChordJson ? "Copied ✓" : "Copy JSON"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => clearChordEditor()}
-                        disabled={
-                          generatingChords ||
-                          savingChords ||
-                          !hasChordEditorContent()
-                        }
-                        className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                      >
-                        {justClearedChords ? "Cleared ✓" : "Clear editor"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={saveChords}
-                        disabled={
-                          !activeProject || savingChords || !chordsText.trim()
-                        }
-                        className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
-                      >
-                        {savingChords
-                          ? "Saving..."
-                          : justSavedChords
-                            ? "Saved ✓"
-                            : "Save chords"}
-                      </button>
-                    </div>
+                {chordExtractionMessage && (
+                  <div className="mt-3 rounded border border-yellow-700/40 bg-yellow-900/20 p-3 text-sm text-yellow-200">
+                    {chordExtractionMessage}
                   </div>
+                )}
 
-                  {chordExtractionMessage && (
-                    <div className="mt-3 rounded border border-yellow-700/40 bg-yellow-900/20 p-3 text-sm text-yellow-200">
-                      {chordExtractionMessage}
-                    </div>
-                  )}
+                {projectMessage && (
+                  <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
+                    {projectMessage}
+                  </div>
+                )}
 
-                  {projectMessage && (
-                    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 text-sm text-gray-300">
-                      {projectMessage}
-                    </div>
-                  )}
+                <input
+                  value={chordVersionTitle}
+                  onChange={(event) => {
+                    setChordVersionTitle(event.target.value);
+                    setChordExtractionMessage("");
+                    setProjectMessage("");
+                  }}
+                  placeholder="Chord version title"
+                  className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
+                />
 
-                  <input
-                    value={chordVersionTitle}
-                    onChange={(event) => {
-                      setChordVersionTitle(event.target.value);
-                      setChordExtractionMessage("");
-                      setProjectMessage("");
-                    }}
-                    placeholder="Chord version title"
-                    className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
-                  />
+                <textarea
+                  value={chordsText}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
 
-                  <textarea
-                    value={chordsText}
-                    onChange={(event) => {
-                      const nextValue = event.target.value;
+                    setChordsText(nextValue);
+                    resetAudioPreviewRequestState();
+                    setLastAppliedTransposeSnapshot(null);
+                    setChordExtractionMessage("");
+                    setProjectMessage("");
 
-                      setChordsText(nextValue);
-                      resetAudioPreviewRequestState();
-                      setLastAppliedTransposeSnapshot(null);
-                      setChordExtractionMessage("");
-                      setProjectMessage("");
+                    if (!nextValue.trim()) {
+                      setChords(null);
+                      setActiveChordVersionId(null);
+                      setChordVersionTitle("");
+                      return;
+                    }
 
-                      if (!nextValue.trim()) {
-                        setChords(null);
-                        setActiveChordVersionId(null);
-                        setChordVersionTitle("");
-                        return;
-                      }
+                    try {
+                      const parsed = JSON.parse(nextValue);
 
-                      try {
-                        const parsed = JSON.parse(nextValue);
+                      if (
+                        parsed &&
+                        typeof parsed === "object" &&
+                        !Array.isArray(parsed)
+                      ) {
+                        setChords(parsed);
 
-                        if (
-                          parsed &&
-                          typeof parsed === "object" &&
-                          !Array.isArray(parsed)
-                        ) {
-                          setChords(parsed);
-
-                          if (Object.keys(parsed).length === 0) {
-                            setActiveChordVersionId(null);
-                          }
+                        if (Object.keys(parsed).length === 0) {
+                          setActiveChordVersionId(null);
                         }
-                      } catch {
-                        // Keep the last valid chord summary while the user is editing invalid JSON.
                       }
-                    }}
-                    placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
-                    className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
-                  />
-                </div>
+                    } catch {
+                      // Keep the last valid chord summary while the user is editing invalid JSON.
+                    }
+                  }}
+                  placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
+                  className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+                />
               </div>
             </div>
-          )}
+          </div>
 
           {mode === "sheet" && (
             <SongSheet
