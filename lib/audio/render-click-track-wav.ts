@@ -986,6 +986,28 @@ function getMusicalGuideHumanisedLevel({
   return Math.max(0, Math.round(baseAmplitude * multiplier));
 }
 
+function getMusicalGuideHumanisedTimingOffsetSeconds({
+  section,
+  index,
+  maxOffsetSeconds,
+}: {
+  section: string;
+  index: number;
+  maxOffsetSeconds: number;
+}) {
+  const sectionSeed = section
+    .split("")
+    .reduce((total, character) => total + character.charCodeAt(0), 0);
+
+  const variation = getDeterministicMusicalGuideVariation(
+    sectionSeed + index * 29 + 11,
+  );
+
+  const centeredVariation = variation * 2 - 1;
+
+  return centeredVariation * maxOffsetSeconds;
+}
+
 function convertFloatSamplesToPcm16Samples(
   samples: Float32Array,
   targetPeak: number,
@@ -1321,12 +1343,30 @@ export function createClickTrackPcm16Samples(
             })
           : Math.round(arpeggioAmplitude * sectionLevel);
 
+        const humanisedArpeggioStartSeconds = isMusicalGuideMix
+          ? Math.max(
+              segment.startSeconds,
+              noteStartSeconds +
+                getMusicalGuideHumanisedTimingOffsetSeconds({
+                  section: segment.section,
+                  index: noteIndex,
+                  maxOffsetSeconds: 0.016,
+                }),
+            )
+          : noteStartSeconds;
+
+        const humanisedArpeggioEndSeconds = Math.min(
+          segment.endSeconds,
+          humanisedArpeggioStartSeconds + sectionArpeggioNoteDurationSeconds,
+        );
+
         addWarmToneToSamples({
           samples,
-          startSample: Math.round(noteStartSeconds * input.sampleRateHz),
+          startSample: Math.round(
+            humanisedArpeggioStartSeconds * input.sampleRateHz,
+          ),
           endSample: Math.round(
-            (noteStartSeconds + sectionArpeggioNoteDurationSeconds) *
-              input.sampleRateHz,
+            humanisedArpeggioEndSeconds * input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
           amplitude: humanisedArpeggioAmplitude,
@@ -1381,12 +1421,29 @@ export function createClickTrackPcm16Samples(
             })
           : Math.round(bassAmplitude * sectionLevel);
 
+        const humanisedBassStartSeconds = isMusicalGuideMix
+          ? Math.max(
+              segment.startSeconds,
+              pulseStartSeconds +
+                getMusicalGuideHumanisedTimingOffsetSeconds({
+                  section: segment.section,
+                  index: pulseIndex,
+                  maxOffsetSeconds: 0.01,
+                }),
+            )
+          : pulseStartSeconds;
+
+        const humanisedBassEndSeconds = Math.min(
+          segment.endSeconds,
+          humanisedBassStartSeconds + bassPulseDurationSeconds,
+        );
+
         addWarmToneToSamples({
           samples,
-          startSample: Math.round(pulseStartSeconds * input.sampleRateHz),
-          endSample: Math.round(
-            (pulseStartSeconds + bassPulseDurationSeconds) * input.sampleRateHz,
+          startSample: Math.round(
+            humanisedBassStartSeconds * input.sampleRateHz,
           ),
+          endSample: Math.round(humanisedBassEndSeconds * input.sampleRateHz),
           sampleRateHz: input.sampleRateHz,
           amplitude: humanisedBassAmplitude,
           frequencyHz: segment.bassFrequencyHz * bassFrequencyMultiplier,
