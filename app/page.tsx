@@ -20308,13 +20308,46 @@ ${buildRewriteInstruction(
           </div>
 
           {mode === "sheet" && (
-            <SongSheet
-              performanceSheet={performanceSheet}
-              performanceSections={performanceSections}
-              performanceFontSize={18}
-              activePerformanceSectionId={activePerformanceSectionId}
-              performanceSectionRefs={performanceSectionRefs}
-            />
+            <div className="space-y-4">
+              {clickTrackAudioUrl ? (
+                <div className="rounded border border-green-900 bg-green-950/20 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-medium text-green-100">
+                        {clickTrackAudioLabel}
+                      </div>
+                      <div className="mt-1 text-[11px] text-green-200">
+                        Guide audio available while reviewing or singing the
+                        sheet.
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange("chords")}
+                      className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950"
+                    >
+                      Open audio controls
+                    </button>
+                  </div>
+
+                  <audio controls src={clickTrackAudioUrl} className="w-full" />
+                </div>
+              ) : (
+                <div className="rounded border border-gray-800 bg-gray-950 p-3 text-sm text-gray-400">
+                  No guide audio generated yet. Go to Chords and download a
+                  musical guide WAV to use audio with the sheet.
+                </div>
+              )}
+
+              <SongSheet
+                performanceSheet={performanceSheet}
+                performanceSections={performanceSections}
+                performanceFontSize={18}
+                activePerformanceSectionId={activePerformanceSectionId}
+                performanceSectionRefs={performanceSectionRefs}
+              />
+            </div>
           )}
 
           {mode === "rehearse" && (
