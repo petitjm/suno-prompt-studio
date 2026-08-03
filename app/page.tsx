@@ -1447,6 +1447,8 @@ export default function Page() {
   const [compareMessage, setCompareMessage] = useState("");
   const [comparingNow, setComparingNow] = useState(false);
   const writeScrollTopRef = React.useRef(0);
+  const chordsScrollTopRef = React.useRef(0);
+
   const videoScrollTopRef = React.useRef(0);
   const sheetScrollTopRef = React.useRef(0);
 
@@ -1461,6 +1463,10 @@ export default function Page() {
       sheetScrollTopRef.current = currentScrollTop;
     }
 
+    if (mode === "chords") {
+      chordsScrollTopRef.current = currentScrollTop;
+    }
+
     if (mode === "video") {
       videoScrollTopRef.current = currentScrollTop;
     }
@@ -1471,6 +1477,10 @@ export default function Page() {
 
     if (mode === "write") {
       writeScrollTopRef.current = currentScrollTop;
+    }
+
+    if (mode === "chords") {
+      chordsScrollTopRef.current = currentScrollTop;
     }
 
     if (mode === "sheet") {
@@ -1562,6 +1572,13 @@ export default function Page() {
 
     if (mode === "write") {
       nextScrollTop = writeScrollTopRef.current;
+    }
+
+    if (mode === "chords") {
+      performanceScrollRef.current?.scrollTo({
+        top: chordsScrollTopRef.current,
+        behavior: "auto",
+      });
     }
 
     if (mode === "sheet") {
