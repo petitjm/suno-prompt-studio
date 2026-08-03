@@ -840,6 +840,63 @@ function addWarmToneToSamples({
   }
 }
 
+function getMusicalGuideBassStepMultiplier(section: string) {
+  const normalizedSection = section.trim().toLowerCase();
+
+  if (
+    normalizedSection.includes("intro") ||
+    normalizedSection.includes("outro") ||
+    normalizedSection.includes("ending")
+  ) {
+    return 4;
+  }
+
+  if (normalizedSection.includes("verse")) {
+    return 2;
+  }
+
+  if (
+    normalizedSection.includes("chorus") ||
+    normalizedSection.includes("hook") ||
+    normalizedSection.includes("refrain")
+  ) {
+    return 1;
+  }
+
+  if (
+    normalizedSection.includes("bridge") ||
+    normalizedSection.includes("middle")
+  ) {
+    return 1.5;
+  }
+
+  return 2;
+}
+
+function getMusicalGuideBassFrequencyMultiplier(
+  section: string,
+  pulseIndex: number,
+) {
+  const normalizedSection = section.trim().toLowerCase();
+
+  if (
+    normalizedSection.includes("bridge") ||
+    normalizedSection.includes("middle")
+  ) {
+    return pulseIndex % 4 === 2 ? 1.5 : 1;
+  }
+
+  if (
+    normalizedSection.includes("chorus") ||
+    normalizedSection.includes("hook") ||
+    normalizedSection.includes("refrain")
+  ) {
+    return pulseIndex % 4 === 3 ? 2 : 1;
+  }
+
+  return 1;
+}
+
 function limitSamplesToPeak(samples: Int16Array, targetPeak: number) {
   let peak = 0;
 
@@ -1181,15 +1238,32 @@ export function createClickTrackPcm16Samples(
     input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
       ? 60 / input.tempoBpm
       : 0;
-  const bassPulseDurationSeconds = secondsPerBassPulse * 0.72;
 
   if (secondsPerBassPulse > 0) {
     for (const segment of chordToneGuideSegments) {
+      const sectionLevel = isMusicalGuideMix
+        ? getMusicalGuideSectionLevel(segment.section)
+        : 1;
+      const bassStepSeconds = isMusicalGuideMix
+        ? secondsPerBassPulse *
+          getMusicalGuideBassStepMultiplier(segment.section)
+        : secondsPerBassPulse;
+      const bassPulseDurationSeconds = Math.min(
+        secondsPerBassPulse * 0.72,
+        bassStepSeconds * 0.82,
+      );
+
+      let pulseIndex = 0;
+
       for (
         let pulseStartSeconds = segment.startSeconds;
         pulseStartSeconds < segment.endSeconds;
-        pulseStartSeconds += secondsPerBassPulse
+        pulseStartSeconds += bassStepSeconds
       ) {
+        const bassFrequencyMultiplier = isMusicalGuideMix
+          ? getMusicalGuideBassFrequencyMultiplier(segment.section, pulseIndex)
+          : 1;
+
         addWarmToneToSamples({
           samples,
           startSample: Math.round(pulseStartSeconds * input.sampleRateHz),
@@ -1197,13 +1271,15 @@ export function createClickTrackPcm16Samples(
             (pulseStartSeconds + bassPulseDurationSeconds) * input.sampleRateHz,
           ),
           sampleRateHz: input.sampleRateHz,
-          amplitude: bassAmplitude,
-          frequencyHz: segment.bassFrequencyHz,
+          amplitude: Math.round(bassAmplitude * sectionLevel),
+          frequencyHz: segment.bassFrequencyHz * bassFrequencyMultiplier,
           secondHarmonicLevel: 0.35,
           thirdHarmonicLevel: 0.1,
           fadeInSeconds: 0.025,
           fadeOutSeconds: 0.16,
         });
+
+        pulseIndex += 1;
       }
     }
   }
