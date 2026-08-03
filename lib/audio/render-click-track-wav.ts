@@ -459,6 +459,40 @@ function getChordToneFrequenciesHz(chord: string): number[] {
   );
 }
 
+function getVoiceLedChordFrequenciesHz({
+  frequenciesHz,
+  previousFrequenciesHz,
+}: {
+  frequenciesHz: number[];
+  previousFrequenciesHz: number[];
+}) {
+  if (previousFrequenciesHz.length === 0) {
+    return frequenciesHz;
+  }
+
+  return frequenciesHz.map((frequencyHz, index) => {
+    const previousFrequencyHz =
+      previousFrequenciesHz[index] ||
+      previousFrequenciesHz[previousFrequenciesHz.length - 1] ||
+      frequencyHz;
+
+    const candidates = [frequencyHz / 2, frequencyHz, frequencyHz * 2].filter(
+      (candidate) => candidate >= 110 && candidate <= 880,
+    );
+
+    if (candidates.length === 0) {
+      return frequencyHz;
+    }
+
+    return candidates.reduce((best, candidate) =>
+      Math.abs(candidate - previousFrequencyHz) <
+      Math.abs(best - previousFrequencyHz)
+        ? candidate
+        : best,
+    );
+  });
+}
+
 type ChordToneGuideSegment = {
   section: string;
   startSeconds: number;
@@ -519,6 +553,8 @@ function getChordToneGuideSegments({
         ]
       : markers;
 
+  let previousFrequenciesHz: number[] = [];
+
   return markersWithOpeningChord
     .map((marker, index) => {
       const nextMarker = markersWithOpeningChord[index + 1];
@@ -530,11 +566,18 @@ function getChordToneGuideSegments({
         return null;
       }
 
+      const voiceLedFrequenciesHz = getVoiceLedChordFrequenciesHz({
+        frequenciesHz: marker.frequenciesHz,
+        previousFrequenciesHz,
+      });
+
+      previousFrequenciesHz = voiceLedFrequenciesHz;
+
       return {
         section: marker.section,
         startSeconds: marker.startSeconds,
         endSeconds,
-        frequenciesHz: marker.frequenciesHz,
+        frequenciesHz: voiceLedFrequenciesHz,
         bassFrequencyHz: marker.bassFrequencyHz,
       };
     })
