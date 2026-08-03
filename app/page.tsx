@@ -1493,7 +1493,7 @@ export default function Page() {
   };
 
   const handleModeChange = (nextMode: AppMode) => {
-    handleWorkspaceScroll();
+    saveCurrentModeScroll();
     setMode(nextMode);
   };
 
@@ -1575,10 +1575,7 @@ export default function Page() {
     }
 
     if (mode === "chords") {
-      performanceScrollRef.current?.scrollTo({
-        top: chordsScrollTopRef.current,
-        behavior: "auto",
-      });
+      nextScrollTop = chordsScrollTopRef.current;
     }
 
     if (mode === "sheet") {
