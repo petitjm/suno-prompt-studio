@@ -918,14 +918,8 @@ function getMusicalGuideBassFrequencyMultiplier(
   section: string,
   pulseIndex: number,
 ) {
-  const normalizedSection = section.trim().toLowerCase();
-
-  if (
-    normalizedSection.includes("bridge") ||
-    normalizedSection.includes("middle")
-  ) {
-    return pulseIndex % 4 === 2 ? 1.5 : 1;
-  }
+  void section;
+  void pulseIndex;
 
   return 1;
 }
