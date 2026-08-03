@@ -824,7 +824,8 @@ function addWarmToneToSamples({
 
     const fadeIn = Math.min(1, offset / fadeInSamples);
     const fadeOut = Math.min(1, remaining / fadeOutSamples);
-    const envelope = Math.min(fadeIn, fadeOut);
+    const linearEnvelope = Math.min(fadeIn, fadeOut);
+    const envelope = linearEnvelope * linearEnvelope * (3 - 2 * linearEnvelope);
     const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
 
     const shapedTone =
@@ -1145,19 +1146,28 @@ export function createClickTrackPcm16Samples(
     const sectionLevel = isMusicalGuideMix
       ? getMusicalGuideSectionLevel(segment.section)
       : 1;
+    const padTransitionOverlapSeconds = isMusicalGuideMix ? 0.22 : 0;
+    const padStartSeconds = Math.max(
+      countInDurationSeconds,
+      segment.startSeconds - padTransitionOverlapSeconds,
+    );
+    const padEndSeconds = Math.min(
+      totalDurationSeconds,
+      segment.endSeconds + padTransitionOverlapSeconds,
+    );
 
     segment.frequenciesHz.forEach((frequencyHz) => {
       addWarmToneToSamples({
         samples,
-        startSample: Math.round(segment.startSeconds * input.sampleRateHz),
-        endSample: Math.round(segment.endSeconds * input.sampleRateHz),
+        startSample: Math.round(padStartSeconds * input.sampleRateHz),
+        endSample: Math.round(padEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
         amplitude: Math.round(chordPadAmplitude * sectionLevel),
         frequencyHz,
         secondHarmonicLevel: 0.22,
         thirdHarmonicLevel: 0.08,
-        fadeInSeconds: 0.12,
-        fadeOutSeconds: 0.24,
+        fadeInSeconds: isMusicalGuideMix ? 0.18 : 0.12,
+        fadeOutSeconds: isMusicalGuideMix ? 0.32 : 0.24,
       });
     });
   }
