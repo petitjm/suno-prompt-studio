@@ -574,7 +574,7 @@ function addToneToSamples({
   amplitude,
   frequencyHz,
 }: {
-  samples: Int16Array;
+  samples: Float32Array;
   startSample: number;
   endSample: number;
   sampleRateHz: number;
@@ -605,10 +605,9 @@ function addToneToSamples({
     const envelope = Math.min(fadeIn, fadeOut);
 
     const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
-    const value = Math.round(Math.sin(phase) * amplitude * envelope);
-    const mixed = samples[sampleIndex] + value;
+    const value = Math.sin(phase) * amplitude * envelope;
 
-    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+    samples[sampleIndex] += value;
   }
 }
 
@@ -620,7 +619,7 @@ function addTonePulseToSamples({
   amplitude,
   frequencyHz,
 }: {
-  samples: Int16Array;
+  samples: Float32Array;
   startSample: number;
   durationSamples: number;
   sampleRateHz: number;
@@ -654,10 +653,9 @@ function addTonePulseToSamples({
     const envelope = Math.min(fadeIn, fadeOut);
 
     const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
-    const value = Math.round(Math.sin(phase) * amplitude * envelope);
-    const mixed = samples[sampleIndex] + value;
+    const value = Math.sin(phase) * amplitude * envelope;
 
-    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+    samples[sampleIndex] += value;
   }
 }
 
@@ -790,7 +788,7 @@ function addWarmToneToSamples({
   fadeInSeconds = 0.08,
   fadeOutSeconds = 0.18,
 }: {
-  samples: Int16Array;
+  samples: Float32Array;
   startSample: number;
   endSample: number;
   sampleRateHz: number;
@@ -834,10 +832,9 @@ function addWarmToneToSamples({
         Math.sin(phase * 3) * thirdHarmonicLevel) /
       harmonicNormaliser;
 
-    const value = Math.round(shapedTone * amplitude * envelope);
-    const mixed = samples[sampleIndex] + value;
+    const value = shapedTone * amplitude * envelope;
 
-    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+    samples[sampleIndex] += value;
   }
 }
 
@@ -898,7 +895,7 @@ function getMusicalGuideBassFrequencyMultiplier(
   return 1;
 }
 
-function limitSamplesToPeak(samples: Int16Array, targetPeak: number) {
+function limitSamplesToPeak(samples: Float32Array, targetPeak: number) {
   let peak = 0;
 
   for (const sample of samples) {
@@ -912,8 +909,25 @@ function limitSamplesToPeak(samples: Int16Array, targetPeak: number) {
   const scale = targetPeak / peak;
 
   for (let index = 0; index < samples.length; index += 1) {
-    samples[index] = Math.round(samples[index] * scale);
+    samples[index] = samples[index] * scale;
   }
+}
+
+function convertFloatSamplesToPcm16Samples(
+  samples: Float32Array,
+  targetPeak: number,
+) {
+  limitSamplesToPeak(samples, targetPeak);
+
+  const pcmSamples = new Int16Array(samples.length);
+
+  for (let index = 0; index < samples.length; index += 1) {
+    const sample = Math.round(samples[index] || 0);
+
+    pcmSamples[index] = Math.max(-32768, Math.min(32767, sample));
+  }
+
+  return pcmSamples;
 }
 
 function getMusicalGuideMixLevel(value: unknown) {
@@ -932,7 +946,7 @@ function addClickToSamples({
   amplitude,
   frequencyHz,
 }: {
-  samples: Int16Array;
+  samples: Float32Array;
   startSample: number;
   sampleRateHz: number;
   lengthSamples: number;
@@ -948,10 +962,9 @@ function addClickToSamples({
 
     const fade = 1 - offset / lengthSamples;
     const phase = (2 * Math.PI * frequencyHz * sampleIndex) / sampleRateHz;
-    const value = Math.round(Math.sin(phase) * amplitude * fade);
-    const mixed = samples[sampleIndex] + value;
+    const value = Math.sin(phase) * amplitude * fade;
 
-    samples[sampleIndex] = Math.max(-32768, Math.min(32767, mixed));
+    samples[sampleIndex] += value;
   }
 }
 
@@ -970,10 +983,13 @@ export function createClickTrackPcm16Samples(
     countInDurationSeconds,
     totalDurationSeconds,
   });
-  const samples = new Int16Array(totalSamples);
+  const samples = new Float32Array(totalSamples);
 
   if (input.tempoBpm <= 0 || !Number.isFinite(input.tempoBpm)) {
-    return samples;
+    return convertFloatSamplesToPcm16Samples(
+      samples,
+      input.mixProfile === "musical-guide" ? 26000 : 32767,
+    );
   }
 
   const secondsPerBeat = 60 / input.tempoBpm;
@@ -1294,11 +1310,10 @@ export function createClickTrackPcm16Samples(
     }
   }
 
-  if (isMusicalGuideMix) {
-    limitSamplesToPeak(samples, 26000);
-  }
-
-  return samples;
+  return convertFloatSamplesToPcm16Samples(
+    samples,
+    isMusicalGuideMix ? 26000 : 32767,
+  );
 }
 
 export function encodePcm16MonoWav(
