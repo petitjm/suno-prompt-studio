@@ -211,6 +211,7 @@ export default function Page() {
   );
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
   const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const sheetGuideAudioRef = useRef<HTMLAudioElement | null>(null);
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
@@ -759,6 +760,22 @@ export default function Page() {
       currentTime: nextTime,
       duration: generatedAudioDuration,
     });
+  };
+
+  const seekSheetGuideAudio = (seconds: number) => {
+    const audioElement = sheetGuideAudioRef.current;
+
+    if (!audioElement || !Number.isFinite(seconds) || seconds < 0) {
+      return;
+    }
+
+    audioElement.currentTime = seconds;
+  };
+
+  const sheetGuideLeadInSeconds = 4;
+
+  const seekSheetGuideAudioWithLeadIn = (seconds: number) => {
+    seekSheetGuideAudio(Math.max(0, seconds - sheetGuideLeadInSeconds));
   };
 
   const [downloadingMusicalGuideWav, setDownloadingMusicalGuideWav] =
@@ -20331,7 +20348,90 @@ ${buildRewriteInstruction(
                     </button>
                   </div>
 
-                  <audio controls src={clickTrackAudioUrl} className="w-full" />
+                  <audio
+                    ref={sheetGuideAudioRef}
+                    controls
+                    src={clickTrackAudioUrl}
+                    className="w-full"
+                    onLoadedMetadata={(event) => {
+                      const duration = event.currentTarget.duration;
+                      const safeDuration =
+                        Number.isFinite(duration) && duration > 0
+                          ? duration
+                          : 0;
+
+                      setGeneratedAudioDuration(safeDuration);
+                    }}
+                  />
+
+                  {getGeneratedAudioSectionJumpSummaries().length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center justify-between gap-3 text-[11px] text-green-100">
+                        <span className="font-medium">Section timeline</span>
+                        <span className="text-green-200">
+                          Click a marker to start {sheetGuideLeadInSeconds}s
+                          before the section.
+                        </span>
+                      </div>
+
+                      <div className="relative h-16 rounded border border-green-900 bg-green-950/40 px-3">
+                        <div className="absolute left-3 right-3 top-8 h-px bg-green-800" />
+
+                        {getGeneratedAudioSectionJumpSummaries()
+                          .slice(0, 16)
+                          .map((section, index, sections) => {
+                            const fallbackPercent =
+                              sections.length > 1
+                                ? (index / (sections.length - 1)) * 100
+                                : 0;
+                            const timelinePercent =
+                              generatedAudioDuration > 0
+                                ? Math.max(
+                                    0,
+                                    Math.min(
+                                      100,
+                                      (section.startSeconds /
+                                        generatedAudioDuration) *
+                                        100,
+                                    ),
+                                  )
+                                : fallbackPercent;
+                            const leadInSeconds = Math.max(
+                              0,
+                              section.startSeconds - sheetGuideLeadInSeconds,
+                            );
+
+                            return (
+                              <button
+                                key={`${section.order}-${section.section}-${section.startSeconds}`}
+                                type="button"
+                                onClick={() =>
+                                  seekSheetGuideAudioWithLeadIn(
+                                    section.startSeconds,
+                                  )
+                                }
+                                title={`${section.section}: marker ${formatGeneratedAudioTime(
+                                  section.startSeconds,
+                                )}, starts from ${formatGeneratedAudioTime(
+                                  leadInSeconds,
+                                )}`}
+                                style={{ left: `${timelinePercent}%` }}
+                                className="absolute top-8 max-w-[120px] -translate-x-1/2 -translate-y-1/2 rounded border border-green-700 bg-green-950 px-2 py-1 text-[10px] leading-tight text-green-100 shadow hover:bg-green-900"
+                              >
+                                <span className="block truncate">
+                                  {section.section}
+                                </span>
+                                <span className="block text-green-300">
+                                  {formatGeneratedAudioTime(
+                                    section.startSeconds,
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="sticky top-0 z-30 rounded border border-gray-800 bg-gray-950/95 p-3 text-sm text-gray-400 shadow-lg backdrop-blur">
