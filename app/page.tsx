@@ -20310,7 +20310,7 @@ ${buildRewriteInstruction(
           {mode === "sheet" && (
             <div className="space-y-4">
               {clickTrackAudioUrl ? (
-                <div className="rounded border border-green-900 bg-green-950/20 p-3">
+                <div className="sticky top-0 z-30 rounded border border-green-900 bg-green-950/95 p-3 shadow-lg backdrop-blur">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-medium text-green-100">
@@ -20334,7 +20334,7 @@ ${buildRewriteInstruction(
                   <audio controls src={clickTrackAudioUrl} className="w-full" />
                 </div>
               ) : (
-                <div className="rounded border border-gray-800 bg-gray-950 p-3 text-sm text-gray-400">
+                <div className="sticky top-0 z-30 rounded border border-gray-800 bg-gray-950/95 p-3 text-sm text-gray-400 shadow-lg backdrop-blur">
                   No guide audio generated yet. Go to Chords and download a
                   musical guide WAV to use audio with the sheet.
                 </div>
