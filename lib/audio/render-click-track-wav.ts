@@ -927,14 +927,6 @@ function getMusicalGuideBassFrequencyMultiplier(
     return pulseIndex % 4 === 2 ? 1.5 : 1;
   }
 
-  if (
-    normalizedSection.includes("chorus") ||
-    normalizedSection.includes("hook") ||
-    normalizedSection.includes("refrain")
-  ) {
-    return pulseIndex % 4 === 3 ? 2 : 1;
-  }
-
   return 1;
 }
 
