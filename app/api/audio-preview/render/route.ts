@@ -50,6 +50,7 @@ type SongSheetLine = {
 type TimelineSection = {
   order: number;
   section: string;
+  sourceLineIndexes: number[];
   lyricLineCount: number;
   chordPlacementCount: number;
   firstLyric: string;
@@ -143,37 +144,59 @@ function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
     ? payload.renderSteps.map((item, index) => normalizeRenderStep(item, index))
     : [];
 
-  const sectionOrder: string[] = [];
-  const linesBySection = new Map<string, SongSheetLine[]>();
+  const sectionInstances: {
+    section: string;
+    sourceLineIndexes: number[];
+    lines: SongSheetLine[];
+  }[] = [];
 
-  songSheetLines.forEach((line) => {
+  songSheetLines.forEach((line, sourceLineIndex) => {
     const section = line.section || "Unknown section";
+    const previousSection = sectionInstances[sectionInstances.length - 1];
 
-    if (!linesBySection.has(section)) {
-      linesBySection.set(section, []);
-      sectionOrder.push(section);
+    if (previousSection && previousSection.section === section) {
+      previousSection.lines.push(line);
+      previousSection.sourceLineIndexes.push(sourceLineIndex);
+      return;
     }
 
-    linesBySection.get(section)?.push(line);
+    sectionInstances.push({
+      section,
+      sourceLineIndexes: [sourceLineIndex],
+      lines: [line],
+    });
   });
 
-  return sectionOrder.map((section, index) => {
-    const lines = linesBySection.get(section) || [];
+  const sectionOccurrenceCounts = new Map<string, number>();
+
+  return sectionInstances.map((sectionInstance, index) => {
+    const sectionOccurrence =
+      (sectionOccurrenceCounts.get(sectionInstance.section) || 0) + 1;
+
+    sectionOccurrenceCounts.set(sectionInstance.section, sectionOccurrence);
+
+    const matchingRenderSteps = renderSteps.filter(
+      (step) => step.section === sectionInstance.section,
+    );
+
     const matchingStep =
-      renderSteps.find((step) => step.section === section) ||
+      matchingRenderSteps[sectionOccurrence - 1] ||
+      matchingRenderSteps[0] ||
       renderSteps[index];
 
-    const chordPlacementCount = lines.reduce((total, line) => {
+    const chordPlacementCount = sectionInstance.lines.reduce((total, line) => {
       return total + (Array.isArray(line.chords) ? line.chords.length : 0);
     }, 0);
 
     return {
       order: index + 1,
-      section,
-      lyricLineCount: lines.length,
+      section: sectionInstance.section,
+      sourceLineIndexes: sectionInstance.sourceLineIndexes,
+      lyricLineCount: sectionInstance.lines.length,
       chordPlacementCount,
-      firstLyric: lines[0]?.lyric || "",
-      lastLyric: lines[lines.length - 1]?.lyric || "",
+      firstLyric: sectionInstance.lines[0]?.lyric || "",
+      lastLyric:
+        sectionInstance.lines[sectionInstance.lines.length - 1]?.lyric || "",
       goal:
         matchingStep?.goal ||
         "Preserve the section feel from the placed songsheet.",
@@ -242,11 +265,15 @@ function buildDryRunCueSheet(
 
     cumulativeSeconds += estimatedSeconds;
 
-    const sectionLines = Array.isArray(payload.songsheetLines)
-      ? payload.songsheetLines
-          .map((item, index) => normalizeSongSheetLine(item, index))
-          .filter((line) => line.section === section.section)
+    const songSheetLines = Array.isArray(payload.songsheetLines)
+      ? payload.songsheetLines.map((item, index) =>
+          normalizeSongSheetLine(item, index),
+        )
       : [];
+
+    const sectionLines = section.sourceLineIndexes
+      .map((sourceLineIndex) => songSheetLines[sourceLineIndex])
+      .filter((line): line is SongSheetLine => Boolean(line));
 
     const chordPlacements = sectionLines.flatMap((line, lineIndex) => {
       const lyricLength = Math.max(1, line.lyric?.length || 1);
