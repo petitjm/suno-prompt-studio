@@ -20760,13 +20760,18 @@ ${buildRewriteInstruction(
 
               <details className="relative z-40 mt-3 rounded border border-yellow-800 bg-yellow-950/40 p-3 text-xs text-yellow-100 shadow-lg">
                 <summary className="cursor-pointer font-semibold">
-                  Section alignment debug / cue sync
+                  Guide sync details
                 </summary>
+
+                <div className="mt-2 text-[11px] text-yellow-200">
+                  Shows how the main song sheet, guide-aligned sheet, cue
+                  markers, and visible Sheet sections currently line up.
+                </div>
 
                 <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
-                      Main performance sheet sections
+                      Main song sheet sections
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(
@@ -20779,7 +20784,7 @@ ${buildRewriteInstruction(
 
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
-                      Audio preview songsheet sections
+                      Guide-aligned sheet sections
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(
@@ -20796,7 +20801,7 @@ ${buildRewriteInstruction(
 
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
-                      Cue timeline markers
+                      Guide cue markers
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(
@@ -20820,7 +20825,7 @@ ${buildRewriteInstruction(
 
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
-                      Sheet display sections
+                      Raw Sheet display sections
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(
@@ -20842,7 +20847,7 @@ ${buildRewriteInstruction(
                   </div>
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
-                      Cue-synced Sheet sections
+                      Visible guide-synced Sheet sections
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(
