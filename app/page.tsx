@@ -210,6 +210,11 @@ export default function Page() {
     "Latest generated WAV",
   );
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
+  const [sheetGuideActiveSectionId, setSheetGuideActiveSectionId] = useState<
+    string | null
+  >(null);
+  const [sheetGuideActiveSectionIndex, setSheetGuideActiveSectionIndex] =
+    useState<number | null>(null);
   const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
   const sheetGuideAudioRef = useRef<HTMLAudioElement | null>(null);
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
@@ -762,6 +767,64 @@ export default function Page() {
     });
   };
 
+  const normaliseGuideSectionLabel = (value: string) => {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/\s+\d+$/g, "");
+  };
+
+  const updateSheetGuideActiveSection = (currentTimeSeconds: number) => {
+    if (!Number.isFinite(currentTimeSeconds) || currentTimeSeconds < 0) {
+      setSheetGuideActiveSectionId(null);
+      setSheetGuideActiveSectionIndex(null);
+      return;
+    }
+
+    const sectionSummaries = getGeneratedAudioSectionJumpSummaries()
+      .slice(0, 16)
+      .sort((first, second) => first.startSeconds - second.startSeconds);
+
+    if (sectionSummaries.length === 0 || performanceSections.length === 0) {
+      setSheetGuideActiveSectionId(null);
+      setSheetGuideActiveSectionIndex(null);
+      return;
+    }
+
+    const currentGuideSectionIndex = sectionSummaries.findLastIndex(
+      (section) => section.startSeconds <= currentTimeSeconds,
+    );
+
+    if (currentGuideSectionIndex < 0) {
+      setSheetGuideActiveSectionId(null);
+      setSheetGuideActiveSectionIndex(null);
+      return;
+    }
+
+    const currentGuideSection = sectionSummaries[currentGuideSectionIndex];
+    const currentGuideLabel = normaliseGuideSectionLabel(
+      currentGuideSection.section,
+    );
+
+    const matchingPerformanceSectionIndex =
+      currentGuideSectionIndex < performanceSections.length
+        ? currentGuideSectionIndex
+        : -1;
+
+    const matchingPerformanceSection =
+      matchingPerformanceSectionIndex >= 0
+        ? performanceSections[matchingPerformanceSectionIndex]
+        : null;
+
+    setSheetGuideActiveSectionId(matchingPerformanceSection?.id || null);
+    setSheetGuideActiveSectionIndex(
+      matchingPerformanceSectionIndex >= 0
+        ? matchingPerformanceSectionIndex
+        : null,
+    );
+  };
+
   const seekSheetGuideAudio = (seconds: number) => {
     const audioElement = sheetGuideAudioRef.current;
 
@@ -775,7 +838,10 @@ export default function Page() {
   const sheetGuideLeadInSeconds = 4;
 
   const seekSheetGuideAudioWithLeadIn = (seconds: number) => {
-    seekSheetGuideAudio(Math.max(0, seconds - sheetGuideLeadInSeconds));
+    const leadInStartSeconds = Math.max(0, seconds - sheetGuideLeadInSeconds);
+
+    seekSheetGuideAudio(leadInStartSeconds);
+    updateSheetGuideActiveSection(leadInStartSeconds);
   };
 
   const [downloadingMusicalGuideWav, setDownloadingMusicalGuideWav] =
@@ -20337,6 +20403,11 @@ ${buildRewriteInstruction(
                         Guide audio available while reviewing or singing the
                         sheet.
                       </div>
+
+                      <div className="mt-1 text-[11px] text-yellow-200">
+                        Sheet highlight id:{" "}
+                        {sheetGuideActiveSectionId || "none"}
+                      </div>
                     </div>
 
                     <button
@@ -20361,6 +20432,23 @@ ${buildRewriteInstruction(
                           : 0;
 
                       setGeneratedAudioDuration(safeDuration);
+                      updateSheetGuideActiveSection(
+                        event.currentTarget.currentTime || 0,
+                      );
+                    }}
+                    onTimeUpdate={(event) => {
+                      updateSheetGuideActiveSection(
+                        event.currentTarget.currentTime || 0,
+                      );
+                    }}
+                    onSeeked={(event) => {
+                      updateSheetGuideActiveSection(
+                        event.currentTarget.currentTime || 0,
+                      );
+                    }}
+                    onEnded={() => {
+                      setSheetGuideActiveSectionId(null);
+                      setSheetGuideActiveSectionIndex(null);
                     }}
                   />
 
@@ -20444,7 +20532,17 @@ ${buildRewriteInstruction(
                 performanceSheet={performanceSheet}
                 performanceSections={performanceSections}
                 performanceFontSize={18}
-                activePerformanceSectionId={activePerformanceSectionId}
+                activePerformanceSectionId={
+                  sheetGuideActiveSectionId || activePerformanceSectionId
+                }
+                activePerformanceSectionIndex={sheetGuideActiveSectionIndex}
+                activePerformanceSectionLabel={
+                  getGeneratedAudioSectionJumpSummaries().findLast(
+                    (section) =>
+                      section.startSeconds <=
+                      (sheetGuideAudioRef.current?.currentTime || 0),
+                  )?.section || null
+                }
                 performanceSectionRefs={performanceSectionRefs}
               />
             </div>
@@ -20493,8 +20591,18 @@ ${buildRewriteInstruction(
               <SongSheet
                 performanceSheet={performanceSheet}
                 performanceSections={performanceSections}
-                performanceFontSize={24}
-                activePerformanceSectionId={activePerformanceSectionId}
+                performanceFontSize={18}
+                activePerformanceSectionId={
+                  sheetGuideActiveSectionId || activePerformanceSectionId
+                }
+                activePerformanceSectionIndex={sheetGuideActiveSectionIndex}
+                activePerformanceSectionLabel={
+                  getGeneratedAudioSectionJumpSummaries().find(
+                    (section) =>
+                      section.startSeconds <=
+                      (sheetGuideAudioRef.current?.currentTime || 0),
+                  )?.section || null
+                }
                 performanceSectionRefs={performanceSectionRefs}
               />
 
