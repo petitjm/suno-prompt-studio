@@ -706,7 +706,9 @@ export default function Page() {
               order: number;
               section: string;
               startSeconds: number;
-            } => section !== null,
+            } =>
+              section !== null &&
+              !isNonPerformanceGuideSection(section.section),
           )
       : [];
 
@@ -741,7 +743,8 @@ export default function Page() {
             order: number;
             section: string;
             startSeconds: number;
-          } => section !== null,
+          } =>
+            section !== null && !isNonPerformanceGuideSection(section.section),
         ) || []
     );
   };
@@ -775,6 +778,79 @@ export default function Page() {
       .replace(/\s+\d+$/g, "");
   };
 
+  const normaliseGuideSectionMatchLabel = (value: string) => {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/([a-z])(\d)/g, "$1 $2")
+      .replace(/(\d)([a-z])/g, "$1 $2")
+      .replace(/\s+/g, " ");
+  };
+
+  const getGuideSectionMatchKey = (value: string) => {
+    const normalised = normaliseGuideSectionMatchLabel(value)
+      .replace(/\[[^\]]*\]/g, " ")
+      .replace(/\([^)]*\)/g, " ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const verseMatch = normalised.match(/\bverse\s*(\d+)\b/);
+
+    if (verseMatch) {
+      return `verse:${verseMatch[1]}`;
+    }
+
+    if (normalised.includes("final chorus")) {
+      return "final chorus";
+    }
+
+    if (normalised.includes("chorus")) {
+      return "chorus";
+    }
+
+    if (normalised.includes("bridge")) {
+      return "bridge";
+    }
+
+    if (normalised.includes("outro") || normalised.includes("tag")) {
+      return "final chorus";
+    }
+
+    return normalised;
+  };
+
+  const isNonPerformanceGuideSection = (value: string) => {
+    const normalised = normaliseGuideSectionMatchLabel(value);
+
+    return (
+      normalised === "meta" ||
+      normalised === "metadata" ||
+      normalised === "title" ||
+      normalised === "artist" ||
+      normalised === "song"
+    );
+  };
+
+  const isNonPerformanceSheetSection = (section: {
+    label: string;
+    content: string;
+  }) => {
+    const normalisedLabel = normaliseGuideSectionMatchLabel(section.label);
+    const contentStart = section.content.trim().toLowerCase();
+
+    return (
+      isNonPerformanceGuideSection(section.label) ||
+      normalisedLabel === "song" ||
+      contentStart.startsWith("{title:") ||
+      contentStart.startsWith("{artist:")
+    );
+  };
+
+  const getGuideHighlightPerformanceSections = () => {
+    return cueSyncedSheetSections;
+  };
+
   const updateSheetGuideActiveSection = (currentTimeSeconds: number) => {
     if (!Number.isFinite(currentTimeSeconds) || currentTimeSeconds < 0) {
       setSheetGuideActiveSectionId(null);
@@ -786,7 +862,13 @@ export default function Page() {
       .slice(0, 16)
       .sort((first, second) => first.startSeconds - second.startSeconds);
 
-    if (sectionSummaries.length === 0 || performanceSections.length === 0) {
+    const guideHighlightPerformanceSections =
+      getGuideHighlightPerformanceSections();
+
+    if (
+      sectionSummaries.length === 0 ||
+      guideHighlightPerformanceSections.length === 0
+    ) {
       setSheetGuideActiveSectionId(null);
       setSheetGuideActiveSectionIndex(null);
       return;
@@ -803,26 +885,30 @@ export default function Page() {
     }
 
     const currentGuideSection = sectionSummaries[currentGuideSectionIndex];
-    const currentGuideLabel = normaliseGuideSectionLabel(
+    const currentGuideSectionKey = getGuideSectionMatchKey(
       currentGuideSection.section,
     );
 
-    const matchingPerformanceSectionIndex =
-      currentGuideSectionIndex < performanceSections.length
-        ? currentGuideSectionIndex
-        : -1;
+    const matchingSheetSections = guideHighlightPerformanceSections.filter(
+      (section) =>
+        getGuideSectionMatchKey(section.label) === currentGuideSectionKey,
+    );
+
+    const currentGuideLabelOccurrenceIndex =
+      sectionSummaries
+        .slice(0, currentGuideSectionIndex + 1)
+        .filter(
+          (section) =>
+            getGuideSectionMatchKey(section.section) === currentGuideSectionKey,
+        ).length - 1;
 
     const matchingPerformanceSection =
-      matchingPerformanceSectionIndex >= 0
-        ? performanceSections[matchingPerformanceSectionIndex]
-        : null;
+      matchingSheetSections[currentGuideLabelOccurrenceIndex] ||
+      matchingSheetSections[0] ||
+      null;
 
     setSheetGuideActiveSectionId(matchingPerformanceSection?.id || null);
-    setSheetGuideActiveSectionIndex(
-      matchingPerformanceSectionIndex >= 0
-        ? matchingPerformanceSectionIndex
-        : null,
-    );
+    setSheetGuideActiveSectionIndex(null);
   };
 
   const seekSheetGuideAudio = (seconds: number) => {
@@ -842,6 +928,19 @@ export default function Page() {
 
     seekSheetGuideAudio(leadInStartSeconds);
     updateSheetGuideActiveSection(leadInStartSeconds);
+  };
+
+  const getSheetGuideInitialSeekSeconds = () => {
+    const firstSection = getGeneratedAudioSectionJumpSummaries()[0];
+
+    if (
+      !firstSection ||
+      firstSection.startSeconds <= sheetGuideLeadInSeconds + 1
+    ) {
+      return null;
+    }
+
+    return Math.max(0, firstSection.startSeconds - sheetGuideLeadInSeconds);
   };
 
   const [downloadingMusicalGuideWav, setDownloadingMusicalGuideWav] =
@@ -1800,6 +1899,119 @@ export default function Page() {
 
     setPerformanceSections(withUniqueIds);
   }, [performanceSheet]);
+
+  const normaliseGuideAlignedSongSheetText = (sheetText: string) => {
+    const lines = sheetText.split(/\r?\n/);
+    const cleanedLines: string[] = [];
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const currentLine = lines[index];
+      const currentTrimmed = currentLine.trim();
+      const nextTrimmed = lines[index + 1]?.trim() || "";
+
+      const bracketHeadingMatch = currentTrimmed.match(/^\[([^\]]+)\]$/);
+
+      if (bracketHeadingMatch) {
+        const bracketLabel = bracketHeadingMatch[1]
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ");
+
+        const nextBareLabel = nextTrimmed.toLowerCase().replace(/\s+/g, " ");
+
+        if (
+          nextBareLabel === bracketLabel ||
+          (bracketLabel.startsWith("verse ") && nextBareLabel === "verse")
+        ) {
+          cleanedLines.push(currentLine);
+          index += 1;
+          continue;
+        }
+      }
+
+      cleanedLines.push(currentLine);
+    }
+
+    return cleanedLines.join("\n");
+  };
+
+  const sheetDisplayPerformanceSheet =
+    clickTrackAudioUrl && audioPreviewSongSheetText.trim()
+      ? normaliseGuideAlignedSongSheetText(audioPreviewSongSheetText)
+      : performanceSheet;
+
+  const sheetDisplayPerformanceSections = useMemo(() => {
+    const parsed = parsePerformanceSections(sheetDisplayPerformanceSheet);
+
+    const counts: Record<string, number> = {};
+
+    return parsed.map((section) => {
+      const key = section.label.toLowerCase();
+
+      counts[key] = (counts[key] || 0) + 1;
+
+      return {
+        ...section,
+        id: `${key}-${counts[key]}`,
+      };
+    });
+  }, [sheetDisplayPerformanceSheet]);
+
+  const usingGuideAlignedSheet =
+    clickTrackAudioUrl && audioPreviewSongSheetText.trim();
+
+  const getCueSyncedSheetSections = () => {
+    if (!usingGuideAlignedSheet) {
+      return sheetDisplayPerformanceSections;
+    }
+
+    const cueSections = getGeneratedAudioSectionJumpSummaries();
+    const usedCueIndexes = new Set<number>();
+
+    return sheetDisplayPerformanceSections.filter((section) => {
+      if (isNonPerformanceSheetSection(section)) {
+        return false;
+      }
+
+      const sectionKey = getGuideSectionMatchKey(section.label);
+      const matchingCueIndex = cueSections.findIndex((cueSection, index) => {
+        if (usedCueIndexes.has(index)) {
+          return false;
+        }
+
+        return getGuideSectionMatchKey(cueSection.section) === sectionKey;
+      });
+
+      if (matchingCueIndex < 0) {
+        return false;
+      }
+
+      usedCueIndexes.add(matchingCueIndex);
+      return true;
+    });
+  };
+
+  const cueSyncedSheetSections = getCueSyncedSheetSections();
+
+  const getDebugParsedSections = (sheetText: string) => {
+    const parsed = parsePerformanceSections(sheetText);
+    const counts: Record<string, number> = {};
+
+    return parsed.map((section, index) => {
+      const key = section.label.toLowerCase();
+
+      counts[key] = (counts[key] || 0) + 1;
+
+      return {
+        index,
+        id: `${key}-${counts[key]}`,
+        label: section.label,
+        matchKey: getGuideSectionMatchKey(section.label),
+        nonPerformance: isNonPerformanceSheetSection(section),
+        contentStart: section.content.slice(0, 140),
+      };
+    });
+  };
 
   React.useEffect(() => {
     if (previewPattern === "piano_block") {
@@ -20404,9 +20616,10 @@ ${buildRewriteInstruction(
                         sheet.
                       </div>
 
-                      <div className="mt-1 text-[11px] text-yellow-200">
-                        Sheet highlight id:{" "}
-                        {sheetGuideActiveSectionId || "none"}
+                      <div className="mt-1 text-[11px] text-green-300">
+                        {usingGuideAlignedSheet
+                          ? "Showing the guide-aligned sheet used for this audio."
+                          : "Showing the main performance sheet."}
                       </div>
                     </div>
 
@@ -20424,6 +20637,23 @@ ${buildRewriteInstruction(
                     controls
                     src={clickTrackAudioUrl}
                     className="w-full"
+                    onPlay={(event) => {
+                      const audioElement = event.currentTarget;
+
+                      if (audioElement.currentTime > 0.5) {
+                        return;
+                      }
+
+                      const initialSeekSeconds =
+                        getSheetGuideInitialSeekSeconds();
+
+                      if (initialSeekSeconds === null) {
+                        return;
+                      }
+
+                      audioElement.currentTime = initialSeekSeconds;
+                      updateSheetGuideActiveSection(initialSeekSeconds);
+                    }}
                     onLoadedMetadata={(event) => {
                       const duration = event.currentTarget.duration;
                       const safeDuration =
@@ -20528,20 +20758,115 @@ ${buildRewriteInstruction(
                 </div>
               )}
 
+              <details className="relative z-40 mt-3 rounded border border-yellow-800 bg-yellow-950/40 p-3 text-xs text-yellow-100 shadow-lg">
+                <summary className="cursor-pointer font-semibold">
+                  Section alignment debug / cue sync
+                </summary>
+
+                <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Main performance sheet sections
+                    </div>
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        getDebugParsedSections(performanceSheet),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Audio preview songsheet sections
+                    </div>
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        getDebugParsedSections(
+                          normaliseGuideAlignedSongSheetText(
+                            audioPreviewSongSheetText,
+                          ),
+                        ),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Cue timeline markers
+                    </div>
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        getGeneratedAudioSectionJumpSummaries().map(
+                          (section, index) => ({
+                            index,
+                            order: section.order,
+                            section: section.section,
+                            startSeconds: section.startSeconds,
+                            matchKey: getGuideSectionMatchKey(section.section),
+                            nonPerformance: isNonPerformanceGuideSection(
+                              section.section,
+                            ),
+                          }),
+                        ),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Sheet display sections
+                    </div>
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        sheetDisplayPerformanceSections.map(
+                          (section, index) => ({
+                            index,
+                            id: section.id,
+                            label: section.label,
+                            matchKey: getGuideSectionMatchKey(section.label),
+                            nonPerformance:
+                              isNonPerformanceSheetSection(section),
+                            contentStart: section.content.slice(0, 140),
+                          }),
+                        ),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Cue-synced Sheet sections
+                    </div>
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        cueSyncedSheetSections.map((section, index) => ({
+                          index,
+                          id: section.id,
+                          label: section.label,
+                          matchKey: getGuideSectionMatchKey(section.label),
+                          contentStart: section.content.slice(0, 140),
+                        })),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+                </div>
+              </details>
+
               <SongSheet
-                performanceSheet={performanceSheet}
-                performanceSections={performanceSections}
+                performanceSheet={sheetDisplayPerformanceSheet}
+                performanceSections={cueSyncedSheetSections}
                 performanceFontSize={18}
                 activePerformanceSectionId={
                   sheetGuideActiveSectionId || activePerformanceSectionId
-                }
-                activePerformanceSectionIndex={sheetGuideActiveSectionIndex}
-                activePerformanceSectionLabel={
-                  getGeneratedAudioSectionJumpSummaries().findLast(
-                    (section) =>
-                      section.startSeconds <=
-                      (sheetGuideAudioRef.current?.currentTime || 0),
-                  )?.section || null
                 }
                 performanceSectionRefs={performanceSectionRefs}
               />
