@@ -2038,6 +2038,32 @@ export default function Page() {
     (detail) => detail.section,
   );
 
+  const getSheetSectionSourceLineIndexes = (
+    section: {
+      label: string;
+      content: string;
+    },
+    sheetText: string,
+  ) => {
+    const sheetLines = sheetText.split(/\r?\n/);
+    const sectionLines = section.content.split(/\r?\n/);
+    const firstContentLine = sectionLines.find((line) => line.trim());
+
+    if (!firstContentLine) {
+      return [];
+    }
+
+    const firstLineIndex = sheetLines.findIndex(
+      (line) => line.trim() === firstContentLine.trim(),
+    );
+
+    if (firstLineIndex < 0) {
+      return [];
+    }
+
+    return sectionLines.map((_, index) => firstLineIndex + index);
+  };
+
   const getDebugParsedSections = (sheetText: string) => {
     const parsed = parsePerformanceSections(sheetText);
     const counts: Record<string, number> = {};
@@ -20882,6 +20908,11 @@ ${buildRewriteInstruction(
                             id: section.id,
                             label: section.label,
                             matchKey: getGuideSectionMatchKey(section.label),
+                            sheetSourceLineIndexes:
+                              getSheetSectionSourceLineIndexes(
+                                section,
+                                sheetDisplayPerformanceSheet,
+                              ),
                             nonPerformance:
                               isNonPerformanceSheetSection(section),
                             contentStart: section.content.slice(0, 140),
@@ -20906,6 +20937,11 @@ ${buildRewriteInstruction(
                           matchKey: getGuideSectionMatchKey(
                             detail.section.label,
                           ),
+                          sheetSourceLineIndexes:
+                            getSheetSectionSourceLineIndexes(
+                              detail.section,
+                              sheetDisplayPerformanceSheet,
+                            ),
                           cueIndex: detail.cueIndex,
                           cueSection: detail.cueSection,
                           cueSectionInstanceId: detail.cueSectionInstanceId,
