@@ -8,6 +8,7 @@ type AudioPreviewSpec = {
   chordVersion?: string;
   key?: string;
   transposeSemitones?: number;
+  audioPreviewSourceMode?: string;
   songsheetStatus?: string;
   songsheetReview?: string;
   readiness?: {
@@ -41,6 +42,10 @@ type AudioPreviewSongSheetLine = {
   lyric: string;
   chords: AudioPreviewChordPlacement[];
 };
+
+function getAudioPreviewSourceMode(value: unknown) {
+  return value === "main-sheet" ? "main-sheet" : "chord-editor";
+}
 
 function normalizeSectionPlanItem(
   item: unknown,
@@ -402,6 +407,9 @@ export async function POST(req: Request) {
       `Chord version: ${body.chordVersion || "Untitled chord version"}`,
       body.key ? `Key: ${body.key}` : "",
       `Transpose: ${body.transposeSemitones ?? 0} semitones`,
+      `Audio preview source mode: ${getAudioPreviewSourceMode(
+        body.audioPreviewSourceMode,
+      )}`,
       body.songsheetStatus ? `Songsheet status: ${body.songsheetStatus}` : "",
       body.songsheetReview ? `Songsheet review: ${body.songsheetReview}` : "",
       tempo ? `Tempo: ${tempo}` : "",
@@ -447,6 +455,9 @@ export async function POST(req: Request) {
       chordVersion: body.chordVersion || "Untitled chord version",
       key: body.key || "",
       transposeSemitones: body.transposeSemitones ?? 0,
+            audioPreviewSourceMode: getAudioPreviewSourceMode(
+        body.audioPreviewSourceMode,
+      ),
       songsheetStatus: body.songsheetStatus || "",
       songsheetReview: body.songsheetReview || "",
       tempo,

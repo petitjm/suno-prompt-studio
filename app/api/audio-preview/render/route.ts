@@ -9,6 +9,7 @@ type RendererPayload = {
   chordVersion?: string;
   key?: string;
   transposeSemitones?: number;
+  audioPreviewSourceMode?: string;
   songsheetStatus?: string;
   songsheetReview?: string;
   tempo?: string;
@@ -424,6 +425,7 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
     songVersion: payload.songVersion || "Untitled song version",
     chordVersion: payload.chordVersion || "Untitled chord version",
     key: payload.key || "",
+    audioPreviewSourceMode: payload.audioPreviewSourceMode || "chord-editor",
     tempo: payload.tempo || "",
     groove: payload.groove || "",
     instrumentation: payload.instrumentation || "",
