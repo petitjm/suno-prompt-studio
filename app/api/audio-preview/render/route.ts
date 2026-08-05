@@ -50,6 +50,7 @@ type SongSheetLine = {
 type TimelineSection = {
   order: number;
   section: string;
+  sectionInstanceId: string;
   sourceLineIndexes: number[];
   lyricLineCount: number;
   chordPlacementCount: number;
@@ -133,6 +134,28 @@ function normalizeSongSheetLine(item: unknown, index: number): SongSheetLine {
   };
 }
 
+function buildSectionInstanceId({
+  order,
+  section,
+  sourceLineIndexes,
+}: {
+  order: number;
+  section: string;
+  sourceLineIndexes: number[];
+}) {
+  const sectionSlug =
+    section
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "section";
+
+  const sourceLineSlug =
+    sourceLineIndexes.length > 0 ? sourceLineIndexes.join("-") : "none";
+
+  return `${order}-${sectionSlug}-${sourceLineSlug}`;
+}
+
 function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
   const songSheetLines = Array.isArray(payload.songsheetLines)
     ? payload.songsheetLines.map((item, index) =>
@@ -188,9 +211,16 @@ function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
       return total + (Array.isArray(line.chords) ? line.chords.length : 0);
     }, 0);
 
+    const order = index + 1;
+
     return {
-      order: index + 1,
+      order,
       section: sectionInstance.section,
+      sectionInstanceId: buildSectionInstanceId({
+        order,
+        section: sectionInstance.section,
+        sourceLineIndexes: sectionInstance.sourceLineIndexes,
+      }),
       sourceLineIndexes: sectionInstance.sourceLineIndexes,
       lyricLineCount: sectionInstance.lines.length,
       chordPlacementCount,
@@ -289,6 +319,8 @@ function buildDryRunCueSheet(
     return {
       order: section.order,
       section: section.section,
+      sectionInstanceId: section.sectionInstanceId,
+      sourceLineIndexes: section.sourceLineIndexes,
       estimatedBars,
       estimatedSeconds,
       startSeconds,
