@@ -13019,6 +13019,8 @@ export default function Page() {
         label: "Audio preview source: no chord editor JSON",
         detail:
           "The audio preview has no placed chord songsheet to use as its timing source.",
+        recommendation:
+          "Generate or paste chord editor JSON with placed songsheet lines before requesting an audio preview.",
       };
     }
 
@@ -13030,6 +13032,8 @@ export default function Page() {
         label: "Audio preview source: chord editor JSON",
         detail:
           "Chord editor JSON is present, but it does not contain placed songsheet lines.",
+        recommendation:
+          "Regenerate or repair the chord editor JSON so it includes placed songsheet lines.",
       };
     }
 
@@ -13066,6 +13070,12 @@ export default function Page() {
           : `The guide will follow ${placedLines.length} placed songsheet line${
               placedLines.length === 1 ? "" : "s"
             } from the chord editor.`,
+      recommendation:
+        mainSectionsMissingFromPreview.length > 0
+          ? `Update the chord editor placed songsheet if you want the guide to include: ${mainSectionsMissingFromPreview.join(
+              ", ",
+            )}.`
+          : "This source is ready for an audio preview.",
     };
   };
 
@@ -15843,6 +15853,9 @@ ${buildRewriteInstruction(
                     </div>
                     <div className="mt-1">
                       {audioPreviewSourceStatus.detail}
+                    </div>
+                    <div className="mt-1 text-[11px] opacity-90">
+                      Recommendation: {audioPreviewSourceStatus.recommendation}
                     </div>
                   </div>
 
