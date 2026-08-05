@@ -2126,6 +2126,35 @@ export default function Page() {
           .join(" ")
       : "";
 
+  const getGeneratedGuideSourceMode = () => {
+    const dryRunSourceMode =
+      audioPreviewDryRunRenderPlan &&
+      typeof audioPreviewDryRunRenderPlan === "object" &&
+      !Array.isArray(audioPreviewDryRunRenderPlan) &&
+      typeof audioPreviewDryRunRenderPlan.audioPreviewSourceMode === "string"
+        ? audioPreviewDryRunRenderPlan.audioPreviewSourceMode
+        : "";
+
+    const rendererPayloadSourceMode =
+      audioPreviewRendererPayload &&
+      typeof audioPreviewRendererPayload === "object" &&
+      !Array.isArray(audioPreviewRendererPayload) &&
+      typeof audioPreviewRendererPayload.audioPreviewSourceMode === "string"
+        ? audioPreviewRendererPayload.audioPreviewSourceMode
+        : "";
+
+    return dryRunSourceMode || rendererPayloadSourceMode || "";
+  };
+
+  const generatedGuideSourceMode = getGeneratedGuideSourceMode();
+
+  const generatedGuideSourceModeLabel =
+    generatedGuideSourceMode === "main-sheet"
+      ? "Main song sheet"
+      : generatedGuideSourceMode === "chord-editor"
+        ? "Chord editor placed songsheet"
+        : "";
+
   const getSheetSectionSourceLineIndexes = (
     section: {
       label: string;
@@ -20994,6 +21023,13 @@ ${buildRewriteInstruction(
                           : "Showing the main performance sheet."}
                       </div>
 
+                      {generatedGuideSourceModeLabel ? (
+                        <div className="mt-1 text-[11px] text-green-300">
+                          Generated guide source:{" "}
+                          {generatedGuideSourceModeLabel}
+                        </div>
+                      ) : null}
+
                       <div
                         className={`mt-1 text-[11px] ${
                           usingGuideAlignedSheet &&
@@ -21158,6 +21194,12 @@ ${buildRewriteInstruction(
                   Shows how the main song sheet, guide-aligned sheet, cue
                   markers, and visible Sheet sections currently line up.
                 </div>
+
+                {generatedGuideSourceModeLabel ? (
+                  <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
+                    Generated guide source: {generatedGuideSourceModeLabel}
+                  </div>
+                ) : null}
 
                 {guideSheetMismatchStatusText ? (
                   <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
