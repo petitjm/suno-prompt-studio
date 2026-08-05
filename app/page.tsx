@@ -13006,6 +13006,71 @@ export default function Page() {
       .filter((line): line is PlacedSongSheetLine => Boolean(line));
   };
 
+  const getAudioPreviewSourceStatus = () => {
+    const chordData = getChordDataFromEditorJson();
+
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return {
+        tone: "empty",
+        label: "Audio preview source: no chord editor JSON",
+        detail:
+          "The audio preview has no placed chord songsheet to use as its timing source.",
+      };
+    }
+
+    const placedLines = getPlacedSongSheetLines(chordData);
+
+    if (placedLines.length === 0) {
+      return {
+        tone: "review",
+        label: "Audio preview source: chord editor JSON",
+        detail:
+          "Chord editor JSON is present, but it does not contain placed songsheet lines.",
+      };
+    }
+
+    const placedSectionKeyCounts = getSectionKeyCounts(
+      placedLines.map((line) => ({
+        label: line.section || "Unknown section",
+        content: line.lyric || "",
+      })),
+    );
+
+    const mainSectionKeyCounts = getSectionKeyCounts(performanceSections);
+
+    const mainSectionsMissingFromPreview = Object.entries(
+      mainSectionKeyCounts,
+    ).flatMap(([key, count]) => {
+      const previewCount = placedSectionKeyCounts[key] || 0;
+      const missingCount = count - previewCount;
+
+      if (missingCount <= 0) {
+        return [];
+      }
+
+      return missingCount === 1 ? [key] : [`${key} x${missingCount}`];
+    });
+
+    return {
+      tone: mainSectionsMissingFromPreview.length > 0 ? "review" : "ready",
+      label: "Audio preview source: chord editor placed songsheet",
+      detail:
+        mainSectionsMissingFromPreview.length > 0
+          ? `The guide will follow the chord editor placed songsheet. Main sheet sections not represented there: ${mainSectionsMissingFromPreview.join(
+              ", ",
+            )}.`
+          : `The guide will follow ${placedLines.length} placed songsheet line${
+              placedLines.length === 1 ? "" : "s"
+            } from the chord editor.`,
+    };
+  };
+
+  const audioPreviewSourceStatus = getAudioPreviewSourceStatus();
+
   const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
     const lyric = line.lyric;
     const baseLength = Math.max(lyric.length, 1);
@@ -15761,6 +15826,23 @@ ${buildRewriteInstruction(
                     </div>
                     <div className="mt-1">
                       {audioPreviewHandoffStatus.detail}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`w-full rounded border px-3 py-2 text-xs leading-5 ${
+                      audioPreviewSourceStatus.tone === "ready"
+                        ? "border-green-900 bg-green-950/20 text-green-100"
+                        : audioPreviewSourceStatus.tone === "review"
+                          ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          : "border-gray-800 bg-gray-950 text-gray-400"
+                    }`}
+                  >
+                    <div className="font-medium">
+                      {audioPreviewSourceStatus.label}
+                    </div>
+                    <div className="mt-1">
+                      {audioPreviewSourceStatus.detail}
                     </div>
                   </div>
 
