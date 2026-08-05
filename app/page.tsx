@@ -655,7 +655,13 @@ export default function Page() {
 
     drawGeneratedAudioWaveform(generatedAudioWaveformProgressRef.current);
   };
-  const getGeneratedAudioSectionJumpSummaries = () => {
+  const getGeneratedAudioSectionJumpSummaries = (): {
+    order: number;
+    section: string;
+    sectionInstanceId: string | null;
+    sourceLineIndexes: number[];
+    startSeconds: number;
+  }[] => {
     const dryRunCueSheet =
       typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
       audioPreviewDryRunRenderPlan?.cueSheet !== null &&
@@ -680,6 +686,7 @@ export default function Page() {
               sectionRecord.section.trim()
                 ? sectionRecord.section
                 : `Section ${index + 1}`;
+
             const startSeconds =
               typeof sectionRecord.startSeconds === "number" &&
               Number.isFinite(sectionRecord.startSeconds)
@@ -690,12 +697,27 @@ export default function Page() {
               return null;
             }
 
+            const sourceLineIndexes = Array.isArray(
+              sectionRecord.sourceLineIndexes,
+            )
+              ? sectionRecord.sourceLineIndexes.filter(
+                  (sourceLineIndex): sourceLineIndex is number =>
+                    typeof sourceLineIndex === "number" &&
+                    Number.isFinite(sourceLineIndex),
+                )
+              : [];
+
             return {
               order:
                 typeof sectionRecord.order === "number"
                   ? sectionRecord.order
                   : index + 1,
               section: sectionName,
+              sectionInstanceId:
+                typeof sectionRecord.sectionInstanceId === "string"
+                  ? sectionRecord.sectionInstanceId
+                  : null,
+              sourceLineIndexes,
               startSeconds,
             };
           })
@@ -705,6 +727,8 @@ export default function Page() {
             ): section is {
               order: number;
               section: string;
+              sectionInstanceId: string | null;
+              sourceLineIndexes: number[];
               startSeconds: number;
             } =>
               section !== null &&
@@ -716,37 +740,44 @@ export default function Page() {
       return dryRunSections;
     }
 
-    return (
-      getClickTrackRendererPreviewSummary()
-        ?.sectionSummaries?.map((section, index) => {
-          const startSeconds =
-            typeof section.startSeconds === "number" &&
-            Number.isFinite(section.startSeconds)
-              ? section.startSeconds
-              : null;
+    const fallbackSectionSummaries =
+      getClickTrackRendererPreviewSummary()?.sectionSummaries || [];
 
-          if (startSeconds === null) {
-            return null;
-          }
+    const fallbackSections: {
+      order: number;
+      section: string;
+      sectionInstanceId: string | null;
+      sourceLineIndexes: number[];
+      startSeconds: number;
+    }[] = [];
 
-          return {
-            order:
-              typeof section.order === "number" ? section.order : index + 1,
-            section: section.section || `Section ${index + 1}`,
-            startSeconds,
-          };
-        })
-        .filter(
-          (
-            section,
-          ): section is {
-            order: number;
-            section: string;
-            startSeconds: number;
-          } =>
-            section !== null && !isNonPerformanceGuideSection(section.section),
-        ) || []
-    );
+    fallbackSectionSummaries.forEach((section, index) => {
+      const startSeconds =
+        typeof section.startSeconds === "number" &&
+        Number.isFinite(section.startSeconds)
+          ? section.startSeconds
+          : null;
+
+      if (startSeconds === null) {
+        return;
+      }
+
+      const sectionName = section.section || `Section ${index + 1}`;
+
+      if (isNonPerformanceGuideSection(sectionName)) {
+        return;
+      }
+
+      fallbackSections.push({
+        order: typeof section.order === "number" ? section.order : index + 1,
+        section: sectionName,
+        sectionInstanceId: null,
+        sourceLineIndexes: [],
+        startSeconds,
+      });
+    });
+
+    return fallbackSections;
   };
 
   const seekGeneratedAudio = (seconds: number) => {
@@ -20810,6 +20841,8 @@ ${buildRewriteInstruction(
                             index,
                             order: section.order,
                             section: section.section,
+                            sectionInstanceId: section.sectionInstanceId,
+                            sourceLineIndexes: section.sourceLineIndexes,
                             startSeconds: section.startSeconds,
                             matchKey: getGuideSectionMatchKey(section.section),
                             nonPerformance: isNonPerformanceGuideSection(
