@@ -2053,6 +2053,76 @@ export default function Page() {
       : `Guide sync needs review: ${cueSyncedSheetSections.length}/${guideCueSectionCount} visible sections matched, ${guideSyncWarningCount} warning(s).`
     : "Guide sync inactive: showing the main performance sheet.";
 
+  const getSectionKeyCounts = (
+    sections: {
+      label: string;
+      content: string;
+    }[],
+  ) => {
+    const counts: Record<string, number> = {};
+
+    sections
+      .filter((section) => !isNonPerformanceSheetSection(section))
+      .forEach((section) => {
+        const key = getGuideSectionMatchKey(section.label);
+
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+    return counts;
+  };
+
+  const mainSheetSectionKeyCounts = getSectionKeyCounts(performanceSections);
+  const guideSheetSectionKeyCounts = getSectionKeyCounts(
+    cueSyncedSheetSections,
+  );
+
+  const mainSheetSectionsMissingFromGuide = Object.entries(
+    mainSheetSectionKeyCounts,
+  ).flatMap(([key, count]) => {
+    const guideCount = guideSheetSectionKeyCounts[key] || 0;
+    const missingCount = count - guideCount;
+
+    if (missingCount <= 0) {
+      return [];
+    }
+
+    return missingCount === 1 ? [key] : [`${key} x${missingCount}`];
+  });
+
+  const guideSectionsNotInMainSheet = Object.entries(
+    guideSheetSectionKeyCounts,
+  ).flatMap(([key, count]) => {
+    const mainCount = mainSheetSectionKeyCounts[key] || 0;
+    const extraCount = count - mainCount;
+
+    if (extraCount <= 0) {
+      return [];
+    }
+
+    return extraCount === 1 ? [key] : [`${key} x${extraCount}`];
+  });
+
+  const guideSheetMismatchStatusText =
+    usingGuideAlignedSheet &&
+    (mainSheetSectionsMissingFromGuide.length > 0 ||
+      guideSectionsNotInMainSheet.length > 0)
+      ? [
+          mainSheetSectionsMissingFromGuide.length > 0
+            ? `Main sheet sections not in guide: ${mainSheetSectionsMissingFromGuide.join(
+                ", ",
+              )}.`
+            : "",
+          guideSectionsNotInMainSheet.length > 0
+            ? `Guide sections not in main sheet: ${guideSectionsNotInMainSheet.join(
+                ", ",
+              )}.`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : "";
+
   const getSheetSectionSourceLineIndexes = (
     section: {
       label: string;
@@ -20720,6 +20790,12 @@ ${buildRewriteInstruction(
                       >
                         {guideSyncStatusText}
                       </div>
+
+                      {guideSheetMismatchStatusText ? (
+                        <div className="mt-1 text-[11px] text-yellow-200">
+                          {guideSheetMismatchStatusText}
+                        </div>
+                      ) : null}
                     </div>
 
                     <button
@@ -20866,6 +20942,12 @@ ${buildRewriteInstruction(
                   Shows how the main song sheet, guide-aligned sheet, cue
                   markers, and visible Sheet sections currently line up.
                 </div>
+
+                {guideSheetMismatchStatusText ? (
+                  <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
+                    {guideSheetMismatchStatusText}
+                  </div>
+                ) : null}
 
                 <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   <div>
