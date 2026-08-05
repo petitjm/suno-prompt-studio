@@ -1990,43 +1990,43 @@ export default function Page() {
         cueSectionInstanceId: null as string | null,
         cueSourceLineIndexes: [] as number[],
         cueStartSeconds: null as number | null,
+        syncWarning: null as string | null,
       }));
     }
 
     const cueSections = getGeneratedAudioSectionJumpSummaries();
-    const usedCueIndexes = new Set<number>();
+    const performanceSheetSections = sheetDisplayPerformanceSections
+      .map((section, sheetIndex) => ({
+        sheetIndex,
+        section,
+      }))
+      .filter((item) => !isNonPerformanceSheetSection(item.section));
 
-    return sheetDisplayPerformanceSections.flatMap((section, sheetIndex) => {
-      if (isNonPerformanceSheetSection(section)) {
+    return cueSections.flatMap((cueSection, cueIndex) => {
+      const matchingSheetSection = performanceSheetSections[cueIndex];
+
+      if (!matchingSheetSection) {
         return [];
       }
 
-      const sectionKey = getGuideSectionMatchKey(section.label);
-      const matchingCueIndex = cueSections.findIndex((cueSection, index) => {
-        if (usedCueIndexes.has(index)) {
-          return false;
-        }
-
-        return getGuideSectionMatchKey(cueSection.section) === sectionKey;
-      });
-
-      if (matchingCueIndex < 0) {
-        return [];
-      }
-
-      const matchingCueSection = cueSections[matchingCueIndex];
-
-      usedCueIndexes.add(matchingCueIndex);
+      const sheetMatchKey = getGuideSectionMatchKey(
+        matchingSheetSection.section.label,
+      );
+      const cueMatchKey = getGuideSectionMatchKey(cueSection.section);
 
       return [
         {
-          sheetIndex,
-          section,
-          cueIndex: matchingCueIndex,
-          cueSection: matchingCueSection.section,
-          cueSectionInstanceId: matchingCueSection.sectionInstanceId,
-          cueSourceLineIndexes: matchingCueSection.sourceLineIndexes,
-          cueStartSeconds: matchingCueSection.startSeconds,
+          sheetIndex: matchingSheetSection.sheetIndex,
+          section: matchingSheetSection.section,
+          cueIndex,
+          cueSection: cueSection.section,
+          cueSectionInstanceId: cueSection.sectionInstanceId,
+          cueSourceLineIndexes: cueSection.sourceLineIndexes,
+          cueStartSeconds: cueSection.startSeconds,
+          syncWarning:
+            sheetMatchKey === cueMatchKey
+              ? null
+              : `Sheet label "${matchingSheetSection.section.label}" differs from cue "${cueSection.section}".`,
         },
       ];
     });
@@ -20947,6 +20947,7 @@ ${buildRewriteInstruction(
                           cueSectionInstanceId: detail.cueSectionInstanceId,
                           cueSourceLineIndexes: detail.cueSourceLineIndexes,
                           cueStartSeconds: detail.cueStartSeconds,
+                          syncWarning: detail.syncWarning,
                           contentStart: detail.section.content.slice(0, 140),
                         })),
                         null,
