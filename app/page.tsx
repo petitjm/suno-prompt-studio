@@ -200,8 +200,9 @@ export default function Page() {
   const [generatingGuideTrackPlan, setGeneratingGuideTrackPlan] =
     useState(false);
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false);
-  const [audioPreviewSourceMode, setAudioPreviewSourceMode] =
-    useState<"chord-editor">("chord-editor");
+  const [audioPreviewSourceMode, setAudioPreviewSourceMode] = useState<
+    "chord-editor" | "main-sheet"
+  >("chord-editor");
   const [audioPreviewMessage, setAudioPreviewMessage] = useState("");
   const [submittingAudioPreviewRender, setSubmittingAudioPreviewRender] =
     useState(false);
@@ -8065,20 +8066,21 @@ export default function Page() {
 
   const buildAudioPreviewSpecCopyText = () => {
     const chordData = getChordDataFromEditorJson();
+    const record =
+      chordData && typeof chordData === "object" && !Array.isArray(chordData)
+        ? (chordData as Record<string, unknown>)
+        : null;
 
-    if (
-      !chordData ||
-      typeof chordData !== "object" ||
-      Array.isArray(chordData)
-    ) {
+    if (audioPreviewSourceMode === "chord-editor" && !record) {
       return "";
     }
 
-    const record = chordData as Record<string, unknown>;
-    const intentRows = getPerformanceIntentRows(record);
-    const guideTrackPlanRows = getGuideTrackPlanRows(record);
-    const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(record);
-    const songsheetLines = getPlacedSongSheetLines(record);
+    const intentRows = record ? getPerformanceIntentRows(record) : [];
+    const guideTrackPlanRows = record ? getGuideTrackPlanRows(record) : [];
+    const guideTrackSectionPlanRows = record
+      ? getGuideTrackSectionPlanRows(record)
+      : [];
+    const songsheetLines = getAudioPreviewSourceLines();
     const readiness = getAudioGuideReadiness();
 
     if (intentRows.length === 0 && songsheetLines.length === 0) {
@@ -8120,7 +8122,9 @@ export default function Page() {
       notes: [
         "This is a machine-readable planning spec for a future simple audio guide track.",
         "It is not a finished production request.",
-        "Chord placement should be treated as performance intent and reviewed against phrasing.",
+        audioPreviewSourceMode === "main-sheet"
+          ? "Main song sheet source is experimental and currently sends lyrics without chord placements."
+          : "Chord placement should be treated as performance intent and reviewed against phrasing.",
       ],
     };
 
@@ -13009,7 +13013,65 @@ export default function Page() {
       .filter((line): line is PlacedSongSheetLine => Boolean(line));
   };
 
+  const getMainSheetAudioPreviewLines = (): PlacedSongSheetLine[] => {
+    return performanceSections.flatMap((section) => {
+      if (isNonPerformanceSheetSection(section)) {
+        return [];
+      }
+
+      return section.content
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => {
+          if (!line) {
+            return false;
+          }
+
+          if (/^\[[^\]]+\]$/.test(line)) {
+            return false;
+          }
+
+          if (/^\{[^}]+\}$/.test(line)) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((lyric) => ({
+          section: section.label,
+          lyric,
+          chords: [],
+        }));
+    });
+  };
+
+  const getAudioPreviewSourceLines = () => {
+    const chordData = getChordDataFromEditorJson();
+
+    if (audioPreviewSourceMode === "main-sheet") {
+      return getMainSheetAudioPreviewLines();
+    }
+
+    return getPlacedSongSheetLines(chordData);
+  };
+
   const getAudioPreviewSourceStatus = () => {
+    if (audioPreviewSourceMode === "main-sheet") {
+      const mainSheetLines = getMainSheetAudioPreviewLines();
+
+      return {
+        tone: mainSheetLines.length > 0 ? "review" : "empty",
+        label: "Audio preview source: main song sheet",
+        detail:
+          mainSheetLines.length > 0
+            ? `The guide will follow ${mainSheetLines.length} lyric line${
+                mainSheetLines.length === 1 ? "" : "s"
+              } from the main song sheet. Chord placements are not included yet.`
+            : "The main song sheet does not contain usable lyric lines for audio preview.",
+        recommendation:
+          "Use this mode to test full song structure alignment. Use chord editor mode when you need chord-aware guide timing.",
+      };
+    }
     const chordData = getChordDataFromEditorJson();
 
     if (
@@ -15864,7 +15926,7 @@ ${buildRewriteInstruction(
                       Source mode:{" "}
                       {audioPreviewSourceMode === "chord-editor"
                         ? "Chord editor placed songsheet"
-                        : audioPreviewSourceMode}
+                        : "Main song sheet"}
                     </div>
                     <label className="mt-2 block text-[11px] opacity-90">
                       Guide source
@@ -15872,13 +15934,16 @@ ${buildRewriteInstruction(
                         value={audioPreviewSourceMode}
                         onChange={(event) => {
                           setAudioPreviewSourceMode(
-                            event.target.value as "chord-editor",
+                            event.target.value as "chord-editor" | "main-sheet",
                           );
                         }}
                         className="mt-1 w-full rounded border border-yellow-800 bg-black/20 px-2 py-1 text-xs text-yellow-100"
                       >
                         <option value="chord-editor">
                           Chord editor placed songsheet
+                        </option>
+                        <option value="main-sheet">
+                          Main song sheet — experimental, no chords yet
                         </option>
                       </select>
                     </label>
@@ -15932,8 +15997,9 @@ ${buildRewriteInstruction(
                 </button>
                 {audioPreviewSourceStatus.tone === "review" ? (
                   <div className="w-full text-right text-[11px] text-yellow-300">
-                    Preview will follow the chord editor placed songsheet, not
-                    the full main song sheet.
+                    {audioPreviewSourceMode === "main-sheet"
+                      ? "Preview will follow the main song sheet, but chord placements are not included yet."
+                      : "Preview will follow the chord editor placed songsheet, not the full main song sheet."}
                   </div>
                 ) : null}
 
