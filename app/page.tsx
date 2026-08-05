@@ -1991,17 +1991,25 @@ export default function Page() {
   const usingGuideAlignedSheet =
     clickTrackAudioUrl && audioPreviewSongSheetText.trim();
 
-  const getCueSyncedSheetSections = () => {
+  const getCueSyncedSheetSectionDetails = () => {
     if (!usingGuideAlignedSheet) {
-      return sheetDisplayPerformanceSections;
+      return sheetDisplayPerformanceSections.map((section, sheetIndex) => ({
+        sheetIndex,
+        section,
+        cueIndex: null as number | null,
+        cueSection: null as string | null,
+        cueSectionInstanceId: null as string | null,
+        cueSourceLineIndexes: [] as number[],
+        cueStartSeconds: null as number | null,
+      }));
     }
 
     const cueSections = getGeneratedAudioSectionJumpSummaries();
     const usedCueIndexes = new Set<number>();
 
-    return sheetDisplayPerformanceSections.filter((section) => {
+    return sheetDisplayPerformanceSections.flatMap((section, sheetIndex) => {
       if (isNonPerformanceSheetSection(section)) {
-        return false;
+        return [];
       }
 
       const sectionKey = getGuideSectionMatchKey(section.label);
@@ -2014,15 +2022,32 @@ export default function Page() {
       });
 
       if (matchingCueIndex < 0) {
-        return false;
+        return [];
       }
 
+      const matchingCueSection = cueSections[matchingCueIndex];
+
       usedCueIndexes.add(matchingCueIndex);
-      return true;
+
+      return [
+        {
+          sheetIndex,
+          section,
+          cueIndex: matchingCueIndex,
+          cueSection: matchingCueSection.section,
+          cueSectionInstanceId: matchingCueSection.sectionInstanceId,
+          cueSourceLineIndexes: matchingCueSection.sourceLineIndexes,
+          cueStartSeconds: matchingCueSection.startSeconds,
+        },
+      ];
     });
   };
 
-  const cueSyncedSheetSections = getCueSyncedSheetSections();
+  const cueSyncedSheetSectionDetails = getCueSyncedSheetSectionDetails();
+
+  const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
+    (detail) => detail.section,
+  );
 
   const getDebugParsedSections = (sheetText: string) => {
     const parsed = parsePerformanceSections(sheetText);
@@ -20884,12 +20909,20 @@ ${buildRewriteInstruction(
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(
-                        cueSyncedSheetSections.map((section, index) => ({
+                        cueSyncedSheetSectionDetails.map((detail, index) => ({
                           index,
-                          id: section.id,
-                          label: section.label,
-                          matchKey: getGuideSectionMatchKey(section.label),
-                          contentStart: section.content.slice(0, 140),
+                          sheetIndex: detail.sheetIndex,
+                          id: detail.section.id,
+                          label: detail.section.label,
+                          matchKey: getGuideSectionMatchKey(
+                            detail.section.label,
+                          ),
+                          cueIndex: detail.cueIndex,
+                          cueSection: detail.cueSection,
+                          cueSectionInstanceId: detail.cueSectionInstanceId,
+                          cueSourceLineIndexes: detail.cueSourceLineIndexes,
+                          cueStartSeconds: detail.cueStartSeconds,
+                          contentStart: detail.section.content.slice(0, 140),
                         })),
                         null,
                         2,
