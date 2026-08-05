@@ -13146,6 +13146,22 @@ export default function Page() {
 
   const audioPreviewSourceStatus = getAudioPreviewSourceStatus();
 
+  const handleAudioPreviewSourceModeChange = (
+    nextSourceMode: "chord-editor" | "main-sheet",
+  ) => {
+    if (nextSourceMode === audioPreviewSourceMode) {
+      return;
+    }
+
+    setAudioPreviewSourceMode(nextSourceMode);
+    resetAudioPreviewRequestState();
+    setClickTrackAudioUrl("");
+    setClickTrackDownloadStatus("");
+    setClickTrackAudioLabel("Latest generated WAV");
+    setSheetGuideActiveSectionId(null);
+    setSheetGuideActiveSectionIndex(null);
+  };
+
   const audioPreviewRequestButtonLabel = requestingAudioPreview
     ? "Requesting..."
     : audioPreviewSourceStatus.tone === "review"
@@ -15933,7 +15949,7 @@ ${buildRewriteInstruction(
                       <select
                         value={audioPreviewSourceMode}
                         onChange={(event) => {
-                          setAudioPreviewSourceMode(
+                          handleAudioPreviewSourceModeChange(
                             event.target.value as "chord-editor" | "main-sheet",
                           );
                         }}
