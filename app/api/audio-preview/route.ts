@@ -399,6 +399,15 @@ export async function POST(req: Request) {
       performanceIntent.vocalDelivery ||
       "Simple understated guide vocal or melody reference only";
 
+    const audioPreviewSourceMode = getAudioPreviewSourceMode(
+      body.audioPreviewSourceMode,
+    );
+
+    const sourceModeInstruction =
+      audioPreviewSourceMode === "main-sheet"
+        ? "Use the main song sheet lyrics as the timing and section-structure reference. Chord placements are not available in this mode, so focus on section flow, phrasing, lyric entry points, and simple rehearsal timing."
+        : "Use the chord-over-lyric songsheet as the main timing reference. Preserve chord timing and section feel.";
+
     const renderPrompt = [
       "Create a simple audio guide preview, not a finished production.",
       "",
@@ -407,9 +416,7 @@ export async function POST(req: Request) {
       `Chord version: ${body.chordVersion || "Untitled chord version"}`,
       body.key ? `Key: ${body.key}` : "",
       `Transpose: ${body.transposeSemitones ?? 0} semitones`,
-      `Audio preview source mode: ${getAudioPreviewSourceMode(
-        body.audioPreviewSourceMode,
-      )}`,
+      `Audio preview source mode: ${audioPreviewSourceMode}`,
       body.songsheetStatus ? `Songsheet status: ${body.songsheetStatus}` : "",
       body.songsheetReview ? `Songsheet review: ${body.songsheetReview}` : "",
       tempo ? `Tempo: ${tempo}` : "",
@@ -419,10 +426,10 @@ export async function POST(req: Request) {
       `Vocal guide style: ${vocalGuideStyle}`,
       "",
       "Rendering priorities:",
-      "- Preserve chord timing and section feel.",
+      `- ${sourceModeInstruction}`,
       "- Keep the arrangement sparse and easy to follow.",
       "- Prioritize rehearsal usefulness over production quality.",
-      "- Use acoustic guitar as the main timing and harmony reference.",
+      "- Use acoustic guitar as the main rehearsal reference.",
       "- Avoid full-band production unless explicitly requested later.",
       "",
       `Songsheet lines: ${normalizedSongSheetLines.length}`,
@@ -455,9 +462,7 @@ export async function POST(req: Request) {
       chordVersion: body.chordVersion || "Untitled chord version",
       key: body.key || "",
       transposeSemitones: body.transposeSemitones ?? 0,
-            audioPreviewSourceMode: getAudioPreviewSourceMode(
-        body.audioPreviewSourceMode,
-      ),
+      audioPreviewSourceMode,
       songsheetStatus: body.songsheetStatus || "",
       songsheetReview: body.songsheetReview || "",
       tempo,
