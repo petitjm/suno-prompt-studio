@@ -878,10 +878,6 @@ export default function Page() {
     );
   };
 
-  const getGuideHighlightPerformanceSections = () => {
-    return cueSyncedSheetSections;
-  };
-
   const updateSheetGuideActiveSection = (currentTimeSeconds: number) => {
     if (!Number.isFinite(currentTimeSeconds) || currentTimeSeconds < 0) {
       setSheetGuideActiveSectionId(null);
@@ -893,12 +889,9 @@ export default function Page() {
       .slice(0, 16)
       .sort((first, second) => first.startSeconds - second.startSeconds);
 
-    const guideHighlightPerformanceSections =
-      getGuideHighlightPerformanceSections();
-
     if (
       sectionSummaries.length === 0 ||
-      guideHighlightPerformanceSections.length === 0
+      cueSyncedSheetSectionDetails.length === 0
     ) {
       setSheetGuideActiveSectionId(null);
       setSheetGuideActiveSectionIndex(null);
@@ -916,29 +909,19 @@ export default function Page() {
     }
 
     const currentGuideSection = sectionSummaries[currentGuideSectionIndex];
-    const currentGuideSectionKey = getGuideSectionMatchKey(
-      currentGuideSection.section,
-    );
 
-    const matchingSheetSections = guideHighlightPerformanceSections.filter(
-      (section) =>
-        getGuideSectionMatchKey(section.label) === currentGuideSectionKey,
-    );
-
-    const currentGuideLabelOccurrenceIndex =
-      sectionSummaries
-        .slice(0, currentGuideSectionIndex + 1)
-        .filter(
-          (section) =>
-            getGuideSectionMatchKey(section.section) === currentGuideSectionKey,
-        ).length - 1;
-
-    const matchingPerformanceSection =
-      matchingSheetSections[currentGuideLabelOccurrenceIndex] ||
-      matchingSheetSections[0] ||
+    const matchingDetail =
+      cueSyncedSheetSectionDetails.find(
+        (detail) =>
+          detail.cueSectionInstanceId &&
+          detail.cueSectionInstanceId === currentGuideSection.sectionInstanceId,
+      ) ||
+      cueSyncedSheetSectionDetails.find(
+        (detail) => detail.cueIndex === currentGuideSectionIndex,
+      ) ||
       null;
 
-    setSheetGuideActiveSectionId(matchingPerformanceSection?.id || null);
+    setSheetGuideActiveSectionId(matchingDetail?.section.id || null);
     setSheetGuideActiveSectionIndex(null);
   };
 
@@ -1946,9 +1929,15 @@ export default function Page() {
         const bracketLabel = bracketHeadingMatch[1]
           .trim()
           .toLowerCase()
+          .replace(/([a-z])(\d)/g, "$1 $2")
+          .replace(/(\d)([a-z])/g, "$1 $2")
           .replace(/\s+/g, " ");
 
-        const nextBareLabel = nextTrimmed.toLowerCase().replace(/\s+/g, " ");
+        const nextBareLabel = nextTrimmed
+          .toLowerCase()
+          .replace(/([a-z])(\d)/g, "$1 $2")
+          .replace(/(\d)([a-z])/g, "$1 $2")
+          .replace(/\s+/g, " ");
 
         if (
           nextBareLabel === bracketLabel ||
