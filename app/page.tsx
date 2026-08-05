@@ -13081,6 +13081,12 @@ export default function Page() {
 
   const audioPreviewSourceStatus = getAudioPreviewSourceStatus();
 
+  const audioPreviewRequestButtonLabel = requestingAudioPreview
+    ? "Requesting..."
+    : audioPreviewSourceStatus.tone === "review"
+      ? "Request chord-source preview"
+      : "Request preview";
+
   const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
     const lyric = line.lyric;
     const baseLength = Math.max(lyric.length, 1);
@@ -15897,8 +15903,14 @@ ${buildRewriteInstruction(
                   disabled={!audioPreviewSpecPreview || requestingAudioPreview}
                   className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                 >
-                  {requestingAudioPreview ? "Requesting..." : "Request preview"}
+                  {audioPreviewRequestButtonLabel}
                 </button>
+                {audioPreviewSourceStatus.tone === "review" ? (
+                  <div className="w-full text-right text-[11px] text-yellow-300">
+                    Preview will follow the chord editor placed songsheet, not
+                    the full main song sheet.
+                  </div>
+                ) : null}
 
                 <button
                   type="button"
