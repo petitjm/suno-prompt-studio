@@ -13164,9 +13164,11 @@ export default function Page() {
 
   const audioPreviewRequestButtonLabel = requestingAudioPreview
     ? "Requesting..."
-    : audioPreviewSourceStatus.tone === "review"
-      ? "Request chord-source preview"
-      : "Request preview";
+    : audioPreviewSourceMode === "main-sheet"
+      ? "Request main-sheet preview"
+      : audioPreviewSourceStatus.tone === "review"
+        ? "Request chord-source preview"
+        : "Request preview";
 
   const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
     const lyric = line.lyric;
