@@ -2155,6 +2155,12 @@ export default function Page() {
         ? "Chord editor placed songsheet"
         : "";
 
+  const generatedPreviewSourceModeLabel =
+    generatedGuideSourceModeLabel ||
+    (audioPreviewSourceMode === "main-sheet"
+      ? "Main song sheet"
+      : "Chord editor placed songsheet");
+
   const getSheetSectionSourceLineIndexes = (
     section: {
       label: string;
@@ -16438,6 +16444,10 @@ ${buildRewriteInstruction(
                         <div className="text-xs leading-5 text-gray-500">
                           Full renderer-ready prompt containing performance
                           intent, placed songsheet, and section guidance.
+                          <div className="mt-1 text-gray-400">
+                            Generated preview source:{" "}
+                            {generatedPreviewSourceModeLabel}
+                          </div>
                         </div>
 
                         <button
@@ -16468,6 +16478,10 @@ ${buildRewriteInstruction(
                         <div className="text-xs leading-5 text-gray-500">
                           Structured machine-readable payload intended for a
                           future audio preview renderer.
+                          <div className="mt-1 text-gray-400">
+                            Generated preview source:{" "}
+                            {generatedPreviewSourceModeLabel}
+                          </div>
                         </div>
 
                         <button
@@ -17452,6 +17466,15 @@ ${buildRewriteInstruction(
                             <div className="mt-1 text-sm text-gray-300">
                               {audioPreviewRendererPayloadSummary.type ||
                                 "Unknown"}
+                            </div>
+                          </div>
+
+                          <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Preview source
+                            </div>
+                            <div className="mt-1 text-sm text-gray-300">
+                              {generatedPreviewSourceModeLabel}
                             </div>
                           </div>
 
