@@ -200,6 +200,8 @@ export default function Page() {
   const [generatingGuideTrackPlan, setGeneratingGuideTrackPlan] =
     useState(false);
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false);
+  const [audioPreviewSourceMode, setAudioPreviewSourceMode] =
+    useState<"chord-editor">("chord-editor");
   const [audioPreviewMessage, setAudioPreviewMessage] = useState("");
   const [submittingAudioPreviewRender, setSubmittingAudioPreviewRender] =
     useState(false);
@@ -8095,6 +8097,7 @@ export default function Page() {
       generatedAt: new Date().toISOString(),
       key: getDisplayedKeyLabel() || getOriginalKeyLabel() || "",
       transposeSemitones: chordTransposeSemitones,
+      audioPreviewSourceMode,
       readiness: {
         label: readiness.label,
         detail: readiness.detail,
@@ -15857,6 +15860,28 @@ ${buildRewriteInstruction(
                     <div className="font-medium">
                       {audioPreviewSourceStatus.label}
                     </div>
+                    <div className="mt-1 text-[11px] opacity-90">
+                      Source mode:{" "}
+                      {audioPreviewSourceMode === "chord-editor"
+                        ? "Chord editor placed songsheet"
+                        : audioPreviewSourceMode}
+                    </div>
+                    <label className="mt-2 block text-[11px] opacity-90">
+                      Guide source
+                      <select
+                        value={audioPreviewSourceMode}
+                        onChange={(event) => {
+                          setAudioPreviewSourceMode(
+                            event.target.value as "chord-editor",
+                          );
+                        }}
+                        className="mt-1 w-full rounded border border-yellow-800 bg-black/20 px-2 py-1 text-xs text-yellow-100"
+                      >
+                        <option value="chord-editor">
+                          Chord editor placed songsheet
+                        </option>
+                      </select>
+                    </label>
                     <div className="mt-1">
                       {audioPreviewSourceStatus.detail}
                     </div>
