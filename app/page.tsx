@@ -2038,6 +2038,21 @@ export default function Page() {
     (detail) => detail.section,
   );
 
+  const guideCueSectionCount = usingGuideAlignedSheet
+    ? getGeneratedAudioSectionJumpSummaries().length
+    : 0;
+
+  const guideSyncWarningCount = cueSyncedSheetSectionDetails.filter(
+    (detail) => detail.syncWarning,
+  ).length;
+
+  const guideSyncStatusText = usingGuideAlignedSheet
+    ? guideCueSectionCount === cueSyncedSheetSections.length &&
+      guideSyncWarningCount === 0
+      ? `Guide sync ready: ${cueSyncedSheetSections.length} visible sections matched to cue markers.`
+      : `Guide sync needs review: ${cueSyncedSheetSections.length}/${guideCueSectionCount} visible sections matched, ${guideSyncWarningCount} warning(s).`
+    : "Guide sync inactive: showing the main performance sheet.";
+
   const getSheetSectionSourceLineIndexes = (
     section: {
       label: string;
@@ -20691,6 +20706,19 @@ ${buildRewriteInstruction(
                         {usingGuideAlignedSheet
                           ? "Showing the guide-aligned sheet used for this audio."
                           : "Showing the main performance sheet."}
+                      </div>
+
+                      <div
+                        className={`mt-1 text-[11px] ${
+                          usingGuideAlignedSheet &&
+                          guideCueSectionCount ===
+                            cueSyncedSheetSections.length &&
+                          guideSyncWarningCount === 0
+                            ? "text-green-300"
+                            : "text-yellow-200"
+                        }`}
+                      >
+                        {guideSyncStatusText}
                       </div>
                     </div>
 
