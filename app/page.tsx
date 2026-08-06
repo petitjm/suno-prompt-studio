@@ -13048,6 +13048,108 @@ export default function Page() {
       .filter((line): line is PlacedSongSheetLine => Boolean(line));
   };
 
+  const getPlacedLineBaseKey = (line: PlacedSongSheetLine) => {
+    return [
+      normalizeLyricMatchText(line.section || "Unsectioned"),
+      normalizeLyricMatchText(line.lyric),
+    ].join("::");
+  };
+
+  const getPlacedLineOccurrenceKey = (
+    line: PlacedSongSheetLine,
+    occurrence: number,
+  ) => {
+    return `${getPlacedLineBaseKey(line)}::${occurrence}`;
+  };
+
+  const getPlacedLineOccurrenceMap = (lines: PlacedSongSheetLine[]) => {
+    const counts = new Map<string, number>();
+    const occurrenceMap = new Map<string, PlacedSongSheetLine>();
+
+    for (const line of lines) {
+      const baseKey = getPlacedLineBaseKey(line);
+      const occurrence = (counts.get(baseKey) || 0) + 1;
+
+      counts.set(baseKey, occurrence);
+      occurrenceMap.set(getPlacedLineOccurrenceKey(line, occurrence), line);
+    }
+
+    return occurrenceMap;
+  };
+
+  const syncChordPlacementsToCurrentSongVersion = () => {
+    const currentSongLines = getMainSheetAudioPreviewLines();
+
+    if (currentSongLines.length === 0) {
+      setChordExtractionMessage(
+        "No usable current song version lyric lines found to sync.",
+      );
+      setProjectMessage("");
+      return;
+    }
+
+    const chordData = getChordDataFromEditorJson();
+    const record =
+      chordData && typeof chordData === "object" && !Array.isArray(chordData)
+        ? (chordData as Record<string, unknown>)
+        : {};
+
+    const existingPlacedLines = getPlacedSongSheetLines(record);
+    const existingLineMap = getPlacedLineOccurrenceMap(existingPlacedLines);
+    const currentLineCounts = new Map<string, number>();
+
+    let preservedLineCount = 0;
+    let insertedLineCount = 0;
+
+    const syncedLines = currentSongLines.map((line) => {
+      const baseKey = getPlacedLineBaseKey(line);
+      const occurrence = (currentLineCounts.get(baseKey) || 0) + 1;
+      currentLineCounts.set(baseKey, occurrence);
+
+      const existingLine = existingLineMap.get(
+        getPlacedLineOccurrenceKey(line, occurrence),
+      );
+
+      if (existingLine) {
+        preservedLineCount += 1;
+
+        return {
+          section: line.section,
+          lyric: line.lyric,
+          chords: existingLine.chords,
+        };
+      }
+
+      insertedLineCount += 1;
+
+      return {
+        section: line.section,
+        lyric: line.lyric,
+        chords: [],
+      };
+    });
+
+    const nextRecord = {
+      ...record,
+      songSheetLines: syncedLines,
+    };
+
+    setChords(nextRecord);
+    setChordsText(JSON.stringify(nextRecord, null, 2));
+    setActiveChordVersionId(null);
+    setChordTransposeSemitones(0);
+    setLastAppliedTransposeSnapshot(null);
+    resetAudioPreviewRequestState();
+    setProjectMessage("");
+    setChordExtractionMessage(
+      `Chord placements synced to the current song version. Preserved ${preservedLineCount} placed lyric line${
+        preservedLineCount === 1 ? "" : "s"
+      }; inserted ${insertedLineCount} current song line${
+        insertedLineCount === 1 ? "" : "s"
+      } without chords. Review, then click Save chords when ready.`,
+    );
+  };
+
   const getMainSheetAudioPreviewLines = (): PlacedSongSheetLine[] => {
     return performanceSections.flatMap((section) => {
       if (isNonPerformanceSheetSection(section)) {
@@ -13365,6 +13467,50 @@ export default function Page() {
     }
 
     return transposeChordSymbol(originalKey, chordTransposeSemitones);
+  };
+
+    const buildPlacedSongSheetPreviewText = () => {
+    const chordData = getChordDataFromEditorJson();
+
+    if (!chordData) {
+      return "";
+    }
+
+    const lines = getPlacedSongSheetLines(chordData);
+
+    if (lines.length === 0) {
+      return "";
+    }
+
+    let currentSection = "";
+
+    return lines
+      .flatMap((line) => {
+        const output: string[] = [];
+
+        if (line.section && line.section !== currentSection) {
+          if (currentSection) {
+            output.push("");
+          }
+
+          output.push(`[${line.section}]`);
+          output.push("");
+          currentSection = line.section;
+        }
+
+        const [chordLine, lyricLine] = renderPlacedSongSheetLine(
+          transposePlacedSongSheetLine(line),
+        );
+
+        if (chordLine.trim()) {
+          output.push(chordLine);
+        }
+
+        output.push(lyricLine);
+
+        return output;
+      })
+      .join("\n");
   };
 
   const buildPlacedSongSheetCopyText = () => {
@@ -21031,6 +21177,21 @@ ${buildRewriteInstruction(
 
                     <button
                       type="button"
+                      onClick={() => syncChordPlacementsToCurrentSongVersion()}
+                      disabled={
+                        generatingPlacedSongsheet ||
+                        generatingBasicChords ||
+                        generatingChords ||
+                        savingChords ||
+                        !performanceSheet.trim()
+                      }
+                      className="rounded border border-yellow-700 px-3 py-2 text-sm font-medium text-yellow-100 hover:bg-yellow-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                    >
+                      Sync to current song version
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => generateGuideTrackPlan()}
                       disabled={
                         generatingGuideTrackPlan ||
@@ -21109,45 +21270,80 @@ ${buildRewriteInstruction(
                   className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
                 />
 
-                <textarea
-                  value={chordsText}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
+                <div className="rounded border border-gray-800 bg-gray-900 p-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                      Chord-placement songsheet preview
+                    </h3>
+                    <div className="text-xs text-gray-500">
+                      Human-readable view
+                    </div>
+                  </div>
 
-                    setChordsText(nextValue);
-                    resetAudioPreviewRequestState();
-                    setLastAppliedTransposeSnapshot(null);
-                    setChordExtractionMessage("");
-                    setProjectMessage("");
+                  {buildPlacedSongSheetPreviewText() ? (
+                      <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-4 font-mono text-sm leading-7 text-gray-100">
+                        {buildPlacedSongSheetPreviewText()}
+                      </pre>
+                    ) : (
+                    <div className="rounded border border-gray-800 bg-gray-950 p-4 text-sm leading-6 text-gray-400">
+                      No placed songsheet available yet. Generate or sync chord
+                      placements to view the current song version as a readable
+                      songsheet.
+                    </div>
+                  )}
+                </div>
 
-                    if (!nextValue.trim()) {
-                      setChords(null);
-                      setActiveChordVersionId(null);
-                      setChordVersionTitle("");
-                      return;
-                    }
+                <details className="mt-3 rounded border border-gray-800 bg-gray-950 p-4">
+                  <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
+                    Technical details: Chord JSON
+                  </summary>
 
-                    try {
-                      const parsed = JSON.parse(nextValue);
+                  <div className="mt-2 text-xs leading-5 text-gray-500">
+                    Raw editable chord-placement data. Most songwriting work
+                    should use the songsheet preview above; use this only for
+                    copying, debugging, or manual repair.
+                  </div>
 
-                      if (
-                        parsed &&
-                        typeof parsed === "object" &&
-                        !Array.isArray(parsed)
-                      ) {
-                        setChords(parsed);
+                  <textarea
+                    value={chordsText}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
 
-                        if (Object.keys(parsed).length === 0) {
-                          setActiveChordVersionId(null);
-                        }
+                      setChordsText(nextValue);
+                      resetAudioPreviewRequestState();
+                      setLastAppliedTransposeSnapshot(null);
+                      setChordExtractionMessage("");
+                      setProjectMessage("");
+
+                      if (!nextValue.trim()) {
+                        setChords(null);
+                        setActiveChordVersionId(null);
+                        setChordVersionTitle("");
+                        return;
                       }
-                    } catch {
-                      // Keep the last valid chord summary while the user is editing invalid JSON.
-                    }
-                  }}
-                  placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
-                  className="min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
-                />
+
+                      try {
+                        const parsed = JSON.parse(nextValue);
+
+                        if (
+                          parsed &&
+                          typeof parsed === "object" &&
+                          !Array.isArray(parsed)
+                        ) {
+                          setChords(parsed);
+
+                          if (Object.keys(parsed).length === 0) {
+                            setActiveChordVersionId(null);
+                          }
+                        }
+                      } catch {
+                        // Keep the last valid chord summary while the user is editing invalid JSON.
+                      }
+                    }}
+                    placeholder='Paste or generate chord JSON here, for example: {"key":"G","verse":"G | D7 | G | C"}'
+                    className="mt-3 min-h-[360px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+                  />
+                </details>
               </div>
             </div>
           </div>
