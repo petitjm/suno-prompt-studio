@@ -13105,7 +13105,7 @@ export default function Page() {
 
     if (currentSongLines.length === 0) {
       setChordExtractionMessage(
-        "No usable current song version lyric lines found to sync.",
+        "No usable Source lyric lines found to process.",
       );
       setProjectMessage("");
       return;
@@ -13165,11 +13165,11 @@ export default function Page() {
     resetAudioPreviewRequestState();
     setProjectMessage("");
     setChordExtractionMessage(
-      `Chord placements synced to the current song version. Preserved ${preservedLineCount} placed lyric line${
+      `Processed Source into the chord-placement preview. Preserved ${preservedLineCount} placed lyric line${
         preservedLineCount === 1 ? "" : "s"
-      }; inserted ${insertedLineCount} current song line${
+      }; added ${insertedLineCount} source line${
         insertedLineCount === 1 ? "" : "s"
-      } without chords. Review, then click Save chords when ready.`,
+      } without chords. Review the preview, then click Save chords when ready.`,
     );
   };
 
@@ -21242,7 +21242,7 @@ ${buildRewriteInstruction(
                       }
                       className="rounded border border-yellow-700 px-3 py-2 text-sm font-medium text-yellow-100 hover:bg-yellow-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                     >
-                      Sync to current song version
+                      Build chord-placement preview from Source
                     </button>
 
                     <button
@@ -21403,9 +21403,9 @@ ${buildRewriteInstruction(
                     </pre>
                   ) : (
                     <div className="rounded border border-gray-800 bg-gray-950 p-4 text-sm leading-6 text-gray-400">
-                      No processed chord-placement preview yet. Generate or sync
-                      chord placements from Source to view the current song
-                      version as a readable songsheet.
+                      No processed chord-placement preview yet. Generate or
+                      build chord placements from Source to view the song as a
+                      readable songsheet.
                     </div>
                   )}
                 </div>
