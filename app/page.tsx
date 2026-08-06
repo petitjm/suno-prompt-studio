@@ -12649,10 +12649,33 @@ export default function Page() {
       return false;
     }
 
+    const normalizedHeading = trimmed
+      .toLowerCase()
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const compactHeading = normalizedHeading.replace(/\s+/g, "");
+
+    const knownSectionHeadings = new Set([
+      "intro",
+      "verse",
+      "chorus",
+      "prechorus",
+      "bridge",
+      "outro",
+      "tag",
+      "breakdown",
+      "finalchorus",
+    ]);
+
     if (
-      /^(intro|verse|verse\s+\d+|chorus|pre-chorus|prechorus|bridge|outro|tag|breakdown|final chorus)$/i.test(
-        trimmed,
-      )
+      knownSectionHeadings.has(compactHeading) ||
+      /^verse\d+$/.test(compactHeading) ||
+      /^chorus\d+$/.test(compactHeading) ||
+      /^bridge\d+$/.test(compactHeading) ||
+      /^outro\d+$/.test(compactHeading) ||
+      /^tag\d+$/.test(compactHeading)
     ) {
       return false;
     }
@@ -13156,19 +13179,19 @@ export default function Page() {
         return [];
       }
 
+      const sectionLabel = normalizeLyricMatchText(section.label);
+
       return section.content
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter((line) => {
-          if (!line) {
+          if (!isSourceLyricContentLine(line)) {
             return false;
           }
 
-          if (/^\[[^\]]+\]$/.test(line)) {
-            return false;
-          }
+          const normalizedLine = normalizeLyricMatchText(line);
 
-          if (/^\{[^}]+\}$/.test(line)) {
+          if (sectionLabel && normalizedLine === sectionLabel) {
             return false;
           }
 
@@ -13469,6 +13492,37 @@ export default function Page() {
     return transposeChordSymbol(originalKey, chordTransposeSemitones);
   };
 
+  const shouldShowPlacedSongSheetPreviewLine = (line: PlacedSongSheetLine) => {
+    const section = line.section.trim();
+    const sectionKey = section.toLowerCase();
+    const lyric = line.lyric.trim();
+
+    if (sectionKey === "meta" || sectionKey === "metadata") {
+      return false;
+    }
+
+    if (!lyric) {
+      return line.chords.length > 0;
+    }
+
+    if (/^\{[^}]+:[^}]*\}$/.test(lyric)) {
+      return false;
+    }
+
+    if (!isSourceLyricContentLine(lyric)) {
+      return false;
+    }
+
+    const normalizedSection = normalizeLyricMatchText(section);
+    const normalizedLyric = normalizeLyricMatchText(lyric);
+
+    if (normalizedSection && normalizedSection === normalizedLyric) {
+      return false;
+    }
+
+    return true;
+  };
+
   const buildPlacedSongSheetPreviewText = () => {
     const chordData = getChordDataFromEditorJson();
 
@@ -13476,20 +13530,9 @@ export default function Page() {
       return "";
     }
 
-    const lines = getPlacedSongSheetLines(chordData).filter((line) => {
-      const section = line.section.trim().toLowerCase();
-      const lyric = line.lyric.trim();
-
-      if (section === "meta" || section === "metadata") {
-        return false;
-      }
-
-      if (/^\{[^}]+:[^}]*\}$/.test(lyric)) {
-        return false;
-      }
-
-      return true;
-    });
+    const lines = getPlacedSongSheetLines(chordData).filter(
+      shouldShowPlacedSongSheetPreviewLine,
+    );
     if (lines.length === 0) {
       return "";
     }
@@ -21114,7 +21157,7 @@ ${buildRewriteInstruction(
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                    Source lyrics
+                    Source
                   </h2>
 
                   <button
@@ -21122,12 +21165,12 @@ ${buildRewriteInstruction(
                     onClick={() => handleModeChange("write")}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
                   >
-                    Edit lyrics
+                    Edit source
                   </button>
                 </div>
 
                 <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100">
-                  {performanceSheet || "No lyrics available yet."}
+                  {performanceSheet || "No source available yet."}
                 </pre>
               </div>
 
@@ -21285,12 +21328,74 @@ ${buildRewriteInstruction(
                 <div className="rounded border border-gray-800 bg-gray-900 p-4">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <h3 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Chord-placement songsheet preview
+                      Processed chord-placement preview
                     </h3>
                     <div className="text-xs text-gray-500">
-                      Human-readable view
+                      Generated from Source
                     </div>
                   </div>
+
+                  <div className="mb-3 grid gap-2 md:grid-cols-4">
+                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Lyric lines
+                      </div>
+                      <div className="mt-1 text-sm text-gray-200">
+                        {placedSongSheetQuality.totalLines}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Lines with chords
+                      </div>
+                      <div className="mt-1 text-sm text-green-300">
+                        {placedSongSheetQuality.linesWithChords}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Lines still needing chords
+                      </div>
+                      <div
+                        className={`mt-1 text-sm ${
+                          placedSongSheetQuality.linesWithoutChords > 0
+                            ? "text-yellow-300"
+                            : "text-green-300"
+                        }`}
+                      >
+                        {placedSongSheetQuality.linesWithoutChords}
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                      <div className="text-xs uppercase tracking-wide text-gray-500">
+                        Total chords
+                      </div>
+                      <div className="mt-1 text-sm text-gray-200">
+                        {placedSongSheetQuality.totalChords}
+                      </div>
+                    </div>
+                  </div>
+
+                  {placedSongSheetQuality.totalLines > 0 ? (
+                    <div
+                      className={`mb-3 rounded border px-3 py-2 text-xs leading-5 ${
+                        placedSongSheetQuality.linesWithoutChords > 0
+                          ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          : "border-green-900 bg-green-950/20 text-green-100"
+                      }`}
+                    >
+                      {placedSongSheetQuality.linesWithoutChords > 0
+                        ? `${placedSongSheetQuality.linesWithChords} of ${placedSongSheetQuality.totalLines} lyric lines include chord placements. ${placedSongSheetQuality.linesWithoutChords} line${
+                            placedSongSheetQuality.linesWithoutChords === 1
+                              ? ""
+                              : "s"
+                          } still need chord placement.`
+                        : "Every placed lyric line currently includes at least one chord placement."}
+                    </div>
+                  ) : null}
 
                   {buildPlacedSongSheetPreviewText() ? (
                     <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-4 font-mono text-sm leading-7 text-gray-100">
@@ -21298,9 +21403,9 @@ ${buildRewriteInstruction(
                     </pre>
                   ) : (
                     <div className="rounded border border-gray-800 bg-gray-950 p-4 text-sm leading-6 text-gray-400">
-                      No placed songsheet available yet. Generate or sync chord
-                      placements to view the current song version as a readable
-                      songsheet.
+                      No processed chord-placement preview yet. Generate or sync
+                      chord placements from Source to view the current song
+                      version as a readable songsheet.
                     </div>
                   )}
                 </div>
