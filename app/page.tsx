@@ -8158,7 +8158,7 @@ export default function Page() {
         "This is a machine-readable planning spec for a future simple audio guide track.",
         "It is not a finished production request.",
         audioPreviewSourceMode === "main-sheet"
-          ? "Main song sheet source is experimental and currently sends lyrics without chord placements."
+          ? "Current song version lyrics-only source is experimental and currently sends lyrics without chord placements."
           : "Chord placement should be treated as performance intent and reviewed against phrasing.",
       ],
     };
@@ -13101,10 +13101,10 @@ export default function Page() {
           mainSheetLines.length > 0
             ? `The guide will follow ${mainSheetLines.length} lyric line${
                 mainSheetLines.length === 1 ? "" : "s"
-              } from the main song sheet. Chord placements are not included yet.`
-            : "The main song sheet does not contain usable lyric lines for audio preview.",
+              } from the current song version lyrics. Chord placements are not included yet.`
+            : "The current song version does not contain usable lyric lines for audio preview.",
         recommendation:
-          "Use this mode to test full song structure alignment. Use chord editor mode when you need chord-aware guide timing.",
+          "Use this mode to test full song structure alignment. Use the chord-placement mode when you need chord-aware guide timing.",
       };
     }
     const chordData = getChordDataFromEditorJson();
@@ -13116,11 +13116,11 @@ export default function Page() {
     ) {
       return {
         tone: "empty",
-        label: "Audio preview source: no chord editor JSON",
+        label: "Audio preview source: no chord-placement data",
         detail:
           "The audio preview has no placed chord songsheet to use as its timing source.",
         recommendation:
-          "Generate or paste chord editor JSON with placed songsheet lines before requesting an audio preview.",
+          "Generate or paste chord-placement data for the current song version before requesting an audio preview.",
       };
     }
 
@@ -13129,11 +13129,11 @@ export default function Page() {
     if (placedLines.length === 0) {
       return {
         tone: "review",
-        label: "Audio preview source: chord editor JSON",
+        label: "Audio preview source: chord-placement data",
         detail:
           "Chord editor JSON is present, but it does not contain placed songsheet lines.",
         recommendation:
-          "Regenerate or repair the chord editor JSON so it includes placed songsheet lines.",
+          "Regenerate or repair the chord-placement data so it includes placed songsheet lines for the current song version.",
       };
     }
 
@@ -21215,7 +21215,7 @@ ${buildRewriteInstruction(
                 </summary>
 
                 <div className="mt-2 text-[11px] text-yellow-200">
-                  Shows how the main song sheet, guide-aligned sheet, cue
+                  Shows how the current song version, guide-aligned sheet, cue
                   markers, and visible Sheet sections currently line up.
                 </div>
 
@@ -21234,7 +21234,7 @@ ${buildRewriteInstruction(
                 <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
-                      Main song sheet sections
+                      Current song version sections
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                       {JSON.stringify(

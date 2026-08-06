@@ -405,7 +405,7 @@ export async function POST(req: Request) {
 
     const sourceModeInstruction =
       audioPreviewSourceMode === "main-sheet"
-        ? "Use the main song sheet lyrics as the timing and section-structure reference. Chord placements are not available in this mode, so focus on section flow, phrasing, lyric entry points, and simple rehearsal timing."
+        ? "Use the current song version lyrics as the timing and section-structure reference. Chord placements are not available in this mode, so focus on section flow, phrasing, lyric entry points, and simple rehearsal timing."
         : "Use the chord-over-lyric songsheet as the main timing reference. Preserve chord timing and section feel.";
 
     const renderPrompt = [
