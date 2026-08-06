@@ -13093,6 +13093,10 @@ export default function Page() {
   const getAudioPreviewSourceStatus = () => {
     if (audioPreviewSourceMode === "main-sheet") {
       const mainSheetLines = getMainSheetAudioPreviewLines();
+      const mainSectionKeyCounts = getSectionKeyCounts(performanceSections);
+      const mainSectionLabels = Object.entries(mainSectionKeyCounts).map(
+        ([key, count]) => (count === 1 ? key : `${key} x${count}`),
+      );
 
       return {
         tone: mainSheetLines.length > 0 ? "review" : "empty",
@@ -13105,8 +13109,30 @@ export default function Page() {
             : "The current song version does not contain usable lyric lines for audio preview.",
         recommendation:
           "Use this mode to test full song structure alignment. Use the chord-placement mode when you need chord-aware guide timing.",
+        alignmentTitle: "Current song version alignment",
+        alignmentRows: [
+          {
+            label: "Current song version sections",
+            value:
+              mainSectionLabels.length > 0
+                ? mainSectionLabels.join(", ")
+                : "No usable sections found",
+          },
+          {
+            label: "Chord placements",
+            value: "Not included in lyrics-only mode",
+          },
+          {
+            label: "Missing chord placements",
+            value:
+              mainSectionLabels.length > 0
+                ? mainSectionLabels.join(", ")
+                : "No usable sections found",
+          },
+        ],
       };
     }
+
     const chordData = getChordDataFromEditorJson();
 
     if (
@@ -13114,6 +13140,11 @@ export default function Page() {
       typeof chordData !== "object" ||
       Array.isArray(chordData)
     ) {
+      const mainSectionKeyCounts = getSectionKeyCounts(performanceSections);
+      const mainSectionLabels = Object.entries(mainSectionKeyCounts).map(
+        ([key, count]) => (count === 1 ? key : `${key} x${count}`),
+      );
+
       return {
         tone: "empty",
         label: "Audio preview source: no chord-placement data",
@@ -13121,19 +13152,66 @@ export default function Page() {
           "The audio preview has no placed chord songsheet to use as its timing source.",
         recommendation:
           "Generate or paste chord-placement data for the current song version before requesting an audio preview.",
+        alignmentTitle: "Current song version alignment",
+        alignmentRows: [
+          {
+            label: "Current song version sections",
+            value:
+              mainSectionLabels.length > 0
+                ? mainSectionLabels.join(", ")
+                : "No usable sections found",
+          },
+          {
+            label: "Chord placements",
+            value: "No chord-placement data found",
+          },
+          {
+            label: "Missing chord placements",
+            value:
+              mainSectionLabels.length > 0
+                ? mainSectionLabels.join(", ")
+                : "No usable sections found",
+          },
+        ],
       };
     }
 
     const placedLines = getPlacedSongSheetLines(chordData);
+
+    const mainSectionKeyCounts = getSectionKeyCounts(performanceSections);
+    const mainSectionLabels = Object.entries(mainSectionKeyCounts).map(
+      ([key, count]) => (count === 1 ? key : `${key} x${count}`),
+    );
 
     if (placedLines.length === 0) {
       return {
         tone: "review",
         label: "Audio preview source: chord-placement data",
         detail:
-          "Chord editor JSON is present, but it does not contain placed songsheet lines.",
+          "Chord-placement data is present, but it does not contain placed songsheet lines.",
         recommendation:
           "Regenerate or repair the chord-placement data so it includes placed songsheet lines for the current song version.",
+        alignmentTitle: "Current song version alignment",
+        alignmentRows: [
+          {
+            label: "Current song version sections",
+            value:
+              mainSectionLabels.length > 0
+                ? mainSectionLabels.join(", ")
+                : "No usable sections found",
+          },
+          {
+            label: "Chord placements",
+            value: "No placed songsheet lines found",
+          },
+          {
+            label: "Missing chord placements",
+            value:
+              mainSectionLabels.length > 0
+                ? mainSectionLabels.join(", ")
+                : "No usable sections found",
+          },
+        ],
       };
     }
 
@@ -13144,7 +13222,9 @@ export default function Page() {
       })),
     );
 
-    const mainSectionKeyCounts = getSectionKeyCounts(performanceSections);
+    const placedSectionLabels = Object.entries(placedSectionKeyCounts).map(
+      ([key, count]) => (count === 1 ? key : `${key} x${count}`),
+    );
 
     const mainSectionsMissingFromPreview = Object.entries(
       mainSectionKeyCounts,
@@ -13169,13 +13249,37 @@ export default function Page() {
             )}.`
           : `The guide will follow ${placedLines.length} placed songsheet line${
               placedLines.length === 1 ? "" : "s"
-            } from the chord editor.`,
+            } from the current song version chord placements.`,
       recommendation:
         mainSectionsMissingFromPreview.length > 0
           ? `Update the chord placements for the current song version if you want the guide to include: ${mainSectionsMissingFromPreview.join(
               ", ",
             )}.`
           : "This source is ready for an audio preview.",
+      alignmentTitle: "Current song version alignment",
+      alignmentRows: [
+        {
+          label: "Current song version sections",
+          value:
+            mainSectionLabels.length > 0
+              ? mainSectionLabels.join(", ")
+              : "No usable sections found",
+        },
+        {
+          label: "Chord-placement sections",
+          value:
+            placedSectionLabels.length > 0
+              ? placedSectionLabels.join(", ")
+              : "No chord-placement sections found",
+        },
+        {
+          label: "Missing chord placements",
+          value:
+            mainSectionsMissingFromPreview.length > 0
+              ? mainSectionsMissingFromPreview.join(", ")
+              : "None",
+        },
+      ],
     };
   };
 
@@ -16007,6 +16111,27 @@ ${buildRewriteInstruction(
                     <div className="mt-1 text-[11px] opacity-90">
                       Recommendation: {audioPreviewSourceStatus.recommendation}
                     </div>
+                    {audioPreviewSourceStatus.alignmentRows.length > 0 ? (
+                      <div className="mt-3 rounded border border-black/20 bg-black/20 p-2 text-[11px] leading-5">
+                        <div className="font-medium opacity-90">
+                          {audioPreviewSourceStatus.alignmentTitle}
+                        </div>
+
+                        <div className="mt-2 grid gap-2 md:grid-cols-3">
+                          {audioPreviewSourceStatus.alignmentRows.map((row) => (
+                            <div
+                              key={row.label}
+                              className="rounded border border-black/20 bg-black/20 p-2"
+                            >
+                              <div className="uppercase tracking-wide opacity-70">
+                                {row.label}
+                              </div>
+                              <div className="mt-1 opacity-95">{row.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   {renderAudioPreviewReadinessCard()}
