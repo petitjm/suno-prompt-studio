@@ -2150,16 +2150,16 @@ export default function Page() {
 
   const generatedGuideSourceModeLabel =
     generatedGuideSourceMode === "main-sheet"
-      ? "Main song sheet"
+      ? "Current song version lyrics only"
       : generatedGuideSourceMode === "chord-editor"
-        ? "Chord editor placed songsheet"
+        ? "Current song version with chord placements"
         : "";
 
   const generatedPreviewSourceModeLabel =
     generatedGuideSourceModeLabel ||
     (audioPreviewSourceMode === "main-sheet"
-      ? "Main song sheet"
-      : "Chord editor placed songsheet");
+      ? "Current song version lyrics only"
+      : "Current song version with chord placements");
 
   const getSheetSectionSourceLineIndexes = (
     section: {
@@ -13096,7 +13096,7 @@ export default function Page() {
 
       return {
         tone: mainSheetLines.length > 0 ? "review" : "empty",
-        label: "Audio preview source: main song sheet",
+        label: "Audio preview source: current song version lyrics only",
         detail:
           mainSheetLines.length > 0
             ? `The guide will follow ${mainSheetLines.length} lyric line${
@@ -13161,10 +13161,10 @@ export default function Page() {
 
     return {
       tone: mainSectionsMissingFromPreview.length > 0 ? "review" : "ready",
-      label: "Audio preview source: chord editor placed songsheet",
+      label: "Audio preview source: current song version with chord placements",
       detail:
         mainSectionsMissingFromPreview.length > 0
-          ? `The guide will follow the chord editor placed songsheet. Main sheet sections not represented there: ${mainSectionsMissingFromPreview.join(
+          ? `The guide will follow the current song version's chord placements. Song sections not represented there yet: ${mainSectionsMissingFromPreview.join(
               ", ",
             )}.`
           : `The guide will follow ${placedLines.length} placed songsheet line${
@@ -13172,7 +13172,7 @@ export default function Page() {
             } from the chord editor.`,
       recommendation:
         mainSectionsMissingFromPreview.length > 0
-          ? `Update the chord editor placed songsheet if you want the guide to include: ${mainSectionsMissingFromPreview.join(
+          ? `Update the chord placements for the current song version if you want the guide to include: ${mainSectionsMissingFromPreview.join(
               ", ",
             )}.`
           : "This source is ready for an audio preview.",
@@ -13200,9 +13200,9 @@ export default function Page() {
   const audioPreviewRequestButtonLabel = requestingAudioPreview
     ? "Requesting..."
     : audioPreviewSourceMode === "main-sheet"
-      ? "Request main-sheet preview"
+      ? "Request lyrics-only preview"
       : audioPreviewSourceStatus.tone === "review"
-        ? "Request chord-source preview"
+        ? "Request chord-placement preview"
         : "Request preview";
 
   const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
@@ -15978,8 +15978,8 @@ ${buildRewriteInstruction(
                     <div className="mt-1 text-[11px] opacity-90">
                       Source mode:{" "}
                       {audioPreviewSourceMode === "chord-editor"
-                        ? "Chord editor placed songsheet"
-                        : "Main song sheet"}
+                        ? "Current song version with chord placements"
+                        : "Current song version lyrics only"}
                     </div>
                     <label className="mt-2 block text-[11px] opacity-90">
                       Guide source
@@ -15993,10 +15993,11 @@ ${buildRewriteInstruction(
                         className="mt-1 w-full rounded border border-yellow-800 bg-black/20 px-2 py-1 text-xs text-yellow-100"
                       >
                         <option value="chord-editor">
-                          Chord editor placed songsheet
+                          Current song version with chord placements
                         </option>
                         <option value="main-sheet">
-                          Main song sheet — experimental, no chords yet
+                          Current song version lyrics only — experimental, no
+                          chords yet
                         </option>
                       </select>
                     </label>
@@ -16051,8 +16052,8 @@ ${buildRewriteInstruction(
                 {audioPreviewSourceStatus.tone === "review" ? (
                   <div className="w-full text-right text-[11px] text-yellow-300">
                     {audioPreviewSourceMode === "main-sheet"
-                      ? "Preview will follow the main song sheet, but chord placements are not included yet."
-                      : "Preview will follow the chord editor placed songsheet, not the full main song sheet."}
+                      ? "Preview will follow the current song version lyrics, but chord placements are not included yet."
+                      : "Preview will follow the current song version chord placements. Some lyric sections may be missing chords."}
                   </div>
                 ) : null}
 
