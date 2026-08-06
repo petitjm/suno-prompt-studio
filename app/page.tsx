@@ -13469,15 +13469,27 @@ export default function Page() {
     return transposeChordSymbol(originalKey, chordTransposeSemitones);
   };
 
-    const buildPlacedSongSheetPreviewText = () => {
+  const buildPlacedSongSheetPreviewText = () => {
     const chordData = getChordDataFromEditorJson();
 
     if (!chordData) {
       return "";
     }
 
-    const lines = getPlacedSongSheetLines(chordData);
+    const lines = getPlacedSongSheetLines(chordData).filter((line) => {
+      const section = line.section.trim().toLowerCase();
+      const lyric = line.lyric.trim();
 
+      if (section === "meta" || section === "metadata") {
+        return false;
+      }
+
+      if (/^\{[^}]+:[^}]*\}$/.test(lyric)) {
+        return false;
+      }
+
+      return true;
+    });
     if (lines.length === 0) {
       return "";
     }
@@ -21281,10 +21293,10 @@ ${buildRewriteInstruction(
                   </div>
 
                   {buildPlacedSongSheetPreviewText() ? (
-                      <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-4 font-mono text-sm leading-7 text-gray-100">
-                        {buildPlacedSongSheetPreviewText()}
-                      </pre>
-                    ) : (
+                    <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-4 font-mono text-sm leading-7 text-gray-100">
+                      {buildPlacedSongSheetPreviewText()}
+                    </pre>
+                  ) : (
                     <div className="rounded border border-gray-800 bg-gray-950 p-4 text-sm leading-6 text-gray-400">
                       No placed songsheet available yet. Generate or sync chord
                       placements to view the current song version as a readable
