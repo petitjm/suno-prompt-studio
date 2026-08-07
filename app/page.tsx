@@ -21156,28 +21156,51 @@ ${buildRewriteInstruction(
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                    Source
-                  </h2>
+                  <div>
+                    <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+                      Source
+                    </h2>
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      Edit the song source here, then rebuild the processed
+                      preview when ready.
+                    </div>
+                  </div>
 
                   <button
                     type="button"
                     onClick={() => handleModeChange("write")}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
                   >
-                    Edit source
+                    Open Write page
                   </button>
                 </div>
 
-                <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100">
-                  {performanceSheet || "No source available yet."}
-                </pre>
+                <textarea
+                  value={performanceSheet}
+                  onChange={(event) => {
+                    setPerformanceSheet(event.target.value);
+                    resetAudioPreviewRequestState();
+                    setClickTrackAudioUrl("");
+                    setClickTrackDownloadStatus("");
+                    setClickTrackAudioLabel("Latest generated WAV");
+                    setSheetGuideActiveSectionId(null);
+                    setSheetGuideActiveSectionIndex(null);
+                    setProjectMessage("");
+                    setChordExtractionMessage(
+                      "Source edited. Rebuild preview from Source before reviewing or saving chords.",
+                    );
+                  }}
+                  placeholder="Add or edit Source here..."
+                  rows={24}
+                  style={{ minHeight: "520px" }}
+                  className="min-h-[520px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100 outline-none focus:border-blue-500"
+                />
               </div>
 
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                    Chord JSON
+                    Chord workflow
                   </h2>
 
                   <div className="flex flex-wrap gap-2">
@@ -21261,15 +21284,6 @@ ${buildRewriteInstruction(
                       {generatingGuideTrackPlan
                         ? "Generating guide plan..."
                         : "Generate guide plan"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyChordJson()}
-                      disabled={!chordsText.trim()}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justCopiedChordJson ? "Copied ✓" : "Copy JSON"}
                     </button>
 
                     <button
@@ -21408,10 +21422,21 @@ ${buildRewriteInstruction(
                     Technical details: Chord JSON
                   </summary>
 
-                  <div className="mt-2 text-xs leading-5 text-gray-500">
-                    Raw editable chord-placement data. Most songwriting work
-                    should use the songsheet preview above; use this only for
-                    copying, debugging, or manual repair.
+                  <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+                    <div className="text-xs leading-5 text-gray-500">
+                      Raw editable chord-placement data. Most songwriting work
+                      should use the songsheet preview above; use this only for
+                      copying, debugging, or manual repair.
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => copyChordJson()}
+                      disabled={!chordsText.trim()}
+                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {justCopiedChordJson ? "Copied ✓" : "Copy JSON"}
+                    </button>
                   </div>
 
                   <textarea
