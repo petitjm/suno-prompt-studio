@@ -21242,7 +21242,7 @@ ${buildRewriteInstruction(
                       }
                       className="rounded border border-yellow-700 px-3 py-2 text-sm font-medium text-yellow-100 hover:bg-yellow-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                     >
-                      Build chord-placement preview from Source
+                      Rebuild preview from Source
                     </button>
 
                     <button
@@ -21335,67 +21335,60 @@ ${buildRewriteInstruction(
                     </div>
                   </div>
 
-                  <div className="mb-3 grid gap-2 md:grid-cols-4">
-                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                      <div className="text-xs uppercase tracking-wide text-gray-500">
-                        Lyric lines
-                      </div>
-                      <div className="mt-1 text-sm text-gray-200">
-                        {placedSongSheetQuality.totalLines}
-                      </div>
-                    </div>
-
-                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                      <div className="text-xs uppercase tracking-wide text-gray-500">
-                        Lines with chords
-                      </div>
-                      <div className="mt-1 text-sm text-green-300">
-                        {placedSongSheetQuality.linesWithChords}
-                      </div>
-                    </div>
-
-                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                      <div className="text-xs uppercase tracking-wide text-gray-500">
-                        Lines still needing chords
-                      </div>
-                      <div
-                        className={`mt-1 text-sm ${
-                          placedSongSheetQuality.linesWithoutChords > 0
-                            ? "text-yellow-300"
-                            : "text-green-300"
-                        }`}
-                      >
-                        {placedSongSheetQuality.linesWithoutChords}
-                      </div>
-                    </div>
-
-                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
-                      <div className="text-xs uppercase tracking-wide text-gray-500">
-                        Total chords
-                      </div>
-                      <div className="mt-1 text-sm text-gray-200">
-                        {placedSongSheetQuality.totalChords}
-                      </div>
-                    </div>
+                  <div className="mb-3 rounded border border-gray-800 bg-gray-950 px-3 py-2 text-xs leading-5 text-gray-400">
+                    Rebuild preview from Source keeps matching existing chord
+                    placements. New Source lines are added without chords.
                   </div>
 
-                  {placedSongSheetQuality.totalLines > 0 ? (
-                    <div
-                      className={`mb-3 rounded border px-3 py-2 text-xs leading-5 ${
-                        placedSongSheetQuality.linesWithoutChords > 0
+                  <div
+                    className={`mb-3 rounded border px-3 py-2 text-xs leading-5 ${
+                      placedSongsheetSourceCoverage.isChecking
+                        ? "border-gray-800 bg-gray-950 text-gray-400"
+                        : placedSongsheetSourceCoverage.missingLineCount > 0
                           ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                          : "border-green-900 bg-green-950/20 text-green-100"
-                      }`}
-                    >
-                      {placedSongSheetQuality.linesWithoutChords > 0
-                        ? `${placedSongSheetQuality.linesWithChords} of ${placedSongSheetQuality.totalLines} lyric lines include chord placements. ${placedSongSheetQuality.linesWithoutChords} line${
-                            placedSongSheetQuality.linesWithoutChords === 1
-                              ? ""
-                              : "s"
-                          } still need chord placement.`
-                        : "Every placed lyric line currently includes at least one chord placement."}
+                          : placedSongsheetSourceCoverage.sourceLineCount > 0
+                            ? "border-green-900 bg-green-950/20 text-green-100"
+                            : "border-gray-800 bg-gray-950 text-gray-400"
+                    }`}
+                  >
+                    <div className="font-medium">
+                      {placedSongsheetSourceCoverage.isChecking
+                        ? "Checking Source alignment..."
+                        : placedSongsheetSourceCoverage.sourceLineCount === 0
+                          ? "No Source lines to compare"
+                          : placedSongsheetSourceCoverage.missingLineCount > 0
+                            ? "Processed preview may be stale"
+                            : "Processed preview appears aligned with Source"}
                     </div>
-                  ) : null}
+
+                    <div className="mt-1">
+                      {placedSongsheetSourceCoverage.isChecking
+                        ? placedSongsheetSourceCoverage.detail
+                        : placedSongsheetSourceCoverage.sourceLineCount === 0
+                          ? "Add Source content, then build the chord-placement preview."
+                          : `${placedSongsheetSourceCoverage.coveredLineCount} of ${placedSongsheetSourceCoverage.sourceLineCount} Source lyric line${
+                              placedSongsheetSourceCoverage.sourceLineCount ===
+                              1
+                                ? ""
+                                : "s"
+                            } are represented in the processed preview.`}
+                    </div>
+
+                    {placedSongsheetSourceCoverage.missingLines.length > 0 ? (
+                      <div className="mt-2">
+                        <div className="font-medium">
+                          Source lines not yet represented:
+                        </div>
+                        <ul className="mt-1 list-disc space-y-1 pl-5">
+                          {placedSongsheetSourceCoverage.missingLines.map(
+                            (line, index) => (
+                              <li key={`${line}-${index}`}>{line}</li>
+                            ),
+                          )}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
 
                   {buildPlacedSongSheetPreviewText() ? (
                     <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-gray-950 p-4 font-mono text-sm leading-7 text-gray-100">
