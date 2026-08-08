@@ -21307,7 +21307,16 @@ ${buildRewriteInstruction(
                         generatingBasicChords ||
                         generatingChords ||
                         !performanceSheet.trim() ||
-                        !hasUsableChordData()
+                        !hasUsableChordData() ||
+                        processedPreviewSourceAlignmentIsChecking ||
+                        processedPreviewHasAlignmentIssue
+                      }
+                      title={
+                        processedPreviewSourceAlignmentIsChecking
+                          ? "Source alignment is still being checked."
+                          : processedPreviewHasAlignmentIssue
+                            ? "Rebuild preview from Source before generating a guide plan."
+                            : undefined
                       }
                       className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                     >
@@ -21348,7 +21357,11 @@ ${buildRewriteInstruction(
                       }
                       className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
                     >
-                      {savingChords ? "Saving..." : justSavedChords ? "Saved ✓" : "Save chords"}
+                      {savingChords
+                        ? "Saving..."
+                        : justSavedChords
+                          ? "Saved ✓"
+                          : "Save chords"}
                     </button>
                   </div>
                 </div>
