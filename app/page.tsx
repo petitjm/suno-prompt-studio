@@ -1614,10 +1614,12 @@ export default function Page() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [projectMessage, setProjectMessage] = useState("");
-  const [savingSong, setSavingSong] = useState(false);
-  const [justSavedSong, setJustSavedSong] = useState(false);
+
   const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([]);
   const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([]);
+  const [savingSong, setSavingSong] = useState(false);
+  const [justSavedSong, setJustSavedSong] = useState(false);
+  const [sourceHasUnsavedChanges, setSourceHasUnsavedChanges] = useState(false);
   const [savingChords, setSavingChords] = useState(false);
   const [justSavedChords, setJustSavedChords] = useState(false);
 
@@ -2437,6 +2439,8 @@ export default function Page() {
       if (savedVersion?.id) {
         setActiveSongVersionId(savedVersion.id);
       }
+
+      setSourceHasUnsavedChanges(false);
 
       setProjectMessage(
         `Saved song version: ${savedVersion?.title || songVersionTitle.trim() || "Untitled version"}`,
@@ -14245,6 +14249,12 @@ export default function Page() {
         return;
       }
 
+      if (sourceHasUnsavedChanges) {
+        setChordExtractionMessage("Save Source before saving chords.");
+        setProjectMessage("");
+        return;
+      }
+
       let chordsToSave: ChordResponse | null = null;
 
       try {
@@ -21209,6 +21219,7 @@ ${buildRewriteInstruction(
                   value={performanceSheet}
                   onChange={(event) => {
                     setPerformanceSheet(event.target.value);
+                    setSourceHasUnsavedChanges(true);
                     resetAudioPreviewRequestState();
                     setClickTrackAudioUrl("");
                     setClickTrackDownloadStatus("");
@@ -21217,7 +21228,7 @@ ${buildRewriteInstruction(
                     setSheetGuideActiveSectionIndex(null);
                     setProjectMessage("");
                     setChordExtractionMessage(
-                      "Source edited. Rebuild preview from Source before reviewing or saving chords.",
+                      "Source edited. Save Source, then rebuild preview from Source before reviewing or saving chords.",
                     );
                   }}
                   placeholder="Add or edit Source here..."
@@ -21308,15 +21319,18 @@ ${buildRewriteInstruction(
                         generatingChords ||
                         !performanceSheet.trim() ||
                         !hasUsableChordData() ||
+                        sourceHasUnsavedChanges ||
                         processedPreviewSourceAlignmentIsChecking ||
                         processedPreviewHasAlignmentIssue
                       }
                       title={
-                        processedPreviewSourceAlignmentIsChecking
-                          ? "Source alignment is still being checked."
-                          : processedPreviewHasAlignmentIssue
-                            ? "Rebuild preview from Source before generating a guide plan."
-                            : undefined
+                        sourceHasUnsavedChanges
+                          ? "Save Source before generating a guide plan."
+                          : processedPreviewSourceAlignmentIsChecking
+                            ? "Source alignment is still being checked."
+                            : processedPreviewHasAlignmentIssue
+                              ? "Rebuild preview from Source before generating a guide plan."
+                              : undefined
                       }
                       className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                     >
@@ -21345,15 +21359,18 @@ ${buildRewriteInstruction(
                         !activeProject ||
                         savingChords ||
                         !chordsText.trim() ||
+                        sourceHasUnsavedChanges ||
                         processedPreviewSourceAlignmentIsChecking ||
                         processedPreviewHasAlignmentIssue
                       }
                       title={
-                        processedPreviewSourceAlignmentIsChecking
-                          ? "Source alignment is still being checked."
-                          : processedPreviewHasAlignmentIssue
-                            ? "Rebuild preview from Source before saving chords."
-                            : undefined
+                        sourceHasUnsavedChanges
+                          ? "Save Source before saving chords."
+                          : processedPreviewSourceAlignmentIsChecking
+                            ? "Source alignment is still being checked."
+                            : processedPreviewHasAlignmentIssue
+                              ? "Rebuild preview from Source before saving chords."
+                              : undefined
                       }
                       className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
                     >
