@@ -13896,6 +13896,17 @@ export default function Page() {
   const songsheetServerValidation = getSongsheetServerValidation();
   const placedSongsheetSourceCoverage = getPlacedSongsheetSourceCoverage();
 
+  const processedPreviewSourceAlignmentIsChecking =
+    placedSongsheetSourceCoverage.isChecking ||
+    placedSongsheetSourceMatch.isChecking;
+
+  const processedPreviewHasStaleLines =
+    placedSongsheetSourceMatch.unmatchedCount > 0;
+
+  const processedPreviewHasAlignmentIssue =
+    placedSongsheetSourceCoverage.missingLineCount > 0 ||
+    processedPreviewHasStaleLines;
+
   const performanceIntentRows = getPerformanceIntentRows(
     getChordDataFromEditorJson(),
   );
@@ -20570,17 +20581,19 @@ ${buildRewriteInstruction(
 
                         <div
                           className={`text-xs ${
-                            placedSongsheetSourceCoverage.isChecking
-                              ? "text-blue-300"
-                              : placedSongsheetSourceCoverage.missingLineCount >
-                                  0
-                                ? "text-yellow-300"
-                                : "text-green-300"
+                            processedPreviewSourceAlignmentIsChecking
+                              ? "border-gray-800 bg-gray-950 text-gray-400"
+                              : processedPreviewHasAlignmentIssue
+                                ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                                : placedSongsheetSourceCoverage.sourceLineCount >
+                                    0
+                                  ? "text-yellow-300"
+                                  : "text-green-300"
                           }`}
                         >
-                          {placedSongsheetSourceCoverage.isChecking
+                          {processedPreviewSourceAlignmentIsChecking
                             ? "Checking"
-                            : placedSongsheetSourceCoverage.missingLineCount > 0
+                            : processedPreviewHasAlignmentIssue
                               ? "Incomplete"
                               : "Covered"}
                         </div>
@@ -21393,8 +21406,8 @@ ${buildRewriteInstruction(
                     </div>
 
                     <div className="mt-1">
-                      {placedSongsheetSourceCoverage.isChecking
-                        ? placedSongsheetSourceCoverage.detail
+                      {processedPreviewSourceAlignmentIsChecking
+                        ? "Source alignment will update after generation completes."
                         : placedSongsheetSourceCoverage.sourceLineCount === 0
                           ? "Add Source content, then build the chord-placement preview."
                           : `${placedSongsheetSourceCoverage.coveredLineCount} of ${placedSongsheetSourceCoverage.sourceLineCount} Source lyric line${
@@ -21402,7 +21415,16 @@ ${buildRewriteInstruction(
                               1
                                 ? ""
                                 : "s"
-                            } are represented in the processed preview.`}
+                            } are represented in the processed preview.${
+                              processedPreviewHasStaleLines
+                                ? ` ${placedSongsheetSourceMatch.unmatchedCount} processed preview line${
+                                    placedSongsheetSourceMatch.unmatchedCount ===
+                                    1
+                                      ? ""
+                                      : "s"
+                                  } no longer appear in Source.`
+                                : ""
+                            }`}
                     </div>
 
                     {placedSongsheetSourceCoverage.missingLines.length > 0 ? (
