@@ -1,34 +1,51 @@
-'use client'
+"use client";
 
-import type { ChordVersion } from '@/types/song'
+import type { ChordVersion } from "@/types/song";
 
 // Selector-only props. Version loading logic lives in StructuredChordJsonEditor.
 type SavedChordVersionSelectorProps = {
-  chordVersions: ChordVersion[]
-  activeChordVersionId: string | null
-  onActiveChordVersionChange: (id: string) => void
-  formatUkDateTime: (value: string) => string
-}
+  chordVersions: ChordVersion[];
+  activeChordVersionId: string | null;
+  activeSongVersionId: string | null;
+  onActiveChordVersionChange: (id: string) => void;
+  formatUkDateTime: (value: string) => string;
+};
 
 export default function SavedChordVersionSelector({
   chordVersions,
   activeChordVersionId,
+  activeSongVersionId,
   onActiveChordVersionChange,
   formatUkDateTime,
 }: SavedChordVersionSelectorProps) {
+  const selectedChordVersionExists = chordVersions.some(
+    (version) => version.id === activeChordVersionId,
+  );
 
-    const selectedChordVersionExists = chordVersions.some(
-      (version) => version.id === activeChordVersionId
-    )
+  const selectedValue = selectedChordVersionExists
+    ? activeChordVersionId || ""
+    : "";
+  const getChordVersionSelectLabel = (version: ChordVersion, index: number) => {
+    const title =
+      version.title || `Untitled chord version ${chordVersions.length - index}`;
 
-    const selectedValue = selectedChordVersionExists ? activeChordVersionId || '' : ''
+    const dateSuffix = version.created_at
+      ? ` (${formatUkDateTime(version.created_at)})`
+      : "";
+
+    if (!version.song_version_id) {
+      return `[Old/unlinked] ${title}${dateSuffix}`;
+    }
+
+    if (version.song_version_id === activeSongVersionId) {
+      return `[Current song] ${title}${dateSuffix}`;
+    }
+
+    return `[Other song] ${title}${dateSuffix}`;
+  };
 
   return (
-    <div
-      className={`mt-3 ${
-        chordVersions.length === 0 ? 'opacity-75' : ''
-      }`}
-     >
+    <div className={`mt-3 ${chordVersions.length === 0 ? "opacity-75" : ""}`}>
       <label className="block text-sm font-medium text-gray-300 mb-1">
         Saved Chord Versions ({chordVersions.length})
       </label>
@@ -41,22 +58,21 @@ export default function SavedChordVersionSelector({
       >
         <option value="">
           {chordVersions.length === 0
-                ? 'No saved chord versions yet'
-    :           'Choose a saved chord version...'}
+            ? "No saved chord versions yet"
+            : "Choose a saved chord version..."}
         </option>
 
         {chordVersions.map((v, i) => (
           <option key={v.id} value={v.id}>
-            {v.title || `Untitled chord version ${chordVersions.length - i}`}
-            {v.created_at ? ` (${formatUkDateTime(v.created_at)})` : ''}
+            {getChordVersionSelectLabel(v, i)}
           </option>
         ))}
       </select>
       {chordVersions.length === 0 && (
-          <p className="mt-2 text-xs text-gray-400">
-            Save structured chord JSON to create a reusable chord version.
-          </p>
-        )}
+        <p className="mt-2 text-xs text-gray-400">
+          Save structured chord JSON to create a reusable chord version.
+        </p>
+      )}
     </div>
-  )
+  );
 }

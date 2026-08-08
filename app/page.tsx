@@ -2982,6 +2982,20 @@ export default function Page() {
     }, 150);
   };
 
+  const getChordVersionSelectLabel = (version: ChordVersionRecord) => {
+    const title = version.title || "Untitled chord version";
+
+    if (!version.song_version_id) {
+      return `[Old/unlinked] ${title}`;
+    }
+
+    if (version.song_version_id === activeSongVersionId) {
+      return `[Current song] ${title}`;
+    }
+
+    return `[Other song] ${title}`;
+  };
+
   const loadChordVersionIntoEditor = (versionId: string) => {
     const selected = chordVersions.find((version) => version.id === versionId);
 
@@ -15667,6 +15681,7 @@ ${buildRewriteInstruction(
                   setChords,
                   chordVersions,
                   activeChordVersionId,
+                  activeSongVersionId,
                   setActiveChordVersionId,
                   saveChords,
                   savingChords,
@@ -16028,7 +16043,7 @@ ${buildRewriteInstruction(
                   <option value="">Select a saved chord version</option>
                   {chordVersions.map((version) => (
                     <option key={version.id} value={version.id}>
-                      {version.title || "Untitled chord version"}
+                      {getChordVersionSelectLabel(version)}
                     </option>
                   ))}
                 </select>

@@ -26,6 +26,7 @@ export type GenerateResponse = {
 
 export type ChordVersion = {
   id: string;
+  song_version_id?: string | null;
   title?: string | null;
   created_at?: string | null;
   chord_data?: unknown;
