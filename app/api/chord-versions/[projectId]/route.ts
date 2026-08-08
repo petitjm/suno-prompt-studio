@@ -1,54 +1,54 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const { projectId } = await params
-    const supabase = await createClient()
+    const { projectId } = await params;
+    const supabase = await createClient();
 
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('id', projectId)
-      .eq('user_id', user.id)
-      .single()
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .single();
 
     if (projectError || !project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
     const { data, error } = await supabase
-      .from('chord_versions')
-      .select('id, project_id, title, chord_data, created_at')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false })
+      .from("chord_versions")
+      .select("id, project_id, song_version_id, title, chord_data, created_at")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('chord_versions fetch error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("chord_versions fetch error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       versions: data || [],
       latest: data?.[0] || null,
-    })
+    });
   } catch (err: any) {
-    console.error('chord_versions GET route failure:', err)
+    console.error("chord_versions GET route failure:", err);
     return NextResponse.json(
-      { error: err?.message || 'Failed to load chord versions' },
-      { status: 500 }
-    )
+      { error: err?.message || "Failed to load chord versions" },
+      { status: 500 },
+    );
   }
 }
