@@ -13913,6 +13913,11 @@ export default function Page() {
     placedSongsheetSourceCoverage.missingLineCount > 0 ||
     processedPreviewHasStaleLines;
 
+  const activeChordVersionBelongsToAnotherSongVersion =
+    Boolean(activeChordVersion?.song_version_id) &&
+    Boolean(activeSongVersionId) &&
+    activeChordVersion?.song_version_id !== activeSongVersionId;
+
   const activeChordVersionSongLinkStatus = !activeChordVersion
     ? "No chord version selected"
     : !activeChordVersion.song_version_id
@@ -21356,17 +21361,20 @@ ${buildRewriteInstruction(
                         !performanceSheet.trim() ||
                         !hasUsableChordData() ||
                         sourceHasUnsavedChanges ||
+                        activeChordVersionBelongsToAnotherSongVersion ||
                         processedPreviewSourceAlignmentIsChecking ||
                         processedPreviewHasAlignmentIssue
                       }
                       title={
                         sourceHasUnsavedChanges
                           ? "Save Source before generating a guide plan."
-                          : processedPreviewSourceAlignmentIsChecking
-                            ? "Source alignment is still being checked."
-                            : processedPreviewHasAlignmentIssue
-                              ? "Rebuild preview from Source before generating a guide plan."
-                              : undefined
+                          : activeChordVersionBelongsToAnotherSongVersion
+                            ? "Rebuild preview from Source before generating a guide plan for this song version."
+                            : processedPreviewSourceAlignmentIsChecking
+                              ? "Source alignment is still being checked."
+                              : processedPreviewHasAlignmentIssue
+                                ? "Rebuild preview from Source before generating a guide plan."
+                                : undefined
                       }
                       className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                     >
@@ -21396,17 +21404,20 @@ ${buildRewriteInstruction(
                         savingChords ||
                         !chordsText.trim() ||
                         sourceHasUnsavedChanges ||
+                        activeChordVersionBelongsToAnotherSongVersion ||
                         processedPreviewSourceAlignmentIsChecking ||
                         processedPreviewHasAlignmentIssue
                       }
                       title={
                         sourceHasUnsavedChanges || !activeSongVersionId
                           ? "Save Source before saving chords."
-                          : processedPreviewSourceAlignmentIsChecking
-                            ? "Source alignment is still being checked."
-                            : processedPreviewHasAlignmentIssue
-                              ? "Rebuild preview from Source before saving chords."
-                              : undefined
+                          : activeChordVersionBelongsToAnotherSongVersion
+                            ? "Rebuild preview from Source before saving chords for this song version."
+                            : processedPreviewSourceAlignmentIsChecking
+                              ? "Source alignment is still being checked."
+                              : processedPreviewHasAlignmentIssue
+                                ? "Rebuild preview from Source before saving chords."
+                                : undefined
                       }
                       className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
                     >
