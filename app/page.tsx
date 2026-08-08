@@ -21166,13 +21166,30 @@ ${buildRewriteInstruction(
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleModeChange("write")}
-                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                  >
-                    Open Write page
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={saveSong}
+                      disabled={
+                        !activeProject || savingSong || !performanceSheet.trim()
+                      }
+                      className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
+                    >
+                      {savingSong
+                        ? "Saving..."
+                        : justSavedSong
+                          ? "Saved ✓"
+                          : "Save Source"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange("write")}
+                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                    >
+                      Open Write page
+                    </button>
+                  </div>
                 </div>
 
                 <textarea
