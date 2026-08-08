@@ -14255,6 +14255,12 @@ export default function Page() {
         return;
       }
 
+      if (!activeSongVersionId) {
+        setChordExtractionMessage("Save Source before saving chords.");
+        setProjectMessage("");
+        return;
+      }
+
       let chordsToSave: ChordResponse | null = null;
 
       try {
@@ -14323,6 +14329,7 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_id: activeProject.id,
+          song_version_id: activeSongVersionId,
           title: chordTitleToSave,
           chord_data: chordsToSave,
         }),
@@ -21364,7 +21371,7 @@ ${buildRewriteInstruction(
                         processedPreviewHasAlignmentIssue
                       }
                       title={
-                        sourceHasUnsavedChanges
+                        sourceHasUnsavedChanges || !activeSongVersionId
                           ? "Save Source before saving chords."
                           : processedPreviewSourceAlignmentIsChecking
                             ? "Source alignment is still being checked."
