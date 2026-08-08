@@ -21333,15 +21333,22 @@ ${buildRewriteInstruction(
                       type="button"
                       onClick={saveChords}
                       disabled={
-                        !activeProject || savingChords || !chordsText.trim()
+                        !activeProject ||
+                        savingChords ||
+                        !chordsText.trim() ||
+                        processedPreviewSourceAlignmentIsChecking ||
+                        processedPreviewHasAlignmentIssue
+                      }
+                      title={
+                        processedPreviewSourceAlignmentIsChecking
+                          ? "Source alignment is still being checked."
+                          : processedPreviewHasAlignmentIssue
+                            ? "Rebuild preview from Source before saving chords."
+                            : undefined
                       }
                       className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
                     >
-                      {savingChords
-                        ? "Saving..."
-                        : justSavedChords
-                          ? "Saved ✓"
-                          : "Save chords"}
+                      {savingChords ? "Saving..." : justSavedChords ? "Saved ✓" : "Save chords"}
                     </button>
                   </div>
                 </div>
