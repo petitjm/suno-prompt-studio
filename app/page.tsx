@@ -1640,9 +1640,11 @@ export default function Page() {
     (version) => version.id === activeSongVersionId,
   );
 
-  const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>(
-    null,
+  const activeChordVersion = chordVersions.find(
+    (version) => version.id === activeChordVersionId,
   );
+
+  const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>();
   const [compareLeftText, setCompareLeftText] = useState("");
   const [compareRightText, setCompareRightText] = useState("");
   const [compareMessage, setCompareMessage] = useState("");
@@ -13911,6 +13913,22 @@ export default function Page() {
     placedSongsheetSourceCoverage.missingLineCount > 0 ||
     processedPreviewHasStaleLines;
 
+  const activeChordVersionSongLinkStatus = !activeChordVersion
+    ? "No chord version selected"
+    : !activeChordVersion.song_version_id
+      ? "Old chord version with no song-version link"
+      : activeChordVersion.song_version_id === activeSongVersionId
+        ? "Linked to current song version"
+        : "Linked to another song version";
+
+  const activeChordVersionSongLinkClassName = !activeChordVersion
+    ? "text-gray-400"
+    : !activeChordVersion.song_version_id
+      ? "text-yellow-300"
+      : activeChordVersion.song_version_id === activeSongVersionId
+        ? "text-green-300"
+        : "text-red-300";
+
   const performanceIntentRows = getPerformanceIntentRows(
     getChordDataFromEditorJson(),
   );
@@ -15955,6 +15973,17 @@ ${buildRewriteInstruction(
                   </div>
                   <div className="mt-1">
                     {chordVersionTitle || "No chord version selected"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">
+                    Chord/song link
+                  </div>
+                  <div
+                    className={`mt-1 font-medium ${activeChordVersionSongLinkClassName}`}
+                  >
+                    {activeChordVersionSongLinkStatus}
                   </div>
                 </div>
 
