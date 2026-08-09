@@ -4537,6 +4537,11 @@ export default function Page() {
   };
 
   const downloadClickTrackWav = async () => {
+    if (chordActionBlockedReason) {
+      setClickTrackDownloadStatus(chordActionBlockedReason);
+      return;
+    }
+
     if (!dryRunArtifactPackage) {
       setClickTrackDownloadStatus(
         "Submit dry run before downloading the click-track WAV.",
@@ -4721,6 +4726,11 @@ export default function Page() {
   };
 
   const downloadMusicalGuideWav = async () => {
+    if (chordActionBlockedReason) {
+      setClickTrackDownloadStatus(chordActionBlockedReason);
+      return;
+    }
+
     if (!dryRunArtifactPackage) {
       setClickTrackDownloadStatus(
         "Submit dry run before downloading the musical guide WAV.",
@@ -16601,12 +16611,12 @@ ${buildRewriteInstruction(
                 <button
                   type="button"
                   onClick={() => requestAudioPreview()}
-                    disabled={
-    !audioPreviewSpecPreview ||
-    requestingAudioPreview ||
-    Boolean(chordActionBlockedReason)
-  }
-  className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-gray-950 disabled:text-gray-500 disabled:opacity-50"
+                  disabled={
+                    !audioPreviewSpecPreview ||
+                    requestingAudioPreview ||
+                    Boolean(chordActionBlockedReason)
+                  }
+                  className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-gray-950 disabled:text-gray-500 disabled:opacity-50"
                 >
                   {audioPreviewRequestButtonLabel}
                 </button>
@@ -17355,7 +17365,9 @@ ${buildRewriteInstruction(
                           type="button"
                           onClick={() => downloadClickTrackWav()}
                           disabled={
-                            downloadingClickTrackWav || !dryRunArtifactPackage
+                            downloadingClickTrackWav ||
+                            !dryRunArtifactPackage ||
+                            Boolean(chordActionBlockedReason)
                           }
                           title="Generate and download the first local click-track WAV using the gated real-render route."
                           className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
@@ -17369,7 +17381,9 @@ ${buildRewriteInstruction(
                           type="button"
                           onClick={() => downloadMusicalGuideWav()}
                           disabled={
-                            downloadingMusicalGuideWav || !dryRunArtifactPackage
+                            downloadingMusicalGuideWav ||
+                            !dryRunArtifactPackage ||
+                            Boolean(chordActionBlockedReason)
                           }
                           title="Generate and download a more musical guide WAV using chord tones, arpeggio, and bass root layers."
                           className="rounded border border-blue-800 px-3 py-1 text-xs font-medium text-blue-100 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
