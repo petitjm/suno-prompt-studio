@@ -21070,14 +21070,20 @@ ${buildRewriteInstruction(
                   Chord workflow status
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => nextChordWorkflowAction.action?.()}
-                  disabled={nextChordWorkflowAction.disabled}
-                  className="rounded border border-blue-600 bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-transparent disabled:text-gray-500"
-                >
-                  {nextChordWorkflowAction.label}
-                </button>
+                {nextChordWorkflowAction.action ? (
+                  <button
+                    type="button"
+                    onClick={() => nextChordWorkflowAction.action?.()}
+                    disabled={nextChordWorkflowAction.disabled}
+                    className="rounded border border-blue-600 bg-blue-950/50 px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-transparent disabled:text-gray-500"
+                  >
+                    {nextChordWorkflowAction.label}
+                  </button>
+                ) : (
+                  <div className="rounded border border-gray-800 bg-gray-950 px-4 py-2 text-sm font-medium text-gray-400">
+                    {nextChordWorkflowAction.label}
+                  </div>
+                )}
               </div>
 
               {songsheetReviewSummaryLine ? (
