@@ -14333,6 +14333,30 @@ export default function Page() {
         return;
       }
 
+      if (processedPreviewSourceAlignmentIsChecking) {
+        setChordExtractionMessage(
+          "Source alignment is still being checked. Try saving chords again in a moment.",
+        );
+        setProjectMessage("");
+        return;
+      }
+
+      if (processedPreviewHasAlignmentIssue) {
+        setChordExtractionMessage(
+          "Rebuild preview from Source before saving chords.",
+        );
+        setProjectMessage("");
+        return;
+      }
+
+      if (activeChordVersionBelongsToAnotherSongVersion) {
+        setChordExtractionMessage(
+          "Rebuild preview from Source before saving chords for this song version.",
+        );
+        setProjectMessage("");
+        return;
+      }
+
       let chordsToSave: ChordResponse | null = null;
 
       try {

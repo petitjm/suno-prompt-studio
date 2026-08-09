@@ -143,7 +143,6 @@ export default function StructuredChordJsonEditor({
         <button
           type="button"
           onClick={() => {
-            setActiveChordVersionId(null);
             setChordExtractionMessage("");
             saveChords();
           }}
