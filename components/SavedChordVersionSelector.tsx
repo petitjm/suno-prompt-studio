@@ -25,6 +25,29 @@ export default function SavedChordVersionSelector({
   const selectedValue = selectedChordVersionExists
     ? activeChordVersionId || ""
     : "";
+  const getChordVersionSortRank = (version: ChordVersion) => {
+    if (version.song_version_id === activeSongVersionId) {
+      return 0;
+    }
+
+    if (version.song_version_id) {
+      return 1;
+    }
+
+    return 2;
+  };
+
+  const sortedChordVersions = [...chordVersions].sort((a, b) => {
+    const rankDifference =
+      getChordVersionSortRank(a) - getChordVersionSortRank(b);
+
+    if (rankDifference !== 0) {
+      return rankDifference;
+    }
+
+    return chordVersions.indexOf(a) - chordVersions.indexOf(b);
+  });
+
   const getChordVersionSelectLabel = (version: ChordVersion, index: number) => {
     const title =
       version.title || `Untitled chord version ${chordVersions.length - index}`;
@@ -62,7 +85,7 @@ export default function SavedChordVersionSelector({
             : "Choose a saved chord version..."}
         </option>
 
-        {chordVersions.map((v, i) => (
+        {sortedChordVersions.map((v, i) => (
           <option key={v.id} value={v.id}>
             {getChordVersionSelectLabel(v, i)}
           </option>

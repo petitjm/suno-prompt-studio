@@ -2982,6 +2982,29 @@ export default function Page() {
     }, 150);
   };
 
+  const getChordVersionSortRank = (version: ChordVersionRecord) => {
+    if (version.song_version_id === activeSongVersionId) {
+      return 0;
+    }
+
+    if (version.song_version_id) {
+      return 1;
+    }
+
+    return 2;
+  };
+
+  const sortedChordVersions = [...chordVersions].sort((a, b) => {
+    const rankDifference =
+      getChordVersionSortRank(a) - getChordVersionSortRank(b);
+
+    if (rankDifference !== 0) {
+      return rankDifference;
+    }
+
+    return chordVersions.indexOf(a) - chordVersions.indexOf(b);
+  });
+
   const getChordVersionSelectLabel = (version: ChordVersionRecord) => {
     const title = version.title || "Untitled chord version";
 
@@ -16041,7 +16064,7 @@ ${buildRewriteInstruction(
                   className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-500"
                 >
                   <option value="">Select a saved chord version</option>
-                  {chordVersions.map((version) => (
+                  {sortedChordVersions.map((version) => (
                     <option key={version.id} value={version.id}>
                       {getChordVersionSelectLabel(version)}
                     </option>
