@@ -4475,6 +4475,15 @@ export default function Page() {
   };
 
   const testBlockedRealRenderRoute = async () => {
+    if (chordActionBlockedReason) {
+      setRealRenderRouteTestResponse({
+        ok: false,
+        status: "chord-action-blocked",
+        message: chordActionBlockedReason,
+      });
+      return;
+    }
+
     if (!dryRunArtifactPackage) {
       setRealRenderRouteTestResponse({
         ok: false,
@@ -17095,7 +17104,9 @@ ${buildRewriteInstruction(
                           type="button"
                           onClick={() => testBlockedRealRenderRoute()}
                           disabled={
-                            testingRealRenderRoute || !dryRunArtifactPackage
+                            testingRealRenderRoute ||
+                            !dryRunArtifactPackage ||
+                            Boolean(chordActionBlockedReason)
                           }
                           title="Safely call the blocked real-render route and confirm it returns blocked status."
                           className="rounded border border-purple-800 px-3 py-1 text-xs font-medium text-purple-200 hover:bg-purple-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
