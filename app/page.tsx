@@ -12107,13 +12107,9 @@ export default function Page() {
 
     if (!hasGuideTrackPlan || !hasSectionPlan) {
       return {
-        label: hasSongsheetReviewWarnings
-          ? "Next: generate guide plan anyway"
-          : "Next: generate guide plan",
-        disabled: false,
-        action: () => {
-          void generateGuideTrackPlan();
-        },
+        label: "Use Generate guide plan in the Chord workflow controls below",
+        disabled: true,
+        action: null as (() => void) | null,
       };
     }
 
@@ -13983,6 +13979,19 @@ export default function Page() {
         ? "text-green-300"
         : "text-red-300";
 
+  const chordActionBlockedReason = sourceHasUnsavedChanges
+    ? "Save Source before saving chords or generating a guide plan."
+    : !activeSongVersionId
+      ? "Save Source before saving chords or generating a guide plan."
+      : activeChordVersionBelongsToAnotherSongVersion
+        ? "This chord version belongs to another song version. Rebuild preview from Source before saving chords or generating a guide plan."
+        : processedPreviewSourceAlignmentIsChecking
+          ? "Source alignment is still being checked."
+          : processedPreviewHasAlignmentIssue
+            ? "Rebuild preview from Source before saving chords or generating a guide plan."
+            : "";
+  const chordActionsAreBlocked = Boolean(chordActionBlockedReason);
+
   const performanceIntentRows = getPerformanceIntentRows(
     getChordDataFromEditorJson(),
   );
@@ -14024,6 +14033,46 @@ export default function Page() {
       setChordExtractionMessage(
         "Add lyrics before generating a guide track plan.",
       );
+      return;
+    }
+
+    if (sourceHasUnsavedChanges) {
+      setChordExtractionMessage(
+        "Save Source before generating a guide track plan.",
+      );
+      setProjectMessage("");
+      return;
+    }
+
+    if (!activeSongVersionId) {
+      setChordExtractionMessage(
+        "Save Source before generating a guide track plan.",
+      );
+      setProjectMessage("");
+      return;
+    }
+
+    if (processedPreviewSourceAlignmentIsChecking) {
+      setChordExtractionMessage(
+        "Source alignment is still being checked. Try generating the guide track plan again in a moment.",
+      );
+      setProjectMessage("");
+      return;
+    }
+
+    if (processedPreviewHasAlignmentIssue) {
+      setChordExtractionMessage(
+        "Rebuild preview from Source before generating a guide track plan.",
+      );
+      setProjectMessage("");
+      return;
+    }
+
+    if (activeChordVersionBelongsToAnotherSongVersion) {
+      setChordExtractionMessage(
+        "Rebuild preview from Source before generating a guide track plan for this song version.",
+      );
+      setProjectMessage("");
       return;
     }
 
@@ -21031,14 +21080,6 @@ ${buildRewriteInstruction(
                 </button>
               </div>
 
-              {nextChordWorkflowAction.label.includes("anyway") ? (
-                <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
-                  The placed songsheet has review warnings. You can continue to
-                  the guide plan, but check lyric match, validation, and
-                  coverage before treating the songsheet as final.
-                </div>
-              ) : null}
-
               {songsheetReviewSummaryLine ? (
                 <div className="mt-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2 text-xs leading-5 text-yellow-100">
                   {songsheetReviewSummaryLine}
@@ -21293,79 +21334,28 @@ ${buildRewriteInstruction(
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-                      Source
-                    </h2>
-                    <div className="mt-1 text-xs leading-5 text-gray-500">
-                      Edit the song source here, then rebuild the processed
-                      preview when ready.
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={saveSong}
-                      disabled={
-                        !activeProject || savingSong || !performanceSheet.trim()
-                      }
-                      className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
-                    >
-                      {savingSong
-                        ? "Saving..."
-                        : justSavedSong
-                          ? "Saved ✓"
-                          : "Save Source"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleModeChange("write")}
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                    >
-                      Open Write page
-                    </button>
-                  </div>
-                </div>
-
-                <textarea
-                  value={performanceSheet}
-                  onChange={(event) => {
-                    setPerformanceSheet(event.target.value);
-                    setSourceHasUnsavedChanges(true);
-                    resetAudioPreviewRequestState();
-                    setClickTrackAudioUrl("");
-                    setClickTrackDownloadStatus("");
-                    setClickTrackAudioLabel("Latest generated WAV");
-                    setSheetGuideActiveSectionId(null);
-                    setSheetGuideActiveSectionIndex(null);
-                    setProjectMessage("");
-                    setChordExtractionMessage(
-                      "Source edited. Save Source, then rebuild preview from Source before reviewing or saving chords.",
-                    );
-                  }}
-                  placeholder="Add or edit Source here..."
-                  rows={24}
-                  style={{ minHeight: "520px" }}
-                  className="min-h-[520px] w-full resize-y rounded border border-gray-800 bg-gray-900 p-4 font-mono text-sm leading-7 text-gray-100 outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="mb-3">
                   <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
                     Chord workflow
                   </h2>
+                </div>
 
+                <div className="mb-3 rounded border border-gray-800 bg-gray-900 px-3 py-2 text-xs leading-5 text-gray-400">
+                  Manual generation controls. The recommended path is: save
+                  Source, rebuild preview from Source, then save chords or
+                  generate the guide plan. Generate full draft is an advanced
+                  all-in-one option and may take longer.
+                </div>
+
+                {chordActionBlockedReason ? (
+                  <div className="mb-3 rounded border border-yellow-800 bg-yellow-950/30 px-3 py-2 text-xs leading-5 text-yellow-100">
+                    <span className="font-medium">Action needed: </span>
+                    {chordActionBlockedReason}
+                  </div>
+                ) : null}
+
+                <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    <div className="mb-3 rounded border border-gray-800 bg-gray-900 px-3 py-2 text-xs leading-5 text-gray-400">
-                      Manual generation controls. The recommended path is the
-                      Chord workflow status button above. Generate full draft is
-                      an advanced all-in-one option and may take longer.
-                    </div>
-
                     <button
                       type="button"
                       onClick={() => generateChords()}
@@ -21434,73 +21424,54 @@ ${buildRewriteInstruction(
                         generatingChords ||
                         !performanceSheet.trim() ||
                         !hasUsableChordData() ||
-                        sourceHasUnsavedChanges ||
-                        activeChordVersionBelongsToAnotherSongVersion ||
-                        processedPreviewSourceAlignmentIsChecking ||
-                        processedPreviewHasAlignmentIssue
+                        chordActionsAreBlocked
                       }
-                      title={
-                        sourceHasUnsavedChanges
-                          ? "Save Source before generating a guide plan."
-                          : activeChordVersionBelongsToAnotherSongVersion
-                            ? "Rebuild preview from Source before generating a guide plan for this song version."
-                            : processedPreviewSourceAlignmentIsChecking
-                              ? "Source alignment is still being checked."
-                              : processedPreviewHasAlignmentIssue
-                                ? "Rebuild preview from Source before generating a guide plan."
-                                : undefined
-                      }
-                      className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                      className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:border-gray-800 disabled:bg-gray-950 disabled:text-gray-600 disabled:opacity-50"
                     >
                       {generatingGuideTrackPlan
                         ? "Generating guide plan..."
                         : "Generate guide plan"}
                     </button>
+                  </div>
 
-                    <button
-                      type="button"
-                      onClick={() => clearChordEditor()}
-                      disabled={
-                        generatingChords ||
-                        savingChords ||
-                        !hasChordEditorContent()
-                      }
-                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
-                    >
-                      {justClearedChords ? "Cleared ✓" : "Clear editor"}
-                    </button>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-800 pt-3">
+                    <div className="text-xs leading-5 text-gray-500">
+                      Save chords only after the Source is saved and the
+                      processed preview is rebuilt for the current song version.
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={saveChords}
-                      disabled={
-                        !activeProject ||
-                        savingChords ||
-                        !chordsText.trim() ||
-                        sourceHasUnsavedChanges ||
-                        activeChordVersionBelongsToAnotherSongVersion ||
-                        processedPreviewSourceAlignmentIsChecking ||
-                        processedPreviewHasAlignmentIssue
-                      }
-                      title={
-                        sourceHasUnsavedChanges || !activeSongVersionId
-                          ? "Save Source before saving chords."
-                          : activeChordVersionBelongsToAnotherSongVersion
-                            ? "Rebuild preview from Source before saving chords for this song version."
-                            : processedPreviewSourceAlignmentIsChecking
-                              ? "Source alignment is still being checked."
-                              : processedPreviewHasAlignmentIssue
-                                ? "Rebuild preview from Source before saving chords."
-                                : undefined
-                      }
-                      className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
-                    >
-                      {savingChords
-                        ? "Saving..."
-                        : justSavedChords
-                          ? "Saved ✓"
-                          : "Save chords"}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => clearChordEditor()}
+                        disabled={
+                          generatingChords ||
+                          savingChords ||
+                          !hasChordEditorContent()
+                        }
+                        className="rounded border border-gray-700 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
+                      >
+                        {justClearedChords ? "Cleared ✓" : "Clear editor"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={saveChords}
+                        disabled={
+                          !activeProject ||
+                          savingChords ||
+                          !chordsText.trim() ||
+                          chordActionsAreBlocked
+                        }
+                        className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500 disabled:opacity-50"
+                      >
+                        {savingChords
+                          ? "Saving..."
+                          : justSavedChords
+                            ? "Saved ✓"
+                            : "Save chords"}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
