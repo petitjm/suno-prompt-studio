@@ -16601,8 +16601,12 @@ ${buildRewriteInstruction(
                 <button
                   type="button"
                   onClick={() => requestAudioPreview()}
-                  disabled={!audioPreviewSpecPreview || requestingAudioPreview}
-                  className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                    disabled={
+    !audioPreviewSpecPreview ||
+    requestingAudioPreview ||
+    Boolean(chordActionBlockedReason)
+  }
+  className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:bg-gray-950 disabled:text-gray-500 disabled:opacity-50"
                 >
                   {audioPreviewRequestButtonLabel}
                 </button>
