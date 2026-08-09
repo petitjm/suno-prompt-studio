@@ -3019,6 +3019,20 @@ export default function Page() {
     return `[Other song] ${title}`;
   };
 
+  const getChordVersionLoadMessage = (version: ChordVersionRecord) => {
+    const title = version.title || "Untitled chord version";
+
+    if (!version.song_version_id) {
+      return `Loaded chord version: ${title} — old/unlinked chord version. Rebuild preview from Source before saving or generating a guide plan.`;
+    }
+
+    if (version.song_version_id === activeSongVersionId) {
+      return `Loaded chord version: ${title} — linked to current song version.`;
+    }
+
+    return `Loaded chord version: ${title} — linked to another song version. Rebuild preview from Source before saving or generating a guide plan.`;
+  };
+
   const loadChordVersionIntoEditor = (versionId: string) => {
     const selected = chordVersions.find((version) => version.id === versionId);
 
@@ -3035,9 +3049,7 @@ export default function Page() {
     resetAudioPreviewRequestState();
     resetAudioPreviewRequestState();
     setChordExtractionMessage("");
-    setProjectMessage(
-      `Loaded chord version: ${selected.title || "Untitled chord version"}`,
-    );
+    setProjectMessage(getChordVersionLoadMessage(selected));
   };
 
   const copySongsheetReview = async () => {

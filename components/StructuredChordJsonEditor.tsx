@@ -55,6 +55,19 @@ export default function StructuredChordJsonEditor({
 }: StructuredChordJsonEditorProps) {
   // Keep version-loading behaviour local to the chord JSON editor.
   // The parent owns state, but this component decides how selecting a saved chord version updates JSON and title.
+  const getChordVersionLoadMessage = (version: ChordVersion) => {
+    const title = version.title || "Untitled chord version";
+
+    if (!version.song_version_id) {
+      return `Loaded chord version: ${title} — old/unlinked chord version. Rebuild preview from Source before saving or generating a guide plan.`;
+    }
+
+    if (version.song_version_id === activeSongVersionId) {
+      return `Loaded chord version: ${title} — linked to current song version.`;
+    }
+
+    return `Loaded chord version: ${title} — linked to another song version. Rebuild preview from Source before saving or generating a guide plan.`;
+  };
   const handleActiveChordVersionChange = (id: string) => {
     setActiveChordVersionId(id);
 
@@ -83,7 +96,12 @@ export default function StructuredChordJsonEditor({
       setChords(chordData);
       setChordsText(JSON.stringify(chordData, null, 2));
       setChordVersionTitle(selected?.title || "");
-      setChordExtractionMessage("");
+
+      if (selected) {
+        setChordExtractionMessage(getChordVersionLoadMessage(selected));
+      } else {
+        setChordExtractionMessage("");
+      }
     }
   };
 
