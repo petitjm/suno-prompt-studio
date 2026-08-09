@@ -3676,6 +3676,52 @@ export default function Page() {
     }
   };
   const requestAudioPreview = async () => {
+    if (sourceHasUnsavedChanges) {
+      setAudioPreviewMessage("Save Source before requesting an audio preview.");
+      setChordExtractionMessage(
+        "Save Source before requesting an audio preview.",
+      );
+      return;
+    }
+
+    if (!activeSongVersionId) {
+      setAudioPreviewMessage("Save Source before requesting an audio preview.");
+      setChordExtractionMessage(
+        "Save Source before requesting an audio preview.",
+      );
+      return;
+    }
+
+    if (processedPreviewSourceAlignmentIsChecking) {
+      setAudioPreviewMessage(
+        "Source alignment is still being checked. Try requesting the audio preview again in a moment.",
+      );
+      setChordExtractionMessage(
+        "Source alignment is still being checked. Try requesting the audio preview again in a moment.",
+      );
+      return;
+    }
+
+    if (processedPreviewHasAlignmentIssue) {
+      setAudioPreviewMessage(
+        "Rebuild preview from Source before requesting an audio preview.",
+      );
+      setChordExtractionMessage(
+        "Rebuild preview from Source before requesting an audio preview.",
+      );
+      return;
+    }
+
+    if (activeChordVersionBelongsToAnotherSongVersion) {
+      setAudioPreviewMessage(
+        "Rebuild preview from Source before requesting an audio preview for this song version.",
+      );
+      setChordExtractionMessage(
+        "Rebuild preview from Source before requesting an audio preview for this song version.",
+      );
+      return;
+    }
+
     const previewSpec = buildAudioPreviewSpecCopyText();
 
     if (!previewSpec) {
