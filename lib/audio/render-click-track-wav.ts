@@ -1269,6 +1269,134 @@ export function createClickTrackPcm16Samples(
     });
   }
 
+  if (isMusicalGuideMix && secondsPerBeat > 0) {
+    const strumSubdivisionSeconds = secondsPerBeat / 2;
+    const strumNoteStaggerSeconds = 0.012;
+
+    for (const segment of chordToneGuideSegments) {
+      if (segment.frequenciesHz.length === 0) {
+        continue;
+      }
+
+      const normalizedSection = segment.section.trim().toLowerCase();
+      const sectionLevel = getMusicalGuideSectionLevel(segment.section);
+
+      let strumPattern: number[];
+
+      if (
+        normalizedSection.includes("intro") ||
+        normalizedSection.includes("outro") ||
+        normalizedSection.includes("ending")
+      ) {
+        // Sparse half-note pulse.
+        strumPattern = [0, 4];
+      } else if (normalizedSection.includes("verse")) {
+        // Folk/acoustic-style: 1, &2, 3, &4.
+        strumPattern = [0, 3, 4, 7];
+      } else if (
+        normalizedSection.includes("pre-chorus") ||
+        normalizedSection.includes("prechorus") ||
+        normalizedSection.includes("lift")
+      ) {
+        // Increasing movement into the chorus.
+        strumPattern = [0, 2, 3, 4, 6, 7];
+      } else if (
+        normalizedSection.includes("chorus") ||
+        normalizedSection.includes("hook") ||
+        normalizedSection.includes("refrain")
+      ) {
+        // Full eighth-note drive.
+        strumPattern = [0, 1, 2, 3, 4, 5, 6, 7];
+      } else if (
+        normalizedSection.includes("bridge") ||
+        normalizedSection.includes("middle")
+      ) {
+        // Different syncopation to distinguish the bridge.
+        strumPattern = [0, 2, 3, 5, 6, 7];
+      } else {
+        // Safe quarter-note fallback.
+        strumPattern = [0, 2, 4, 6];
+      }
+
+      const barDurationSeconds = secondsPerBeat * 4;
+      let strumIndex = 0;
+
+      for (
+        let barStartSeconds = segment.startSeconds;
+        barStartSeconds < segment.endSeconds;
+        barStartSeconds += barDurationSeconds
+      ) {
+        for (const patternStep of strumPattern) {
+          const scheduledStartSeconds =
+            barStartSeconds + patternStep * strumSubdivisionSeconds;
+
+          if (scheduledStartSeconds >= segment.endSeconds) {
+            continue;
+          }
+
+          const isUpStrum = patternStep % 2 === 1;
+          const isStrongBeat = patternStep === 0 || patternStep === 4;
+
+          const humanisedStartSeconds = Math.max(
+            segment.startSeconds,
+            scheduledStartSeconds +
+              getMusicalGuideHumanisedTimingOffsetSeconds({
+                section: segment.section,
+                index: strumIndex,
+                maxOffsetSeconds: 0.012,
+              }),
+          );
+
+          const baseStrumAmplitude =
+            arpeggioAmplitude *
+            0.32 *
+            sectionLevel *
+            (isStrongBeat ? 1.12 : isUpStrum ? 0.78 : 0.92);
+
+          const humanisedStrumAmplitude = getMusicalGuideHumanisedLevel({
+            baseAmplitude: baseStrumAmplitude,
+            section: segment.section,
+            index: strumIndex,
+            variationDepth: 0.1,
+          });
+
+          const orderedFrequenciesHz = isUpStrum
+            ? [...segment.frequenciesHz].reverse()
+            : segment.frequenciesHz;
+
+          orderedFrequenciesHz.forEach((frequencyHz, noteIndex) => {
+            const noteStartSeconds =
+              humanisedStartSeconds + noteIndex * strumNoteStaggerSeconds;
+
+            const noteEndSeconds = Math.min(
+              segment.endSeconds,
+              noteStartSeconds + Math.min(secondsPerBeat * 0.62, 0.55),
+            );
+
+            if (noteEndSeconds <= noteStartSeconds) {
+              return;
+            }
+
+            addWarmToneToSamples({
+              samples,
+              startSample: Math.round(noteStartSeconds * input.sampleRateHz),
+              endSample: Math.round(noteEndSeconds * input.sampleRateHz),
+              sampleRateHz: input.sampleRateHz,
+              amplitude: humanisedStrumAmplitude,
+              frequencyHz,
+              secondHarmonicLevel: 0.3,
+              thirdHarmonicLevel: 0.11,
+              fadeInSeconds: 0.008,
+              fadeOutSeconds: 0.2,
+            });
+          });
+
+          strumIndex += 1;
+        }
+      }
+    }
+  }
+
   const secondsPerArpeggioNote =
     input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
       ? 60 / input.tempoBpm / 2
