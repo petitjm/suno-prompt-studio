@@ -1069,6 +1069,14 @@ export default function Page() {
     setSheetGuideActiveSectionId(null);
     setSheetGuideActiveSectionIndex(null);
   };
+  const resetGeneratedAudioState = () => {
+    setClickTrackAudioUrl("");
+    setClickTrackDownloadStatus("");
+    setClickTrackAudioLabel("Latest generated WAV");
+    setGeneratedAudioDuration(0);
+    setSheetGuideActiveSectionId(null);
+    setSheetGuideActiveSectionIndex(null);
+  };
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false);
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false);
   const [justCopiedChordPacket, setJustCopiedChordPacket] = useState(false);
@@ -17247,11 +17255,12 @@ ${buildRewriteInstruction(
                             <input
                               type="checkbox"
                               checked={includeClickTrackCountIn}
-                              onChange={(event) =>
+                              onChange={(event) => {
                                 setIncludeClickTrackCountIn(
                                   event.target.checked,
-                                )
-                              }
+                                );
+                                resetGeneratedAudioState();
+                              }}
                             />
                             Count-in
                           </label>
@@ -17260,11 +17269,12 @@ ${buildRewriteInstruction(
                             <input
                               type="checkbox"
                               checked={includeClickTrackBeatClicks}
-                              onChange={(event) =>
+                              onChange={(event) => {
                                 setIncludeClickTrackBeatClicks(
                                   event.target.checked,
-                                )
-                              }
+                                );
+                                resetGeneratedAudioState();
+                              }}
                             />
                             Beat clicks
                           </label>
@@ -17273,11 +17283,12 @@ ${buildRewriteInstruction(
                             <input
                               type="checkbox"
                               checked={includeClickTrackSectionMarkers}
-                              onChange={(event) =>
+                              onChange={(event) => {
                                 setIncludeClickTrackSectionMarkers(
                                   event.target.checked,
-                                )
-                              }
+                                );
+                                resetGeneratedAudioState();
+                              }}
                             />
                             Section markers
                           </label>
@@ -17286,11 +17297,12 @@ ${buildRewriteInstruction(
                             <input
                               type="checkbox"
                               checked={includeClickTrackChordMarkers}
-                              onChange={(event) =>
+                              onChange={(event) => {
                                 setIncludeClickTrackChordMarkers(
                                   event.target.checked,
-                                )
-                              }
+                                );
+                                resetGeneratedAudioState();
+                              }}
                             />
                             Chord markers
                           </label>
@@ -17299,11 +17311,12 @@ ${buildRewriteInstruction(
                             <input
                               type="checkbox"
                               checked={includeClickTrackChordToneGuide}
-                              onChange={(event) =>
+                              onChange={(event) => {
                                 setIncludeClickTrackChordToneGuide(
                                   event.target.checked,
-                                )
-                              }
+                                );
+                                resetGeneratedAudioState();
+                              }}
                             />
                             Chord guide tones
                           </label>
