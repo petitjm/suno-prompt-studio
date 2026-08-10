@@ -13836,6 +13836,35 @@ export default function Page() {
       .join("\n");
   };
 
+  const currentPlacedSongSheetText = buildCompactPlacedSongSheetCopyText();
+
+  const currentPlacedSongSheetSections = (() => {
+    const sourceText = currentPlacedSongSheetText || performanceSheet;
+    const parsed = parsePerformanceSections(sourceText);
+    const counts: Record<string, number> = {};
+
+    return parsed.map((section) => {
+      const key = section.label.toLowerCase();
+
+      counts[key] = (counts[key] || 0) + 1;
+
+      return {
+        ...section,
+        id: `${key}-${counts[key]}`,
+      };
+    });
+  })();
+
+  const visibleSheetPerformanceSheet =
+    clickTrackAudioUrl && audioPreviewSongSheetText.trim()
+      ? sheetDisplayPerformanceSheet
+      : currentPlacedSongSheetText || performanceSheet;
+
+  const visibleSheetPerformanceSections =
+    clickTrackAudioUrl && audioPreviewSongSheetText.trim()
+      ? cueSyncedSheetSections
+      : currentPlacedSongSheetSections;
+
   const buildAudioGuideReadinessCopyText = () => {
     const readiness = getAudioGuideReadiness();
 
@@ -22098,8 +22127,8 @@ ${buildRewriteInstruction(
               </details>
 
               <SongSheet
-                performanceSheet={sheetDisplayPerformanceSheet}
-                performanceSections={cueSyncedSheetSections}
+                performanceSheet={visibleSheetPerformanceSheet}
+                performanceSections={visibleSheetPerformanceSections}
                 performanceFontSize={18}
                 activePerformanceSectionId={
                   sheetGuideActiveSectionId || activePerformanceSectionId
@@ -22150,8 +22179,8 @@ ${buildRewriteInstruction(
               </button>
 
               <SongSheet
-                performanceSheet={performanceSheet}
-                performanceSections={performanceSections}
+                performanceSheet={visibleSheetPerformanceSheet}
+                performanceSections={visibleSheetPerformanceSections}
                 performanceFontSize={18}
                 activePerformanceSectionId={
                   sheetGuideActiveSectionId || activePerformanceSectionId
