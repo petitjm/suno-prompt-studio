@@ -1054,6 +1054,12 @@ export default function Page() {
     setDryRunArtifactPackage(null);
     setDryRunArtifactPackageValidation(null);
     setDryRunCueSheetValidation(null);
+    setClickTrackAudioUrl("");
+    setClickTrackDownloadStatus("");
+    setClickTrackAudioLabel("Latest generated WAV");
+    setGeneratedAudioDuration(0);
+    setSheetGuideActiveSectionId(null);
+    setSheetGuideActiveSectionIndex(null);
   };
   const [justCopiedChordJson, setJustCopiedChordJson] = useState(false);
   const [justCopiedChordSummary, setJustCopiedChordSummary] = useState(false);
@@ -3046,7 +3052,6 @@ export default function Page() {
     setLastAppliedTransposeSnapshot(null);
     setChordTransposeSemitones(0);
     setChordsText(JSON.stringify(selected.chord_data || {}, null, 2));
-    resetAudioPreviewRequestState();
     resetAudioPreviewRequestState();
     setChordExtractionMessage("");
     setProjectMessage(getChordVersionLoadMessage(selected));
