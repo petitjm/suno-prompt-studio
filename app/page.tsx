@@ -1902,6 +1902,8 @@ export default function Page() {
   }, [userEmail]);
 
   React.useEffect(() => {
+    resetAudioPreviewRequestState();
+
     if (activeProject?.id) {
       void loadProjectData(activeProject.id);
     }
