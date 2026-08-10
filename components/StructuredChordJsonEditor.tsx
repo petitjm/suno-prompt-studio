@@ -23,6 +23,7 @@ type StructuredChordJsonEditorProps = {
   activeChordVersionId: string | null;
   activeSongVersionId: string | null;
   setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  resetAudioPreviewRequestState: () => void;
   setChords: React.Dispatch<React.SetStateAction<ChordResponse | null>>;
   formatUkDateTime: (value: string) => string;
 
@@ -46,6 +47,7 @@ export default function StructuredChordJsonEditor({
   activeChordVersionId,
   activeSongVersionId,
   setActiveChordVersionId,
+  resetAudioPreviewRequestState,
   setChords,
   formatUkDateTime,
 
@@ -69,9 +71,8 @@ export default function StructuredChordJsonEditor({
     return `Loaded chord version: ${title} — linked to another song version. Rebuild preview from Source before saving or generating a guide plan.`;
   };
   const handleActiveChordVersionChange = (id: string) => {
-    setActiveChordVersionId(id);
-
     if (!id) {
+      resetAudioPreviewRequestState();
       setActiveChordVersionId(null);
       setChordVersionTitle("");
       setChordExtractionMessage("");
@@ -81,27 +82,30 @@ export default function StructuredChordJsonEditor({
     const selected = chordVersions.find((v) => v.id === id);
     const chordData = getChordVersionData(selected);
 
-    if (chordData) {
-      if (chordsText.trim()) {
-        const confirmed = window.confirm(
-          "Load this saved chord version? This will replace the current chord JSON in the editor.",
-        );
+    if (!chordData) {
+      return;
+    }
 
-        if (!confirmed) {
-          setActiveChordVersionId(activeChordVersionId);
-          return;
-        }
+    if (chordsText.trim()) {
+      const confirmed = window.confirm(
+        "Load this saved chord version? This will replace the current chord JSON in the editor.",
+      );
+
+      if (!confirmed) {
+        return;
       }
+    }
 
-      setChords(chordData);
-      setChordsText(JSON.stringify(chordData, null, 2));
-      setChordVersionTitle(selected?.title || "");
+    resetAudioPreviewRequestState();
+    setActiveChordVersionId(id);
+    setChords(chordData);
+    setChordsText(JSON.stringify(chordData, null, 2));
+    setChordVersionTitle(selected?.title || "");
 
-      if (selected) {
-        setChordExtractionMessage(getChordVersionLoadMessage(selected));
-      } else {
-        setChordExtractionMessage("");
-      }
+    if (selected) {
+      setChordExtractionMessage(getChordVersionLoadMessage(selected));
+    } else {
+      setChordExtractionMessage("");
     }
   };
 

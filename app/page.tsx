@@ -15887,6 +15887,7 @@ ${buildRewriteInstruction(
                   activeChordVersionId,
                   activeSongVersionId,
                   setActiveChordVersionId,
+                  resetAudioPreviewRequestState,
                   saveChords,
                   savingChords,
                   justSavedChords,

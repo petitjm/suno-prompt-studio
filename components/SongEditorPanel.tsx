@@ -53,6 +53,7 @@ type SongEditorWorkspaceChordProps = {
   activeChordVersionId: string | null;
   activeSongVersionId: string | null;
   setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  resetAudioPreviewRequestState: () => void;
 
   saveChords: () => void;
   savingChords: boolean;
@@ -129,6 +130,8 @@ export default function SongEditorPanel({
           activeChordVersionId: chordEditor.activeChordVersionId,
           activeSongVersionId: chordEditor.activeSongVersionId,
           setActiveChordVersionId: chordEditor.setActiveChordVersionId,
+          resetAudioPreviewRequestState:
+            chordEditor.resetAudioPreviewRequestState,
           saveChords: chordEditor.saveChords,
           savingChords: chordEditor.savingChords,
           justSavedChords: chordEditor.justSavedChords,

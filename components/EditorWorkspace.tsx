@@ -49,6 +49,7 @@ type EditorWorkspaceChordProps = {
   activeChordVersionId: string | null;
   activeSongVersionId: string | null;
   setActiveChordVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  resetAudioPreviewRequestState: () => void;
 
   saveChords: () => void;
   savingChords: boolean;
@@ -108,6 +109,9 @@ export default function EditorWorkspace({
         activeChordVersionId={chordEditor.activeChordVersionId}
         activeSongVersionId={chordEditor.activeSongVersionId}
         setActiveChordVersionId={chordEditor.setActiveChordVersionId}
+        resetAudioPreviewRequestState={
+          chordEditor.resetAudioPreviewRequestState
+        }
         formatUkDateTime={shared.formatUkDateTime}
         saveChords={chordEditor.saveChords}
         savingChords={chordEditor.savingChords}
