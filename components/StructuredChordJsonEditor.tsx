@@ -212,6 +212,7 @@ export default function StructuredChordJsonEditor({
         value={chordsText}
         onChange={(e) => {
           setChordsText(e.target.value);
+          resetAudioPreviewRequestState();
           setChordExtractionMessage("");
           setActiveChordVersionId(null);
         }}
