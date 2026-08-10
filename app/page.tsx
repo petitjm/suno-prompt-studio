@@ -327,6 +327,8 @@ export default function Page() {
       ...currentLevels,
       [key]: nextValue,
     }));
+
+    resetGeneratedAudioState();
   };
 
   const getMusicalGuideAuditionAudioContext = () => {
