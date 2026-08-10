@@ -3525,6 +3525,11 @@ export default function Page() {
   };
 
   const submitAudioPreviewRendererPayload = async () => {
+    if (chordActionBlockedReason) {
+      setAudioPreviewRenderMessage(chordActionBlockedReason);
+      return;
+    }
+
     if (!audioPreviewRendererPayload) {
       setAudioPreviewRenderMessage("No renderer payload available to submit.");
       return;
@@ -14045,15 +14050,15 @@ export default function Page() {
         : "text-red-300";
 
   const chordActionBlockedReason = sourceHasUnsavedChanges
-    ? "Save Source before saving chords or generating a guide plan."
+    ? "Save Source before using chord-dependent actions."
     : !activeSongVersionId
-      ? "Save Source before saving chords or generating a guide plan."
+      ? "Save Source before using chord-dependent actions."
       : activeChordVersionBelongsToAnotherSongVersion
-        ? "This chord version belongs to another song version. Rebuild preview from Source before saving chords or generating a guide plan."
+        ? "This chord version belongs to another song version. Rebuild preview from Source before using chord-dependent actions."
         : processedPreviewSourceAlignmentIsChecking
           ? "Source alignment is still being checked."
           : processedPreviewHasAlignmentIssue
-            ? "Rebuild preview from Source before saving chords or generating a guide plan."
+            ? "Rebuild preview from Source before using chord-dependent actions."
             : "";
   const chordActionsAreBlocked = Boolean(chordActionBlockedReason);
 
@@ -17082,7 +17087,8 @@ ${buildRewriteInstruction(
                             submittingAudioPreviewRender ||
                             !audioPreviewRendererPayload ||
                             audioPreviewRendererPayloadValidation?.ready !==
-                              true
+                              true ||
+                            Boolean(chordActionBlockedReason)
                           }
                           className="rounded border border-blue-700 px-3 py-1 text-xs font-medium text-blue-200 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                         >
