@@ -20986,9 +20986,10 @@ ${buildRewriteInstruction(
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setChordTransposeSemitones((value) => value - 1)
-                    }
+                    onClick={() => {
+                      setChordTransposeSemitones((value) => value - 1);
+                      resetGeneratedAudioState();
+                    }}
                     disabled={!placedSongSheetPreview}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
@@ -21001,9 +21002,10 @@ ${buildRewriteInstruction(
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setChordTransposeSemitones((value) => value + 1)
-                    }
+                    onClick={() => {
+                      setChordTransposeSemitones((value) => value + 1);
+                      resetGeneratedAudioState();
+                    }}
                     disabled={!placedSongSheetPreview}
                     className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-500"
                   >
