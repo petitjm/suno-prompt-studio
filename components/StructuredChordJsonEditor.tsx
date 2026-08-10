@@ -179,6 +179,7 @@ export default function StructuredChordJsonEditor({
             }
 
             setChordsText("");
+            resetAudioPreviewRequestState();
             setChordVersionTitle("");
             setChordExtractionMessage("");
             setActiveChordVersionId(null);
