@@ -34,6 +34,7 @@ type SongEditorWorkspaceSongProps = {
   savingSong: boolean;
   justSavedSong: boolean;
   saveSong: () => void;
+  resetAudioPreviewRequestState: () => void;
 };
 
 type SongEditorWorkspaceChordProps = {
@@ -111,6 +112,8 @@ export default function SongEditorPanel({
           saveSong: songEditor.saveSong,
           savingSong: songEditor.savingSong,
           justSavedSong: songEditor.justSavedSong,
+          resetAudioPreviewRequestState:
+            songEditor.resetAudioPreviewRequestState,
           activeProject: songEditor.activeProject,
         }}
         chordEditor={{

@@ -1,33 +1,34 @@
-'use client'
+"use client";
 
-import React from 'react'
+import React from "react";
 
-import SongSheetEditor from './SongSheetEditor'
-import SavedSongVersionSelector from './SavedSongVersionSelector'
-import SongVersionSaveControls from './SongVersionSaveControls'
+import SongSheetEditor from "./SongSheetEditor";
+import SavedSongVersionSelector from "./SavedSongVersionSelector";
+import SongVersionSaveControls from "./SongVersionSaveControls";
 
-import type { Project, SongVersionRecord } from '@/types/song'
+import type { Project, SongVersionRecord } from "@/types/song";
 
-import { getSongVersionLyrics } from '@/lib/songVersions'
+import { getSongVersionLyrics } from "@/lib/songVersions";
 
 type SongVersionEditorProps = {
-  performanceSheet: string
-  setPerformanceSheet: (value: string) => void
+  performanceSheet: string;
+  setPerformanceSheet: (value: string) => void;
 
-  songVersions: SongVersionRecord[]
-  activeSongVersionId: string | null
-  setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>
-  formatUkDateTime: (value: string) => string
+  songVersions: SongVersionRecord[];
+  activeSongVersionId: string | null;
+  setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  formatUkDateTime: (value: string) => string;
 
-  songVersionTitle: string
-  setSongVersionTitle: (value: string) => void
+  songVersionTitle: string;
+  setSongVersionTitle: (value: string) => void;
 
-  saveSong: () => void
-  savingSong: boolean
-  justSavedSong: boolean
+  saveSong: () => void;
+  savingSong: boolean;
+  justSavedSong: boolean;
+  resetAudioPreviewRequestState: () => void;
 
-  activeProject: Project | null
-}
+  activeProject: Project | null;
+};
 
 export default function SongVersionEditor({
   performanceSheet,
@@ -44,82 +45,84 @@ export default function SongVersionEditor({
   saveSong,
   savingSong,
   justSavedSong,
+  resetAudioPreviewRequestState,
 
   activeProject,
 }: SongVersionEditorProps) {
-    // Keep version-loading behaviour local to the song editor.
-    // The parent owns state, but this component decides how selecting a saved song version updates the sheet.
-    const handleActiveSongVersionChange = (id: string) => {
-      if (!id) {
-        setActiveSongVersionId(null)
-        setSongVersionTitle('')
-        return
-      }
-
-  const selected = songVersions.find((v) => v.id === id)
-  const lyrics = getSongVersionLyrics(selected)
-
-  if (!lyrics) {
-    setActiveSongVersionId(id)
-    return
-  }
-
-  const hasUnsavedLyrics =
-    activeSongVersionId === null &&
-    performanceSheet.trim().length > 0
-
-  if (hasUnsavedLyrics) {
-    const confirmed = window.confirm(
-      'Load this saved song version? This will replace the current song sheet text.'
-    )
-
-    if (!confirmed) {
-      return
+  // Keep version-loading behaviour local to the song editor.
+  // The parent owns state, but this component decides how selecting a saved song version updates the sheet.
+  const handleActiveSongVersionChange = (id: string) => {
+    if (!id) {
+      resetAudioPreviewRequestState();
+      setActiveSongVersionId(null);
+      setSongVersionTitle("");
+      return;
     }
-  }
 
-  setActiveSongVersionId(id)
-  setPerformanceSheet(lyrics)
-  setSongVersionTitle(selected?.title ?? '')
-}
+    const selected = songVersions.find((v) => v.id === id);
+    const lyrics = getSongVersionLyrics(selected);
 
+    if (!lyrics) {
+      resetAudioPreviewRequestState();
+      setActiveSongVersionId(id);
+      return;
+    }
 
-const handlePerformanceSheetChange = (value: string) => {
-  setPerformanceSheet(value)
+    const hasUnsavedLyrics =
+      activeSongVersionId === null && performanceSheet.trim().length > 0;
 
-  if (value !== performanceSheet) {
-    setActiveSongVersionId(null)
-  }
+    if (hasUnsavedLyrics) {
+      const confirmed = window.confirm(
+        "Load this saved song version? This will replace the current song sheet text.",
+      );
 
-  if (!value.trim()) {
-    setSongVersionTitle('')
-  }
-}
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    resetAudioPreviewRequestState();
+    setActiveSongVersionId(id);
+    setPerformanceSheet(lyrics);
+    setSongVersionTitle(selected?.title ?? "");
+  };
+
+  const handlePerformanceSheetChange = (value: string) => {
+    setPerformanceSheet(value);
+
+    if (value !== performanceSheet) {
+      setActiveSongVersionId(null);
+    }
+
+    if (!value.trim()) {
+      setSongVersionTitle("");
+    }
+  };
 
   return (
     <>
       <SongSheetEditor
-          performanceSheet={performanceSheet}
-          setPerformanceSheet={handlePerformanceSheetChange}
-        />
+        performanceSheet={performanceSheet}
+        setPerformanceSheet={handlePerformanceSheetChange}
+      />
 
-     <SavedSongVersionSelector
-      songVersions={songVersions}
-      activeSongVersionId={activeSongVersionId}
-      onActiveSongVersionChange={handleActiveSongVersionChange}
-      formatUkDateTime={formatUkDateTime}
-    />
+      <SavedSongVersionSelector
+        songVersions={songVersions}
+        activeSongVersionId={activeSongVersionId}
+        onActiveSongVersionChange={handleActiveSongVersionChange}
+        formatUkDateTime={formatUkDateTime}
+      />
 
       <SongVersionSaveControls
-      songVersionTitle={songVersionTitle}
-      setSongVersionTitle={setSongVersionTitle}
-      setActiveSongVersionId={setActiveSongVersionId}
-      saveSong={saveSong}
-      savingSong={savingSong}
-      justSavedSong={justSavedSong}
-      activeProject={activeProject}
-      performanceSheet={performanceSheet}
-    />
+        songVersionTitle={songVersionTitle}
+        setSongVersionTitle={setSongVersionTitle}
+        setActiveSongVersionId={setActiveSongVersionId}
+        saveSong={saveSong}
+        savingSong={savingSong}
+        justSavedSong={justSavedSong}
+        activeProject={activeProject}
+        performanceSheet={performanceSheet}
+      />
     </>
-  )
+  );
 }

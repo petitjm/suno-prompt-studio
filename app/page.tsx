@@ -15854,6 +15854,7 @@ ${buildRewriteInstruction(
                   savingSong,
                   justSavedSong,
                   saveSong,
+                  resetAudioPreviewRequestState,
                 }}
                 chordEditor={{
                   structuredChordJsonRef,

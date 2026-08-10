@@ -28,6 +28,7 @@ type EditorWorkspaceSongProps = {
   saveSong: () => void;
   savingSong: boolean;
   justSavedSong: boolean;
+  resetAudioPreviewRequestState: () => void;
 
   activeProject: Project | null;
 };
@@ -84,6 +85,7 @@ export default function EditorWorkspace({
         saveSong={songEditor.saveSong}
         savingSong={songEditor.savingSong}
         justSavedSong={songEditor.justSavedSong}
+        resetAudioPreviewRequestState={songEditor.resetAudioPreviewRequestState}
         activeProject={songEditor.activeProject}
       />
 
