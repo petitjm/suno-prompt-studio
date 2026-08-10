@@ -91,6 +91,7 @@ export default function SongVersionEditor({
     setPerformanceSheet(value);
 
     if (value !== performanceSheet) {
+      resetAudioPreviewRequestState();
       setActiveSongVersionId(null);
     }
 
