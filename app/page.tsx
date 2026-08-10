@@ -168,6 +168,14 @@ export default function Page() {
   const [previewReady, setPreviewReady] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [previewTempo, setPreviewTempo] = useState(92);
+  const handlePreviewTempoChange = (nextTempo: number) => {
+    if (nextTempo === previewTempo) {
+      return;
+    }
+
+    setPreviewTempo(nextTempo);
+    resetAudioPreviewRequestState();
+  };
   const [previewFeel, setPreviewFeel] = useState<PreviewFeel>("straight");
   const [previewInstrument, setPreviewInstrument] =
     useState<PreviewInstrument>("guitar");
@@ -22093,7 +22101,7 @@ ${buildRewriteInstruction(
                 previewFeel={previewFeel}
                 setPreviewFeel={setPreviewFeel}
                 previewTempo={previewTempo}
-                setPreviewTempo={setPreviewTempo}
+                setPreviewTempo={handlePreviewTempoChange}
                 previewLoop={previewLoop}
                 setPreviewLoop={setPreviewLoop}
                 previewIncludeBass={previewIncludeBass}
@@ -22157,7 +22165,7 @@ ${buildRewriteInstruction(
                     previewFeel={previewFeel}
                     setPreviewFeel={setPreviewFeel}
                     previewTempo={previewTempo}
-                    setPreviewTempo={setPreviewTempo}
+                    setPreviewTempo={handlePreviewTempoChange}
                     previewLoop={previewLoop}
                     setPreviewLoop={setPreviewLoop}
                     previewIncludeBass={previewIncludeBass}
