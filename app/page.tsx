@@ -2464,6 +2464,8 @@ export default function Page() {
 
       await loadProjectData(activeProject.id, { silent: true });
 
+      resetAudioPreviewRequestState();
+
       if (savedVersion?.id) {
         setActiveSongVersionId(savedVersion.id);
       }
