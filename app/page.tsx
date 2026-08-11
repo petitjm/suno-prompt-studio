@@ -207,6 +207,58 @@ export default function Page() {
     useState(false);
   const [generatingGuideTrackPlan, setGeneratingGuideTrackPlan] =
     useState(false);
+  const [makeSongStage, setMakeSongStage] = useState<
+    | "idle"
+    | "chords"
+    | "songsheet"
+    | "align"
+    | "verify-align"
+    | "guide"
+    | "verify-guide"
+    | "preview"
+    | "dry-run"
+    | "audio"
+    | "verify-audio"
+    | "complete"
+    | "error"
+  >("idle");
+
+  type MakeSongRunStatus = "running" | "ready" | "warning" | "failed";
+
+  type MakeSongRunReport = {
+    startedAt: string;
+    completedAt: string;
+    status: MakeSongRunStatus;
+    projectTitle: string;
+    songVersionId: string;
+    songVersionTitle: string;
+    chordSource: string;
+    chordVersionId: string;
+    chordVersionTitle: string;
+    tempoBpm: number;
+    sourceLineCount: number;
+    placedLineCount: number;
+    chordedLineCount: number;
+    chordEventCount: number;
+    guideSectionCount: number;
+    audioDurationSeconds: number;
+    sectionCoverage: {
+      section: string;
+      lyricLineCount: number;
+      chordedLineCount: number;
+      chordEventCount: number;
+    }[];
+    events: string[];
+    warnings: string[];
+  };
+
+  const [makeSongMessage, setMakeSongMessage] = useState("");
+  const [makeSongAlignmentCheck, setMakeSongAlignmentCheck] = useState(0);
+
+  const [makeSongRunReport, setMakeSongRunReport] =
+    useState<MakeSongRunReport | null>(null);
+
+  const [makeSongReportCopied, setMakeSongReportCopied] = useState(false);
   const [requestingAudioPreview, setRequestingAudioPreview] = useState(false);
   const [audioPreviewSourceMode, setAudioPreviewSourceMode] = useState<
     "chord-editor" | "main-sheet"
@@ -12870,10 +12922,9 @@ export default function Page() {
     const chordData = getChordDataFromEditorJson();
     const placedLines = getPlacedSongSheetLines(chordData);
 
-    const sourceLines = performanceSheet
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(isSourceLyricContentLine);
+    const sourceLines = getMainSheetAudioPreviewLines()
+      .map((line) => line.lyric.trim())
+      .filter(Boolean);
 
     const placedLyricSet = new Set(
       placedLines
@@ -13012,10 +13063,9 @@ export default function Page() {
     const chordData = getChordDataFromEditorJson();
     const placedLines = getPlacedSongSheetLines(chordData);
 
-    const sourceLines = performanceSheet
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(isSourceLyricContentLine);
+    const sourceLines = getMainSheetAudioPreviewLines()
+      .map((line) => line.lyric.trim())
+      .filter(Boolean);
 
     const normalizedSourceLines = new Set(
       sourceLines.map((line) => normalizeLyricMatchText(line)).filter(Boolean),
@@ -14159,7 +14209,7 @@ export default function Page() {
       setChordExtractionMessage(
         "Add lyrics before generating a guide track plan.",
       );
-      return;
+      return null;
     }
 
     if (sourceHasUnsavedChanges) {
@@ -14167,7 +14217,7 @@ export default function Page() {
         "Save Source before generating a guide track plan.",
       );
       setProjectMessage("");
-      return;
+      return null;
     }
 
     if (!activeSongVersionId) {
@@ -14175,7 +14225,7 @@ export default function Page() {
         "Save Source before generating a guide track plan.",
       );
       setProjectMessage("");
-      return;
+      return null;
     }
 
     if (processedPreviewSourceAlignmentIsChecking) {
@@ -14183,7 +14233,7 @@ export default function Page() {
         "Source alignment is still being checked. Try generating the guide track plan again in a moment.",
       );
       setProjectMessage("");
-      return;
+      return null;
     }
 
     if (processedPreviewHasAlignmentIssue) {
@@ -14191,7 +14241,7 @@ export default function Page() {
         "Rebuild preview from Source before generating a guide track plan.",
       );
       setProjectMessage("");
-      return;
+      return null;
     }
 
     if (activeChordVersionBelongsToAnotherSongVersion) {
@@ -14199,7 +14249,7 @@ export default function Page() {
         "Rebuild preview from Source before generating a guide track plan for this song version.",
       );
       setProjectMessage("");
-      return;
+      return null;
     }
 
     const chordData = getUsableChordDataFromEditor();
@@ -14211,7 +14261,7 @@ export default function Page() {
       setChordExtractionMessage(
         "Generate or load a chord draft before generating a guide track plan.",
       );
-      return;
+      return null;
     }
 
     setGeneratingGuideTrackPlan(true);
@@ -14243,7 +14293,7 @@ export default function Page() {
             ? result.error
             : "Could not generate guide track plan.",
         );
-        return;
+        return null;
       }
 
       setChords(result);
@@ -14263,8 +14313,10 @@ export default function Page() {
       setLastAppliedTransposeSnapshot(null);
       resetAudioPreviewRequestState();
       setChordExtractionMessage("Guide track plan generated.");
+      return result;
     } catch {
       setChordExtractionMessage("Could not generate guide track plan.");
+      return null;
     } finally {
       setGeneratingGuideTrackPlan(false);
     }
@@ -14488,6 +14540,847 @@ export default function Page() {
       setJustClearedChords(false);
     }, 1500);
   };
+
+  const makeSongIsRunning =
+    makeSongStage !== "idle" &&
+    makeSongStage !== "complete" &&
+    makeSongStage !== "error";
+
+  const getSavedChordVersionForCurrentSong = () => {
+    if (!activeSongVersionId) {
+      return null;
+    }
+
+    return (
+      chordVersions.find(
+        (version) =>
+          version.song_version_id === activeSongVersionId &&
+          version.chord_data &&
+          typeof version.chord_data === "object" &&
+          !Array.isArray(version.chord_data) &&
+          Object.keys(version.chord_data as Record<string, unknown>).length > 0,
+      ) || null
+    );
+  };
+
+  const getMakeSongProgressSteps = () => {
+    const chordData = getChordDataFromEditorJson();
+
+    const loadedChordVersionMatchesCurrentSong =
+      Boolean(activeChordVersion) &&
+      Boolean(activeSongVersionId) &&
+      activeChordVersion?.song_version_id === activeSongVersionId;
+
+    const savedChordVersionForCurrentSong =
+      getSavedChordVersionForCurrentSong();
+
+    const loadedChordDataIsUsable =
+      loadedChordVersionMatchesCurrentSong &&
+      Boolean(chordData) &&
+      typeof chordData === "object" &&
+      !Array.isArray(chordData) &&
+      Object.keys(chordData as Record<string, unknown>).length > 0;
+
+    const hasChordDraft =
+      loadedChordDataIsUsable || Boolean(savedChordVersionForCurrentSong);
+
+    const placedLines = getPlacedSongSheetLines(chordData);
+    const guideTrackPlanRows = getGuideTrackPlanRows(chordData);
+    const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(chordData);
+
+    const sourceIsAligned =
+      hasChordDraft &&
+      !processedPreviewSourceAlignmentIsChecking &&
+      !processedPreviewHasAlignmentIssue;
+
+    return [
+      {
+        label: "Source ready",
+        complete:
+          Boolean(performanceSheet.trim()) &&
+          Boolean(activeSongVersionId) &&
+          !sourceHasUnsavedChanges,
+        working: false,
+      },
+      {
+        label: "Chords generated",
+        complete: hasChordDraft,
+        working: makeSongStage === "chords",
+      },
+      {
+        label: "Chords placed",
+        complete: hasChordDraft && placedLines.length > 0,
+        working: makeSongStage === "songsheet",
+      },
+      {
+        label: "Song aligned",
+        complete: sourceIsAligned,
+        working: makeSongStage === "align",
+      },
+      {
+        label: "Guide plan created",
+        complete:
+          sourceIsAligned &&
+          guideTrackPlanRows.length > 0 &&
+          guideTrackSectionPlanRows.length > 0,
+        working: makeSongStage === "guide",
+      },
+      {
+        label: "Audio prepared",
+        complete:
+          Boolean(audioPreviewRendererPayload) &&
+          audioPreviewRendererPayloadValidation?.ready === true,
+        working: makeSongStage === "preview",
+      },
+      {
+        label: "Render package ready",
+        complete: Boolean(dryRunArtifactPackage),
+        working: makeSongStage === "dry-run",
+      },
+      {
+        label: "Musical guide ready",
+        complete: Boolean(clickTrackAudioUrl),
+        working: makeSongStage === "audio" || makeSongStage === "verify-audio",
+      },
+    ];
+  };
+
+  const makeSongProgressSteps = getMakeSongProgressSteps();
+
+  const appendMakeSongRunEvent = (message: string) => {
+    setMakeSongRunReport((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        events: [...current.events, message],
+      };
+    });
+  };
+
+  const setMakeSongStatusMessage = (message: string) => {
+    setMakeSongMessage(message);
+    appendMakeSongRunEvent(message);
+  };
+
+  const getMakeSongChordPlacementCounts = () => {
+    const chordData = getChordDataFromEditorJson();
+    const placedLines = getPlacedSongSheetLines(chordData);
+
+    let chordedLineCount = 0;
+    let chordEventCount = 0;
+
+    for (const line of placedLines) {
+      const chords =
+        line &&
+        typeof line === "object" &&
+        "chords" in line &&
+        Array.isArray((line as { chords?: unknown[] }).chords)
+          ? (line as { chords: unknown[] }).chords
+          : [];
+
+      if (chords.length > 0) {
+        chordedLineCount += 1;
+        chordEventCount += chords.length;
+      }
+    }
+
+    return {
+      placedLineCount: placedLines.length,
+      chordedLineCount,
+      chordEventCount,
+    };
+  };
+
+  const getMakeSongSectionCoverage = () => {
+    const chordData = getChordDataFromEditorJson();
+    const placedLines = getPlacedSongSheetLines(chordData);
+
+    const coverage: {
+      section: string;
+      lyricLineCount: number;
+      chordedLineCount: number;
+      chordEventCount: number;
+    }[] = [];
+
+    const sectionOccurrenceCounts: Record<string, number> = {};
+
+    let previousSectionKey = "";
+    let currentCoverageIndex = -1;
+
+    for (const line of placedLines) {
+      if (!line.lyric.trim()) {
+        continue;
+      }
+
+      const rawSection = line.section.trim() || "Unsectioned";
+      const sectionKey = rawSection.toLowerCase();
+
+      if (sectionKey !== previousSectionKey) {
+        sectionOccurrenceCounts[sectionKey] =
+          (sectionOccurrenceCounts[sectionKey] || 0) + 1;
+
+        coverage.push({
+          section: rawSection,
+          lyricLineCount: 0,
+          chordedLineCount: 0,
+          chordEventCount: 0,
+        });
+
+        currentCoverageIndex = coverage.length - 1;
+        previousSectionKey = sectionKey;
+      }
+
+      const current = coverage[currentCoverageIndex];
+
+      if (!current) {
+        continue;
+      }
+
+      current.lyricLineCount += 1;
+
+      if (line.chords.length > 0) {
+        current.chordedLineCount += 1;
+        current.chordEventCount += line.chords.length;
+      }
+    }
+
+    const totalOccurrences: Record<string, number> = {};
+
+    for (const row of coverage) {
+      const key = row.section.toLowerCase();
+      totalOccurrences[key] = (totalOccurrences[key] || 0) + 1;
+    }
+
+    const displayedOccurrences: Record<string, number> = {};
+
+    return coverage.map((row) => {
+      const key = row.section.toLowerCase();
+
+      displayedOccurrences[key] = (displayedOccurrences[key] || 0) + 1;
+
+      return {
+        ...row,
+        section:
+          totalOccurrences[key] > 1
+            ? `${row.section} ${displayedOccurrences[key]}`
+            : row.section,
+      };
+    });
+  };
+
+  const buildMakeSongRunReportCopyText = () => {
+    if (!makeSongRunReport) {
+      return "";
+    }
+
+    const report = makeSongRunReport;
+
+    return [
+      "MAKE SONG RUN REPORT",
+      "",
+      `Status: ${report.status.toUpperCase()}`,
+      `Started: ${report.startedAt}`,
+      `Completed: ${report.completedAt || "—"}`,
+      "",
+      `Project: ${report.projectTitle || "Untitled project"}`,
+      `Song version: ${report.songVersionTitle || "Untitled song version"}`,
+      `Song version ID: ${report.songVersionId || "—"}`,
+      "",
+      `Chord source: ${report.chordSource || "Not determined"}`,
+      `Chord version: ${report.chordVersionTitle || "—"}`,
+      `Chord version ID: ${report.chordVersionId || "—"}`,
+      "",
+      `Tempo: ${report.tempoBpm} BPM`,
+      `Source lyric lines: ${report.sourceLineCount}`,
+      `Placed lyric lines: ${report.placedLineCount}`,
+      `Lines with chord events: ${report.chordedLineCount}`,
+      `Total chord events: ${report.chordEventCount}`,
+      `Guide sections: ${report.guideSectionCount}`,
+      "",
+      "Section coverage:",
+      ...(report.sectionCoverage.length > 0
+        ? report.sectionCoverage.map(
+            (section) =>
+              `- ${section.section}: ${section.chordedLineCount} / ${section.lyricLineCount} lyric lines chorded; ${section.chordEventCount} chord events`,
+          )
+        : ["- No section coverage available"]),
+      "",
+      `WAV duration: ${
+        report.audioDurationSeconds > 0
+          ? `${report.audioDurationSeconds.toFixed(1)} seconds`
+          : "Not measured"
+      }`,
+      "",
+      "Warnings:",
+      ...(report.warnings.length > 0
+        ? report.warnings.map((warning) => `- ${warning}`)
+        : ["- None"]),
+      "",
+      "Run events:",
+      ...report.events.map((event, index) => `${index + 1}. ${event}`),
+    ].join("\n");
+  };
+
+  const copyMakeSongRunReport = async () => {
+    const text = buildMakeSongRunReportCopyText();
+
+    if (!text) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(text);
+    setMakeSongReportCopied(true);
+
+    window.setTimeout(() => {
+      setMakeSongReportCopied(false);
+    }, 1200);
+  };
+
+  const startMakeSong = () => {
+    if (!performanceSheet.trim()) {
+      setMakeSongStage("error");
+      setMakeSongMessage("Add lyrics before making the song.");
+      return;
+    }
+
+    if (sourceHasUnsavedChanges || !activeSongVersionId) {
+      setMakeSongStage("error");
+      setMakeSongMessage("Save Source before making the song.");
+      return;
+    }
+
+    if (makeSongIsRunning) {
+      return;
+    }
+
+    resetGeneratedAudioState();
+
+    setMakeSongRunReport({
+      startedAt: new Date().toLocaleString("en-GB"),
+      completedAt: "",
+      status: "running",
+      projectTitle: activeProject?.title || "Untitled project",
+      songVersionId: activeSongVersionId || "",
+      songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+      chordSource: "",
+      chordVersionId: "",
+      chordVersionTitle: "",
+      tempoBpm: previewTempo,
+      sourceLineCount: getMainSheetAudioPreviewLines().length,
+      placedLineCount: 0,
+      chordedLineCount: 0,
+      chordEventCount: 0,
+      guideSectionCount: 0,
+      audioDurationSeconds: 0,
+      sectionCoverage: [],
+      events: ["Starting song creation..."],
+      warnings: [],
+    });
+
+    setMakeSongReportCopied(false);
+    setMakeSongMessage("Starting song creation...");
+    setMakeSongStage("chords");
+  };
+
+  React.useEffect(() => {
+    if (
+      makeSongStage === "idle" ||
+      makeSongStage === "complete" ||
+      makeSongStage === "error"
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const runMakeSongStage = async () => {
+      try {
+        if (makeSongStage === "chords") {
+          setMakeSongMessage("Preparing chords...");
+
+          const chordData = getChordDataFromEditorJson();
+
+          const loadedChordVersionMatchesCurrentSong =
+            Boolean(activeChordVersion) &&
+            Boolean(activeSongVersionId) &&
+            activeChordVersion?.song_version_id === activeSongVersionId;
+
+          const loadedChordDataIsUsable =
+            loadedChordVersionMatchesCurrentSong &&
+            Boolean(chordData) &&
+            typeof chordData === "object" &&
+            !Array.isArray(chordData) &&
+            Object.keys(chordData as Record<string, unknown>).length > 0;
+
+          if (loadedChordDataIsUsable) {
+            setMakeSongRunReport((current) =>
+              current
+                ? {
+                    ...current,
+                    chordSource:
+                      "Loaded saved chords already linked to current song version",
+                    chordVersionId: activeChordVersion?.id || "",
+                    chordVersionTitle:
+                      activeChordVersion?.title || "Untitled chord version",
+                  }
+                : current,
+            );
+            setMakeSongStatusMessage(
+              `Using saved chords linked to the current song version: ${
+                activeChordVersion?.title || "Untitled chord version"
+              }.`,
+            );
+
+            if (!cancelled) {
+              setMakeSongStage("songsheet");
+            }
+
+            return;
+          }
+
+          const hasUnsavedChordEditorWork =
+            Boolean(chordsText.trim()) && !activeChordVersionId;
+
+          if (hasUnsavedChordEditorWork) {
+            throw new Error(
+              "Unsaved chord work is currently in the editor. Save or clear it before running Make Song.",
+            );
+          }
+
+          const savedChordVersionForCurrentSong =
+            getSavedChordVersionForCurrentSong();
+
+          if (savedChordVersionForCurrentSong) {
+            setMakeSongRunReport((current) =>
+              current
+                ? {
+                    ...current,
+                    chordSource:
+                      "Auto-loaded saved chords linked to current song version",
+                    chordVersionId: savedChordVersionForCurrentSong.id,
+                    chordVersionTitle:
+                      savedChordVersionForCurrentSong.title ||
+                      "Untitled chord version",
+                  }
+                : current,
+            );
+            setMakeSongStatusMessage(
+              `Loading saved chords for the current song version: ${
+                savedChordVersionForCurrentSong.title ||
+                "Untitled chord version"
+              }...`,
+            );
+
+            const savedChordData =
+              savedChordVersionForCurrentSong.chord_data as ChordResponse;
+
+            resetAudioPreviewRequestState();
+            setActiveChordVersionId(savedChordVersionForCurrentSong.id);
+            setChords(savedChordData);
+            setChordsText(JSON.stringify(savedChordData, null, 2));
+            setChordVersionTitle(savedChordVersionForCurrentSong.title || "");
+            setChordExtractionMessage(
+              `Loaded chord version: ${
+                savedChordVersionForCurrentSong.title ||
+                "Untitled chord version"
+              } — linked to current song version.`,
+            );
+
+            if (!cancelled) {
+              setMakeSongStage("songsheet");
+            }
+
+            return;
+          }
+
+          setMakeSongStatusMessage(
+            "No saved chords exist for this song version. Generating a new chord draft...",
+          );
+
+          setMakeSongRunReport((current) =>
+            current
+              ? {
+                  ...current,
+                  chordSource: "Generated new chord draft",
+                  chordVersionId: "",
+                  chordVersionTitle: "",
+                }
+              : current,
+          );
+
+          await generateBasicChords();
+
+          if (!cancelled) {
+            setMakeSongStage("songsheet");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "songsheet") {
+          const chordData = getChordDataFromEditorJson();
+
+          if (!chordData) {
+            throw new Error(
+              "Chord generation did not produce usable chord data.",
+            );
+          }
+
+          const placedLines = getPlacedSongSheetLines(chordData);
+
+          if (placedLines.length === 0) {
+            setMakeSongMessage("Placing chords against the lyrics...");
+            await generatePlacedSongsheet();
+          }
+
+          if (!cancelled) {
+            setMakeSongStage("align");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "align") {
+          const chordData = getChordDataFromEditorJson();
+
+          if (!chordData) {
+            throw new Error(
+              "No chord data is available to align with the Source.",
+            );
+          }
+
+          const placedLines = getPlacedSongSheetLines(chordData);
+
+          if (placedLines.length === 0) {
+            throw new Error(
+              "Chord placement did not complete. Review the songsheet before continuing.",
+            );
+          }
+
+          setMakeSongMessage(
+            "Aligning the chorded songsheet with the current Source...",
+          );
+
+          syncChordPlacementsToCurrentSongVersion();
+
+          if (!cancelled) {
+            setMakeSongStage("verify-align");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "verify-align") {
+          if (processedPreviewSourceAlignmentIsChecking) {
+            setMakeSongMessage("Checking Source and chord alignment...");
+
+            window.setTimeout(() => {
+              if (!cancelled) {
+                setMakeSongAlignmentCheck((value) => value + 1);
+              }
+            }, 250);
+
+            return;
+          }
+
+          if (processedPreviewHasAlignmentIssue) {
+            throw new Error(
+              "The chorded songsheet could not be aligned with the current Source.",
+            );
+          }
+
+          setMakeSongMessage("Song aligned with the current Source.");
+
+          if (!cancelled) {
+            setMakeSongStage("guide");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "guide") {
+          const chordData = getChordDataFromEditorJson();
+
+          if (!chordData) {
+            throw new Error("No chord data is available for the guide plan.");
+          }
+
+          const placedLines = getPlacedSongSheetLines(chordData);
+
+          if (placedLines.length === 0) {
+            throw new Error(
+              "Chord placement did not complete. Review the songsheet before continuing.",
+            );
+          }
+
+          const guideRows = getGuideTrackPlanRows(chordData);
+          const sectionRows = getGuideTrackSectionPlanRows(chordData);
+
+          if (guideRows.length === 0 || sectionRows.length === 0) {
+            setMakeSongMessage("Creating the musical guide plan...");
+
+            const generatedGuidePlan = await generateGuideTrackPlan();
+
+            if (!generatedGuidePlan) {
+              throw new Error(
+                "Guide plan generation was blocked or failed. See the Chord workflow message below.",
+              );
+            }
+
+            const generatedGuideRows =
+              getGuideTrackPlanRows(generatedGuidePlan);
+            const generatedSectionRows =
+              getGuideTrackSectionPlanRows(generatedGuidePlan);
+
+            if (
+              generatedGuideRows.length === 0 ||
+              generatedSectionRows.length === 0
+            ) {
+              throw new Error(
+                "Guide plan generation returned incomplete guide data.",
+              );
+            }
+          }
+
+          if (!cancelled) {
+            setMakeSongStage("verify-guide");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "verify-guide") {
+          const chordData = getChordDataFromEditorJson();
+
+          if (!chordData) {
+            throw new Error("Guide plan generation did not return chord data.");
+          }
+
+          const guideRows = getGuideTrackPlanRows(chordData);
+          const sectionRows = getGuideTrackSectionPlanRows(chordData);
+
+          if (guideRows.length === 0 || sectionRows.length === 0) {
+            throw new Error(
+              "Guide plan generation did not complete. Review the Chord workflow.",
+            );
+          }
+
+          setMakeSongMessage("Guide plan created.");
+
+          if (!cancelled) {
+            setMakeSongStage("preview");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "preview") {
+          const chordData = getChordDataFromEditorJson();
+
+          if (!chordData) {
+            throw new Error("Chord data is no longer available.");
+          }
+
+          const guideRows = getGuideTrackPlanRows(chordData);
+          const sectionRows = getGuideTrackSectionPlanRows(chordData);
+
+          if (guideRows.length === 0 || sectionRows.length === 0) {
+            throw new Error(
+              "Guide plan generation did not complete. Review the Chord workflow.",
+            );
+          }
+
+          if (
+            !audioPreviewRendererPayload ||
+            audioPreviewRendererPayloadValidation?.ready !== true
+          ) {
+            setMakeSongMessage("Preparing the audio...");
+            await requestAudioPreview();
+          }
+
+          if (!cancelled) {
+            setMakeSongStage("dry-run");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "dry-run") {
+          if (
+            !audioPreviewRendererPayload ||
+            audioPreviewRendererPayloadValidation?.ready !== true
+          ) {
+            throw new Error(
+              "Audio preparation did not produce a valid renderer payload.",
+            );
+          }
+
+          if (!dryRunArtifactPackage) {
+            setMakeSongMessage("Preparing the render package...");
+            await submitAudioPreviewRendererPayload();
+          }
+
+          if (!cancelled) {
+            setMakeSongStage("audio");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "audio") {
+          if (!dryRunArtifactPackage) {
+            throw new Error(
+              "The render package was not created. Review the audio controls.",
+            );
+          }
+
+          setMakeSongMessage("Rendering the musical guide...");
+          await downloadMusicalGuideWav();
+
+          if (!cancelled) {
+            setMakeSongStage("verify-audio");
+          }
+
+          return;
+        }
+
+        if (makeSongStage === "verify-audio") {
+          if (!clickTrackAudioUrl) {
+            throw new Error(
+              "The musical guide WAV was not created. Review the audio status below.",
+            );
+          }
+
+          const { placedLineCount, chordedLineCount, chordEventCount } =
+            getMakeSongChordPlacementCounts();
+
+          const sourceLineCount = getMainSheetAudioPreviewLines().length;
+          const guideSectionCount = getGuideTrackSectionPlanRows(
+            getChordDataFromEditorJson(),
+          ).length;
+
+          const sectionCoverage = getMakeSongSectionCoverage();
+
+          const warnings: string[] = [];
+
+          if (placedLineCount === 0) {
+            warnings.push("No placed lyric lines were produced.");
+          }
+
+          if (chordEventCount === 0) {
+            warnings.push(
+              "No chord events were found in the placed songsheet. The generated guide may contain little or no useful harmonic audio.",
+            );
+          } else if (
+            chordedLineCount < Math.max(1, Math.floor(sourceLineCount * 0.25))
+          ) {
+            warnings.push(
+              `Chord coverage is sparse: ${chordedLineCount} of ${sourceLineCount} source lyric lines contain chord events.`,
+            );
+          }
+
+          if (placedLineCount < sourceLineCount) {
+            warnings.push(
+              `${sourceLineCount - placedLineCount} source lyric line${
+                sourceLineCount - placedLineCount === 1 ? "" : "s"
+              } are not represented in the placed songsheet.`,
+            );
+          }
+
+          const sectionsWithoutChords = sectionCoverage.filter(
+            (section) =>
+              section.lyricLineCount > 0 &&
+              section.chordEventCount === 0 &&
+              section.section.toLowerCase() !== "unsectioned",
+          );
+
+          if (sectionsWithoutChords.length > 0) {
+            warnings.push(
+              `No chord events were found in: ${sectionsWithoutChords
+                .map((section) => section.section)
+                .join(", ")}.`,
+            );
+          }
+
+          const finalStatus: MakeSongRunStatus =
+            warnings.length > 0 ? "warning" : "ready";
+
+          setMakeSongRunReport((current) =>
+            current
+              ? {
+                  ...current,
+                  completedAt: new Date().toLocaleString("en-GB"),
+                  status: finalStatus,
+                  sourceLineCount,
+                  placedLineCount,
+                  chordedLineCount,
+                  chordEventCount,
+                  guideSectionCount,
+                  audioDurationSeconds: generatedAudioDuration,
+                  sectionCoverage,
+                  warnings,
+                  events: [
+                    ...current.events,
+                    warnings.length > 0
+                      ? `Make Song completed with ${warnings.length} warning${
+                          warnings.length === 1 ? "" : "s"
+                        }.`
+                      : "Make Song completed successfully.",
+                  ],
+                }
+              : current,
+          );
+
+          if (warnings.length > 0) {
+            setMakeSongMessage(
+              `Song guide created with ${warnings.length} warning${
+                warnings.length === 1 ? "" : "s"
+              }. Review the Make Song Run Report below.`,
+            );
+          } else {
+            setMakeSongMessage(
+              "Song guide ready. Open Sheet, Rehearse, or Perform to use it.",
+            );
+          }
+
+          setMakeSongStage("complete");
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        const failureMessage =
+          error instanceof Error
+            ? error.message
+            : "Make Song could not complete.";
+
+        setMakeSongRunReport((current) =>
+          current
+            ? {
+                ...current,
+                completedAt: new Date().toLocaleString("en-GB"),
+                status: "failed",
+                events: [...current.events, `FAILED: ${failureMessage}`],
+                warnings: [...current.warnings, failureMessage],
+              }
+            : current,
+        );
+
+        setMakeSongStage("error");
+        setMakeSongMessage(failureMessage);
+      }
+    };
+
+    void runMakeSongStage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [makeSongStage, makeSongAlignmentCheck]);
 
   const saveChords = async () => {
     try {
@@ -21483,6 +22376,251 @@ ${buildRewriteInstruction(
                 ) : null}
               </div>
             ) : null}
+
+            <div className="mb-4 rounded border border-blue-800 bg-blue-950/20 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold text-blue-100">
+                    Make Song
+                  </h2>
+
+                  <div className="mt-1 max-w-2xl text-sm leading-6 text-gray-400">
+                    Build a usable musical guide from the current lyrics.
+                    Existing chord, songsheet, guide-plan, and audio stages are
+                    reused when they are already ready.
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={startMakeSong}
+                  disabled={
+                    makeSongIsRunning ||
+                    !performanceSheet.trim() ||
+                    sourceHasUnsavedChanges ||
+                    !activeSongVersionId
+                  }
+                  className="rounded bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                >
+                  {makeSongIsRunning
+                    ? "Making song..."
+                    : makeSongStage === "complete"
+                      ? "Make again"
+                      : "Make Song"}
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {makeSongProgressSteps.map((step) => (
+                  <div
+                    key={step.label}
+                    className="rounded border border-gray-800 bg-gray-950 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2 text-sm">
+                      <span
+                        className={
+                          step.complete
+                            ? "text-green-400"
+                            : step.working
+                              ? "text-blue-300"
+                              : "text-gray-600"
+                        }
+                      >
+                        {step.complete ? "✓" : step.working ? "●" : "○"}
+                      </span>
+
+                      <span
+                        className={
+                          step.complete
+                            ? "text-green-200"
+                            : step.working
+                              ? "text-blue-100"
+                              : "text-gray-400"
+                        }
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {makeSongMessage ? (
+                <div
+                  className={`mt-3 rounded border px-3 py-2 text-sm ${
+                    makeSongStage === "error"
+                      ? "border-red-800 bg-red-950/30 text-red-100"
+                      : makeSongStage === "complete"
+                        ? "border-green-800 bg-green-950/30 text-green-100"
+                        : "border-blue-900 bg-blue-950/30 text-blue-100"
+                  }`}
+                >
+                  {makeSongMessage}
+                </div>
+              ) : null}
+
+              {makeSongRunReport ? (
+                <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-200">
+                        Make Song Run Report
+                      </h3>
+
+                      <div
+                        className={`mt-1 text-xs font-medium ${
+                          makeSongRunReport.status === "ready"
+                            ? "text-green-300"
+                            : makeSongRunReport.status === "warning"
+                              ? "text-yellow-300"
+                              : makeSongRunReport.status === "failed"
+                                ? "text-red-300"
+                                : "text-blue-300"
+                        }`}
+                      >
+                        {makeSongRunReport.status === "ready"
+                          ? "READY"
+                          : makeSongRunReport.status === "warning"
+                            ? "COMPLETED WITH WARNINGS"
+                            : makeSongRunReport.status === "failed"
+                              ? "FAILED"
+                              : "RUNNING"}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={copyMakeSongRunReport}
+                      className="rounded border border-gray-700 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-800"
+                    >
+                      {makeSongReportCopied ? "Copied ✓" : "Copy report"}
+                    </button>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <span className="text-gray-500">Song version: </span>
+                      <span className="text-gray-200">
+                        {makeSongRunReport.songVersionTitle || "Untitled"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">Tempo: </span>
+                      <span className="text-gray-200">
+                        {makeSongRunReport.tempoBpm} BPM
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">Placed lines: </span>
+                      <span className="text-gray-200">
+                        {makeSongRunReport.placedLineCount} /{" "}
+                        {makeSongRunReport.sourceLineCount}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-gray-500">Chord events: </span>
+                      <span className="text-gray-200">
+                        {makeSongRunReport.chordEventCount}
+                      </span>
+                    </div>
+
+                    <div className="sm:col-span-2 xl:col-span-4">
+                      <span className="text-gray-500">Chord source: </span>
+                      <span className="text-gray-200">
+                        {makeSongRunReport.chordSource || "Pending"}
+                      </span>
+                    </div>
+
+                    {makeSongRunReport.chordVersionTitle ? (
+                      <div className="sm:col-span-2 xl:col-span-4">
+                        <span className="text-gray-500">Chord version: </span>
+                        <span className="text-gray-200">
+                          {makeSongRunReport.chordVersionTitle}
+                        </span>
+                      </div>
+                    ) : null}
+                    {makeSongRunReport.sectionCoverage.length > 0 ? (
+                      <div className="mt-2 sm:col-span-2 xl:col-span-4">
+                        <div className="mb-2 text-xs font-medium text-gray-400">
+                          Section coverage
+                        </div>
+
+                        <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
+                          {makeSongRunReport.sectionCoverage.map(
+                            (section, index) => {
+                              const hasNoChords =
+                                section.lyricLineCount > 0 &&
+                                section.chordEventCount === 0;
+
+                              return (
+                                <div
+                                  key={`${section.section}-${index}`}
+                                  className={`rounded border px-2 py-1.5 ${
+                                    hasNoChords
+                                      ? "border-yellow-900 bg-yellow-950/20"
+                                      : "border-gray-800 bg-gray-900"
+                                  }`}
+                                >
+                                  <span
+                                    className={
+                                      hasNoChords
+                                        ? "text-yellow-200"
+                                        : "text-gray-200"
+                                    }
+                                  >
+                                    {section.section}
+                                  </span>
+
+                                  <span className="ml-2 text-gray-500">
+                                    {section.chordedLineCount}/
+                                    {section.lyricLineCount} chorded ·{" "}
+                                    {section.chordEventCount} events
+                                  </span>
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {makeSongRunReport.warnings.length > 0 ? (
+                    <div className="mt-4 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2">
+                      <div className="text-xs font-medium text-yellow-200">
+                        Warnings
+                      </div>
+
+                      <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-yellow-100/90">
+                        {makeSongRunReport.warnings.map((warning, index) => (
+                          <li key={`${warning}-${index}`}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-xs font-medium text-gray-400">
+                      Run events ({makeSongRunReport.events.length})
+                    </summary>
+
+                    <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-gray-400">
+                      {makeSongRunReport.events.map((event, index) => (
+                        <li key={`${event}-${index}`}>{event}</li>
+                      ))}
+                    </ol>
+                  </details>
+                </div>
+              ) : null}
+
+              <div className="mt-3 text-xs leading-5 text-gray-500">
+                Detailed generation, placement, validation, render, mix, and
+                diagnostic controls remain available below.
+              </div>
+            </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded border border-gray-800 bg-gray-950 p-4">
