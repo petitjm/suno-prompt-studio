@@ -1,268 +1,78 @@
-# Architecture Reset Notes
+# Suno Prompt Studio — Living Project Context
 
+> **Status:** Living document  
+> **Repository:** `suno-prompt-studio`  
+> **Branch:** `architecture-reset`
+>
+> This document is the primary continuity and architecture reference for the project.
+>
+> It must be reviewed before making significant workflow, architecture, songwriting,
+> versioning, chord, audio, Suno, or Video changes.
+>
+> Update this document whenever a development change materially alters the product
+> workflow, architecture, protected behaviour, or current development direction.
 
-## Current checkpoint
+---
 
-The architecture reset has reached a stable checkpoint.
+# READ THIS FIRST IN EVERY NEW DEVELOPMENT CHAT
 
-Completed:
+Suno Prompt Studio is intended to become a **cohesive songwriter's workbench**.
 
-- Write mode editor split into focused UI components.
-- `SongEditorPanel` reduced to a wiring/composition component.
-- Major prop boundaries grouped into object props.
-- Saved song-version and chord-version selectors extracted.
-- Song sheet editor extracted.
-- Structured Chord JSON editor extracted.
-- Compare controls extracted.
-- Shared helpers added for formatting and version data access.
-- Project version fetching and normalisation extracted into `lib/projectVersions.ts`.
-- `ChordVersionRecord` preserved for page state and project-loading data.
+The highest priority is **song creation itself**:
 
-Recommended next development rule:
+- lyrics
+- melody
+- chords
+- song structure
+- arrangement
+- performance development
 
-Make future changes in small, isolated steps and avoid moving React state ownership unless there is a clear reason.
+Suno, OpenArt, AI prompting, release tools, and video tools are supporting systems.
+They must help create better songs rather than become the centre of the application.
 
+A large amount of working functionality already exists.
 
+**Do not assume a missing workflow simply because it is not immediately visible.**
 
+Before changing an established area:
 
+1. Inspect the existing code and current behaviour.
+2. Identify what already works.
+3. Identify saved/versioned data involved.
+4. Preserve established creative workflows unless there is a specific reason to change them.
+5. Avoid solving a local symptom without checking its effect on the wider songwriting workflow.
 
-## Current editor structure
+The current development challenge is primarily **cohesion and discoverability**, not wholesale rebuilding.
 
-The Write mode editor has been split into smaller UI components while keeping state ownership mostly in `app/page.tsx`.
+The building blocks of the songwriter's workbench are largely present.
+
+---
+
+# 1. Product purpose
+
+The application exists to help a singer-songwriter move from an idea or incomplete
+composition toward a credible, performable song.
+
+The desired long-term workflow is approximately:
 
 ```text
-SongEditorPanel
-├─ WritePanelHeader
-├─ EditorWorkspace
-│  ├─ SongVersionEditor
-│  │  ├─ SongSheetEditor
-│  │  ├─ SavedSongVersionSelector
-│  │  └─ SongVersionSaveControls
-│  └─ StructuredChordJsonEditor
-│     └─ SavedChordVersionSelector
-└─ CompareVersionControls
-
-State ownership
-
-Most state is still owned by app/page.tsx.
-
-SongEditorPanel is mainly a wiring component.
-
-EditorWorkspace groups the main editing areas.
-
-SongVersionEditor owns the local behaviour for selecting saved song versions.
-
-StructuredChordJsonEditor owns the local behaviour for selecting saved chord versions.
-
-Important workflow separation
-
-Song sheet embedded chords and Structured Chord JSON are separate workflows.
-
-Saved song versions affect the Song Sheet / Lyrics editor.
-
-Saved chord versions affect the Structured Chord JSON editor.
-
-// =================================================================
-// component checklist 
-## Component responsibilities
-
-## Prop grouping pattern
-
-Large UI components now prefer grouped object props where it improves readability.
-
-Examples:
-
-```tsx
-<SongEditorPanel
-  songEditor={{ ... }}
-  chordEditor={{ ... }}
-  compareControls={{ ... }}
-  shared={{ ... }}
-/>
-<EditorWorkspace
-  songEditor={{ ... }}
-  chordEditor={{ ... }}
-  shared={{ ... }}
-/>
-<CompareVersionControls
-  source={{ ... }}
-  actionState={{ ... }}
-  panelSelection={{ ... }}
-/>
-
-This keeps wiring components easier to scan while still leaving state ownership in app/page.tsx.
-
-## Current prop boundary
-
-`app/page.tsx` still owns the main state.
-
-`SongEditorPanel` receives grouped props and passes them into focused child components.
-
-This keeps the current state model stable while reducing the visual complexity o
-
-
-### `SongEditorPanel`
-
-Wiring component for Write mode.
-
-It should not contain detailed editor JSX or version-selection logic.
-
-### `EditorWorkspace`
-
-Groups the main editing areas:
-
-- Song sheet / saved song versions / song saving
-- Structured chord JSON / saved chord versions / chord saving
-
-### `SongVersionEditor`
-
-Owns the local behaviour for selecting a saved song version and loading it into the Song Sheet / Lyrics editor.
-
-### `StructuredChordJsonEditor`
-
-Owns the local behaviour for selecting a saved chord version and loading it into the Structured Chord JSON editor.
-
-### `CompareVersionControls`
-
-Owns the compare control UI:
-
-- Compare current vs last saved
-- Load saved version into left panel
-- Load saved version into right panel
-- Load current into either compare panel
-
-### Selector components
-
-Selector components should stay simple and UI-only.
-
-They receive data and callbacks, but should not decide how loaded content changes editor state.
-
-
-## Shared helpers
-
-Small pure helpers now live in `lib/` rather than inside UI components or `app/page.tsx`.
-
-Current helpers:
-
-- `lib/chords.ts`
-  - `looksLikeChordLine`
-  - `extractLyricsOnly`
-  - Detects chord-only lines and extracts lyrics-only text while preserving sensible spacing.
-
-- `lib/songSections.ts`
-  - `isSectionHeader`
-  - Detects song section headings while avoiding chord-only lines.
-
-  Chord-line detection is shared by lyrics extraction and section detection.
-
-This helps keep Remove Chords, section parsing, and rewrite workflows consistent.
-
-- `lib/projectVersions.ts`
-  - `loadProjectVersions`
-  - `normaliseProjectVersionData`
-  - Fetches song-version and chord-version API data for a project.
-  - Returns per-endpoint success/error state so one failed endpoint does not automatically wipe the other.
-  - Normalises raw API responses into editor-ready values.
-  - Does not update React state directly.
-
-  ## Project loading resilience
-
-`loadProjectData` in `app/page.tsx` now handles song-version and chord-version load results separately.
-
-If one endpoint fails and the other succeeds, the successful data is still applied to the editor.
-
-Unexpected errors still fall through to the catch block and clear editor state as a defensive fallback.
-
-  `loadProjectData` in `app/page.tsx` still owns React state updates.
-
-`normaliseProjectVersionData` prepares the data used by those state updates, including:
-
-- saved song versions
-- saved chord versions
-- active song/chord version IDs
-- latest lyrics
-- latest structured chord JSON
-- initial compare panel IDs
-
-  Project data loading still lives in `app/page.tsx`.
-  The helper only handles API fetching and response validation. State updates remain in the page component for now.
-
-- `lib/format.ts`
-  - `formatUkDateTime`
-  - Formats saved version timestamps for UK display.
-
-- `lib/songVersions.ts`
-  - `getSongVersionLyrics`
-  - `getInitialCompareSongIds`
-  - Safely extracts `lyrics_full` from a saved song version and chooses initial compare panel version IDs.
-
-- `lib/chordVersions.ts`
-  - `getChordVersionData`
-  - Safely extracts structured chord data from a saved chord version.
-
-  ## Chord version types
-
-There are two chord-version shapes in use:
-
-- `ChordVersionRecord`
-  - Full database/API record.
-  - Used by `app/page.tsx` state and project loading.
-  - Includes fields such as `project_id`.
-
-- `ChordVersion`
-  - Lightweight UI shape.
-  - Used by selector/editor components where only `id`, `title`, `created_at`, and `chord_data` are needed.
-
-Project-loading helpers should preserve `ChordVersionRecord[]` so they remain compatible with page state.
-
-`app/page.tsx` now uses these helpers during project loading, so UI components and project-loading logic rely on the same version-data access patterns.
-These helpers should stay pure and should not call APIs, mutate React state, or depend on component lifecycle.
-
-## Rewrite Lab behaviour
-
-The Rewrite Lab now supports several songwriting-focused rewrite controls:
-
-- **Rewrite voice / locale**
-  - Natural British
-  - British singer-songwriter
-  - UK folk rock
-  - Modern country / Americana
-  - Neutral commercial
-
-- **Rewrite constraints**
-  - Default
-  - Keep structure
-  - Maintain syllable feel
-  - Shorten / extend / conversational / poetic / stronger / simplify
-
-- **Protect song context**
-  - Enabled by default.
-  - Adds prompt guidance to preserve the song’s existing story, speaker, emotional situation, point of view, and imagery.
-  - Can be disabled when a more creatively free rewrite is desired.
-
-- **Maintain syllable feel**
-  - Treated as a line-preserving constraint.
-  - Adds prompt guidance to preserve syllable count, stress pattern, sung rhythm, and phrasing shape.
-  - Useful for melody-fitted lyrics where the existing chords/melody should still work.
-
-- **Whole-song rewrite heading preservation**
-  - Whole-song rewrites preserve existing section headings when the model returns lyrics without headings.
-  - Section-only rewrites still replace only the selected section body inside the full source text.
-
-- **Compare panel feedback**
-  - Main rewrites copy the original text to the left compare panel and rewritten text to the right compare panel.
-  - Left/right rewrites update the selected compare panel and leave the other unchanged.
-  - Compare messages record voice, constraint, and context-protection settings used for the rewrite.
-
-
-
-
-// ========================================================
-
-Known local build note
-
-npm run build may pass compile/TypeScript and then fail during page data collection with a missing DATABASE_URL for /api/sessions.
-
-That is a local environment issue, not necessarily a code failure.
-
-npm run dev remains the normal local app testing route.
+Ideas / incomplete song
+        ↓
+Write
+        ↓
+Rewrite / develop / compare
+        ↓
+Approved saved song version
+        ↓
+Existing or newly developed chords
+        ↓
+Make Song
+        ↓
+Performance Sheet
+        ↓
+Musical guide / WAV
+        ↓
+Sheet / Rehearse / Perform
+        ↓
+Suno / Video / Release support where useful
+```
