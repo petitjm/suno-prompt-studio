@@ -15417,6 +15417,11 @@ export default function Page() {
             );
           }
 
+          if (generatedAudioDuration <= 0) {
+            setMakeSongMessage("Finalising musical guide audio details...");
+            return;
+          }
+
           const { placedLineCount, chordedLineCount, chordEventCount } =
             getMakeSongChordPlacementCounts();
 
@@ -15550,7 +15555,7 @@ export default function Page() {
     return () => {
       cancelled = true;
     };
-  }, [makeSongStage, makeSongAlignmentCheck]);
+  }, [makeSongStage, makeSongAlignmentCheck, generatedAudioDuration]);
 
   const saveChords = async () => {
     try {
