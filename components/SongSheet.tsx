@@ -67,13 +67,14 @@ export default function SongSheet({
         const isActive =
           typeof activePerformanceSectionIndex === "number"
             ? sectionIndex === activePerformanceSectionIndex
-            : section.id === activePerformanceSectionId ||
-              Boolean(
-                activeLabel &&
-                (sectionLabel === activeLabel ||
-                  sectionLabel.includes(activeLabel) ||
-                  activeLabel.includes(sectionLabel)),
-              );
+            : activePerformanceSectionId
+              ? section.id === activePerformanceSectionId
+              : Boolean(
+                  activeLabel &&
+                  (sectionLabel === activeLabel ||
+                    sectionLabel.includes(activeLabel) ||
+                    activeLabel.includes(sectionLabel)),
+                );
 
         return (
           <div

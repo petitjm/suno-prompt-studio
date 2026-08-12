@@ -987,7 +987,10 @@ export default function Page() {
       null;
 
     setSheetGuideActiveSectionId(matchingDetail?.section.id || null);
-    setSheetGuideActiveSectionIndex(null);
+
+    setSheetGuideActiveSectionIndex(
+      matchingDetail ? matchingDetail.cueIndex : currentGuideSectionIndex,
+    );
   };
 
   const seekSheetGuideAudio = (seconds: number) => {
@@ -1912,6 +1915,43 @@ export default function Page() {
     clearPreviewTimeouts();
     lastFollowedSectionIdRef.current = null;
     setPreviewPlaying(false);
+  };
+
+  const startPerformancePlayback = async () => {
+    const generatedAudio = sheetGuideAudioRef.current;
+
+    if (clickTrackAudioUrl && generatedAudio) {
+      stopPreviewPlayback();
+
+      if (generatedAudio.currentTime > 0.5) {
+        await generatedAudio.play();
+        return;
+      }
+
+      const initialSeekSeconds = getSheetGuideInitialSeekSeconds();
+
+      if (initialSeekSeconds !== null) {
+        generatedAudio.currentTime = initialSeekSeconds;
+        updateSheetGuideActiveSection(initialSeekSeconds);
+      }
+
+      await generatedAudio.play();
+      return;
+    }
+
+    await startPreviewPlayback();
+  };
+
+  const stopPerformancePlayback = () => {
+    const generatedAudio = sheetGuideAudioRef.current;
+
+    if (clickTrackAudioUrl && generatedAudio) {
+      generatedAudio.pause();
+      setPreviewPlaying(false);
+      return;
+    }
+
+    stopPreviewPlayback();
   };
 
   useEffect(() => {
@@ -23324,13 +23364,7 @@ ${buildRewriteInstruction(
                   sheetGuideActiveSectionId || activePerformanceSectionId
                 }
                 activePerformanceSectionIndex={sheetGuideActiveSectionIndex}
-                activePerformanceSectionLabel={
-                  getGeneratedAudioSectionJumpSummaries().find(
-                    (section) =>
-                      section.startSeconds <=
-                      (sheetGuideAudioRef.current?.currentTime || 0),
-                  )?.section || null
-                }
+                activePerformanceSectionLabel={null}
                 performanceSectionRefs={performanceSectionRefs}
               />
 
@@ -23342,7 +23376,84 @@ ${buildRewriteInstruction(
                     </h2>
                   </div>
 
+                  {clickTrackAudioUrl ? (
+                    <div className="mb-4 rounded border border-green-900 bg-green-950/30 p-3">
+                      <div className="mb-2">
+                        <div className="text-sm font-medium text-green-100">
+                          Musical guide
+                        </div>
+                        <div className="mt-1 text-xs text-green-300">
+                          Performance playback is using the generated Make Song
+                          WAV.
+                        </div>
+                      </div>
+
+                      <audio
+                        ref={sheetGuideAudioRef}
+                        controls
+                        src={clickTrackAudioUrl}
+                        className="w-full"
+                        onPlay={(event) => {
+                          const audioElement = event.currentTarget;
+
+                          setPreviewPlaying(true);
+
+                          if (audioElement.currentTime <= 0.5) {
+                            const initialSeekSeconds =
+                              getSheetGuideInitialSeekSeconds();
+
+                            if (initialSeekSeconds !== null) {
+                              audioElement.currentTime = initialSeekSeconds;
+                              updateSheetGuideActiveSection(initialSeekSeconds);
+                            }
+                          }
+                        }}
+                        onPause={() => {
+                          setPreviewPlaying(false);
+                        }}
+                        onEnded={() => {
+                          setPreviewPlaying(false);
+                          setSheetGuideActiveSectionId(null);
+                          setSheetGuideActiveSectionIndex(null);
+                        }}
+                        onLoadedMetadata={(event) => {
+                          const duration = event.currentTarget.duration;
+
+                          const safeDuration =
+                            Number.isFinite(duration) && duration > 0
+                              ? duration
+                              : 0;
+
+                          setGeneratedAudioDuration(safeDuration);
+
+                          updateSheetGuideActiveSection(
+                            event.currentTarget.currentTime || 0,
+                          );
+                        }}
+                        onTimeUpdate={(event) => {
+                          updateSheetGuideActiveSection(
+                            event.currentTarget.currentTime || 0,
+                          );
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-400">
+                      No generated Make Song WAV is available. Performance
+                      playback will use the rehearsal preview engine.
+                    </div>
+                  )}
+
+                  {clickTrackAudioUrl ? (
+                    <div className="mb-3 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-gray-400">
+                      Rehearsal preview controls are disabled while the
+                      generated Make Song WAV is active. Change these settings
+                      in Rehearse, then regenerate Make Song.
+                    </div>
+                  ) : null}
+
                   <RehearsePanel
+                    disabled={Boolean(clickTrackAudioUrl)}
                     previewSection={previewSection}
                     setPreviewSection={setPreviewSection}
                     previewPattern={previewPattern}
@@ -23364,8 +23475,8 @@ ${buildRewriteInstruction(
                     previewReady={previewReady}
                     followPlayback={followPlayback}
                     setFollowPlayback={setFollowPlayback}
-                    startPreviewPlayback={startPreviewPlayback}
-                    stopPreviewPlayback={stopPreviewPlayback}
+                    startPreviewPlayback={startPerformancePlayback}
+                    stopPreviewPlayback={stopPerformancePlayback}
                   />
                 </div>
               )}
