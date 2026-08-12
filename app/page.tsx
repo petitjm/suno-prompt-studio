@@ -14362,7 +14362,11 @@ export default function Page() {
     }
   };
 
-  const generatePlacedSongsheet = async () => {
+  const generatePlacedSongsheet = async (
+    options: {
+      preserveExistingChordPlacements?: boolean;
+    } = {},
+  ) => {
     if (!performanceSheet.trim()) {
       setChordExtractionMessage(
         "Add lyrics before generating a placed songsheet.",
@@ -14378,6 +14382,8 @@ export default function Page() {
       );
       return;
     }
+
+    const existingPlacedLines = getPlacedSongSheetLines(chordData);
 
     setGeneratingPlacedSongsheet(true);
     setChordExtractionMessage("Generating placed songsheet...");
@@ -14408,8 +14414,46 @@ export default function Page() {
         return;
       }
 
-      setChords(result);
-      setChordsText(JSON.stringify(result, null, 2));
+      let nextChordData = result;
+
+      if (
+        options.preserveExistingChordPlacements &&
+        existingPlacedLines.length > 0
+      ) {
+        const generatedPlacedLines = getPlacedSongSheetLines(result);
+
+        const existingLineMap = getPlacedLineOccurrenceMap(existingPlacedLines);
+        const generatedLineCounts = new Map<string, number>();
+
+        const mergedPlacedLines = generatedPlacedLines.map((generatedLine) => {
+          const baseKey = getPlacedLineBaseKey(generatedLine);
+          const occurrence = (generatedLineCounts.get(baseKey) || 0) + 1;
+
+          generatedLineCounts.set(baseKey, occurrence);
+
+          const existingLine = existingLineMap.get(
+            getPlacedLineOccurrenceKey(generatedLine, occurrence),
+          );
+
+          if (existingLine?.chords.length) {
+            return {
+              section: generatedLine.section,
+              lyric: generatedLine.lyric,
+              chords: existingLine.chords,
+            };
+          }
+
+          return generatedLine;
+        });
+
+        nextChordData = {
+          ...result,
+          songSheetLines: mergedPlacedLines,
+        };
+      }
+
+      setChords(nextChordData);
+      setChordsText(JSON.stringify(nextChordData, null, 2));
       setActiveChordVersionId(null);
       setChordVersionTitle((currentTitle) => {
         const baseTitle = currentTitle
@@ -14734,8 +14778,10 @@ export default function Page() {
     };
   };
 
-  const getMakeSongSectionCoverage = () => {
-    const chordData = getChordDataFromEditorJson();
+  const getMakeSongSectionCoverage = (value?: unknown) => {
+    const chordData =
+      value === undefined ? getChordDataFromEditorJson() : value;
+
     const placedLines = getPlacedSongSheetLines(chordData);
 
     const coverage: {
@@ -15129,6 +15175,31 @@ export default function Page() {
           if (processedPreviewHasAlignmentIssue) {
             throw new Error(
               "The chorded songsheet could not be aligned with the current Source.",
+            );
+          }
+
+          const alignedChordData = getChordDataFromEditorJson();
+
+          const sectionsWithoutChordEvents = getMakeSongSectionCoverage(
+            alignedChordData,
+          ).filter(
+            (section) =>
+              section.lyricLineCount > 0 && section.chordEventCount === 0,
+          );
+
+          if (sectionsWithoutChordEvents.length > 0) {
+            setMakeSongStatusMessage(
+              `Repairing missing chord placements in ${sectionsWithoutChordEvents
+                .map((section) => section.section)
+                .join(", ")}...`,
+            );
+
+            await generatePlacedSongsheet({
+              preserveExistingChordPlacements: true,
+            });
+
+            appendMakeSongRunEvent(
+              "Missing-section chord repair request completed.",
             );
           }
 
