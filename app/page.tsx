@@ -13310,9 +13310,42 @@ export default function Page() {
       .filter((line): line is PlacedSongSheetLine => Boolean(line));
   };
 
+  const getPlacedLineSectionFamily = (section: string) => {
+    const normalized = normalizeLyricMatchText(section || "Unsectioned")
+      .replace(/[()[\]]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (/^(?:final\s+)?chorus(?:\s+\d+)?(?:\s+final)?$/.test(normalized)) {
+      return "chorus";
+    }
+
+    if (/^verse(?:\s+\d+)?$/.test(normalized)) {
+      return "verse";
+    }
+
+    if (/^(?:pre\s+chorus|prechorus)(?:\s+\d+)?$/.test(normalized)) {
+      return "prechorus";
+    }
+
+    if (/^bridge(?:\s+\d+)?$/.test(normalized)) {
+      return "bridge";
+    }
+
+    if (/^intro(?:\s+\d+)?$/.test(normalized)) {
+      return "intro";
+    }
+
+    if (/^outro(?:\s+\d+)?$/.test(normalized)) {
+      return "outro";
+    }
+
+    return normalized || "unsectioned";
+  };
+
   const getPlacedLineBaseKey = (line: PlacedSongSheetLine) => {
     return [
-      normalizeLyricMatchText(line.section || "Unsectioned"),
+      getPlacedLineSectionFamily(line.section || "Unsectioned"),
       normalizeLyricMatchText(line.lyric),
     ].join("::");
   };
@@ -14343,9 +14376,10 @@ export default function Page() {
       setChordVersionTitle((currentTitle) => {
         const baseTitle = currentTitle
           .trim()
-          .replace(/\s+with songsheet and guide plan$/i, "")
-          .replace(/\s+with guide plan$/i, "")
-          .replace(/\s+with songsheet$/i, "")
+          .replace(
+            /(?:\s+—\s+Make Song result|\s+with songsheet and guide plan|\s+with guide plan|\s+with songsheet)+$/gi,
+            "",
+          )
           .trim();
 
         return `${baseTitle || "Basic chord draft"} with songsheet and guide plan`;
@@ -14911,6 +14945,12 @@ export default function Page() {
       ...report.events.map((event, index) => `${index + 1}. ${event}`),
     ].join("\n");
   };
+
+  const makeSongHasUnsavedChordResult =
+    makeSongRunReport?.finalChordState ===
+      "Automatically repaired during Make Song — working chord result is unsaved" ||
+    makeSongRunReport?.finalChordState ===
+      "Generated working chord result — unsaved";
 
   const copyMakeSongRunReport = async () => {
     const text = buildMakeSongRunReportCopyText();
@@ -15615,8 +15655,21 @@ export default function Page() {
       setChordExtractionMessage("");
       setProjectMessage("Saving chords...");
 
-      const chordTitleToSave =
+      const currentChordTitle =
         chordVersionTitle.trim() || `Chord version ${chordVersions.length + 1}`;
+
+      const baseChordTitle = makeSongHasUnsavedChordResult
+        ? currentChordTitle
+            .replace(
+              /(?:\s+—\s+Make Song result|\s+with songsheet and guide plan|\s+with guide plan|\s+with songsheet)+$/gi,
+              "",
+            )
+            .trim()
+        : currentChordTitle;
+
+      const chordTitleToSave = makeSongHasUnsavedChordResult
+        ? `${baseChordTitle || "Basic chord draft"} — Make Song result`
+        : baseChordTitle;
 
       const res = await fetch("/api/chord-versions", {
         method: "POST",
@@ -15650,6 +15703,22 @@ export default function Page() {
 
       setChordVersionTitle(savedChordTitle);
       setLastAppliedTransposeSnapshot(null);
+
+      if (makeSongHasUnsavedChordResult) {
+        setMakeSongRunReport((current) =>
+          current
+            ? {
+                ...current,
+                finalChordState: `Saved as new chord version: ${savedChordTitle}`,
+                events: [
+                  ...current.events,
+                  `Saved Make Song chord result as new version: ${savedChordTitle}.`,
+                ],
+              }
+            : current,
+        );
+      }
+
       setProjectMessage(`Saved chord version: ${savedChordTitle}`);
       setJustSavedChords(true);
 
@@ -22666,10 +22735,48 @@ ${buildRewriteInstruction(
 
                     {makeSongRunReport.chordVersionTitle ? (
                       <div className="sm:col-span-2 xl:col-span-4">
-                        <span className="text-gray-500">Chord version: </span>
+                        <span className="text-gray-500">
+                          Source chord version:{" "}
+                        </span>
                         <span className="text-gray-200">
                           {makeSongRunReport.chordVersionTitle}
                         </span>
+                      </div>
+                    ) : null}
+
+                    <div className="sm:col-span-2 xl:col-span-4">
+                      <span className="text-gray-500">Final chord state: </span>
+                      <span
+                        className={
+                          makeSongHasUnsavedChordResult
+                            ? "text-yellow-200"
+                            : "text-gray-200"
+                        }
+                      >
+                        {makeSongRunReport.finalChordState || "Pending"}
+                      </span>
+                    </div>
+
+                    {makeSongHasUnsavedChordResult ? (
+                      <div className="sm:col-span-2 xl:col-span-4">
+                        <div className="mt-1 flex flex-wrap items-center gap-3 rounded border border-yellow-900 bg-yellow-950/20 px-3 py-2">
+                          <div className="text-xs leading-5 text-yellow-100">
+                            Make Song changed the working chord result. Save it
+                            as a new chord version if you want to keep these
+                            musical changes.
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => void saveChords()}
+                            disabled={savingChords}
+                            className="rounded bg-yellow-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-yellow-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                          >
+                            {savingChords
+                              ? "Saving..."
+                              : "Save Make Song chords"}
+                          </button>
+                        </div>
                       </div>
                     ) : null}
                     {makeSongRunReport.sectionCoverage.length > 0 ? (
