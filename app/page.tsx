@@ -274,6 +274,9 @@ export default function Page() {
     "Latest generated WAV",
   );
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
+  const [rehearsalPlaybackEngine, setRehearsalPlaybackEngine] = useState<
+    "tone" | "wav"
+  >("tone");
   const [sheetGuideActiveSectionId, setSheetGuideActiveSectionId] = useState<
     string | null
   >(null);
@@ -1921,7 +1924,11 @@ export default function Page() {
   const startPerformancePlayback = async () => {
     const generatedAudio = sheetGuideAudioRef.current;
 
-    if (clickTrackAudioUrl && generatedAudio) {
+    if (
+      rehearsalPlaybackEngine === "wav" &&
+      clickTrackAudioUrl &&
+      generatedAudio
+    ) {
       stopPreviewPlayback();
 
       if (generatedAudio.currentTime > 0.5) {
@@ -1940,13 +1947,17 @@ export default function Page() {
       return;
     }
 
+    if (generatedAudio && !generatedAudio.paused) {
+      generatedAudio.pause();
+    }
+
     await startPreviewPlayback();
   };
 
   const stopPerformancePlayback = () => {
     const generatedAudio = sheetGuideAudioRef.current;
 
-    if (clickTrackAudioUrl && generatedAudio) {
+    if (rehearsalPlaybackEngine === "wav" && generatedAudio) {
       generatedAudio.pause();
       setPreviewPlaying(false);
       return;
@@ -1954,6 +1965,25 @@ export default function Page() {
 
     stopPreviewPlayback();
   };
+
+  const handleRehearsalPlaybackEngineChange = (engine: "tone" | "wav") => {
+    stopPreviewPlayback();
+
+    const generatedAudio = sheetGuideAudioRef.current;
+
+    if (generatedAudio && !generatedAudio.paused) {
+      generatedAudio.pause();
+    }
+
+    setPreviewPlaying(false);
+    setRehearsalPlaybackEngine(engine);
+  };
+
+  useEffect(() => {
+    if (!clickTrackAudioUrl && rehearsalPlaybackEngine === "wav") {
+      setRehearsalPlaybackEngine("tone");
+    }
+  }, [clickTrackAudioUrl, rehearsalPlaybackEngine]);
 
   useEffect(() => {
     setRewriteTarget("main");
@@ -23521,6 +23551,10 @@ ${buildRewriteInstruction(
           {mode === "rehearse" && (
             <div className="h-full">
               <RehearsePanel
+                playbackEngine={rehearsalPlaybackEngine}
+                setPlaybackEngine={handleRehearsalPlaybackEngineChange}
+                generatedWavAvailable={Boolean(clickTrackAudioUrl)}
+                disabled={rehearsalPlaybackEngine === "wav"}
                 previewSection={previewSection}
                 setPreviewSection={setPreviewSection}
                 previewPattern={previewPattern}
@@ -23655,7 +23689,10 @@ ${buildRewriteInstruction(
                   ) : null}
 
                   <RehearsePanel
-                    disabled={Boolean(clickTrackAudioUrl)}
+                    playbackEngine={rehearsalPlaybackEngine}
+                    setPlaybackEngine={handleRehearsalPlaybackEngineChange}
+                    generatedWavAvailable={Boolean(clickTrackAudioUrl)}
+                    disabled={rehearsalPlaybackEngine === "wav"}
                     previewSection={previewSection}
                     setPreviewSection={setPreviewSection}
                     previewPattern={previewPattern}
