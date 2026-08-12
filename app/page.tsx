@@ -235,6 +235,7 @@ export default function Page() {
     chordSource: string;
     chordVersionId: string;
     chordVersionTitle: string;
+    finalChordState: string;
     tempoBpm: number;
     sourceLineCount: number;
     placedLineCount: number;
@@ -14876,8 +14877,9 @@ export default function Page() {
       `Song version ID: ${report.songVersionId || "—"}`,
       "",
       `Chord source: ${report.chordSource || "Not determined"}`,
-      `Chord version: ${report.chordVersionTitle || "—"}`,
-      `Chord version ID: ${report.chordVersionId || "—"}`,
+      `Source chord version: ${report.chordVersionTitle || "—"}`,
+      `Source chord version ID: ${report.chordVersionId || "—"}`,
+      `Final chord state: ${report.finalChordState || "Not determined"}`,
       "",
       `Tempo: ${report.tempoBpm} BPM`,
       `Source lyric lines: ${report.sourceLineCount}`,
@@ -14954,6 +14956,7 @@ export default function Page() {
       chordSource: "",
       chordVersionId: "",
       chordVersionTitle: "",
+      finalChordState: "Working chord result not yet determined",
       tempoBpm: previewTempo,
       sourceLineCount: getMainSheetAudioPreviewLines().length,
       placedLineCount: 0,
@@ -15201,6 +15204,15 @@ export default function Page() {
             appendMakeSongRunEvent(
               "Missing-section chord repair request completed.",
             );
+            setMakeSongRunReport((current) =>
+              current
+                ? {
+                    ...current,
+                    finalChordState:
+                      "Automatically repaired during Make Song — working chord result is unsaved",
+                  }
+                : current,
+            );
           }
 
           setMakeSongMessage("Song aligned with the current Source.");
@@ -15425,6 +15437,13 @@ export default function Page() {
                   ...current,
                   completedAt: new Date().toLocaleString("en-GB"),
                   status: finalStatus,
+                  finalChordState:
+                    current.finalChordState ===
+                    "Automatically repaired during Make Song — working chord result is unsaved"
+                      ? current.finalChordState
+                      : current.chordVersionId
+                        ? "Matches saved source chord version"
+                        : "Generated working chord result — unsaved",
                   sourceLineCount,
                   placedLineCount,
                   chordedLineCount,
