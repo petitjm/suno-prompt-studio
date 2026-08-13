@@ -1243,14 +1243,16 @@ export function createClickTrackPcm16Samples(
     const sectionLevel = isMusicalGuideMix
       ? getMusicalGuideSectionLevel(segment.section)
       : 1;
-    const padTransitionOverlapSeconds = isMusicalGuideMix ? 0.22 : 0;
+    const padTransitionReleaseSeconds = isMusicalGuideMix ? 0.18 : 0;
+
     const padStartSeconds = Math.max(
       countInDurationSeconds,
-      segment.startSeconds - padTransitionOverlapSeconds,
+      segment.startSeconds,
     );
+
     const padEndSeconds = Math.min(
       totalDurationSeconds,
-      segment.endSeconds + padTransitionOverlapSeconds,
+      segment.endSeconds + padTransitionReleaseSeconds,
     );
 
     segment.frequenciesHz.forEach((frequencyHz) => {
@@ -1263,8 +1265,8 @@ export function createClickTrackPcm16Samples(
         frequencyHz,
         secondHarmonicLevel: 0.22,
         thirdHarmonicLevel: 0.08,
-        fadeInSeconds: isMusicalGuideMix ? 0.18 : 0.12,
-        fadeOutSeconds: isMusicalGuideMix ? 0.32 : 0.24,
+        fadeInSeconds: isMusicalGuideMix ? 0.1 : 0.12,
+        fadeOutSeconds: isMusicalGuideMix ? 0.22 : 0.24,
       });
     });
   }
@@ -1368,8 +1370,13 @@ export function createClickTrackPcm16Samples(
             const noteStartSeconds =
               humanisedStartSeconds + noteIndex * strumNoteStaggerSeconds;
 
+            const strumReleaseEndSeconds = Math.min(
+              totalDurationSeconds,
+              segment.endSeconds + 0.12,
+            );
+
             const noteEndSeconds = Math.min(
-              segment.endSeconds,
+              strumReleaseEndSeconds,
               noteStartSeconds + Math.min(secondsPerBeat * 0.62, 0.55),
             );
 

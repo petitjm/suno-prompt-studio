@@ -295,7 +295,8 @@ export default function Page() {
     useState<AudioChordMarker | null>(null);
 
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
-
+  const [audioPreviewRendererPayloadOpen, setAudioPreviewRendererPayloadOpen] =
+    useState(false);
   const [sheetGuideActiveSectionId, setSheetGuideActiveSectionId] = useState<
     string | null
   >(null);
@@ -309,6 +310,8 @@ export default function Page() {
   const generatedAudioWaveformCanvasRef = useRef<HTMLCanvasElement | null>(
     null,
   );
+  const audioPreviewRendererPayloadDetailsRef =
+    useRef<HTMLDetailsElement | null>(null);
   const generatedAudioWaveformPeaksRef = useRef<number[]>([]);
   const generatedAudioWaveformProgressRef = useRef(0);
   const musicalGuideAuditionAudioContextRef = useRef<AudioContext | null>(null);
@@ -586,6 +589,17 @@ export default function Page() {
     setGeneratedAudioActiveChord(
       getGeneratedAudioActiveChord(currentTimeSeconds),
     );
+  };
+
+  const revealGeneratedAudioWaveform = () => {
+    setAudioPreviewRendererPayloadOpen(true);
+
+    window.setTimeout(() => {
+      generatedAudioWaveformCanvasRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
   };
 
   const drawGeneratedAudioWaveform = (progress = 0) => {
@@ -5282,6 +5296,7 @@ export default function Page() {
       });
 
       void loadGeneratedAudioWaveform(url);
+      revealGeneratedAudioWaveform();
 
       setClickTrackDownloadStatus(
         `Downloaded musical guide WAV: ${link.download}${
@@ -18545,7 +18560,16 @@ ${buildRewriteInstruction(
                   ) : null}
 
                   {audioPreviewRendererPayload ? (
-                    <details className="rounded border border-gray-800 bg-gray-950 p-4">
+                    <details
+                      ref={audioPreviewRendererPayloadDetailsRef}
+                      open={audioPreviewRendererPayloadOpen}
+                      onToggle={(event) => {
+                        setAudioPreviewRendererPayloadOpen(
+                          event.currentTarget.open,
+                        );
+                      }}
+                      className="rounded border border-gray-800 bg-gray-950 p-4"
+                    >
                       <summary className="cursor-pointer text-sm font-medium uppercase tracking-wide text-gray-500">
                         Audio preview renderer payload
                       </summary>
