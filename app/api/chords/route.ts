@@ -1,142 +1,139 @@
-import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from "next/server";
+import OpenAI from "openai";
+import { createClient } from "@/lib/supabase/server";
 
-const CHORD_GENERATION_TIMEOUT_MS = 300_000
+const CHORD_GENERATION_TIMEOUT_MS = 300_000;
 
 function isTimeoutError(error: unknown) {
   if (!(error instanceof Error)) {
-    return false
+    return false;
   }
 
-  const message = error.message.toLowerCase()
+  const message = error.message.toLowerCase();
 
   return (
-    error.name === 'AbortError' ||
-    message.includes('timed out') ||
-    message.includes('timeout') ||
-    message.includes('aborted')
-  )
+    error.name === "AbortError" ||
+    message.includes("timed out") ||
+    message.includes("timeout") ||
+    message.includes("aborted")
+  );
 }
 
 function isQuotaError(error: unknown) {
-  if (!error || typeof error !== 'object') {
-    return false
+  if (!error || typeof error !== "object") {
+    return false;
   }
 
   const record = error as {
-    status?: number
-    code?: string
-    type?: string
-  }
+    status?: number;
+    code?: string;
+    type?: string;
+  };
 
   return (
     record.status === 429 ||
-    record.code === 'insufficient_quota' ||
-    record.type === 'insufficient_quota'
-  )
+    record.code === "insufficient_quota" ||
+    record.type === "insufficient_quota"
+  );
 }
-
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
-})
+});
 
 function parseModelJson(text: string) {
-  const trimmed = text.trim()
+  const trimmed = text.trim();
 
   try {
-    return JSON.parse(trimmed)
+    return JSON.parse(trimmed);
   } catch {
     // Continue to fallback extraction below.
   }
 
   const withoutCodeFence = trimmed
-    .replace(/^```(?:json)?/i, '')
-    .replace(/```$/i, '')
-    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
 
   try {
-    return JSON.parse(withoutCodeFence)
+    return JSON.parse(withoutCodeFence);
   } catch {
     // Continue to object extraction below.
   }
 
-  const firstBrace = trimmed.indexOf('{')
-  const lastBrace = trimmed.lastIndexOf('}')
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
 
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const jsonCandidate = trimmed.slice(firstBrace, lastBrace + 1)
-    return JSON.parse(jsonCandidate)
+    const jsonCandidate = trimmed.slice(firstBrace, lastBrace + 1);
+    return JSON.parse(jsonCandidate);
   }
 
-  throw new Error('Could not parse JSON from model response.')
+  throw new Error("Could not parse JSON from model response.");
 }
-
-
 
 async function getArtistDNAString() {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
-    if (userError || !user) return ''
+    if (userError || !user) return "";
 
     const { data, error } = await supabase
-      .from('artist_dna_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle()
+      .from("artist_dna_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (error || !data) return ''
+    if (error || !data) return "";
 
     return `
 Artist DNA Profile:
-- Artist Name: ${data.artist_name || ''}
-- Vocal Range: ${data.vocal_range || ''}
-- Core Genres: ${data.core_genres || ''}
-- Lyrical Style: ${data.lyrical_style || ''}
-- Emotional Tone: ${data.emotional_tone || ''}
-- Writing Strengths: ${data.writing_strengths || ''}
-- Avoid List: ${data.avoid_list || ''}
-- Visual Style: ${data.visual_style || ''}
-- Performance Style: ${data.performance_style || ''}
-- DNA Summary: ${data.dna_summary || ''}
+- Artist Name: ${data.artist_name || ""}
+- Vocal Range: ${data.vocal_range || ""}
+- Core Genres: ${data.core_genres || ""}
+- Lyrical Style: ${data.lyrical_style || ""}
+- Emotional Tone: ${data.emotional_tone || ""}
+- Writing Strengths: ${data.writing_strengths || ""}
+- Avoid List: ${data.avoid_list || ""}
+- Visual Style: ${data.visual_style || ""}
+- Performance Style: ${data.performance_style || ""}
+- DNA Summary: ${data.dna_summary || ""}
 
 Use this DNA as a strong stylistic guide. Do not mention it explicitly in the output.
-`
+`;
   } catch (err) {
-    console.error('Artist DNA lookup failed in chords route:', err)
-    return ''
+    console.error("Artist DNA lookup failed in chords route:", err);
+    return "";
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const artistDNA = await getArtistDNAString()
+    const body = await req.json();
+    const artistDNA = await getArtistDNAString();
 
-    const lyrics = typeof body.lyrics === 'string' ? body.lyrics : ''
-const songTitle = typeof body.songTitle === 'string' ? body.songTitle : ''
-const songVersionTitle =
-  typeof body.songVersionTitle === 'string' ? body.songVersionTitle : ''
+    const lyrics = typeof body.lyrics === "string" ? body.lyrics : "";
+    const songTitle = typeof body.songTitle === "string" ? body.songTitle : "";
+    const songVersionTitle =
+      typeof body.songVersionTitle === "string" ? body.songVersionTitle : "";
 
-const prompt = `
+    const prompt = `
 You are a professional songwriter, acoustic arranger, and live performance songsheet editor.
 
 Create playable acoustic-guitar chords and a performance songsheet for these lyrics.
 
-Song title: ${songTitle || 'Untitled song'}
-Song version: ${songVersionTitle || 'Untitled version'}
+Song title: ${songTitle || "Untitled song"}
+Song version: ${songVersionTitle || "Untitled version"}
 
-Genre: ${body.genre || ''}
-Mood: ${Array.isArray(body.moods) ? body.moods.join(', ') : ''}
-Theme: ${body.theme || ''}
-Hook: ${body.hook || ''}
+Genre: ${body.genre || ""}
+Mood: ${Array.isArray(body.moods) ? body.moods.join(", ") : ""}
+Theme: ${body.theme || ""}
+Hook: ${body.hook || ""}
 
 Lyrics:
 ${lyrics}
@@ -240,100 +237,100 @@ Guide track plan requirements:
 - Use sectionPlan to describe how each major section should feel and develop.
 - Include vocalGuideStyle as a simple guide vocal or melody reference, not a polished lead vocal.
 - Include rhythmReference to describe the pulse clearly enough that it could later drive audio preview generation.
-`
+`;
 
+    const controller = new AbortController();
 
-    
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, CHORD_GENERATION_TIMEOUT_MS);
 
-const controller = new AbortController()
+    let completion;
 
-const timeoutId = setTimeout(() => {
-  controller.abort()
-}, CHORD_GENERATION_TIMEOUT_MS)
+    try {
+      completion = await openai.chat.completions.create(
+        {
+          model: "gpt-5",
+          messages: [{ role: "user", content: prompt }],
+        },
+        {
+          signal: controller.signal,
+        },
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
-let completion
+    const text = completion.choices[0].message.content || "{}";
 
-try {
-  completion = await openai.chat.completions.create(
-    {
-      model: 'gpt-5',
-      messages: [{ role: 'user', content: prompt }],
-    },
-    {
-      signal: controller.signal,
-    },
-  )
-} finally {
-  clearTimeout(timeoutId)
-}
-
-    const text = completion.choices[0].message.content || '{}'
-
-    let chordData
-try {
-  chordData = parseModelJson(text)
-} catch {
-  return NextResponse.json(
-    {
-      error: 'Invalid JSON from model',
-      raw: text,
-    },
-    { status: 500 }
-  )
-}
+    let chordData;
+    try {
+      chordData = parseModelJson(text);
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid JSON from model",
+          raw: text,
+        },
+        { status: 500 },
+      );
+    }
 
     if (body.project_id) {
-      const supabase = await createClient()
+      const supabase = await createClient();
 
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
-      await supabase.from('chord_versions').insert({
+      await supabase.from("chord_versions").insert({
         project_id: body.project_id,
         chord_data: chordData,
-      })
+      });
 
       if (user) {
         const { error: projectUpdateError } = await supabase
-          .from('projects')
+          .from("projects")
           .update({ updated_at: new Date().toISOString() })
-          .eq('id', body.project_id)
-          .eq('user_id', user.id)
+          .eq("id", body.project_id)
+          .eq("user_id", user.id);
 
         if (projectUpdateError) {
-          console.error('projects updated_at bump failed after chord save:', projectUpdateError)
+          console.error(
+            "projects updated_at bump failed after chord save:",
+            projectUpdateError,
+          );
         }
       }
     }
 
-    return NextResponse.json(chordData)
+    return NextResponse.json(chordData);
   } catch (error) {
-  console.error('Chords route failure:', error)
+    console.error("Chords route failure:", error);
 
-  if (isQuotaError(error)) {
+    if (isQuotaError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "OpenAI API quota has been exceeded. Please check your API billing/usage, then try generating chords again.",
+        },
+        { status: 429 },
+      );
+    }
+
+    if (isTimeoutError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "Chord generation timed out after 5 minutes. Please try again, or shorten the lyrics/prompt context and regenerate.",
+        },
+        { status: 504 },
+      );
+    }
+
     return NextResponse.json(
-      {
-        error:
-          'OpenAI API quota has been exceeded. Please check your API billing/usage, then try generating chords again.',
-      },
-      { status: 429 },
-    )
+      { error: "Could not generate chords." },
+      { status: 500 },
+    );
   }
-
-  if (isTimeoutError(error)) {
-    return NextResponse.json(
-      {
-        error:
-          'Chord generation timed out after 5 minutes. Please try again, or shorten the lyrics/prompt context and regenerate.',
-      },
-      { status: 504 },
-    )
-  }
-
-  return NextResponse.json(
-    { error: 'Could not generate chords.' },
-    { status: 500 },
-  )
-}
 }

@@ -291,6 +291,8 @@ export default function Page() {
   const [generatedAudioChordMarkers, setGeneratedAudioChordMarkers] = useState<
     AudioChordMarker[]
   >([]);
+  const [generatedAudioActiveChord, setGeneratedAudioActiveChord] =
+    useState<AudioChordMarker | null>(null);
 
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
 
@@ -564,6 +566,28 @@ export default function Page() {
     ).padStart(2, "0")}`;
   };
 
+  const getGeneratedAudioActiveChord = (
+    currentTimeSeconds: number,
+  ): AudioChordMarker | null => {
+    let activeMarker: AudioChordMarker | null = null;
+
+    for (const marker of generatedAudioChordMarkers) {
+      if (marker.timeSeconds > currentTimeSeconds) {
+        break;
+      }
+
+      activeMarker = marker;
+    }
+
+    return activeMarker;
+  };
+
+  const updateGeneratedAudioActiveChord = (currentTimeSeconds: number) => {
+    setGeneratedAudioActiveChord(
+      getGeneratedAudioActiveChord(currentTimeSeconds),
+    );
+  };
+
   const drawGeneratedAudioWaveform = (progress = 0) => {
     const canvas = generatedAudioWaveformCanvasRef.current;
 
@@ -640,6 +664,41 @@ export default function Page() {
 
         context.fillStyle = "rgba(219, 234, 254, 0.85)";
         context.fillText(section.section, markerX + 3, 4);
+      });
+      const currentTimeSeconds = safeProgress * generatedAudioDuration;
+      const activeChordMarker =
+        getGeneratedAudioActiveChord(currentTimeSeconds);
+
+      generatedAudioChordMarkers.forEach((marker) => {
+        if (
+          !Number.isFinite(marker.timeSeconds) ||
+          marker.timeSeconds < 0 ||
+          marker.timeSeconds > generatedAudioDuration
+        ) {
+          return;
+        }
+
+        const markerProgress = Math.max(
+          0,
+          Math.min(1, marker.timeSeconds / generatedAudioDuration),
+        );
+        const markerX = markerProgress * canvasWidth;
+
+        const isActiveMarker =
+          activeChordMarker !== null &&
+          activeChordMarker.timeSeconds === marker.timeSeconds &&
+          activeChordMarker.chord === marker.chord;
+
+        context.fillStyle = isActiveMarker
+          ? "rgba(253, 224, 71, 0.95)"
+          : "rgba(251, 191, 36, 0.7)";
+
+        context.fillRect(
+          markerX,
+          isActiveMarker ? canvasHeight - 24 : canvasHeight - 14,
+          isActiveMarker ? 2 : 1,
+          isActiveMarker ? 24 : 14,
+        );
       });
     }
 
@@ -751,7 +810,18 @@ export default function Page() {
         ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
         : null;
 
-    return buildChordMarkersFromCueSheetSections(cueSheet?.sections);
+    const countInDurationSeconds = includeClickTrackCountIn
+      ? (60 / previewTempo) * 4
+      : 0;
+
+    return buildChordMarkersFromCueSheetSections(cueSheet?.sections).map(
+      (marker) => ({
+        ...marker,
+        timeSeconds: Number(
+          (marker.timeSeconds + countInDurationSeconds).toFixed(3),
+        ),
+      }),
+    );
   };
 
   const getGeneratedAudioSectionJumpSummaries = (): {
@@ -1163,6 +1233,7 @@ export default function Page() {
   const resetGeneratedAudioState = () => {
     setClickTrackAudioUrl("");
     setGeneratedAudioChordMarkers([]);
+    setGeneratedAudioActiveChord(null);
     setClickTrackDownloadStatus("");
     setClickTrackAudioLabel("Latest generated WAV");
     setGeneratedAudioDuration(0);
@@ -18876,11 +18947,15 @@ ${buildRewriteInstruction(
                                 );
                               }}
                               onTimeUpdate={(event) => {
+                                const currentTime =
+                                  event.currentTarget.currentTime || 0;
+
                                 updateGeneratedAudioPlaybackUi({
-                                  currentTime:
-                                    event.currentTarget.currentTime || 0,
+                                  currentTime,
                                   duration: generatedAudioDuration,
                                 });
+
+                                updateGeneratedAudioActiveChord(currentTime);
                               }}
                               onEnded={(event) => {
                                 updateGeneratedAudioPlaybackUi({
@@ -18910,10 +18985,26 @@ ${buildRewriteInstruction(
                               }}
                             />
 
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                              <span className="font-medium text-yellow-200">
+                                Active chord:{" "}
+                                {generatedAudioActiveChord?.chord || "—"}
+                              </span>
+
+                              {generatedAudioActiveChord ? (
+                                <span className="text-green-200">
+                                  {generatedAudioActiveChord.section} ·{" "}
+                                  {formatGeneratedAudioTime(
+                                    generatedAudioActiveChord.timeSeconds,
+                                  )}
+                                </span>
+                              ) : null}
+                            </div>
+
                             <div className="text-[11px] text-green-200">
                               Waveform shows generated audio shape, section
-                              markers, and current playback position. Click the
-                              waveform to jump.
+                              markers, chord-change markers, and current
+                              playback position. Click the waveform to jump.
                             </div>
 
                             <div className="space-y-1">
