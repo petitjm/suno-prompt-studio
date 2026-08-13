@@ -175,6 +175,15 @@ export default function Page() {
 
     setPreviewTempo(nextTempo);
     resetAudioPreviewRequestState();
+
+    if (activeProject?.id && activeSongVersionId && activeChordVersionId) {
+      void restorePersistedAudioForState({
+        projectId: activeProject.id,
+        songVersionId: activeSongVersionId,
+        chordVersionId: activeChordVersionId,
+        tempoBpm: nextTempo,
+      });
+    }
   };
   const [previewFeel, setPreviewFeel] = useState<PreviewFeel>("straight");
   const [previewInstrument, setPreviewInstrument] =
@@ -2431,6 +2440,77 @@ export default function Page() {
     }
   };
 
+  const restorePersistedAudioForState = async ({
+    projectId,
+    songVersionId,
+    chordVersionId,
+    tempoBpm,
+  }: {
+    projectId: string;
+    songVersionId: string | null;
+    chordVersionId: string | null;
+    tempoBpm: number;
+  }) => {
+    if (!songVersionId || !chordVersionId) {
+      return false;
+    }
+
+    const { data: savedAudioVersion, error: savedAudioError } = await supabase
+      .from("audio_versions")
+      .select(
+        "id, storage_path, title, tempo_bpm, duration_seconds, created_at",
+      )
+      .eq("project_id", projectId)
+      .eq("song_version_id", songVersionId)
+      .eq("chord_version_id", chordVersionId)
+      .eq("tempo_bpm", tempoBpm)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (savedAudioError) {
+      console.error("Saved audio version restore failed:", savedAudioError);
+      return false;
+    }
+
+    if (!savedAudioVersion?.storage_path) {
+      return false;
+    }
+
+    const { data: signedAudio, error: signedAudioError } =
+      await supabase.storage
+        .from("generated-audio")
+        .createSignedUrl(savedAudioVersion.storage_path, 60 * 60 * 24);
+
+    if (signedAudioError || !signedAudio?.signedUrl) {
+      console.error("Saved audio signed URL failed:", signedAudioError);
+      return false;
+    }
+
+    setClickTrackAudioUrl(signedAudio.signedUrl);
+
+    setClickTrackAudioLabel(
+      savedAudioVersion.title
+        ? `Saved musical guide: ${savedAudioVersion.title}`
+        : "Saved musical guide WAV",
+    );
+
+    setGeneratedAudioDuration(
+      typeof savedAudioVersion.duration_seconds === "number" &&
+        savedAudioVersion.duration_seconds > 0
+        ? savedAudioVersion.duration_seconds
+        : 0,
+    );
+
+    setClickTrackDownloadStatus(
+      `Restored saved musical guide WAV for the current song version at ${savedAudioVersion.tempo_bpm} BPM.`,
+    );
+
+    void loadGeneratedAudioWaveform(signedAudio.signedUrl);
+
+    return true;
+  };
+
   const loadProjectData = async (
     projectId: string,
     options?: { silent?: boolean },
@@ -2440,6 +2520,9 @@ export default function Page() {
 
     setActiveChordVersionId(null);
     setChordVersionTitle("");
+
+    resetGeneratedAudioState();
+
     const token = Date.now();
     latestProjectLoadRef.current = token;
 
@@ -2498,6 +2581,13 @@ export default function Page() {
       setChordVersionTitle(
         normalisedProjectData.latestChordVersion?.title || "",
       );
+
+      await restorePersistedAudioForState({
+        projectId,
+        songVersionId: normalisedProjectData.activeSongVersionId,
+        chordVersionId: normalisedProjectData.activeChordVersionId,
+        tempoBpm: previewTempo,
+      });
 
       if (projectVersionResult.song.ok && projectVersionResult.chord.ok) {
         setProjectMessage("");
@@ -23682,6 +23772,39 @@ ${buildRewriteInstruction(
 
           {mode === "rehearse" && (
             <div className="h-full">
+              {clickTrackAudioUrl ? (
+                <audio
+                  ref={sheetGuideAudioRef}
+                  src={clickTrackAudioUrl}
+                  controls
+                  className="mb-4 w-full"
+                  onPlay={() => {
+                    setPreviewPlaying(true);
+                  }}
+                  onPause={() => {
+                    setPreviewPlaying(false);
+                  }}
+                  onEnded={() => {
+                    setPreviewPlaying(false);
+                    setSheetGuideActiveSectionId(null);
+                    setSheetGuideActiveSectionIndex(null);
+                  }}
+                  onLoadedMetadata={(event) => {
+                    const duration = event.currentTarget.duration;
+
+                    const safeDuration =
+                      Number.isFinite(duration) && duration > 0 ? duration : 0;
+
+                    setGeneratedAudioDuration(safeDuration);
+                  }}
+                  onTimeUpdate={(event) => {
+                    updateSheetGuideActiveSection(
+                      event.currentTarget.currentTime || 0,
+                    );
+                  }}
+                />
+              ) : null}
+
               <RehearsePanel
                 playbackEngine={rehearsalPlaybackEngine}
                 setPlaybackEngine={handleRehearsalPlaybackEngineChange}
@@ -23708,8 +23831,8 @@ ${buildRewriteInstruction(
                 previewReady={previewReady}
                 followPlayback={followPlayback}
                 setFollowPlayback={setFollowPlayback}
-                startPreviewPlayback={startPreviewPlayback}
-                stopPreviewPlayback={stopPreviewPlayback}
+                startPreviewPlayback={startPerformancePlayback}
+                stopPreviewPlayback={stopPerformancePlayback}
               />
             </div>
           )}

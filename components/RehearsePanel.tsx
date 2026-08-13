@@ -96,6 +96,9 @@ export default function RehearsePanel({
     cursor: "pointer",
   };
 
+  const playbackUnavailable =
+    playbackEngine === "wav" ? !generatedWavAvailable : !previewBarsLength;
+
   return (
     <div
       style={{
@@ -322,30 +325,34 @@ export default function RehearsePanel({
       >
         <button
           onClick={startPreviewPlayback}
-          disabled={disabled || !previewBarsLength}
+          disabled={playbackUnavailable}
           style={{
             ...primaryButtonStyle,
-            opacity: disabled || !previewBarsLength ? 0.55 : 1,
-            cursor: disabled || !previewBarsLength ? "not-allowed" : "pointer",
+            opacity: playbackUnavailable ? 0.55 : 1,
+            cursor: playbackUnavailable ? "not-allowed" : "pointer",
           }}
         >
           {previewPlaying
-            ? "Restart Preview"
-            : previewReady
-              ? "Play Preview"
-              : "Enable Audio + Play"}
+            ? playbackEngine === "wav"
+              ? "Restart WAV"
+              : "Restart Preview"
+            : playbackEngine === "wav"
+              ? "Play WAV"
+              : previewReady
+                ? "Play Preview"
+                : "Enable Audio + Play"}
         </button>
 
         <button
           onClick={stopPreviewPlayback}
-          disabled={disabled || !previewPlaying}
+          disabled={!previewPlaying}
           style={{
             ...secondaryButtonStyle,
-            opacity: disabled || !previewPlaying ? 0.55 : 1,
-            cursor: disabled || !previewPlaying ? "not-allowed" : "pointer",
+            opacity: !previewPlaying ? 0.55 : 1,
+            cursor: !previewPlaying ? "not-allowed" : "pointer",
           }}
         >
-          Stop Preview
+          {playbackEngine === "wav" ? "Stop WAV" : "Stop Preview"}
         </button>
       </div>
 
