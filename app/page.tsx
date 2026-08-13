@@ -4889,6 +4889,125 @@ export default function Page() {
       .join("\n");
   };
 
+  const persistGeneratedAudioWav = async ({
+    blob,
+    filename,
+    rendererTempoBpm,
+    rendererSampleRate,
+    rendererJobId,
+    rendererMixProfile,
+  }: {
+    blob: Blob;
+    filename: string;
+    rendererTempoBpm: string | null;
+    rendererSampleRate: string | null;
+    rendererJobId: string | null;
+    rendererMixProfile: string | null;
+  }) => {
+    if (!activeProject?.id || !activeSongVersionId) {
+      return {
+        saved: false,
+        message:
+          "Generated WAV is available in this browser session but could not be saved because there is no active saved song version.",
+      };
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return {
+        saved: false,
+        message:
+          "Generated WAV is available in this browser session but could not be saved because the user session is unavailable.",
+      };
+    }
+
+    const audioVersionId = crypto.randomUUID();
+
+    const storagePath = [
+      user.id,
+      activeProject.id,
+      activeSongVersionId,
+      `${audioVersionId}.wav`,
+    ].join("/");
+
+    const { error: uploadError } = await supabase.storage
+      .from("generated-audio")
+      .upload(storagePath, blob, {
+        contentType: blob.type || "audio/wav",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Generated audio upload failed:", uploadError);
+
+      return {
+        saved: false,
+        message: `Generated WAV is available in this browser session but persistent upload failed: ${uploadError.message}`,
+      };
+    }
+
+    const sourceChordVersionId = makeSongHasUnsavedChordResult
+      ? null
+      : makeSongRunReport?.chordVersionId || activeChordVersionId || null;
+
+    const { error: metadataError } = await supabase
+      .from("audio_versions")
+      .insert({
+        id: audioVersionId,
+        project_id: activeProject.id,
+        song_version_id: activeSongVersionId,
+        chord_version_id: sourceChordVersionId,
+        title: filename.replace(/\.wav$/i, "") || "Generated musical guide",
+        storage_path: storagePath,
+        tempo_bpm:
+          rendererTempoBpm && Number.isFinite(Number(rendererTempoBpm))
+            ? Number(rendererTempoBpm)
+            : previewTempo,
+        duration_seconds: null,
+        render_settings: {
+          mixProfile: rendererMixProfile || "musical-guide",
+          sampleRate: rendererSampleRate
+            ? Number(rendererSampleRate) || null
+            : null,
+          rendererJobId: rendererJobId || null,
+          musicalGuideMixLevels,
+          includeCountIn: includeClickTrackCountIn,
+          includeBeatClicks: includeClickTrackBeatClicks,
+          includeSectionMarkers: includeClickTrackSectionMarkers,
+          includeChordMarkers: includeClickTrackChordMarkers,
+          includeChordToneGuide: true,
+        },
+      });
+
+    if (metadataError) {
+      console.error("Generated audio metadata save failed:", metadataError);
+
+      const { error: cleanupError } = await supabase.storage
+        .from("generated-audio")
+        .remove([storagePath]);
+
+      if (cleanupError) {
+        console.error("Generated audio upload cleanup failed:", cleanupError);
+      }
+
+      return {
+        saved: false,
+        message: `Generated WAV is available in this browser session but its saved-audio record could not be created: ${metadataError.message}`,
+      };
+    }
+
+    return {
+      saved: true,
+      audioVersionId,
+      storagePath,
+      message: "Generated musical guide saved for this song version.",
+    };
+  };
+
   const downloadMusicalGuideWav = async () => {
     if (chordActionBlockedReason) {
       setClickTrackDownloadStatus(chordActionBlockedReason);
@@ -4954,6 +5073,17 @@ export default function Page() {
           response.headers.get("Content-Disposition"),
         ) || "musical-guide.wav";
 
+      const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
+
+      const persistenceResult = await persistGeneratedAudioWav({
+        blob,
+        filename,
+        rendererTempoBpm,
+        rendererSampleRate,
+        rendererJobId,
+        rendererMixProfile,
+      });
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -4980,8 +5110,6 @@ export default function Page() {
 
       void loadGeneratedAudioWaveform(url);
 
-      const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
-
       setClickTrackDownloadStatus(
         `Downloaded musical guide WAV: ${link.download}${
           rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
@@ -4989,6 +5117,10 @@ export default function Page() {
           rendererJobId ? ` | job ${rendererJobId}` : ""
         }${rendererMixProfile ? ` | mix ${rendererMixProfile}` : ""}${
           contentLength ? ` | ${contentLength} bytes` : ""
+        } | ${
+          persistenceResult.saved
+            ? "saved persistently"
+            : "persistent save failed"
         }`,
       );
     } catch (error) {
