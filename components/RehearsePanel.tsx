@@ -32,16 +32,10 @@ type RehearsePanelProps = {
   setFollowPlayback: (value: boolean) => void;
   startPreviewPlayback: () => void;
   stopPreviewPlayback: () => void;
-  playbackEngine?: "tone" | "wav";
-  setPlaybackEngine?: (value: "tone" | "wav") => void;
-  generatedWavAvailable?: boolean;
   disabled?: boolean;
 };
 
 export default function RehearsePanel({
-  playbackEngine = "tone",
-  setPlaybackEngine = () => {},
-  generatedWavAvailable = false,
   disabled = false,
   previewSection,
   setPreviewSection,
@@ -96,8 +90,7 @@ export default function RehearsePanel({
     cursor: "pointer",
   };
 
-  const playbackUnavailable =
-    playbackEngine === "wav" ? !generatedWavAvailable : !previewBarsLength;
+  const playbackUnavailable = !previewBarsLength;
 
   return (
     <div
@@ -110,58 +103,6 @@ export default function RehearsePanel({
       }}
     >
       <h3 style={{ marginTop: 0, marginBottom: 14 }}>Audio Preview</h3>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 18,
-          flexWrap: "wrap",
-          marginBottom: 16,
-          padding: 12,
-          borderRadius: 10,
-          border: "1px solid #3f3f46",
-          background: "#27272a",
-        }}
-      >
-        <strong>Playback engine</strong>
-
-        <label style={{ cursor: "pointer" }}>
-          <input
-            type="radio"
-            name="rehearsal-playback-engine"
-            value="tone"
-            checked={playbackEngine === "tone"}
-            onChange={() => setPlaybackEngine("tone")}
-            style={{ marginRight: 7 }}
-          />
-          Tone Synth
-        </label>
-
-        <label
-          style={{
-            cursor: generatedWavAvailable ? "pointer" : "not-allowed",
-            opacity: generatedWavAvailable ? 1 : 0.5,
-          }}
-        >
-          <input
-            type="radio"
-            name="rehearsal-playback-engine"
-            value="wav"
-            checked={playbackEngine === "wav"}
-            disabled={!generatedWavAvailable}
-            onChange={() => setPlaybackEngine("wav")}
-            style={{ marginRight: 7 }}
-          />
-          Generated WAV
-        </label>
-
-        <span style={{ fontSize: 12, color: "#a1a1aa" }}>
-          {playbackEngine === "tone"
-            ? "Tempo, pattern, feel and other rehearsal controls are live."
-            : "Using the rendered Make Song WAV. Change settings and regenerate to alter the WAV."}
-        </span>
-      </div>
 
       <div
         style={{
@@ -332,15 +273,7 @@ export default function RehearsePanel({
             cursor: playbackUnavailable ? "not-allowed" : "pointer",
           }}
         >
-          {previewPlaying
-            ? playbackEngine === "wav"
-              ? "Restart WAV"
-              : "Restart Preview"
-            : playbackEngine === "wav"
-              ? "Play WAV"
-              : previewReady
-                ? "Play Preview"
-                : "Enable Audio + Play"}
+          {previewPlaying ? "Restart Preview" : "Play Preview"}
         </button>
 
         <button
@@ -352,7 +285,7 @@ export default function RehearsePanel({
             cursor: !previewPlaying ? "not-allowed" : "pointer",
           }}
         >
-          {playbackEngine === "wav" ? "Stop WAV" : "Stop Preview"}
+          Stop Preview
         </button>
       </div>
 

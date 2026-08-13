@@ -2,6 +2,11 @@
 
 import SongWorkshopPanel from "@/components/SongWorkshopPanel";
 
+import {
+  buildChordMarkersFromCueSheetSections,
+  type AudioChordMarker,
+} from "@/lib/audio/build-chord-markers";
+
 import type {
   Project,
   FormState,
@@ -282,10 +287,13 @@ export default function Page() {
   const [clickTrackAudioLabel, setClickTrackAudioLabel] = useState(
     "Latest generated WAV",
   );
+
+  const [generatedAudioChordMarkers, setGeneratedAudioChordMarkers] = useState<
+    AudioChordMarker[]
+  >([]);
+
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
-  const [rehearsalPlaybackEngine, setRehearsalPlaybackEngine] = useState<
-    "tone" | "wav"
-  >("tone");
+
   const [sheetGuideActiveSectionId, setSheetGuideActiveSectionId] = useState<
     string | null
   >(null);
@@ -733,6 +741,19 @@ export default function Page() {
 
     drawGeneratedAudioWaveform(generatedAudioWaveformProgressRef.current);
   };
+
+  const getCurrentGeneratedAudioChordMarkers = (): AudioChordMarker[] => {
+    const cueSheet =
+      audioPreviewDryRunRenderPlan &&
+      typeof audioPreviewDryRunRenderPlan.cueSheet === "object" &&
+      audioPreviewDryRunRenderPlan.cueSheet !== null &&
+      !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+        ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+        : null;
+
+    return buildChordMarkersFromCueSheetSections(cueSheet?.sections);
+  };
+
   const getGeneratedAudioSectionJumpSummaries = (): {
     order: number;
     section: string;
@@ -1141,6 +1162,7 @@ export default function Page() {
   };
   const resetGeneratedAudioState = () => {
     setClickTrackAudioUrl("");
+    setGeneratedAudioChordMarkers([]);
     setClickTrackDownloadStatus("");
     setClickTrackAudioLabel("Latest generated WAV");
     setGeneratedAudioDuration(0);
@@ -1620,6 +1642,12 @@ export default function Page() {
   };
 
   const startPreviewPlayback = async () => {
+    const generatedAudio = sheetGuideAudioRef.current;
+
+    if (generatedAudio && !generatedAudio.paused) {
+      generatedAudio.pause();
+    }
+
     await Tone.start();
 
     clearPreviewTimeouts();
@@ -1929,70 +1957,6 @@ export default function Page() {
     lastFollowedSectionIdRef.current = null;
     setPreviewPlaying(false);
   };
-
-  const startPerformancePlayback = async () => {
-    const generatedAudio = sheetGuideAudioRef.current;
-
-    if (
-      rehearsalPlaybackEngine === "wav" &&
-      clickTrackAudioUrl &&
-      generatedAudio
-    ) {
-      stopPreviewPlayback();
-
-      if (generatedAudio.currentTime > 0.5) {
-        await generatedAudio.play();
-        return;
-      }
-
-      const initialSeekSeconds = getSheetGuideInitialSeekSeconds();
-
-      if (initialSeekSeconds !== null) {
-        generatedAudio.currentTime = initialSeekSeconds;
-        updateSheetGuideActiveSection(initialSeekSeconds);
-      }
-
-      await generatedAudio.play();
-      return;
-    }
-
-    if (generatedAudio && !generatedAudio.paused) {
-      generatedAudio.pause();
-    }
-
-    await startPreviewPlayback();
-  };
-
-  const stopPerformancePlayback = () => {
-    const generatedAudio = sheetGuideAudioRef.current;
-
-    if (rehearsalPlaybackEngine === "wav" && generatedAudio) {
-      generatedAudio.pause();
-      setPreviewPlaying(false);
-      return;
-    }
-
-    stopPreviewPlayback();
-  };
-
-  const handleRehearsalPlaybackEngineChange = (engine: "tone" | "wav") => {
-    stopPreviewPlayback();
-
-    const generatedAudio = sheetGuideAudioRef.current;
-
-    if (generatedAudio && !generatedAudio.paused) {
-      generatedAudio.pause();
-    }
-
-    setPreviewPlaying(false);
-    setRehearsalPlaybackEngine(engine);
-  };
-
-  useEffect(() => {
-    if (!clickTrackAudioUrl && rehearsalPlaybackEngine === "wav") {
-      setRehearsalPlaybackEngine("tone");
-    }
-  }, [clickTrackAudioUrl, rehearsalPlaybackEngine]);
 
   useEffect(() => {
     setRewriteTarget("main");
@@ -2458,7 +2422,7 @@ export default function Page() {
     const { data: savedAudioVersion, error: savedAudioError } = await supabase
       .from("audio_versions")
       .select(
-        "id, storage_path, title, tempo_bpm, duration_seconds, created_at",
+        "id, storage_path, title, tempo_bpm, duration_seconds, render_settings, created_at",
       )
       .eq("project_id", projectId)
       .eq("song_version_id", songVersionId)
@@ -2486,6 +2450,50 @@ export default function Page() {
       console.error("Saved audio signed URL failed:", signedAudioError);
       return false;
     }
+
+    const renderSettings =
+      savedAudioVersion.render_settings &&
+      typeof savedAudioVersion.render_settings === "object" &&
+      !Array.isArray(savedAudioVersion.render_settings)
+        ? (savedAudioVersion.render_settings as Record<string, unknown>)
+        : null;
+
+    const restoredChordTimeline = Array.isArray(renderSettings?.chordTimeline)
+      ? renderSettings.chordTimeline
+          .map((marker) => {
+            if (
+              !marker ||
+              typeof marker !== "object" ||
+              Array.isArray(marker)
+            ) {
+              return null;
+            }
+
+            const record = marker as Record<string, unknown>;
+
+            const section =
+              typeof record.section === "string" ? record.section : "";
+            const chord = typeof record.chord === "string" ? record.chord : "";
+            const timeSeconds =
+              typeof record.timeSeconds === "number" &&
+              Number.isFinite(record.timeSeconds)
+                ? record.timeSeconds
+                : null;
+
+            if (!section || !chord || timeSeconds === null) {
+              return null;
+            }
+
+            return {
+              section,
+              chord,
+              timeSeconds,
+            };
+          })
+          .filter((marker): marker is AudioChordMarker => marker !== null)
+      : [];
+
+    setGeneratedAudioChordMarkers(restoredChordTimeline);
 
     setClickTrackAudioUrl(signedAudio.signedUrl);
 
@@ -5044,6 +5052,8 @@ export default function Page() {
       ? null
       : makeSongRunReport?.chordVersionId || activeChordVersionId || null;
 
+    const chordTimeline = getCurrentGeneratedAudioChordMarkers();
+
     const { error: metadataError } = await supabase
       .from("audio_versions")
       .insert({
@@ -5064,6 +5074,7 @@ export default function Page() {
             ? Number(rendererSampleRate) || null
             : null,
           rendererJobId: rendererJobId || null,
+          chordTimeline,
           musicalGuideMixLevels,
           includeCountIn: includeClickTrackCountIn,
           includeBeatClicks: includeClickTrackBeatClicks,
@@ -5158,6 +5169,7 @@ export default function Page() {
       const contentLength = response.headers.get("Content-Length");
 
       const blob = await response.blob();
+      setGeneratedAudioChordMarkers(getCurrentGeneratedAudioChordMarkers());
       const filename =
         getFilenameFromContentDisposition(
           response.headers.get("Content-Disposition"),
@@ -23497,6 +23509,8 @@ ${buildRewriteInstruction(
                     src={clickTrackAudioUrl}
                     className="w-full"
                     onPlay={(event) => {
+                      stopPreviewPlayback();
+
                       const audioElement = event.currentTarget;
 
                       if (audioElement.currentTime > 0.5) {
@@ -23779,13 +23793,10 @@ ${buildRewriteInstruction(
                   controls
                   className="mb-4 w-full"
                   onPlay={() => {
-                    setPreviewPlaying(true);
+                    stopPreviewPlayback();
                   }}
-                  onPause={() => {
-                    setPreviewPlaying(false);
-                  }}
+
                   onEnded={() => {
-                    setPreviewPlaying(false);
                     setSheetGuideActiveSectionId(null);
                     setSheetGuideActiveSectionIndex(null);
                   }}
@@ -23806,10 +23817,7 @@ ${buildRewriteInstruction(
               ) : null}
 
               <RehearsePanel
-                playbackEngine={rehearsalPlaybackEngine}
-                setPlaybackEngine={handleRehearsalPlaybackEngineChange}
-                generatedWavAvailable={Boolean(clickTrackAudioUrl)}
-                disabled={rehearsalPlaybackEngine === "wav"}
+                disabled={false}
                 previewSection={previewSection}
                 setPreviewSection={setPreviewSection}
                 previewPattern={previewPattern}
@@ -23831,8 +23839,8 @@ ${buildRewriteInstruction(
                 previewReady={previewReady}
                 followPlayback={followPlayback}
                 setFollowPlayback={setFollowPlayback}
-                startPreviewPlayback={startPerformancePlayback}
-                stopPreviewPlayback={stopPerformancePlayback}
+                startPreviewPlayback={startPreviewPlayback}
+                stopPreviewPlayback={stopPreviewPlayback}
               />
             </div>
           )}
@@ -23874,8 +23882,8 @@ ${buildRewriteInstruction(
                           Musical guide
                         </div>
                         <div className="mt-1 text-xs text-green-300">
-                          Performance playback is using the generated Make Song
-                          WAV.
+                          Generated Make Song WAV is available for performance
+                          playback.
                         </div>
                       </div>
 
@@ -23885,9 +23893,9 @@ ${buildRewriteInstruction(
                         src={clickTrackAudioUrl}
                         className="w-full"
                         onPlay={(event) => {
-                          const audioElement = event.currentTarget;
+                          stopPreviewPlayback();
 
-                          setPreviewPlaying(true);
+                          const audioElement = event.currentTarget;
 
                           if (audioElement.currentTime <= 0.5) {
                             const initialSeekSeconds =
@@ -23899,11 +23907,8 @@ ${buildRewriteInstruction(
                             }
                           }
                         }}
-                        onPause={() => {
-                          setPreviewPlaying(false);
-                        }}
+
                         onEnded={() => {
-                          setPreviewPlaying(false);
                           setSheetGuideActiveSectionId(null);
                           setSheetGuideActiveSectionIndex(null);
                         }}
@@ -23935,19 +23940,8 @@ ${buildRewriteInstruction(
                     </div>
                   )}
 
-                  {clickTrackAudioUrl ? (
-                    <div className="mb-3 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-gray-400">
-                      Rehearsal preview controls are disabled while the
-                      generated Make Song WAV is active. Change these settings
-                      in Rehearse, then regenerate Make Song.
-                    </div>
-                  ) : null}
-
                   <RehearsePanel
-                    playbackEngine={rehearsalPlaybackEngine}
-                    setPlaybackEngine={handleRehearsalPlaybackEngineChange}
-                    generatedWavAvailable={Boolean(clickTrackAudioUrl)}
-                    disabled={rehearsalPlaybackEngine === "wav"}
+                    disabled={false}
                     previewSection={previewSection}
                     setPreviewSection={setPreviewSection}
                     previewPattern={previewPattern}
@@ -23969,8 +23963,8 @@ ${buildRewriteInstruction(
                     previewReady={previewReady}
                     followPlayback={followPlayback}
                     setFollowPlayback={setFollowPlayback}
-                    startPreviewPlayback={startPerformancePlayback}
-                    stopPreviewPlayback={stopPerformancePlayback}
+                    startPreviewPlayback={startPreviewPlayback}
+                    stopPreviewPlayback={stopPreviewPlayback}
                   />
                 </div>
               )}

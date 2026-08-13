@@ -1,3 +1,5 @@
+import { buildChordMarkersFromCueSheetSections } from "@/lib/audio/build-chord-markers";
+
 import {
   createReadyClickTrackWavDownload,
   renderClickTrackWav,
@@ -131,85 +133,6 @@ function getTimelineSections(value: unknown) {
     .filter((section) => section !== null);
 }
 
-function buildChordMarkersFromCueSheetSections({
-  cueSheetSections,
-}: {
-  cueSheetSections: ReturnType<typeof getCueSheetSections>;
-}) {
-  return cueSheetSections.flatMap((cueSection) => {
-    const chordPlacements = getArray(
-      (cueSection as Record<string, unknown>).chordPlacements,
-    );
-
-    if (chordPlacements.length === 0) {
-      return [];
-    }
-
-    const sectionDurationSeconds =
-      cueSection.endSeconds - cueSection.startSeconds;
-
-    if (sectionDurationSeconds <= 0) {
-      return [];
-    }
-
-    return chordPlacements
-      .map((placement, index) => {
-        const record = getRecord(placement);
-
-        if (!record) {
-          return null;
-        }
-
-        const chord = getString(record.chord);
-        const lineIndex = getNumber(record.lineIndex);
-        const charIndex = getNumber(record.charIndex);
-        const lyricLength = getNumber(record.lyricLength);
-
-        if (
-          !chord ||
-          lineIndex === null ||
-          charIndex === null ||
-          lyricLength === null ||
-          lyricLength <= 0
-        ) {
-          return null;
-        }
-
-        const lyricLineCount =
-          typeof cueSection.lyricLineCount === "number" &&
-          Number.isFinite(cueSection.lyricLineCount) &&
-          cueSection.lyricLineCount > 0
-            ? cueSection.lyricLineCount
-            : Math.max(1, chordPlacements.length);
-
-        const linePosition = Math.min(
-          0.98,
-          Math.max(
-            0.02,
-            (lineIndex + charIndex / lyricLength) / lyricLineCount,
-          ),
-        );
-
-        const fallbackPosition = (index + 1) / (chordPlacements.length + 1);
-
-        const lineFraction =
-          cueSection.estimatedBars > 0 ? linePosition : fallbackPosition;
-
-        return {
-          section: cueSection.section,
-          chord,
-          timeSeconds: Number(
-            (
-              cueSection.startSeconds +
-              sectionDurationSeconds * lineFraction
-            ).toFixed(3),
-          ),
-        };
-      })
-      .filter((marker) => marker !== null);
-  });
-}
-
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
@@ -257,9 +180,7 @@ export async function POST(req: Request) {
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
   const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
-  const chordMarkers = buildChordMarkersFromCueSheetSections({
-    cueSheetSections,
-  });
+  const chordMarkers = buildChordMarkersFromCueSheetSections(cueSheetSections);
 
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
