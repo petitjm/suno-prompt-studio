@@ -76,3 +76,27 @@ Sheet / Rehearse / Perform
         ↓
 Suno / Video / Release support where useful
 ```
+
+## Make Song and musical guide purpose
+
+Make Song is intended to support song development and rehearsal, not to produce a polished performance backing track.
+
+The generated musical guide should therefore be:
+
+- pleasant and musically credible enough for repeated listening;
+- clear enough to support singing, playing, rehearsal, and evaluation;
+- accurate enough to expose problems in phrasing, chord placement, structure, and melody;
+- restrained enough that accompaniment choices do not distract from the song itself.
+
+Production polish is secondary to musical usefulness.
+
+The next major musical capability is melody. Melody, phrasing, and chord placement should progressively become explicit, editable, version-aware musical decisions rather than being treated only as rendered audio.
+
+As a song develops:
+
+- compatible chord, phrasing, and melody decisions should be preserved where the lyric and section still correspond;
+- changed or newly introduced material should be identified explicitly;
+- only affected musical material should need revision where possible;
+- creating a new song version should not blindly discard established musical work.
+
+The long-term target is a structured relationship between lyric phrases, phrase timing, chord events, and melody notes so that changes made during songwriting can be embodied reliably in subsequent song versions and musical guides.
