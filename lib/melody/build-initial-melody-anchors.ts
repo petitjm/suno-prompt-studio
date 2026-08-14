@@ -60,10 +60,12 @@ function chooseAnchorPitch({
   pitchClasses,
   section,
   previousPitchMidi,
+  isSectionStart,
 }: {
   pitchClasses: string[];
   section: string;
   previousPitchMidi: number | null;
+  isSectionStart: boolean;
 }) {
   const candidates = getPitchCandidates(pitchClasses, 43, 60);
 
@@ -72,6 +74,14 @@ function chooseAnchorPitch({
   }
 
   const sectionTargetMidi = getSectionTargetMidi(section);
+  if (isSectionStart) {
+    return candidates.reduce((bestCandidate, candidate) =>
+      Math.abs(candidate - sectionTargetMidi) <
+      Math.abs(bestCandidate - sectionTargetMidi)
+        ? candidate
+        : bestCandidate,
+    );
+  }
 
   return candidates.reduce((bestCandidate, candidate) => {
     const candidatePreviousDistance =
@@ -97,14 +107,18 @@ export function buildInitialMelodyAnchors(
   framework: MelodyPitchFrameworkPhrase[],
 ): MelodyPhrase[] {
   let previousPitchMidi: number | null = null;
+  let previousSection = "";
 
   return framework.map((item) => {
     const phrase = item.phrase;
+
+    const isSectionStart = phrase.section !== previousSection;
 
     const pitchMidi = chooseAnchorPitch({
       pitchClasses: item.pitchClasses,
       section: phrase.section,
       previousPitchMidi,
+      isSectionStart,
     });
 
     if (pitchMidi === null) {
@@ -132,6 +146,7 @@ export function buildInitialMelodyAnchors(
     };
 
     previousPitchMidi = pitchMidi;
+    previousSection = phrase.section;
 
     return {
       ...phrase,

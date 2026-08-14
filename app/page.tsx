@@ -8,6 +8,8 @@ import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
 
 import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
 
+import { buildInitialMelodyAnchors } from "@/lib/melody/build-initial-melody-anchors";
+
 import {
   buildChordMarkersFromCueSheetSections,
   type AudioChordMarker,
@@ -2334,6 +2336,8 @@ export default function Page() {
       chordMarkers,
     });
   })();
+
+  const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
 
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
     (detail) => detail.section,
@@ -23994,6 +23998,32 @@ ${buildRewriteInstruction(
                           endSeconds: item.phrase.endSeconds,
                           chords: item.chords,
                           pitchClasses: item.pitchClasses,
+                        })),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Initial melody anchors
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        initialMelodyAnchors.map((phrase, index) => ({
+                          index,
+                          section: phrase.section,
+                          sourceLineIndex: phrase.sourceLineIndex,
+                          sourceLyric: phrase.sourceLyric,
+                          startSeconds: phrase.startSeconds,
+                          endSeconds: phrase.endSeconds,
+                          notes: phrase.notes.map((note) => ({
+                            pitchMidi: note.pitchMidi,
+                            startSeconds: note.startSeconds,
+                            durationSeconds: note.durationSeconds,
+                          })),
                         })),
                         null,
                         2,
