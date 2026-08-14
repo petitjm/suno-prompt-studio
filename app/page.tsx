@@ -8,6 +8,8 @@ import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
 
 import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
 
+import { buildLyricPhraseUnits } from "@/lib/melody/build-lyric-phrase-units";
+
 import { buildInitialMelodyAnchors } from "@/lib/melody/build-initial-melody-anchors";
 
 import {
@@ -2338,6 +2340,7 @@ export default function Page() {
   })();
 
   const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
+  const lyricPhraseUnits = buildLyricPhraseUnits(initialMelodyAnchors);
 
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
     (detail) => detail.section,
@@ -24024,6 +24027,26 @@ ${buildRewriteInstruction(
                             startSeconds: note.startSeconds,
                             durationSeconds: note.durationSeconds,
                           })),
+                        })),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Lyric phrase units
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        lyricPhraseUnits.map((group, index) => ({
+                          index,
+                          section: group.phrase.section,
+                          sourceLineIndex: group.phrase.sourceLineIndex,
+                          sourceLyric: group.phrase.sourceLyric,
+                          units: group.units,
                         })),
                         null,
                         2,
