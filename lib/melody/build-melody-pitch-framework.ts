@@ -63,9 +63,20 @@ function getChordPitchClasses(chord: string): string[] {
     return [];
   }
 
+  const isMajorSeventh = suffix.startsWith("maj7");
+  const isMinorSeventh = suffix.startsWith("m7");
   const isMinor = suffix.startsWith("m") && !suffix.startsWith("maj");
+  const isDominantSeventh = suffix.startsWith("7");
 
-  const intervals = isMinor ? [0, 3, 7] : [0, 4, 7];
+  const intervals = isMajorSeventh
+    ? [0, 4, 7, 11]
+    : isMinorSeventh
+      ? [0, 3, 7, 10]
+      : isDominantSeventh
+        ? [0, 4, 7, 10]
+        : isMinor
+          ? [0, 3, 7]
+          : [0, 4, 7];
 
   return intervals.map(
     (interval) => PITCH_CLASS_NAMES[(rootPitchClass + interval) % 12],

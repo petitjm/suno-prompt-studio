@@ -6,6 +6,8 @@ import { buildMelodyPhraseScaffoldFromGuideSections } from "@/lib/melody/build-m
 
 import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
 
+import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
+
 import {
   buildChordMarkersFromCueSheetSections,
   type AudioChordMarker,
@@ -2312,6 +2314,26 @@ export default function Page() {
     tempoBpm: previewTempo,
     phrases: melodyPhraseScaffold,
   });
+
+  const melodyPitchFramework = (() => {
+    const dryRunCueSheet =
+      typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
+      audioPreviewDryRunRenderPlan?.cueSheet !== null &&
+      !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+        ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+        : null;
+
+    const cueSections = Array.isArray(dryRunCueSheet?.sections)
+      ? dryRunCueSheet.sections
+      : generatedAudioCueSections;
+
+    const chordMarkers = buildChordMarkersFromCueSheetSections(cueSections);
+
+    return buildMelodyPitchFramework({
+      phrases: melodyPhraseScaffold,
+      chordMarkers,
+    });
+  })();
 
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
     (detail) => detail.section,
@@ -23950,6 +23972,29 @@ ${buildRewriteInstruction(
                               ),
                             }
                           : null,
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Melody harmonic framework
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        melodyPitchFramework.map((item, index) => ({
+                          index,
+                          section: item.phrase.section,
+                          sourceLineIndex: item.phrase.sourceLineIndex,
+                          sourceLyric: item.phrase.sourceLyric,
+                          startSeconds: item.phrase.startSeconds,
+                          endSeconds: item.phrase.endSeconds,
+                          chords: item.chords,
+                          pitchClasses: item.pitchClasses,
+                        })),
                         null,
                         2,
                       )}
