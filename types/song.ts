@@ -63,6 +63,34 @@ export type ChordVersionRecord = {
   created_at?: string;
 };
 
+export type MelodyNote = {
+  pitchMidi: number;
+  startSeconds: number;
+  durationSeconds: number;
+  lyricText?: string;
+  syllableText?: string;
+};
+
+export type MelodyPhrase = {
+  section: string;
+  sectionInstanceId: string | null;
+  sourceLineIndex: number;
+  sourceLyric: string;
+  startSeconds: number;
+  endSeconds: number;
+  notes: MelodyNote[];
+};
+
+export type MelodyVersionData = {
+  songVersionId: string;
+  chordVersionId: string | null;
+  tempoBpm: number;
+  phrases: MelodyPhrase[];
+};
+
+export type MelodyTransferStatus =
+  "preserved" | "needs-review" | "new" | "removed";
+
 export type ArtistDNAProfile = {
   id?: string;
   artist_name: string;
