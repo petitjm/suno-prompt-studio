@@ -2,6 +2,8 @@
 
 import SongWorkshopPanel from "@/components/SongWorkshopPanel";
 
+import { buildMelodyPhraseScaffoldFromGuideSections } from "@/lib/melody/build-melody-phrases";
+
 import {
   buildChordMarkersFromCueSheetSections,
   type AudioChordMarker,
@@ -295,6 +297,9 @@ export default function Page() {
     useState<AudioChordMarker | null>(null);
 
   const [generatedAudioDuration, setGeneratedAudioDuration] = useState(0);
+  const [generatedAudioCueSections, setGeneratedAudioCueSections] = useState<
+    Record<string, unknown>[]
+  >([]);
   const [audioPreviewRendererPayloadOpen, setAudioPreviewRendererPayloadOpen] =
     useState(false);
   const [sheetGuideActiveSectionId, setSheetGuideActiveSectionId] = useState<
@@ -815,6 +820,25 @@ export default function Page() {
     drawGeneratedAudioWaveform(generatedAudioWaveformProgressRef.current);
   };
 
+  const getCurrentGeneratedAudioCueSections = (): Record<string, unknown>[] => {
+    const cueSheet =
+      audioPreviewDryRunRenderPlan &&
+      typeof audioPreviewDryRunRenderPlan.cueSheet === "object" &&
+      audioPreviewDryRunRenderPlan.cueSheet !== null &&
+      !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+        ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+        : null;
+
+    return Array.isArray(cueSheet?.sections)
+      ? cueSheet.sections.filter(
+          (section): section is Record<string, unknown> =>
+            typeof section === "object" &&
+            section !== null &&
+            !Array.isArray(section),
+        )
+      : [];
+  };
+
   const getCurrentGeneratedAudioChordMarkers = (): AudioChordMarker[] => {
     const cueSheet =
       audioPreviewDryRunRenderPlan &&
@@ -852,8 +876,12 @@ export default function Page() {
         ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
         : null;
 
-    const dryRunSections = Array.isArray(dryRunCueSheet?.sections)
+    const availableCueSections = Array.isArray(dryRunCueSheet?.sections)
       ? dryRunCueSheet.sections
+      : generatedAudioCueSections;
+
+    const dryRunSections = Array.isArray(availableCueSections)
+      ? availableCueSections
           .map((section, index) => {
             if (
               typeof section !== "object" ||
@@ -1248,6 +1276,7 @@ export default function Page() {
     setClickTrackAudioUrl("");
     setGeneratedAudioChordMarkers([]);
     setGeneratedAudioActiveChord(null);
+    setGeneratedAudioCueSections([]);
     setClickTrackDownloadStatus("");
     setClickTrackAudioLabel("Latest generated WAV");
     setGeneratedAudioDuration(0);
@@ -2247,6 +2276,33 @@ export default function Page() {
   };
 
   const cueSyncedSheetSectionDetails = getCueSyncedSheetSectionDetails();
+  const melodyPhraseScaffold = (() => {
+    const dryRunCueSheet =
+      typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
+      audioPreviewDryRunRenderPlan?.cueSheet !== null &&
+      !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+        ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+        : null;
+
+    const sourceLines = performanceSheet
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(
+        (line) =>
+          line.length > 0 &&
+          !(line.startsWith("{") && line.endsWith("}")) &&
+          !(line.startsWith("[") && line.endsWith("]")),
+      );
+
+    const sections = Array.isArray(dryRunCueSheet?.sections)
+      ? dryRunCueSheet.sections
+      : generatedAudioCueSections;
+
+    return buildMelodyPhraseScaffoldFromGuideSections({
+      sections,
+      sourceLines,
+    });
+  })();
 
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
     (detail) => detail.section,
@@ -2577,6 +2633,17 @@ export default function Page() {
           })
           .filter((marker): marker is AudioChordMarker => marker !== null)
       : [];
+
+    const restoredCueSections = Array.isArray(renderSettings?.cueSections)
+      ? renderSettings.cueSections.filter(
+          (section): section is Record<string, unknown> =>
+            typeof section === "object" &&
+            section !== null &&
+            !Array.isArray(section),
+        )
+      : [];
+
+    setGeneratedAudioCueSections(restoredCueSections);
 
     setGeneratedAudioChordMarkers(restoredChordTimeline);
 
@@ -4241,7 +4308,7 @@ export default function Page() {
     };
   }, [clickTrackAudioUrl]);
 
-  const getClickTrackRendererPreviewSummary = () => {
+  function getClickTrackRendererPreviewSummary() {
     const response = realRenderRouteTestResponse;
 
     if (!response) {
@@ -4404,7 +4471,7 @@ export default function Page() {
           : null,
       sectionStartTimesSeconds,
     };
-  };
+  }
 
   const applyClickTrackLayerPreset = ({
     countIn,
@@ -5138,6 +5205,7 @@ export default function Page() {
       : makeSongRunReport?.chordVersionId || activeChordVersionId || null;
 
     const chordTimeline = getCurrentGeneratedAudioChordMarkers();
+    const cueSections = getCurrentGeneratedAudioCueSections();
 
     const { error: metadataError } = await supabase
       .from("audio_versions")
@@ -5160,6 +5228,7 @@ export default function Page() {
             : null,
           rendererJobId: rendererJobId || null,
           chordTimeline,
+          cueSections,
           musicalGuideMixLevels,
           includeCountIn: includeClickTrackCountIn,
           includeBeatClicks: includeClickTrackBeatClicks,
@@ -23819,6 +23888,34 @@ ${buildRewriteInstruction(
                             ),
                           }),
                         ),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Melody phrase scaffold
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        melodyPhraseScaffold.map((phrase, index) => ({
+                          index,
+                          section: phrase.section,
+                          sectionInstanceId: phrase.sectionInstanceId,
+                          sourceLineIndex: phrase.sourceLineIndex,
+                          sourceLyric: phrase.sourceLyric,
+                          startSeconds: phrase.startSeconds,
+                          endSeconds: phrase.endSeconds,
+                          durationSeconds: Number(
+                            (phrase.endSeconds - phrase.startSeconds).toFixed(
+                              3,
+                            ),
+                          ),
+                          noteCount: phrase.notes.length,
+                        })),
                         null,
                         2,
                       )}
