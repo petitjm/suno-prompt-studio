@@ -4,6 +4,8 @@ import SongWorkshopPanel from "@/components/SongWorkshopPanel";
 
 import { buildMelodyPhraseScaffoldFromGuideSections } from "@/lib/melody/build-melody-phrases";
 
+import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
+
 import {
   buildChordMarkersFromCueSheetSections,
   type AudioChordMarker,
@@ -2303,6 +2305,13 @@ export default function Page() {
       sourceLines,
     });
   })();
+
+  const melodyVersionData = buildMelodyVersionData({
+    songVersionId: activeSongVersionId || "",
+    chordVersionId: activeChordVersionId,
+    tempoBpm: previewTempo,
+    phrases: melodyPhraseScaffold,
+  });
 
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
     (detail) => detail.section,
@@ -23916,6 +23925,31 @@ ${buildRewriteInstruction(
                           ),
                           noteCount: phrase.notes.length,
                         })),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Melody version data
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        melodyVersionData
+                          ? {
+                              songVersionId: melodyVersionData.songVersionId,
+                              chordVersionId: melodyVersionData.chordVersionId,
+                              tempoBpm: melodyVersionData.tempoBpm,
+                              phraseCount: melodyVersionData.phrases.length,
+                              noteCount: melodyVersionData.phrases.reduce(
+                                (total, phrase) => total + phrase.notes.length,
+                                0,
+                              ),
+                            }
+                          : null,
                         null,
                         2,
                       )}
