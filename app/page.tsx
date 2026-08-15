@@ -338,14 +338,15 @@ export default function Page() {
     useState(false);
 
   const musicalGuideMixStorageKey =
-    "suno-prompt-studio-musical-guide-mix-levels-v1";
+    "suno-prompt-studio-musical-guide-mix-levels-v3";
   const [musicalGuideMixLevels, setMusicalGuideMixLevels] = useState({
-    click: 1,
-    section: 1,
-    chordMarker: 1,
-    pad: 1,
-    arpeggio: 1,
-    bass: 1,
+    click: 0.5,
+    section: 0.6,
+    chordMarker: 0.7,
+    pad: 0.75,
+    arpeggio: 0.35,
+    bass: 0.75,
+    melody: 1.7,
   });
 
   useEffect(() => {
@@ -393,6 +394,10 @@ export default function Page() {
           typeof parsedMixLevels.bass === "number"
             ? Math.max(0, Math.min(2, parsedMixLevels.bass))
             : currentLevels.bass,
+        melody:
+          typeof parsedMixLevels.melody === "number"
+            ? Math.max(0, Math.min(2, parsedMixLevels.melody))
+            : currentLevels.melody,
       }));
     } catch {
       // Ignore invalid stored mix settings.
@@ -411,7 +416,14 @@ export default function Page() {
   }, [musicalGuideMixLevels, musicalGuideMixStorageKey]);
 
   const updateMusicalGuideMixLevel = (
-    key: "click" | "section" | "chordMarker" | "pad" | "arpeggio" | "bass",
+    key:
+      | "click"
+      | "section"
+      | "chordMarker"
+      | "pad"
+      | "arpeggio"
+      | "bass"
+      | "melody",
     value: number,
   ) => {
     if (!Number.isFinite(value)) {
@@ -489,7 +501,14 @@ export default function Page() {
   };
 
   const playMusicalGuideMixAudition = (
-    key: "click" | "section" | "chordMarker" | "pad" | "arpeggio" | "bass",
+    key:
+      | "click"
+      | "section"
+      | "chordMarker"
+      | "pad"
+      | "arpeggio"
+      | "bass"
+      | "melody",
   ) => {
     const level = musicalGuideMixLevels[key];
 
@@ -562,6 +581,18 @@ export default function Page() {
           waveform: "triangle",
         });
       });
+      return;
+    }
+
+    if (key === "melody") {
+      playMusicalGuideToneAudition({
+        frequencyHz: 329.63,
+        startSeconds: 0,
+        durationSeconds: 0.5,
+        gainValue: gainValue * 1.25,
+        waveform: "sine",
+      });
+
       return;
     }
 
@@ -5347,6 +5378,7 @@ export default function Page() {
           enableRealClickTrackWavDownload: true,
           mixProfile: "musical-guide",
           musicalGuideMixLevels,
+          melodyNotes: initialMelodyContours.flatMap((phrase) => phrase.notes),
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id
@@ -18950,6 +18982,7 @@ ${buildRewriteInstruction(
                                 ["pad", "Chord pad"],
                                 ["arpeggio", "Arpeggio"],
                                 ["bass", "Bass root"],
+                                ["melody", "Melody guide"],
                               ].map(([key, label]) => {
                                 const typedKey = key as
                                   | "click"
@@ -18957,7 +18990,8 @@ ${buildRewriteInstruction(
                                   | "chordMarker"
                                   | "pad"
                                   | "arpeggio"
-                                  | "bass";
+                                  | "bass"
+                                  | "melody";
                                 const value = musicalGuideMixLevels[typedKey];
 
                                 return (

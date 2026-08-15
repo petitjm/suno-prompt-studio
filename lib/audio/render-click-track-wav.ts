@@ -13,6 +13,13 @@ export type ClickTrackChordMarker = {
   timeSeconds: number;
 };
 
+export type ClickTrackMelodyNote = {
+  pitchMidi: number;
+  startSeconds: number;
+  durationSeconds: number;
+  lyricText?: string;
+};
+
 export type ClickTrackWavRenderInput = {
   renderJobId: string;
   targetKey: "clickTrack";
@@ -27,6 +34,7 @@ export type ClickTrackWavRenderInput = {
   cueSheetSectionCount?: number;
   cueSheetSections?: ClickTrackCueSheetSection[];
   chordMarkers?: ClickTrackChordMarker[];
+  melodyNotes?: ClickTrackMelodyNote[];
   includeCountIn?: boolean;
   includeBeatClicks?: boolean;
   includeSectionMarkers?: boolean;
@@ -40,6 +48,7 @@ export type ClickTrackWavRenderInput = {
     pad?: number;
     arpeggio?: number;
     bass?: number;
+    melody?: number;
   };
 };
 
@@ -383,7 +392,7 @@ function getChordRootFrequencyHz(chord: string): number {
 }
 
 function getChordRootBassFrequencyHz(chord: string): number {
-  return getChordRootFrequencyHz(chord) / 2;
+  return getChordRootFrequencyHz(chord) / 4;
 }
 
 function getChordRootSemitone(chord: string): number | null {
@@ -994,6 +1003,16 @@ function getMusicalGuideHumanisedTimingOffsetSeconds({
   return centeredVariation * maxOffsetSeconds;
 }
 
+function applySampleGain(samples: Float32Array, gain: number) {
+  if (!Number.isFinite(gain) || gain <= 0 || gain === 1) {
+    return;
+  }
+
+  for (let index = 0; index < samples.length; index += 1) {
+    samples[index] = samples[index] * gain;
+  }
+}
+
 function convertFloatSamplesToPcm16Samples(
   samples: Float32Array,
   targetPeak: number,
@@ -1047,6 +1066,10 @@ function addClickToSamples({
 
     samples[sampleIndex] += value;
   }
+}
+
+function getMidiFrequencyHz(pitchMidi: number) {
+  return 440 * Math.pow(2, (pitchMidi - 69) / 12);
 }
 
 export function createClickTrackPcm16Samples(
@@ -1107,6 +1130,10 @@ export function createClickTrackPcm16Samples(
     input.musicalGuideMixLevels?.bass,
   );
 
+  const musicalGuideMelodyLevel = getMusicalGuideMixLevel(
+    input.musicalGuideMixLevels?.melody,
+  );
+
   const accentAmplitude = isMusicalGuideMix
     ? Math.round(50 * musicalGuideClickLevel)
     : 22000;
@@ -1129,6 +1156,10 @@ export function createClickTrackPcm16Samples(
   const bassAmplitude = isMusicalGuideMix
     ? Math.round(4200 * musicalGuideBassLevel)
     : 1350;
+
+  const melodyAmplitude = isMusicalGuideMix
+    ? Math.round(5200 * musicalGuideMelodyLevel)
+    : 0;
 
   const clickFrequencyHz = 1800;
   const sectionClickFrequencyHz = 1200;
@@ -1389,12 +1420,12 @@ export function createClickTrackPcm16Samples(
               startSample: Math.round(noteStartSeconds * input.sampleRateHz),
               endSample: Math.round(noteEndSeconds * input.sampleRateHz),
               sampleRateHz: input.sampleRateHz,
-              amplitude: humanisedStrumAmplitude,
+              amplitude: melodyAmplitude,
               frequencyHz,
-              secondHarmonicLevel: 0.3,
-              thirdHarmonicLevel: 0.11,
-              fadeInSeconds: 0.008,
-              fadeOutSeconds: 0.2,
+              secondHarmonicLevel: 0.16,
+              thirdHarmonicLevel: 0.035,
+              fadeInSeconds: 0.035,
+              fadeOutSeconds: 0.1,
             });
           });
 
@@ -1476,8 +1507,13 @@ export function createClickTrackPcm16Samples(
             )
           : noteStartSeconds;
 
+        const arpeggioReleaseEndSeconds = Math.min(
+          totalDurationSeconds,
+          segment.endSeconds + 0.08,
+        );
+
         const humanisedArpeggioEndSeconds = Math.min(
-          segment.endSeconds,
+          arpeggioReleaseEndSeconds,
           humanisedArpeggioStartSeconds + sectionArpeggioNoteDurationSeconds,
         );
 
@@ -1554,8 +1590,13 @@ export function createClickTrackPcm16Samples(
             )
           : pulseStartSeconds;
 
+        const bassReleaseEndSeconds = Math.min(
+          totalDurationSeconds,
+          segment.endSeconds + 0.1,
+        );
+
         const humanisedBassEndSeconds = Math.min(
-          segment.endSeconds,
+          bassReleaseEndSeconds,
           humanisedBassStartSeconds + bassPulseDurationSeconds,
         );
 
@@ -1568,8 +1609,8 @@ export function createClickTrackPcm16Samples(
           sampleRateHz: input.sampleRateHz,
           amplitude: humanisedBassAmplitude,
           frequencyHz: segment.bassFrequencyHz * bassFrequencyMultiplier,
-          secondHarmonicLevel: 0.35,
-          thirdHarmonicLevel: 0.1,
+          secondHarmonicLevel: 0.18,
+          thirdHarmonicLevel: 0.05,
           fadeInSeconds: 0.025,
           fadeOutSeconds: 0.16,
         });
@@ -1579,9 +1620,57 @@ export function createClickTrackPcm16Samples(
     }
   }
 
+  if (
+    isMusicalGuideMix &&
+    melodyAmplitude > 0 &&
+    Array.isArray(input.melodyNotes)
+  ) {
+    for (const melodyNote of input.melodyNotes) {
+      if (
+        !Number.isFinite(melodyNote.pitchMidi) ||
+        !Number.isFinite(melodyNote.startSeconds) ||
+        !Number.isFinite(melodyNote.durationSeconds) ||
+        melodyNote.durationSeconds <= 0
+      ) {
+        continue;
+      }
+
+      const noteStartSeconds =
+        countInDurationSeconds + Math.max(0, melodyNote.startSeconds);
+
+      const noteEndSeconds = Math.min(
+        totalDurationSeconds,
+        noteStartSeconds + melodyNote.durationSeconds,
+      );
+
+      if (noteEndSeconds <= noteStartSeconds) {
+        continue;
+      }
+
+      const frequencyHz = getMidiFrequencyHz(melodyNote.pitchMidi);
+
+      addWarmToneToSamples({
+        samples,
+        startSample: Math.round(noteStartSeconds * input.sampleRateHz),
+        endSample: Math.round(noteEndSeconds * input.sampleRateHz),
+        sampleRateHz: input.sampleRateHz,
+        amplitude: melodyAmplitude,
+        frequencyHz,
+        secondHarmonicLevel: 0.32,
+        thirdHarmonicLevel: 0.1,
+        fadeInSeconds: 0.025,
+        fadeOutSeconds: 0.08,
+      });
+    }
+  }
+
+  if (isMusicalGuideMix) {
+    applySampleGain(samples, 2.35);
+  }
+
   return convertFloatSamplesToPcm16Samples(
     samples,
-    isMusicalGuideMix ? 26000 : 32767,
+    isMusicalGuideMix ? 31000 : 32767,
   );
 }
 

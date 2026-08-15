@@ -107,6 +107,48 @@ function getCueSheetSections(value: unknown) {
     .filter((section) => section !== null);
 }
 
+function getMelodyNotes(value: unknown) {
+  return getArray(value)
+    .map((note) => {
+      const record = getRecord(note);
+
+      if (!record) {
+        return null;
+      }
+
+      const pitchMidi = getNumber(record.pitchMidi);
+      const startSeconds = getNumber(record.startSeconds);
+      const durationSeconds = getNumber(record.durationSeconds);
+      const lyricText = getString(record.lyricText);
+
+      if (
+        pitchMidi === null ||
+        startSeconds === null ||
+        durationSeconds === null ||
+        durationSeconds <= 0
+      ) {
+        return null;
+      }
+
+      return {
+        pitchMidi,
+        startSeconds,
+        durationSeconds,
+        lyricText: lyricText || undefined,
+      };
+    })
+    .filter(
+      (
+        note,
+      ): note is {
+        pitchMidi: number;
+        startSeconds: number;
+        durationSeconds: number;
+        lyricText: string | undefined;
+      } => note !== null,
+    );
+}
+
 function getTimelineSections(value: unknown) {
   return getArray(value)
     .map((section) => {
@@ -169,18 +211,20 @@ export async function POST(req: Request) {
   );
 
   const musicalGuideMixLevels = {
-    click: getNumber(requestedMusicalGuideMixLevels?.click) ?? 1,
-    section: getNumber(requestedMusicalGuideMixLevels?.section) ?? 1,
-    chordMarker: getNumber(requestedMusicalGuideMixLevels?.chordMarker) ?? 1,
-    pad: getNumber(requestedMusicalGuideMixLevels?.pad) ?? 1,
-    arpeggio: getNumber(requestedMusicalGuideMixLevels?.arpeggio) ?? 1,
-    bass: getNumber(requestedMusicalGuideMixLevels?.bass) ?? 1,
+    click: getNumber(requestedMusicalGuideMixLevels?.click) ?? 0.5,
+    section: getNumber(requestedMusicalGuideMixLevels?.section) ?? 0.6,
+    chordMarker: getNumber(requestedMusicalGuideMixLevels?.chordMarker) ?? 0.7,
+    pad: getNumber(requestedMusicalGuideMixLevels?.pad) ?? 0.75,
+    arpeggio: getNumber(requestedMusicalGuideMixLevels?.arpeggio) ?? 0.35,
+    bass: getNumber(requestedMusicalGuideMixLevels?.bass) ?? 0.75,
+    melody: getNumber(requestedMusicalGuideMixLevels?.melody) ?? 1.7,
   };
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
   const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
   const chordMarkers = buildChordMarkersFromCueSheetSections(cueSheetSections);
+  const melodyNotes = getMelodyNotes(bodyRecord?.melodyNotes);
 
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
@@ -333,6 +377,7 @@ export async function POST(req: Request) {
       getArray(dryRunCueSheet?.sections).length || undefined,
     cueSheetSections,
     chordMarkers,
+    melodyNotes,
     includeCountIn,
     includeBeatClicks,
     includeSectionMarkers,
