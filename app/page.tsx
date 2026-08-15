@@ -2356,7 +2356,7 @@ export default function Page() {
 
   const initialMelodyContours = buildInitialMelodyContours({
     anchors: initialMelodyAnchors,
-    lyricUnits: lyricPhraseUnits,
+    wordTimings: lyricWordTimings,
     framework: melodyPitchFramework,
     scalePitchClasses: melodyScale?.pitchClasses || [],
   });

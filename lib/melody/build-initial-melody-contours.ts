@@ -1,20 +1,8 @@
 import type { MelodyNote, MelodyPhrase } from "@/types/song";
-import type { LyricPhraseUnitGroup } from "@/lib/melody/build-lyric-phrase-units";
+import type { LyricWordTimingGroup } from "@/lib/melody/build-lyric-word-timings";
 import type { MelodyPitchFrameworkPhrase } from "@/lib/melody/build-melody-pitch-framework";
 
 type ContourDirection = "up" | "down" | "level";
-
-function getContourNoteCount(wordCount: number) {
-  if (wordCount <= 2) {
-    return 2;
-  }
-
-  if (wordCount <= 5) {
-    return 3;
-  }
-
-  return 4;
-}
 
 function getSectionContourDirection(
   section: string,
@@ -114,21 +102,21 @@ function getPitchCandidates(
 
 export function buildInitialMelodyContours({
   anchors,
-  lyricUnits,
+  wordTimings,
   framework,
   scalePitchClasses,
 }: {
   anchors: MelodyPhrase[];
-  lyricUnits: LyricPhraseUnitGroup[];
+  wordTimings: LyricWordTimingGroup[];
   framework: MelodyPitchFrameworkPhrase[];
   scalePitchClasses: string[];
 }): MelodyPhrase[] {
   return anchors.map((anchorPhrase, phraseIndex) => {
     const anchorNote = anchorPhrase.notes[0];
-    const unitGroup = lyricUnits[phraseIndex];
+    const wordTimingGroup = wordTimings[phraseIndex];
     const frameworkPhrase = framework[phraseIndex];
 
-    if (!anchorNote || !unitGroup || !frameworkPhrase) {
+    if (!anchorNote || !wordTimingGroup || !frameworkPhrase) {
       return anchorPhrase;
     }
 
@@ -143,29 +131,21 @@ export function buildInitialMelodyContours({
     }
 
     let currentPitch = anchorNote.pitchMidi;
+    let phraseNoteIndex = 0;
+
     const notes: MelodyNote[] = [];
 
-    unitGroup.units.forEach((unit, unitIndex) => {
-      const noteCount = getContourNoteCount(unit.wordCount);
-
-      const unitDurationSeconds = Math.max(
-        0,
-        unit.endSeconds - unit.startSeconds,
-      );
-
-      const noteDurationSeconds =
-        noteCount > 0 ? unitDurationSeconds / noteCount : 0;
-
+    wordTimingGroup.units.forEach((unit, unitIndex) => {
       const direction = getSectionContourDirection(
         anchorPhrase.section,
         unitIndex,
       );
 
-      for (let noteIndex = 0; noteIndex < noteCount; noteIndex += 1) {
-        if (noteIndex > 0) {
+      unit.words.forEach((word, wordIndex) => {
+        if (phraseNoteIndex > 0) {
           const noteDirection =
             direction === "level"
-              ? noteIndex % 2 === 1
+              ? wordIndex % 2 === 1
                 ? "up"
                 : "down"
               : direction;
@@ -179,15 +159,15 @@ export function buildInitialMelodyContours({
 
         notes.push({
           pitchMidi: currentPitch,
-          startSeconds: Number(
-            (unit.startSeconds + noteDurationSeconds * noteIndex).toFixed(3),
-          ),
+          startSeconds: word.startSeconds,
           durationSeconds: Number(
-            Math.max(0.25, noteDurationSeconds * 0.88).toFixed(3),
+            Math.max(0.1, word.durationSeconds * 0.88).toFixed(3),
           ),
-          lyricText: unit.text,
+          lyricText: word.word,
         });
-      }
+
+        phraseNoteIndex += 1;
+      });
     });
 
     return {
