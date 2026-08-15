@@ -5,10 +5,18 @@ export type MelodyChordMarker = {
   timeSeconds: number;
 };
 
+export type MelodyHarmonyEvent = {
+  chord: string;
+  startSeconds: number;
+  endSeconds: number;
+  pitchClasses: string[];
+};
+
 export type MelodyPitchFrameworkPhrase = {
   phrase: MelodyPhrase;
   chords: string[];
   pitchClasses: string[];
+  harmonyEvents: MelodyHarmonyEvent[];
 };
 
 const NOTE_TO_PITCH_CLASS: Record<string, number> = {
@@ -83,6 +91,71 @@ function getChordPitchClasses(chord: string): string[] {
   );
 }
 
+function buildPhraseHarmonyEvents({
+  phrase,
+  chordMarkers,
+}: {
+  phrase: MelodyPhrase;
+  chordMarkers: MelodyChordMarker[];
+}): MelodyHarmonyEvent[] {
+  const sortedMarkers = [...chordMarkers].sort(
+    (a, b) => a.timeSeconds - b.timeSeconds,
+  );
+
+  const precedingMarker = [...sortedMarkers]
+    .reverse()
+    .find((marker) => marker.timeSeconds <= phrase.startSeconds);
+
+  const markersInsidePhrase = sortedMarkers.filter(
+    (marker) =>
+      marker.timeSeconds > phrase.startSeconds &&
+      marker.timeSeconds < phrase.endSeconds,
+  );
+
+  const phraseMarkers: MelodyChordMarker[] = [];
+
+  if (precedingMarker) {
+    phraseMarkers.push({
+      chord: precedingMarker.chord,
+      timeSeconds: phrase.startSeconds,
+    });
+  } else {
+    const markerAtPhraseStart = sortedMarkers.find(
+      (marker) => marker.timeSeconds === phrase.startSeconds,
+    );
+
+    if (markerAtPhraseStart) {
+      phraseMarkers.push(markerAtPhraseStart);
+    }
+  }
+
+  markersInsidePhrase.forEach((marker) => {
+    if (
+      !phraseMarkers.some(
+        (existing) =>
+          existing.timeSeconds === marker.timeSeconds &&
+          existing.chord === marker.chord,
+      )
+    ) {
+      phraseMarkers.push(marker);
+    }
+  });
+
+  return phraseMarkers.map((marker, index) => {
+    const nextMarker = phraseMarkers[index + 1];
+
+    return {
+      chord: marker.chord,
+      startSeconds: Math.max(phrase.startSeconds, marker.timeSeconds),
+      endSeconds: Math.min(
+        phrase.endSeconds,
+        nextMarker?.timeSeconds ?? phrase.endSeconds,
+      ),
+      pitchClasses: getChordPitchClasses(marker.chord),
+    };
+  });
+}
+
 export function buildMelodyPitchFramework({
   phrases,
   chordMarkers,
@@ -118,10 +191,24 @@ export function buildMelodyPitchFramework({
       new Set(chords.flatMap((chord) => getChordPitchClasses(chord))),
     );
 
+    const harmonyEvents = buildPhraseHarmonyEvents({
+      phrase,
+      chordMarkers,
+    });
+
+    const activeChords = Array.from(
+      new Set(harmonyEvents.map((event) => event.chord)),
+    );
+
+    const activePitchClasses = Array.from(
+      new Set(harmonyEvents.flatMap((event) => event.pitchClasses)),
+    );
+
     return {
       phrase,
-      chords,
-      pitchClasses,
+      chords: activeChords,
+      pitchClasses: activePitchClasses,
+      harmonyEvents,
     };
   });
 }

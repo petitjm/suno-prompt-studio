@@ -24020,6 +24020,7 @@ ${buildRewriteInstruction(
                           endSeconds: item.phrase.endSeconds,
                           chords: item.chords,
                           pitchClasses: item.pitchClasses,
+                          harmonyEvents: item.harmonyEvents,
                         })),
                         null,
                         2,

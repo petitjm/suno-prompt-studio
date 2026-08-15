@@ -100,6 +100,20 @@ function getPitchCandidates(
   return candidates;
 }
 
+function getActiveHarmonyEvent(
+  frameworkPhrase: MelodyPitchFrameworkPhrase,
+  timeSeconds: number,
+) {
+  return (
+    frameworkPhrase.harmonyEvents.find(
+      (event) =>
+        timeSeconds >= event.startSeconds && timeSeconds < event.endSeconds,
+    ) ??
+    frameworkPhrase.harmonyEvents[frameworkPhrase.harmonyEvents.length - 1] ??
+    null
+  );
+}
+
 export function buildInitialMelodyContours({
   anchors,
   wordTimings,
@@ -132,6 +146,7 @@ export function buildInitialMelodyContours({
 
     let currentPitch = anchorNote.pitchMidi;
     let phraseNoteIndex = 0;
+    let previousHarmonyChord: string | null = null;
 
     const notes: MelodyNote[] = [];
 
@@ -142,7 +157,48 @@ export function buildInitialMelodyContours({
       );
 
       unit.words.forEach((word, wordIndex) => {
-        if (phraseNoteIndex > 0) {
+        const noteMidpointSeconds =
+          word.startSeconds + word.durationSeconds / 2;
+
+        const activeHarmonyEvent = getActiveHarmonyEvent(
+          frameworkPhrase,
+          noteMidpointSeconds,
+        );
+
+        const activeHarmonyPitchClasses =
+          activeHarmonyEvent?.pitchClasses ?? frameworkPhrase.pitchClasses;
+
+        const chordCandidates = getPitchCandidates(activeHarmonyPitchClasses);
+
+        const melodicPitchClasses = Array.from(
+          new Set([...scalePitchClasses, ...activeHarmonyPitchClasses]),
+        );
+
+        const melodicCandidates = getPitchCandidates(melodicPitchClasses);
+
+        const harmonyChanged =
+          activeHarmonyEvent !== null &&
+          activeHarmonyEvent.chord !== previousHarmonyChord;
+
+        const isFinalWordInUnit = wordIndex === unit.words.length - 1;
+
+        const preferChordTone =
+          phraseNoteIndex === 0 || harmonyChanged || isFinalWordInUnit;
+
+        const preferredCandidates =
+          preferChordTone && chordCandidates.length > 0
+            ? chordCandidates
+            : melodicCandidates.length > 0
+              ? melodicCandidates
+              : candidates;
+
+        if (phraseNoteIndex === 0 && preferChordTone) {
+          currentPitch = preferredCandidates.reduce((best, candidate) =>
+            Math.abs(candidate - currentPitch) < Math.abs(best - currentPitch)
+              ? candidate
+              : best,
+          );
+        } else if (phraseNoteIndex > 0) {
           const noteDirection =
             direction === "level"
               ? wordIndex % 2 === 1
@@ -151,11 +207,14 @@ export function buildInitialMelodyContours({
               : direction;
 
           currentPitch = chooseNearbyPitch(
-            candidates,
+            preferredCandidates,
             currentPitch,
             noteDirection,
           );
         }
+
+        previousHarmonyChord =
+          activeHarmonyEvent?.chord ?? previousHarmonyChord;
 
         notes.push({
           pitchMidi: currentPitch,
