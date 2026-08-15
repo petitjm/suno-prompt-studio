@@ -114,6 +114,66 @@ function getActiveHarmonyEvent(
   );
 }
 
+function getPhraseShapeDirection({
+  section,
+  noteIndex,
+  noteCount,
+}: {
+  section: string;
+  noteIndex: number;
+  noteCount: number;
+}): ContourDirection {
+  if (noteCount <= 1) {
+    return "level";
+  }
+
+  const progress = noteIndex / Math.max(1, noteCount - 1);
+  const normalisedSection = section.toLowerCase();
+
+  const isChorus =
+    normalisedSection.includes("chorus") ||
+    normalisedSection.includes("hook") ||
+    normalisedSection.includes("refrain");
+
+  const isBridge =
+    normalisedSection.includes("bridge") ||
+    normalisedSection.includes("middle");
+
+  if (isChorus) {
+    if (progress < 0.45) {
+      return "up";
+    }
+
+    if (progress < 0.7) {
+      return "level";
+    }
+
+    return "down";
+  }
+
+  if (isBridge) {
+    if (progress < 0.35) {
+      return "up";
+    }
+
+    if (progress < 0.65) {
+      return "down";
+    }
+
+    return "level";
+  }
+
+  if (progress < 0.3) {
+    return "level";
+  }
+
+  if (progress < 0.6) {
+    return "up";
+  }
+
+  return "down";
+}
+
 export function buildInitialMelodyContours({
   anchors,
   wordTimings,
@@ -149,6 +209,11 @@ export function buildInitialMelodyContours({
     let previousHarmonyChord: string | null = null;
 
     const notes: MelodyNote[] = [];
+
+    const totalWordCount = wordTimingGroup.units.reduce(
+      (total, unit) => total + unit.words.length,
+      0,
+    );
 
     wordTimingGroup.units.forEach((unit, unitIndex) => {
       const direction = getSectionContourDirection(
@@ -199,12 +264,16 @@ export function buildInitialMelodyContours({
               : best,
           );
         } else if (phraseNoteIndex > 0) {
+          const phraseShapeDirection = getPhraseShapeDirection({
+            section: anchorPhrase.section,
+            noteIndex: phraseNoteIndex,
+            noteCount: totalWordCount,
+          });
+
           const noteDirection =
-            direction === "level"
-              ? wordIndex % 2 === 1
-                ? "up"
-                : "down"
-              : direction;
+            harmonyChanged || isFinalWordInUnit
+              ? direction
+              : phraseShapeDirection;
 
           currentPitch = chooseNearbyPitch(
             preferredCandidates,
