@@ -16,6 +16,8 @@ import { buildInitialMelodyAnchors } from "@/lib/melody/build-initial-melody-anc
 
 import { buildMelodyScale } from "@/lib/melody/build-melody-scale";
 
+import { buildLyricWordTimings } from "@/lib/melody/build-lyric-word-timings";
+
 import {
   buildChordMarkersFromCueSheetSections,
   type AudioChordMarker,
@@ -2345,6 +2347,7 @@ export default function Page() {
 
   const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
   const lyricPhraseUnits = buildLyricPhraseUnits(initialMelodyAnchors);
+  const lyricWordTimings = buildLyricWordTimings(lyricPhraseUnits);
 
   const melodyScale = buildMelodyScale({
     keyLabel: typeof chords?.key === "string" ? chords.key : "",
@@ -24067,6 +24070,16 @@ ${buildRewriteInstruction(
                         null,
                         2,
                       )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Lyric word timings
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(lyricWordTimings, null, 2)}
                     </pre>
                   </div>
 
