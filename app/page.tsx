@@ -23801,6 +23801,7 @@ ${buildRewriteInstruction(
 
                       audioElement.currentTime = initialSeekSeconds;
                       updateSheetGuideActiveSection(initialSeekSeconds);
+                      updateGeneratedAudioActiveChord(initialSeekSeconds);
                     }}
                     onLoadedMetadata={(event) => {
                       const duration = event.currentTarget.duration;
@@ -23815,20 +23816,38 @@ ${buildRewriteInstruction(
                       );
                     }}
                     onTimeUpdate={(event) => {
-                      updateSheetGuideActiveSection(
-                        event.currentTarget.currentTime || 0,
-                      );
+                      const currentTime = event.currentTarget.currentTime || 0;
+
+                      updateSheetGuideActiveSection(currentTime);
+                      updateGeneratedAudioActiveChord(currentTime);
                     }}
                     onSeeked={(event) => {
-                      updateSheetGuideActiveSection(
-                        event.currentTarget.currentTime || 0,
-                      );
+                      const currentTime = event.currentTarget.currentTime || 0;
+
+                      updateSheetGuideActiveSection(currentTime);
+                      updateGeneratedAudioActiveChord(currentTime);
                     }}
                     onEnded={() => {
                       setSheetGuideActiveSectionId(null);
                       setSheetGuideActiveSectionIndex(null);
+                      setGeneratedAudioActiveChord(null);
                     }}
                   />
+
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 rounded border border-yellow-900/60 bg-yellow-950/20 px-3 py-2 text-sm">
+                    <span className="font-medium text-yellow-200">
+                      Sounding chord:{" "}
+                      <span className="text-lg font-semibold">
+                        {generatedAudioActiveChord?.chord || "—"}
+                      </span>
+                    </span>
+
+                    {generatedAudioActiveChord ? (
+                      <span className="text-xs text-green-200">
+                        {generatedAudioActiveChord.section}
+                      </span>
+                    ) : null}
+                  </div>
 
                   {getGeneratedAudioSectionJumpSummaries().length > 0 ? (
                     <div className="mt-3 space-y-2">
@@ -24347,6 +24366,9 @@ ${buildRewriteInstruction(
                             if (initialSeekSeconds !== null) {
                               audioElement.currentTime = initialSeekSeconds;
                               updateSheetGuideActiveSection(initialSeekSeconds);
+                              updateGeneratedAudioActiveChord(
+                                initialSeekSeconds,
+                              );
                             }
                           }
                         }}
@@ -24354,6 +24376,7 @@ ${buildRewriteInstruction(
                         onEnded={() => {
                           setSheetGuideActiveSectionId(null);
                           setSheetGuideActiveSectionIndex(null);
+                          setGeneratedAudioActiveChord(null);
                         }}
                         onLoadedMetadata={(event) => {
                           const duration = event.currentTarget.duration;
@@ -24370,11 +24393,35 @@ ${buildRewriteInstruction(
                           );
                         }}
                         onTimeUpdate={(event) => {
-                          updateSheetGuideActiveSection(
-                            event.currentTarget.currentTime || 0,
-                          );
+                          const currentTime =
+                            event.currentTarget.currentTime || 0;
+
+                          updateSheetGuideActiveSection(currentTime);
+                          updateGeneratedAudioActiveChord(currentTime);
+                        }}
+                        onSeeked={(event) => {
+                          const currentTime =
+                            event.currentTarget.currentTime || 0;
+
+                          updateSheetGuideActiveSection(currentTime);
+                          updateGeneratedAudioActiveChord(currentTime);
                         }}
                       />
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-yellow-900/60 bg-yellow-950/20 px-3 py-2">
+                        <span className="text-sm font-medium text-yellow-200">
+                          Sounding chord:{" "}
+                          <span className="text-lg font-semibold">
+                            {generatedAudioActiveChord?.chord || "—"}
+                          </span>
+                        </span>
+
+                        {generatedAudioActiveChord ? (
+                          <span className="text-xs text-green-200">
+                            {generatedAudioActiveChord.section}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   ) : (
                     <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-400">
