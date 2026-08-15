@@ -174,6 +174,36 @@ function getPhraseShapeDirection({
   return "down";
 }
 
+function shouldHoldPreviousMelodyPitch(word: string) {
+  const cleaned = word
+    .replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, "")
+    .toLowerCase();
+
+  if (!cleaned) {
+    return false;
+  }
+
+  const lightWords = new Set([
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "but",
+    "for",
+    "in",
+    "my",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+  ]);
+
+  return lightWords.has(cleaned);
+}
+
 function getMelodySectionFamily(section: string) {
   const normalised = section.trim().toLowerCase();
 
@@ -333,6 +363,12 @@ export function buildInitialMelodyContours({
 
         const isFinalWordInUnit = wordIndex === unit.words.length - 1;
 
+        const holdPreviousPitch =
+          phraseNoteIndex > 0 &&
+          shouldHoldPreviousMelodyPitch(word.word) &&
+          !harmonyChanged &&
+          !isFinalWordInUnit;
+
         const preferChordTone =
           phraseNoteIndex === 0 || harmonyChanged || isFinalWordInUnit;
 
@@ -349,7 +385,7 @@ export function buildInitialMelodyContours({
               ? candidate
               : best,
           );
-        } else if (phraseNoteIndex > 0) {
+        } else if (phraseNoteIndex > 0 && !holdPreviousPitch) {
           const phraseShapeDirection = getPhraseShapeDirection({
             section: anchorPhrase.section,
             noteIndex: phraseNoteIndex,
