@@ -174,6 +174,55 @@ function getPhraseShapeDirection({
   return "down";
 }
 
+function getMelodySectionFamily(section: string) {
+  const normalised = section.trim().toLowerCase();
+
+  if (
+    normalised.includes("chorus") ||
+    normalised.includes("hook") ||
+    normalised.includes("refrain")
+  ) {
+    return "chorus";
+  }
+
+  if (normalised.includes("bridge") || normalised.includes("middle")) {
+    return "bridge";
+  }
+
+  if (
+    normalised.includes("pre-chorus") ||
+    normalised.includes("prechorus") ||
+    normalised.includes("lift")
+  ) {
+    return "prechorus";
+  }
+
+  if (normalised.includes("verse")) {
+    return "verse";
+  }
+
+  return normalised;
+}
+
+function getMelodyMotifKey(
+  phrase: MelodyPhrase,
+  frameworkPhrase: MelodyPitchFrameworkPhrase,
+) {
+  const normalisedLyric = phrase.sourceLyric
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}' ]/gu, "")
+    .replace(/\s+/g, " ");
+
+  const chordSequence = frameworkPhrase.chords.join("|");
+
+  return [
+    getMelodySectionFamily(phrase.section),
+    normalisedLyric,
+    chordSequence,
+  ].join("::");
+}
+
 export function buildInitialMelodyContours({
   anchors,
   wordTimings,
@@ -185,6 +234,8 @@ export function buildInitialMelodyContours({
   framework: MelodyPitchFrameworkPhrase[];
   scalePitchClasses: string[];
 }): MelodyPhrase[] {
+  const establishedMotifs = new Map<string, number[]>();
+
   return anchors.map((anchorPhrase, phraseIndex) => {
     const anchorNote = anchorPhrase.notes[0];
     const wordTimingGroup = wordTimings[phraseIndex];
@@ -214,6 +265,41 @@ export function buildInitialMelodyContours({
       (total, unit) => total + unit.words.length,
       0,
     );
+
+    const motifKey = getMelodyMotifKey(anchorPhrase, frameworkPhrase);
+    const establishedPitchSequence = establishedMotifs.get(motifKey);
+
+    if (
+      establishedPitchSequence &&
+      establishedPitchSequence.length === totalWordCount
+    ) {
+      let reusedNoteIndex = 0;
+
+      const reusedNotes: MelodyNote[] = [];
+
+      wordTimingGroup.units.forEach((unit) => {
+        unit.words.forEach((word) => {
+          const pitchMidi =
+            establishedPitchSequence[reusedNoteIndex] ?? anchorNote.pitchMidi;
+
+          reusedNotes.push({
+            pitchMidi,
+            startSeconds: word.startSeconds,
+            durationSeconds: Number(
+              Math.max(0.1, word.durationSeconds * 0.88).toFixed(3),
+            ),
+            lyricText: word.word,
+          });
+
+          reusedNoteIndex += 1;
+        });
+      });
+
+      return {
+        ...anchorPhrase,
+        notes: reusedNotes,
+      };
+    }
 
     wordTimingGroup.units.forEach((unit, unitIndex) => {
       const direction = getSectionContourDirection(
@@ -297,6 +383,11 @@ export function buildInitialMelodyContours({
         phraseNoteIndex += 1;
       });
     });
+
+    establishedMotifs.set(
+      motifKey,
+      notes.map((note) => note.pitchMidi),
+    );
 
     return {
       ...anchorPhrase,

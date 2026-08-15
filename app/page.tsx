@@ -24174,6 +24174,42 @@ ${buildRewriteInstruction(
 
                   <div>
                     <div className="mb-1 font-semibold text-yellow-200">
+                      Repeated melody motif check
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        initialMelodyContours
+                          .map((phrase, index) => ({
+                            index,
+                            section: phrase.section,
+                            lyric: phrase.sourceLyric,
+                            pitches: phrase.notes.map((note) => note.pitchMidi),
+                          }))
+                          .filter((phrase, index, phrases) => {
+                            const normalise = (value: string) =>
+                              value
+                                .trim()
+                                .toLowerCase()
+                                .replace(/[^\p{L}\p{N}' ]/gu, "")
+                                .replace(/\s+/g, " ");
+
+                            const currentLyric = normalise(phrase.lyric);
+
+                            return phrases.some(
+                              (otherPhrase, otherIndex) =>
+                                otherIndex !== index &&
+                                normalise(otherPhrase.lyric) === currentLyric,
+                            );
+                          }),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
                       Raw Sheet display sections
                     </div>
                     <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
