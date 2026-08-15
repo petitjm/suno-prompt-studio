@@ -49,7 +49,7 @@ function getWordWeight(word: string) {
   ]);
 
   if (lightWords.has(cleaned)) {
-    return 0.7;
+    return 0.6;
   }
 
   if (cleaned.length >= 6) {
@@ -67,7 +67,7 @@ export function buildLyricWordTimings(
     sourceLineIndex: group.phrase.sourceLineIndex,
     sourceLyric: group.phrase.sourceLyric,
 
-    units: group.units.map((unit) => {
+    units: group.units.map((unit, unitIndex) => {
       const words = unit.text.trim().split(/\s+/).filter(Boolean);
 
       if (words.length === 0) {
@@ -79,34 +79,53 @@ export function buildLyricWordTimings(
         };
       }
 
-      const weights = words.map((word, index) => {
-        const baseWeight = getWordWeight(word);
-
-        const isFinalWord = index === words.length - 1;
-
-        return isFinalWord ? baseWeight * 1.2 : baseWeight;
-      });
-
-      const totalWeight = weights.reduce((total, weight) => total + weight, 0);
+      const isFinalUnit = unitIndex === group.units.length - 1;
 
       const unitDurationSeconds = Math.max(
         0,
         unit.endSeconds - unit.startSeconds,
       );
 
+      const phraseBreakSeconds = isFinalUnit
+        ? 0
+        : Math.min(0.16, unitDurationSeconds * 0.08);
+
+      const soundingUnitEndSeconds = Math.max(
+        unit.startSeconds,
+        unit.endSeconds - phraseBreakSeconds,
+      );
+
+      const soundingUnitDurationSeconds = Math.max(
+        0,
+        soundingUnitEndSeconds - unit.startSeconds,
+      );
+
+      const weights = words.map((word, index) => {
+        const baseWeight = getWordWeight(word);
+        const isFinalWord = index === words.length - 1;
+
+        if (!isFinalWord) {
+          return baseWeight;
+        }
+
+        return isFinalUnit ? baseWeight * 1.55 : baseWeight * 1.3;
+      });
+
+      const totalWeight = weights.reduce((total, weight) => total + weight, 0);
+
       let elapsedSeconds = 0;
 
       const wordTimings = words.map((word, index) => {
         const durationSeconds =
           index === words.length - 1
-            ? unitDurationSeconds - elapsedSeconds
-            : unitDurationSeconds * (weights[index] / totalWeight);
+            ? soundingUnitDurationSeconds - elapsedSeconds
+            : soundingUnitDurationSeconds * (weights[index] / totalWeight);
 
         const startSeconds = unit.startSeconds + elapsedSeconds;
 
         const endSeconds =
           index === words.length - 1
-            ? unit.endSeconds
+            ? soundingUnitEndSeconds
             : startSeconds + durationSeconds;
 
         elapsedSeconds += durationSeconds;
