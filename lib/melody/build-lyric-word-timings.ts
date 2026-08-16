@@ -59,6 +59,28 @@ function getWordWeight(word: string) {
   return 1;
 }
 
+function getFinalWordWeightMultiplier(section: string) {
+  const normalised = section.trim().toLowerCase();
+
+  if (
+    normalised.includes("chorus") ||
+    normalised.includes("hook") ||
+    normalised.includes("refrain")
+  ) {
+    return 1.95;
+  }
+
+  if (normalised.includes("bridge") || normalised.includes("middle")) {
+    return 1.45;
+  }
+
+  if (normalised.includes("verse")) {
+    return 1.6;
+  }
+
+  return 1.75;
+}
+
 export function buildLyricWordTimings(
   groups: LyricPhraseUnitGroup[],
 ): LyricWordTimingGroup[] {
@@ -118,7 +140,9 @@ export function buildLyricWordTimings(
           return baseWeight;
         }
 
-        return isFinalUnit ? baseWeight * 1.75 : baseWeight * 1.3;
+        return isFinalUnit
+          ? baseWeight * getFinalWordWeightMultiplier(group.phrase.section)
+          : baseWeight * 1.3;
       });
 
       const totalWeight = weights.reduce((total, weight) => total + weight, 0);
