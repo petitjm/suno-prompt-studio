@@ -184,6 +184,7 @@ export function createClickTrackWavPreview(
   const songDurationSeconds = getResolvedTotalDurationSeconds(input);
   const countInDurationSeconds = getCountInDurationSeconds(input);
   const totalDurationSeconds = songDurationSeconds + countInDurationSeconds;
+
   const totalSamples = Math.max(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
@@ -1077,15 +1078,22 @@ export function createClickTrackPcm16Samples(
 ): Int16Array {
   const songDurationSeconds = getResolvedTotalDurationSeconds(input);
   const countInDurationSeconds = getCountInDurationSeconds(input);
-  const totalDurationSeconds = songDurationSeconds + countInDurationSeconds;
+
+  const songEndSeconds = songDurationSeconds + countInDurationSeconds;
+
+  const endingReleaseSeconds = input.mixProfile === "musical-guide" ? 2.4 : 0;
+
+  const totalDurationSeconds = songEndSeconds + endingReleaseSeconds;
+
   const totalSamples = Math.max(
     0,
     Math.round(totalDurationSeconds * input.sampleRateHz),
   );
+
   const chordToneGuideSegments = getChordToneGuideSegments({
     input,
     countInDurationSeconds,
-    totalDurationSeconds,
+    totalDurationSeconds: songEndSeconds,
   });
   const samples = new Float32Array(totalSamples);
 
@@ -1618,6 +1626,43 @@ export function createClickTrackPcm16Samples(
         pulseIndex += 1;
       }
     }
+  }
+
+  if (
+    isMusicalGuideMix &&
+    endingReleaseSeconds > 0 &&
+    chordToneGuideSegments.length > 0
+  ) {
+    const finalChordSegment =
+      chordToneGuideSegments[chordToneGuideSegments.length - 1];
+
+    finalChordSegment.frequenciesHz.forEach((frequencyHz) => {
+      addWarmToneToSamples({
+        samples,
+        startSample: Math.round(songEndSeconds * input.sampleRateHz),
+        endSample: Math.round(totalDurationSeconds * input.sampleRateHz),
+        sampleRateHz: input.sampleRateHz,
+        amplitude: Math.round(chordPadAmplitude * 0.7),
+        frequencyHz,
+        secondHarmonicLevel: 0.16,
+        thirdHarmonicLevel: 0.04,
+        fadeInSeconds: 0.015,
+        fadeOutSeconds: 2.1,
+      });
+    });
+
+    addWarmToneToSamples({
+      samples,
+      startSample: Math.round(songEndSeconds * input.sampleRateHz),
+      endSample: Math.round(totalDurationSeconds * input.sampleRateHz),
+      sampleRateHz: input.sampleRateHz,
+      amplitude: Math.round(bassAmplitude * 0.45),
+      frequencyHz: finalChordSegment.bassFrequencyHz,
+      secondHarmonicLevel: 0.12,
+      thirdHarmonicLevel: 0.03,
+      fadeInSeconds: 0.015,
+      fadeOutSeconds: 2.15,
+    });
   }
 
   if (
