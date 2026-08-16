@@ -2390,6 +2390,7 @@ export default function Page() {
     wordTimings: lyricWordTimings,
     framework: melodyPitchFramework,
     scalePitchClasses: melodyScale?.pitchClasses || [],
+    character: melodyVersionData?.character,
   });
 
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(

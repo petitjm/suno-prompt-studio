@@ -1,4 +1,9 @@
-import type { MelodyNote, MelodyPhrase } from "@/types/song";
+import {
+  DEFAULT_MELODY_CHARACTER,
+  type MelodyCharacter,
+  type MelodyNote,
+  type MelodyPhrase,
+} from "@/types/song";
 import type { LyricWordTimingGroup } from "@/lib/melody/build-lyric-word-timings";
 import type { MelodyPitchFrameworkPhrase } from "@/lib/melody/build-melody-pitch-framework";
 
@@ -98,6 +103,27 @@ function getPitchCandidates(
   }
 
   return candidates;
+}
+
+function getMelodyCharacterRange(character: MelodyCharacter) {
+  if (character.register === "low") {
+    return {
+      minimumMidi: 40,
+      maximumMidi: 57,
+    };
+  }
+
+  if (character.register === "high") {
+    return {
+      minimumMidi: 46,
+      maximumMidi: 63,
+    };
+  }
+
+  return {
+    minimumMidi: 43,
+    maximumMidi: 60,
+  };
 }
 
 function getActiveHarmonyEvent(
@@ -322,13 +348,16 @@ export function buildInitialMelodyContours({
   wordTimings,
   framework,
   scalePitchClasses,
+  character = DEFAULT_MELODY_CHARACTER,
 }: {
   anchors: MelodyPhrase[];
   wordTimings: LyricWordTimingGroup[];
   framework: MelodyPitchFrameworkPhrase[];
   scalePitchClasses: string[];
+  character?: MelodyCharacter;
 }): MelodyPhrase[] {
   const establishedMotifs = new Map<string, number[]>();
+  const melodyRange = getMelodyCharacterRange(character);
 
   return anchors.map((anchorPhrase, phraseIndex) => {
     const anchorNote = anchorPhrase.notes[0];
@@ -343,13 +372,22 @@ export function buildInitialMelodyContours({
       new Set([...scalePitchClasses, ...frameworkPhrase.pitchClasses]),
     );
 
-    const candidates = getPitchCandidates(melodicPitchClasses);
+    const candidates = getPitchCandidates(
+      melodicPitchClasses,
+      melodyRange.minimumMidi,
+      melodyRange.maximumMidi,
+    );
 
     if (candidates.length === 0) {
       return anchorPhrase;
     }
 
-    let currentPitch = anchorNote.pitchMidi;
+    let currentPitch = candidates.reduce((best, candidate) =>
+      Math.abs(candidate - anchorNote.pitchMidi) <
+      Math.abs(best - anchorNote.pitchMidi)
+        ? candidate
+        : best,
+    );
     let phraseNoteIndex = 0;
     let previousHarmonyChord: string | null = null;
 
@@ -413,13 +451,21 @@ export function buildInitialMelodyContours({
         const activeHarmonyPitchClasses =
           activeHarmonyEvent?.pitchClasses ?? frameworkPhrase.pitchClasses;
 
-        const chordCandidates = getPitchCandidates(activeHarmonyPitchClasses);
+        const chordCandidates = getPitchCandidates(
+          activeHarmonyPitchClasses,
+          melodyRange.minimumMidi,
+          melodyRange.maximumMidi,
+        );
 
         const melodicPitchClasses = Array.from(
           new Set([...scalePitchClasses, ...activeHarmonyPitchClasses]),
         );
 
-        const melodicCandidates = getPitchCandidates(melodicPitchClasses);
+        const melodicCandidates = getPitchCandidates(
+          melodicPitchClasses,
+          melodyRange.minimumMidi,
+          melodyRange.maximumMidi,
+        );
 
         const harmonyChanged =
           activeHarmonyEvent !== null &&
