@@ -81,10 +81,26 @@ function getFinalWordWeightMultiplier(section: string) {
   return 1.75;
 }
 
+function isBridgeSection(section: string) {
+  const normalised = section.trim().toLowerCase();
+
+  return normalised.includes("bridge") || normalised.includes("middle");
+}
+
+function isChorusSection(section: string) {
+  const normalised = section.trim().toLowerCase();
+
+  return (
+    normalised.includes("chorus") ||
+    normalised.includes("hook") ||
+    normalised.includes("refrain")
+  );
+}
+
 export function buildLyricWordTimings(
   groups: LyricPhraseUnitGroup[],
 ): LyricWordTimingGroup[] {
-  return groups.map((group) => ({
+  return groups.map((group, groupIndex) => ({
     section: group.phrase.section,
     sourceLineIndex: group.phrase.sourceLineIndex,
     sourceLyric: group.phrase.sourceLyric,
@@ -103,6 +119,13 @@ export function buildLyricWordTimings(
 
       const isFirstUnit = unitIndex === 0;
       const isFinalUnit = unitIndex === group.units.length - 1;
+      const nextGroup = groups[groupIndex + 1];
+
+      const isBridgeToChorusTransition =
+        isFinalUnit &&
+        isBridgeSection(group.phrase.section) &&
+        Boolean(nextGroup) &&
+        isChorusSection(nextGroup.phrase.section);
 
       const unitDurationSeconds = Math.max(
         0,
@@ -113,9 +136,11 @@ export function buildLyricWordTimings(
         ? Math.min(0.1, unitDurationSeconds * 0.04)
         : 0;
 
-      const phraseBreakSeconds = isFinalUnit
-        ? 0
-        : Math.min(0.16, unitDurationSeconds * 0.08);
+      const phraseBreakSeconds = isBridgeToChorusTransition
+        ? Math.min(0.28, unitDurationSeconds * 0.12)
+        : isFinalUnit
+          ? 0
+          : Math.min(0.16, unitDurationSeconds * 0.08);
 
       const soundingUnitStartSeconds = Math.min(
         unit.endSeconds,
