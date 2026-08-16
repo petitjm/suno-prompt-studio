@@ -79,6 +79,7 @@ export function buildLyricWordTimings(
         };
       }
 
+      const isFirstUnit = unitIndex === 0;
       const isFinalUnit = unitIndex === group.units.length - 1;
 
       const unitDurationSeconds = Math.max(
@@ -86,18 +87,27 @@ export function buildLyricWordTimings(
         unit.endSeconds - unit.startSeconds,
       );
 
+      const phraseEntrySeconds = isFirstUnit
+        ? Math.min(0.1, unitDurationSeconds * 0.04)
+        : 0;
+
       const phraseBreakSeconds = isFinalUnit
         ? 0
         : Math.min(0.16, unitDurationSeconds * 0.08);
 
+      const soundingUnitStartSeconds = Math.min(
+        unit.endSeconds,
+        unit.startSeconds + phraseEntrySeconds,
+      );
+
       const soundingUnitEndSeconds = Math.max(
-        unit.startSeconds,
+        soundingUnitStartSeconds,
         unit.endSeconds - phraseBreakSeconds,
       );
 
       const soundingUnitDurationSeconds = Math.max(
         0,
-        soundingUnitEndSeconds - unit.startSeconds,
+        soundingUnitEndSeconds - soundingUnitStartSeconds,
       );
 
       const weights = words.map((word, index) => {
@@ -108,7 +118,7 @@ export function buildLyricWordTimings(
           return baseWeight;
         }
 
-        return isFinalUnit ? baseWeight * 1.55 : baseWeight * 1.3;
+        return isFinalUnit ? baseWeight * 1.75 : baseWeight * 1.3;
       });
 
       const totalWeight = weights.reduce((total, weight) => total + weight, 0);
@@ -121,7 +131,7 @@ export function buildLyricWordTimings(
             ? soundingUnitDurationSeconds - elapsedSeconds
             : soundingUnitDurationSeconds * (weights[index] / totalWeight);
 
-        const startSeconds = unit.startSeconds + elapsedSeconds;
+        const startSeconds = soundingUnitStartSeconds + elapsedSeconds;
 
         const endSeconds =
           index === words.length - 1
