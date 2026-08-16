@@ -100,3 +100,24 @@ As a song develops:
 - creating a new song version should not blindly discard established musical work.
 
 The long-term target is a structured relationship between lyric phrases, phrase timing, chord events, and melody notes so that changes made during songwriting can be embodied reliably in subsequent song versions and musical guides.
+### Song-specific musical intent
+
+The current musical-guide work has shown that fixed section rules are useful as development defaults, but they must not become the final artistic model.
+
+Rules such as "chorus = higher, brighter, more active" or "bridge = contrasting" can help establish musical differentiation, but different songs may require very different behaviour. A chorus may need to feel broader rather than more upbeat; a final chorus may need to become more restrained, heavier, lower, sparser, or more intense rather than simply larger.
+
+Musical behaviour should therefore become driven by song-specific intent rather than by section labels alone.
+
+The first configurable musical-intent layer should be deliberately small. The initial Melody Character model should concentrate on:
+
+- register;
+- melodic lift;
+- melodic movement.
+
+These should initially operate as song-level settings. Section-specific overrides can be introduced later where they provide meaningful songwriting control.
+
+Existing section-aware rules should remain useful as defaults or interpretations of those settings, rather than being treated as permanent artistic decisions.
+
+The same musical-intent model should eventually inform more than the generated musical guide. In particular, the Suno prompt system should later be revisited so that vocal, melodic, arrangement, energy, and section-transition guidance can be derived from the same song-specific intent rather than independently regenerated from generic section assumptions.
+
+The existing Suno prompt functionality should remain stable while this musical-intent layer is developed and proved through Make Song. Once the intent model is established, the Suno workflow should be reviewed to determine which existing prompt fields should consume shared musical intent automatically and which controls remain genuinely Suno-specific.
