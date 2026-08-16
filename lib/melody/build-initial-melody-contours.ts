@@ -427,9 +427,22 @@ export function buildInitialMelodyContours({
 
         const isFinalWordInUnit = wordIndex === unit.words.length - 1;
 
+        const isGestureStart = wordIndex === 0;
+
+        const gesturePivotIndex =
+          unit.words.length >= 5 ? Math.floor((unit.words.length - 1) / 2) : -1;
+
+        const isGesturePivot = wordIndex === gesturePivotIndex;
+
+        const isGestureAnchor =
+          isGestureStart ||
+          isGesturePivot ||
+          harmonyChanged ||
+          isFinalWordInUnit;
+
         const holdPreviousPitch =
           phraseNoteIndex > 0 &&
-          shouldHoldPreviousMelodyPitch(word.word) &&
+          (shouldHoldPreviousMelodyPitch(word.word) || !isGestureAnchor) &&
           !harmonyChanged &&
           !isFinalWordInUnit;
 
