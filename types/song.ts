@@ -81,10 +81,23 @@ export type MelodyPhrase = {
   notes: MelodyNote[];
 };
 
+export type MelodyCharacter = {
+  register: "low" | "mid" | "high";
+  lift: "restrained" | "balanced" | "strong";
+  movement: "calm" | "balanced" | "active";
+};
+
+export const DEFAULT_MELODY_CHARACTER: MelodyCharacter = {
+  register: "mid",
+  lift: "balanced",
+  movement: "balanced",
+};
+
 export type MelodyVersionData = {
   songVersionId: string;
   chordVersionId: string | null;
   tempoBpm: number;
+  character: MelodyCharacter;
   phrases: MelodyPhrase[];
 };
 
