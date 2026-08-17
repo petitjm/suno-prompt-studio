@@ -3,6 +3,7 @@ import {
   type MelodyCharacter,
   type MelodyNote,
   type MelodyPhrase,
+  type MelodySectionIntent,
 } from "@/types/song";
 import type { LyricWordTimingGroup } from "@/lib/melody/build-lyric-word-timings";
 import type { MelodyPitchFrameworkPhrase } from "@/lib/melody/build-melody-pitch-framework";
@@ -165,6 +166,20 @@ function getMelodyCharacterRange(character: MelodyCharacter) {
   };
 }
 
+function getEffectiveMelodyCharacter({
+  character,
+  sectionIntent,
+}: {
+  character: MelodyCharacter;
+  sectionIntent?: MelodySectionIntent;
+}): MelodyCharacter {
+  return {
+    register: sectionIntent?.register ?? character.register,
+    lift: sectionIntent?.lift ?? character.lift,
+    movement: sectionIntent?.movement ?? character.movement,
+  };
+}
+
 function getActiveHarmonyEvent(
   frameworkPhrase: MelodyPitchFrameworkPhrase,
   timeSeconds: number,
@@ -304,6 +319,7 @@ function getMelodySectionFamily(section: string) {
 function getMelodyMotifKey(
   phrase: MelodyPhrase,
   frameworkPhrase: MelodyPitchFrameworkPhrase,
+  character: MelodyCharacter,
 ) {
   const normalisedLyric = phrase.sourceLyric
     .trim()
@@ -317,6 +333,9 @@ function getMelodyMotifKey(
     getMelodySectionFamily(phrase.section),
     normalisedLyric,
     chordSequence,
+    character.register,
+    character.lift,
+    character.movement,
   ].join("::");
 }
 
@@ -390,20 +409,34 @@ export function buildInitialMelodyContours({
   framework,
   scalePitchClasses,
   character = DEFAULT_MELODY_CHARACTER,
+  sectionIntents = [],
 }: {
   anchors: MelodyPhrase[];
   wordTimings: LyricWordTimingGroup[];
   framework: MelodyPitchFrameworkPhrase[];
   scalePitchClasses: string[];
   character?: MelodyCharacter;
+  sectionIntents?: MelodySectionIntent[];
 }): MelodyPhrase[] {
   const establishedMotifs = new Map<string, number[]>();
-  const melodyRange = getMelodyCharacterRange(character);
 
   return anchors.map((anchorPhrase, phraseIndex) => {
     const anchorNote = anchorPhrase.notes[0];
     const wordTimingGroup = wordTimings[phraseIndex];
     const frameworkPhrase = framework[phraseIndex];
+    const sectionIntent = anchorPhrase.sectionInstanceId
+      ? sectionIntents.find(
+          (intent) =>
+            intent.sectionInstanceId === anchorPhrase.sectionInstanceId,
+        )
+      : undefined;
+
+    const effectiveCharacter = getEffectiveMelodyCharacter({
+      character,
+      sectionIntent,
+    });
+
+    const melodyRange = getMelodyCharacterRange(effectiveCharacter);
 
     if (!anchorNote || !wordTimingGroup || !frameworkPhrase) {
       return anchorPhrase;
@@ -439,7 +472,11 @@ export function buildInitialMelodyContours({
       0,
     );
 
-    const motifKey = getMelodyMotifKey(anchorPhrase, frameworkPhrase);
+    const motifKey = getMelodyMotifKey(
+      anchorPhrase,
+      frameworkPhrase,
+      effectiveCharacter,
+    );
     const establishedPitchSequence = establishedMotifs.get(motifKey);
 
     if (
@@ -478,7 +515,7 @@ export function buildInitialMelodyContours({
       const direction = getSectionContourDirection(
         anchorPhrase.section,
         unitIndex,
-        character.lift,
+        effectiveCharacter.lift,
       );
 
       unit.words.forEach((word, wordIndex) => {
@@ -529,7 +566,7 @@ export function buildInitialMelodyContours({
           isFinalWordInUnit;
 
         const holdForMovement = shouldHoldForMelodyMovement(
-          character.movement,
+          effectiveCharacter.movement,
           isGestureAnchor,
           phraseNoteIndex,
         );
@@ -561,7 +598,7 @@ export function buildInitialMelodyContours({
             section: anchorPhrase.section,
             noteIndex: phraseNoteIndex,
             noteCount: totalWordCount,
-            lift: character.lift,
+            lift: effectiveCharacter.lift,
           });
 
           const noteDirection =

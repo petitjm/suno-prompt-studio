@@ -9,12 +9,14 @@ export function buildMelodyVersionData({
   chordVersionId,
   tempoBpm,
   character = DEFAULT_MELODY_CHARACTER,
+  sectionIntents = [],
   phrases,
 }: {
   songVersionId: string;
   chordVersionId: string | null;
   tempoBpm: number;
   character?: MelodyVersionData["character"];
+  sectionIntents?: MelodyVersionData["sectionIntents"];
   phrases: MelodyPhrase[];
 }): MelodyVersionData | null {
   if (!songVersionId || !Number.isFinite(tempoBpm) || tempoBpm <= 0) {
@@ -26,6 +28,7 @@ export function buildMelodyVersionData({
     chordVersionId,
     tempoBpm,
     character,
+    sectionIntents,
     phrases,
   };
 }

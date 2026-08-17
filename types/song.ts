@@ -93,11 +93,20 @@ export const DEFAULT_MELODY_CHARACTER: MelodyCharacter = {
   movement: "balanced",
 };
 
+export type MelodySectionIntent = {
+  sectionInstanceId: string;
+  register?: MelodyCharacter["register"];
+  lift?: MelodyCharacter["lift"];
+  movement?: MelodyCharacter["movement"];
+  delivery?: "natural" | "deliberate" | "spacious";
+};
+
 export type MelodyVersionData = {
   songVersionId: string;
   chordVersionId: string | null;
   tempoBpm: number;
   character: MelodyCharacter;
+  sectionIntents: MelodySectionIntent[];
   phrases: MelodyPhrase[];
 };
 
