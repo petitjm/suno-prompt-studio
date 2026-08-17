@@ -2393,6 +2393,67 @@ export default function Page() {
     character: melodyVersionData?.character,
   });
 
+  const melodyRangeBySection = Array.from(
+    initialMelodyContours
+      .reduce(
+        (ranges, phrase) => {
+          const pitches = phrase.notes
+            .map((note) => note.pitchMidi)
+            .filter((pitch) => Number.isFinite(pitch));
+
+          if (pitches.length === 0) {
+            return ranges;
+          }
+
+          const sectionKey =
+            phrase.sectionInstanceId || phrase.section || "Unlabelled section";
+
+          const existing = ranges.get(sectionKey);
+
+          const phraseMinimumMidi = Math.min(...pitches);
+          const phraseMaximumMidi = Math.max(...pitches);
+
+          if (existing) {
+            existing.minimumMidi = Math.min(
+              existing.minimumMidi,
+              phraseMinimumMidi,
+            );
+            existing.maximumMidi = Math.max(
+              existing.maximumMidi,
+              phraseMaximumMidi,
+            );
+            existing.noteCount += pitches.length;
+            existing.phraseCount += 1;
+
+            return ranges;
+          }
+
+          ranges.set(sectionKey, {
+            section: phrase.section,
+            sectionInstanceId: phrase.sectionInstanceId,
+            minimumMidi: phraseMinimumMidi,
+            maximumMidi: phraseMaximumMidi,
+            noteCount: pitches.length,
+            phraseCount: 1,
+          });
+
+          return ranges;
+        },
+        new Map<
+          string,
+          {
+            section: string;
+            sectionInstanceId: string | null;
+            minimumMidi: number;
+            maximumMidi: number;
+            noteCount: number;
+            phraseCount: number;
+          }
+        >(),
+      )
+      .values(),
+  );
+
   const cueSyncedSheetSections = cueSyncedSheetSectionDetails.map(
     (detail) => detail.section,
   );
@@ -24167,6 +24228,23 @@ ${buildRewriteInstruction(
                             lyricText: note.lyricText,
                           })),
                         })),
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="mb-1 font-semibold text-yellow-200">
+                      Melody range by section
+                    </div>
+
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                      {JSON.stringify(
+                        {
+                          character: melodyVersionData?.character ?? null,
+                          sections: melodyRangeBySection,
+                        },
                         null,
                         2,
                       )}
