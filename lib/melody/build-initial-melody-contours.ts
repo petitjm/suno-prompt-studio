@@ -8,10 +8,49 @@ import type { LyricWordTimingGroup } from "@/lib/melody/build-lyric-word-timings
 import type { MelodyPitchFrameworkPhrase } from "@/lib/melody/build-melody-pitch-framework";
 
 type ContourDirection = "up" | "down" | "level";
+function applyMelodyLiftBias(
+  direction: ContourDirection,
+  lift: MelodyCharacter["lift"],
+): ContourDirection {
+  if (lift === "restrained") {
+    if (direction === "up") {
+      return "level";
+    }
+
+    return direction;
+  }
+
+  if (lift === "strong") {
+    if (direction === "level") {
+      return "up";
+    }
+
+    return direction;
+  }
+
+  return direction;
+}
+
+function shouldHoldForMelodyMovement(
+  movement: MelodyCharacter["movement"],
+  isGestureAnchor: boolean,
+  phraseNoteIndex: number,
+) {
+  if (movement === "calm") {
+    return !isGestureAnchor || phraseNoteIndex % 2 === 1;
+  }
+
+  if (movement === "active") {
+    return !isGestureAnchor && phraseNoteIndex % 3 !== 0;
+  }
+
+  return !isGestureAnchor;
+}
 
 function getSectionContourDirection(
   section: string,
   unitIndex: number,
+  lift: MelodyCharacter["lift"],
 ): ContourDirection {
   const normalised = section.toLowerCase();
 
@@ -20,14 +59,14 @@ function getSectionContourDirection(
     normalised.includes("hook") ||
     normalised.includes("refrain")
   ) {
-    return unitIndex % 2 === 0 ? "up" : "level";
+    return applyMelodyLiftBias(unitIndex % 2 === 0 ? "up" : "level", lift);
   }
 
   if (normalised.includes("bridge") || normalised.includes("middle")) {
-    return unitIndex % 2 === 0 ? "up" : "down";
+    return applyMelodyLiftBias(unitIndex % 2 === 0 ? "up" : "down", lift);
   }
 
-  return unitIndex % 2 === 0 ? "level" : "down";
+  return applyMelodyLiftBias(unitIndex % 2 === 0 ? "level" : "down", lift);
 }
 
 function chooseNearbyPitch(
@@ -144,10 +183,12 @@ function getPhraseShapeDirection({
   section,
   noteIndex,
   noteCount,
+  lift,
 }: {
   section: string;
   noteIndex: number;
   noteCount: number;
+  lift: MelodyCharacter["lift"];
 }): ContourDirection {
   if (noteCount <= 1) {
     return "level";
@@ -167,37 +208,37 @@ function getPhraseShapeDirection({
 
   if (isChorus) {
     if (progress < 0.45) {
-      return "up";
+      return applyMelodyLiftBias("up", lift);
     }
 
     if (progress < 0.7) {
-      return "level";
+      return applyMelodyLiftBias("level", lift);
     }
 
-    return "down";
+    return applyMelodyLiftBias("down", lift);
   }
 
   if (isBridge) {
     if (progress < 0.35) {
-      return "up";
+      return applyMelodyLiftBias("up", lift);
     }
 
     if (progress < 0.65) {
-      return "down";
+      return applyMelodyLiftBias("down", lift);
     }
 
-    return "level";
+    return applyMelodyLiftBias("level", lift);
   }
 
   if (progress < 0.3) {
-    return "level";
+    return applyMelodyLiftBias("level", lift);
   }
 
   if (progress < 0.6) {
-    return "up";
+    return applyMelodyLiftBias("up", lift);
   }
 
-  return "down";
+  return applyMelodyLiftBias("down", lift);
 }
 
 function shouldHoldPreviousMelodyPitch(word: string) {
@@ -437,6 +478,7 @@ export function buildInitialMelodyContours({
       const direction = getSectionContourDirection(
         anchorPhrase.section,
         unitIndex,
+        character.lift,
       );
 
       unit.words.forEach((word, wordIndex) => {
@@ -486,9 +528,15 @@ export function buildInitialMelodyContours({
           harmonyChanged ||
           isFinalWordInUnit;
 
+        const holdForMovement = shouldHoldForMelodyMovement(
+          character.movement,
+          isGestureAnchor,
+          phraseNoteIndex,
+        );
+
         const holdPreviousPitch =
           phraseNoteIndex > 0 &&
-          (shouldHoldPreviousMelodyPitch(word.word) || !isGestureAnchor) &&
+          (shouldHoldPreviousMelodyPitch(word.word) || holdForMovement) &&
           !harmonyChanged &&
           !isFinalWordInUnit;
 
@@ -513,6 +561,7 @@ export function buildInitialMelodyContours({
             section: anchorPhrase.section,
             noteIndex: phraseNoteIndex,
             noteCount: totalWordCount,
+            lift: character.lift,
           });
 
           const noteDirection =
