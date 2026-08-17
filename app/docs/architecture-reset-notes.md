@@ -121,3 +121,29 @@ Existing section-aware rules should remain useful as defaults or interpretations
 The same musical-intent model should eventually inform more than the generated musical guide. In particular, the Suno prompt system should later be revisited so that vocal, melodic, arrangement, energy, and section-transition guidance can be derived from the same song-specific intent rather than independently regenerated from generic section assumptions.
 
 The existing Suno prompt functionality should remain stable while this musical-intent layer is developed and proved through Make Song. Once the intent model is established, the Suno workflow should be reviewed to determine which existing prompt fields should consume shared musical intent automatically and which controls remain genuinely Suno-specific.
+
+### Lyric story and delivery
+
+Musical intent must not be derived from structural section labels alone.
+
+Labels such as Verse, Chorus, Bridge, and Final Chorus describe structural function, but they do not define emotional meaning or delivery. A chorus may be uplifting, restrained, reflective, pleading, resigned, angry, intimate, or deliberately understated. A final chorus does not inherently need to become bigger, higher, faster, or more energetic.
+
+The lyric story and intended emotional delivery should therefore sit above section-based musical defaults.
+
+The developing hierarchy should be:
+
+1. lyric story and emotional intent;
+2. song-level musical character;
+3. optional section-specific intent or delivery overrides;
+4. phrase-level shaping;
+5. individual melody-note decisions.
+
+Song-level controls should establish a useful starting character, not impose a blanket solution on every section.
+
+Section-specific intent should allow materially different treatment where the song requires it. For example, a Final Chorus could be more deliberate, spacious, emotionally weighted, restrained, or lower in movement without teaching the system that all Final Choruses should behave that way.
+
+Delivery should also be treated as distinct from tempo. A more deliberate emotional delivery may involve longer important words, greater phrase space, fewer melodic changes, or more breathing room while the underlying song tempo remains unchanged. Explicit tempo changes may be supported separately where they are genuinely part of the composition.
+
+The long-term goal is for musical decisions to respond to what the lyric is saying and how the songwriter intends it to be delivered, rather than relying mainly on generic assumptions about section type.
+
+This principle should eventually inform both the generated musical guide and Suno prompting so that both systems interpret the same underlying song-specific and section-specific intent.
