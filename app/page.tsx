@@ -44,8 +44,8 @@ import type {
   PreviewBar,
   PreviewBarMeta,
   AppMode,
-   MelodyCharacter,
-   MelodySectionIntent,
+  MelodyCharacter,
+  MelodySectionIntent,
 } from "@/types/song";
 import SongEditorPanel from "@/components/SongEditorPanel";
 
@@ -2380,7 +2380,10 @@ export default function Page() {
 
   const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
   const lyricPhraseUnits = buildLyricPhraseUnits(initialMelodyAnchors);
-  const lyricWordTimings = buildLyricWordTimings(lyricPhraseUnits);
+  const lyricWordTimings = buildLyricWordTimings(
+    lyricPhraseUnits,
+    melodyVersionData?.sectionIntents,
+  );
 
   const melodyScale = buildMelodyScale({
     keyLabel: typeof chords?.key === "string" ? chords.key : "",
@@ -2411,21 +2414,21 @@ export default function Page() {
           const sectionKey =
             phrase.sectionInstanceId || phrase.section || "Unlabelled section";
           const sectionIntent = phrase.sectionInstanceId
-  ? melodyVersionData?.sectionIntents.find(
-      (intent) =>
-        intent.sectionInstanceId === phrase.sectionInstanceId,
-    )
-  : undefined;
+            ? melodyVersionData?.sectionIntents.find(
+                (intent) =>
+                  intent.sectionInstanceId === phrase.sectionInstanceId,
+              )
+            : undefined;
 
-const songCharacter = melodyVersionData?.character ?? null;
+          const songCharacter = melodyVersionData?.character ?? null;
 
-const effectiveCharacter = songCharacter
-  ? {
-      register: sectionIntent?.register ?? songCharacter.register,
-      lift: sectionIntent?.lift ?? songCharacter.lift,
-      movement: sectionIntent?.movement ?? songCharacter.movement,
-    }
-  : null;
+          const effectiveCharacter = songCharacter
+            ? {
+                register: sectionIntent?.register ?? songCharacter.register,
+                lift: sectionIntent?.lift ?? songCharacter.lift,
+                movement: sectionIntent?.movement ?? songCharacter.movement,
+              }
+            : null;
           const existing = ranges.get(sectionKey);
 
           const phraseMinimumMidi = Math.min(...pitches);
@@ -2447,33 +2450,33 @@ const effectiveCharacter = songCharacter
           }
 
           ranges.set(sectionKey, {
-  section: phrase.section,
-  sectionInstanceId: phrase.sectionInstanceId,
-  songCharacter,
-  sectionIntent: sectionIntent ?? null,
-  effectiveCharacter,
-  minimumMidi: phraseMinimumMidi,
-  maximumMidi: phraseMaximumMidi,
-  noteCount: pitches.length,
-  phraseCount: 1,
-});
+            section: phrase.section,
+            sectionInstanceId: phrase.sectionInstanceId,
+            songCharacter,
+            sectionIntent: sectionIntent ?? null,
+            effectiveCharacter,
+            minimumMidi: phraseMinimumMidi,
+            maximumMidi: phraseMaximumMidi,
+            noteCount: pitches.length,
+            phraseCount: 1,
+          });
 
           return ranges;
         },
         new Map<
-  string,
-  {
-    section: string;
-    sectionInstanceId: string | null;
-    songCharacter: MelodyCharacter | null;
-    sectionIntent: MelodySectionIntent | null;
-    effectiveCharacter: MelodyCharacter | null;
-    minimumMidi: number;
-    maximumMidi: number;
-    noteCount: number;
-    phraseCount: number;
-  }
->(),
+          string,
+          {
+            section: string;
+            sectionInstanceId: string | null;
+            songCharacter: MelodyCharacter | null;
+            sectionIntent: MelodySectionIntent | null;
+            effectiveCharacter: MelodyCharacter | null;
+            minimumMidi: number;
+            maximumMidi: number;
+            noteCount: number;
+            phraseCount: number;
+          }
+        >(),
       )
       .values(),
   );
