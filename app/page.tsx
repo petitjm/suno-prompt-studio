@@ -47,6 +47,9 @@ import type {
   MelodyCharacter,
   MelodySectionIntent,
 } from "@/types/song";
+
+import { DEFAULT_MELODY_CHARACTER } from "@/types/song";
+
 import SongEditorPanel from "@/components/SongEditorPanel";
 
 import LiveDiffPreview from "@/components/LiveDiffPreview";
@@ -191,6 +194,12 @@ export default function Page() {
   const [previewReady, setPreviewReady] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [previewTempo, setPreviewTempo] = useState(92);
+  const [melodyCharacter, setMelodyCharacter] = useState<MelodyCharacter>(
+    DEFAULT_MELODY_CHARACTER,
+  );
+  const [melodySectionIntents, setMelodySectionIntents] = useState<
+    MelodySectionIntent[]
+  >([]);
   const handlePreviewTempoChange = (nextTempo: number) => {
     if (nextTempo === previewTempo) {
       return;
@@ -2351,10 +2360,227 @@ export default function Page() {
     });
   })();
 
+  const melodySectionIntentTargets = (() => {
+    const sourceLines = performanceSections.flatMap((section) => {
+      const normalizedSectionLabel = String(section.label || "")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}' ]/gu, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return section.content
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => {
+          if (!line) {
+            return false;
+          }
+
+          if (
+            (line.startsWith("[") && line.endsWith("]")) ||
+            (line.startsWith("{") && line.endsWith("}"))
+          ) {
+            return false;
+          }
+
+          const normalizedLine = line
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}' ]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+          if (
+            normalizedSectionLabel &&
+            normalizedLine === normalizedSectionLabel
+          ) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((lyric) => ({
+          section: section.label,
+          lyric,
+          chords: [],
+        }));
+    });
+
+    const sectionInstances: {
+      section: string;
+      sourceLineIndexes: number[];
+    }[] = [];
+
+    sourceLines.forEach((line, sourceLineIndex) => {
+      const section = line.section || "Unknown section";
+      const previousSection = sectionInstances[sectionInstances.length - 1];
+
+      if (previousSection && previousSection.section === section) {
+        previousSection.sourceLineIndexes.push(sourceLineIndex);
+        return;
+      }
+
+      sectionInstances.push({
+        section,
+        sourceLineIndexes: [sourceLineIndex],
+      });
+    });
+
+    return sectionInstances.map((sectionInstance, index) => {
+      const order = index + 1;
+
+      const sectionSlug =
+        sectionInstance.section
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "section";
+
+      const sourceLineSlug =
+        sectionInstance.sourceLineIndexes.length > 0
+          ? sectionInstance.sourceLineIndexes.join("-")
+          : "none";
+
+      return {
+        section: sectionInstance.section,
+        sectionInstanceId: `${order}-${sectionSlug}-${sourceLineSlug}`,
+      };
+    });
+  })();
+
+  const updateMelodySectionDelivery = (
+    sectionInstanceId: string,
+    delivery: NonNullable<MelodySectionIntent["delivery"]>,
+  ) => {
+    setMelodySectionIntents((current) => {
+      const existing = current.find(
+        (intent) => intent.sectionInstanceId === sectionInstanceId,
+      );
+
+      if (delivery === "natural") {
+        if (!existing) {
+          return current;
+        }
+
+        const remainingIntent: MelodySectionIntent = {
+          sectionInstanceId,
+          register: existing.register,
+          lift: existing.lift,
+          movement: existing.movement,
+          entry: existing.entry,
+        };
+
+        const hasOtherOverrides =
+          remainingIntent.register !== undefined ||
+          remainingIntent.lift !== undefined ||
+          remainingIntent.movement !== undefined ||
+          remainingIntent.entry !== undefined;
+
+        if (!hasOtherOverrides) {
+          return current.filter(
+            (intent) => intent.sectionInstanceId !== sectionInstanceId,
+          );
+        }
+
+        return current.map((intent) =>
+          intent.sectionInstanceId === sectionInstanceId
+            ? remainingIntent
+            : intent,
+        );
+      }
+
+      if (existing) {
+        return current.map((intent) =>
+          intent.sectionInstanceId === sectionInstanceId
+            ? {
+                ...intent,
+                delivery,
+              }
+            : intent,
+        );
+      }
+
+      return [
+        ...current,
+        {
+          sectionInstanceId,
+          delivery,
+        },
+      ];
+    });
+
+    resetGeneratedAudioState();
+  };
+
+  const updateMelodySectionEntry = (
+    sectionInstanceId: string,
+    entry: NonNullable<MelodySectionIntent["entry"]>,
+  ) => {
+    setMelodySectionIntents((current) => {
+      const existing = current.find(
+        (intent) => intent.sectionInstanceId === sectionInstanceId,
+      );
+
+      if (entry === "natural") {
+        if (!existing) {
+          return current;
+        }
+
+        const remainingIntent: MelodySectionIntent = {
+          sectionInstanceId,
+          register: existing.register,
+          lift: existing.lift,
+          movement: existing.movement,
+          delivery: existing.delivery,
+        };
+
+        const hasOtherOverrides =
+          remainingIntent.register !== undefined ||
+          remainingIntent.lift !== undefined ||
+          remainingIntent.movement !== undefined ||
+          remainingIntent.delivery !== undefined;
+
+        if (!hasOtherOverrides) {
+          return current.filter(
+            (intent) => intent.sectionInstanceId !== sectionInstanceId,
+          );
+        }
+
+        return current.map((intent) =>
+          intent.sectionInstanceId === sectionInstanceId
+            ? remainingIntent
+            : intent,
+        );
+      }
+
+      if (existing) {
+        return current.map((intent) =>
+          intent.sectionInstanceId === sectionInstanceId
+            ? {
+                ...intent,
+                entry,
+              }
+            : intent,
+        );
+      }
+
+      return [
+        ...current,
+        {
+          sectionInstanceId,
+          entry,
+        },
+      ];
+    });
+
+    resetGeneratedAudioState();
+  };
+
   const melodyVersionData = buildMelodyVersionData({
     songVersionId: activeSongVersionId || "",
     chordVersionId: activeChordVersionId,
     tempoBpm: previewTempo,
+    character: melodyCharacter,
+    sectionIntents: melodySectionIntents,
     phrases: melodyPhraseScaffold,
   });
 
@@ -23240,6 +23466,169 @@ ${buildRewriteInstruction(
                       ? "Make again"
                       : "Make Song"}
                 </button>
+              </div>
+
+              <div className="col-span-full mt-2 rounded border border-purple-900 bg-purple-950/20 p-3">
+                <div className="mb-2 text-xs font-semibold text-purple-100">
+                  Melody character for next render
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="space-y-1 text-[11px] text-purple-100">
+                    <span className="block">Register</span>
+
+                    <select
+                      value={melodyCharacter.register}
+                      onChange={(event) => {
+                        setMelodyCharacter((current) => ({
+                          ...current,
+                          register: event.target
+                            .value as MelodyCharacter["register"],
+                        }));
+                        resetGeneratedAudioState();
+                      }}
+                      className="w-full rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                    >
+                      <option value="low">Low</option>
+                      <option value="mid">Mid</option>
+                      <option value="high">High</option>
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-[11px] text-purple-100">
+                    <span className="block">Lift</span>
+
+                    <select
+                      value={melodyCharacter.lift}
+                      onChange={(event) => {
+                        setMelodyCharacter((current) => ({
+                          ...current,
+                          lift: event.target.value as MelodyCharacter["lift"],
+                        }));
+                        resetGeneratedAudioState();
+                      }}
+                      className="w-full rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                    >
+                      <option value="restrained">Restrained</option>
+                      <option value="balanced">Balanced</option>
+                      <option value="strong">Strong</option>
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-[11px] text-purple-100">
+                    <span className="block">Movement</span>
+
+                    <select
+                      value={melodyCharacter.movement}
+                      onChange={(event) => {
+                        setMelodyCharacter((current) => ({
+                          ...current,
+                          movement: event.target
+                            .value as MelodyCharacter["movement"],
+                        }));
+                        resetGeneratedAudioState();
+                      }}
+                      className="w-full rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                    >
+                      <option value="calm">Calm</option>
+                      <option value="balanced">Balanced</option>
+                      <option value="active">Active</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-2 text-[11px] text-purple-200">
+                  These settings shape the melody generated for the next musical
+                  guide. They do not change an already-rendered WAV.
+                </div>
+              </div>
+
+              <div className="col-span-full mt-2 rounded border border-purple-900 bg-purple-950/20 p-3">
+                <div className="mb-1 text-xs font-semibold text-purple-100">
+                  Section intent for next render
+                </div>
+
+                <div className="mb-3 text-[11px] text-purple-200">
+                  Section labels do not impose a musical character. Choose
+                  overrides only where the lyric and intended performance call
+                  for them.
+                </div>
+
+                {melodySectionIntentTargets.length > 0 ? (
+                  <div className="grid gap-2">
+                    {melodySectionIntentTargets.map((section) => {
+                      const sectionIntent = melodySectionIntents.find(
+                        (intent) =>
+                          intent.sectionInstanceId ===
+                          section.sectionInstanceId,
+                      );
+
+                      const delivery = sectionIntent?.delivery ?? "natural";
+
+                      const entry = sectionIntent?.entry ?? "natural";
+
+                      return (
+                        <label
+                          key={section.sectionInstanceId}
+                          className="flex items-center justify-between gap-3 rounded border border-purple-900/70 bg-black/20 px-3 py-2 text-[11px] text-purple-100"
+                        >
+                          <span className="min-w-0 flex-1">
+                            {section.section}
+                          </span>
+
+                          <div className="flex flex-wrap items-center gap-3">
+                            <label className="flex items-center gap-2">
+                              <span className="text-purple-200">Delivery</span>
+
+                              <select
+                                value={delivery}
+                                onChange={(event) =>
+                                  updateMelodySectionDelivery(
+                                    section.sectionInstanceId,
+                                    event.target.value as NonNullable<
+                                      MelodySectionIntent["delivery"]
+                                    >,
+                                  )
+                                }
+                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                              >
+                                <option value="natural">Natural</option>
+                                <option value="deliberate">Deliberate</option>
+                                <option value="spacious">Spacious</option>
+                              </select>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <span className="text-purple-200">Entry</span>
+
+                              <select
+                                value={entry}
+                                onChange={(event) =>
+                                  updateMelodySectionEntry(
+                                    section.sectionInstanceId,
+                                    event.target.value as NonNullable<
+                                      MelodySectionIntent["entry"]
+                                    >,
+                                  )
+                                }
+                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                              >
+                                <option value="natural">Natural</option>
+                                <option value="gentle">Gentle</option>
+                                <option value="lifted">Lifted</option>
+                              </select>
+                            </label>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-purple-300">
+                    Generate the guide structure before setting section
+                    delivery.
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">

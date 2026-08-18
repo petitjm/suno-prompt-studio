@@ -32,6 +32,21 @@ function applyMelodyLiftBias(
   return direction;
 }
 
+function applySectionEntryBias(
+  direction: ContourDirection,
+  entry: NonNullable<MelodySectionIntent["entry"]>,
+): ContourDirection {
+  if (entry === "gentle") {
+    return direction === "up" ? "level" : direction;
+  }
+
+  if (entry === "lifted") {
+    return direction === "down" ? "level" : "up";
+  }
+
+  return direction;
+}
+
 function shouldHoldForMelodyMovement(
   movement: MelodyCharacter["movement"],
   isGestureAnchor: boolean,
@@ -320,6 +335,7 @@ function getMelodyMotifKey(
   phrase: MelodyPhrase,
   frameworkPhrase: MelodyPitchFrameworkPhrase,
   character: MelodyCharacter,
+  entry: NonNullable<MelodySectionIntent["entry"]>,
 ) {
   const normalisedLyric = phrase.sourceLyric
     .trim()
@@ -336,6 +352,7 @@ function getMelodyMotifKey(
     character.register,
     character.lift,
     character.movement,
+    entry,
   ].join("::");
 }
 
@@ -436,6 +453,24 @@ export function buildInitialMelodyContours({
       sectionIntent,
     });
 
+    const sectionPhraseIndex = anchorPhrase.sectionInstanceId
+      ? anchors
+          .slice(0, phraseIndex)
+          .filter(
+            (phrase) =>
+              phrase.sectionInstanceId === anchorPhrase.sectionInstanceId,
+          ).length
+      : 0;
+
+    const sectionEntry = sectionIntent?.entry ?? "natural";
+
+    const entryAppliesToPhrase =
+      sectionEntry !== "natural" && sectionPhraseIndex < 2;
+
+    const effectiveEntryForPhrase = entryAppliesToPhrase
+      ? sectionEntry
+      : "natural";
+
     const melodyRange = getMelodyCharacterRange(effectiveCharacter);
 
     if (!anchorNote || !wordTimingGroup || !frameworkPhrase) {
@@ -476,6 +511,7 @@ export function buildInitialMelodyContours({
       anchorPhrase,
       frameworkPhrase,
       effectiveCharacter,
+      effectiveEntryForPhrase,
     );
     const establishedPitchSequence = establishedMotifs.get(motifKey);
 
@@ -512,11 +548,16 @@ export function buildInitialMelodyContours({
     }
 
     wordTimingGroup.units.forEach((unit, unitIndex) => {
-      const direction = getSectionContourDirection(
+      const baseDirection = getSectionContourDirection(
         anchorPhrase.section,
         unitIndex,
         effectiveCharacter.lift,
       );
+
+      const direction =
+        entryAppliesToPhrase && unitIndex === 0
+          ? applySectionEntryBias(baseDirection, effectiveEntryForPhrase)
+          : baseDirection;
 
       unit.words.forEach((word, wordIndex) => {
         const noteMidpointSeconds =
@@ -594,12 +635,19 @@ export function buildInitialMelodyContours({
               : best,
           );
         } else if (phraseNoteIndex > 0 && !holdPreviousPitch) {
-          const phraseShapeDirection = getPhraseShapeDirection({
+          const basePhraseShapeDirection = getPhraseShapeDirection({
             section: anchorPhrase.section,
             noteIndex: phraseNoteIndex,
             noteCount: totalWordCount,
             lift: effectiveCharacter.lift,
           });
+
+          const phraseShapeDirection = entryAppliesToPhrase
+            ? applySectionEntryBias(
+                basePhraseShapeDirection,
+                effectiveEntryForPhrase,
+              )
+            : basePhraseShapeDirection;
 
           const noteDirection =
             harmonyChanged || isFinalWordInUnit

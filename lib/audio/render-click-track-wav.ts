@@ -1428,7 +1428,7 @@ export function createClickTrackPcm16Samples(
               startSample: Math.round(noteStartSeconds * input.sampleRateHz),
               endSample: Math.round(noteEndSeconds * input.sampleRateHz),
               sampleRateHz: input.sampleRateHz,
-              amplitude: melodyAmplitude,
+              amplitude: humanisedStrumAmplitude,
               frequencyHz,
               secondHarmonicLevel: 0.16,
               thirdHarmonicLevel: 0.035,

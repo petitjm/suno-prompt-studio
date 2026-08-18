@@ -99,6 +99,7 @@ export type MelodySectionIntent = {
   lift?: MelodyCharacter["lift"];
   movement?: MelodyCharacter["movement"];
   delivery?: "natural" | "deliberate" | "spacious";
+  entry?: "natural" | "gentle" | "lifted";
 };
 
 export type MelodyVersionData = {
