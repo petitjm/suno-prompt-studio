@@ -23905,122 +23905,147 @@ ${buildRewriteInstruction(
 
                       const entry = sectionIntent?.entry ?? "natural";
 
+                      const effectiveRegister =
+                        sectionIntent?.register ?? melodyCharacter.register;
+                      const effectiveLift =
+                        sectionIntent?.lift ?? melodyCharacter.lift;
+                      const effectiveMovement =
+                        sectionIntent?.movement ?? melodyCharacter.movement;
+
                       return (
-                        <label
+                        <div
                           key={section.sectionInstanceId}
-                          className="flex items-center justify-between gap-3 rounded border border-purple-900/70 bg-black/20 px-3 py-2 text-[11px] text-purple-100"
+                          className="rounded border border-purple-900/70 bg-black/20 px-3 py-2 text-[11px] text-purple-100"
                         >
-                          <span className="min-w-0 flex-1">
-                            {section.section}
-                          </span>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="min-w-0 flex-1">
+                              {section.section}
+                            </span>
 
-                          <div className="flex flex-wrap items-center gap-3">
-                            <label className="flex items-center gap-2">
-                              <span className="text-purple-200">Register</span>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <label className="flex items-center gap-2">
+                                <span className="text-purple-200">
+                                  Register
+                                </span>
 
-                              <select
-                                value={register}
-                                onChange={(event) =>
-                                  updateMelodySectionCharacter(
-                                    section.sectionInstanceId,
-                                    "register",
-                                    event.target.value,
-                                  )
-                                }
-                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
-                              >
-                                <option value="default">Song default</option>
-                                <option value="low">Low</option>
-                                <option value="mid">Mid</option>
-                                <option value="high">High</option>
-                              </select>
-                            </label>
+                                <select
+                                  value={register}
+                                  onChange={(event) =>
+                                    updateMelodySectionCharacter(
+                                      section.sectionInstanceId,
+                                      "register",
+                                      event.target.value,
+                                    )
+                                  }
+                                  className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                                >
+                                  <option value="default">Song default</option>
+                                  <option value="low">Low</option>
+                                  <option value="mid">Mid</option>
+                                  <option value="high">High</option>
+                                </select>
+                              </label>
 
-                            <label className="flex items-center gap-2">
-                              <span className="text-purple-200">Lift</span>
+                              <label className="flex items-center gap-2">
+                                <span className="text-purple-200">Lift</span>
 
-                              <select
-                                value={lift}
-                                onChange={(event) =>
-                                  updateMelodySectionCharacter(
-                                    section.sectionInstanceId,
-                                    "lift",
-                                    event.target.value,
-                                  )
-                                }
-                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
-                              >
-                                <option value="default">Song default</option>
-                                <option value="restrained">Restrained</option>
-                                <option value="balanced">Balanced</option>
-                                <option value="strong">Strong</option>
-                              </select>
-                            </label>
+                                <select
+                                  value={lift}
+                                  onChange={(event) =>
+                                    updateMelodySectionCharacter(
+                                      section.sectionInstanceId,
+                                      "lift",
+                                      event.target.value,
+                                    )
+                                  }
+                                  className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                                >
+                                  <option value="default">Song default</option>
+                                  <option value="restrained">Restrained</option>
+                                  <option value="balanced">Balanced</option>
+                                  <option value="strong">Strong</option>
+                                </select>
+                              </label>
 
-                            <label className="flex items-center gap-2">
-                              <span className="text-purple-200">Movement</span>
+                              <label className="flex items-center gap-2">
+                                <span className="text-purple-200">
+                                  Movement
+                                </span>
 
-                              <select
-                                value={movement}
-                                onChange={(event) =>
-                                  updateMelodySectionCharacter(
-                                    section.sectionInstanceId,
-                                    "movement",
-                                    event.target.value,
-                                  )
-                                }
-                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
-                              >
-                                <option value="default">Song default</option>
-                                <option value="calm">Calm</option>
-                                <option value="balanced">Balanced</option>
-                                <option value="active">Active</option>
-                              </select>
-                            </label>
+                                <select
+                                  value={movement}
+                                  onChange={(event) =>
+                                    updateMelodySectionCharacter(
+                                      section.sectionInstanceId,
+                                      "movement",
+                                      event.target.value,
+                                    )
+                                  }
+                                  className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                                >
+                                  <option value="default">Song default</option>
+                                  <option value="calm">Calm</option>
+                                  <option value="balanced">Balanced</option>
+                                  <option value="active">Active</option>
+                                </select>
+                              </label>
 
-                            <label className="flex items-center gap-2">
-                              <span className="text-purple-200">Delivery</span>
+                              <label className="flex items-center gap-2">
+                                <span className="text-purple-200">
+                                  Delivery
+                                </span>
 
-                              <select
-                                value={delivery}
-                                onChange={(event) =>
-                                  updateMelodySectionDelivery(
-                                    section.sectionInstanceId,
-                                    event.target.value as NonNullable<
-                                      MelodySectionIntent["delivery"]
-                                    >,
-                                  )
-                                }
-                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
-                              >
-                                <option value="natural">Natural</option>
-                                <option value="deliberate">Deliberate</option>
-                                <option value="spacious">Spacious</option>
-                              </select>
-                            </label>
+                                <select
+                                  value={delivery}
+                                  onChange={(event) =>
+                                    updateMelodySectionDelivery(
+                                      section.sectionInstanceId,
+                                      event.target.value as NonNullable<
+                                        MelodySectionIntent["delivery"]
+                                      >,
+                                    )
+                                  }
+                                  className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                                >
+                                  <option value="natural">Natural</option>
+                                  <option value="deliberate">Deliberate</option>
+                                  <option value="spacious">Spacious</option>
+                                </select>
+                              </label>
 
-                            <label className="flex items-center gap-2">
-                              <span className="text-purple-200">Entry</span>
+                              <label className="flex items-center gap-2">
+                                <span className="text-purple-200">Entry</span>
 
-                              <select
-                                value={entry}
-                                onChange={(event) =>
-                                  updateMelodySectionEntry(
-                                    section.sectionInstanceId,
-                                    event.target.value as NonNullable<
-                                      MelodySectionIntent["entry"]
-                                    >,
-                                  )
-                                }
-                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
-                              >
-                                <option value="natural">Natural</option>
-                                <option value="gentle">Gentle</option>
-                                <option value="lifted">Lifted</option>
-                              </select>
-                            </label>
+                                <select
+                                  value={entry}
+                                  onChange={(event) =>
+                                    updateMelodySectionEntry(
+                                      section.sectionInstanceId,
+                                      event.target.value as NonNullable<
+                                        MelodySectionIntent["entry"]
+                                      >,
+                                    )
+                                  }
+                                  className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                                >
+                                  <option value="natural">Natural</option>
+                                  <option value="gentle">Gentle</option>
+                                  <option value="lifted">Lifted</option>
+                                </select>
+                              </label>
+                            </div>
                           </div>
-                        </label>
+
+                          <div className="mt-2 border-t border-purple-900/50 pt-2 text-[10px] text-purple-300">
+                            Effective: Register {effectiveRegister} · Lift{" "}
+                            {effectiveLift} · Movement {effectiveMovement}
+                            {sectionIntent?.register !== undefined ||
+                            sectionIntent?.lift !== undefined ||
+                            sectionIntent?.movement !== undefined
+                              ? " · section override active"
+                              : " · song defaults"}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
