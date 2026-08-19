@@ -21,6 +21,24 @@ export type GenerateResponse = {
   lyrics_brief?: string;
   lyrics_full?: string;
   lyrics_template?: string;
+
+  musical_intent?: {
+    melody_character?: {
+      register?: "low" | "mid" | "high";
+      lift?: "restrained" | "balanced" | "strong";
+      movement?: "calm" | "balanced" | "active";
+    };
+
+    section_intents?: {
+      sectionInstanceId: string;
+      register?: "low" | "mid" | "high";
+      lift?: "restrained" | "balanced" | "strong";
+      movement?: "calm" | "balanced" | "active";
+      delivery?: "natural" | "deliberate" | "spacious";
+      entry?: "natural" | "gentle" | "lifted";
+    }[];
+  };
+
   error?: string;
 };
 
