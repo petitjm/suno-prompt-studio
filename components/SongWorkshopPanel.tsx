@@ -563,7 +563,7 @@ export default function SongWorkshopPanel({
       `Current pass: ${getCurrentWorkshopPassType()}`,
       `Current pass detail: ${getCurrentWorkshopPassDescription()}`,
       "",
-      "Workshop controls:",
+      "Writing choices:",
       `- Development focus: ${getDevelopmentFocusCopyLabel(developmentFocus)}`,
       `- Change intensity: ${changeIntensity}/5`,
       `- Preserve original phrases: ${preserveOriginal}/5`,
@@ -591,7 +591,7 @@ export default function SongWorkshopPanel({
             "Emotional centre:",
             analysisResult.emotionalCentre || "",
             "",
-            "How the fragments connect:",
+            "How the song ideas connect:",
             analysisResult.fragmentConnection || "",
             "",
             "Main weakness:",
@@ -1057,7 +1057,7 @@ export default function SongWorkshopPanel({
     {
       id: "draft" as const,
       number: 3,
-      label: "Create or revise the draft",
+      label: "Develop the song",
       status:
         drafting || runningFullWorkshop
           ? "working"
@@ -1087,7 +1087,7 @@ export default function SongWorkshopPanel({
     {
       id: "use" as const,
       number: 5,
-      label: "Use the approved result",
+      label: "Use this version",
       status: draftResult?.lyric ? "ready" : "blocked",
       detail: draftResult?.lyric
         ? "Send the draft to Compare or use it in Write."
@@ -1417,7 +1417,8 @@ export default function SongWorkshopPanel({
               </h2>
 
               <p className="mt-1 text-sm text-gray-400">
-                Create a cohesive lyric using the current development direction
+                Develop the lyrics into a stronger song using your chosen
+                direction
                 {analysisResult ? " and the available song analysis." : "."}
               </p>
             </div>
@@ -1430,12 +1431,12 @@ export default function SongWorkshopPanel({
                 className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
               >
                 {showDraftComplete
-                  ? "Draft created ✓"
+                  ? "Song version created ✓"
                   : drafting
                     ? "Creating draft..."
                     : draftResult
-                      ? "Create another draft"
-                      : "Create cohesive draft"}
+                      ? "Develop another version"
+                      : "Develop song"}
               </button>
 
               {!analysisResult && (
@@ -1677,7 +1678,7 @@ export default function SongWorkshopPanel({
               onClick={() => onActiveTaskChange("draft")}
               className="mt-4 rounded border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800"
             >
-              Go to draft task
+              Go to Develop Song
             </button>
           </div>
         )}
@@ -1685,7 +1686,7 @@ export default function SongWorkshopPanel({
         {activeTask === "use" && (
           <div className="rounded border border-purple-900 bg-purple-950/20 p-4">
             <h2 className="text-lg font-semibold text-gray-100">
-              5. Use the approved result
+              5. Use this version
             </h2>
 
             {draftResult?.lyric ? (
@@ -1749,7 +1750,7 @@ export default function SongWorkshopPanel({
 
                 <details className="mt-5 rounded border border-gray-800 bg-gray-950/70 p-3">
                   <summary className="cursor-pointer text-sm font-medium text-gray-300">
-                    Preview approved draft
+                    Preview song version
                   </summary>
 
                   <pre className="mt-3 whitespace-pre-wrap rounded border border-gray-800 bg-black/30 p-3 text-sm text-gray-300">
@@ -1797,7 +1798,7 @@ export default function SongWorkshopPanel({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-lg font-semibold text-gray-100">
-                  Cohesive draft
+                  Developed song
                 </h3>
 
                 <span className="rounded-full border border-purple-500/40 bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-200">
@@ -1830,7 +1831,7 @@ export default function SongWorkshopPanel({
             {draftResult.workshopControlNotes && (
               <div className="mt-4 text-sm text-gray-400">
                 <div className="font-medium text-gray-300">
-                  Workshop control notes:
+                  Writing choices used:
                 </div>
                 <ul className="mt-2 list-disc space-y-1 pl-5">
                   {draftResult.workshopControlNotes.map((item) => (
