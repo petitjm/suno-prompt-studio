@@ -17547,14 +17547,14 @@ export default function Page() {
 
     setJustExtractedChords(true);
     const sectionCount = Object.keys(extracted.sections).length;
-    const message = `Chord lines extracted and removed: ${sectionCount} section${
+    const message = `Chord lines extracted to Structured Chord JSON: ${sectionCount} section${
       sectionCount === 1 ? "" : "s"
-    } found. Review the JSON, then click Save Chords if you want to keep this version.`;
+    } found. The chord lines remain in the song sheet. Review the JSON, then click Save Chords if you want to keep this version.`;
 
     setChordExtractionMessage(message);
 
     setRewriteMessage(
-      `Chord lines extracted to Structured Chord JSON and removed from the song sheet: ${sectionCount} section${sectionCount === 1 ? "" : "s"} found. Review the JSON, then click Save Chords if you want to keep this version.`,
+      `Chord lines extracted to Structured Chord JSON: ${sectionCount} section${sectionCount === 1 ? "" : "s"} found. The chord lines remain in the song sheet. Review the JSON, then click Save Chords if you want to keep this version.`,
     );
 
     setTimeout(() => setJustExtractedChords(false), 1000);
