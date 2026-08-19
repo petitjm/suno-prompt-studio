@@ -13219,6 +13219,7 @@ export default function Page() {
       "chorus",
       "bridge",
       "outro",
+      "sections",
       "notes",
       "songsheetNotes",
       "generationHistory",
