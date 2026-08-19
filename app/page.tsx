@@ -115,6 +115,11 @@ import {
   normaliseProjectVersionData,
 } from "@/lib/projectVersions";
 
+import {
+  getSongVersionLyrics,
+  getSongVersionMusicalIntent,
+} from "@/lib/songVersions";
+
 import { extractLyricsOnly, looksLikeChordLine } from "@/lib/chords";
 
 import VideoPromptBuilder from "@/components/VideoPromptBuilder";
@@ -1922,6 +1927,9 @@ export default function Page() {
   const [activeSongVersionId, setActiveSongVersionId] = useState<string | null>(
     null,
   );
+  const [sourceSongVersionId, setSourceSongVersionId] = useState<string | null>(
+    null,
+  );
   const [activeChordVersionId, setActiveChordVersionId] = useState<
     string | null
   >(null);
@@ -1933,6 +1941,85 @@ export default function Page() {
   const activeChordVersion = chordVersions.find(
     (version) => version.id === activeChordVersionId,
   );
+
+  const handleSavedSongVersionChange = (id: string | null) => {
+    if (!id) {
+      resetAudioPreviewRequestState();
+
+      setActiveSongVersionId(null);
+      setSongVersionTitle("");
+
+      setActiveChordVersionId(null);
+      setChordVersionTitle("");
+      setChords(null);
+      setChordsText("{}");
+
+      setMelodyCharacter(DEFAULT_MELODY_CHARACTER);
+      setMelodySectionIntents([]);
+
+      return;
+    }
+
+    const selectedSongVersion =
+      songVersions.find((version) => version.id === id) || null;
+
+    if (!selectedSongVersion) {
+      return;
+    }
+
+    const lyrics = getSongVersionLyrics(selectedSongVersion);
+
+    const matchingChordVersion =
+      chordVersions
+        .filter((version) => version.song_version_id === id)
+        .sort((a, b) => {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+
+          return bTime - aTime;
+        })[0] || null;
+
+    const restoredMusicalIntent =
+      getSongVersionMusicalIntent(selectedSongVersion);
+
+    resetAudioPreviewRequestState();
+    resetGeneratedAudioState();
+
+    setActiveSongVersionId(id);
+    setSourceSongVersionId(id);
+    setPerformanceSheet(lyrics);
+    setSongVersionTitle(selectedSongVersion.title || "");
+
+    setMelodyCharacter(restoredMusicalIntent.character);
+    setMelodySectionIntents(restoredMusicalIntent.sectionIntents);
+
+    if (matchingChordVersion) {
+      const matchingChordData = matchingChordVersion.chord_data || null;
+
+      setActiveChordVersionId(matchingChordVersion.id);
+      setChordVersionTitle(
+        matchingChordVersion.title || "Untitled chord version",
+      );
+      setChords(matchingChordData);
+      setChordsText(JSON.stringify(matchingChordData || {}, null, 2));
+
+      setChordExtractionMessage(
+        `Loaded saved chords linked to song version: ${
+          matchingChordVersion.title || "Untitled chord version"
+        }.`,
+      );
+    } else {
+      setActiveChordVersionId(null);
+      setChordVersionTitle("");
+      setChords(null);
+      setChordsText("{}");
+
+      setChordExtractionMessage("This song version has no saved chords.");
+    }
+
+    setChordTransposeSemitones(0);
+    setLastAppliedTransposeSnapshot(null);
+  };
 
   const [jumpHighlightLine, setJumpHighlightLine] = useState<number | null>();
   const [compareLeftText, setCompareLeftText] = useState("");
@@ -3079,6 +3166,7 @@ export default function Page() {
     options?: { silent?: boolean },
   ) => {
     setActiveSongVersionId(null);
+    setSourceSongVersionId(null);
     setSongVersionTitle("");
 
     setActiveChordVersionId(null);
@@ -3134,7 +3222,19 @@ export default function Page() {
 
       setChordVersions(normalisedProjectData.chordVersions);
       setActiveSongVersionId(normalisedProjectData.activeSongVersionId);
+      setSourceSongVersionId(normalisedProjectData.activeSongVersionId);
       setActiveChordVersionId(normalisedProjectData.activeChordVersionId);
+
+      const latestSongVersion =
+        normalisedProjectData.songVersions.find(
+          (version) => version.id === normalisedProjectData.activeSongVersionId,
+        ) || null;
+
+      const restoredMusicalIntent =
+        getSongVersionMusicalIntent(latestSongVersion);
+
+      setMelodyCharacter(restoredMusicalIntent.character);
+      setMelodySectionIntents(restoredMusicalIntent.sectionIntents);
 
       setPerformanceSheet(normalisedProjectData.latestLyrics);
       setChords(normalisedProjectData.latestChords);
@@ -3215,6 +3315,34 @@ export default function Page() {
         return;
       }
 
+      const sourceSongVersionIdForSave = sourceSongVersionId;
+
+      const activeSourceChordVersion =
+        sourceSongVersionIdForSave && activeChordVersionId
+          ? chordVersions.find(
+              (version) =>
+                version.id === activeChordVersionId &&
+                version.song_version_id === sourceSongVersionIdForSave,
+            ) || null
+          : null;
+
+      const latestSourceChordVersion = sourceSongVersionIdForSave
+        ? chordVersions
+            .filter(
+              (version) =>
+                version.song_version_id === sourceSongVersionIdForSave,
+            )
+            .sort((a, b) => {
+              const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+
+              return bTime - aTime;
+            })[0] || null
+        : null;
+
+      const sourceChordVersionForSave =
+        activeSourceChordVersion || latestSourceChordVersion;
+
       setSavingSong(true);
       setSongVersionTitle("");
       setJustSavedSong(false);
@@ -3238,19 +3366,92 @@ export default function Page() {
       }
       const savedVersion = data.version;
 
+      let carriedChordVersionTitle = "";
+      let chordCarryWarning = "";
+
+      if (
+        savedVersion?.id &&
+        sourceChordVersionForSave?.chord_data &&
+        typeof sourceChordVersionForSave.chord_data === "object" &&
+        !Array.isArray(sourceChordVersionForSave.chord_data)
+      ) {
+        try {
+          const carriedChordData: Record<string, unknown> = {
+            ...(sourceChordVersionForSave.chord_data as Record<
+              string,
+              unknown
+            >),
+          };
+
+          // Chord placements belong to the old lyric version.
+          // Preserve the harmony, but require placement to be rebuilt
+          // against the newly saved lyrics.
+          delete carriedChordData.songSheetLines;
+
+          // The guide plan was created for the previous version.
+          // It should be regenerated after the new lyric/chord alignment.
+          delete carriedChordData.guideTrackPlan;
+
+          const sourceChordTitle =
+            sourceChordVersionForSave.title || "Saved chords";
+
+          const carriedTitle = `${sourceChordTitle} — carried forward`;
+
+          const chordRes = await fetch("/api/chord-versions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              project_id: activeProject.id,
+              song_version_id: savedVersion.id,
+              title: carriedTitle,
+              chord_data: carriedChordData,
+            }),
+          });
+
+          const chordData = await readJsonSafe(chordRes);
+
+          if (!chordRes.ok) {
+            throw new Error(
+              chordData.error || "Failed to carry forward saved chords.",
+            );
+          }
+
+          carriedChordVersionTitle = chordData.version?.title || carriedTitle;
+        } catch (error) {
+          chordCarryWarning =
+            error instanceof Error
+              ? `Song saved, but chords could not be carried forward: ${error.message}`
+              : "Song saved, but chords could not be carried forward.";
+        }
+      }
+
       await loadProjectData(activeProject.id, { silent: true });
 
       resetAudioPreviewRequestState();
 
       if (savedVersion?.id) {
         setActiveSongVersionId(savedVersion.id);
+        setSourceSongVersionId(savedVersion.id);
       }
 
       setSourceHasUnsavedChanges(false);
 
-      setProjectMessage(
-        `Saved song version: ${savedVersion?.title || songVersionTitle.trim() || "Untitled version"}`,
-      );
+      const savedSongTitle =
+        savedVersion?.title || songVersionTitle.trim() || "Untitled version";
+
+      if (chordCarryWarning) {
+        setProjectMessage(
+          `Saved song version: ${savedSongTitle}. ${chordCarryWarning}`,
+        );
+      } else if (carriedChordVersionTitle) {
+        setProjectMessage(
+          `Saved song version: ${savedSongTitle}. Carried forward chords as "${carriedChordVersionTitle}".`,
+        );
+      } else {
+        setProjectMessage(
+          `Saved song version: ${savedSongTitle}. No saved chords were available to carry forward.`,
+        );
+      }
 
       setJustSavedSong(true);
       window.setTimeout(() => {
@@ -17224,7 +17425,7 @@ export default function Page() {
   const chordRegex =
     /^[A-G](#|b)?(m|maj|min|dim|aug|sus|add|dom)?[0-9]*(maj|min|m|sus|add|dim|aug|b|#|\/|[0-9])*$/i;
 
-  const extractChordsAndRemoveFromRewriteSource = () => {
+  const extractChordsAndRemoveFromRewriteSource = async () => {
     const extracted = extractEmbeddedChordsToJson(sourceForDetection);
 
     if (!Object.keys(extracted.sections).length) {
@@ -17232,25 +17433,103 @@ export default function Page() {
       return;
     }
 
-    setChords(extracted);
-    setChordsText(JSON.stringify(extracted, null, 2));
-    scrollToStructuredChordJson();
+    if (!activeProject) {
+      setRewriteMessage(
+        "Select a project before extracting and saving chord lines.",
+      );
+      return;
+    }
 
-    removeChordsFromRewriteSource();
+    if (!activeSongVersionId) {
+      setRewriteMessage(
+        "Save the current Source before extracting and removing chord lines.",
+      );
+      return;
+    }
 
-    setJustExtractedAndRemovedChords(true);
-    const sectionCount = Object.keys(extracted.sections).length;
+    if (sourceHasUnsavedChanges) {
+      setRewriteMessage(
+        "Save the current Source before extracting and removing chord lines. The extracted chords need to remain linked to that saved song version.",
+      );
+      return;
+    }
 
-    const message = `Chord lines extracted: ${sectionCount} section${
-      sectionCount === 1 ? "" : "s"
-    } found. Review the JSON, then click Save Chords if you want to keep this version.`;
+    try {
+      setChordExtractionMessage("Saving extracted chord lines...");
 
-    setChordExtractionMessage(message);
-    setRewriteMessage(
-      `Chord lines extracted to Structured Chord JSON: ${sectionCount} section${sectionCount === 1 ? "" : "s"} found. Review the JSON, then click Save Chords if you want to keep this version.`,
-    );
+      const extractedChordTitle =
+        chordVersionTitle.trim() || "Extracted embedded chords";
 
-    setTimeout(() => setJustExtractedAndRemovedChords(false), 2000);
+      const response = await fetch("/api/chord-versions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          song_version_id: activeSongVersionId,
+          title: extractedChordTitle,
+          chord_data: extracted,
+        }),
+      });
+
+      const data = await readJsonSafe(response);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to save the extracted chord version.",
+        );
+      }
+
+      const savedVersion = data.version;
+
+      setChords(extracted);
+      setChordsText(JSON.stringify(extracted, null, 2));
+      setChordTransposeSemitones(0);
+      setLastAppliedTransposeSnapshot(null);
+      resetAudioPreviewRequestState();
+
+      if (savedVersion?.id) {
+        setActiveChordVersionId(savedVersion.id);
+
+        setChordVersions((current) => [
+          savedVersion,
+          ...current.filter((version) => version.id !== savedVersion.id),
+        ]);
+      }
+
+      const savedChordTitle = savedVersion?.title || extractedChordTitle;
+
+      setChordVersionTitle(savedChordTitle);
+
+      scrollToStructuredChordJson();
+
+      removeChordsFromRewriteSource();
+
+      setJustExtractedAndRemovedChords(true);
+
+      const sectionCount = Object.keys(extracted.sections).length;
+
+      setChordExtractionMessage(
+        `Chord lines extracted and saved as "${savedChordTitle}": ${sectionCount} section${
+          sectionCount === 1 ? "" : "s"
+        } found.`,
+      );
+
+      setRewriteMessage(
+        `Chord lines extracted, saved as "${savedChordTitle}", and removed from the song sheet. You can now rewrite the lyrics without losing the original chord version.`,
+      );
+
+      setTimeout(() => setJustExtractedAndRemovedChords(false), 2000);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not save the extracted chord version.";
+
+      setChordExtractionMessage(message);
+      setRewriteMessage(
+        `${message} The chord lines were not removed from Source.`,
+      );
+    }
   };
 
   const extractChordsFromRewriteSourceToJson = () => {
@@ -17817,6 +18096,7 @@ ${buildRewriteInstruction(
                   songVersions,
                   activeSongVersionId,
                   setActiveSongVersionId,
+                  onSavedSongVersionChange: handleSavedSongVersionChange,
                   songVersionTitle,
                   setSongVersionTitle,
                   activeProject,

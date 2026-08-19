@@ -17,6 +17,7 @@ type SongVersionEditorProps = {
   songVersions: SongVersionRecord[];
   activeSongVersionId: string | null;
   setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  onSavedSongVersionChange: (id: string | null) => void;
   formatUkDateTime: (value: string) => string;
 
   songVersionTitle: string;
@@ -37,6 +38,8 @@ export default function SongVersionEditor({
   songVersions,
   activeSongVersionId,
   setActiveSongVersionId,
+  onSavedSongVersionChange,
+
   formatUkDateTime,
 
   songVersionTitle,
@@ -53,18 +56,14 @@ export default function SongVersionEditor({
   // The parent owns state, but this component decides how selecting a saved song version updates the sheet.
   const handleActiveSongVersionChange = (id: string) => {
     if (!id) {
-      resetAudioPreviewRequestState();
-      setActiveSongVersionId(null);
-      setSongVersionTitle("");
+      onSavedSongVersionChange(null);
       return;
     }
 
-    const selected = songVersions.find((v) => v.id === id);
+    const selected = songVersions.find((version) => version.id === id);
     const lyrics = getSongVersionLyrics(selected);
 
-    if (!lyrics) {
-      resetAudioPreviewRequestState();
-      setActiveSongVersionId(id);
+    if (!selected) {
       return;
     }
 
@@ -81,10 +80,12 @@ export default function SongVersionEditor({
       }
     }
 
-    resetAudioPreviewRequestState();
-    setActiveSongVersionId(id);
-    setPerformanceSheet(lyrics);
-    setSongVersionTitle(selected?.title ?? "");
+    if (!lyrics) {
+      onSavedSongVersionChange(id);
+      return;
+    }
+
+    onSavedSongVersionChange(id);
   };
 
   const handlePerformanceSheetChange = (value: string) => {

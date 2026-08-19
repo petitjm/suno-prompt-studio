@@ -21,6 +21,7 @@ type EditorWorkspaceSongProps = {
   songVersions: SongVersionRecord[];
   activeSongVersionId: string | null;
   setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  onSavedSongVersionChange: (id: string | null) => void;
 
   songVersionTitle: string;
   setSongVersionTitle: (value: string) => void;
@@ -80,6 +81,7 @@ export default function EditorWorkspace({
         songVersions={songEditor.songVersions}
         activeSongVersionId={songEditor.activeSongVersionId}
         setActiveSongVersionId={songEditor.setActiveSongVersionId}
+        onSavedSongVersionChange={songEditor.onSavedSongVersionChange}
         formatUkDateTime={shared.formatUkDateTime}
         songVersionTitle={songEditor.songVersionTitle}
         setSongVersionTitle={songEditor.setSongVersionTitle}

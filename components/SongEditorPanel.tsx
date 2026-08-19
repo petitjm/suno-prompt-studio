@@ -25,6 +25,7 @@ type SongEditorWorkspaceSongProps = {
   songVersions: SongVersionRecord[];
   activeSongVersionId: string | null;
   setActiveSongVersionId: React.Dispatch<React.SetStateAction<string | null>>;
+  onSavedSongVersionChange: (id: string | null) => void;
 
   songVersionTitle: string;
   setSongVersionTitle: (value: string) => void;
@@ -108,6 +109,7 @@ export default function SongEditorPanel({
           songVersions: songEditor.songVersions,
           activeSongVersionId: songEditor.activeSongVersionId,
           setActiveSongVersionId: songEditor.setActiveSongVersionId,
+          onSavedSongVersionChange: songEditor.onSavedSongVersionChange,
           songVersionTitle: songEditor.songVersionTitle,
           setSongVersionTitle: songEditor.setSongVersionTitle,
           saveSong: songEditor.saveSong,
