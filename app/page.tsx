@@ -3355,6 +3355,10 @@ export default function Page() {
           title: songVersionTitle.trim() || "Untitled version",
           result: {
             lyrics_full: performanceSheet,
+            musical_intent: {
+              melody_character: melodyCharacter,
+              section_intents: melodySectionIntents,
+            },
           },
         }),
       });
