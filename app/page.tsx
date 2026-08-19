@@ -188,6 +188,10 @@ export default function Page() {
   const [mode, setMode] = useState<AppMode>("write");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  type DevelopTask = "intent" | "analysis" | "draft" | "review" | "use";
+
+  const [developTask, setDevelopTask] = useState<DevelopTask>("intent");
+
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -2074,7 +2078,14 @@ export default function Page() {
 
   const handleModeChange = (nextMode: AppMode) => {
     saveCurrentModeScroll();
+
+    if (nextMode === mode) {
+      setSidebarCollapsed((current) => !current);
+      return;
+    }
+
     setMode(nextMode);
+    setSidebarCollapsed(true);
   };
 
   const [flashLeftPanel, setFlashLeftPanel] = useState(false);
@@ -18046,8 +18057,8 @@ ${buildRewriteInstruction(
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900 text-white">
       <div
         className={`${
-          sidebarCollapsed ? "w-14" : "w-44"
-        } shrink-0 bg-gray-800 p-3 flex flex-col transition-all duration-300`}
+          sidebarCollapsed ? "w-12 px-1.5" : "w-44 px-3"
+        } shrink-0 bg-gray-800 py-3 flex flex-col transition-all duration-300`}
       >
         <button
           type="button"
@@ -18406,6 +18417,8 @@ ${buildRewriteInstruction(
           <div className={mode === "develop" ? "block" : "hidden"}>
             <SongWorkshopPanel
               lyrics={performanceSheet}
+              activeTask={developTask}
+              onActiveTaskChange={setDevelopTask}
               songTitle={activeProject?.title || ""}
               songVersionTitle={
                 activeSongVersion?.title || songVersionTitle || ""
@@ -24057,39 +24070,70 @@ ${buildRewriteInstruction(
                 )}
               </div>
 
-              <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                {makeSongProgressSteps.map((step) => (
-                  <div
-                    key={step.label}
-                    className="rounded border border-gray-800 bg-gray-950 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2 text-sm">
-                      <span
-                        className={
-                          step.complete
-                            ? "text-green-400"
-                            : step.working
-                              ? "text-blue-300"
-                              : "text-gray-600"
-                        }
-                      >
-                        {step.complete ? "✓" : step.working ? "●" : "○"}
-                      </span>
+              <div className="mt-4 rounded border border-gray-800 bg-gray-950/70 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-100">
+                      3. Prepare musical guide
+                    </h3>
 
-                      <span
-                        className={
-                          step.complete
-                            ? "text-green-200"
-                            : step.working
-                              ? "text-blue-100"
-                              : "text-gray-400"
-                        }
-                      >
-                        {step.label}
-                      </span>
+                    <div className="mt-1 text-xs text-gray-400">
+                      Complete the required preparation steps before generating
+                      the musical guide.
                     </div>
                   </div>
-                ))}
+
+                  <div
+                    className={`text-xs font-semibold ${
+                      makeSongProgressSteps.every((step) => step.complete)
+                        ? "text-green-300"
+                        : makeSongProgressSteps.some((step) => step.working)
+                          ? "text-blue-300"
+                          : "text-gray-400"
+                    }`}
+                  >
+                    {makeSongProgressSteps.every((step) => step.complete)
+                      ? "READY"
+                      : makeSongProgressSteps.some((step) => step.working)
+                        ? "IN PROGRESS"
+                        : "NOT READY"}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                  {makeSongProgressSteps.map((step) => (
+                    <div
+                      key={step.label}
+                      className="rounded border border-gray-800 bg-black/20 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2 text-sm">
+                        <span
+                          className={
+                            step.complete
+                              ? "text-green-400"
+                              : step.working
+                                ? "text-blue-300"
+                                : "text-gray-600"
+                          }
+                        >
+                          {step.complete ? "✓" : step.working ? "●" : "○"}
+                        </span>
+
+                        <span
+                          className={
+                            step.complete
+                              ? "text-green-200"
+                              : step.working
+                                ? "text-blue-100"
+                                : "text-gray-400"
+                          }
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {makeSongMessage ? (
