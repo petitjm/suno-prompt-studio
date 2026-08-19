@@ -2534,6 +2534,55 @@ export default function Page() {
     });
   })();
 
+  const updateMelodySectionCharacter = (
+    sectionInstanceId: string,
+    field: "register" | "lift" | "movement",
+    value: string,
+  ) => {
+    setMelodySectionIntents((current) => {
+      const existing = current.find(
+        (intent) => intent.sectionInstanceId === sectionInstanceId,
+      );
+
+      const nextIntent: MelodySectionIntent = {
+        ...(existing || { sectionInstanceId }),
+      };
+
+      if (value === "default") {
+        delete nextIntent[field];
+      } else if (field === "register") {
+        nextIntent.register = value as MelodyCharacter["register"];
+      } else if (field === "lift") {
+        nextIntent.lift = value as MelodyCharacter["lift"];
+      } else {
+        nextIntent.movement = value as MelodyCharacter["movement"];
+      }
+
+      const hasOverrides =
+        nextIntent.register !== undefined ||
+        nextIntent.lift !== undefined ||
+        nextIntent.movement !== undefined ||
+        nextIntent.delivery !== undefined ||
+        nextIntent.entry !== undefined;
+
+      if (!hasOverrides) {
+        return current.filter(
+          (intent) => intent.sectionInstanceId !== sectionInstanceId,
+        );
+      }
+
+      if (existing) {
+        return current.map((intent) =>
+          intent.sectionInstanceId === sectionInstanceId ? nextIntent : intent,
+        );
+      }
+
+      return [...current, nextIntent];
+    });
+
+    resetGeneratedAudioState();
+  };
+
   const updateMelodySectionDelivery = (
     sectionInstanceId: string,
     delivery: NonNullable<MelodySectionIntent["delivery"]>,
@@ -23848,6 +23897,10 @@ ${buildRewriteInstruction(
                           section.sectionInstanceId,
                       );
 
+                      const register = sectionIntent?.register ?? "default";
+                      const lift = sectionIntent?.lift ?? "default";
+                      const movement = sectionIntent?.movement ?? "default";
+
                       const delivery = sectionIntent?.delivery ?? "natural";
 
                       const entry = sectionIntent?.entry ?? "natural";
@@ -23862,6 +23915,69 @@ ${buildRewriteInstruction(
                           </span>
 
                           <div className="flex flex-wrap items-center gap-3">
+                            <label className="flex items-center gap-2">
+                              <span className="text-purple-200">Register</span>
+
+                              <select
+                                value={register}
+                                onChange={(event) =>
+                                  updateMelodySectionCharacter(
+                                    section.sectionInstanceId,
+                                    "register",
+                                    event.target.value,
+                                  )
+                                }
+                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                              >
+                                <option value="default">Song default</option>
+                                <option value="low">Low</option>
+                                <option value="mid">Mid</option>
+                                <option value="high">High</option>
+                              </select>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <span className="text-purple-200">Lift</span>
+
+                              <select
+                                value={lift}
+                                onChange={(event) =>
+                                  updateMelodySectionCharacter(
+                                    section.sectionInstanceId,
+                                    "lift",
+                                    event.target.value,
+                                  )
+                                }
+                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                              >
+                                <option value="default">Song default</option>
+                                <option value="restrained">Restrained</option>
+                                <option value="balanced">Balanced</option>
+                                <option value="strong">Strong</option>
+                              </select>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <span className="text-purple-200">Movement</span>
+
+                              <select
+                                value={movement}
+                                onChange={(event) =>
+                                  updateMelodySectionCharacter(
+                                    section.sectionInstanceId,
+                                    "movement",
+                                    event.target.value,
+                                  )
+                                }
+                                className="rounded border border-purple-800 bg-gray-950 px-2 py-1 text-xs text-purple-100"
+                              >
+                                <option value="default">Song default</option>
+                                <option value="calm">Calm</option>
+                                <option value="balanced">Balanced</option>
+                                <option value="active">Active</option>
+                              </select>
+                            </label>
+
                             <label className="flex items-center gap-2">
                               <span className="text-purple-200">Delivery</span>
 
