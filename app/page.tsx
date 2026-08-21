@@ -192,7 +192,7 @@ export default function Page() {
 
   const [developTask, setDevelopTask] = useState<DevelopTask>("intent");
 
-  type ChordsTask = "source" | "create" | "shape" | "check" | "save";
+  type ChordsTask = "source" | "create" | "shape" | "check" | "save" | "make";
   type HarmonyRichness = "simple" | "balanced" | "richer";
 
   type HarmonyGuitarFeel = "open" | "mixed" | "colourful";
@@ -286,60 +286,92 @@ export default function Page() {
   const [chordsTask, setChordsTask] = useState<ChordsTask>("source");
   const [showAddedChordsReview, setShowAddedChordsReview] = useState(true);
   const [selectedPlacedLineIndex, setSelectedPlacedLineIndex] = useState(0);
-  const getChordTasks = () => [
-    {
-      id: "source" as const,
-      number: 1,
-      label: "Choose song and chord version",
-      status:
-        activeProject && activeSongVersionId
-          ? ("complete" as const)
-          : ("blocked" as const),
-    },
-    {
-      id: "create" as const,
-      number: 2,
-      label: "Add Chords",
-      status:
-        generatingChords || generatingBasicChords
-          ? ("working" as const)
-          : hasUsableChordData()
+  const getChordTasks = () => {
+    const hasSavedChordCheckpoint = Boolean(
+      activeChordVersionId || makeSongRunReport?.chordVersionId,
+    );
+
+    const hasPendingMakeSongChordRevision =
+      makeSongRunReport?.finalChordState ===
+        "Automatically repaired during Make Song — working chord result is unsaved" ||
+      makeSongRunReport?.finalChordState ===
+        "Generated working chord result — unsaved";
+
+    return [
+      {
+        id: "source" as const,
+        number: 1,
+        label: "Choose song and chord version",
+        status:
+          activeProject && activeSongVersionId
             ? ("complete" as const)
-            : performanceSheet.trim()
-              ? ("ready" as const)
-              : ("blocked" as const),
-    },
-    {
-      id: "shape" as const,
-      number: 3,
-      label: "Shape the harmony",
-      status: hasUsableChordData() ? ("ready" as const) : ("blocked" as const),
-    },
-    {
-      id: "check" as const,
-      number: 4,
-      label: "Fit chords and lyrics",
-      status: generatingPlacedSongsheet
-        ? ("working" as const)
-        : placedSongSheetPreview
+            : ("blocked" as const),
+      },
+      {
+        id: "create" as const,
+        number: 2,
+        label: "Add Chords",
+        status:
+          chordsTask === "create" && (generatingChords || generatingBasicChords)
+            ? ("working" as const)
+            : hasUsableChordData()
+              ? ("complete" as const)
+              : performanceSheet.trim()
+                ? ("ready" as const)
+                : ("blocked" as const),
+      },
+      {
+        id: "shape" as const,
+        number: 3,
+        label: "Shape the harmony",
+        status: placedSongSheetPreview
           ? ("complete" as const)
           : hasUsableChordData()
             ? ("ready" as const)
             : ("blocked" as const),
-    },
-    {
-      id: "save" as const,
-      number: 5,
-      label: "Save this chord version",
-      status: savingChords
-        ? ("working" as const)
-        : justSavedChords
-          ? ("complete" as const)
-          : hasUsableChordData() && !chordActionsAreBlocked
+      },
+      {
+        id: "check" as const,
+        number: 4,
+        label: "Fit chords and lyrics",
+        status:
+          chordsTask === "check" && generatingPlacedSongsheet
+            ? ("working" as const)
+            : placedSongSheetPreview
+              ? ("complete" as const)
+              : hasUsableChordData()
+                ? ("ready" as const)
+                : ("blocked" as const),
+      },
+      {
+        id: "save" as const,
+        number: 5,
+        label: "Save checkpoint",
+        status: savingChords
+          ? ("working" as const)
+          : hasPendingMakeSongChordRevision
             ? ("ready" as const)
-            : ("blocked" as const),
-    },
-  ];
+            : hasSavedChordCheckpoint
+              ? ("complete" as const)
+              : hasUsableChordData() && !chordActionsAreBlocked
+                ? ("ready" as const)
+                : ("blocked" as const),
+      },
+      {
+        id: "make" as const,
+        number: 6,
+        label: "Make Song",
+        status:
+          makeSongStage === "complete"
+            ? ("complete" as const)
+            : makeSongIsRunning
+              ? ("working" as const)
+              : hasSavedChordCheckpoint
+                ? ("ready" as const)
+                : ("blocked" as const),
+      },
+    ];
+  };
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -2189,6 +2221,7 @@ export default function Page() {
   const [comparingNow, setComparingNow] = useState(false);
   const writeScrollTopRef = React.useRef(0);
   const chordsScrollTopRef = React.useRef(0);
+  const fitEditorRef = React.useRef<HTMLDivElement | null>(null);
   const restoredChordWorkingDraftKeyRef = React.useRef("");
   const skipNextChordWorkingDraftSaveRef = React.useRef(false);
 
@@ -14524,9 +14557,46 @@ export default function Page() {
       sourceLines.map((line) => normalizeLyricMatchText(line)).filter(Boolean),
     );
 
-    const lyricLines = placedLines.filter((line) => line.lyric.trim());
+    const normalizePlacedSectionLabel = (value: string) =>
+      value
+        .trim()
+        .replace(/:$/, "")
+        .replace(/^[[(]\s*/, "")
+        .replace(/\s*[\])]$/, "")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/([a-z])(\d)/gi, "$1 $2")
+        .replace(/(\d)([a-z])/gi, "$1 $2")
+        .replace(/[\/_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .toLowerCase();
 
-    const unmatchedLines = lyricLines.filter((line) => {
+    const lyricLines = placedLines
+      .map((line, lineIndex) => ({
+        line,
+        lineIndex,
+      }))
+      .filter(({ line }) => {
+        const lyric = line.lyric.trim();
+
+        if (!lyric) {
+          return false;
+        }
+
+        const normalizedLyric = normalizePlacedSectionLabel(lyric);
+        const normalizedSection = normalizePlacedSectionLabel(
+          line.section || "",
+        );
+
+        // Generated placed songsheets can contain display rows such as
+        // "Verse1:" or "Intro:". They are section labels, not lyric lines.
+        if (normalizedSection && normalizedLyric === normalizedSection) {
+          return false;
+        }
+
+        return true;
+      });
+
+    const unmatchedLines = lyricLines.filter(({ line }) => {
       const normalizedLyric = normalizeLyricMatchText(line.lyric);
 
       if (!normalizedLyric) {
@@ -14558,7 +14628,10 @@ export default function Page() {
       detail,
       checkedCount,
       unmatchedCount,
-      unmatchedLines: unmatchedLines.slice(0, 8),
+      unmatchedLines: unmatchedLines.slice(0, 8).map(({ line, lineIndex }) => ({
+        ...line,
+        lineIndex,
+      })),
       isChecking: false,
     };
   };
@@ -16787,6 +16860,21 @@ export default function Page() {
     makeSongRunReport?.finalChordState ===
       "Generated working chord result — unsaved";
 
+  const makeSongSourceChordVersionId =
+    makeSongRunReport?.chordVersionId || activeChordVersionId || "";
+
+  const makeSongSourceChordVersionTitle =
+    makeSongRunReport?.chordVersionTitle ||
+    activeChordVersion?.title ||
+    chordVersionTitle ||
+    "";
+
+  const makeSongHasSavedSourceCheckpoint = Boolean(
+    makeSongSourceChordVersionId,
+  );
+
+  const makeSongAudioIsReady = Boolean(clickTrackAudioUrl);
+
   const copyMakeSongRunReport = async () => {
     const text = buildMakeSongRunReportCopyText();
 
@@ -17561,6 +17649,12 @@ export default function Page() {
 
       setProjectMessage(`Saved chord version: ${savedChordTitle}`);
       setJustSavedChords(true);
+
+      if (activeProject.id && activeSongVersionId) {
+        clearChordWorkingDraft(activeProject.id, activeSongVersionId);
+
+        restoredChordWorkingDraftKeyRef.current = "";
+      }
 
       setTimeout(() => setJustSavedChords(false), 1000);
     } catch (err: any) {
@@ -18928,6 +19022,22 @@ ${buildRewriteInstruction(
         >
           {mode === "write" && (
             <div>
+              {chordsTask === "make" && (
+                <div className="mb-3 flex items-center justify-between rounded border border-blue-900 bg-blue-950/20 px-3 py-2">
+                  <div className="text-sm text-blue-100">
+                    Editing the song from Make Song
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("chords")}
+                    className="rounded border border-blue-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-blue-100 hover:bg-blue-950/40"
+                  >
+                    ← Back to Make Song
+                  </button>
+                </div>
+              )}
+
               <SongEditorPanel
                 songEditor={{
                   performanceSheet,
@@ -19312,12 +19422,13 @@ ${buildRewriteInstruction(
               </nav>
             </aside>
 
-            <div className="min-w-0 flex-1 space-y-6">
-              <div>
+            <div className="min-w-0 flex-1 space-y-4">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h1 className="text-xl font-semibold text-gray-100">
                   Chords Workshop
                 </h1>
-                <p className="mt-2 text-sm text-gray-400">
+
+                <p className="text-sm text-gray-400">
                   Generate, inspect, edit, and save harmonic structure for the
                   current song.
                 </p>
@@ -20116,11 +20227,15 @@ ${buildRewriteInstruction(
 
                         <button
                           type="button"
-                          onClick={() => setChordsTask("save")}
+                          onClick={() => {
+                            setChordExtractionMessage("");
+                            setProjectMessage("");
+                            setChordsTask("save");
+                          }}
                           disabled={!placedSongSheetPreview}
                           className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                         >
-                          Save this version
+                          Review checkpoint
                         </button>
                       </div>
                     )}
@@ -20314,6 +20429,55 @@ ${buildRewriteInstruction(
                                       need review.
                                     </div>
                                   )}
+                                  {placedSongsheetSourceMatch.unmatchedLines
+                                    .length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                      {placedSongsheetSourceMatch.unmatchedLines.map(
+                                        (item, reviewIndex) => (
+                                          <div
+                                            key={`${item.section}-${item.lineIndex}-${reviewIndex}`}
+                                            className="rounded border border-yellow-800 bg-yellow-950/20 p-3"
+                                          >
+                                            <div className="text-[11px] font-medium uppercase tracking-wide text-yellow-300/80">
+                                              {item.section || "Unsectioned"}
+                                            </div>
+
+                                            <div className="mt-1 text-sm leading-6 text-yellow-100">
+                                              “{item.lyric}”
+                                            </div>
+
+                                            <div className="mt-2 text-xs leading-5 text-yellow-200/80">
+                                              This fitted lyric line was not
+                                              found in the current song lyrics.
+                                            </div>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedPlacedLineIndex(
+                                                  item.lineIndex,
+                                                );
+                                                setMovingChordTarget(null);
+                                                setEditingPlacedLyric(null);
+
+                                                window.setTimeout(() => {
+                                                  fitEditorRef.current?.scrollIntoView(
+                                                    {
+                                                      behavior: "smooth",
+                                                      block: "start",
+                                                    },
+                                                  );
+                                                }, 50);
+                                              }}
+                                              className="mt-3 rounded border border-yellow-700 bg-yellow-950/20 px-3 py-1.5 text-xs font-medium text-yellow-100 hover:bg-yellow-950/40"
+                                            >
+                                              Review this line
+                                            </button>
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div
@@ -20426,7 +20590,10 @@ ${buildRewriteInstruction(
                         </div>
 
                         {/* SELECTED LINE EDITOR */}
-                        <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                        <div
+                          ref={fitEditorRef}
+                          className="rounded border border-gray-800 bg-gray-950 p-4"
+                        >
                           <div>
                             <h3 className="text-sm font-semibold text-gray-100">
                               Edit the fit
@@ -20632,10 +20799,546 @@ ${buildRewriteInstruction(
                 </div>
               )}
 
+              {chordsTask === "save" && (
+                <div className="space-y-4">
+                  <div className="rounded border border-purple-900 bg-purple-950/20 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-100">
+                          5. Save checkpoint
+                        </h2>
+
+                        <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-400">
+                          Preserve the current harmony, lyric phrasing and chord
+                          placement as a checkpoint when this version is worth
+                          keeping.
+                        </p>
+                      </div>
+
+                      <div
+                        className={`rounded border px-3 py-2 text-xs ${
+                          activeChordVersionId
+                            ? "border-green-900 bg-green-950/20 text-green-100"
+                            : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                        }`}
+                      >
+                        <div className="font-semibold">
+                          {activeChordVersionId
+                            ? "Saved checkpoint ✓"
+                            : "Working draft • Unsaved changes"}
+                        </div>
+
+                        {!activeChordVersionId && (
+                          <div className="mt-1 text-yellow-200/80">
+                            Your working changes are preserved automatically.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.7fr)]">
+                    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <h3 className="text-sm font-semibold text-gray-100">
+                        Current checkpoint
+                      </h3>
+
+                      <p className="mt-1 text-xs leading-5 text-gray-500">
+                        Review what you are about to preserve.
+                      </p>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Song
+                          </div>
+
+                          <div className="mt-1 text-sm text-gray-100">
+                            {activeProject?.title || "No project selected"}
+                          </div>
+
+                          <div className="mt-1 text-xs text-gray-500">
+                            {activeSongVersion?.title ||
+                              songVersionTitle ||
+                              "Current saved song version"}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Lyric / chord fit
+                          </div>
+
+                          <div className="mt-1 text-sm text-gray-100">
+                            {placedSongSheetPreview
+                              ? "Performance Sheet available"
+                              : "No fitted Performance Sheet"}
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Fit check
+                          </div>
+
+                          <div
+                            className={`mt-1 text-sm ${
+                              processedPreviewSourceAlignmentIsChecking
+                                ? "text-blue-200"
+                                : chordFitNeedsReview
+                                  ? "text-yellow-200"
+                                  : "text-green-200"
+                            }`}
+                          >
+                            {processedPreviewSourceAlignmentIsChecking
+                              ? "Checking..."
+                              : chordFitNeedsReview
+                                ? "Review recommended"
+                                : "Looks good"}
+                          </div>
+
+                          {chordFitReviewItemCount > 0 && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              {chordFitReviewItemCount} review item
+                              {chordFitReviewItemCount === 1 ? "" : "s"}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Chord sections
+                          </div>
+
+                          <div className="mt-1 text-sm text-gray-100">
+                            {chordSummaryRows.length} section
+                            {chordSummaryRows.length === 1 ? "" : "s"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {placedSongSheetPreview && (
+                        <details className="mt-4 rounded border border-gray-800 bg-gray-900">
+                          <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-gray-400">
+                            Preview Performance Sheet
+                          </summary>
+
+                          <pre className="max-h-80 overflow-auto whitespace-pre border-t border-gray-800 p-3 font-mono text-xs leading-5 text-gray-200">
+                            {placedSongSheetPreview}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                      <h3 className="text-sm font-semibold text-gray-100">
+                        Save checkpoint
+                      </h3>
+
+                      <p className="mt-1 text-xs leading-5 text-gray-500">
+                        Give this version a useful name so you can recognise it
+                        later.
+                      </p>
+
+                      <label className="mt-4 block">
+                        <span className="text-xs font-medium text-gray-400">
+                          Chord version title
+                        </span>
+
+                        <input
+                          value={chordVersionTitle}
+                          onChange={(event) => {
+                            setChordVersionTitle(event.target.value);
+                            setChordExtractionMessage("");
+                            setProjectMessage("");
+                          }}
+                          placeholder={`Chord version ${chordVersions.length + 1}`}
+                          className="mt-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-purple-500"
+                        />
+                      </label>
+
+                      {!activeChordVersionId && (
+                        <div className="mt-4 rounded border border-yellow-900 bg-yellow-950/20 p-3 text-xs leading-5 text-yellow-100">
+                          Saving creates a formal checkpoint. You can continue
+                          developing the song afterwards without losing this
+                          version.
+                        </div>
+                      )}
+
+                      {activeChordVersionId && (
+                        <div className="mt-4 rounded border border-green-900 bg-green-950/20 p-3 text-xs leading-5 text-green-100">
+                          This working state has been saved as a chord-version
+                          checkpoint.
+                        </div>
+                      )}
+
+                      {chordExtractionMessage && (
+                        <div className="mt-4 rounded border border-yellow-900 bg-yellow-950/20 p-3 text-sm leading-6 text-yellow-100">
+                          {chordExtractionMessage}
+                        </div>
+                      )}
+
+                      {projectMessage && (
+                        <div className="mt-4 rounded border border-gray-800 bg-gray-900 p-3 text-sm leading-6 text-gray-300">
+                          {projectMessage}
+                        </div>
+                      )}
+
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setChordsTask("check")}
+                          disabled={savingChords}
+                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-500"
+                        >
+                          Back to Fit chords and lyrics
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void saveChords()}
+                          disabled={
+                            !activeProject ||
+                            savingChords ||
+                            !chordsText.trim() ||
+                            chordActionsAreBlocked
+                          }
+                          className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                        >
+                          {savingChords
+                            ? "Saving checkpoint..."
+                            : justSavedChords
+                              ? "Checkpoint saved ✓"
+                              : "Save checkpoint"}
+                        </button>
+                        {activeChordVersionId && (
+                          <button
+                            type="button"
+                            onClick={() => setChordsTask("make")}
+                            disabled={savingChords}
+                            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                          >
+                            Continue to Make Song
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {chordsTask === "make" && (
+                <div className="space-y-3">
+                  <div className="rounded border border-blue-800 bg-blue-950/20 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h2 className="text-lg font-semibold text-blue-100">
+                          6. Make Song
+                        </h2>
+
+                        <p className="text-sm text-gray-400">
+                          Turn the saved song, harmony and lyric/chord fit into
+                          a usable musical guide.
+                        </p>
+                      </div>
+
+                      <div
+                        className={`rounded border px-3 py-2 text-xs ${
+                          makeSongStage === "complete"
+                            ? "border-green-900 bg-green-950/20 text-green-100"
+                            : makeSongHasSavedSourceCheckpoint
+                              ? "border-blue-900 bg-blue-950/20 text-blue-100"
+                              : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                        }`}
+                      >
+                        <div className="font-semibold">
+                          {makeSongStage === "complete"
+                            ? "Musical guide ready ✓"
+                            : makeSongHasSavedSourceCheckpoint
+                              ? "Saved checkpoint ready ✓"
+                              : "Save a checkpoint first"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <h3 className="text-sm font-semibold text-gray-100">
+                        Source and results
+                      </h3>
+
+                      <p className="text-xs text-gray-500">
+                        Review what Make Song is using and open the results
+                        directly.
+                      </p>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {/* SONG */}
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Song
+                        </div>
+
+                        <div className="mt-1 text-sm font-medium text-gray-100">
+                          {activeProject?.title || "No song selected"}
+                        </div>
+
+                        <div className="mt-1 text-xs text-gray-500">
+                          {activeSongVersion?.title ||
+                            songVersionTitle ||
+                            "Current song version"}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleModeChange("write")}
+                          className="mt-3 rounded border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30"
+                        >
+                          Open in Write
+                        </button>
+                      </div>
+
+                      {/* CHORD CHECKPOINT */}
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Source chord checkpoint
+                        </div>
+
+                        <div
+                          className={`mt-1 text-sm font-medium ${
+                            makeSongHasSavedSourceCheckpoint
+                              ? "text-green-200"
+                              : "text-yellow-200"
+                          }`}
+                        >
+                          {makeSongHasSavedSourceCheckpoint
+                            ? "Saved ✓"
+                            : "No saved checkpoint"}
+                        </div>
+
+                        {makeSongSourceChordVersionTitle && (
+                          <div className="mt-1 text-xs text-gray-500">
+                            {makeSongSourceChordVersionTitle}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => setChordsTask("save")}
+                          className="mt-3 rounded border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30"
+                        >
+                          Review checkpoint
+                        </button>
+                      </div>
+
+                      {/* PERFORMANCE SHEET */}
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Performance Sheet
+                        </div>
+
+                        <div
+                          className={`mt-1 text-sm font-medium ${
+                            placedSongSheetPreview
+                              ? "text-green-200"
+                              : "text-yellow-200"
+                          }`}
+                        >
+                          {placedSongSheetPreview ? "Ready ✓" : "Not ready"}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleModeChange("sheet")}
+                            disabled={!placedSongSheetPreview}
+                            className="rounded border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-600"
+                          >
+                            Open Sheet
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => copyPlacedSongSheet()}
+                            disabled={!placedSongSheetPreview}
+                            className="rounded border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-600"
+                          >
+                            {justCopiedPlacedSongSheet ? "Copied ✓" : "Copy"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* MUSICAL GUIDE */}
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Musical guide
+                        </div>
+
+                        <div
+                          className={`mt-1 text-sm font-medium ${
+                            makeSongAudioIsReady
+                              ? "text-green-200"
+                              : makeSongIsRunning
+                                ? "text-blue-200"
+                                : "text-gray-400"
+                          }`}
+                        >
+                          {makeSongAudioIsReady
+                            ? "WAV ready ✓"
+                            : makeSongIsRunning
+                              ? "Creating..."
+                              : "Not created yet"}
+                        </div>
+
+                        {clickTrackAudioUrl && (
+                          <audio
+                            controls
+                            src={clickTrackAudioUrl}
+                            className="mt-3 w-full"
+                            onLoadedMetadata={(event) => {
+                              const duration = event.currentTarget.duration;
+
+                              const safeDuration =
+                                Number.isFinite(duration) && duration > 0
+                                  ? duration
+                                  : 0;
+
+                              if (safeDuration > 0) {
+                                setGeneratedAudioDuration(safeDuration);
+                              }
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {makeSongHasUnsavedChordResult && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-yellow-800 bg-yellow-950/20 px-4 py-3">
+                      <div className="text-sm leading-6 text-yellow-100">
+                        <span className="font-semibold">
+                          Make Song adjusted the working chord result.
+                        </span>{" "}
+                        Your original source checkpoint is still saved.
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setChordsTask("save")}
+                        className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500"
+                      >
+                        Review and save revised checkpoint
+                      </button>
+                    </div>
+                  )}
+
+                  {makeSongMessage && (
+                    <div
+                      className={`rounded border p-3 text-sm leading-6 ${
+                        makeSongStage === "error"
+                          ? "border-red-900 bg-red-950/20 text-red-100"
+                          : makeSongStage === "complete"
+                            ? "border-green-900 bg-green-950/20 text-green-100"
+                            : "border-blue-900 bg-blue-950/20 text-blue-100"
+                      }`}
+                    >
+                      {makeSongMessage}
+                    </div>
+                  )}
+
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.7fr)]">
+                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h3 className="text-sm font-semibold text-gray-100">
+                          Build musical guide
+                        </h3>
+
+                        <p className="text-xs text-gray-500">
+                          Use the saved checkpoint as the source for the guide.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={startMakeSong}
+                        disabled={
+                          makeSongIsRunning ||
+                          !performanceSheet.trim() ||
+                          sourceHasUnsavedChanges ||
+                          !activeSongVersionId ||
+                          !makeSongHasSavedSourceCheckpoint ||
+                          makeSongHasUnsavedChordResult
+                        }
+                        className="mt-3 rounded bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                      >
+                        {makeSongIsRunning
+                          ? "Making song..."
+                          : makeSongStage === "complete"
+                            ? "Make again"
+                            : "Make Song"}
+                      </button>
+
+                      {makeSongHasUnsavedChordResult && (
+                        <div className="mt-3 text-xs leading-5 text-yellow-200">
+                          Save or discard the revised Make Song chord result
+                          before running Make Song again.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded border border-gray-800 bg-gray-950 p-3">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h3 className="text-sm font-semibold text-gray-100">
+                          Continue with your song
+                        </h3>
+
+                        <p className="text-xs text-gray-500">
+                          Use the guide while reviewing, rehearsing or
+                          performing the song.
+                        </p>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                        <button
+                          type="button"
+                          onClick={() => handleModeChange("sheet")}
+                          disabled={!makeSongAudioIsReady}
+                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-green-700 hover:bg-green-950/20 disabled:cursor-not-allowed disabled:text-gray-600"
+                        >
+                          Open Sheet
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleModeChange("rehearse")}
+                          disabled={!makeSongAudioIsReady}
+                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-green-700 hover:bg-green-950/20 disabled:cursor-not-allowed disabled:text-gray-600"
+                        >
+                          Rehearse
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleModeChange("perform")}
+                          disabled={!makeSongAudioIsReady}
+                          className="rounded bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                        >
+                          Perform
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {chordsTask !== "source" &&
                 chordsTask !== "create" &&
                 chordsTask !== "shape" &&
-                chordsTask !== "check" && (
+                chordsTask !== "check" &&
+                chordsTask !== "save" &&
+                chordsTask !== "make" && (
                   <>
                     <div className="rounded border border-gray-800 bg-gray-950 p-4">
                       <div className="text-sm font-medium uppercase tracking-wide text-gray-500">
@@ -26489,7 +27192,7 @@ ${buildRewriteInstruction(
 
                       {makeSongMessage ? (
                         <div
-                          className={`mt-3 rounded border px-3 py-2 text-sm ${
+                          className={`rounded border px-3 py-2 text-sm ${
                             makeSongStage === "error"
                               ? "border-red-800 bg-red-950/30 text-red-100"
                               : makeSongStage === "complete"
@@ -27108,7 +27811,9 @@ ${buildRewriteInstruction(
                       onClick={() => handleModeChange("chords")}
                       className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950"
                     >
-                      Open audio controls
+                      {chordsTask === "make"
+                        ? "← Back to Make Song"
+                        : "Open audio controls"}
                     </button>
                   </div>
 
@@ -27253,9 +27958,21 @@ ${buildRewriteInstruction(
                   ) : null}
                 </div>
               ) : (
-                <div className="sticky top-0 z-30 rounded border border-gray-800 bg-gray-950/95 p-3 text-sm text-gray-400 shadow-lg backdrop-blur">
-                  No guide audio generated yet. Go to Chords and download a
-                  musical guide WAV to use audio with the sheet.
+                <div className="sticky top-0 z-30 flex items-center justify-between gap-3 rounded border border-gray-800 bg-gray-950/95 p-3 text-sm text-gray-400 shadow-lg backdrop-blur">
+                  <div>
+                    No guide audio generated yet. Go to Chords and download a
+                    musical guide WAV to use audio with the sheet.
+                  </div>
+
+                  {chordsTask === "make" && (
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange("chords")}
+                      className="shrink-0 rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-gray-900"
+                    >
+                      ← Back to Make Song
+                    </button>
+                  )}
                 </div>
               )}
 
