@@ -187,6 +187,9 @@ export default function Page() {
 
   const [mode, setMode] = useState<AppMode>("write");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  type WriteTask = "song" | "compare" | "suno";
+
+  const [writeTask, setWriteTask] = useState<WriteTask>("song");
 
   type DevelopTask = "intent" | "analysis" | "draft" | "review" | "use";
 
@@ -2127,6 +2130,47 @@ export default function Page() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [projectMessage, setProjectMessage] = useState("");
+
+  const [projectSearch, setProjectSearch] = useState("");
+  const [projectSortKey, setProjectSortKey] =
+    useState<ProjectSortKey>("updated_at");
+  const [projectSortDirection, setProjectSortDirection] = useState<
+    "asc" | "desc"
+  >("desc");
+
+  const visibleProjects = React.useMemo(() => {
+    const search = projectSearch.trim().toLowerCase();
+
+    const filtered = search
+      ? projects.filter((project) =>
+          project.title.toLowerCase().includes(search),
+        )
+      : [...projects];
+
+    return filtered.sort((a, b) => {
+      if (projectSortKey === "title") {
+        const result = a.title.localeCompare(b.title, undefined, {
+          sensitivity: "base",
+        });
+
+        return projectSortDirection === "asc" ? result : -result;
+      }
+
+      const aTime = a.updated_at
+        ? new Date(a.updated_at).getTime()
+        : a.created_at
+          ? new Date(a.created_at).getTime()
+          : 0;
+
+      const bTime = b.updated_at
+        ? new Date(b.updated_at).getTime()
+        : b.created_at
+          ? new Date(b.created_at).getTime()
+          : 0;
+
+      return projectSortDirection === "asc" ? aTime - bTime : bTime - aTime;
+    });
+  }, [projects, projectSearch, projectSortKey, projectSortDirection]);
 
   const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([]);
   const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([]);
@@ -18964,6 +19008,14 @@ ${buildRewriteInstruction(
 
         <div className="flex flex-col gap-2">
           <SidebarItem
+            icon="📁"
+            label="Projects"
+            active={mode === "projects"}
+            collapsed={sidebarCollapsed}
+            onClick={() => handleModeChange("projects")}
+          />
+
+          <SidebarItem
             icon="✍️"
             label="Write"
             active={mode === "write"}
@@ -19063,7 +19115,61 @@ ${buildRewriteInstruction(
                 </div>
               )}
 
+              <div className="mb-4 flex flex-wrap gap-2 rounded border border-gray-800 bg-gray-950 p-2">
+                <button
+                  type="button"
+                  onClick={() => setWriteTask("song")}
+                  className={`rounded px-4 py-2 text-sm font-medium ${
+                    writeTask === "song"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  }`}
+                >
+                  1. Song
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWriteTask("compare")}
+                  className={`rounded px-4 py-2 text-sm font-medium ${
+                    writeTask === "compare"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  }`}
+                >
+                  2. Compare
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWriteTask("suno")}
+                  className={`rounded px-4 py-2 text-sm font-medium ${
+                    writeTask === "suno"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  }`}
+                >
+                  3. Suno
+                </button>
+              </div>
+
+              {writeTask !== "song" && (
+                <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h1 className="text-xl font-semibold text-gray-100">
+                    {writeTask === "compare" ? "Compare" : "Suno"}
+                  </h1>
+
+                  <span className="text-sm text-gray-400">
+                    Project:{" "}
+                    <span className="font-medium text-gray-200">
+                      {activeProject?.title || "No project selected"}
+                    </span>
+                  </span>
+                </div>
+              )}
+
               <SongEditorPanel
+                activeTask={writeTask}
                 songEditor={{
                   performanceSheet,
                   setPerformanceSheet,
@@ -19117,156 +19223,177 @@ ${buildRewriteInstruction(
                   formatUkDateTime,
                 }}
               />
+              {writeTask === "compare" && (
+                <>
+                  <ComparePanels
+                    compareLeftRef={compareLeftRef}
+                    compareRightRef={compareRightRef}
+                    compareLeftText={compareLeftText}
+                    setCompareLeftText={setCompareLeftText}
+                    compareRightText={compareRightText}
+                    setCompareRightText={setCompareRightText}
+                    lockCompareLeft={lockCompareLeft}
+                    setLockCompareLeft={setLockCompareLeft}
+                    lockCompareRight={lockCompareRight}
+                    setLockCompareRight={setLockCompareRight}
+                    compareUpdateMessage={compareUpdateMessage}
+                    setCompareUpdateMessage={setCompareUpdateMessage}
+                    lastRewriteTargetLabel={lastRewriteTargetLabel}
+                    flashLeftPanel={flashLeftPanel}
+                    flashRightPanel={flashRightPanel}
+                    setFlashLeftPanel={setFlashLeftPanel}
+                    setFlashRightPanel={setFlashRightPanel}
+                    panelsMatch={panelsMatch}
+                    applyingLeft={applyingLeft}
+                    setApplyingLeft={setApplyingLeft}
+                    applyingRight={applyingRight}
+                    setApplyingRight={setApplyingRight}
+                    canApplyLeft={canApplyLeft}
+                    canApplyRight={canApplyRight}
+                    usingLeft={usingLeft}
+                    setUsingLeft={setUsingLeft}
+                    usingRight={usingRight}
+                    setUsingRight={setUsingRight}
+                    syncCompareScroll={syncCompareScroll}
+                    autoSnapshot={autoSnapshot}
+                    performanceScrollRef={performanceScrollRef}
+                    setPerformanceSheet={setPerformanceSheetFromCompareUse}
+                    setCurrentBarIndex={setCurrentBarIndex}
+                    setMode={setMode}
+                  />
 
-              <ComparePanels
-                compareLeftRef={compareLeftRef}
-                compareRightRef={compareRightRef}
-                compareLeftText={compareLeftText}
-                setCompareLeftText={setCompareLeftText}
-                compareRightText={compareRightText}
-                setCompareRightText={setCompareRightText}
-                lockCompareLeft={lockCompareLeft}
-                setLockCompareLeft={setLockCompareLeft}
-                lockCompareRight={lockCompareRight}
-                setLockCompareRight={setLockCompareRight}
-                compareUpdateMessage={compareUpdateMessage}
-                setCompareUpdateMessage={setCompareUpdateMessage}
-                lastRewriteTargetLabel={lastRewriteTargetLabel}
-                flashLeftPanel={flashLeftPanel}
-                flashRightPanel={flashRightPanel}
-                setFlashLeftPanel={setFlashLeftPanel}
-                setFlashRightPanel={setFlashRightPanel}
-                panelsMatch={panelsMatch}
-                applyingLeft={applyingLeft}
-                setApplyingLeft={setApplyingLeft}
-                applyingRight={applyingRight}
-                setApplyingRight={setApplyingRight}
-                canApplyLeft={canApplyLeft}
-                canApplyRight={canApplyRight}
-                usingLeft={usingLeft}
-                setUsingLeft={setUsingLeft}
-                usingRight={usingRight}
-                setUsingRight={setUsingRight}
-                syncCompareScroll={syncCompareScroll}
-                autoSnapshot={autoSnapshot}
-                performanceScrollRef={performanceScrollRef}
-                setPerformanceSheet={setPerformanceSheetFromCompareUse}
-                setCurrentBarIndex={setCurrentBarIndex}
-                setMode={setMode}
-              />
+                  <LiveDiffPreview
+                    previewLeftRef={previewLeftRef}
+                    previewRightRef={previewRightRef}
+                    editedDiffRows={editedDiffRows}
+                    highlightedLines={highlightedLines}
+                    syncPreviewScroll={syncPreviewScroll}
+                    scrollCompareEditorsToLine={scrollCompareEditorsToLine}
+                    getWordDiffParts={getWordDiffParts}
+                  />
 
-              <LiveDiffPreview
-                previewLeftRef={previewLeftRef}
-                previewRightRef={previewRightRef}
-                editedDiffRows={editedDiffRows}
-                highlightedLines={highlightedLines}
-                syncPreviewScroll={syncPreviewScroll}
-                scrollCompareEditorsToLine={scrollCompareEditorsToLine}
-                getWordDiffParts={getWordDiffParts}
-              />
-
-              <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
-                <RewritePanel
-                  activeProjectTitle={activeProject?.title}
-                  protectSongContext={protectSongContext}
-                  setProtectSongContext={setProtectSongContext}
-                  rewriteTarget={rewriteTarget}
-                  setRewriteTarget={setRewriteTarget}
-                  rewritePreset={rewritePreset}
-                  setRewritePreset={setRewritePreset}
-                  rewritePresets={rewritePresets}
-                  rewriteInstruction={rewriteInstruction}
-                  setRewriteInstruction={setRewriteInstruction}
-                  rewriteConstraint={rewriteConstraint}
-                  setRewriteConstraint={setRewriteConstraint}
-                  commercialPolishMode={commercialPolishMode}
-                  setCommercialPolishMode={setCommercialPolishMode}
-                  rewriteSectionOnly={rewriteSectionOnly}
-                  setRewriteSectionOnly={setRewriteSectionOnly}
-                  rewriteSectionName={rewriteSectionName}
-                  setRewriteSectionName={setRewriteSectionName}
-                  detectedSections={detectedSections}
-                  extractChordsAndRemoveFromRewriteSource={
-                    extractChordsAndRemoveFromRewriteSource
-                  }
-                  justExtractedAndRemovedChords={justExtractedAndRemovedChords}
-                  justExtractedChords={justExtractedChords}
-                  hasChordLinesInRewriteSource={hasChordLinesInRewriteSource}
-                  hasRewriteSourceText={hasRewriteSourceText}
-                  rewriteSectionCount={rewriteSectionCount}
-                  rewriteTargetLabel={rewriteTargetLabel}
-                  rewriteScopeLabel={rewriteScopeLabel}
-                  rewriteVoiceLabel={rewriteVoiceLabel}
-                  rewriteAvailabilityLabel={rewriteAvailabilityLabel}
-                  rewriteConstraintLabel={rewriteConstraintLabel}
-                  protectSongContextLabel={protectSongContextLabel}
-                  rewriteBlockedReason={rewriteBlockedReason}
-                  rewriteCanRun={rewriteCanRun}
-                  setCompareUpdateMessage={setCompareUpdateMessage}
-                  extractingLyricsOnly={extractingLyricsOnly}
-                  removeChordsFromRewriteSource={removeChordsFromRewriteSource}
-                  extractChordsFromRewriteSourceToJson={
-                    extractChordsFromRewriteSourceToJson
-                  }
-                  setRewriteMessage={setRewriteMessage}
-                  runRewriteLab={runRewriteLab}
-                  rewriteLoading={rewriteLoading}
-                  rewriteDone={rewriteDone}
-                  rewriteMessage={rewriteMessage}
-                  rewriteVoice={rewriteVoice}
-                  setRewriteVoice={setRewriteVoice}
-                  rewriteVoiceOptions={rewriteVoiceOptions}
-                />
-              </div>
-
-              {chordVersions.length > 0 && (
-                <div className="mb-3 max-w-3xl">
-                  <h3 className="text-sm text-gray-400 mb-2">
-                    Load saved chord version
-                  </h3>
-                </div>
+                  <div className="mb-4 p-4 rounded bg-gray-800 max-w-6xl">
+                    <RewritePanel
+                      activeProjectTitle={activeProject?.title}
+                      protectSongContext={protectSongContext}
+                      setProtectSongContext={setProtectSongContext}
+                      rewriteTarget={rewriteTarget}
+                      setRewriteTarget={setRewriteTarget}
+                      rewritePreset={rewritePreset}
+                      setRewritePreset={setRewritePreset}
+                      rewritePresets={rewritePresets}
+                      rewriteInstruction={rewriteInstruction}
+                      setRewriteInstruction={setRewriteInstruction}
+                      rewriteConstraint={rewriteConstraint}
+                      setRewriteConstraint={setRewriteConstraint}
+                      commercialPolishMode={commercialPolishMode}
+                      setCommercialPolishMode={setCommercialPolishMode}
+                      rewriteSectionOnly={rewriteSectionOnly}
+                      setRewriteSectionOnly={setRewriteSectionOnly}
+                      rewriteSectionName={rewriteSectionName}
+                      setRewriteSectionName={setRewriteSectionName}
+                      detectedSections={detectedSections}
+                      extractChordsAndRemoveFromRewriteSource={
+                        extractChordsAndRemoveFromRewriteSource
+                      }
+                      justExtractedAndRemovedChords={
+                        justExtractedAndRemovedChords
+                      }
+                      justExtractedChords={justExtractedChords}
+                      hasChordLinesInRewriteSource={
+                        hasChordLinesInRewriteSource
+                      }
+                      hasRewriteSourceText={hasRewriteSourceText}
+                      rewriteSectionCount={rewriteSectionCount}
+                      rewriteTargetLabel={rewriteTargetLabel}
+                      rewriteScopeLabel={rewriteScopeLabel}
+                      rewriteVoiceLabel={rewriteVoiceLabel}
+                      rewriteAvailabilityLabel={rewriteAvailabilityLabel}
+                      rewriteConstraintLabel={rewriteConstraintLabel}
+                      protectSongContextLabel={protectSongContextLabel}
+                      rewriteBlockedReason={rewriteBlockedReason}
+                      rewriteCanRun={rewriteCanRun}
+                      setCompareUpdateMessage={setCompareUpdateMessage}
+                      extractingLyricsOnly={extractingLyricsOnly}
+                      removeChordsFromRewriteSource={
+                        removeChordsFromRewriteSource
+                      }
+                      extractChordsFromRewriteSourceToJson={
+                        extractChordsFromRewriteSourceToJson
+                      }
+                      setRewriteMessage={setRewriteMessage}
+                      runRewriteLab={runRewriteLab}
+                      rewriteLoading={rewriteLoading}
+                      rewriteDone={rewriteDone}
+                      rewriteMessage={rewriteMessage}
+                      rewriteVoice={rewriteVoice}
+                      setRewriteVoice={setRewriteVoice}
+                      rewriteVoiceOptions={rewriteVoiceOptions}
+                    />
+                  </div>
+                </>
               )}
 
-              <div className="mb-4 p-4 rounded bg-gray-800 max-w-xl">
-                <div className="flex items-center justify-between mb-3">
+              {debugOutput && (
+                <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
+                  {debugOutput}
+                </pre>
+              )}
+            </div>
+          )}
+
+          {mode === "projects" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h1 className="text-xl font-semibold text-gray-100">
+                  Projects
+                </h1>
+
+                <p className="text-sm text-gray-400">
+                  Choose and manage the project you want to work in.
+                </p>
+              </div>
+
+              <div className="max-w-xl rounded bg-gray-800 p-4">
+                <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-lg font-semibold">Projects</h2>
 
                   <button
                     type="button"
                     onClick={() => loadProjects()}
-                    className="px-3 py-1 rounded bg-gray-600 text-white text-sm"
+                    className="rounded bg-gray-600 px-3 py-1 text-sm text-white"
                   >
                     Refresh
                   </button>
                 </div>
 
                 {projectMessage && (
-                  <p className="text-sm text-gray-400 mb-3">{projectMessage}</p>
+                  <p className="mb-3 text-sm text-gray-400">{projectMessage}</p>
                 )}
 
-                <div className="flex gap-2 mb-3">
+                <div className="mb-3 flex gap-2">
                   <input
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder="New project name"
-                    className="flex-1 px-3 py-2 rounded bg-gray-700 text-white"
+                    className="flex-1 rounded bg-gray-700 px-3 py-2 text-white"
                   />
 
                   <button
                     type="button"
                     onClick={createProject}
-                    className="px-4 py-2 rounded bg-blue-600 text-white"
+                    className="rounded bg-blue-600 px-4 py-2 text-white"
                   >
                     Create
                   </button>
                 </div>
 
-                <div className="flex gap-2 mb-3">
+                <div className="mb-3 flex gap-2">
                   <button
                     type="button"
                     onClick={renameProject}
                     disabled={!activeProject}
-                    className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+                    className="rounded bg-gray-600 px-3 py-2 text-white disabled:opacity-40"
                   >
                     Rename
                   </button>
@@ -19275,7 +19402,7 @@ ${buildRewriteInstruction(
                     type="button"
                     onClick={duplicateProject}
                     disabled={!activeProject}
-                    className="px-3 py-2 rounded bg-gray-600 text-white disabled:opacity-40"
+                    className="rounded bg-gray-600 px-3 py-2 text-white disabled:opacity-40"
                   >
                     Duplicate
                   </button>
@@ -19284,28 +19411,85 @@ ${buildRewriteInstruction(
                     type="button"
                     onClick={deleteProject}
                     disabled={!activeProject}
-                    className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-40"
+                    className="rounded bg-red-600 px-3 py-2 text-white disabled:opacity-40"
                   >
                     Delete
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  {projects.map((project) => (
+                <div className="mb-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_220px]">
+                  <input
+                    type="search"
+                    value={projectSearch}
+                    onChange={(event) => setProjectSearch(event.target.value)}
+                    placeholder="Search projects..."
+                    className="rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                  />
+
+                  <select
+                    value={`${projectSortKey}:${projectSortDirection}`}
+                    onChange={(event) => {
+                      const value = event.target.value;
+
+                      if (value === "updated_at:desc") {
+                        setProjectSortKey("updated_at");
+                        setProjectSortDirection("desc");
+                        return;
+                      }
+
+                      if (value === "title:asc") {
+                        setProjectSortKey("title");
+                        setProjectSortDirection("asc");
+                        return;
+                      }
+
+                      setProjectSortKey("title");
+                      setProjectSortDirection("desc");
+                    }}
+                    className="rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="updated_at:desc">Recently updated</option>
+                    <option value="title:asc">Name A–Z</option>
+                    <option value="title:desc">Name Z–A</option>
+                  </select>
+                </div>
+
+                <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                  {visibleProjects.map((project) => (
                     <button
                       key={project.id}
                       type="button"
-                      onClick={() => setActiveProject(project)}
-                      className={`w-full text-left px-3 py-2 rounded ${
+                      onClick={() => {
+                        setActiveProject(project);
+                        handleModeChange("write");
+                      }}
+                      className={`w-full rounded px-3 py-2 text-left ${
                         activeProject?.id === project.id
                           ? "bg-blue-600 text-white"
-                          : "bg-gray-700 text-gray-200"
+                          : "bg-gray-700 text-gray-200 hover:bg-gray-600"
                       }`}
                     >
                       <div className="font-medium">{project.title}</div>
-                      <div className="text-xs opacity-70">{project.id}</div>
+
+                      <div className="mt-1 flex items-center justify-between gap-3 text-xs opacity-70">
+                        <span className="truncate">{project.id}</span>
+
+                        {project.updated_at && (
+                          <span className="shrink-0">
+                            {new Date(project.updated_at).toLocaleDateString(
+                              "en-GB",
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   ))}
+
+                  {visibleProjects.length === 0 && (
+                    <div className="rounded border border-gray-700 bg-gray-950 px-3 py-4 text-center text-sm text-gray-400">
+                      No matching projects.
+                    </div>
+                  )}
                 </div>
 
                 {activeProject && (
@@ -19314,12 +19498,6 @@ ${buildRewriteInstruction(
                   </p>
                 )}
               </div>
-
-              {debugOutput && (
-                <pre className="mt-4 p-4 rounded bg-gray-800 text-gray-200 whitespace-pre-wrap text-sm">
-                  {debugOutput}
-                </pre>
-              )}
             </div>
           )}
 

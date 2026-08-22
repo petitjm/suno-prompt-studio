@@ -172,7 +172,14 @@ export type ChordRewriteMode =
   | "capo_friendly";
 
 export type AppMode =
-  "write" | "develop" | "chords" | "sheet" | "rehearse" | "perform" | "video";
+  | "projects"
+  | "write"
+  | "develop"
+  | "chords"
+  | "sheet"
+  | "rehearse"
+  | "perform"
+  | "video";
 
 export type ProjectSortKey = "updated_at" | "title";
 export type SortDirection = "asc" | "desc";

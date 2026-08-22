@@ -87,6 +87,7 @@ type SongEditorSharedProps = {
 };
 
 type SongEditorPanelProps = {
+  activeTask: "song" | "compare" | "suno";
   songEditor: SongEditorWorkspaceSongProps;
   chordEditor: SongEditorWorkspaceChordProps;
   compareControls: SongEditorCompareProps;
@@ -94,6 +95,7 @@ type SongEditorPanelProps = {
 };
 
 export default function SongEditorPanel({
+  activeTask,
   songEditor,
   chordEditor,
   compareControls,
@@ -101,8 +103,9 @@ export default function SongEditorPanel({
 }: SongEditorPanelProps) {
   return (
     <>
-      <WritePanelHeader />
+      {activeTask === "song" && <WritePanelHeader />}
       <EditorWorkspace
+        activeTask={activeTask}
         songEditor={{
           performanceSheet: songEditor.performanceSheet,
           setPerformanceSheet: songEditor.setPerformanceSheet,
@@ -119,54 +122,38 @@ export default function SongEditorPanel({
             songEditor.resetAudioPreviewRequestState,
           activeProject: songEditor.activeProject,
         }}
-        chordEditor={{
-          structuredChordJsonRef: chordEditor.structuredChordJsonRef,
-          chordVersionTitle: chordEditor.chordVersionTitle,
-          setChordVersionTitle: chordEditor.setChordVersionTitle,
-          chordsText: chordEditor.chordsText,
-          chordExtractionMessage: chordEditor.chordExtractionMessage,
-          setChordExtractionMessage: chordEditor.setChordExtractionMessage,
-          setChordsText: chordEditor.setChordsText,
-          setChords: chordEditor.setChords,
-          chordVersions: chordEditor.chordVersions,
-          activeChordVersionId: chordEditor.activeChordVersionId,
-          activeSongVersionId: chordEditor.activeSongVersionId,
-          setActiveChordVersionId: chordEditor.setActiveChordVersionId,
-          resetAudioPreviewRequestState:
-            chordEditor.resetAudioPreviewRequestState,
-          saveChords: chordEditor.saveChords,
-          savingChords: chordEditor.savingChords,
-          justSavedChords: chordEditor.justSavedChords,
-        }}
+        structuredChordJson={chordEditor.chordsText}
         shared={{
           formatUkDateTime: shared.formatUkDateTime,
         }}
       />
-      <CompareVersionControls
-        source={{
-          performanceSheet: songEditor.performanceSheet,
-          songVersions: songEditor.songVersions,
-          formatUkDateTime: shared.formatUkDateTime,
-        }}
-        actionState={{
-          comparingNow: compareControls.comparingNow,
-          setComparingNow: compareControls.setComparingNow,
-          loadingLeftCurrent: compareControls.loadingLeftCurrent,
-          setLoadingLeftCurrent: compareControls.setLoadingLeftCurrent,
-          loadingRightCurrent: compareControls.loadingRightCurrent,
-          setLoadingRightCurrent: compareControls.setLoadingRightCurrent,
-        }}
-        panelSelection={{
-          compareLeftSongId: compareControls.compareLeftSongId,
-          setCompareLeftSongId: compareControls.setCompareLeftSongId,
-          compareRightSongId: compareControls.compareRightSongId,
-          setCompareRightSongId: compareControls.setCompareRightSongId,
-          setCompareLeftText: compareControls.setCompareLeftText,
-          setCompareRightText: compareControls.setCompareRightText,
-          setFlashLeftPanel: compareControls.setFlashLeftPanel,
-          setFlashRightPanel: compareControls.setFlashRightPanel,
-        }}
-      />
+      {activeTask === "compare" && (
+        <CompareVersionControls
+          source={{
+            performanceSheet: songEditor.performanceSheet,
+            songVersions: songEditor.songVersions,
+            formatUkDateTime: shared.formatUkDateTime,
+          }}
+          actionState={{
+            comparingNow: compareControls.comparingNow,
+            setComparingNow: compareControls.setComparingNow,
+            loadingLeftCurrent: compareControls.loadingLeftCurrent,
+            setLoadingLeftCurrent: compareControls.setLoadingLeftCurrent,
+            loadingRightCurrent: compareControls.loadingRightCurrent,
+            setLoadingRightCurrent: compareControls.setLoadingRightCurrent,
+          }}
+          panelSelection={{
+            compareLeftSongId: compareControls.compareLeftSongId,
+            setCompareLeftSongId: compareControls.setCompareLeftSongId,
+            compareRightSongId: compareControls.compareRightSongId,
+            setCompareRightSongId: compareControls.setCompareRightSongId,
+            setCompareLeftText: compareControls.setCompareLeftText,
+            setCompareRightText: compareControls.setCompareRightText,
+            setFlashLeftPanel: compareControls.setFlashLeftPanel,
+            setFlashRightPanel: compareControls.setFlashRightPanel,
+          }}
+        />
+      )}
     </>
   );
 }
