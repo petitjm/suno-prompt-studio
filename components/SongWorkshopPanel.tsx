@@ -1188,43 +1188,37 @@ export default function SongWorkshopPanel({
           </p>
         </div>
 
-        <div className="mb-5 rounded border border-gray-800 bg-gray-900/70 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                Current song
-              </div>
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-gray-800 bg-gray-900/70 px-3 py-2 text-sm">
+          <span className="font-medium text-gray-200">
+            {songTitle || "Untitled project"}
+          </span>
 
-              <div className="mt-1 text-sm font-medium text-gray-200">
-                {songTitle || "Untitled project"}
-              </div>
+          <span className="text-gray-600">·</span>
 
-              <div className="mt-1 text-xs text-gray-400">
-                {songVersionTitle || "Unsaved or untitled version"}
-              </div>
-            </div>
+          <span className="text-xs text-gray-400">
+            {songVersionTitle || "Unsaved or untitled version"}
+          </span>
 
-            <div
-              className={`rounded border px-2 py-1 text-xs font-medium ${
-                hasLyrics
-                  ? "border-green-800 bg-green-950/30 text-green-300"
-                  : "border-yellow-800 bg-yellow-950/30 text-yellow-300"
-              }`}
-            >
-              {hasLyrics ? "Lyrics ready" : "Lyrics required"}
-            </div>
-          </div>
+          <span
+            className={`ml-auto rounded border px-2 py-0.5 text-xs font-medium ${
+              hasLyrics
+                ? "border-green-800 bg-green-950/30 text-green-300"
+                : "border-yellow-800 bg-yellow-950/30 text-yellow-300"
+            }`}
+          >
+            {hasLyrics ? "Lyrics ready" : "Lyrics required"}
+          </span>
         </div>
 
         {activeTask === "intent" && (
-          <div className="mb-5 rounded border border-purple-900 bg-purple-950/20 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="rounded border border-purple-900 bg-purple-950/20 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-purple-100">
                   1. Decide what needs developing
                 </h2>
 
-                <p className="mt-1 text-sm text-purple-200">
+                <p className="mt-0.5 text-xs text-purple-200/80">
                   Set the creative direction for this development pass.
                 </p>
               </div>
@@ -1239,42 +1233,49 @@ export default function SongWorkshopPanel({
               </button>
             </div>
 
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-gray-300">
-                Development focus
-              </span>
+            <div className="mt-3 grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Development focus
+                </span>
 
-              <select
-                value={developmentFocus}
-                onChange={(event) => setDevelopmentFocus(event.target.value)}
-                className="mt-2 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
-              >
-                <option value="diagnose">Diagnose the song idea</option>
-                <option value="connect-fragments">
-                  Connect disconnected fragments
-                </option>
-                <option value="strengthen-chorus">
-                  Strengthen chorus and hook
-                </option>
-                <option value="cohesive-draft">
-                  Create a cohesive song draft
-                </option>
-                <option value="preserve-original">
-                  Preserve original phrases as much as possible
-                </option>
-                <option value="make-singable">
-                  Make it more singable and performance-ready
-                </option>
-              </select>
-            </label>
+                <select
+                  value={developmentFocus}
+                  onChange={(event) => setDevelopmentFocus(event.target.value)}
+                  className="mt-1 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
+                >
+                  <option value="diagnose">Diagnose the song idea</option>
+                  <option value="connect-fragments">
+                    Connect disconnected fragments
+                  </option>
+                  <option value="strengthen-chorus">
+                    Strengthen chorus and hook
+                  </option>
+                  <option value="cohesive-draft">
+                    Create a cohesive song draft
+                  </option>
+                  <option value="preserve-original">
+                    Preserve original phrases as much as possible
+                  </option>
+                  <option value="make-singable">
+                    Make it more singable and performance-ready
+                  </option>
+                </select>
+              </label>
 
-            <details className="mt-4 rounded border border-gray-800 bg-gray-950/70 p-3">
+              <div className="pb-2 text-xs text-gray-500">
+                Change {changeIntensity}/5 · Preserve {preserveOriginal}/5 ·
+                Emotion {emotionalDirectness}/5 · Singability {singability}/5
+              </div>
+            </div>
+
+            <details className="mt-3 rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
               <summary className="cursor-pointer text-sm font-medium text-gray-300">
                 Workshop notes
                 {workshopNotes.trim() ? " · added" : " · optional"}
               </summary>
 
-              <label className="mt-3 block">
+              <label className="mt-2 block">
                 <span className="text-xs text-gray-500">
                   Theme, emotional intent, structure, voice, what to preserve,
                   or what currently feels wrong.
@@ -1284,19 +1285,17 @@ export default function SongWorkshopPanel({
                   value={workshopNotes}
                   onChange={(event) => setWorkshopNotes(event.target.value)}
                   placeholder="Example: Connect the disconnected verses through chance and fortune. Keep the voice plain-spoken and emotional."
-                  className="mt-2 min-h-28 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
+                  className="mt-2 min-h-24 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
                 />
               </label>
             </details>
 
-            <details className="mt-3 rounded border border-gray-800 bg-gray-950/70 p-3">
+            <details className="mt-2 rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
               <summary className="cursor-pointer text-sm font-medium text-gray-300">
-                Creative controls · Change {changeIntensity}/5 · Preserve{" "}
-                {preserveOriginal}/5 · Emotion {emotionalDirectness}/5 ·
-                Singability {singability}/5
+                Creative controls
               </summary>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
                 {renderWorkshopSlider({
                   label: "Change intensity",
                   leftLabel: "Light touch",
@@ -1331,14 +1330,14 @@ export default function SongWorkshopPanel({
               </div>
             </details>
 
-            <details className="mt-3 rounded border border-gray-800 bg-gray-950/70 p-3">
+            <details className="mt-2 rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
               <summary className="cursor-pointer text-sm font-medium text-gray-300">
                 Source lyrics · {hasLyrics ? "available" : "not available"}
               </summary>
 
               {hasLyrics ? (
                 <>
-                  <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-black/30 p-3 text-xs text-gray-400">
+                  <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded border border-gray-800 bg-black/30 p-3 text-xs text-gray-400">
                     {sourceLyricsPreview}
                     {sourceLyricsIsTruncated ? "\n\n…" : ""}
                   </pre>
@@ -1358,7 +1357,7 @@ export default function SongWorkshopPanel({
                   )}
                 </>
               ) : (
-                <p className="mt-3 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500">
                   No lyrics or fragments available. Add them in Write, then
                   return to Develop.
                 </p>

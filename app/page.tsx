@@ -19075,9 +19075,20 @@ ${buildRewriteInstruction(
 
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="h-12 bg-gray-800 flex items-center px-4 border-b border-gray-700">
-          <span className="text-sm text-gray-400">
-            Mode: {mode.toUpperCase()}
-          </span>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="shrink-0 text-sm text-gray-400">
+              Mode: {mode.toUpperCase()}
+            </span>
+
+            <span className="text-gray-600">·</span>
+
+            <span className="min-w-0 truncate text-sm text-gray-300">
+              Project:{" "}
+              <span className="font-medium text-gray-100">
+                {activeProject?.title || "No project selected"}
+              </span>
+            </span>
+          </div>
 
           <div className="ml-auto flex items-center gap-3">
             <span className="text-xs text-green-400">{userEmail}</span>
