@@ -1670,6 +1670,31 @@ export default function Page() {
   const [lockCompareLeft, setLockCompareLeft] = useState(false);
   const [lockCompareRight, setLockCompareRight] = useState(false);
   const pendingCompareScrollRef = React.useRef(false);
+  const availablePreviewSections = React.useMemo<PreviewSectionKey[]>(() => {
+    const available = new Set<PreviewSectionKey>();
+
+    performanceSections.forEach((section) => {
+      const label = section.label.trim().toLowerCase();
+
+      if (/^verse(?:\s*\d+)?(?:\s*outro)?$/.test(label)) {
+        available.add("verse");
+      }
+
+      if (/^chorus(?:\s*\d+)?$/.test(label) || /^final chorus$/.test(label)) {
+        available.add("chorus");
+      }
+
+      if (/^bridge(?:\s*\d+)?$/.test(label)) {
+        available.add("bridge");
+      }
+    });
+
+    if (available.size > 0) {
+      available.add("full_song");
+    }
+
+    return Array.from(available);
+  }, [performanceSections]);
   const previewBars = React.useMemo(() => {
     if (!chords) return [];
 
@@ -28385,6 +28410,7 @@ ${buildRewriteInstruction(
                 disabled={false}
                 previewSection={previewSection}
                 setPreviewSection={setPreviewSection}
+                availablePreviewSections={availablePreviewSections}
                 previewPattern={previewPattern}
                 setPreviewPattern={setPreviewPattern}
                 previewInstrument={previewInstrument}
@@ -28537,6 +28563,7 @@ ${buildRewriteInstruction(
                     disabled={false}
                     previewSection={previewSection}
                     setPreviewSection={setPreviewSection}
+                    availablePreviewSections={availablePreviewSections}
                     previewPattern={previewPattern}
                     setPreviewPattern={setPreviewPattern}
                     previewInstrument={previewInstrument}

@@ -11,6 +11,7 @@ import type {
 type RehearsePanelProps = {
   previewSection: PreviewSectionKey;
   setPreviewSection: (value: PreviewSectionKey) => void;
+  availablePreviewSections?: PreviewSectionKey[];
   previewPattern: PreviewPattern;
   setPreviewPattern: (value: PreviewPattern) => void;
   previewInstrument: PreviewInstrument;
@@ -39,6 +40,7 @@ export default function RehearsePanel({
   disabled = false,
   previewSection,
   setPreviewSection,
+  availablePreviewSections = ["verse", "chorus", "bridge", "full_song"],
   previewPattern,
   setPreviewPattern,
   previewInstrument,
@@ -102,15 +104,29 @@ export default function RehearsePanel({
         background: "#1b1b20",
       }}
     >
-      <h3 style={{ marginTop: 0, marginBottom: 14 }}>Audio Preview</h3>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 12,
+          flexWrap: "wrap",
+          marginBottom: 14,
+        }}
+      >
+        <h3 style={{ margin: 0 }}>Rehearse</h3>
+
+        <span style={{ color: "#a1a1aa", fontSize: 13 }}>
+          Choose what to rehearse and set the tempo.
+        </span>
+      </div>
 
       <div
         style={{
           display: "flex",
-          gap: 14,
+          gap: 18,
           flexWrap: "wrap",
-          marginBottom: 14,
           alignItems: "center",
+          marginBottom: 14,
         }}
       >
         <label style={{ cursor: "pointer" }}>
@@ -128,91 +144,24 @@ export default function RehearsePanel({
               padding: "10px 12px",
             }}
           >
-            <option value="verse">Verse</option>
-            <option value="chorus">Chorus</option>
-            <option value="bridge">Bridge</option>
-            <option value="full_song">Full Song</option>
+            {availablePreviewSections.includes("verse") && (
+              <option value="verse">Verse</option>
+            )}
+
+            {availablePreviewSections.includes("chorus") && (
+              <option value="chorus">Chorus</option>
+            )}
+
+            {availablePreviewSections.includes("bridge") && (
+              <option value="bridge">Bridge</option>
+            )}
+
+            {availablePreviewSections.includes("full_song") && (
+              <option value="full_song">Full Song</option>
+            )}
           </select>
         </label>
 
-        <label style={{ cursor: "pointer" }}>
-          Pattern
-          <select
-            value={previewPattern}
-            disabled={disabled}
-            onChange={(e) =>
-              setPreviewPattern(e.target.value as PreviewPattern)
-            }
-            style={{
-              ...inputStyle,
-              width: 210,
-              marginLeft: 10,
-              padding: "10px 12px",
-            }}
-          >
-            <option value="ballad_strum">Ballad Strum</option>
-            <option value="country_train">Country Train</option>
-            <option value="fingerpick">Fingerpick</option>
-            <option value="piano_block">Piano Block Chords</option>
-          </select>
-        </label>
-
-        <label style={{ cursor: "pointer" }}>
-          Instrument
-          <select
-            value={previewInstrument}
-            onChange={(e) =>
-              setPreviewInstrument(e.target.value as PreviewInstrument)
-            }
-            style={{
-              ...inputStyle,
-              width: 170,
-              marginLeft: 10,
-              padding: "10px 12px",
-            }}
-            disabled={
-              disabled ||
-              previewPattern === "piano_block" ||
-              previewPattern === "fingerpick"
-            }
-          >
-            <option value="guitar">Guitar</option>
-            <option value="piano">Piano</option>
-          </select>
-        </label>
-
-        <label style={{ cursor: "pointer" }}>
-          Feel
-          <select
-            value={previewFeel}
-            onChange={(e) => setPreviewFeel(e.target.value as PreviewFeel)}
-            style={{
-              ...inputStyle,
-              width: 150,
-              marginLeft: 10,
-              padding: "10px 12px",
-            }}
-            disabled={
-              disabled ||
-              previewPattern === "piano_block" ||
-              previewPattern === "fingerpick"
-            }
-          >
-            <option value="straight">Straight</option>
-            <option value="swing">Swing</option>
-          </select>
-        </label>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 18,
-          flexWrap: "wrap",
-          alignItems: "center",
-          marginBottom: 14,
-        }}
-      >
         <label style={{ cursor: "pointer" }}>
           Tempo
           <input
@@ -226,40 +175,149 @@ export default function RehearsePanel({
           />
           <span style={{ marginLeft: 8 }}>{previewTempo} BPM</span>
         </label>
-
-        <label style={{ cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            disabled={disabled}
-            checked={previewLoop}
-            onChange={(e) => setPreviewLoop(e.target.checked)}
-            style={{ marginRight: 8 }}
-          />
-          Loop
-        </label>
-
-        <label style={{ cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={previewIncludeBass}
-            onChange={(e) => setPreviewIncludeBass(e.target.checked)}
-            style={{ marginRight: 8 }}
-            disabled={disabled || previewPattern === "country_train"}
-          />
-          Add bass
-        </label>
-
-        <label style={{ cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            disabled={disabled}
-            checked={previewIncludeClick}
-            onChange={(e) => setPreviewIncludeClick(e.target.checked)}
-            style={{ marginRight: 8 }}
-          />
-          Add click
-        </label>
       </div>
+
+      <details
+        style={{
+          marginBottom: 14,
+          border: "1px solid #3f3f46",
+          borderRadius: 10,
+          padding: "10px 12px",
+          background: "#18181b",
+        }}
+      >
+        <summary
+          style={{
+            cursor: "pointer",
+            color: "#d4d4d8",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          Advanced rehearsal settings
+        </summary>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            flexWrap: "wrap",
+            marginTop: 14,
+            alignItems: "center",
+          }}
+        >
+          <label style={{ cursor: "pointer" }}>
+            Pattern
+            <select
+              value={previewPattern}
+              disabled={disabled}
+              onChange={(e) =>
+                setPreviewPattern(e.target.value as PreviewPattern)
+              }
+              style={{
+                ...inputStyle,
+                width: 210,
+                marginLeft: 10,
+                padding: "10px 12px",
+              }}
+            >
+              <option value="ballad_strum">Ballad Strum</option>
+              <option value="country_train">Country Train</option>
+              <option value="fingerpick">Fingerpick</option>
+              <option value="piano_block">Piano Block Chords</option>
+            </select>
+          </label>
+
+          <label style={{ cursor: "pointer" }}>
+            Instrument
+            <select
+              value={previewInstrument}
+              onChange={(e) =>
+                setPreviewInstrument(e.target.value as PreviewInstrument)
+              }
+              style={{
+                ...inputStyle,
+                width: 170,
+                marginLeft: 10,
+                padding: "10px 12px",
+              }}
+              disabled={
+                disabled ||
+                previewPattern === "piano_block" ||
+                previewPattern === "fingerpick"
+              }
+            >
+              <option value="guitar">Guitar</option>
+              <option value="piano">Piano</option>
+            </select>
+          </label>
+
+          <label style={{ cursor: "pointer" }}>
+            Feel
+            <select
+              value={previewFeel}
+              onChange={(e) => setPreviewFeel(e.target.value as PreviewFeel)}
+              style={{
+                ...inputStyle,
+                width: 150,
+                marginLeft: 10,
+                padding: "10px 12px",
+              }}
+              disabled={
+                disabled ||
+                previewPattern === "piano_block" ||
+                previewPattern === "fingerpick"
+              }
+            >
+              <option value="straight">Straight</option>
+              <option value="swing">Swing</option>
+            </select>
+          </label>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 18,
+            flexWrap: "wrap",
+            alignItems: "center",
+            marginTop: 14,
+          }}
+        >
+          <label style={{ cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              disabled={disabled}
+              checked={previewLoop}
+              onChange={(e) => setPreviewLoop(e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Loop
+          </label>
+
+          <label style={{ cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={previewIncludeBass}
+              onChange={(e) => setPreviewIncludeBass(e.target.checked)}
+              style={{ marginRight: 8 }}
+              disabled={disabled || previewPattern === "country_train"}
+            />
+            Add bass
+          </label>
+
+          <label style={{ cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              disabled={disabled}
+              checked={previewIncludeClick}
+              onChange={(e) => setPreviewIncludeClick(e.target.checked)}
+              style={{ marginRight: 8 }}
+            />
+            Add click
+          </label>
+        </div>
+      </details>
 
       <div
         style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}

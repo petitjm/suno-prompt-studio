@@ -172,20 +172,190 @@ export function parseChordSequence(input?: string) {
     .filter((token) => /^[A-G](?:#|b)?/.test(token));
 }
 
+type PlacedPreviewLine = {
+  section: string;
+  lyric: string;
+  chords: Array<{
+    chord: string;
+    charIndex: number;
+  }>;
+};
+
+function getPlacedPreviewLines(
+  chords: ChordResponse | null,
+): PlacedPreviewLine[] {
+  if (!chords) return [];
+
+  const record = chords as Record<string, unknown>;
+
+  const candidateLines =
+    record.songSheetLines ||
+    record.songsheetLines ||
+    record.performanceSongSheetLines ||
+    record.performanceSheetLines ||
+    record.lines;
+
+  if (!Array.isArray(candidateLines)) {
+    return [];
+  }
+
+  return candidateLines
+    .map((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return null;
+      }
+
+      const lineRecord = entry as Record<string, unknown>;
+
+      const section =
+        typeof lineRecord.section === "string" ? lineRecord.section.trim() : "";
+
+      const lyric =
+        typeof lineRecord.lyric === "string"
+          ? lineRecord.lyric.trim()
+          : typeof lineRecord.text === "string"
+            ? lineRecord.text.trim()
+            : typeof lineRecord.line === "string"
+              ? lineRecord.line.trim()
+              : "";
+
+      const rawChords = Array.isArray(lineRecord.chords)
+        ? lineRecord.chords
+        : [];
+
+      const placedChords = rawChords
+        .map((entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+            return null;
+          }
+
+          const chordRecord = entry as Record<string, unknown>;
+
+          const chord =
+            typeof chordRecord.chord === "string"
+              ? chordRecord.chord.trim()
+              : "";
+
+          const rawIndex =
+            typeof chordRecord.charIndex === "number"
+              ? chordRecord.charIndex
+              : typeof chordRecord.index === "number"
+                ? chordRecord.index
+                : typeof chordRecord.position === "number"
+                  ? chordRecord.position
+                  : null;
+
+          if (!chord || rawIndex === null || !Number.isFinite(rawIndex)) {
+            return null;
+          }
+
+          return {
+            chord,
+            charIndex: Math.max(0, Math.floor(rawIndex)),
+          };
+        })
+        .filter(
+          (
+            chord,
+          ): chord is {
+            chord: string;
+            charIndex: number;
+          } => Boolean(chord),
+        );
+
+      if (!lyric && placedChords.length === 0) {
+        return null;
+      }
+
+      return {
+        section,
+        lyric,
+        chords: placedChords,
+      };
+    })
+    .filter((line): line is PlacedPreviewLine => Boolean(line));
+}
+
+function getPreviewSectionFamily(section: string) {
+  const normalized = section
+    .trim()
+    .toLowerCase()
+    .replace(/[()[\]]/g, " ")
+    .replace(/[_/-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (/^(?:final\s+)?chorus(?:\s+\d+)?(?:\s+final)?$/.test(normalized)) {
+    return "chorus";
+  }
+
+  if (/^verse(?:\s+\d+)?$/.test(normalized)) {
+    return "verse";
+  }
+
+  if (/^(?:pre\s+chorus|prechorus)(?:\s+\d+)?$/.test(normalized)) {
+    return "prechorus";
+  }
+
+  if (/^bridge(?:\s+\d+)?$/.test(normalized)) {
+    return "bridge";
+  }
+
+  if (/^intro(?:\s+\d+)?$/.test(normalized)) {
+    return "intro";
+  }
+
+  if (/^outro(?:\s+\d+)?$/.test(normalized)) {
+    return "outro";
+  }
+
+  return normalized || "unsectioned";
+}
+
+function buildPlacedPreviewBars(
+  chords: ChordResponse | null,
+  family?: string,
+): PreviewBar[] {
+  const lines = getPlacedPreviewLines(chords);
+
+  return lines.flatMap((line) => {
+    if (family && getPreviewSectionFamily(line.section) !== family) {
+      return [];
+    }
+
+    return line.chords.map((placement) => ({
+      label: line.section || "Song",
+      chord: placement.chord,
+      sectionId: null,
+    }));
+  });
+}
+
 export function buildPreviewBars(
   chords: ChordResponse | null,
   section: PreviewSectionKey,
 ): PreviewBar[] {
   if (!chords) return [];
 
+  const placedBars =
+    section === "full_song"
+      ? buildPlacedPreviewBars(chords)
+      : buildPlacedPreviewBars(chords, section);
+
+  if (placedBars.length > 0) {
+    return placedBars;
+  }
+
   const verse = parseChordSequence(chords.verse).map((chord) => ({
     label: "Verse",
     chord,
   }));
+
   const chorus = parseChordSequence(chords.chorus).map((chord) => ({
     label: "Chorus",
     chord,
   }));
+
   const bridge = parseChordSequence(chords.bridge).map((chord) => ({
     label: "Bridge",
     chord,
@@ -283,16 +453,39 @@ export function buildOrderedPreviewBarsFromSections(
   sections: OrderedSongSection[],
   chords: ChordResponse | null,
 ): PreviewBar[] {
-  if (!sections.length || !chords) return [];
+  if (!chords) return [];
+
+  const placedLines = getPlacedPreviewLines(chords);
+
+  if (placedLines.length > 0) {
+    return placedLines.flatMap((line) => {
+      const matchingSection =
+        sections.find(
+          (section) =>
+            normalizeSectionLabel(section.label) ===
+            normalizeSectionLabel(line.section),
+        ) || null;
+
+      return line.chords.map((placement) => ({
+        label: line.section || "Song",
+        chord: placement.chord,
+        sectionId: matchingSection?.id || null,
+      }));
+    });
+  }
+
+  if (!sections.length) return [];
 
   const verseBars = parseChordSequence(chords.verse).map((chord) => ({
     label: "Verse",
     chord,
   }));
+
   const chorusBars = parseChordSequence(chords.chorus).map((chord) => ({
     label: "Chorus",
     chord,
   }));
+
   const bridgeBars = parseChordSequence(chords.bridge).map((chord) => ({
     label: "Bridge",
     chord,
@@ -320,6 +513,7 @@ export function buildOrderedPreviewBarsFromSections(
           section,
         );
       }
+
       return attachSection(verseBars, section);
     }
 
@@ -335,9 +529,11 @@ export function buildOrderedPreviewBarsFromSections(
       if (chorusBars.length >= 4) {
         return attachSection(chorusBars.slice(0, 4), section);
       }
+
       if (verseBars.length >= 4) {
         return attachSection(verseBars.slice(0, 4), section);
       }
+
       return attachSection(chorusBars, section);
     }
 
@@ -348,12 +544,14 @@ export function buildOrderedPreviewBarsFromSections(
           section,
         );
       }
+
       if (verseBars.length >= 4) {
         return attachSection(
           verseBars.slice(Math.max(0, verseBars.length - 4)),
           section,
         );
       }
+
       return attachSection(chorusBars, section);
     }
 
