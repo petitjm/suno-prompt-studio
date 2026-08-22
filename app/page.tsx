@@ -28756,6 +28756,161 @@ ${buildRewriteInstruction(
                     </div>
                   )}
 
+                  <details className="mb-4 rounded border border-yellow-800 bg-yellow-950/30 p-3 text-xs text-yellow-100">
+                    <summary className="cursor-pointer font-semibold">
+                      Advanced guide diagnostics
+                    </summary>
+
+                    <div className="mt-2 text-[11px] text-yellow-200">
+                      Technical details for checking guide, cue, melody, and
+                      performance-sheet alignment.
+                    </div>
+
+                    {generatedGuideSourceModeLabel ? (
+                      <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
+                        Generated guide source: {generatedGuideSourceModeLabel}
+                      </div>
+                    ) : null}
+
+                    {guideSheetMismatchStatusText ? (
+                      <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
+                        {guideSheetMismatchStatusText}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-3 grid gap-3">
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Current song version sections
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(
+                            getDebugParsedSections(performanceSheet),
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Guide-aligned sheet sections
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(
+                            getDebugParsedSections(
+                              normaliseGuideAlignedSongSheetText(
+                                audioPreviewSongSheetText,
+                              ),
+                            ),
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Guide cue markers
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(
+                            getGeneratedAudioSectionJumpSummaries().map(
+                              (section, index) => ({
+                                index,
+                                order: section.order,
+                                section: section.section,
+                                sectionInstanceId: section.sectionInstanceId,
+                                sourceLineIndexes: section.sourceLineIndexes,
+                                startSeconds: section.startSeconds,
+                                matchKey: getGuideSectionMatchKey(
+                                  section.section,
+                                ),
+                                nonPerformance: isNonPerformanceGuideSection(
+                                  section.section,
+                                ),
+                              }),
+                            ),
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Melody phrase scaffold
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(
+                            melodyPhraseScaffold.map((phrase, index) => ({
+                              index,
+                              section: phrase.section,
+                              sectionInstanceId: phrase.sectionInstanceId,
+                              sourceLineIndex: phrase.sourceLineIndex,
+                              sourceLyric: phrase.sourceLyric,
+                              startSeconds: phrase.startSeconds,
+                              endSeconds: phrase.endSeconds,
+                              durationSeconds: Number(
+                                (
+                                  phrase.endSeconds - phrase.startSeconds
+                                ).toFixed(3),
+                              ),
+                              noteCount: phrase.notes.length,
+                            })),
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Melody version data
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(
+                            melodyVersionData
+                              ? {
+                                  songVersionId:
+                                    melodyVersionData.songVersionId,
+                                  chordVersionId:
+                                    melodyVersionData.chordVersionId,
+                                  tempoBpm: melodyVersionData.tempoBpm,
+                                  phraseCount: melodyVersionData.phrases.length,
+                                  noteCount: melodyVersionData.phrases.reduce(
+                                    (total, phrase) =>
+                                      total + phrase.notes.length,
+                                    0,
+                                  ),
+                                }
+                              : null,
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Lyric word timings
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(lyricWordTimings, null, 2)}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 font-semibold text-yellow-200">
+                          Melody scale
+                        </div>
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
+                          {JSON.stringify(melodyScale, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </details>
+
                   <RehearsePanel
                     disabled={false}
                     previewSection={previewSection}
