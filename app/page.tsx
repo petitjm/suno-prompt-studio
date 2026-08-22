@@ -2295,17 +2295,12 @@ export default function Page() {
   const skipNextChordWorkingDraftSaveRef = React.useRef(false);
 
   const videoScrollTopRef = React.useRef(0);
-  const sheetScrollTopRef = React.useRef(0);
 
   const handleWorkspaceScroll = () => {
     const currentScrollTop = performanceScrollRef.current?.scrollTop || 0;
 
     if (mode === "write") {
       writeScrollTopRef.current = currentScrollTop;
-    }
-
-    if (mode === "sheet") {
-      sheetScrollTopRef.current = currentScrollTop;
     }
 
     if (mode === "chords") {
@@ -2326,10 +2321,6 @@ export default function Page() {
 
     if (mode === "chords") {
       chordsScrollTopRef.current = currentScrollTop;
-    }
-
-    if (mode === "sheet") {
-      sheetScrollTopRef.current = currentScrollTop;
     }
 
     if (mode === "video") {
@@ -2428,10 +2419,6 @@ export default function Page() {
 
     if (mode === "chords") {
       nextScrollTop = chordsScrollTopRef.current;
-    }
-
-    if (mode === "sheet") {
-      nextScrollTop = sheetScrollTopRef.current;
     }
 
     if (mode === "video") {
@@ -19067,14 +19054,6 @@ ${buildRewriteInstruction(
           />
 
           <SidebarItem
-            icon="📄"
-            label="Sheet"
-            active={mode === "sheet"}
-            collapsed={sidebarCollapsed}
-            onClick={() => handleModeChange("sheet")}
-          />
-
-          <SidebarItem
             icon="🎧"
             label="Rehearse"
             active={mode === "rehearse"}
@@ -21393,11 +21372,11 @@ ${buildRewriteInstruction(
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button
                             type="button"
-                            onClick={() => handleModeChange("sheet")}
+                            onClick={() => handleModeChange("perform")}
                             disabled={!placedSongSheetPreview}
                             className="rounded border border-gray-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-600"
                           >
-                            Open Sheet
+                            Open Performance
                           </button>
 
                           <button
@@ -21541,16 +21520,7 @@ ${buildRewriteInstruction(
                         </p>
                       </div>
 
-                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange("sheet")}
-                          disabled={!makeSongAudioIsReady}
-                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-green-700 hover:bg-green-950/20 disabled:cursor-not-allowed disabled:text-gray-600"
-                        >
-                          Open Sheet
-                        </button>
-
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <button
                           type="button"
                           onClick={() => handleModeChange("rehearse")}
@@ -28000,577 +27970,6 @@ ${buildRewriteInstruction(
             </div>
           </div>
 
-          {mode === "sheet" && (
-            <div className="space-y-4">
-              {clickTrackAudioUrl ? (
-                <div className="sticky top-0 z-30 rounded border border-green-900 bg-green-950/95 p-3 shadow-lg backdrop-blur">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <div className="text-sm font-medium text-green-100">
-                        {clickTrackAudioLabel}
-                      </div>
-
-                      <div className="text-xs text-green-300">
-                        {usingGuideAlignedSheet
-                          ? "Guide-aligned performance sheet"
-                          : "Main performance sheet"}
-                      </div>
-
-                      {guideSyncWarningCount > 0 ||
-                      guideSheetMismatchStatusText ? (
-                        <div className="text-xs text-yellow-200">
-                          Guide sync needs review
-                        </div>
-                      ) : (
-                        <div className="text-xs text-green-400">
-                          Guide ready
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleModeChange("chords")}
-                      className="rounded border border-green-800 px-3 py-1 text-xs font-medium text-green-200 hover:bg-green-950"
-                    >
-                      {chordsTask === "make"
-                        ? "← Back to Make Song"
-                        : "Open audio controls"}
-                    </button>
-                  </div>
-
-                  <audio
-                    ref={sheetGuideAudioRef}
-                    controls
-                    src={clickTrackAudioUrl}
-                    className="w-full"
-                    onPlay={(event) => {
-                      stopPreviewPlayback();
-
-                      const audioElement = event.currentTarget;
-
-                      if (audioElement.currentTime > 0.5) {
-                        return;
-                      }
-
-                      const initialSeekSeconds =
-                        getSheetGuideInitialSeekSeconds();
-
-                      if (initialSeekSeconds === null) {
-                        return;
-                      }
-
-                      audioElement.currentTime = initialSeekSeconds;
-                      updateSheetGuideActiveSection(initialSeekSeconds);
-                      updateGeneratedAudioActiveChord(initialSeekSeconds);
-                    }}
-                    onLoadedMetadata={(event) => {
-                      const duration = event.currentTarget.duration;
-                      const safeDuration =
-                        Number.isFinite(duration) && duration > 0
-                          ? duration
-                          : 0;
-
-                      setGeneratedAudioDuration(safeDuration);
-                      updateSheetGuideActiveSection(
-                        event.currentTarget.currentTime || 0,
-                      );
-                    }}
-                    onTimeUpdate={(event) => {
-                      const currentTime = event.currentTarget.currentTime || 0;
-
-                      updateSheetGuideActiveSection(currentTime);
-                      updateGeneratedAudioActiveChord(currentTime);
-                    }}
-                    onSeeked={(event) => {
-                      const currentTime = event.currentTarget.currentTime || 0;
-
-                      updateSheetGuideActiveSection(currentTime);
-                      updateGeneratedAudioActiveChord(currentTime);
-                    }}
-                    onEnded={() => {
-                      setSheetGuideActiveSectionId(null);
-                      setSheetGuideActiveSectionIndex(null);
-                      setGeneratedAudioActiveChord(null);
-                    }}
-                  />
-
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 rounded border border-yellow-900/60 bg-yellow-950/20 px-3 py-2 text-sm">
-                    <span className="font-medium text-yellow-200">
-                      Sounding chord:{" "}
-                      <span className="text-lg font-semibold">
-                        {generatedAudioActiveChord?.chord || "—"}
-                      </span>
-                    </span>
-
-                    {generatedAudioActiveChord ? (
-                      <span className="text-xs text-green-200">
-                        {generatedAudioActiveChord.section}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {getGeneratedAudioSectionJumpSummaries().length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center justify-between gap-3 text-[11px] text-green-100">
-                        <span className="font-medium">Section timeline</span>
-                        <span className="text-green-200">
-                          Click a marker to start {sheetGuideLeadInSeconds}s
-                          before the section.
-                        </span>
-                      </div>
-
-                      <div className="relative h-16 rounded border border-green-900 bg-green-950/40 px-3">
-                        <div className="absolute left-3 right-3 top-8 h-px bg-green-800" />
-
-                        {getGeneratedAudioSectionJumpSummaries()
-                          .slice(0, 16)
-                          .map((section, index, sections) => {
-                            const fallbackPercent =
-                              sections.length > 1
-                                ? (index / (sections.length - 1)) * 100
-                                : 0;
-                            const timelinePercent =
-                              generatedAudioDuration > 0
-                                ? Math.max(
-                                    0,
-                                    Math.min(
-                                      100,
-                                      (section.startSeconds /
-                                        generatedAudioDuration) *
-                                        100,
-                                    ),
-                                  )
-                                : fallbackPercent;
-                            const leadInSeconds = Math.max(
-                              0,
-                              section.startSeconds - sheetGuideLeadInSeconds,
-                            );
-
-                            return (
-                              <button
-                                key={`${section.order}-${section.section}-${section.startSeconds}`}
-                                type="button"
-                                onClick={() =>
-                                  seekSheetGuideAudioWithLeadIn(
-                                    section.startSeconds,
-                                  )
-                                }
-                                title={`${section.section}: marker ${formatGeneratedAudioTime(
-                                  section.startSeconds,
-                                )}, starts from ${formatGeneratedAudioTime(
-                                  leadInSeconds,
-                                )}`}
-                                style={{ left: `${timelinePercent}%` }}
-                                className="absolute top-8 max-w-[120px] -translate-x-1/2 -translate-y-1/2 rounded border border-green-700 bg-green-950 px-2 py-1 text-[10px] leading-tight text-green-100 shadow hover:bg-green-900"
-                              >
-                                <span className="block truncate">
-                                  {section.section}
-                                </span>
-                                <span className="block text-green-300">
-                                  {formatGeneratedAudioTime(
-                                    section.startSeconds,
-                                  )}
-                                </span>
-                              </button>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="sticky top-0 z-30 flex items-center justify-between gap-3 rounded border border-gray-800 bg-gray-950/95 p-3 text-sm text-gray-400 shadow-lg backdrop-blur">
-                  <div>
-                    No guide audio generated yet. Go to Chords and download a
-                    musical guide WAV to use audio with the sheet.
-                  </div>
-
-                  {chordsTask === "make" && (
-                    <button
-                      type="button"
-                      onClick={() => handleModeChange("chords")}
-                      className="shrink-0 rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-200 hover:bg-gray-900"
-                    >
-                      ← Back to Make Song
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <details className="relative z-40 mt-3 rounded border border-yellow-800 bg-yellow-950/40 p-3 text-xs text-yellow-100 shadow-lg">
-                <summary className="cursor-pointer font-semibold">
-                  Advanced guide diagnostics
-                </summary>
-
-                <div className="mt-2 text-[11px] text-yellow-200">
-                  Technical details for checking guide, cue, melody, and sheet
-                  alignment.
-                </div>
-
-                {generatedGuideSourceModeLabel ? (
-                  <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
-                    Generated guide source: {generatedGuideSourceModeLabel}
-                  </div>
-                ) : null}
-
-                {guideSheetMismatchStatusText ? (
-                  <div className="mt-2 rounded border border-yellow-700/50 bg-yellow-900/30 p-2 text-[11px] text-yellow-100">
-                    {guideSheetMismatchStatusText}
-                  </div>
-                ) : null}
-
-                <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Current song version sections
-                    </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        getDebugParsedSections(performanceSheet),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Guide-aligned sheet sections
-                    </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        getDebugParsedSections(
-                          normaliseGuideAlignedSongSheetText(
-                            audioPreviewSongSheetText,
-                          ),
-                        ),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Guide cue markers
-                    </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        getGeneratedAudioSectionJumpSummaries().map(
-                          (section, index) => ({
-                            index,
-                            order: section.order,
-                            section: section.section,
-                            sectionInstanceId: section.sectionInstanceId,
-                            sourceLineIndexes: section.sourceLineIndexes,
-                            startSeconds: section.startSeconds,
-                            matchKey: getGuideSectionMatchKey(section.section),
-                            nonPerformance: isNonPerformanceGuideSection(
-                              section.section,
-                            ),
-                          }),
-                        ),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Melody phrase scaffold
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        melodyPhraseScaffold.map((phrase, index) => ({
-                          index,
-                          section: phrase.section,
-                          sectionInstanceId: phrase.sectionInstanceId,
-                          sourceLineIndex: phrase.sourceLineIndex,
-                          sourceLyric: phrase.sourceLyric,
-                          startSeconds: phrase.startSeconds,
-                          endSeconds: phrase.endSeconds,
-                          durationSeconds: Number(
-                            (phrase.endSeconds - phrase.startSeconds).toFixed(
-                              3,
-                            ),
-                          ),
-                          noteCount: phrase.notes.length,
-                        })),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Melody version data
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        melodyVersionData
-                          ? {
-                              songVersionId: melodyVersionData.songVersionId,
-                              chordVersionId: melodyVersionData.chordVersionId,
-                              tempoBpm: melodyVersionData.tempoBpm,
-                              phraseCount: melodyVersionData.phrases.length,
-                              noteCount: melodyVersionData.phrases.reduce(
-                                (total, phrase) => total + phrase.notes.length,
-                                0,
-                              ),
-                            }
-                          : null,
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Melody harmonic framework
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        melodyPitchFramework.map((item, index) => ({
-                          index,
-                          section: item.phrase.section,
-                          sourceLineIndex: item.phrase.sourceLineIndex,
-                          sourceLyric: item.phrase.sourceLyric,
-                          startSeconds: item.phrase.startSeconds,
-                          endSeconds: item.phrase.endSeconds,
-                          chords: item.chords,
-                          pitchClasses: item.pitchClasses,
-                          harmonyEvents: item.harmonyEvents,
-                        })),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Initial melody anchors
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        initialMelodyAnchors.map((phrase, index) => ({
-                          index,
-                          section: phrase.section,
-                          sourceLineIndex: phrase.sourceLineIndex,
-                          sourceLyric: phrase.sourceLyric,
-                          startSeconds: phrase.startSeconds,
-                          endSeconds: phrase.endSeconds,
-                          notes: phrase.notes.map((note) => ({
-                            pitchMidi: note.pitchMidi,
-                            startSeconds: note.startSeconds,
-                            durationSeconds: note.durationSeconds,
-                          })),
-                        })),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Lyric phrase units
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        lyricPhraseUnits.map((group, index) => ({
-                          index,
-                          section: group.phrase.section,
-                          sourceLineIndex: group.phrase.sourceLineIndex,
-                          sourceLyric: group.phrase.sourceLyric,
-                          units: group.units,
-                        })),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Lyric word timings
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(lyricWordTimings, null, 2)}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Melody scale
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(melodyScale, null, 2)}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Initial melody contours
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        initialMelodyContours.map((phrase, index) => ({
-                          index,
-                          section: phrase.section,
-                          sourceLineIndex: phrase.sourceLineIndex,
-                          sourceLyric: phrase.sourceLyric,
-                          notes: phrase.notes.map((note) => ({
-                            pitchMidi: note.pitchMidi,
-                            startSeconds: note.startSeconds,
-                            durationSeconds: note.durationSeconds,
-                            lyricText: note.lyricText,
-                          })),
-                        })),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Melody range by section
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        {
-                          sections: melodyRangeBySection,
-                        },
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Repeated melody motif check
-                    </div>
-
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        initialMelodyContours
-                          .map((phrase, index) => ({
-                            index,
-                            section: phrase.section,
-                            lyric: phrase.sourceLyric,
-                            pitches: phrase.notes.map((note) => note.pitchMidi),
-                          }))
-                          .filter((phrase, index, phrases) => {
-                            const normalise = (value: string) =>
-                              value
-                                .trim()
-                                .toLowerCase()
-                                .replace(/[^\p{L}\p{N}' ]/gu, "")
-                                .replace(/\s+/g, " ");
-
-                            const currentLyric = normalise(phrase.lyric);
-
-                            return phrases.some(
-                              (otherPhrase, otherIndex) =>
-                                otherIndex !== index &&
-                                normalise(otherPhrase.lyric) === currentLyric,
-                            );
-                          }),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Raw Sheet display sections
-                    </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        sheetDisplayPerformanceSections.map(
-                          (section, index) => ({
-                            index,
-                            id: section.id,
-                            label: section.label,
-                            matchKey: getGuideSectionMatchKey(section.label),
-                            sheetSourceLineIndexes:
-                              getSheetSectionSourceLineIndexes(
-                                section,
-                                sheetDisplayPerformanceSheet,
-                              ),
-                            nonPerformance:
-                              isNonPerformanceSheetSection(section),
-                            contentStart: section.content.slice(0, 140),
-                          }),
-                        ),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-                  <div>
-                    <div className="mb-1 font-semibold text-yellow-200">
-                      Visible guide-synced Sheet sections
-                    </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
-                      {JSON.stringify(
-                        cueSyncedSheetSectionDetails.map((detail, index) => ({
-                          index,
-                          sheetIndex: detail.sheetIndex,
-                          id: detail.section.id,
-                          label: detail.section.label,
-                          matchKey: getGuideSectionMatchKey(
-                            detail.section.label,
-                          ),
-                          sheetSourceLineIndexes:
-                            getSheetSectionSourceLineIndexes(
-                              detail.section,
-                              sheetDisplayPerformanceSheet,
-                            ),
-                          cueIndex: detail.cueIndex,
-                          cueSection: detail.cueSection,
-                          cueSectionInstanceId: detail.cueSectionInstanceId,
-                          cueSourceLineIndexes: detail.cueSourceLineIndexes,
-                          cueStartSeconds: detail.cueStartSeconds,
-                          syncWarning: detail.syncWarning,
-                          contentStart: detail.section.content.slice(0, 140),
-                        })),
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-                </div>
-              </details>
-
-              <SongSheet
-                performanceSheet={visibleSheetPerformanceSheet}
-                performanceSections={visibleSheetPerformanceSections}
-                performanceFontSize={18}
-                activePerformanceSectionId={
-                  sheetGuideActiveSectionId || activePerformanceSectionId
-                }
-                performanceSectionRefs={performanceSectionRefs}
-              />
-            </div>
-          )}
-
           {mode === "rehearse" && (
             <div className="h-full">
               {clickTrackAudioUrl ? (
@@ -28638,10 +28037,25 @@ ${buildRewriteInstruction(
               <button
                 type="button"
                 onClick={() => setPerformControlsOpen((open) => !open)}
-                className="fixed right-6 top-20 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
+                className="fixed right-6 top-32 z-50 px-4 py-2 rounded bg-blue-600 text-white shadow-lg"
               >
                 {performControlsOpen ? "Hide Controls" : "Show Controls"}
               </button>
+              {chordsTask === "make" && (
+                <div className="mb-3 flex items-center justify-between gap-3 rounded border border-blue-900 bg-blue-950/20 px-3 py-2">
+                  <div className="text-sm text-blue-100">
+                    Performing the song from Make Song
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("chords")}
+                    className="rounded border border-blue-700 bg-gray-950 px-3 py-1.5 text-xs font-medium text-blue-100 hover:bg-blue-950/40"
+                  >
+                    ← Back to Make Song
+                  </button>
+                </div>
+              )}
 
               <SongSheet
                 performanceSheet={visibleSheetPerformanceSheet}
