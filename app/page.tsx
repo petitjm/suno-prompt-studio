@@ -2548,9 +2548,20 @@ export default function Page() {
     resetAudioPreviewRequestState();
 
     if (activeProject?.id) {
+      if (userEmail) {
+        try {
+          window.localStorage.setItem(
+            `suno-prompt-studio:last-active-project:${userEmail}`,
+            activeProject.id,
+          );
+        } catch {
+          // Ignore localStorage write failures.
+        }
+      }
+
       void loadProjectData(activeProject.id);
     }
-  }, [activeProject?.id]);
+  }, [activeProject?.id, userEmail]);
 
   React.useEffect(() => {
     if (!activeProject?.id || !activeSongVersionId) {
@@ -3388,9 +3399,25 @@ export default function Page() {
 
       if (nextProjects.length > 0) {
         setActiveProject((prev) => {
-          const targetId = preferredProjectId || prev?.id;
+          let rememberedProjectId = "";
+
+          if (userEmail) {
+            try {
+              rememberedProjectId =
+                window.localStorage.getItem(
+                  `suno-prompt-studio:last-active-project:${userEmail}`,
+                ) || "";
+            } catch {
+              // Ignore localStorage read failures.
+            }
+          }
+
+          const targetId =
+            preferredProjectId || prev?.id || rememberedProjectId;
+
           return targetId
-            ? nextProjects.find((p) => p.id === targetId) || nextProjects[0]
+            ? nextProjects.find((project) => project.id === targetId) ||
+                nextProjects[0]
             : nextProjects[0];
         });
       } else {
@@ -27977,47 +28004,28 @@ ${buildRewriteInstruction(
             <div className="space-y-4">
               {clickTrackAudioUrl ? (
                 <div className="sticky top-0 z-30 rounded border border-green-900 bg-green-950/95 p-3 shadow-lg backdrop-blur">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-medium text-green-100">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <div className="text-sm font-medium text-green-100">
                         {clickTrackAudioLabel}
                       </div>
-                      <div className="mt-1 text-[11px] text-green-200">
-                        Guide audio available while reviewing or singing the
-                        sheet.
-                      </div>
 
-                      <div className="mt-1 text-[11px] text-green-300">
+                      <div className="text-xs text-green-300">
                         {usingGuideAlignedSheet
-                          ? "Showing the guide-aligned sheet used for this audio."
-                          : "Showing the main performance sheet."}
+                          ? "Guide-aligned performance sheet"
+                          : "Main performance sheet"}
                       </div>
 
-                      {generatedGuideSourceModeLabel ? (
-                        <div className="mt-1 text-[11px] text-green-300">
-                          Generated guide source:{" "}
-                          {generatedGuideSourceModeLabel}
+                      {guideSyncWarningCount > 0 ||
+                      guideSheetMismatchStatusText ? (
+                        <div className="text-xs text-yellow-200">
+                          Guide sync needs review
                         </div>
-                      ) : null}
-
-                      <div
-                        className={`mt-1 text-[11px] ${
-                          usingGuideAlignedSheet &&
-                          guideCueSectionCount ===
-                            cueSyncedSheetSections.length &&
-                          guideSyncWarningCount === 0
-                            ? "text-green-300"
-                            : "text-yellow-200"
-                        }`}
-                      >
-                        {guideSyncStatusText}
-                      </div>
-
-                      {guideSheetMismatchStatusText ? (
-                        <div className="mt-1 text-[11px] text-yellow-200">
-                          {guideSheetMismatchStatusText}
+                      ) : (
+                        <div className="text-xs text-green-400">
+                          Guide ready
                         </div>
-                      ) : null}
+                      )}
                     </div>
 
                     <button
@@ -28192,12 +28200,12 @@ ${buildRewriteInstruction(
 
               <details className="relative z-40 mt-3 rounded border border-yellow-800 bg-yellow-950/40 p-3 text-xs text-yellow-100 shadow-lg">
                 <summary className="cursor-pointer font-semibold">
-                  Guide sync details
+                  Advanced guide diagnostics
                 </summary>
 
                 <div className="mt-2 text-[11px] text-yellow-200">
-                  Shows how the current song version, guide-aligned sheet, cue
-                  markers, and visible Sheet sections currently line up.
+                  Technical details for checking guide, cue, melody, and sheet
+                  alignment.
                 </div>
 
                 {generatedGuideSourceModeLabel ? (

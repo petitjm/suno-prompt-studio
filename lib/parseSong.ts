@@ -135,7 +135,7 @@ export function parsePerformanceSections(sheet: string): PerformanceSection[] {
     if (isSectionHeader(trimmed)) {
       pushSection();
       currentLabel = cleanHeader(trimmed);
-      currentContent = [line];
+      currentContent = [];
     } else {
       currentContent.push(line);
     }

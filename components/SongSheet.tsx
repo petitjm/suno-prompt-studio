@@ -93,6 +93,17 @@ export default function SongSheet({
               transition: "all 0.25s ease",
             }}
           >
+            <div
+              style={{
+                marginBottom: 10,
+                fontSize: Math.max(14, performanceFontSize - 2),
+                fontWeight: 700,
+                color: isActive ? "#bfdbfe" : "#d4d4d8",
+              }}
+            >
+              {section.label}
+            </div>
+
             <pre
               style={{
                 margin: 0,
