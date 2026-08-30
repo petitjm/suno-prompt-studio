@@ -993,6 +993,17 @@ export default function VideoPromptBuilder({
       return;
     }
 
+    const hasSongProfileValues = Boolean(
+      songCreativeProfile?.genre?.trim() ||
+      songCreativeProfile?.moods?.length ||
+      songCreativeProfile?.coreTheme?.trim() ||
+      songCreativeProfile?.emotionalCentre?.trim(),
+    );
+
+    if (!hasSongProfileValues) {
+      return;
+    }
+
     if (directionSeedSongVersionId === songVersionId) {
       return;
     }
