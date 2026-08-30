@@ -2351,89 +2351,102 @@ export default function VideoPromptBuilder({
                 <div className="space-y-4">
                   {videoTask === "review" && (
                     <>
-                      <label className="block">
-                        <span className="mb-1 block text-sm font-medium text-gray-300">
-                          Global style
-                        </span>
-                        <textarea
-                          value={result.global_style}
-                          readOnly
-                          rows={3}
-                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyVideoField(
-                              "GLOBAL STYLE:",
-                              result.global_style,
-                              getVideoFieldKey(result, index, "global-style"),
-                            )
-                          }
-                          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                        >
-                          {justCopiedField ===
-                          getVideoFieldKey(result, index, "global-style")
-                            ? "Global style copied ✓"
-                            : "Copy global style"}
-                        </button>
-                      </label>
+                      <div className="space-y-5">
+                        <section>
+                          <div className="mb-1 flex items-center justify-between gap-3">
+                            <h4 className="text-sm font-semibold text-gray-200">
+                              Global style
+                            </h4>
 
-                      <label className="block">
-                        <span className="mb-1 block text-sm font-medium text-gray-300">
-                          Character prompt
-                        </span>
-                        <textarea
-                          value={result.character_prompt}
-                          readOnly
-                          rows={3}
-                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyVideoField(
-                              "CHARACTER PROMPT:",
-                              result.character_prompt,
-                              getVideoFieldKey(result, index, "character"),
-                            )
-                          }
-                          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                        >
-                          {justCopiedField ===
-                          getVideoFieldKey(result, index, "character")
-                            ? "Character prompt copied ✓"
-                            : "Copy character prompt"}
-                        </button>
-                      </label>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyVideoField(
+                                  "GLOBAL STYLE:",
+                                  result.global_style,
+                                  getVideoFieldKey(
+                                    result,
+                                    index,
+                                    "global-style",
+                                  ),
+                                )
+                              }
+                              className="text-xs text-purple-300 hover:text-purple-200"
+                            >
+                              {justCopiedField ===
+                              getVideoFieldKey(result, index, "global-style")
+                                ? "Copied ✓"
+                                : "Copy"}
+                            </button>
+                          </div>
 
-                      <label className="block">
-                        <span className="mb-1 block text-sm font-medium text-gray-300">
-                          Video concept
-                        </span>
-                        <textarea
-                          value={result.video_concept}
-                          readOnly
-                          rows={4}
-                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyVideoField(
-                              "VIDEO CONCEPT:",
-                              result.video_concept,
-                              getVideoFieldKey(result, index, "video-concept"),
-                            )
-                          }
-                          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                        >
-                          {justCopiedField ===
-                          getVideoFieldKey(result, index, "video-concept")
-                            ? "Video concept copied ✓"
-                            : "Copy video concept"}
-                        </button>
-                      </label>
+                          <p className="text-sm leading-6 text-gray-300">
+                            {result.global_style}
+                          </p>
+                        </section>
+
+                        <section>
+                          <div className="mb-1 flex items-center justify-between gap-3">
+                            <h4 className="text-sm font-semibold text-gray-200">
+                              Character
+                            </h4>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyVideoField(
+                                  "CHARACTER PROMPT:",
+                                  result.character_prompt,
+                                  getVideoFieldKey(result, index, "character"),
+                                )
+                              }
+                              className="text-xs text-purple-300 hover:text-purple-200"
+                            >
+                              {justCopiedField ===
+                              getVideoFieldKey(result, index, "character")
+                                ? "Copied ✓"
+                                : "Copy"}
+                            </button>
+                          </div>
+
+                          <p className="text-sm leading-6 text-gray-300">
+                            {result.character_prompt}
+                          </p>
+                        </section>
+
+                        <section>
+                          <div className="mb-1 flex items-center justify-between gap-3">
+                            <h4 className="text-sm font-semibold text-gray-200">
+                              Video concept
+                            </h4>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyVideoField(
+                                  "VIDEO CONCEPT:",
+                                  result.video_concept,
+                                  getVideoFieldKey(
+                                    result,
+                                    index,
+                                    "video-concept",
+                                  ),
+                                )
+                              }
+                              className="text-xs text-purple-300 hover:text-purple-200"
+                            >
+                              {justCopiedField ===
+                              getVideoFieldKey(result, index, "video-concept")
+                                ? "Copied ✓"
+                                : "Copy"}
+                            </button>
+                          </div>
+
+                          <p className="text-sm leading-6 text-gray-300">
+                            {result.video_concept}
+                          </p>
+                        </section>
+                      </div>
                     </>
                   )}
 
@@ -2608,53 +2621,51 @@ export default function VideoPromptBuilder({
                   )}
 
                   {videoTask === "review" && (
-                    <div>
-                      <h4 className="mb-2 text-sm font-medium text-gray-300">
-                        Scene prompts
+                    <section className="mt-6">
+                      <h4 className="mb-3 text-sm font-semibold text-gray-200">
+                        Scene plan
                       </h4>
 
                       <div className="space-y-3">
                         {result.scene_prompts.map((scene, sceneIndex) => (
                           <div
                             key={`${result.dna_id}-${scene.section}-${sceneIndex}`}
-                            className="block"
+                            className="border-t border-gray-800 pt-3 first:border-t-0 first:pt-0"
                           >
-                            <label className="block">
-                              <span className="mb-1 block text-xs font-medium text-gray-400">
+                            <div className="mb-1 flex items-center justify-between gap-3">
+                              <h5 className="text-sm font-medium text-gray-300">
                                 {scene.section}
-                              </span>
-                              <textarea
-                                value={scene.prompt}
-                                readOnly
-                                rows={3}
-                                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                              />
-                            </label>
+                              </h5>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                copyVideoField(
-                                  `SCENE PROMPT - ${scene.section}:`,
-                                  scene.prompt,
-                                  getVideoSceneFieldKey(
-                                    result,
-                                    index,
-                                    sceneIndex,
-                                  ),
-                                )
-                              }
-                              className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                            >
-                              {justCopiedField ===
-                              getVideoSceneFieldKey(result, index, sceneIndex)
-                                ? "Scene prompt copied ✓"
-                                : "Copy scene prompt"}
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  copyVideoField(
+                                    `SCENE PROMPT - ${scene.section}:`,
+                                    scene.prompt,
+                                    getVideoSceneFieldKey(
+                                      result,
+                                      index,
+                                      sceneIndex,
+                                    ),
+                                  )
+                                }
+                                className="text-xs text-purple-300 hover:text-purple-200"
+                              >
+                                {justCopiedField ===
+                                getVideoSceneFieldKey(result, index, sceneIndex)
+                                  ? "Copied ✓"
+                                  : "Copy"}
+                              </button>
+                            </div>
+
+                            <p className="text-sm leading-6 text-gray-300">
+                              {scene.prompt}
+                            </p>
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </section>
                   )}
                 </div>
               </article>
