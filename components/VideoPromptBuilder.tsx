@@ -1,879 +1,915 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo, useRef } from "react";
 
 type VideoScenePrompt = {
-  section: string
-  prompt: string
-}
+  section: string;
+  prompt: string;
+};
 
 type VideoResult = {
-  dna_id: string
-  dna_name: string
-  global_style: string
-  character_prompt: string
-  video_concept: string
-  scene_prompts: VideoScenePrompt[]
-}
+  dna_id: string;
+  dna_name: string;
+  global_style: string;
+  character_prompt: string;
+  video_concept: string;
+  scene_prompts: VideoScenePrompt[];
+};
 
 type VideoPromptBuilderProps = {
-      lyrics: string
-      songTitle: string
-      songVersionTitle: string
-        projectId?: string | null
-      songVersionId: string | null
-    }
+  lyrics: string;
+  songTitle: string;
+  songVersionTitle: string;
+  projectId?: string | null;
+  songVersionId: string | null;
+  songCreativeProfile?: {
+    genre?: string;
+    moods?: string[];
+    coreTheme?: string;
+    emotionalCentre?: string;
+  };
+};
 
-  type SavedVideoVersion = {
-      id: string
-      project_id: string
-      song_version_id: string | null
-      title: string | null
-      video_data: {
-        songTitle?: string
-        songVersionTitle?: string
-        generatedAt?: string
-        status?: string
-        results?: VideoResult[]
-      } | null
-      created_at?: string
-    } 
+type SavedVideoVersion = {
+  id: string;
+  project_id: string;
+  song_version_id: string | null;
+  title: string | null;
+  video_data: {
+    songTitle?: string;
+    songVersionTitle?: string;
+    generatedAt?: string;
+    status?: string;
+    results?: VideoResult[];
+  } | null;
+  created_at?: string;
+};
 
 const splitMoods = (value: string) =>
   value
-    .split(',')
+    .split(",")
     .map((mood) => mood.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 
-    const openArtNegativePrompt = [
-      'low quality',
-      'blurry',
-      'distorted face',
-      'deformed hands',
-      'extra fingers',
-      'bad anatomy',
-      'warped body',
-      'flickering',
-      'inconsistent character',
-      'changing face',
-      'changing clothing',
-      'text artifacts',
-      'watermark',
-      'logo',
-      'overexposed',
-      'underexposed',
-      'jittery camera',
-      'unnatural mouth movement',
-      'poor lip sync',
-    ].join(', ')
+const openArtNegativePrompt = [
+  "low quality",
+  "blurry",
+  "distorted face",
+  "deformed hands",
+  "extra fingers",
+  "bad anatomy",
+  "warped body",
+  "flickering",
+  "inconsistent character",
+  "changing face",
+  "changing clothing",
+  "text artifacts",
+  "watermark",
+  "logo",
+  "overexposed",
+  "underexposed",
+  "jittery camera",
+  "unnatural mouth movement",
+  "poor lip sync",
+].join(", ");
 
 const buildMasterPrompt = (result: VideoResult) =>
   [
     result.global_style,
     result.character_prompt,
     result.video_concept,
-    'Create a cinematic music video sequence with consistent character, emotional continuity, natural camera movement, realistic lighting, and scene-to-scene visual coherence.',
-  ].join(' ')
+    "Create a cinematic music video sequence with consistent character, emotional continuity, natural camera movement, realistic lighting, and scene-to-scene visual coherence.",
+  ].join(" ");
 
 const buildShortPrompt = (result: VideoResult) =>
+  [result.global_style, result.character_prompt, result.video_concept]
+    .join(" ")
+    .slice(0, 700);
+
+const buildLipSyncPrompt = (result: VideoResult) =>
   [
-    result.global_style,
+    "CHARACTER:",
     result.character_prompt,
+    "",
+    "LIP-SYNC PERFORMANCE:",
+    "Music video lip-sync performance shot. The main character is singing directly to camera with natural mouth movement, believable emotion, and clear vocal phrasing.",
+    "",
+    "VOCAL / PERFORMANCE FEEL:",
+    "British male singer-songwriter energy, low baritone performance feel, intimate but cinematic delivery.",
+    "",
+    "CONTINUITY:",
+    "Keep the same face, wardrobe, lighting, colour grade, and visual style as the main video. Subtle acoustic performance body language, expressive eyes, natural head movement, realistic timing, no exaggerated acting.",
+    "",
+    "VISUAL STYLE:",
+    result.global_style,
+  ].join("\n");
+
+const buildImageToVideoPrompt = (result: VideoResult) =>
+  [
+    "IMAGE-TO-VIDEO DIRECTION:",
+    "Animate the supplied image as a cinematic music video shot. Preserve the original character identity, composition, wardrobe, lighting, and colour grade.",
+    "",
+    "MOTION:",
+    "Use slow natural camera movement, subtle parallax, gentle environmental motion, realistic facial expression, and emotionally restrained performance energy.",
+    "",
+    "CONTINUITY:",
+    "Keep the same face, clothing, visual style, and emotional tone as the full video. Avoid sudden changes in character, background, lighting, or camera angle.",
+    "",
+    "VIDEO CONCEPT:",
     result.video_concept,
-  ]
-    .join(' ')
-    .slice(0, 700)
+    "",
+    "CHARACTER:",
+    result.character_prompt,
+    "",
+    "VISUAL STYLE:",
+    result.global_style,
+  ].join("\n");
 
-    const buildLipSyncPrompt = (result: VideoResult) =>
-      [
-        'CHARACTER:',
-        result.character_prompt,
-        '',
-        'LIP-SYNC PERFORMANCE:',
-        'Music video lip-sync performance shot. The main character is singing directly to camera with natural mouth movement, believable emotion, and clear vocal phrasing.',
-        '',
-        'VOCAL / PERFORMANCE FEEL:',
-        'British male singer-songwriter energy, low baritone performance feel, intimate but cinematic delivery.',
-        '',
-        'CONTINUITY:',
-        'Keep the same face, wardrobe, lighting, colour grade, and visual style as the main video. Subtle acoustic performance body language, expressive eyes, natural head movement, realistic timing, no exaggerated acting.',
-        '',
-        'VISUAL STYLE:',
-        result.global_style,
-      ].join('\n')
+const buildSocialTeaserPack = (
+  result: VideoResult,
+  songTitle: string,
+  songVersionTitle: string,
+  generatedAt: string,
+) =>
+  [
+    `OPENART SOCIAL TEASER PACK - ${result.dna_name}`,
+    buildSongReference(songTitle, songVersionTitle, generatedAt),
+    "",
+    "FORMAT:",
+    "Create a short-form vertical music video teaser suitable for YouTube Shorts, TikTok, Instagram Reels, or social media promotion.",
+    "",
+    "DURATION:",
+    "10 to 20 seconds.",
+    "",
+    "HOOK MOMENT:",
+    "Open with the strongest emotional or visual moment from the song. Make the first two seconds visually clear, intriguing, and memorable.",
+    "",
+    "VISUAL CONCEPT:",
+    result.video_concept,
+    "",
+    "MAIN CHARACTER:",
+    result.character_prompt,
+    "",
+    "VISUAL STYLE:",
+    result.global_style,
+    "",
+    "EDITING DIRECTION:",
+    "Use cinematic vertical framing, slow emotional movement, one clear focal image, subtle performance energy, and a strong final visual beat. Avoid over-cutting. Keep the character consistent.",
+    "",
+    "TEXT OVERLAY SUGGESTION:",
+    songTitle.trim()
+      ? `"${songTitle.trim()}"`
+      : "Use the song title as a short overlay.",
+    "",
+    "NEGATIVE PROMPT:",
+    openArtNegativePrompt,
+  ].join("\n");
 
-      const buildImageToVideoPrompt = (result: VideoResult) =>
-          [
-            'IMAGE-TO-VIDEO DIRECTION:',
-            'Animate the supplied image as a cinematic music video shot. Preserve the original character identity, composition, wardrobe, lighting, and colour grade.',
-            '',
-            'MOTION:',
-            'Use slow natural camera movement, subtle parallax, gentle environmental motion, realistic facial expression, and emotionally restrained performance energy.',
-            '',
-            'CONTINUITY:',
-            'Keep the same face, clothing, visual style, and emotional tone as the full video. Avoid sudden changes in character, background, lighting, or camera angle.',
-            '',
-            'VIDEO CONCEPT:',
-            result.video_concept,
-            '',
-            'CHARACTER:',
-            result.character_prompt,
-            '',
-            'VISUAL STYLE:',
-            result.global_style,
-          ].join('\n')
+const buildStoryboardPack = (
+  result: VideoResult,
+  songTitle: string,
+  songVersionTitle: string,
+  generatedAt: string,
+) =>
+  [
+    `OPENART STORYBOARD - ${result.dna_name}`,
+    buildSongReference(songTitle, songVersionTitle, generatedAt),
+    "",
+    "VIDEO CONCEPT:",
+    result.video_concept,
+    "",
+    "VISUAL STYLE:",
+    result.global_style,
+    "",
+    "MAIN CHARACTER:",
+    result.character_prompt,
+    "",
+    "STORYBOARD BEATS:",
+    ...result.scene_prompts.flatMap((scene, index) => [
+      "",
+      `${index + 1}. ${scene.section}`,
+      `Visual beat: ${scene.prompt}`,
+      "Camera direction: cinematic music video framing, natural motion, emotionally connected to the lyric section.",
+      "Continuity note: keep the same character, colour grade, lighting mood, and visual world.",
+    ]),
+  ].join("\n");
 
-
-        const buildSocialTeaserPack = (
-              result: VideoResult,
-              songTitle: string,
-              songVersionTitle: string,
-              generatedAt: string
-            ) =>
-              [
-                `OPENART SOCIAL TEASER PACK - ${result.dna_name}`,
-                buildSongReference(songTitle, songVersionTitle, generatedAt),
-                '',
-                'FORMAT:',
-                'Create a short-form vertical music video teaser suitable for YouTube Shorts, TikTok, Instagram Reels, or social media promotion.',
-                '',
-                'DURATION:',
-                '10 to 20 seconds.',
-                '',
-                'HOOK MOMENT:',
-                'Open with the strongest emotional or visual moment from the song. Make the first two seconds visually clear, intriguing, and memorable.',
-                '',
-                'VISUAL CONCEPT:',
-                result.video_concept,
-                '',
-                'MAIN CHARACTER:',
-                result.character_prompt,
-                '',
-                'VISUAL STYLE:',
-                result.global_style,
-                '',
-                'EDITING DIRECTION:',
-                'Use cinematic vertical framing, slow emotional movement, one clear focal image, subtle performance energy, and a strong final visual beat. Avoid over-cutting. Keep the character consistent.',
-                '',
-                'TEXT OVERLAY SUGGESTION:',
-                songTitle.trim()
-                  ? `"${songTitle.trim()}"`
-                  : 'Use the song title as a short overlay.',
-                '',
-                'NEGATIVE PROMPT:',
-                openArtNegativePrompt,
-              ].join('\n')
-
-
-
-        const buildStoryboardPack = (
-          result: VideoResult,
-          songTitle: string,
-          songVersionTitle: string,
-          generatedAt: string
-        ) =>
-          [
-            `OPENART STORYBOARD - ${result.dna_name}`,
-            buildSongReference(songTitle, songVersionTitle, generatedAt),
-            '',
-            'VIDEO CONCEPT:',
-            result.video_concept,
-            '',
-            'VISUAL STYLE:',
-            result.global_style,
-            '',
-            'MAIN CHARACTER:',
-            result.character_prompt,
-            '',
-            'STORYBOARD BEATS:',
-            ...result.scene_prompts.flatMap((scene, index) => [
-              '',
-              `${index + 1}. ${scene.section}`,
-              `Visual beat: ${scene.prompt}`,
-              'Camera direction: cinematic music video framing, natural motion, emotionally connected to the lyric section.',
-              'Continuity note: keep the same character, colour grade, lighting mood, and visual world.',
-            ]),
-          ].join('\n')
-
-     const buildSceneChainPack = (
-      result: VideoResult,
-      songTitle: string,
-      songVersionTitle: string,
-      generatedAt: string
-    ) =>
-      [
-        `OPENART SCENE CHAIN PACK - ${result.dna_name}`,
-        buildSongReference(songTitle, songVersionTitle, generatedAt),
-        '',
-        'GLOBAL STYLE TO KEEP CONSISTENT ACROSS ALL SCENES:',
-        result.global_style,
-        '',
-        'CHARACTER CONSISTENCY PROMPT:',
-        result.character_prompt,
-        '',
-        'SCENE CHAINING INSTRUCTION:',
-        'Keep the same main character, clothing style, emotional tone, lighting style, and cinematic visual language across every scene. Each scene should feel like part of the same continuous music video.',
-        '',
-        'SCENES:',
-        ...result.scene_prompts.flatMap((scene, index) => [
-          '',
-          `${index + 1}. ${scene.section}`,
-          scene.prompt,
-        ]),
-      ].join('\n')
-
+const buildSceneChainPack = (
+  result: VideoResult,
+  songTitle: string,
+  songVersionTitle: string,
+  generatedAt: string,
+) =>
+  [
+    `OPENART SCENE CHAIN PACK - ${result.dna_name}`,
+    buildSongReference(songTitle, songVersionTitle, generatedAt),
+    "",
+    "GLOBAL STYLE TO KEEP CONSISTENT ACROSS ALL SCENES:",
+    result.global_style,
+    "",
+    "CHARACTER CONSISTENCY PROMPT:",
+    result.character_prompt,
+    "",
+    "SCENE CHAINING INSTRUCTION:",
+    "Keep the same main character, clothing style, emotional tone, lighting style, and cinematic visual language across every scene. Each scene should feel like part of the same continuous music video.",
+    "",
+    "SCENES:",
+    ...result.scene_prompts.flatMap((scene, index) => [
+      "",
+      `${index + 1}. ${scene.section}`,
+      scene.prompt,
+    ]),
+  ].join("\n");
 
 const buildSongReference = (
   songTitle: string,
   songVersionTitle: string,
-  generatedAt = ''
+  generatedAt = "",
 ) =>
   [
     songTitle.trim()
       ? `Song title: ${songTitle.trim()}`
-      : 'Song title: Not selected',
+      : "Song title: Not selected",
     songVersionTitle.trim()
       ? `Song version: ${songVersionTitle.trim()}`
-      : 'Song version: Untitled saved version',
+      : "Song version: Untitled saved version",
     generatedAt
       ? `Generated at: ${generatedAt}`
-      : 'Generated at: Not generated in this session',
-  ].join('\n')
+      : "Generated at: Not generated in this session",
+  ].join("\n");
 
+function buildVideoPageHandoffSummary({
+  songTitle,
+  songVersionTitle,
+  songVersionId,
+  generatedAt,
+  status,
+  resultCount,
+  hasLyrics,
+  hasSavedSongVersion,
+  hasGeneratedVideoPrompts,
+  canClearGeneratedVideoPrompts,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  songVersionId?: string | null;
+  generatedAt: string;
+  status: string;
+  resultCount: number;
+  hasLyrics: boolean;
+  hasSavedSongVersion: boolean;
+  hasGeneratedVideoPrompts: boolean;
+  canClearGeneratedVideoPrompts: boolean;
+}) {
+  return [
+    "VIDEO PAGE HANDOFF SUMMARY:",
+    `Song title: ${songTitle || "Untitled song"}`,
+    `Song version: ${songVersionTitle || "Untitled version"}`,
+    `Song version ID: ${songVersionId || "None"}`,
+    `Generated at: ${generatedAt || "Not generated yet"}`,
+    "",
+    "Current state:",
+    `Has lyrics: ${hasLyrics ? "Yes" : "No"}`,
+    `Has saved song version: ${hasSavedSongVersion ? "Yes" : "No"}`,
+    `Has generated video prompts: ${hasGeneratedVideoPrompts ? "Yes" : "No"}`,
+    `Can clear generated video prompts: ${canClearGeneratedVideoPrompts ? "Yes" : "No"}`,
+    `Generated result count: ${resultCount}`,
+    "",
+    "Current status:",
+    status || "No current video prompt status message.",
+    "",
+    "Implemented Video workflow features:",
+    [
+      "Video prompts require a saved song version before generation.",
+      "Generated Video prompts persist across mode changes using session storage.",
+      "Generated Video prompts are scoped to the selected saved song version.",
+      "Clear generated video prompts removes the visible output and session cache.",
+      "Generate button changes to Regenerate when output exists.",
+      "Regeneration requires confirmation before replacing current output.",
+      "OpenArt workflow packs are hidden until generated prompts exist.",
+      "An empty-state panel explains how to unlock OpenArt workflow packs.",
+      "Video action buttons use primary/secondary styling.",
+    ].join("\n"),
+    "",
+    "Recommended next development step:",
+    hasGeneratedVideoPrompts
+      ? "Continue improving generated output quality, save/load video prompt versions, or add release-pack persistence."
+      : "Generate video prompts first, then test OpenArt workflow packs and copied prompt outputs.",
+  ].join("\n");
+}
 
-  function buildVideoPageHandoffSummary({
-      songTitle,
-      songVersionTitle,
-      songVersionId,
-      generatedAt,
-      status,
-      resultCount,
-      hasLyrics,
-      hasSavedSongVersion,
-      hasGeneratedVideoPrompts,
-      canClearGeneratedVideoPrompts,
-    }: {
-      songTitle: string
-      songVersionTitle: string
-      songVersionId?: string | null
-      generatedAt: string
-      status: string
-      resultCount: number
-      hasLyrics: boolean
-      hasSavedSongVersion: boolean
-      hasGeneratedVideoPrompts: boolean
-      canClearGeneratedVideoPrompts: boolean
-    }) {
-      return [
-        'VIDEO PAGE HANDOFF SUMMARY:',
-        `Song title: ${songTitle || 'Untitled song'}`,
-        `Song version: ${songVersionTitle || 'Untitled version'}`,
-        `Song version ID: ${songVersionId || 'None'}`,
-        `Generated at: ${generatedAt || 'Not generated yet'}`,
-        '',
-        'Current state:',
-        `Has lyrics: ${hasLyrics ? 'Yes' : 'No'}`,
-        `Has saved song version: ${hasSavedSongVersion ? 'Yes' : 'No'}`,
-        `Has generated video prompts: ${hasGeneratedVideoPrompts ? 'Yes' : 'No'}`,
-        `Can clear generated video prompts: ${canClearGeneratedVideoPrompts ? 'Yes' : 'No'}`,
-        `Generated result count: ${resultCount}`,
-        '',
-        'Current status:',
-        status || 'No current video prompt status message.',
-        '',
-        'Implemented Video workflow features:',
-        [
-          'Video prompts require a saved song version before generation.',
-          'Generated Video prompts persist across mode changes using session storage.',
-          'Generated Video prompts are scoped to the selected saved song version.',
-          'Clear generated video prompts removes the visible output and session cache.',
-          'Generate button changes to Regenerate when output exists.',
-          'Regeneration requires confirmation before replacing current output.',
-          'OpenArt workflow packs are hidden until generated prompts exist.',
-          'An empty-state panel explains how to unlock OpenArt workflow packs.',
-          'Video action buttons use primary/secondary styling.',
-        ].join('\n'),
-        '',
-        'Recommended next development step:',
-        hasGeneratedVideoPrompts
-          ? 'Continue improving generated output quality, save/load video prompt versions, or add release-pack persistence.'
-          : 'Generate video prompts first, then test OpenArt workflow packs and copied prompt outputs.',
-      ].join('\n')
-    }
+function buildVideoPromptSessionSummary({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  status,
+  resultCount,
+  hasSavedSongVersion,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  status: string;
+  resultCount: number;
+  hasSavedSongVersion: boolean;
+}) {
+  return [
+    "VIDEO PROMPT SESSION SUMMARY:",
+    `Song title: ${songTitle || "Untitled song"}`,
+    `Song version: ${songVersionTitle || "Untitled version"}`,
+    `Generated at: ${generatedAt || "Not generated yet"}`,
+    `Saved song version linked: ${hasSavedSongVersion ? "Yes" : "No"}`,
+    `Generated video prompt versions: ${resultCount}`,
+    "",
+    "Current status:",
+    status || "No current video prompt status message.",
+    "",
+    "Available OpenArt workflow packs:",
+    [
+      "Copy video pack",
+      "Copy scene chain",
+      "Copy storyboard",
+      "Copy social teaser",
+      "Copy global style",
+      "Copy character prompt",
+      "Copy cover image prompt",
+      "Copy MPJ character consistency prompt",
+      "Copy lyrics-to-visual beat sheet",
+      "Copy OpenArt production checklist",
+      "Copy OpenArt release promo pack",
+      "Copy full OpenArt creative bundle",
+    ].join("\n"),
+    "",
+    "Recommended next step:",
+    resultCount > 0
+      ? "Choose the best generated version, copy the cover image prompt first, then use the character consistency prompt before creating scene images."
+      : "Generate video prompts from a saved song version before copying OpenArt workflow packs.",
+  ].join("\n");
+}
 
+function buildOpenArtProductionChecklistPack({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  videoConcept,
+  globalStyle,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  videoConcept: string;
+  globalStyle: string;
+}) {
+  const displayTitle = songTitle || "Untitled song";
+  const displayVersion = songVersionTitle || "Untitled version";
 
-  function buildVideoPromptSessionSummary({
-      songTitle,
-      songVersionTitle,
-      generatedAt,
-      status,
-      resultCount,
-      hasSavedSongVersion,
-    }: {
-      songTitle: string
-      songVersionTitle: string
-      generatedAt: string
-      status: string
-      resultCount: number
-      hasSavedSongVersion: boolean
-    }) {
-      return [
-        'VIDEO PROMPT SESSION SUMMARY:',
-        `Song title: ${songTitle || 'Untitled song'}`,
-        `Song version: ${songVersionTitle || 'Untitled version'}`,
-        `Generated at: ${generatedAt || 'Not generated yet'}`,
-        `Saved song version linked: ${hasSavedSongVersion ? 'Yes' : 'No'}`,
-        `Generated video prompt versions: ${resultCount}`,
-        '',
-        'Current status:',
-        status || 'No current video prompt status message.',
-        '',
-        'Available OpenArt workflow packs:',
-        [
-          'Copy video pack',
-          'Copy scene chain',
-          'Copy storyboard',
-          'Copy social teaser',
-          'Copy global style',
-          'Copy character prompt',
-          'Copy cover image prompt',
-          'Copy MPJ character consistency prompt',
-          'Copy lyrics-to-visual beat sheet',
-          'Copy OpenArt production checklist',
-          'Copy OpenArt release promo pack',
-          'Copy full OpenArt creative bundle',
-        ].join('\n'),
-        '',
-        'Recommended next step:',
-        resultCount > 0
-          ? 'Choose the best generated version, copy the cover image prompt first, then use the character consistency prompt before creating scene images.'
-          : 'Generate video prompts from a saved song version before copying OpenArt workflow packs.',
-      ].join('\n')
-    }
+  return [
+    "OPENART PRODUCTION CHECKLIST:",
+    `Song title: ${displayTitle}`,
+    `Song version: ${displayVersion}`,
+    `Generated at: ${generatedAt}`,
+    "",
+    "Purpose:",
+    "Use this checklist to move from generated video prompts into a finished OpenArt music-video workflow.",
+    "",
+    "Video concept:",
+    videoConcept ||
+      "Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.",
+    "",
+    "Global visual style:",
+    globalStyle ||
+      "Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.",
+    "",
+    "Step 1 — Cover image / hero frame:",
+    [
+      "Use the cover image prompt first.",
+      "Generate a strong square 1:1 still image.",
+      "Choose the frame with the clearest emotional focus and most consistent MPJ character.",
+      "Avoid images with text, logos, distorted face, or artificial-looking hands.",
+    ].join("\n"),
+    "",
+    "Step 2 — Character consistency:",
+    [
+      "Use the MPJ character consistency prompt before generating scene images.",
+      "Keep the same face, age, build, clothing feel, and singer-songwriter identity.",
+      "Reject images where the performer looks like a different person.",
+    ].join("\n"),
+    "",
+    "Step 3 — Scene chain:",
+    [
+      "Use the scene chain pack to create the main visual sequence.",
+      "Generate each scene as a still image first.",
+      "Keep lighting, mood, clothing, and character identity consistent across scenes.",
+      "Save the best still frame for each scene before animating.",
+    ].join("\n"),
+    "",
+    "Step 4 — Image-to-video:",
+    [
+      "Use the image-to-video prompt on the selected still frames.",
+      "Use gentle cinematic camera movement.",
+      "Avoid excessive motion, face warping, or dramatic action that distracts from the song.",
+      "Check each clip for stable face, hands, guitar, and mouth shape.",
+    ].join("\n"),
+    "",
+    "Step 5 — Lip-sync:",
+    [
+      "Use the lip-sync prompt for direct vocal performance moments.",
+      "Keep the mouth movement natural and emotionally connected to the lyric.",
+      "Use close or medium shots where the face is stable and expressive.",
+      "Reject clips with exaggerated mouth movement or mismatched emotion.",
+    ].join("\n"),
+    "",
+    "Step 6 — Storyboard / edit:",
+    [
+      "Use the storyboard pack to plan the final order.",
+      "Let verses feel intimate and observational.",
+      "Let choruses feel wider and more emotionally open.",
+      "Use instrumental sections for atmosphere, memory, movement, or landscape.",
+    ].join("\n"),
+    "",
+    "Step 7 — Social teaser:",
+    [
+      "Use the social teaser pack for Shorts, Reels, TikTok, and Facebook preview clips.",
+      "Pick the most emotionally immediate visual moment.",
+      "Keep the teaser short, clear, and visually strong without text overlays if possible.",
+    ].join("\n"),
+    "",
+    "Step 8 — Release promo:",
+    [
+      "Use the OpenArt release promo pack after the final video is assembled.",
+      "Prepare YouTube description, social caption, teaser caption, hashtags, and thumbnail direction.",
+      "Keep all wording aligned with the MPJ identity: British singer-songwriter, acoustic, heartfelt, cinematic.",
+    ].join("\n"),
+  ].join("\n");
+}
 
-  function buildOpenArtProductionChecklistPack({
-              songTitle,
-              songVersionTitle,
-              generatedAt,
-              videoConcept,
-              globalStyle,
-            }: {
-              songTitle: string
-              songVersionTitle: string
-              generatedAt: string
-              videoConcept: string
-              globalStyle: string
-            }) {
-              const displayTitle = songTitle || 'Untitled song'
-              const displayVersion = songVersionTitle || 'Untitled version'
+function splitLyricsIntoVisualSections(lyrics: string) {
+  const sections = lyrics
+    .split(/\n\s*\n/g)
+    .map((section) => section.trim())
+    .filter(Boolean);
 
-              return [
-                'OPENART PRODUCTION CHECKLIST:',
-                `Song title: ${displayTitle}`,
-                `Song version: ${displayVersion}`,
-                `Generated at: ${generatedAt}`,
-                '',
-                'Purpose:',
-                'Use this checklist to move from generated video prompts into a finished OpenArt music-video workflow.',
-                '',
-                'Video concept:',
-                videoConcept || 'Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.',
-                '',
-                'Global visual style:',
-                globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
-                '',
-                'Step 1 — Cover image / hero frame:',
-                [
-                  'Use the cover image prompt first.',
-                  'Generate a strong square 1:1 still image.',
-                  'Choose the frame with the clearest emotional focus and most consistent MPJ character.',
-                  'Avoid images with text, logos, distorted face, or artificial-looking hands.',
-                ].join('\n'),
-                '',
-                'Step 2 — Character consistency:',
-                [
-                  'Use the MPJ character consistency prompt before generating scene images.',
-                  'Keep the same face, age, build, clothing feel, and singer-songwriter identity.',
-                  'Reject images where the performer looks like a different person.',
-                ].join('\n'),
-                '',
-                'Step 3 — Scene chain:',
-                [
-                  'Use the scene chain pack to create the main visual sequence.',
-                  'Generate each scene as a still image first.',
-                  'Keep lighting, mood, clothing, and character identity consistent across scenes.',
-                  'Save the best still frame for each scene before animating.',
-                ].join('\n'),
-                '',
-                'Step 4 — Image-to-video:',
-                [
-                  'Use the image-to-video prompt on the selected still frames.',
-                  'Use gentle cinematic camera movement.',
-                  'Avoid excessive motion, face warping, or dramatic action that distracts from the song.',
-                  'Check each clip for stable face, hands, guitar, and mouth shape.',
-                ].join('\n'),
-                '',
-                'Step 5 — Lip-sync:',
-                [
-                  'Use the lip-sync prompt for direct vocal performance moments.',
-                  'Keep the mouth movement natural and emotionally connected to the lyric.',
-                  'Use close or medium shots where the face is stable and expressive.',
-                  'Reject clips with exaggerated mouth movement or mismatched emotion.',
-                ].join('\n'),
-                '',
-                'Step 6 — Storyboard / edit:',
-                [
-                  'Use the storyboard pack to plan the final order.',
-                  'Let verses feel intimate and observational.',
-                  'Let choruses feel wider and more emotionally open.',
-                  'Use instrumental sections for atmosphere, memory, movement, or landscape.',
-                ].join('\n'),
-                '',
-                'Step 7 — Social teaser:',
-                [
-                  'Use the social teaser pack for Shorts, Reels, TikTok, and Facebook preview clips.',
-                  'Pick the most emotionally immediate visual moment.',
-                  'Keep the teaser short, clear, and visually strong without text overlays if possible.',
-                ].join('\n'),
-                '',
-                'Step 8 — Release promo:',
-                [
-                  'Use the OpenArt release promo pack after the final video is assembled.',
-                  'Prepare YouTube description, social caption, teaser caption, hashtags, and thumbnail direction.',
-                  'Keep all wording aligned with the MPJ identity: British singer-songwriter, acoustic, heartfelt, cinematic.',
-                ].join('\n'),
-              ].join('\n')
-            }
+  if (sections.length === 0) {
+    return ["No lyric sections available."];
+  }
 
+  return sections.map((section, index) => {
+    const lines = section
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
 
-  function splitLyricsIntoVisualSections(lyrics: string) {
-      const sections = lyrics
-        .split(/\n\s*\n/g)
-        .map((section) => section.trim())
-        .filter(Boolean)
+    const headingMatch = lines[0]?.match(/^\[.*\]$/);
+    const heading = headingMatch ? lines[0] : `Section ${index + 1}`;
+    const lyricLines = headingMatch ? lines.slice(1) : lines;
 
-      if (sections.length === 0) {
-        return ['No lyric sections available.']
-      }
+    return [
+      `${heading}:`,
+      lyricLines.join("\n"),
+      "",
+      "Suggested visual beat:",
+      "Create a cinematic visual moment that reflects the emotional meaning of this lyric section. Keep the MPJ performer visually consistent, use natural music-video pacing, and avoid literal overacting.",
+    ].join("\n");
+  });
+}
 
-      return sections.map((section, index) => {
-        const lines = section
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean)
+function buildOpenArtReleasePromoPack({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  videoConcept,
+  globalStyle,
+  characterPrompt,
+  masterOpenArtPrompt,
+  negativePrompt,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  videoConcept: string;
+  globalStyle: string;
+  characterPrompt: string;
+  masterOpenArtPrompt: string;
+  negativePrompt: string;
+}) {
+  const displayTitle = songTitle || "Untitled song";
+  const displayVersion = songVersionTitle || "Untitled version";
 
-        const headingMatch = lines[0]?.match(/^\[.*\]$/)
-        const heading = headingMatch ? lines[0] : `Section ${index + 1}`
-        const lyricLines = headingMatch ? lines.slice(1) : lines
+  return [
+    "OPENART RELEASE PROMO PACK:",
+    `Song title: ${displayTitle}`,
+    `Song version: ${displayVersion}`,
+    `Generated at: ${generatedAt}`,
+    "",
+    "Purpose:",
+    "Use this pack to promote the finished song/video across YouTube, Shorts, Reels, TikTok, Facebook, Instagram, and release posts.",
+    "",
+    "YouTube description draft:",
+    [
+      `${displayTitle} is an original MPJ song brought to life with a cinematic OpenArt video treatment.`,
+      "",
+      "This version focuses on emotional storytelling, acoustic singer-songwriter performance, and a grounded British folk/country/cinematic visual identity.",
+      "",
+      `Video concept: ${videoConcept || "A cinematic acoustic music video built around emotional realism and singer-songwriter performance."}`,
+      "",
+      "Created as part of the MPJ music workflow using Suno for song production and OpenArt for visual storytelling.",
+    ].join("\n"),
+    "",
+    "Short social caption:",
+    `${displayTitle} — a cinematic acoustic MPJ song brought to life with OpenArt visuals. Honest, heartfelt, and built around the story in the lyric.`,
+    "",
+    "Teaser caption:",
+    `A first look at the video world for ${displayTitle}.`,
+    "",
+    "Hashtags:",
+    "#MPJ #OriginalSong #SingerSongwriter #AcousticMusic #FolkCountry #MusicVideo #OpenArt #AIMusicVideo #BritishSongwriter #NewMusic",
+    "",
+    "Thumbnail / cover-frame direction:",
+    [
+      "Create a strong cinematic thumbnail frame with the MPJ performer as the emotional focal point.",
+      "The image should read clearly at small size, with strong lighting, natural realism, and no text.",
+      "Use a square 1:1 version for cover art and a 16:9 version for YouTube thumbnail framing.",
+    ].join("\n"),
+    "",
+    "MPJ character consistency:",
+    characterPrompt ||
+      "British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.",
+    "",
+    "Global visual style:",
+    globalStyle ||
+      "Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.",
+    "",
+    "Master OpenArt prompt reference:",
+    masterOpenArtPrompt ||
+      "Create a cinematic, emotionally expressive music-video still or scene with a grounded British singer-songwriter feel.",
+    "",
+    "Negative prompt:",
+    negativePrompt ||
+      "text, captions, typography, logos, watermark, distorted face, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality",
+  ].join("\n");
+}
 
-        
+function buildLyricsVisualBeatPack({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  lyrics,
+  videoConcept,
+  globalStyle,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  lyrics: string;
+  videoConcept: string;
+  globalStyle: string;
+}) {
+  const visualSections = splitLyricsIntoVisualSections(lyrics);
 
+  return [
+    "OPENART LYRICS-TO-VISUAL BEAT SHEET:",
+    `Song title: ${songTitle || "Untitled song"}`,
+    `Song version: ${songVersionTitle || "Untitled version"}`,
+    `Generated at: ${generatedAt}`,
+    "",
+    "Purpose:",
+    "Use this as a scene-planning guide for turning the saved song lyrics into OpenArt video scenes, storyboard frames, image-to-video prompts, and lip-sync moments.",
+    "",
+    "Video concept:",
+    videoConcept ||
+      "Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.",
+    "",
+    "Global visual style:",
+    globalStyle ||
+      "Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.",
+    "",
+    "Visual pacing rules:",
+    [
+      "Each lyric section should become one clear visual beat or short scene.",
+      "Keep the MPJ performer visually consistent across all sections.",
+      "Use emotional symbolism, setting, lighting, and performance detail rather than literal illustration of every line.",
+      "Let verses feel intimate and observational.",
+      "Let choruses feel wider, stronger, and more emotionally open.",
+      "Use gentle cinematic camera movement suitable for OpenArt image-to-video.",
+      "Avoid text overlays, captions, logos, and typography.",
+    ].join("\n"),
+    "",
+    "Lyrics-to-visual section map:",
+    visualSections.join("\n\n---\n\n"),
+  ].join("\n");
+}
 
+function buildCoverImagePromptPack({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  videoConcept,
+  globalStyle,
+  characterPrompt,
+  masterOpenArtPrompt,
+  negativePrompt,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  videoConcept: string;
+  globalStyle: string;
+  characterPrompt: string;
+  masterOpenArtPrompt: string;
+  negativePrompt: string;
+}) {
+  return [
+    "OPENART COVER IMAGE PROMPT:",
+    `Song title: ${songTitle || "Untitled song"}`,
+    `Song version: ${songVersionTitle || "Untitled version"}`,
+    `Generated at: ${generatedAt}`,
+    "",
+    "Purpose:",
+    "Create a still cover image / hero frame for the music video before image-to-video animation.",
+    "",
+    "Cover image direction:",
+    "A cinematic square cover-art image, suitable for a song release thumbnail, OpenArt image generation, and a first frame for image-to-video. The image should feel emotionally immediate, musical, atmospheric, and visually strong at small thumbnail size.",
+    "",
+    "Composition:",
+    "Square 1:1 cover-art composition. Strong central subject. Clear emotional focal point. Cinematic lighting. Shallow depth of field. No text, no logos, no typography, no watermark.",
+    "",
+    "Optional portrait version:",
+    "Also suitable as a 9:16 vertical hero frame for short-form teaser video, keeping the same subject, mood, lighting, clothing, and environment.",
+    "",
+    "MPJ character consistency:",
+    characterPrompt ||
+      "British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.",
+    "",
+    "Video concept:",
+    videoConcept ||
+      "Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.",
+    "",
+    "Global visual style:",
+    globalStyle ||
+      "Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.",
+    "",
+    "Master OpenArt direction:",
+    masterOpenArtPrompt ||
+      "Create a cinematic, emotionally expressive music-video still image with a grounded British singer-songwriter feel.",
+    "",
+    "Image-generation prompt:",
+    [
+      characterPrompt || "British male singer-songwriter performer",
+      videoConcept || "emotional cinematic music video atmosphere",
+      globalStyle || "warm cinematic acoustic folk-country visual style",
+      "square album-cover composition",
+      "hero frame for image-to-video",
+      "natural expressive face",
+      "cinematic lighting",
+      "high-detail realistic image",
+      "emotional storytelling",
+      "no text",
+      "no logos",
+    ].join(", "),
+    "",
+    "Negative prompt:",
+    negativePrompt ||
+      "text, captions, typography, logos, watermark, distorted face, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality",
+  ].join("\n");
+}
 
-        return [
-          `${heading}:`,
-          lyricLines.join('\n'),
-          '',
-          'Suggested visual beat:',
-          'Create a cinematic visual moment that reflects the emotional meaning of this lyric section. Keep the MPJ performer visually consistent, use natural music-video pacing, and avoid literal overacting.',
-        ].join('\n')
-      })
-    }
+function buildCharacterConsistencyPromptPack({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  characterPrompt,
+  globalStyle,
+  negativePrompt,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  characterPrompt: string;
+  globalStyle: string;
+  negativePrompt: string;
+}) {
+  return [
+    "OPENART MPJ CHARACTER CONSISTENCY PROMPT:",
+    `Song title: ${songTitle || "Untitled song"}`,
+    `Song version: ${songVersionTitle || "Untitled version"}`,
+    `Generated at: ${generatedAt}`,
+    "",
+    "Purpose:",
+    "Use this prompt to keep the main MPJ performer visually consistent across OpenArt images, video scenes, lip-sync clips, and image-to-video generations.",
+    "",
+    "Core character identity:",
+    "MPJ is a British male singer-songwriter and acoustic performer with a natural, grounded presence. He has the emotional feel of a low baritone storyteller, combining folk, country, and cinematic acoustic influences. He should feel real, mature, expressive, and believable rather than glossy or artificial.",
+    "",
+    "Character prompt:",
+    characterPrompt ||
+      "British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.",
+    "",
+    "Visual continuity rules:",
+    [
+      "Keep the same face, age, build, hair style, and general facial character across every scene.",
+      "Keep clothing consistent unless a scene specifically requires a change.",
+      "Use natural facial expressions with subtle emotional variation.",
+      "Avoid making the performer look like a different person between shots.",
+      "Avoid exaggerated fashion styling, celebrity glamour, or fantasy-costume changes.",
+      "Preserve a believable UK singer-songwriter feel.",
+    ].join("\n"),
+    "",
+    "Performance continuity:",
+    [
+      "The performer should look comfortable with an acoustic guitar and microphone.",
+      "Body language should be intimate, heartfelt, and musically focused.",
+      "For lip-sync scenes, keep mouth movement natural and emotionally connected to the lyric.",
+      "For image-to-video scenes, use gentle cinematic movement rather than dramatic action.",
+    ].join("\n"),
+    "",
+    "Global visual style:",
+    globalStyle ||
+      "Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.",
+    "",
+    "Reusable character prompt for OpenArt:",
+    [
+      characterPrompt || "British male singer-songwriter acoustic performer",
+      "consistent face across all scenes",
+      "natural realistic human features",
+      "mature grounded emotional expression",
+      "authentic UK singer-songwriter identity",
+      "acoustic folk country cinematic style",
+      "subtle performance presence",
+      "realistic skin texture",
+      "cinematic natural lighting",
+      "no text",
+      "no logos",
+    ].join(", "),
+    "",
+    "Negative prompt:",
+    negativePrompt ||
+      "text, captions, typography, logos, watermark, distorted face, inconsistent face, different person, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality",
+  ].join("\n");
+}
 
-
-    function buildOpenArtReleasePromoPack({
-          songTitle,
-          songVersionTitle,
-          generatedAt,
-          videoConcept,
-          globalStyle,
-          characterPrompt,
-          masterOpenArtPrompt,
-          negativePrompt,
-        }: {
-          songTitle: string
-          songVersionTitle: string
-          generatedAt: string
-          videoConcept: string
-          globalStyle: string
-          characterPrompt: string
-          masterOpenArtPrompt: string
-          negativePrompt: string
-        }) {
-          const displayTitle = songTitle || 'Untitled song'
-          const displayVersion = songVersionTitle || 'Untitled version'
-
-          return [
-            'OPENART RELEASE PROMO PACK:',
-            `Song title: ${displayTitle}`,
-            `Song version: ${displayVersion}`,
-            `Generated at: ${generatedAt}`,
-            '',
-            'Purpose:',
-            'Use this pack to promote the finished song/video across YouTube, Shorts, Reels, TikTok, Facebook, Instagram, and release posts.',
-            '',
-            'YouTube description draft:',
-            [
-              `${displayTitle} is an original MPJ song brought to life with a cinematic OpenArt video treatment.`,
-              '',
-              'This version focuses on emotional storytelling, acoustic singer-songwriter performance, and a grounded British folk/country/cinematic visual identity.',
-              '',
-              `Video concept: ${videoConcept || 'A cinematic acoustic music video built around emotional realism and singer-songwriter performance.'}`,
-              '',
-              'Created as part of the MPJ music workflow using Suno for song production and OpenArt for visual storytelling.',
-            ].join('\n'),
-            '',
-            'Short social caption:',
-            `${displayTitle} — a cinematic acoustic MPJ song brought to life with OpenArt visuals. Honest, heartfelt, and built around the story in the lyric.`,
-            '',
-            'Teaser caption:',
-            `A first look at the video world for ${displayTitle}.`,
-            '',
-            'Hashtags:',
-            '#MPJ #OriginalSong #SingerSongwriter #AcousticMusic #FolkCountry #MusicVideo #OpenArt #AIMusicVideo #BritishSongwriter #NewMusic',
-            '',
-            'Thumbnail / cover-frame direction:',
-            [
-              'Create a strong cinematic thumbnail frame with the MPJ performer as the emotional focal point.',
-              'The image should read clearly at small size, with strong lighting, natural realism, and no text.',
-              'Use a square 1:1 version for cover art and a 16:9 version for YouTube thumbnail framing.',
-            ].join('\n'),
-            '',
-            'MPJ character consistency:',
-            characterPrompt || 'British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.',
-            '',
-            'Global visual style:',
-            globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
-            '',
-            'Master OpenArt prompt reference:',
-            masterOpenArtPrompt || 'Create a cinematic, emotionally expressive music-video still or scene with a grounded British singer-songwriter feel.',
-            '',
-            'Negative prompt:',
-            negativePrompt || 'text, captions, typography, logos, watermark, distorted face, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality',
-          ].join('\n')
-        }
-
-
-
-    function buildLyricsVisualBeatPack({
-      songTitle,
-      songVersionTitle,
-      generatedAt,
-      lyrics,
-      videoConcept,
-      globalStyle,
-    }: {
-      songTitle: string
-      songVersionTitle: string
-      generatedAt: string
-      lyrics: string
-      videoConcept: string
-      globalStyle: string
-    }) {
-      const visualSections = splitLyricsIntoVisualSections(lyrics)
-
-      return [
-        'OPENART LYRICS-TO-VISUAL BEAT SHEET:',
-        `Song title: ${songTitle || 'Untitled song'}`,
-        `Song version: ${songVersionTitle || 'Untitled version'}`,
-        `Generated at: ${generatedAt}`,
-        '',
-        'Purpose:',
-        'Use this as a scene-planning guide for turning the saved song lyrics into OpenArt video scenes, storyboard frames, image-to-video prompts, and lip-sync moments.',
-        '',
-        'Video concept:',
-        videoConcept || 'Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.',
-        '',
-        'Global visual style:',
-        globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
-        '',
-        'Visual pacing rules:',
-        [
-          'Each lyric section should become one clear visual beat or short scene.',
-          'Keep the MPJ performer visually consistent across all sections.',
-          'Use emotional symbolism, setting, lighting, and performance detail rather than literal illustration of every line.',
-          'Let verses feel intimate and observational.',
-          'Let choruses feel wider, stronger, and more emotionally open.',
-          'Use gentle cinematic camera movement suitable for OpenArt image-to-video.',
-          'Avoid text overlays, captions, logos, and typography.',
-        ].join('\n'),
-        '',
-        'Lyrics-to-visual section map:',
-        visualSections.join('\n\n---\n\n'),
-      ].join('\n')
-    }
-
-
-   function buildCoverImagePromptPack({
-      songTitle,
-      songVersionTitle,
-      generatedAt,
-      videoConcept,
-      globalStyle,
-      characterPrompt,
-      masterOpenArtPrompt,
-      negativePrompt,
-    }: {
-      songTitle: string
-      songVersionTitle: string
-      generatedAt: string
-      videoConcept: string
-      globalStyle: string
-      characterPrompt: string
-      masterOpenArtPrompt: string
-      negativePrompt: string
-    }) {
-      return [
-        'OPENART COVER IMAGE PROMPT:',
-        `Song title: ${songTitle || 'Untitled song'}`,
-        `Song version: ${songVersionTitle || 'Untitled version'}`,
-        `Generated at: ${generatedAt}`,
-        '',
-        'Purpose:',
-        'Create a still cover image / hero frame for the music video before image-to-video animation.',
-        '',
-        'Cover image direction:',
-        'A cinematic square cover-art image, suitable for a song release thumbnail, OpenArt image generation, and a first frame for image-to-video. The image should feel emotionally immediate, musical, atmospheric, and visually strong at small thumbnail size.',
-        '',
-        'Composition:',
-        'Square 1:1 cover-art composition. Strong central subject. Clear emotional focal point. Cinematic lighting. Shallow depth of field. No text, no logos, no typography, no watermark.',
-        '',
-        'Optional portrait version:',
-        'Also suitable as a 9:16 vertical hero frame for short-form teaser video, keeping the same subject, mood, lighting, clothing, and environment.',
-        '',
-        'MPJ character consistency:',
-        characterPrompt || 'British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.',
-        '',
-        'Video concept:',
-        videoConcept || 'Emotionally grounded cinematic music video concept with a strong singer-songwriter identity.',
-        '',
-        'Global visual style:',
-        globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
-        '',
-        'Master OpenArt direction:',
-        masterOpenArtPrompt || 'Create a cinematic, emotionally expressive music-video still image with a grounded British singer-songwriter feel.',
-        '',
-        'Image-generation prompt:',
-        [
-          characterPrompt || 'British male singer-songwriter performer',
-          videoConcept || 'emotional cinematic music video atmosphere',
-          globalStyle || 'warm cinematic acoustic folk-country visual style',
-          'square album-cover composition',
-          'hero frame for image-to-video',
-          'natural expressive face',
-          'cinematic lighting',
-          'high-detail realistic image',
-          'emotional storytelling',
-          'no text',
-          'no logos',
-        ].join(', '),
-        '',
-        'Negative prompt:',
-        negativePrompt || 'text, captions, typography, logos, watermark, distorted face, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality',
-      ].join('\n')
-    }
-
-    function buildCharacterConsistencyPromptPack({
-            songTitle,
-            songVersionTitle,
-            generatedAt,
-            characterPrompt,
-            globalStyle,
-            negativePrompt,
-        }: {
-            songTitle: string
-            songVersionTitle: string
-            generatedAt: string
-            characterPrompt: string
-            globalStyle: string
-            negativePrompt: string
-        }) {
-            return [
-            'OPENART MPJ CHARACTER CONSISTENCY PROMPT:',
-            `Song title: ${songTitle || 'Untitled song'}`,
-            `Song version: ${songVersionTitle || 'Untitled version'}`,
-            `Generated at: ${generatedAt}`,
-            '',
-            'Purpose:',
-            'Use this prompt to keep the main MPJ performer visually consistent across OpenArt images, video scenes, lip-sync clips, and image-to-video generations.',
-            '',
-            'Core character identity:',
-            'MPJ is a British male singer-songwriter and acoustic performer with a natural, grounded presence. He has the emotional feel of a low baritone storyteller, combining folk, country, and cinematic acoustic influences. He should feel real, mature, expressive, and believable rather than glossy or artificial.',
-            '',
-            'Character prompt:',
-            characterPrompt || 'British male singer-songwriter, low baritone performer, acoustic folk/country/cinematic identity, emotionally grounded and natural.',
-            '',
-            'Visual continuity rules:',
-            [
-                'Keep the same face, age, build, hair style, and general facial character across every scene.',
-                'Keep clothing consistent unless a scene specifically requires a change.',
-                'Use natural facial expressions with subtle emotional variation.',
-                'Avoid making the performer look like a different person between shots.',
-                'Avoid exaggerated fashion styling, celebrity glamour, or fantasy-costume changes.',
-                'Preserve a believable UK singer-songwriter feel.',
-            ].join('\n'),
-            '',
-            'Performance continuity:',
-            [
-                'The performer should look comfortable with an acoustic guitar and microphone.',
-                'Body language should be intimate, heartfelt, and musically focused.',
-                'For lip-sync scenes, keep mouth movement natural and emotionally connected to the lyric.',
-                'For image-to-video scenes, use gentle cinematic movement rather than dramatic action.',
-            ].join('\n'),
-            '',
-            'Global visual style:',
-            globalStyle || 'Cinematic acoustic singer-songwriter visuals, natural lighting, emotional realism, warm filmic tones, atmospheric depth.',
-            '',
-            'Reusable character prompt for OpenArt:',
-            [
-                characterPrompt || 'British male singer-songwriter acoustic performer',
-                'consistent face across all scenes',
-                'natural realistic human features',
-                'mature grounded emotional expression',
-                'authentic UK singer-songwriter identity',
-                'acoustic folk country cinematic style',
-                'subtle performance presence',
-                'realistic skin texture',
-                'cinematic natural lighting',
-                'no text',
-                'no logos',
-            ].join(', '),
-            '',
-            'Negative prompt:',
-            negativePrompt || 'text, captions, typography, logos, watermark, distorted face, inconsistent face, different person, extra fingers, extra limbs, plastic skin, cartoonish, overprocessed, blurry, low quality',
-            ].join('\n')
-        }
-
-    const buildVideoPack = (
-      result: VideoResult,
-      songTitle: string,
-      songVersionTitle: string,
-      generatedAt: string
-    ) =>
-      [
+const buildVideoPack = (
+  result: VideoResult,
+  songTitle: string,
+  songVersionTitle: string,
+  generatedAt: string,
+) =>
+  [
     `VIDEO PROMPT PACK - ${result.dna_name}`,
     buildSongReference(songTitle, songVersionTitle, generatedAt),
-    '',
-    'GLOBAL STYLE:',
+    "",
+    "GLOBAL STYLE:",
     result.global_style,
-    '',
-    'CHARACTER PROMPT:',
+    "",
+    "CHARACTER PROMPT:",
     result.character_prompt,
-    '',
-    'VIDEO CONCEPT:',
+    "",
+    "VIDEO CONCEPT:",
     result.video_concept,
-    '',
-    'MASTER OPENART PROMPT:',
+    "",
+    "MASTER OPENART PROMPT:",
     buildMasterPrompt(result),
-    '',
-   'SHORT OPENART PROMPT:',
+    "",
+    "SHORT OPENART PROMPT:",
     buildShortPrompt(result),
-    '',
-   'OPENART LIP-SYNC PROMPT:',
+    "",
+    "OPENART LIP-SYNC PROMPT:",
     buildLipSyncPrompt(result),
-    '',
-    'OPENART IMAGE-TO-VIDEO PROMPT:',
+    "",
+    "OPENART IMAGE-TO-VIDEO PROMPT:",
     buildImageToVideoPrompt(result),
-    '',
-    'OPENART NEGATIVE PROMPT:',
+    "",
+    "OPENART NEGATIVE PROMPT:",
     openArtNegativePrompt,
-    '',
-    'SCENE PROMPTS:',
+    "",
+    "SCENE PROMPTS:",
     ...result.scene_prompts.flatMap((scene, index) => [
-      '',
+      "",
       `${index + 1}. ${scene.section}`,
       scene.prompt,
     ]),
-  ].join('\n')
+  ].join("\n");
 
-  function buildFullOpenArtCreativeBundlePack({
+function buildFullOpenArtCreativeBundlePack({
+  songTitle,
+  songVersionTitle,
+  generatedAt,
+  lyrics,
+  videoConcept,
+  globalStyle,
+  characterPrompt,
+  masterOpenArtPrompt,
+  negativePrompt,
+}: {
+  songTitle: string;
+  songVersionTitle: string;
+  generatedAt: string;
+  lyrics: string;
+  videoConcept: string;
+  globalStyle: string;
+  characterPrompt: string;
+  masterOpenArtPrompt: string;
+  negativePrompt: string;
+}) {
+  return [
+    "FULL OPENART CREATIVE BUNDLE:",
+    `Song title: ${songTitle || "Untitled song"}`,
+    `Song version: ${songVersionTitle || "Untitled version"}`,
+    `Generated at: ${generatedAt}`,
+    "",
+    "This bundle combines the main OpenArt creative workflow outputs for cover art, character consistency, lyric-to-visual mapping, production planning, and release promotion.",
+    "",
+    "============================================================",
+    "",
+    buildCoverImagePromptPack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      videoConcept,
+      globalStyle,
+      characterPrompt,
+      masterOpenArtPrompt,
+      negativePrompt,
+    }),
+    "",
+    "============================================================",
+    "",
+    buildCharacterConsistencyPromptPack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      characterPrompt,
+      globalStyle,
+      negativePrompt,
+    }),
+    "",
+    "============================================================",
+    "",
+    buildLyricsVisualBeatPack({
       songTitle,
       songVersionTitle,
       generatedAt,
       lyrics,
       videoConcept,
       globalStyle,
+    }),
+    "",
+    "============================================================",
+    "",
+    buildOpenArtProductionChecklistPack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      videoConcept,
+      globalStyle,
+    }),
+    "",
+    "============================================================",
+    "",
+    buildOpenArtReleasePromoPack({
+      songTitle,
+      songVersionTitle,
+      generatedAt,
+      videoConcept,
+      globalStyle,
       characterPrompt,
       masterOpenArtPrompt,
       negativePrompt,
-    }: {
-      songTitle: string
-      songVersionTitle: string
-      generatedAt: string
-      lyrics: string
-      videoConcept: string
-      globalStyle: string
-      characterPrompt: string
-      masterOpenArtPrompt: string
-      negativePrompt: string
-    }) {
-      return [
-        'FULL OPENART CREATIVE BUNDLE:',
-        `Song title: ${songTitle || 'Untitled song'}`,
-        `Song version: ${songVersionTitle || 'Untitled version'}`,
-        `Generated at: ${generatedAt}`,
-        '',
-        'This bundle combines the main OpenArt creative workflow outputs for cover art, character consistency, lyric-to-visual mapping, production planning, and release promotion.',
-        '',
-        '============================================================',
-        '',
-        buildCoverImagePromptPack({
-          songTitle,
-          songVersionTitle,
-          generatedAt,
-          videoConcept,
-          globalStyle,
-          characterPrompt,
-          masterOpenArtPrompt,
-          negativePrompt,
-        }),
-        '',
-        '============================================================',
-        '',
-        buildCharacterConsistencyPromptPack({
-          songTitle,
-          songVersionTitle,
-          generatedAt,
-          characterPrompt,
-          globalStyle,
-          negativePrompt,
-        }),
-        '',
-        '============================================================',
-        '',
-        buildLyricsVisualBeatPack({
-          songTitle,
-          songVersionTitle,
-          generatedAt,
-          lyrics,
-          videoConcept,
-          globalStyle,
-        }),
-        '',
-        '============================================================',
-        '',
-        buildOpenArtProductionChecklistPack({
-          songTitle,
-          songVersionTitle,
-          generatedAt,
-          videoConcept,
-          globalStyle,
-        }),
-        '',
-        '============================================================',
-        '',
-        buildOpenArtReleasePromoPack({
-          songTitle,
-          songVersionTitle,
-          generatedAt,
-          videoConcept,
-          globalStyle,
-          characterPrompt,
-          masterOpenArtPrompt,
-          negativePrompt,
-        }),
-      ].join('\n')
-    }
+    }),
+  ].join("\n");
+}
+
+const videoGenreOptions = [
+  "Singer-songwriter",
+  "Acoustic singer-songwriter ballad",
+  "Indie folk",
+  "Folk rock",
+  "Acoustic folk",
+  "Modern country",
+  "Country ballad",
+  "Acoustic pop",
+  "Pop ballad",
+  "Rock ballad",
+  "Blues",
+  "Cinematic folk",
+];
+
+const videoMoodOptions = [
+  "Hopeful",
+  "Tender",
+  "Nostalgic",
+  "Content",
+  "Reflective",
+  "Intimate",
+  "Heartfelt",
+  "Melancholic",
+  "Romantic",
+  "Warm",
+  "Bittersweet",
+  "Uplifting",
+  "Dark",
+  "Cinematic",
+  "Raw",
+];
 
 export default function VideoPromptBuilder({
   lyrics,
@@ -881,374 +917,413 @@ export default function VideoPromptBuilder({
   songVersionTitle,
   projectId,
   songVersionId,
+  songCreativeProfile,
 }: VideoPromptBuilderProps) {
+  type VideoTask = "direction" | "generate" | "review" | "save" | "make";
 
-  const [genre, setGenre] = useState('')
-  const [moodsText, setMoodsText] = useState('')
-  const [theme, setTheme] = useState('')
-  const [hook, setHook] = useState('')
-  const [dnaId, setDnaId] = useState('mpj-master')
-  const [multiVersion, setMultiVersion] = useState(false)
+  const [videoTask, setVideoTask] = useState<VideoTask>("direction");
 
-  const [generating, setGenerating] = useState(false)
-  const [message, setMessage] = useState('')
-  const [results, setResults] = useState<VideoResult[]>([])
+  const [genre, setGenre] = useState("");
+  const [showGenreOptions, setShowGenreOptions] = useState(false);
+  const [moodsText, setMoodsText] = useState("");
+  const [showMoodOptions, setShowMoodOptions] = useState(false);
+  const [theme, setTheme] = useState("");
+  const [directionSeedSongVersionId, setDirectionSeedSongVersionId] = useState<
+    string | null
+  >(null);
+  const [hook, setHook] = useState("");
+  const [dnaId, setDnaId] = useState("mpj-master");
+  const [multiVersion, setMultiVersion] = useState(false);
 
-  const [videoGeneratedAt, setVideoGeneratedAt] = useState('')
+  const [generating, setGenerating] = useState(false);
+  const [message, setMessage] = useState("");
+  const [results, setResults] = useState<VideoResult[]>([]);
 
-  const [videoPromptStatus, setVideoPromptStatus] = useState('')
-  const clearVideoMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [videoGeneratedAt, setVideoGeneratedAt] = useState("");
+
+  const [videoPromptStatus, setVideoPromptStatus] = useState("");
+  const clearVideoMessageTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   const videoPromptStorageKey = songVersionId
     ? `video-prompts:${songVersionId}`
-    : ''
+    : "";
 
+  const [videoVersionTitle, setVideoVersionTitle] = useState("");
+  const [savingVideoVersion, setSavingVideoVersion] = useState(false);
+  const [videoVersionMessage, setVideoVersionMessage] = useState("");
 
-    const [videoVersionTitle, setVideoVersionTitle] = useState('')
-    const [savingVideoVersion, setSavingVideoVersion] = useState(false)
-    const [videoVersionMessage, setVideoVersionMessage] = useState('')
+  const [savedVideoVersions, setSavedVideoVersions] = useState<
+    SavedVideoVersion[]
+  >([]);
+  const [loadingVideoVersions, setLoadingVideoVersions] = useState(false);
+  const [selectedSavedVideoVersionId, setSelectedSavedVideoVersionId] =
+    useState("");
+  const [currentVideoDisplayTitle, setCurrentVideoDisplayTitle] = useState("");
+  const [currentVideoDisplaySource, setCurrentVideoDisplaySource] = useState<
+    "saved" | "generated" | ""
+  >("");
 
-    const [savedVideoVersions, setSavedVideoVersions] = useState<SavedVideoVersion[]>([])
-    const [loadingVideoVersions, setLoadingVideoVersions] = useState(false)
-    const [selectedSavedVideoVersionId, setSelectedSavedVideoVersionId] = useState('')
-    const [currentVideoDisplayTitle, setCurrentVideoDisplayTitle] = useState('')
-    const [currentVideoDisplaySource, setCurrentVideoDisplaySource] = useState<
-      'saved' | 'generated' | ''
-    >('')
+  const videoCopyButtonClass =
+    "rounded border border-purple-700 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent";
 
-const videoCopyButtonClass =
-  'rounded border border-purple-700 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent'
- 
-  
-
-
-  const workflowPackButtonClass = videoCopyButtonClass
+  const workflowPackButtonClass = videoCopyButtonClass;
 
   const primaryVideoButtonClass =
-  'rounded bg-purple-700 px-4 py-2 text-sm font-medium text-white hover:bg-purple-600 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400'
+    "rounded bg-purple-700 px-4 py-2 text-sm font-medium text-white hover:bg-purple-600 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400";
 
-const secondaryVideoButtonClass =
-  'rounded border border-purple-700 px-4 py-2 text-sm font-medium text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent'
+  const secondaryVideoButtonClass =
+    "rounded border border-purple-700 px-4 py-2 text-sm font-medium text-purple-200 hover:bg-purple-950/40 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:bg-transparent";
 
-  const [justCopiedField, setJustCopiedField] = useState('')
-  const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null)
-
-
-  useEffect(() => {
-      return () => {
-        if (clearVideoMessageTimerRef.current) {
-          clearTimeout(clearVideoMessageTimerRef.current)
-        }
-      }
-    }, [])
-
+  const [justCopiedField, setJustCopiedField] = useState("");
+  const [justCopiedIndex, setJustCopiedIndex] = useState<number | null>(null);
 
   useEffect(() => {
-      loadSavedVideoVersions()
-    }, [projectId, songVersionId])
-
-
-
-     useEffect(() => {
-      setJustCopiedField('')
-      setJustCopiedIndex(null)
-      setVideoPromptStatus('')
-      setVideoVersionMessage('')
-      setSelectedSavedVideoVersionId('')
-    }, [songVersionId])
-
-
+    return () => {
+      if (clearVideoMessageTimerRef.current) {
+        clearTimeout(clearVideoMessageTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
-      if (!videoPromptStorageKey) {
-        setResults([])
-        setVideoGeneratedAt('')
-        return
-      }
-
-      const saved = window.sessionStorage.getItem(videoPromptStorageKey)
-
-      if (!saved) {
-        setResults([])
-        setVideoGeneratedAt('')
-        return
-      }
-
-      try {
-        const parsed = JSON.parse(saved) as {
-          results?: VideoResult[]
-          videoGeneratedAt?: string
-        }
-
-        if (Array.isArray(parsed.results)) {
-          setResults(parsed.results)
-
-          if (parsed.results.length > 0) {
-            setVideoPromptStatus('Restored generated video prompts from this browser session.')
-          }
-        } else {
-          setResults([])
-        }
-
-        if (typeof parsed.videoGeneratedAt === 'string') {
-          setVideoGeneratedAt(parsed.videoGeneratedAt)
-        } else {
-          setVideoGeneratedAt('')
-        }
-      } catch {
-        window.sessionStorage.removeItem(videoPromptStorageKey)
-        setResults([])
-        setVideoGeneratedAt('')
-      }
-    }, [videoPromptStorageKey])
-
-
-
-    useEffect(() => {
-      if (!videoPromptStorageKey) {
-        return
-      }
-
-      if (results.length === 0 && !videoGeneratedAt) {
-        return
-      }
-
-      window.sessionStorage.setItem(
-        videoPromptStorageKey,
-        JSON.stringify({
-          results,
-          videoGeneratedAt,
-        }),
-      )
-    }, [results, videoGeneratedAt, videoPromptStorageKey])
-
-
-
-
-  const hasLyrics = lyrics.trim().length > 0
-
-  const hasSavedSongVersion = Boolean(songVersionId)
-  const hasProject = Boolean(projectId)
- 
-  const canGenerateVideoPrompts = hasLyrics && hasSavedSongVersion && !generating
-  const hasGeneratedVideoPrompts = results.length > 0
-  const canClearGeneratedVideoPrompts =
-  results.length > 0 ||
-  Boolean(videoGeneratedAt) ||
-  Boolean(currentVideoDisplayTitle) ||
-  Boolean(currentVideoDisplaySource) ||
-  Boolean(selectedSavedVideoVersionId) ||
-  Boolean(videoVersionTitle)
-
-   const canSaveVideoVersion = hasProject && hasSavedSongVersion && hasGeneratedVideoPrompts && !savingVideoVersion
-
-   const loadSavedVideoVersions = async () => {
-      if (!projectId || !songVersionId) {
-        setSavedVideoVersions([])
-        return
-      }
-
-      try {
-        setLoadingVideoVersions(true)
-
-        const params = new URLSearchParams({
-          projectId,
-          songVersionId,
-        })
-
-        params.set('t', String(Date.now()))
-
-        const response = await fetch(`/api/video-versions?${params.toString()}`, {
-          cache: 'no-store',
-        })
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to load saved video prompt versions.')
-        }
-
-        const loadedVersions = Array.isArray(data.videoVersions) ? data.videoVersions : []
-
-            setSavedVideoVersions(loadedVersions)
-
-            const shouldAutoLoadMostRecent =
-              loadedVersions.length > 0 && results.length === 0 && !videoGeneratedAt
-
-            if (shouldAutoLoadMostRecent) {
-              applySavedVideoPromptVersion(
-                loadedVersions[0],
-                'Loaded most recent saved video prompt version',
-              )
-            }
-      } catch (error) {
-        setSavedVideoVersions([])
-        setVideoVersionMessage(
-          error instanceof Error
-            ? error.message
-            : 'Failed to load saved video prompt versions.',
-        )
-      } finally {
-        setLoadingVideoVersions(false)
-      }
+    if (!songVersionId) {
+      setDirectionSeedSongVersionId(null);
+      return;
     }
 
+    if (directionSeedSongVersionId === songVersionId) {
+      return;
+    }
 
-  const saveVideoPromptVersion = async () => {
-  if (!projectId) {
-    setVideoVersionMessage('Choose a project before saving a video prompt version.')
-    return
-  }
+    setGenre(songCreativeProfile?.genre?.trim() || "");
+    setMoodsText(
+      songCreativeProfile?.moods
+        ?.map((mood) => mood.trim())
+        .filter(Boolean)
+        .join(", ") || "",
+    );
+    setTheme(songCreativeProfile?.coreTheme?.trim() || "");
 
-  if (!songVersionId) {
-    setVideoVersionMessage('Save or load a song version before saving video prompts.')
-    return
-  }
+    setDirectionSeedSongVersionId(songVersionId);
+  }, [songVersionId, songCreativeProfile, directionSeedSongVersionId]);
 
-  if (results.length === 0) {
-    setVideoVersionMessage('Generate video prompts before saving a video prompt version.')
-    return
-  }
+  useEffect(() => {
+    loadSavedVideoVersions();
+  }, [projectId, songVersionId]);
 
-  try {
-    setSavingVideoVersion(true)
-    setVideoVersionMessage('Saving video prompt version...')
+  useEffect(() => {
+    setJustCopiedField("");
+    setJustCopiedIndex(null);
+    setVideoPromptStatus("");
+    setVideoVersionMessage("");
+    setSelectedSavedVideoVersionId("");
+  }, [songVersionId]);
 
-    const title =
-      videoVersionTitle.trim() ||
-      `Video prompts - ${songVersionTitle || 'Untitled version'}`
+  useEffect(() => {
+    if (!videoPromptStorageKey) {
+      setResults([]);
+      setVideoGeneratedAt("");
+      return;
+    }
 
-    const response = await fetch('/api/video-versions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const saved = window.sessionStorage.getItem(videoPromptStorageKey);
+
+    if (!saved) {
+      setResults([]);
+      setVideoGeneratedAt("");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(saved) as {
+        results?: VideoResult[];
+        videoGeneratedAt?: string;
+      };
+
+      if (Array.isArray(parsed.results)) {
+        setResults(parsed.results);
+
+        if (parsed.results.length > 0) {
+          setVideoPromptStatus(
+            "Restored generated video prompts from this browser session.",
+          );
+        }
+      } else {
+        setResults([]);
+      }
+
+      if (typeof parsed.videoGeneratedAt === "string") {
+        setVideoGeneratedAt(parsed.videoGeneratedAt);
+      } else {
+        setVideoGeneratedAt("");
+      }
+    } catch {
+      window.sessionStorage.removeItem(videoPromptStorageKey);
+      setResults([]);
+      setVideoGeneratedAt("");
+    }
+  }, [videoPromptStorageKey]);
+
+  useEffect(() => {
+    if (!videoPromptStorageKey) {
+      return;
+    }
+
+    if (results.length === 0 && !videoGeneratedAt) {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      videoPromptStorageKey,
+      JSON.stringify({
+        results,
+        videoGeneratedAt,
+      }),
+    );
+  }, [results, videoGeneratedAt, videoPromptStorageKey]);
+
+  const hasLyrics = lyrics.trim().length > 0;
+
+  const hasSavedSongVersion = Boolean(songVersionId);
+  const hasProject = Boolean(projectId);
+
+  const canGenerateVideoPrompts =
+    hasLyrics && hasSavedSongVersion && !generating;
+  const hasGeneratedVideoPrompts = results.length > 0;
+  const canClearGeneratedVideoPrompts =
+    results.length > 0 ||
+    Boolean(videoGeneratedAt) ||
+    Boolean(currentVideoDisplayTitle) ||
+    Boolean(currentVideoDisplaySource) ||
+    Boolean(selectedSavedVideoVersionId) ||
+    Boolean(videoVersionTitle);
+
+  const canSaveVideoVersion =
+    hasProject &&
+    hasSavedSongVersion &&
+    hasGeneratedVideoPrompts &&
+    !savingVideoVersion;
+
+  const loadSavedVideoVersions = async () => {
+    if (!projectId || !songVersionId) {
+      setSavedVideoVersions([]);
+      return;
+    }
+
+    try {
+      setLoadingVideoVersions(true);
+
+      const params = new URLSearchParams({
         projectId,
         songVersionId,
-        title,
-        videoData: {
-          songTitle,
-          songVersionTitle,
-          generatedAt: videoGeneratedAt,
-          status: videoPromptStatus,
-          results,
+      });
+
+      params.set("t", String(Date.now()));
+
+      const response = await fetch(`/api/video-versions?${params.toString()}`, {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to load saved video prompt versions.",
+        );
+      }
+
+      const loadedVersions = Array.isArray(data.videoVersions)
+        ? data.videoVersions
+        : [];
+
+      setSavedVideoVersions(loadedVersions);
+
+      const shouldAutoLoadMostRecent =
+        loadedVersions.length > 0 && results.length === 0 && !videoGeneratedAt;
+
+      if (shouldAutoLoadMostRecent) {
+        applySavedVideoPromptVersion(
+          loadedVersions[0],
+          "Loaded most recent saved video prompt version",
+        );
+      }
+    } catch (error) {
+      setSavedVideoVersions([]);
+      setVideoVersionMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to load saved video prompt versions.",
+      );
+    } finally {
+      setLoadingVideoVersions(false);
+    }
+  };
+
+  const saveVideoPromptVersion = async () => {
+    if (!projectId) {
+      setVideoVersionMessage(
+        "Choose a project before saving a video prompt version.",
+      );
+      return;
+    }
+
+    if (!songVersionId) {
+      setVideoVersionMessage(
+        "Save or load a song version before saving video prompts.",
+      );
+      return;
+    }
+
+    if (results.length === 0) {
+      setVideoVersionMessage(
+        "Generate video prompts before saving a video prompt version.",
+      );
+      return;
+    }
+
+    try {
+      setSavingVideoVersion(true);
+      setVideoVersionMessage("Saving video prompt version...");
+
+      const title =
+        videoVersionTitle.trim() ||
+        `Video prompts - ${songVersionTitle || "Untitled version"}`;
+
+      const response = await fetch("/api/video-versions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
-    })
+        body: JSON.stringify({
+          projectId,
+          songVersionId,
+          title,
+          videoData: {
+            songTitle,
+            songVersionTitle,
+            generatedAt: videoGeneratedAt,
+            status: videoPromptStatus,
+            results,
+          },
+        }),
+      });
 
-    const data = await response.json()
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to save video prompt version.')
-    }
-
-    setVideoVersionMessage(`Saved video prompt version: ${title}`)
-    await loadSavedVideoVersions()
-  } catch (error) {
-    setVideoVersionMessage(
-      error instanceof Error
-        ? error.message
-        : 'Failed to save video prompt version.',
-    )
-  } finally {
-    setSavingVideoVersion(false)
-  }
-}
-
-
-    const showTemporaryVideoMessage = (message: string) => {
-      if (clearVideoMessageTimerRef.current) {
-        clearTimeout(clearVideoMessageTimerRef.current)
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save video prompt version.");
       }
 
-      setVideoPromptStatus(message)
-      setVideoVersionMessage(message)
+      setVideoVersionMessage(`Saved video prompt version: ${title}`);
+      await loadSavedVideoVersions();
+    } catch (error) {
+      setVideoVersionMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to save video prompt version.",
+      );
+    } finally {
+      setSavingVideoVersion(false);
+    }
+  };
 
-      clearVideoMessageTimerRef.current = setTimeout(() => {
-        setVideoPromptStatus('')
-        setVideoVersionMessage('')
-        clearVideoMessageTimerRef.current = null
-      }, 2500)
+  const showTemporaryVideoMessage = (message: string) => {
+    if (clearVideoMessageTimerRef.current) {
+      clearTimeout(clearVideoMessageTimerRef.current);
     }
 
-const loadSavedVideoPromptVersion = () => {
-  const selected = savedVideoVersions.find(
-    (version) => version.id === selectedSavedVideoVersionId,
-  )
+    setVideoPromptStatus(message);
+    setVideoVersionMessage(message);
 
-  if (!selected) {
-    setVideoVersionMessage('Choose a saved video prompt version to load.')
-    return
-  }
+    clearVideoMessageTimerRef.current = setTimeout(() => {
+      setVideoPromptStatus("");
+      setVideoVersionMessage("");
+      clearVideoMessageTimerRef.current = null;
+    }, 2500);
+  };
 
-  applySavedVideoPromptVersion(selected)
-}
+  const loadSavedVideoPromptVersion = () => {
+    const selected = savedVideoVersions.find(
+      (version) => version.id === selectedSavedVideoVersionId,
+    );
 
-const applySavedVideoPromptVersion = (
-      savedVersion: SavedVideoVersion,
-      statusPrefix = 'Loaded saved video prompt version',
-    ) => {
-        if (clearVideoMessageTimerRef.current) {
-              clearTimeout(clearVideoMessageTimerRef.current)
-              clearVideoMessageTimerRef.current = null
-            }
-
-            setVideoVersionMessage('')
-      const videoData = savedVersion.video_data
-
-      if (!videoData) {
-        setVideoVersionMessage('Saved video prompt version has no video data.')
-        return false
-      }
-
-      const savedResults = Array.isArray(videoData.results) ? videoData.results : []
-
-      if (savedResults.length === 0) {
-        setVideoVersionMessage('Saved video prompt version has no generated results.')
-        return false
-      }
-
-      const loadedTitle = savedVersion.title || 'Untitled video prompt version'
-
-         setVideoVersionTitle(loadedTitle)
-         setCurrentVideoDisplayTitle(loadedTitle)
-         setCurrentVideoDisplaySource('saved')
-         setSelectedSavedVideoVersionId(savedVersion.id)
-         setVideoPromptStatus(`${statusPrefix}: ${loadedTitle}`)
-         setVideoVersionMessage('')
-
-      return true
+    if (!selected) {
+      setVideoVersionMessage("Choose a saved video prompt version to load.");
+      return;
     }
 
+    applySavedVideoPromptVersion(selected);
+  };
+
+  const applySavedVideoPromptVersion = (
+    savedVersion: SavedVideoVersion,
+    statusPrefix = "Loaded saved video prompt version",
+  ) => {
+    if (clearVideoMessageTimerRef.current) {
+      clearTimeout(clearVideoMessageTimerRef.current);
+      clearVideoMessageTimerRef.current = null;
+    }
+
+    setVideoVersionMessage("");
+    const videoData = savedVersion.video_data;
+
+    if (!videoData) {
+      setVideoVersionMessage("Saved video prompt version has no video data.");
+      return false;
+    }
+
+    const savedResults = Array.isArray(videoData.results)
+      ? videoData.results
+      : [];
+
+    if (savedResults.length === 0) {
+      setVideoVersionMessage(
+        "Saved video prompt version has no generated results.",
+      );
+      return false;
+    }
+
+    const loadedTitle = savedVersion.title || "Untitled video prompt version";
+
+    setVideoVersionTitle(loadedTitle);
+    setCurrentVideoDisplayTitle(loadedTitle);
+    setCurrentVideoDisplaySource("saved");
+    setSelectedSavedVideoVersionId(savedVersion.id);
+    setVideoPromptStatus(`${statusPrefix}: ${loadedTitle}`);
+    setVideoVersionMessage("");
+
+    return true;
+  };
 
   const videoRequestSummary = useMemo(() => {
     return [
-      genre.trim() ? `Genre: ${genre.trim()}` : 'Genre: not set',
-      moodsText.trim() ? `Mood: ${moodsText.trim()}` : 'Mood: not set',
-      theme.trim() ? `Theme: ${theme.trim()}` : 'Theme: not set',
-      hook.trim() ? `Hook: ${hook.trim()}` : 'Hook: not set',
+      genre.trim() ? `Genre: ${genre.trim()}` : "Genre: not set",
+      moodsText.trim() ? `Mood: ${moodsText.trim()}` : "Mood: not set",
+      theme.trim() ? `Theme: ${theme.trim()}` : "Theme: not set",
+      hook.trim() ? `Hook: ${hook.trim()}` : "Hook: not set",
       `DNA: ${dnaId}`,
-      multiVersion ? 'Mode: multi-version' : 'Mode: single version',
-    ].join(' · ')
-  }, [genre, moodsText, theme, hook, dnaId, multiVersion])
+      multiVersion ? "Mode: multi-version" : "Mode: single version",
+    ].join(" · ");
+  }, [genre, moodsText, theme, hook, dnaId, multiVersion]);
 
   const generateVideoPrompts = async () => {
     if (!hasLyrics) {
-      setMessage('Add or load lyrics before generating video prompts.')
-      return
+      setMessage("Add or load lyrics before generating video prompts.");
+      return;
     }
 
-    setGenerating(true)
-    setMessage('')
-    setResults([])
-    setVideoGeneratedAt('')
+    setGenerating(true);
+    setMessage("");
+    setResults([]);
+    setVideoGeneratedAt("");
 
     try {
-      const response = await fetch('/api/video', {
-        method: 'POST',
+      const response = await fetch("/api/video", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           genre,
@@ -1259,463 +1334,679 @@ const applySavedVideoPromptVersion = (
           dnaId,
           multiVersion,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate video prompts.')
+        throw new Error(data.error || "Failed to generate video prompts.");
       }
 
-          const hadExistingResults = results.length > 0
-      const generatedAt = new Date().toLocaleString()
+      const hadExistingResults = results.length > 0;
+      const generatedAt = new Date().toLocaleString();
 
       if (Array.isArray(data.versions)) {
-        setResults(data.versions)
+        setResults(data.versions);
       } else {
-        setResults([data])
+        setResults([data]);
       }
 
-        setVideoGeneratedAt(generatedAt)
-        setSelectedSavedVideoVersionId('')
-        setCurrentVideoDisplayTitle('Unsaved generated video prompts')
-        setCurrentVideoDisplaySource('generated')
+      setVideoGeneratedAt(generatedAt);
+      setSelectedSavedVideoVersionId("");
+      setCurrentVideoDisplayTitle("Unsaved generated video prompts");
+      setCurrentVideoDisplaySource("generated");
 
-        if (!videoVersionTitle.trim()) {
-          setVideoVersionTitle(`Video prompts - ${songVersionTitle || 'Untitled version'}`)
-        }
+      if (!videoVersionTitle.trim()) {
+        setVideoVersionTitle(
+          `Video prompts - ${songVersionTitle || "Untitled version"}`,
+        );
+      }
 
-        setMessage(`Video prompts generated at ${generatedAt}.`)
-        setVideoPromptStatus(
-          hadExistingResults
-            ? 'Regenerated video prompts and replaced the previous output.'
-            : 'Generated new video prompts.',
-        )
-      
+      setMessage(`Video prompts generated at ${generatedAt}.`);
+      setVideoPromptStatus(
+        hadExistingResults
+          ? "Regenerated video prompts and replaced the previous output."
+          : "Generated new video prompts.",
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to generate video prompts.')
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate video prompts.",
+      );
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }
+  };
 
   const handleGenerateVideoPromptsClick = () => {
     if (results.length > 0) {
       const confirmed = window.confirm(
-        'Regenerate video prompts? This will replace the current generated video prompt output.',
-      )
+        "Regenerate video prompts? This will replace the current generated video prompt output.",
+      );
 
       if (!confirmed) {
-        return
+        return;
       }
     }
 
-    generateVideoPrompts()
-  }
-
+    generateVideoPrompts();
+  };
 
   const clearGeneratedVideoPrompts = () => {
-      setResults([])
-      setVideoGeneratedAt('')
-      setJustCopiedField('')
-      setJustCopiedIndex(null)
-      setVideoVersionTitle('')
-      setSelectedSavedVideoVersionId('')
-      setCurrentVideoDisplayTitle('')
-      setCurrentVideoDisplaySource('')
+    setResults([]);
+    setVideoGeneratedAt("");
+    setJustCopiedField("");
+    setJustCopiedIndex(null);
+    setVideoVersionTitle("");
+    setSelectedSavedVideoVersionId("");
+    setCurrentVideoDisplayTitle("");
+    setCurrentVideoDisplaySource("");
 
-      if (videoPromptStorageKey) {
-        window.sessionStorage.removeItem(videoPromptStorageKey)
-      }
-
-      setVideoPromptStatus('')
-      showTemporaryVideoMessage(
-          'Cleared generated video prompts. Saved video versions are still available to load.',
-        )
+    if (videoPromptStorageKey) {
+      window.sessionStorage.removeItem(videoPromptStorageKey);
     }
 
-
-
+    setVideoPromptStatus("");
+    showTemporaryVideoMessage(
+      "Cleared generated video prompts. Saved video versions are still available to load.",
+    );
+  };
 
   const copyVideoField = (title: string, value: string, fieldKey: string) => {
-      navigator.clipboard.writeText(
-        [title, buildSongReference(songTitle, songVersionTitle, videoGeneratedAt), '', value].join('\n')
-      )
+    navigator.clipboard.writeText(
+      [
+        title,
+        buildSongReference(songTitle, songVersionTitle, videoGeneratedAt),
+        "",
+        value,
+      ].join("\n"),
+    );
 
-      setJustCopiedField(fieldKey)
+    setJustCopiedField(fieldKey);
 
-      window.setTimeout(() => {
-        setJustCopiedField('')
-      }, 1800)
-    }
+    window.setTimeout(() => {
+      setJustCopiedField("");
+    }, 1800);
+  };
 
-    const getVideoFieldKey = (
-  result: VideoResult,
-  index: number,
-  fieldName: string
-) => `${result.dna_id}-${index}-${fieldName}`
+  const getVideoFieldKey = (
+    result: VideoResult,
+    index: number,
+    fieldName: string,
+  ) => `${result.dna_id}-${index}-${fieldName}`;
 
-const getVideoSceneFieldKey = (
-  result: VideoResult,
-  resultIndex: number,
-  sceneIndex: number
-) => `${result.dna_id}-${resultIndex}-scene-${sceneIndex}`
-
+  const getVideoSceneFieldKey = (
+    result: VideoResult,
+    resultIndex: number,
+    sceneIndex: number,
+  ) => `${result.dna_id}-${resultIndex}-scene-${sceneIndex}`;
 
   const copyVideoPack = (result: VideoResult, index: number) => {
     navigator.clipboard.writeText(
-      buildVideoPack(result, songTitle, songVersionTitle, videoGeneratedAt)
-    )
-    setJustCopiedIndex(index)
+      buildVideoPack(result, songTitle, songVersionTitle, videoGeneratedAt),
+    );
+    setJustCopiedIndex(index);
 
     window.setTimeout(() => {
-      setJustCopiedIndex(null)
-    }, 1800)
-  }
+      setJustCopiedIndex(null);
+    }, 1800);
+  };
 
   return (
     <section className="rounded border border-gray-700 bg-gray-900/60 p-4">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-100">
-          Video Prompt Builder
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-100">Video</h2>
+
         <p className="mt-1 text-sm text-gray-400">
-          Generate OpenArt-ready music video prompts from the current song sheet.
+          Develop a visual direction for the song, then prepare a handoff for
+          video and image tools.
         </p>
+      </div>
 
-        <div className="mt-3 rounded border border-gray-700 bg-gray-900/70 px-3 py-2 text-xs text-gray-300">
-          {hasSavedSongVersion ? (
-            <span>
-              Video prompts are linked to this saved song version and will be restored during this browser session.
-            </span>
-          ) : (
-            <span className="text-amber-300">
-              Save or load a song version before generating video prompts. This keeps copied prompts tied to the correct song and version.
-            </span>
-          )}
-        </div>
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          {
+            id: "direction" as VideoTask,
+            number: "1",
+            label: "Set direction",
+            status: hasSavedSongVersion && hasLyrics ? "Ready" : "Needs song",
+          },
+          {
+            id: "generate" as VideoTask,
+            number: "2",
+            label: "Generate",
+            status: generating
+              ? "Working"
+              : results.length > 0
+                ? "Complete"
+                : hasSavedSongVersion && hasLyrics
+                  ? "Ready"
+                  : "Blocked",
+          },
+          {
+            id: "review" as VideoTask,
+            number: "3",
+            label: "Review",
+            status: results.length > 0 ? "Ready" : "Blocked",
+          },
+          {
+            id: "save" as VideoTask,
+            number: "4",
+            label: "Save version",
+            status:
+              results.length > 0 || savedVideoVersions.length > 0
+                ? "Ready"
+                : "Blocked",
+          },
+          {
+            id: "make" as VideoTask,
+            number: "5",
+            label: "Make video",
+            status: results.length > 0 ? "Ready" : "Blocked",
+          },
+        ].map((task) => {
+          const active = videoTask === task.id;
 
-        <div className="mt-3 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
+          return (
+            <button
+              key={task.id}
+              type="button"
+              onClick={() => setVideoTask(task.id)}
+              className={`rounded border px-3 py-2 text-left ${
+                active
+                  ? "border-purple-600 bg-purple-950/40"
+                  : "border-gray-700 bg-gray-950 hover:border-gray-600"
+              }`}
+            >
+              <div className="text-xs text-gray-500">{task.number}</div>
+
+              <div
+                className={`mt-0.5 text-sm font-medium ${
+                  active ? "text-purple-100" : "text-gray-200"
+                }`}
+              >
+                {task.label}
+              </div>
+
+              <div
+                className={`mt-1 text-xs ${
+                  task.status === "Complete" || task.status === "Ready"
+                    ? "text-green-400"
+                    : task.status === "Working"
+                      ? "text-blue-300"
+                      : "text-gray-500"
+                }`}
+              >
+                {task.status}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {videoTask === "direction" && (
+        <div className="space-y-4">
+          <div className="mb-4">
+            <p className="mt-1 text-sm text-gray-400">
+              Generate OpenArt-ready music video prompts from the current song
+              sheet.
+            </p>
+
+            <div className="mt-3 rounded border border-gray-700 bg-gray-900/70 px-3 py-2 text-xs text-gray-300">
+              {hasSavedSongVersion ? (
+                <span>
+                  Video prompts are linked to this saved song version and will
+                  be restored during this browser session.
+                </span>
+              ) : (
+                <span className="text-amber-300">
+                  Save or load a song version before generating video prompts.
+                  This keeps copied prompts tied to the correct song and
+                  version.
+                </span>
+              )}
+            </div>
+
+            <div className="rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
               <div>
-                Song:{' '}
+                Song:{" "}
                 <span className="text-gray-100">
-                  {songTitle || 'Not selected'}
+                  {songTitle || "Not selected"}
                 </span>
               </div>
               <div className="mt-1">
-                Version:{' '}
-                <span className={hasSavedSongVersion ? 'text-green-300' : 'text-yellow-300'}>
+                Version:{" "}
+                <span
+                  className={
+                    hasSavedSongVersion ? "text-green-300" : "text-yellow-300"
+                  }
+                >
                   {hasSavedSongVersion
-                    ? songVersionTitle || 'Untitled saved version'
-                    : 'Save the current song version before generating video prompts'}
+                    ? songVersionTitle || "Untitled saved version"
+                    : "Save the current song version before generating video prompts"}
                 </span>
               </div>
             </div>
 
             {videoGeneratedAt && (
               <div className="mt-3 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-300">
-                Generated at:{' '}
-                <span className="text-green-300">
-                  {videoGeneratedAt}
-                </span>
+                Generated at:{" "}
+                <span className="text-green-300">{videoGeneratedAt}</span>
               </div>
             )}
+          </div>
 
-      </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="relative block">
+              <span className="mb-1 block text-sm font-medium text-gray-300">
+                Genre
+              </span>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-gray-300">
-            Genre
-          </span>
-          <input
-            value={genre}
-            onChange={(event) => setGenre(event.target.value)}
-            placeholder="modern country, indie folk, acoustic pop..."
-            className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
-          />
-        </label>
+              <div className="relative">
+                <input
+                  value={genre}
+                  onChange={(event) => {
+                    setGenre(event.target.value);
+                  }}
+                  onFocus={() => setShowGenreOptions(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      setShowGenreOptions(false);
+                    }
+                  }}
+                  placeholder="Choose or enter a genre..."
+                  className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 pr-10 text-gray-100"
+                />
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-gray-300">
-            Moods
-          </span>
-          <input
-            value={moodsText}
-            onChange={(event) => setMoodsText(event.target.value)}
-            placeholder="cinematic, reflective, hopeful"
-            className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Separate moods with commas.
-          </p>
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-gray-300">
-            Theme
-          </span>
-          <input
-            value={theme}
-            onChange={(event) => setTheme(event.target.value)}
-            placeholder="coming home, lost love, open road..."
-            className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-gray-300">
-            Hook / visual focus
-          </span>
-          <input
-            value={hook}
-            onChange={(event) => setHook(event.target.value)}
-            placeholder="main emotional image or chorus idea"
-            className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
-          />
-        </label>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-gray-300">
-            Creative DNA
-          </span>
-          <select
-            value={dnaId}
-            onChange={(event) => setDnaId(event.target.value)}
-            className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
-          >
-            <option value="mpj-master">MPJ Master</option>
-            <option value="commercial-hit">Commercial Hit</option>
-            <option value="raw-folk">Raw Folk</option>
-          </select>
-        </label>
-
-        <label className="flex items-center gap-2 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-300">
-          <input
-            type="checkbox"
-            checked={multiVersion}
-            onChange={(event) => setMultiVersion(event.target.checked)}
-          />
-          Generate three DNA versions
-        </label>
-      </div>
-
-      <div className="mt-4 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-400">
-        {videoRequestSummary}
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={handleGenerateVideoPromptsClick}
-          disabled={!canGenerateVideoPrompts}
-          className={primaryVideoButtonClass}
-          title={
-              !hasLyrics
-                ? 'Add or load lyrics before generating video prompts.'
-                : !hasSavedSongVersion
-                  ? 'Save the current song version before generating video prompts, so the video output can identify the song and version.'
-                  : 'Generate OpenArt-ready music video prompts from the saved song version.'
-            }
-        >
-          {generating
-          ? 'Generating video prompts...'
-          : !hasLyrics
-            ? 'Add lyrics to generate video'
-            : !hasSavedSongVersion
-              ? 'Save song version before video'
-              : results.length > 0
-                ? 'Regenerate video prompts'
-                : 'Generate video prompts'}
+                <button
+                  type="button"
+                  onClick={() => setShowGenreOptions((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-400 hover:text-gray-200"
+                  aria-label="Show genre choices"
+                >
+                  ▾
                 </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(
-              buildVideoPageHandoffSummary({
-                songTitle,
-                songVersionTitle,
-                songVersionId,
-                generatedAt: videoGeneratedAt,
-                status: videoPromptStatus,
-                resultCount: results.length,
-                hasLyrics,
-                hasSavedSongVersion,
-                hasGeneratedVideoPrompts,
-                canClearGeneratedVideoPrompts,
-              }),
-            )
-            setJustCopiedField('videoPageHandoffSummary')
-            window.setTimeout(() => setJustCopiedField(''), 1500)
-          }}
-          className={secondaryVideoButtonClass}
-        >
-          {justCopiedField === 'videoPageHandoffSummary'
-            ? 'Copied ✓'
-            : 'Copy Video page handoff summary'}
-        </button>
+                {showGenreOptions && (
+                  <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded border border-gray-700 bg-gray-950 shadow-lg">
+                    {videoGenreOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setGenre(option);
+                          setShowGenreOptions(false);
+                        }}
+                        className={`block w-full px-3 py-2 text-left text-sm hover:bg-gray-800 ${
+                          option.toLowerCase() === genre.trim().toLowerCase()
+                            ? "bg-purple-950/40 text-purple-200"
+                            : "text-gray-200"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
 
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(
-              buildVideoPromptSessionSummary({
-                songTitle,
-                songVersionTitle,
-                generatedAt: videoGeneratedAt,
-                status: videoPromptStatus,
-                resultCount: results.length,
-                hasSavedSongVersion,
-              }),
-            )
-            setJustCopiedField('videoPromptSessionSummary')
-            window.setTimeout(() => setJustCopiedField(''), 1500)
-          }}
-          className={secondaryVideoButtonClass}
-        >
-          {justCopiedField === 'videoPromptSessionSummary'
-            ? 'Copied ✓'
-            : 'Copy video prompt session summary'}
-        </button>
+                    {genre.trim() &&
+                      !videoGenreOptions.some(
+                        (option) =>
+                          option.toLowerCase() === genre.trim().toLowerCase(),
+                      ) && (
+                        <div className="border-t border-gray-800 px-3 py-2 text-xs text-gray-500">
+                          Custom genre: {genre.trim()}
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
+            </label>
 
-        <button
-          type="button"
-          onClick={clearGeneratedVideoPrompts}
-          disabled={!canClearGeneratedVideoPrompts}
-          className={secondaryVideoButtonClass}
-        >
-          Clear generated video prompts
-        </button>
-        
+            <label className="relative block">
+              <span className="mb-1 block text-sm font-medium text-gray-300">
+                Moods
+                {songCreativeProfile?.moods?.length ? (
+                  <span className="ml-2 text-xs font-normal text-purple-300/70">
+                    from song profile
+                  </span>
+                ) : null}
+              </span>
 
-      </div>
+              <div className="relative">
+                <input
+                  value={moodsText}
+                  onChange={(event) => setMoodsText(event.target.value)}
+                  onFocus={() => setShowMoodOptions(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      setShowMoodOptions(false);
+                    }
+                  }}
+                  placeholder="Choose or enter moods, separated by commas..."
+                  className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 pr-10 text-gray-100"
+                />
 
-     {videoPromptStatus && (
-          <p className="mt-2 text-xs text-slate-400">
-            {videoPromptStatus}
-          </p>
-        )}
+                <button
+                  type="button"
+                  onClick={() => setShowMoodOptions((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-400 hover:text-gray-200"
+                  aria-label="Show mood choices"
+                >
+                  ▾
+                </button>
 
-        {!hasGeneratedVideoPrompts && (
-          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
-            <h4 className="text-sm font-semibold text-slate-100">
-              OpenArt workflow packs
-            </h4>
-            <p className="mt-1 text-xs text-slate-400">
-              Generate video prompts first to unlock reusable OpenArt packs for cover art, character consistency, visual planning, production, and release promotion.
-            </p>
-            <div className="mt-3 rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
-              The OpenArt copy packs will appear here after video prompts have been generated for this saved song version.
-            </div>
+                {showMoodOptions && (
+                  <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded border border-gray-700 bg-gray-950 shadow-lg">
+                    {videoMoodOptions.map((option) => {
+                      const selectedMoods = splitMoods(moodsText);
+                      const isSelected = selectedMoods.some(
+                        (mood) => mood.toLowerCase() === option.toLowerCase(),
+                      );
+
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => {
+                            const currentMoods = splitMoods(moodsText);
+
+                            const nextMoods = isSelected
+                              ? currentMoods.filter(
+                                  (mood) =>
+                                    mood.toLowerCase() !== option.toLowerCase(),
+                                )
+                              : [...currentMoods, option];
+
+                            setMoodsText(nextMoods.join(", "));
+                          }}
+                          className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-800 ${
+                            isSelected
+                              ? "bg-purple-950/40 text-purple-200"
+                              : "text-gray-200"
+                          }`}
+                        >
+                          <span>{option}</span>
+                          {isSelected && <span>✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-gray-300">
+                Theme
+                {songCreativeProfile?.coreTheme?.trim() && (
+                  <span className="ml-2 text-xs font-normal text-purple-300/70">
+                    from song profile
+                  </span>
+                )}
+              </span>
+
+              <input
+                value={theme}
+                onChange={(event) => setTheme(event.target.value)}
+                placeholder="coming home, lost love, open road..."
+                className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-gray-300">
+                Visual hook / focus
+              </span>
+
+              <input
+                value={hook}
+                onChange={(event) => setHook(event.target.value)}
+                placeholder="Optional: a recurring image, moment, location, or visual idea..."
+                className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
+              />
+            </label>
           </div>
-        )}
 
-      {message && (
-        <p className="mt-3 rounded border border-gray-700 bg-gray-950 p-2 text-xs text-gray-300">
-          {message}
-        </p>
+          <div className="mt-2 grid gap-3 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-gray-300">
+                Creative DNA
+              </span>
+              <select
+                value={dnaId}
+                onChange={(event) => setDnaId(event.target.value)}
+                className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
+              >
+                <option value="mpj-master">MPJ Master</option>
+                <option value="commercial-hit">Commercial Hit</option>
+                <option value="raw-folk">Raw Folk</option>
+              </select>
+            </label>
+
+            <label className="flex items-center gap-2 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={multiVersion}
+                onChange={(event) => setMultiVersion(event.target.checked)}
+              />
+              Generate three DNA versions
+            </label>
+          </div>
+        </div>
       )}
 
-      <div className="mt-4 rounded border border-gray-700 bg-gray-900/70 p-3">
-
-      <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-3 text-xs text-gray-300">
-          <div className="font-medium text-gray-200">
-            Video version status
+      {videoTask === "generate" && (
+        <div className="space-y-4">
+          <div className="mt-4 rounded border border-gray-700 bg-gray-950 p-3 text-xs text-gray-400">
+            {videoRequestSummary}
           </div>
 
-          <div className="mt-2 grid gap-1 text-gray-400">
-            <div>
-              <span className="text-gray-300">Saved song version:</span>{' '}
-              {songVersionTitle || 'Untitled version'}
+          <div className="mt-4 space-y-3">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleGenerateVideoPromptsClick}
+                disabled={!canGenerateVideoPrompts}
+                className={primaryVideoButtonClass}
+                title={
+                  !hasLyrics
+                    ? "Add or load lyrics before generating video prompts."
+                    : !hasSavedSongVersion
+                      ? "Save the current song version before generating video prompts, so the video output can identify the song and version."
+                      : "Generate OpenArt-ready music video prompts from the saved song version."
+                }
+              >
+                {generating
+                  ? "Generating video prompts..."
+                  : !hasLyrics
+                    ? "Add lyrics to generate video"
+                    : !hasSavedSongVersion
+                      ? "Save song version before video"
+                      : results.length > 0
+                        ? "Regenerate video prompts"
+                        : "Generate video prompts"}
+              </button>
+
+              <button
+                type="button"
+                onClick={clearGeneratedVideoPrompts}
+                disabled={!canClearGeneratedVideoPrompts}
+                className={secondaryVideoButtonClass}
+              >
+                Clear generated video prompts
+              </button>
             </div>
 
-            <div>
-              <span className="text-gray-300">Current video display:</span>{' '}
-              {currentVideoDisplayTitle || 'None loaded'}
-              {currentVideoDisplaySource && (
-                <span className="ml-1 text-gray-500">
-                  {currentVideoDisplaySource === 'saved'
-                    ? '(saved)'
-                    : '(not saved yet)'}
-                </span>
-              )}
-            </div>
+            <details className="rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
+              <summary className="cursor-pointer text-xs font-medium text-gray-400">
+                Advanced
+              </summary>
 
-            <div>
-              <span className="text-gray-300">Most recent saved video:</span>{' '}
-              {savedVideoVersions[0]?.title || 'None saved yet'}
-            </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      buildVideoPageHandoffSummary({
+                        songTitle,
+                        songVersionTitle,
+                        songVersionId,
+                        generatedAt: videoGeneratedAt,
+                        status: videoPromptStatus,
+                        resultCount: results.length,
+                        hasLyrics,
+                        hasSavedSongVersion,
+                        hasGeneratedVideoPrompts,
+                        canClearGeneratedVideoPrompts,
+                      }),
+                    );
+                    setJustCopiedField("videoPageHandoffSummary");
+                    window.setTimeout(() => setJustCopiedField(""), 1500);
+                  }}
+                  className={secondaryVideoButtonClass}
+                >
+                  {justCopiedField === "videoPageHandoffSummary"
+                    ? "Copied ✓"
+                    : "Copy Video page handoff summary"}
+                </button>
 
-            <div>
-              <span className="text-gray-300">Saved video versions:</span>{' '}
-              {savedVideoVersions.length}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      buildVideoPromptSessionSummary({
+                        songTitle,
+                        songVersionTitle,
+                        generatedAt: videoGeneratedAt,
+                        status: videoPromptStatus,
+                        resultCount: results.length,
+                        hasSavedSongVersion,
+                      }),
+                    );
+                    setJustCopiedField("videoPromptSessionSummary");
+                    window.setTimeout(() => setJustCopiedField(""), 1500);
+                  }}
+                  className={secondaryVideoButtonClass}
+                >
+                  {justCopiedField === "videoPromptSessionSummary"
+                    ? "Copied ✓"
+                    : "Copy video prompt session summary"}
+                </button>
+              </div>
+            </details>
           </div>
+
+          {videoPromptStatus && (
+            <p className="mt-2 text-xs text-slate-400">{videoPromptStatus}</p>
+          )}
+
+          {!hasGeneratedVideoPrompts && (
+            <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
+              <h4 className="text-sm font-semibold text-slate-100">
+                OpenArt workflow packs
+              </h4>
+              <p className="mt-1 text-xs text-slate-400">
+                Generate video prompts first to unlock reusable OpenArt packs
+                for cover art, character consistency, visual planning,
+                production, and release promotion.
+              </p>
+              <div className="mt-3 rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
+                The OpenArt copy packs will appear here after video prompts have
+                been generated for this saved song version.
+              </div>
+            </div>
+          )}
+
+          {message && (
+            <p className="mt-3 rounded border border-gray-700 bg-gray-950 p-2 text-xs text-gray-300">
+              {message}
+            </p>
+          )}
         </div>
+      )}
 
-      <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-3 text-xs text-gray-300">
-          <div className="font-medium text-gray-200">
-            Video version status
+      {videoTask === "save" && (
+        <div className="mt-4 rounded border border-gray-700 bg-gray-900/70 p-3">
+          <div className="mb-4 rounded border border-gray-700 bg-gray-950 px-3 py-3 text-xs text-gray-300">
+            <div className="font-medium text-gray-200">
+              Video version status
+            </div>
+
+            <div className="mt-2 grid gap-x-6 gap-y-1 text-gray-400 md:grid-cols-2">
+              <div>
+                <span className="text-gray-300">Song version:</span>{" "}
+                {songVersionTitle || "Untitled version"}
+              </div>
+
+              <div>
+                <span className="text-gray-300">Current:</span>{" "}
+                {currentVideoDisplayTitle || "None loaded"}
+                {currentVideoDisplaySource && (
+                  <span className="ml-1 text-gray-500">
+                    {currentVideoDisplaySource === "saved"
+                      ? "(saved)"
+                      : "(not saved yet)"}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <span className="text-gray-300">Latest saved:</span>{" "}
+                {savedVideoVersions[0]?.title || "None saved yet"}
+              </div>
+
+              <div>
+                <span className="text-gray-300">Saved versions:</span>{" "}
+                {savedVideoVersions.length}
+              </div>
+            </div>
           </div>
 
-          <div className="mt-2 grid gap-1 text-gray-400">
+          {loadingVideoVersions && (
+            <p className="mb-3 text-xs text-gray-500">
+              Loading saved video prompt versions...
+            </p>
+          )}
 
+          <div className="mb-3">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-gray-300">
+                Load saved video version
+              </span>
+              <select
+                value={selectedSavedVideoVersionId}
+                onChange={(event) =>
+                  setSelectedSavedVideoVersionId(event.target.value)
+                }
+                disabled={savedVideoVersions.length === 0}
+                className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+              >
+                <option value="">
+                  {savedVideoVersions.length === 0
+                    ? "No saved video versions yet"
+                    : "Choose saved video version"}
+                </option>
+                {savedVideoVersions.map((version, index) => (
+                  <option key={version.id} value={version.id}>
+                    {version.title || `Untitled video version ${index + 1}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              onClick={loadSavedVideoPromptVersion}
+              disabled={!selectedSavedVideoVersionId}
+              className={`${secondaryVideoButtonClass} mt-2`}
+            >
+              Load saved video version
+            </button>
           </div>
-        </div>
-
-
-      <div className="mb-3 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
- 
-       
-         {loadingVideoVersions && (
-          <p className="mt-2 text-xs text-gray-500">
-            Loading saved video prompt versions...
-          </p>
-        )}
-     
- 
-</div>
-        
-
-
-
-<div className="mb-3">
-      <label className="block">
-        <span className="mb-1 block text-xs font-medium text-gray-300">
-          Load saved video version
-        </span>
-        <select
-          value={selectedSavedVideoVersionId}
-          onChange={(event) => setSelectedSavedVideoVersionId(event.target.value)}
-          disabled={savedVideoVersions.length === 0}
-          className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-        >
-          <option value="">
-            {savedVideoVersions.length === 0
-              ? 'No saved video versions yet'
-              : 'Choose saved video version'}
-          </option>
-          {savedVideoVersions.map((version, index) => (
-            <option key={version.id} value={version.id}>
-              {version.title || `Untitled video version ${index + 1}`}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <button
-        type="button"
-        onClick={loadSavedVideoPromptVersion}
-        disabled={!selectedSavedVideoVersionId}
-        className={`${secondaryVideoButtonClass} mt-2`}
-      >
-        Load saved video version
-      </button>
-    </div>
-
 
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-gray-300">
@@ -1737,567 +2028,639 @@ const getVideoSceneFieldKey = (
               disabled={!canSaveVideoVersion}
               className={secondaryVideoButtonClass}
             >
-              {savingVideoVersion ? 'Saving video version...' : 'Save video prompt version'}
+              {savingVideoVersion
+                ? "Saving video version..."
+                : "Save video prompt version"}
             </button>
           </div>
 
           {videoVersionMessage && (
-            <p className="mt-2 text-xs text-gray-400">
-              {videoVersionMessage}
-            </p>
+            <p className="mt-2 text-xs text-gray-400">{videoVersionMessage}</p>
           )}
-          <p className="mt-2 text-xs text-gray-500">
-              {loadingVideoVersions
-                ? 'Loading saved video prompt versions...'
-                : `Saved video prompt versions for this song version: ${savedVideoVersions.length}`}
-            </p>
-
-        </div>
-
-
-
-      {results.length > 0 && (
-        <div className="mt-5 space-y-4">
-          {results.map((result, index) => (
-            <article
-              key={`${result.dna_id}-${index}`}
-              className="rounded border border-gray-700 bg-gray-950 p-4"
-            >
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-semibold text-gray-100">
-                  {result.dna_name}
-                </h3>
-
-                <button
-                  type="button"
-                  onClick={() => copyVideoPack(result, index)}
-                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                >
-                  {justCopiedIndex === index ? 'Video pack copied ✓' : 'Copy video pack'}
-                </button>
-
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    copyVideoField(
-                      'OPENART SCENE CHAIN PACK:',
-                      buildSceneChainPack(result, songTitle, songVersionTitle, videoGeneratedAt),
-                      getVideoFieldKey(result, index, 'scene-chain')
-                    )
-                  }
-                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                >
-                  {justCopiedField === getVideoFieldKey(result, index, 'scene-chain')
-                    ? 'Scene chain copied ✓'
-                    : 'Copy scene chain'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const fieldKey = getVideoFieldKey(result, index, 'storyboard')
-
-                    navigator.clipboard.writeText(
-                      buildStoryboardPack(
-                        result,
-                        songTitle,
-                        songVersionTitle,
-                        videoGeneratedAt
-                      )
-                    )
-
-                    setJustCopiedField(fieldKey)
-
-                    window.setTimeout(() => {
-                      setJustCopiedField('')
-                    }, 1800)
-                  }}
-                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                >
-                  {justCopiedField === getVideoFieldKey(result, index, 'storyboard')
-                    ? 'Storyboard copied ✓'
-                    : 'Copy storyboard'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const fieldKey = getVideoFieldKey(result, index, 'social-teaser')
-
-                    navigator.clipboard.writeText(
-                      buildSocialTeaserPack(
-                        result,
-                        songTitle,
-                        songVersionTitle,
-                        videoGeneratedAt
-                      )
-                    )
-
-                    setJustCopiedField(fieldKey)
-
-                    window.setTimeout(() => {
-                      setJustCopiedField('')
-                    }, 1800)
-                  }}
-                  className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                >
-                  {justCopiedField === getVideoFieldKey(result, index, 'social-teaser')
-                    ? 'Social teaser copied ✓'
-                    : 'Copy social teaser'}
-                </button>
-
-
-        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
-            <div className="mb-3">
-            <h4 className="text-sm font-semibold text-slate-100">
-                OpenArt workflow packs
-            </h4>
-           <p className="mt-1 text-xs text-slate-400">
-              {hasGeneratedVideoPrompts
-                ? 'Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion.'
-                : 'Generate video prompts first to unlock the OpenArt workflow packs.'}
-            </p>
-            </div>
-
-            {hasGeneratedVideoPrompts ? (
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-
-
-                <button
-                  type="button"
-                  className={workflowPackButtonClass}
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      buildCoverImagePromptPack({
-                          songTitle,
-                          songVersionTitle,
-                          generatedAt: videoGeneratedAt,
-                          videoConcept: result.video_concept,
-                          globalStyle: result.global_style,
-                          characterPrompt: result.character_prompt,
-                          masterOpenArtPrompt:  buildMasterPrompt(result),
-                          negativePrompt: openArtNegativePrompt,
-                        }),
-                    )
-                    setJustCopiedField('coverImagePrompt')
-                        window.setTimeout(() => setJustCopiedField(''), 1500)
-                     }}
-                  disabled={!hasGeneratedVideoPrompts}
-                >
-                  {justCopiedField === 'coverImagePrompt' ? 'Copied ✓' : 'Copy cover image prompt'}
-                </button>
-
-                <button
-                  type="button"
-                  className={workflowPackButtonClass}
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      buildCharacterConsistencyPromptPack({
-                        songTitle,
-                        songVersionTitle,
-                        generatedAt: videoGeneratedAt,
-                        characterPrompt: result.character_prompt,
-                        globalStyle: result.global_style,
-                        negativePrompt: openArtNegativePrompt,
-                      }),
-                    )
-                    setJustCopiedField('characterConsistencyPrompt')
-                    window.setTimeout(() => setJustCopiedField(''), 1500)
-                  }}
-                  disabled={!hasGeneratedVideoPrompts}
-                >
-                  {justCopiedField === 'characterConsistencyPrompt'
-                    ? 'Copied ✓'
-                    : 'Copy MPJ character consistency prompt'}
-                </button>
-
-                <button
-                  type="button"
-                  className={workflowPackButtonClass}
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      buildLyricsVisualBeatPack({
-                        songTitle,
-                        songVersionTitle,
-                        generatedAt: videoGeneratedAt,
-                        lyrics,
-                        videoConcept: result.video_concept,
-                        globalStyle: result.global_style,
-                      }),
-                    )
-                    setJustCopiedField('lyricsVisualBeatSheet')
-                    window.setTimeout(() => setJustCopiedField(''), 1500)
-                  }}
-                  disabled={!hasGeneratedVideoPrompts}
-                >
-                  {justCopiedField === 'lyricsVisualBeatSheet'
-                    ? 'Copied ✓'
-                    : 'Copy lyrics-to-visual beat sheet'}
-            </button>
-
-            
-
-            <button
-              type="button"
-              className={workflowPackButtonClass}
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  buildOpenArtReleasePromoPack({
-                    songTitle,
-                    songVersionTitle,
-                    generatedAt: videoGeneratedAt,
-                    videoConcept: result.video_concept,
-                    globalStyle: result.global_style,
-                    characterPrompt: result.character_prompt,
-                    masterOpenArtPrompt: buildMasterPrompt(result),
-                    negativePrompt: openArtNegativePrompt,
-                  }),
-                )
-                setJustCopiedField('openArtReleasePromoPack')
-                window.setTimeout(() => setJustCopiedField(''), 1500)
-              }}
-              disabled={!hasGeneratedVideoPrompts}
-            >
-              {justCopiedField === 'openArtReleasePromoPack'
-                ? 'Copied ✓'
-                : 'Copy OpenArt release promo pack'}
-            </button>
-
-            <button
-              type="button"
-              className={workflowPackButtonClass}
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  buildOpenArtProductionChecklistPack({
-                    songTitle,
-                    songVersionTitle,
-                    generatedAt: videoGeneratedAt,
-                    videoConcept: result.video_concept,
-                    globalStyle: result.global_style,
-                  }),
-                )
-                setJustCopiedField('openArtProductionChecklist')
-                window.setTimeout(() => setJustCopiedField(''), 1500)
-              }}
-              disabled={!hasGeneratedVideoPrompts}
-            >
-              {justCopiedField === 'openArtProductionChecklist'
-                ? 'Copied ✓'
-                : 'Copy OpenArt production checklist'}
-            </button>
-
-            <button
-              type="button"
-              className={workflowPackButtonClass}
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  buildFullOpenArtCreativeBundlePack({
-                    songTitle,
-                    songVersionTitle,
-                    generatedAt: videoGeneratedAt,
-                    lyrics,
-                    videoConcept: result.video_concept,
-                    globalStyle: result.global_style,
-                    characterPrompt: result.character_prompt,
-                    masterOpenArtPrompt: buildMasterPrompt(result),
-                    negativePrompt: openArtNegativePrompt,
-                  }),
-                )
-                setJustCopiedField('fullOpenArtCreativeBundle')
-                window.setTimeout(() => setJustCopiedField(''), 1500)
-              }}
-              disabled={!hasGeneratedVideoPrompts}
-            >
-              {justCopiedField === 'fullOpenArtCreativeBundle'
-                ? 'Copied ✓'
-                : 'Copy full OpenArt creative bundle'}
-            </button>
-              </div>
-        ) : (
-          <div className="rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
-                The OpenArt copy packs will appear here after video prompts have been generated for this saved song version.
-              </div>
-            )}
-              
-        </div>
-
-        </div>
-
-              <div className="space-y-4">
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    Global style
-                  </span>
-                  <textarea
-                    value={result.global_style}
-                    readOnly
-                    rows={3}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyVideoField(
-                        'GLOBAL STYLE:',
-                        result.global_style,
-                        getVideoFieldKey(result, index, 'global-style')
-                      )
-                    }
-                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                  >
-                    {justCopiedField === getVideoFieldKey(result, index, 'global-style')
-                      ? 'Global style copied ✓'
-                      : 'Copy global style'}
-                  </button>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    Character prompt
-                  </span>
-                  <textarea
-                    value={result.character_prompt}
-                    readOnly
-                    rows={3}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyVideoField(
-                        'CHARACTER PROMPT:',
-                        result.character_prompt,
-                        getVideoFieldKey(result, index, 'character')
-                      )
-                    }
-                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                  >
-                    {justCopiedField === getVideoFieldKey(result, index, 'character')
-                      ? 'Character prompt copied ✓'
-                      : 'Copy character prompt'}
-                  </button>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    Video concept
-                  </span>
-                  <textarea
-                    value={result.video_concept}
-                    readOnly
-                    rows={4}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyVideoField(
-                        'VIDEO CONCEPT:',
-                        result.video_concept,
-                        getVideoFieldKey(result, index, 'video-concept')
-                      )
-                    }
-                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                  >
-                    {justCopiedField === getVideoFieldKey(result, index, 'video-concept')
-                      ? 'Video concept copied ✓'
-                      : 'Copy video concept'}
-                  </button>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    Master OpenArt prompt
-                  </span>
-                  <textarea
-                    value={buildMasterPrompt(result)}
-                    readOnly
-                    rows={5}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                      type="button"
-                      onClick={() => copyVideoField(
-                          'MASTER OPENART PROMPT:',
-                          buildMasterPrompt(result),
-                          getVideoFieldKey(result, index, 'master')
-                        )}
-                      className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                    >
-                      {justCopiedField === getVideoFieldKey(result, index, 'master')
-                        ? 'Master prompt copied ✓'
-                        : 'Copy master prompt'}
-                    </button>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    Short OpenArt prompt
-                  </span>
-                  <textarea
-                    value={buildShortPrompt(result)}
-                    readOnly
-                    rows={4}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                      type="button"
-                      onClick={() =>
-                        copyVideoField(
-                          'SHORT OPENART PROMPT:',
-                          buildShortPrompt(result),
-                          getVideoFieldKey(result, index, 'short')
-                        )
-                      }
-                      className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                    >
-                      {justCopiedField === getVideoFieldKey(result, index, 'short')
-                        ? 'Short prompt copied ✓'
-                        : 'Copy short prompt'}
-                    </button>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Shortened prompt for OpenArt fields with tighter character limits.
-                  </p>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    OpenArt lip-sync prompt
-                  </span>
-                  <textarea
-                    value={buildLipSyncPrompt(result)}
-                    readOnly
-                    rows={5}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyVideoField(
-                        'OPENART LIP-SYNC PROMPT:',
-                        buildLipSyncPrompt(result),
-                        getVideoFieldKey(result, index, 'lip-sync')
-                      )
-                    }
-                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                  >
-                    {justCopiedField === getVideoFieldKey(result, index, 'lip-sync')
-                      ? 'Lip-sync prompt copied ✓'
-                      : 'Copy lip-sync prompt'}
-                  </button>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Use this for OpenArt shots where MPJ is singing directly to camera.
-                  </p>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    OpenArt image-to-video prompt
-                  </span>
-                  <textarea
-                    value={buildImageToVideoPrompt(result)}
-                    readOnly
-                    rows={6}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyVideoField(
-                        'OPENART IMAGE-TO-VIDEO PROMPT:',
-                        buildImageToVideoPrompt(result),
-                        getVideoFieldKey(result, index, 'image-to-video')
-                      )
-                    }
-                    className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                  >
-                    {justCopiedField === getVideoFieldKey(result, index, 'image-to-video')
-                      ? 'Image-to-video prompt copied ✓'
-                      : 'Copy image-to-video prompt'}
-                  </button>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Use this when animating a cover image, still frame, or generated character image in OpenArt.
-                  </p>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-300">
-                    OpenArt negative prompt
-                  </span>
-                  <textarea
-                    value={openArtNegativePrompt}
-                    readOnly
-                    rows={3}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-                  />
-                  <button
-                      type="button"
-                      onClick={() =>
-                        copyVideoField(
-                          'OPENART NEGATIVE PROMPT:',
-                          openArtNegativePrompt,
-                          getVideoFieldKey(result, index, 'negative')
-                        )
-                      }
-                      className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                    >
-                      {justCopiedField === getVideoFieldKey(result, index, 'negative')
-                        ? 'Negative prompt copied ✓'
-                        : 'Copy negative prompt'}
-                    </button>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Use this to reduce video artifacts, inconsistent character details, and lip-sync issues.
-                  </p>
-                </label>
-
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-gray-300">
-                    Scene prompts
-                  </h4>
-
-                  <div className="space-y-3">
-                    {result.scene_prompts.map((scene, sceneIndex) => (
-                      <div
-  key={`${result.dna_id}-${scene.section}-${sceneIndex}`}
-  className="block"
->
-  <label className="block">
-    <span className="mb-1 block text-xs font-medium text-gray-400">
-      {scene.section}
-    </span>
-    <textarea
-      value={scene.prompt}
-      readOnly
-      rows={3}
-      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
-    />
-  </label>
-
-        <button
-          type="button"
-          onClick={() =>
-            copyVideoField(
-              `SCENE PROMPT - ${scene.section}:`,
-              scene.prompt,
-              getVideoSceneFieldKey(result, index, sceneIndex)
-            )
-          }
-          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-        >
-          {justCopiedField === getVideoSceneFieldKey(result, index, sceneIndex)
-            ? 'Scene prompt copied ✓'
-            : 'Copy scene prompt'}
-        </button>
-    </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
         </div>
       )}
+      {results.length > 0 &&
+        (videoTask === "review" || videoTask === "make") && (
+          <div className="mt-5 space-y-4">
+            {results.map((result, index) => (
+              <article
+                key={`${result.dna_id}-${index}`}
+                className="rounded border border-gray-700 bg-gray-950 p-4"
+              >
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-gray-100">
+                    {result.dna_name}
+                  </h3>
+
+                  {videoTask === "make" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => copyVideoPack(result, index)}
+                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                      >
+                        {justCopiedIndex === index
+                          ? "Video pack copied ✓"
+                          : "Copy video pack"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyVideoField(
+                            "OPENART SCENE CHAIN PACK:",
+                            buildSceneChainPack(
+                              result,
+                              songTitle,
+                              songVersionTitle,
+                              videoGeneratedAt,
+                            ),
+                            getVideoFieldKey(result, index, "scene-chain"),
+                          )
+                        }
+                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                      >
+                        {justCopiedField ===
+                        getVideoFieldKey(result, index, "scene-chain")
+                          ? "Scene chain copied ✓"
+                          : "Copy scene chain"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const fieldKey = getVideoFieldKey(
+                            result,
+                            index,
+                            "storyboard",
+                          );
+
+                          navigator.clipboard.writeText(
+                            buildStoryboardPack(
+                              result,
+                              songTitle,
+                              songVersionTitle,
+                              videoGeneratedAt,
+                            ),
+                          );
+
+                          setJustCopiedField(fieldKey);
+
+                          window.setTimeout(() => {
+                            setJustCopiedField("");
+                          }, 1800);
+                        }}
+                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                      >
+                        {justCopiedField ===
+                        getVideoFieldKey(result, index, "storyboard")
+                          ? "Storyboard copied ✓"
+                          : "Copy storyboard"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const fieldKey = getVideoFieldKey(
+                            result,
+                            index,
+                            "social-teaser",
+                          );
+
+                          navigator.clipboard.writeText(
+                            buildSocialTeaserPack(
+                              result,
+                              songTitle,
+                              songVersionTitle,
+                              videoGeneratedAt,
+                            ),
+                          );
+
+                          setJustCopiedField(fieldKey);
+
+                          window.setTimeout(() => {
+                            setJustCopiedField("");
+                          }, 1800);
+                        }}
+                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                      >
+                        {justCopiedField ===
+                        getVideoFieldKey(result, index, "social-teaser")
+                          ? "Social teaser copied ✓"
+                          : "Copy social teaser"}
+                      </button>
+                    </>
+                  )}
+                  {videoTask === "make" && (
+                    <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold text-slate-100">
+                          OpenArt workflow packs
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {hasGeneratedVideoPrompts
+                            ? "Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion."
+                            : "Generate video prompts first to unlock the OpenArt workflow packs."}
+                        </p>
+                      </div>
+
+                      {hasGeneratedVideoPrompts ? (
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                          <button
+                            type="button"
+                            className={workflowPackButtonClass}
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                buildCoverImagePromptPack({
+                                  songTitle,
+                                  songVersionTitle,
+                                  generatedAt: videoGeneratedAt,
+                                  videoConcept: result.video_concept,
+                                  globalStyle: result.global_style,
+                                  characterPrompt: result.character_prompt,
+                                  masterOpenArtPrompt:
+                                    buildMasterPrompt(result),
+                                  negativePrompt: openArtNegativePrompt,
+                                }),
+                              );
+                              setJustCopiedField("coverImagePrompt");
+                              window.setTimeout(
+                                () => setJustCopiedField(""),
+                                1500,
+                              );
+                            }}
+                            disabled={!hasGeneratedVideoPrompts}
+                          >
+                            {justCopiedField === "coverImagePrompt"
+                              ? "Copied ✓"
+                              : "Copy cover image prompt"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={workflowPackButtonClass}
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                buildCharacterConsistencyPromptPack({
+                                  songTitle,
+                                  songVersionTitle,
+                                  generatedAt: videoGeneratedAt,
+                                  characterPrompt: result.character_prompt,
+                                  globalStyle: result.global_style,
+                                  negativePrompt: openArtNegativePrompt,
+                                }),
+                              );
+                              setJustCopiedField("characterConsistencyPrompt");
+                              window.setTimeout(
+                                () => setJustCopiedField(""),
+                                1500,
+                              );
+                            }}
+                            disabled={!hasGeneratedVideoPrompts}
+                          >
+                            {justCopiedField === "characterConsistencyPrompt"
+                              ? "Copied ✓"
+                              : "Copy MPJ character consistency prompt"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={workflowPackButtonClass}
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                buildLyricsVisualBeatPack({
+                                  songTitle,
+                                  songVersionTitle,
+                                  generatedAt: videoGeneratedAt,
+                                  lyrics,
+                                  videoConcept: result.video_concept,
+                                  globalStyle: result.global_style,
+                                }),
+                              );
+                              setJustCopiedField("lyricsVisualBeatSheet");
+                              window.setTimeout(
+                                () => setJustCopiedField(""),
+                                1500,
+                              );
+                            }}
+                            disabled={!hasGeneratedVideoPrompts}
+                          >
+                            {justCopiedField === "lyricsVisualBeatSheet"
+                              ? "Copied ✓"
+                              : "Copy lyrics-to-visual beat sheet"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={workflowPackButtonClass}
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                buildOpenArtReleasePromoPack({
+                                  songTitle,
+                                  songVersionTitle,
+                                  generatedAt: videoGeneratedAt,
+                                  videoConcept: result.video_concept,
+                                  globalStyle: result.global_style,
+                                  characterPrompt: result.character_prompt,
+                                  masterOpenArtPrompt:
+                                    buildMasterPrompt(result),
+                                  negativePrompt: openArtNegativePrompt,
+                                }),
+                              );
+                              setJustCopiedField("openArtReleasePromoPack");
+                              window.setTimeout(
+                                () => setJustCopiedField(""),
+                                1500,
+                              );
+                            }}
+                            disabled={!hasGeneratedVideoPrompts}
+                          >
+                            {justCopiedField === "openArtReleasePromoPack"
+                              ? "Copied ✓"
+                              : "Copy OpenArt release promo pack"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={workflowPackButtonClass}
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                buildOpenArtProductionChecklistPack({
+                                  songTitle,
+                                  songVersionTitle,
+                                  generatedAt: videoGeneratedAt,
+                                  videoConcept: result.video_concept,
+                                  globalStyle: result.global_style,
+                                }),
+                              );
+                              setJustCopiedField("openArtProductionChecklist");
+                              window.setTimeout(
+                                () => setJustCopiedField(""),
+                                1500,
+                              );
+                            }}
+                            disabled={!hasGeneratedVideoPrompts}
+                          >
+                            {justCopiedField === "openArtProductionChecklist"
+                              ? "Copied ✓"
+                              : "Copy OpenArt production checklist"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={workflowPackButtonClass}
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                buildFullOpenArtCreativeBundlePack({
+                                  songTitle,
+                                  songVersionTitle,
+                                  generatedAt: videoGeneratedAt,
+                                  lyrics,
+                                  videoConcept: result.video_concept,
+                                  globalStyle: result.global_style,
+                                  characterPrompt: result.character_prompt,
+                                  masterOpenArtPrompt:
+                                    buildMasterPrompt(result),
+                                  negativePrompt: openArtNegativePrompt,
+                                }),
+                              );
+                              setJustCopiedField("fullOpenArtCreativeBundle");
+                              window.setTimeout(
+                                () => setJustCopiedField(""),
+                                1500,
+                              );
+                            }}
+                            disabled={!hasGeneratedVideoPrompts}
+                          >
+                            {justCopiedField === "fullOpenArtCreativeBundle"
+                              ? "Copied ✓"
+                              : "Copy full OpenArt creative bundle"}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
+                          The OpenArt copy packs will appear here after video
+                          prompts have been generated for this saved song
+                          version.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {videoTask === "review" && (
+                    <>
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-gray-300">
+                          Global style
+                        </span>
+                        <textarea
+                          value={result.global_style}
+                          readOnly
+                          rows={3}
+                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyVideoField(
+                              "GLOBAL STYLE:",
+                              result.global_style,
+                              getVideoFieldKey(result, index, "global-style"),
+                            )
+                          }
+                          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                        >
+                          {justCopiedField ===
+                          getVideoFieldKey(result, index, "global-style")
+                            ? "Global style copied ✓"
+                            : "Copy global style"}
+                        </button>
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-gray-300">
+                          Character prompt
+                        </span>
+                        <textarea
+                          value={result.character_prompt}
+                          readOnly
+                          rows={3}
+                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyVideoField(
+                              "CHARACTER PROMPT:",
+                              result.character_prompt,
+                              getVideoFieldKey(result, index, "character"),
+                            )
+                          }
+                          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                        >
+                          {justCopiedField ===
+                          getVideoFieldKey(result, index, "character")
+                            ? "Character prompt copied ✓"
+                            : "Copy character prompt"}
+                        </button>
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-gray-300">
+                          Video concept
+                        </span>
+                        <textarea
+                          value={result.video_concept}
+                          readOnly
+                          rows={4}
+                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyVideoField(
+                              "VIDEO CONCEPT:",
+                              result.video_concept,
+                              getVideoFieldKey(result, index, "video-concept"),
+                            )
+                          }
+                          className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                        >
+                          {justCopiedField ===
+                          getVideoFieldKey(result, index, "video-concept")
+                            ? "Video concept copied ✓"
+                            : "Copy video concept"}
+                        </button>
+                      </label>
+                    </>
+                  )}
+
+                  {videoTask === "make" && (
+                    <details className="rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
+                      <summary className="cursor-pointer text-sm font-medium text-gray-300">
+                        Detailed OpenArt prompts
+                      </summary>
+
+                      <div className="mt-4 space-y-4">
+                        <label className="block">
+                          <span className="mb-1 block text-sm font-medium text-gray-300">
+                            Master OpenArt prompt
+                          </span>
+                          <textarea
+                            value={buildMasterPrompt(result)}
+                            readOnly
+                            rows={5}
+                            className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyVideoField(
+                                "MASTER OPENART PROMPT:",
+                                buildMasterPrompt(result),
+                                getVideoFieldKey(result, index, "master"),
+                              )
+                            }
+                            className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "master")
+                              ? "Master prompt copied ✓"
+                              : "Copy master prompt"}
+                          </button>
+                        </label>
+
+                        <label className="block">
+                          <span className="mb-1 block text-sm font-medium text-gray-300">
+                            Short OpenArt prompt
+                          </span>
+                          <textarea
+                            value={buildShortPrompt(result)}
+                            readOnly
+                            rows={4}
+                            className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyVideoField(
+                                "SHORT OPENART PROMPT:",
+                                buildShortPrompt(result),
+                                getVideoFieldKey(result, index, "short"),
+                              )
+                            }
+                            className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "short")
+                              ? "Short prompt copied ✓"
+                              : "Copy short prompt"}
+                          </button>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Shortened prompt for OpenArt fields with tighter
+                            character limits.
+                          </p>
+                        </label>
+
+                        <label className="block">
+                          <span className="mb-1 block text-sm font-medium text-gray-300">
+                            OpenArt lip-sync prompt
+                          </span>
+                          <textarea
+                            value={buildLipSyncPrompt(result)}
+                            readOnly
+                            rows={5}
+                            className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyVideoField(
+                                "OPENART LIP-SYNC PROMPT:",
+                                buildLipSyncPrompt(result),
+                                getVideoFieldKey(result, index, "lip-sync"),
+                              )
+                            }
+                            className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "lip-sync")
+                              ? "Lip-sync prompt copied ✓"
+                              : "Copy lip-sync prompt"}
+                          </button>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Use this for OpenArt shots where MPJ is singing
+                            directly to camera.
+                          </p>
+                        </label>
+
+                        <label className="block">
+                          <span className="mb-1 block text-sm font-medium text-gray-300">
+                            OpenArt image-to-video prompt
+                          </span>
+                          <textarea
+                            value={buildImageToVideoPrompt(result)}
+                            readOnly
+                            rows={6}
+                            className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyVideoField(
+                                "OPENART IMAGE-TO-VIDEO PROMPT:",
+                                buildImageToVideoPrompt(result),
+                                getVideoFieldKey(
+                                  result,
+                                  index,
+                                  "image-to-video",
+                                ),
+                              )
+                            }
+                            className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "image-to-video")
+                              ? "Image-to-video prompt copied ✓"
+                              : "Copy image-to-video prompt"}
+                          </button>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Use this when animating a cover image, still frame,
+                            or generated character image in OpenArt.
+                          </p>
+                        </label>
+
+                        <label className="block">
+                          <span className="mb-1 block text-sm font-medium text-gray-300">
+                            OpenArt negative prompt
+                          </span>
+                          <textarea
+                            value={openArtNegativePrompt}
+                            readOnly
+                            rows={3}
+                            className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyVideoField(
+                                "OPENART NEGATIVE PROMPT:",
+                                openArtNegativePrompt,
+                                getVideoFieldKey(result, index, "negative"),
+                              )
+                            }
+                            className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "negative")
+                              ? "Negative prompt copied ✓"
+                              : "Copy negative prompt"}
+                          </button>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Use this to reduce video artifacts, inconsistent
+                            character details, and lip-sync issues.
+                          </p>
+                        </label>
+                      </div>
+                    </details>
+                  )}
+
+                  {videoTask === "review" && (
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium text-gray-300">
+                        Scene prompts
+                      </h4>
+
+                      <div className="space-y-3">
+                        {result.scene_prompts.map((scene, sceneIndex) => (
+                          <div
+                            key={`${result.dna_id}-${scene.section}-${sceneIndex}`}
+                            className="block"
+                          >
+                            <label className="block">
+                              <span className="mb-1 block text-xs font-medium text-gray-400">
+                                {scene.section}
+                              </span>
+                              <textarea
+                                value={scene.prompt}
+                                readOnly
+                                rows={3}
+                                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100"
+                              />
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyVideoField(
+                                  `SCENE PROMPT - ${scene.section}:`,
+                                  scene.prompt,
+                                  getVideoSceneFieldKey(
+                                    result,
+                                    index,
+                                    sceneIndex,
+                                  ),
+                                )
+                              }
+                              className="mt-2 rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
+                            >
+                              {justCopiedField ===
+                              getVideoSceneFieldKey(result, index, sceneIndex)
+                                ? "Scene prompt copied ✓"
+                                : "Copy scene prompt"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
     </section>
-  )
+  );
 }
