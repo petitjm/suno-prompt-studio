@@ -46,6 +46,7 @@ import type {
   AppMode,
   MelodyCharacter,
   MelodySectionIntent,
+  SongCreativeProfile,
 } from "@/types/song";
 
 import { DEFAULT_MELODY_CHARACTER } from "@/types/song";
@@ -2173,6 +2174,8 @@ export default function Page() {
   }, [projects, projectSearch, projectSortKey, projectSortDirection]);
 
   const [songVersions, setSongVersions] = useState<SongVersionRecord[]>([]);
+  const [songCreativeProfile, setSongCreativeProfile] =
+    useState<SongCreativeProfile>({});
   const [chordVersions, setChordVersions] = useState<ChordVersionRecord[]>([]);
   const [savingSong, setSavingSong] = useState(false);
   const [justSavedSong, setJustSavedSong] = useState(false);
@@ -2199,6 +2202,53 @@ export default function Page() {
   const activeSongVersion = songVersions.find(
     (version) => version.id === activeSongVersionId,
   );
+
+  useEffect(() => {
+    setSongCreativeProfile(activeSongVersion?.creative_profile || {});
+  }, [activeSongVersion]);
+
+  const saveSongCreativeProfile = async (
+    updates: Partial<SongCreativeProfile>,
+  ) => {
+    if (!activeSongVersionId) {
+      throw new Error("Select a saved song version first.");
+    }
+
+    const nextProfile: SongCreativeProfile = {
+      ...songCreativeProfile,
+      ...updates,
+    };
+
+    const res = await fetch(`/api/song-version/${activeSongVersionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        creative_profile: nextProfile,
+      }),
+    });
+
+    const data = await readJsonSafe(res);
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to update song profile");
+    }
+
+    const savedProfile: SongCreativeProfile =
+      data.version?.creative_profile || nextProfile;
+
+    setSongCreativeProfile(savedProfile);
+
+    setSongVersions((current) =>
+      current.map((version) =>
+        version.id === activeSongVersionId
+          ? {
+              ...version,
+              creative_profile: savedProfile,
+            }
+          : version,
+      ),
+    );
+  };
 
   const activeChordVersion = chordVersions.find(
     (version) => version.id === activeChordVersionId,
@@ -19520,7 +19570,11 @@ ${buildRewriteInstruction(
 
           <div className={mode === "develop" ? "block" : "hidden"}>
             <SongWorkshopPanel
+              key={activeSongVersionId || "working-draft"}
               lyrics={performanceSheet}
+              projectId={activeProject?.id}
+              songVersionId={activeSongVersionId}
+              songCreativeProfile={songCreativeProfile}
               activeTask={developTask}
               onActiveTaskChange={setDevelopTask}
               songTitle={activeProject?.title || ""}
@@ -19554,6 +19608,26 @@ ${buildRewriteInstruction(
                 }, 600);
               }}
               onEditLyrics={() => handleModeChange("write")}
+              onUseAnalysisInSongProfile={async (profile) => {
+                await saveSongCreativeProfile({
+                  ...(profile.genre?.trim()
+                    ? { genre: profile.genre.trim() }
+                    : {}),
+                  ...(profile.moods?.length
+                    ? {
+                        moods: profile.moods
+                          .map((mood) => mood.trim())
+                          .filter(Boolean),
+                      }
+                    : {}),
+                  ...(profile.coreTheme?.trim()
+                    ? { coreTheme: profile.coreTheme.trim() }
+                    : {}),
+                  ...(profile.emotionalCentre?.trim()
+                    ? { emotionalCentre: profile.emotionalCentre.trim() }
+                    : {}),
+                });
+              }}
             />
           </div>
 
@@ -28368,6 +28442,7 @@ ${buildRewriteInstruction(
                 }
                 projectId={activeProject?.id || null}
                 songVersionId={activeSongVersionId}
+                songCreativeProfile={songCreativeProfile}
               />
             </div>
           )}

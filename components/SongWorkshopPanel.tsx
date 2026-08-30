@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 type SongWorkshopPanelProps = {
+  projectId?: string;
+  songVersionId?: string | null;
   lyrics: string;
   activeTask: "intent" | "analysis" | "draft" | "review" | "use";
   onActiveTaskChange: (
@@ -13,10 +15,24 @@ type SongWorkshopPanelProps = {
   onUseDraft?: (draft: string) => void;
   onSendDraftToCompare?: (draft: string, label?: string) => void;
   onEditLyrics?: () => void;
+  songCreativeProfile?: {
+    genre?: string;
+    moods?: string[];
+    coreTheme?: string;
+    emotionalCentre?: string;
+  };
+  onUseAnalysisInSongProfile?: (profile: {
+    genre?: string;
+    moods?: string[];
+    coreTheme?: string;
+    emotionalCentre?: string;
+  }) => Promise<void>;
 };
 
 type AnalysisResult = {
   generatedAt?: string;
+  genre?: string;
+  moods?: string[];
   coreTheme?: string;
   emotionalCentre?: string;
   fragmentConnection?: string;
@@ -44,11 +60,15 @@ export default function SongWorkshopPanel({
   lyrics,
   songTitle,
   songVersionTitle,
+  projectId,
+  songVersionId,
+  songCreativeProfile,
   activeTask,
   onActiveTaskChange,
   onUseDraft,
   onSendDraftToCompare,
   onEditLyrics,
+  onUseAnalysisInSongProfile,
 }: SongWorkshopPanelProps) {
   const [showFullSourceLyrics, setShowFullSourceLyrics] = useState(false);
 
@@ -66,6 +86,9 @@ export default function SongWorkshopPanel({
     null,
   );
   const [justCopiedAnalysis, setJustCopiedAnalysis] = useState(false);
+  const [justUsedAnalysisInProfile, setJustUsedAnalysisInProfile] =
+    useState(false);
+  const [savingAnalysisToProfile, setSavingAnalysisToProfile] = useState(false);
   const [justCopiedAnalysisPrompt, setJustCopiedAnalysisPrompt] =
     useState(false);
   const [justCopiedDraftPrompt, setJustCopiedDraftPrompt] = useState(false);
@@ -125,6 +148,8 @@ export default function SongWorkshopPanel({
     setJustCopiedDraftPrompt(false);
     setJustCopiedDraft(false);
     setJustCopiedAnalysis(false);
+    setJustUsedAnalysisInProfile(false);
+    setSavingAnalysisToProfile(false);
     setRunningFullWorkshop(false);
     setLastWorkshopAction("");
     setWorkshopActionHistory([]);
@@ -157,6 +182,51 @@ export default function SongWorkshopPanel({
     emotionalDirectness,
     singability,
   ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !projectId || !songVersionId) {
+      return;
+    }
+
+    const key = getDevelopWorkingDraftKey(projectId, songVersionId);
+
+    try {
+      const stored = window.localStorage.getItem(key);
+
+      if (!stored) {
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed) ||
+        !parsed.draftResult ||
+        typeof parsed.draftResult !== "object" ||
+        Array.isArray(parsed.draftResult) ||
+        typeof parsed.sourceLyrics !== "string"
+      ) {
+        return;
+      }
+
+      // Never restore a draft created from different lyrics.
+      if (parsed.sourceLyrics.trim() !== lyrics.trim()) {
+        return;
+      }
+
+      setDraftResult(parsed.draftResult as DraftResult);
+
+      if (typeof parsed.lastWorkshopAction === "string") {
+        setLastWorkshopAction(parsed.lastWorkshopAction);
+      }
+
+      setDraftMessage("Restored Develop working draft.");
+    } catch {
+      // Ignore invalid or unavailable localStorage data.
+    }
+  }, [projectId, songVersionId, lyrics]);
 
   const renderWorkshopSlider = ({
     label,
@@ -284,6 +354,63 @@ export default function SongWorkshopPanel({
     }
   };
 
+  const getDevelopWorkingDraftKey = (
+    currentProjectId: string,
+    currentSongVersionId: string,
+  ) =>
+    `suno-prompt-studio:develop-working-draft:${currentProjectId}:${currentSongVersionId}`;
+
+  const saveDevelopWorkingDraft = (draft: DraftResult, action: string) => {
+    if (typeof window === "undefined" || !projectId || !songVersionId) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        getDevelopWorkingDraftKey(projectId, songVersionId),
+        JSON.stringify({
+          draftResult: draft,
+          lastWorkshopAction: action,
+          sourceLyrics: lyrics,
+          savedAt: new Date().toISOString(),
+        }),
+      );
+    } catch {
+      // Ignore localStorage write failures.
+    }
+  };
+
+  const clearDevelopWorkingDraft = () => {
+    if (typeof window === "undefined" || !projectId || !songVersionId) {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(
+        getDevelopWorkingDraftKey(projectId, songVersionId),
+      );
+    } catch {
+      // Ignore localStorage failures.
+    }
+  };
+
+  const hasSongCreativeProfile = Boolean(
+    songCreativeProfile?.genre?.trim() ||
+    songCreativeProfile?.moods?.length ||
+    songCreativeProfile?.coreTheme?.trim() ||
+    songCreativeProfile?.emotionalCentre?.trim(),
+  );
+
+  const songProfileAnalysisContext: AnalysisResult | null =
+    hasSongCreativeProfile
+      ? {
+          genre: songCreativeProfile?.genre,
+          moods: songCreativeProfile?.moods,
+          coreTheme: songCreativeProfile?.coreTheme,
+          emotionalCentre: songCreativeProfile?.emotionalCentre,
+        }
+      : null;
+
   const createCohesiveDraft = async (
     analysisOverride?: AnalysisResult | null,
     source: "manual" | "full-workshop" = "manual",
@@ -296,17 +423,20 @@ export default function SongWorkshopPanel({
     }
 
     try {
-      if (source === "full-workshop") {
-        recordWorkshopAction("Analyze + draft");
-      } else {
-        recordWorkshopAction(
-          analysisOverride
+      const analysisContextForDraft =
+        analysisOverride ?? analysisResult ?? songProfileAnalysisContext;
+      const draftAction =
+        source === "full-workshop"
+          ? "Analyze + draft"
+          : analysisOverride
             ? "Create cohesive draft using fresh analysis"
             : analysisResult
               ? "Create cohesive draft using existing analysis"
-              : "Create cohesive draft without analysis",
-        );
-      }
+              : songProfileAnalysisContext
+                ? "Create cohesive draft using song profile"
+                : "Create cohesive draft without analysis";
+
+      recordWorkshopAction(draftAction);
 
       setLastSentCompareLabel("");
       setDrafting(true);
@@ -324,7 +454,7 @@ export default function SongWorkshopPanel({
           songVersionTitle,
           workshopNotes,
           workshopControls,
-          analysisResult: analysisOverride ?? analysisResult,
+          analysisResult: analysisContextForDraft,
         }),
       });
 
@@ -347,8 +477,14 @@ export default function SongWorkshopPanel({
         throw new Error(data.error || "Failed to create cohesive draft.");
       }
 
-      setDraftResult(data.draft || null);
+      const createdDraft = data.draft || null;
+
+      setDraftResult(createdDraft);
       setDraftMessage("Cohesive draft created.");
+
+      if (createdDraft) {
+        saveDevelopWorkingDraft(createdDraft, draftAction);
+      }
       if (source === "full-workshop") {
         showTemporaryFeedback(setShowFullWorkshopComplete);
       } else {
@@ -386,16 +522,27 @@ export default function SongWorkshopPanel({
 
   const getDraftAnalysisStatus = (draft: DraftResult) => {
     if (!draft.analysisContext) {
-      return "Draft created without a prior analysis pass.";
+      return "Draft created without analysis or saved song profile context.";
     }
 
     const generatedAt = formatGeneratedAt(draft.analysisContext.generatedAt);
 
-    if (!generatedAt) {
-      return "Draft created using the current Song Workshop analysis.";
+    if (generatedAt) {
+      return `Draft created using detailed analysis generated at: ${generatedAt}`;
     }
 
-    return `Draft created using analysis generated at: ${generatedAt}`;
+    const hasDetailedAnalysis = Boolean(
+      draft.analysisContext.fragmentConnection?.trim() ||
+      draft.analysisContext.mainWeakness?.trim() ||
+      draft.analysisContext.suggestedShape?.length ||
+      draft.analysisContext.nextStep?.trim(),
+    );
+
+    if (hasDetailedAnalysis) {
+      return "Draft created using the current detailed Song Workshop analysis.";
+    }
+
+    return "Draft created using the saved song profile.";
   };
 
   const getDraftSourceBadge = (draft: DraftResult) => {
@@ -406,13 +553,27 @@ export default function SongWorkshopPanel({
     }
 
     if (!draft.analysisContext) {
-      return "No analysis";
+      return "No analysis/profile";
     }
 
-    return "Used analysis";
+    const generatedAt = formatGeneratedAt(draft.analysisContext.generatedAt);
+
+    if (generatedAt) {
+      return "Used detailed analysis";
+    }
+
+    const hasDetailedAnalysis = Boolean(
+      draft.analysisContext.fragmentConnection?.trim() ||
+      draft.analysisContext.mainWeakness?.trim() ||
+      draft.analysisContext.suggestedShape?.length ||
+      draft.analysisContext.nextStep?.trim(),
+    );
+
+    return hasDetailedAnalysis ? "Used detailed analysis" : "Used song profile";
   };
 
   const clearWorkshopResultsManually = () => {
+    clearDevelopWorkingDraft();
     clearWorkshopOutput();
     setShowFullSourceLyrics(false);
     showTemporaryFeedback(setShowClearComplete);
@@ -584,6 +745,12 @@ export default function SongWorkshopPanel({
             analysisResult.generatedAt
               ? `Generated at: ${formatGeneratedAt(analysisResult.generatedAt)}`
               : "",
+            "",
+            "Genre:",
+            analysisResult.genre || "",
+            "",
+            "Moods:",
+            analysisResult.moods?.join(", ") || "",
             "",
             "Core theme:",
             analysisResult.coreTheme || "",
@@ -1471,12 +1638,44 @@ export default function SongWorkshopPanel({
 
             {analysisResult ? (
               <div className="mt-4 rounded border border-green-900/50 bg-green-950/20 p-3 text-xs text-green-200">
-                ✓ Current song analysis will be supplied to the drafting step.
+                ✓ Current detailed song analysis will be supplied to the
+                drafting step.
+              </div>
+            ) : hasSongCreativeProfile ? (
+              <div className="mt-4 rounded border border-purple-900/50 bg-purple-950/20 p-3 text-xs text-purple-200">
+                <div className="font-medium">
+                  ✓ Saved song profile will be supplied to the drafting step.
+                </div>
+
+                <div className="mt-2 space-y-1 text-purple-200/80">
+                  {songCreativeProfile?.genre && (
+                    <div>Genre: {songCreativeProfile.genre}</div>
+                  )}
+
+                  {songCreativeProfile?.moods?.length ? (
+                    <div>Moods: {songCreativeProfile.moods.join(", ")}</div>
+                  ) : null}
+
+                  {songCreativeProfile?.coreTheme && (
+                    <div>Theme: {songCreativeProfile.coreTheme}</div>
+                  )}
+
+                  {songCreativeProfile?.emotionalCentre && (
+                    <div>
+                      Emotional centre: {songCreativeProfile.emotionalCentre}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2 text-purple-200/70">
+                  Create a draft using this saved song knowledge, or run Analyse
+                  + create draft for a fresh detailed analysis first.
+                </div>
               </div>
             ) : (
               <div className="mt-4 rounded border border-gray-800 bg-gray-950/60 p-3 text-xs text-gray-400">
-                No analysis is currently available. You can create a draft
-                directly or run Analyse + create draft.
+                No analysis or saved song profile is currently available. You
+                can create a draft directly or run Analyse + create draft.
               </div>
             )}
           </div>
@@ -1542,14 +1741,63 @@ export default function SongWorkshopPanel({
                     Song idea analysis
                   </h2>
 
-                  <button
-                    type="button"
-                    onClick={copySongAnalysis}
-                    disabled={!analysisResult}
-                    className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
-                  >
-                    {justCopiedAnalysis ? "Copied ✓" : "Copy analysis"}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!onUseAnalysisInSongProfile) {
+                          return;
+                        }
+
+                        try {
+                          setSavingAnalysisToProfile(true);
+                          setJustUsedAnalysisInProfile(false);
+
+                          await Promise.all([
+                            onUseAnalysisInSongProfile({
+                              genre: analysisResult.genre,
+                              moods: analysisResult.moods,
+                              coreTheme: analysisResult.coreTheme,
+                              emotionalCentre: analysisResult.emotionalCentre,
+                            }),
+                            new Promise((resolve) =>
+                              window.setTimeout(resolve, 600),
+                            ),
+                          ]);
+
+                          setJustUsedAnalysisInProfile(true);
+                        } catch (err) {
+                          setJustUsedAnalysisInProfile(false);
+                          setAnalysisMessage(
+                            err instanceof Error
+                              ? err.message
+                              : "Could not update the song profile.",
+                          );
+                        } finally {
+                          setSavingAnalysisToProfile(false);
+                        }
+                      }}
+                      disabled={
+                        !onUseAnalysisInSongProfile || savingAnalysisToProfile
+                      }
+                      className="rounded border border-purple-700 px-3 py-1 text-xs font-medium text-purple-200 hover:bg-purple-950/40 active:scale-95 active:bg-purple-900/60 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
+                    >
+                      {savingAnalysisToProfile
+                        ? "Saving..."
+                        : justUsedAnalysisInProfile
+                          ? "Added to song profile ✓"
+                          : "Use in song profile"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={copySongAnalysis}
+                      disabled={!analysisResult}
+                      className="rounded border border-gray-700 px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-500"
+                    >
+                      {justCopiedAnalysis ? "Copied ✓" : "Copy analysis"}
+                    </button>
+                  </div>
                 </div>
 
                 {analysisResult.generatedAt && (
@@ -1560,6 +1808,17 @@ export default function SongWorkshopPanel({
                 )}
 
                 <div className="mt-3 grid gap-3 text-sm text-gray-400">
+                  <div>
+                    <span className="font-medium text-gray-300">Genre:</span>{" "}
+                    {analysisResult.genre || "Not identified"}
+                  </div>
+
+                  <div>
+                    <span className="font-medium text-gray-300">Moods:</span>{" "}
+                    {analysisResult.moods?.length
+                      ? analysisResult.moods.join(", ")
+                      : "Not identified"}
+                  </div>
                   <div>
                     <span className="font-medium text-gray-300">
                       Core theme:

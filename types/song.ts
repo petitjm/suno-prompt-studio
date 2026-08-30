@@ -63,12 +63,20 @@ export type ChordResponse = {
   [key: string]: unknown;
 };
 
+export type SongCreativeProfile = {
+  genre?: string;
+  moods?: string[];
+  coreTheme?: string;
+  emotionalCentre?: string;
+};
+
 export type SongVersionRecord = {
   id: string;
   project_id: string;
   title?: string;
   form?: FormState;
   result?: GenerateResponse;
+  creative_profile?: SongCreativeProfile;
   created_at?: string;
 };
 
