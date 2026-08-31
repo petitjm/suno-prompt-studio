@@ -290,6 +290,9 @@ export default function Page() {
   const [chordsTask, setChordsTask] = useState<ChordsTask>("source");
   const [showAddedChordsReview, setShowAddedChordsReview] = useState(true);
   const [selectedPlacedLineIndex, setSelectedPlacedLineIndex] = useState(0);
+  const [reviewedChordFitSignature, setReviewedChordFitSignature] = useState<
+    string | null
+  >(null);
   const getChordTasks = () => {
     const hasSavedChordCheckpoint = Boolean(
       activeChordVersionId || makeSongRunReport?.chordVersionId,
@@ -342,7 +345,11 @@ export default function Page() {
           chordsTask === "check" && generatingPlacedSongsheet
             ? ("working" as const)
             : placedSongSheetPreview
-              ? ("complete" as const)
+              ? chordFitNeedsReview
+                ? chordFitReviewAccepted
+                  ? ("reviewed" as const)
+                  : ("ready" as const)
+                : ("complete" as const)
               : hasUsableChordData()
                 ? ("ready" as const)
                 : ("blocked" as const),
@@ -6328,6 +6335,11 @@ export default function Page() {
     const chordTimeline = getCurrentGeneratedAudioChordMarkers();
     const cueSections = getCurrentGeneratedAudioCueSections();
 
+    const persistedTempoBpm =
+      rendererTempoBpm && Number.isFinite(Number(rendererTempoBpm))
+        ? Number(rendererTempoBpm)
+        : previewTempo;
+
     const { error: metadataError } = await supabase
       .from("audio_versions")
       .insert({
@@ -6337,10 +6349,7 @@ export default function Page() {
         chord_version_id: sourceChordVersionId,
         title: filename.replace(/\.wav$/i, "") || "Generated musical guide",
         storage_path: storagePath,
-        tempo_bpm:
-          rendererTempoBpm && Number.isFinite(Number(rendererTempoBpm))
-            ? Number(rendererTempoBpm)
-            : previewTempo,
+        tempo_bpm: persistedTempoBpm,
         duration_seconds: null,
         render_settings: {
           mixProfile: rendererMixProfile || "musical-guide",
@@ -6374,6 +6383,59 @@ export default function Page() {
         saved: false,
         message: `Generated WAV is available in this browser session but its saved-audio record could not be created: ${metadataError.message}`,
       };
+    }
+
+    const { data: supersededAudioVersions, error: supersededAudioLookupError } =
+      await supabase
+        .from("audio_versions")
+        .select("id, storage_path")
+        .eq("project_id", activeProject.id)
+        .eq("song_version_id", activeSongVersionId)
+        .eq("chord_version_id", sourceChordVersionId)
+        .eq("tempo_bpm", persistedTempoBpm)
+        .neq("id", audioVersionId);
+
+    if (supersededAudioLookupError) {
+      console.error(
+        "Superseded generated audio lookup failed:",
+        supersededAudioLookupError,
+      );
+    } else if (supersededAudioVersions?.length) {
+      const supersededStoragePaths = supersededAudioVersions
+        .map((version) => version.storage_path)
+        .filter(
+          (path): path is string =>
+            typeof path === "string" && path.trim().length > 0,
+        );
+
+      if (supersededStoragePaths.length > 0) {
+        const { error: supersededStorageDeleteError } = await supabase.storage
+          .from("generated-audio")
+          .remove(supersededStoragePaths);
+
+        if (supersededStorageDeleteError) {
+          console.error(
+            "Superseded generated audio storage cleanup failed:",
+            supersededStorageDeleteError,
+          );
+        } else {
+          const supersededIds = supersededAudioVersions.map(
+            (version) => version.id,
+          );
+
+          const { error: supersededMetadataDeleteError } = await supabase
+            .from("audio_versions")
+            .delete()
+            .in("id", supersededIds);
+
+          if (supersededMetadataDeleteError) {
+            console.error(
+              "Superseded generated audio metadata cleanup failed:",
+              supersededMetadataDeleteError,
+            );
+          }
+        }
+      }
     }
 
     return {
@@ -14488,13 +14550,12 @@ export default function Page() {
       "finalchorus",
     ]);
 
+    const sectionHeadingPattern =
+      /^(?:intro|verse\d*|prechorus\d*|chorus\d*|bridge\d*|outro\d*|tag\d*|breakdown|finalchorus)(?:(?:intro|verse\d*|prechorus\d*|chorus\d*|bridge\d*|outro\d*|tag\d*|breakdown|finalchorus))?(?:repeatandfade|repeat|fade|repeattotheend)?$/;
+
     if (
       knownSectionHeadings.has(compactHeading) ||
-      /^verse\d+$/.test(compactHeading) ||
-      /^chorus\d+$/.test(compactHeading) ||
-      /^bridge\d+$/.test(compactHeading) ||
-      /^outro\d+$/.test(compactHeading) ||
-      /^tag\d+$/.test(compactHeading)
+      sectionHeadingPattern.test(compactHeading)
     ) {
       return false;
     }
@@ -14543,7 +14604,7 @@ export default function Page() {
 
     const sourceLines = getMainSheetAudioPreviewLines()
       .map((line) => line.lyric.trim())
-      .filter(Boolean);
+      .filter((line) => isSourceLyricContentLine(line));
 
     const placedLyricSet = new Set(
       placedLines
@@ -15536,6 +15597,12 @@ export default function Page() {
   };
 
   const savePlacedLyricEdit = (lineIndex: number) => {
+    if (sourceHasUnsavedChanges) {
+      setChordExtractionMessage(
+        "Save the current song changes before editing lyrics from the fitted sheet.",
+      );
+      return;
+    }
     if (!editingPlacedLyric || editingPlacedLyric.lineIndex !== lineIndex) {
       return;
     }
@@ -16124,17 +16191,33 @@ export default function Page() {
     placedSongsheetSourceCoverage.missingLineCount > 0 ||
     processedPreviewHasStaleLines;
 
-  const chordFitHasPlacementIssues =
-    placedSongSheetQuality.outOfRangeChords > 0 ||
-    placedSongSheetQuality.placementIssues.length > 0;
+  const chordFitHasPlacementIssues = Boolean(placedSongSheetQuality.warning);
 
   const chordFitNeedsReview =
     processedPreviewHasAlignmentIssue || chordFitHasPlacementIssues;
 
+  const chordFitCanBeAcceptedAsReviewed =
+    !processedPreviewHasAlignmentIssue && chordFitHasPlacementIssues;
+
+  const currentChordFitSignature = JSON.stringify({
+    placedLines: getPlacedSongSheetLines(getChordDataFromEditorJson()),
+    missingLines: placedSongsheetSourceCoverage.missingLines,
+    unmatchedLines: placedSongsheetSourceMatch.unmatchedLines,
+    placementIssues: placedSongSheetQuality.placementIssues,
+  });
+
+  const chordFitReviewAccepted =
+    chordFitCanBeAcceptedAsReviewed &&
+    reviewedChordFitSignature === currentChordFitSignature;
+
   const chordFitReviewItemCount =
     placedSongsheetSourceCoverage.missingLineCount +
     placedSongsheetSourceMatch.unmatchedCount +
-    placedSongSheetQuality.placementIssues.length;
+    placedSongSheetQuality.placementIssues.length +
+    (placedSongSheetQuality.warning &&
+    placedSongSheetQuality.placementIssues.length === 0
+      ? 1
+      : 0);
 
   const activeChordVersionBelongsToAnotherSongVersion =
     Boolean(activeChordVersion?.song_version_id) &&
@@ -16440,6 +16523,12 @@ export default function Page() {
   };
 
   const generateBasicChords = async () => {
+    if (sourceHasUnsavedChanges) {
+      setChordExtractionMessage(
+        "Save the current song changes before generating chords.",
+      );
+      return;
+    }
     if (!performanceSheet.trim()) {
       setChordExtractionMessage(
         "Add lyrics before generating a basic chord draft.",
@@ -16491,6 +16580,12 @@ export default function Page() {
   };
 
   const generateChords = async () => {
+    if (sourceHasUnsavedChanges) {
+      setChordExtractionMessage(
+        "Save the current song changes before generating chords.",
+      );
+      return;
+    }
     if (!performanceSheet.trim()) {
       setChordExtractionMessage("Add lyrics before generating chords.");
       return;
@@ -19654,11 +19749,13 @@ ${buildRewriteInstruction(
                   const statusText =
                     task.status === "complete"
                       ? "Complete"
-                      : task.status === "working"
-                        ? "In progress"
-                        : task.status === "blocked"
-                          ? "Waiting"
-                          : "Ready";
+                      : task.status === "reviewed"
+                        ? "Reviewed"
+                        : task.status === "working"
+                          ? "In progress"
+                          : task.status === "blocked"
+                            ? "Waiting"
+                            : "Ready";
 
                   return (
                     <button
@@ -19676,14 +19773,17 @@ ${buildRewriteInstruction(
                           className={`mt-0.5 shrink-0 text-xs ${
                             task.status === "complete"
                               ? "text-green-400"
-                              : task.status === "working"
-                                ? "text-blue-300"
-                                : task.status === "blocked"
-                                  ? "text-gray-600"
-                                  : "text-purple-300"
+                              : task.status === "reviewed"
+                                ? "text-green-300"
+                                : task.status === "working"
+                                  ? "text-blue-300"
+                                  : task.status === "blocked"
+                                    ? "text-gray-600"
+                                    : "text-purple-300"
                           }`}
                         >
-                          {task.status === "complete"
+                          {task.status === "complete" ||
+                          task.status === "reviewed"
                             ? "✓"
                             : task.status === "working"
                               ? "●"
@@ -19699,11 +19799,13 @@ ${buildRewriteInstruction(
                             className={`mt-0.5 text-[10px] ${
                               task.status === "complete"
                                 ? "text-green-400"
-                                : task.status === "working"
-                                  ? "text-blue-300"
-                                  : task.status === "blocked"
-                                    ? "text-gray-600"
-                                    : "text-gray-500"
+                                : task.status === "reviewed"
+                                  ? "text-green-300"
+                                  : task.status === "working"
+                                    ? "text-blue-300"
+                                    : task.status === "blocked"
+                                      ? "text-gray-600"
+                                      : "text-gray-500"
                             }`}
                           >
                             {statusText}
@@ -19867,6 +19969,7 @@ ${buildRewriteInstruction(
                         disabled={
                           generatingChords ||
                           !performanceSheet.trim() ||
+                          sourceHasUnsavedChanges ||
                           chordStartingPointChosen
                         }
                         className="mt-4 w-full rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
@@ -19875,6 +19978,12 @@ ${buildRewriteInstruction(
                           ? "Generating chords..."
                           : "Generate chords"}
                       </button>
+                      {sourceHasUnsavedChanges && (
+                        <div className="mt-2 text-xs leading-5 text-yellow-200">
+                          Save the current song changes before generating
+                          chords.
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col rounded border border-gray-800 bg-gray-950 p-4">
@@ -20456,7 +20565,7 @@ ${buildRewriteInstruction(
               {chordsTask === "check" && (
                 <div className="space-y-4">
                   <div className="rounded border border-purple-900 bg-purple-950/20 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.7fr)]">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-100">
                           4. Fit chords and lyrics
@@ -20467,27 +20576,166 @@ ${buildRewriteInstruction(
                           then adjust the lyric or chord position until the song
                           feels right.
                         </p>
+
+                        {hasUsableChordData() && (
+                          <div
+                            className={`mt-3 inline-block rounded border px-3 py-2 text-xs ${
+                              activeChordVersionId
+                                ? "border-green-900 bg-green-950/20 text-green-100"
+                                : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                            }`}
+                          >
+                            <div className="font-semibold">
+                              {activeChordVersionId
+                                ? "Saved checkpoint"
+                                : "Working draft • Not yet saved as a checkpoint"}
+                            </div>
+
+                            {!activeChordVersionId && (
+                              <div className="mt-1 text-yellow-200/80">
+                                Your working draft is kept while you continue
+                                editing.
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {hasUsableChordData() && (
-                        <div
-                          className={`rounded border px-3 py-2 text-xs ${
-                            activeChordVersionId
-                              ? "border-green-900 bg-green-950/20 text-green-100"
-                              : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                          }`}
-                        >
-                          <div className="font-semibold">
-                            {activeChordVersionId
-                              ? "Saved checkpoint"
-                              : "Working draft • Unsaved changes"}
+                      {placedSongSheetPreview && (
+                        <div className="rounded border border-gray-800 bg-gray-950/70 p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                              Fit status
+                            </div>
+
+                            <div
+                              className={`rounded px-2 py-1 text-xs font-medium ${
+                                processedPreviewSourceAlignmentIsChecking
+                                  ? "bg-blue-950/40 text-blue-200"
+                                  : chordFitNeedsReview
+                                    ? "bg-yellow-950/40 text-yellow-200"
+                                    : "bg-green-950/40 text-green-200"
+                              }`}
+                            >
+                              {processedPreviewSourceAlignmentIsChecking
+                                ? "Checking..."
+                                : chordFitReviewAccepted
+                                  ? "Reviewed"
+                                  : chordFitNeedsReview
+                                    ? "Review needed"
+                                    : "Looks good"}
+                            </div>
                           </div>
 
-                          {!activeChordVersionId && (
-                            <div className="mt-1 text-yellow-200/80">
-                              Working changes are preserved automatically.
+                          <div className="mt-3 grid gap-2 text-xs">
+                            <div
+                              className={
+                                placedSongsheetSourceMatch.unmatchedCount === 0
+                                  ? "text-green-200"
+                                  : "text-yellow-200"
+                              }
+                            >
+                              {placedSongsheetSourceMatch.unmatchedCount === 0
+                                ? "✓"
+                                : "⚠"}{" "}
+                              Lyrics matched
                             </div>
-                          )}
+
+                            <div
+                              className={
+                                placedSongsheetSourceCoverage.missingLineCount ===
+                                0
+                                  ? "text-green-200"
+                                  : "text-yellow-200"
+                              }
+                            >
+                              {placedSongsheetSourceCoverage.missingLineCount ===
+                              0
+                                ? "✓"
+                                : "⚠"}{" "}
+                              Lyrics covered
+                            </div>
+
+                            <div
+                              className={
+                                !chordFitHasPlacementIssues
+                                  ? "text-green-200"
+                                  : "text-yellow-200"
+                              }
+                            >
+                              {!chordFitHasPlacementIssues ? "✓" : "⚠"} Chord
+                              positions
+                            </div>
+
+                            <div className="mt-3 border-t border-gray-800 pt-3">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Fit details
+                              </div>
+
+                              <div className="mt-2 space-y-1 text-xs leading-5 text-gray-400">
+                                <div>{placedSongSheetQuality.detail}</div>
+                                <div>{placedSongsheetSourceMatch.detail}</div>
+                                <div>
+                                  {placedSongsheetSourceCoverage.detail}
+                                </div>
+
+                                {songsheetReviewSummaryLine && (
+                                  <div className="text-yellow-200">
+                                    {songsheetReviewSummaryLine}
+                                  </div>
+                                )}
+                                {chordFitNeedsReview && (
+                                  <div className="mt-3 border-t border-gray-800 pt-3">
+                                    {processedPreviewHasAlignmentIssue ? (
+                                      <div className="text-xs leading-5 text-yellow-200">
+                                        The fitted sheet no longer matches the
+                                        saved song source. Rebuild the fit from
+                                        the current saved song before
+                                        continuing.
+                                      </div>
+                                    ) : chordFitReviewAccepted ? (
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="text-xs text-green-200">
+                                          ✓ Chord placement reviewed and
+                                          accepted for the current fit.
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setReviewedChordFitSignature(null)
+                                          }
+                                          className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                        >
+                                          Review again
+                                        </button>
+                                      </div>
+                                    ) : chordFitCanBeAcceptedAsReviewed ? (
+                                      <div>
+                                        <div className="text-xs leading-5 text-yellow-200">
+                                          Review the chord placement warning. If
+                                          the placement is intentional, you can
+                                          accept it.
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setReviewedChordFitSignature(
+                                              currentChordFitSignature,
+                                            )
+                                          }
+                                          className="mt-2 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500"
+                                        >
+                                          Mark reviewed
+                                        </button>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -20656,233 +20904,7 @@ ${buildRewriteInstruction(
                       </div>
 
                       {/* RIGHT: EDIT + FIT CHECK */}
-                      <div className="space-y-4 xl:sticky xl:top-4">
-                        {/* FIT CHECK */}
-                        <div className="rounded border border-gray-800 bg-gray-950 p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="text-sm font-semibold text-gray-100">
-                                Fit check
-                              </h3>
-
-                              <p className="mt-1 text-xs leading-5 text-gray-500">
-                                A quick health check for the current lyric/chord
-                                fit.
-                              </p>
-                            </div>
-
-                            {placedSongSheetPreview && (
-                              <div
-                                className={`rounded px-3 py-1.5 text-xs font-medium ${
-                                  processedPreviewSourceAlignmentIsChecking
-                                    ? "bg-blue-950/40 text-blue-200"
-                                    : chordFitNeedsReview
-                                      ? "bg-yellow-950/40 text-yellow-200"
-                                      : "bg-green-950/40 text-green-200"
-                                }`}
-                              >
-                                {processedPreviewSourceAlignmentIsChecking
-                                  ? "Checking..."
-                                  : chordFitNeedsReview
-                                    ? "Review needed"
-                                    : "Looks good"}
-                              </div>
-                            )}
-                          </div>
-
-                          {placedSongSheetPreview ? (
-                            <>
-                              <div className="mt-4 grid gap-2">
-                                <div
-                                  className={`rounded border p-3 text-sm ${
-                                    placedSongsheetSourceMatch.unmatchedCount ===
-                                    0
-                                      ? "border-green-900 bg-green-950/20 text-green-100"
-                                      : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                                  }`}
-                                >
-                                  <div className="font-medium">
-                                    {placedSongsheetSourceMatch.unmatchedCount ===
-                                    0
-                                      ? "✓"
-                                      : "⚠"}{" "}
-                                    Lyrics matched
-                                  </div>
-
-                                  {placedSongsheetSourceMatch.unmatchedCount >
-                                    0 && (
-                                    <div className="mt-1 text-xs">
-                                      {
-                                        placedSongsheetSourceMatch.unmatchedCount
-                                      }{" "}
-                                      lyric line
-                                      {placedSongsheetSourceMatch.unmatchedCount ===
-                                      1
-                                        ? ""
-                                        : "s"}{" "}
-                                      need review.
-                                    </div>
-                                  )}
-                                  {placedSongsheetSourceMatch.unmatchedLines
-                                    .length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                      {placedSongsheetSourceMatch.unmatchedLines.map(
-                                        (item, reviewIndex) => (
-                                          <div
-                                            key={`${item.section}-${item.lineIndex}-${reviewIndex}`}
-                                            className="rounded border border-yellow-800 bg-yellow-950/20 p-3"
-                                          >
-                                            <div className="text-[11px] font-medium uppercase tracking-wide text-yellow-300/80">
-                                              {item.section || "Unsectioned"}
-                                            </div>
-
-                                            <div className="mt-1 text-sm leading-6 text-yellow-100">
-                                              “{item.lyric}”
-                                            </div>
-
-                                            <div className="mt-2 text-xs leading-5 text-yellow-200/80">
-                                              This fitted lyric line was not
-                                              found in the current song lyrics.
-                                            </div>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setSelectedPlacedLineIndex(
-                                                  item.lineIndex,
-                                                );
-                                                setMovingChordTarget(null);
-                                                setEditingPlacedLyric(null);
-
-                                                window.setTimeout(() => {
-                                                  fitEditorRef.current?.scrollIntoView(
-                                                    {
-                                                      behavior: "smooth",
-                                                      block: "start",
-                                                    },
-                                                  );
-                                                }, 50);
-                                              }}
-                                              className="mt-3 rounded border border-yellow-700 bg-yellow-950/20 px-3 py-1.5 text-xs font-medium text-yellow-100 hover:bg-yellow-950/40"
-                                            >
-                                              Review this line
-                                            </button>
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div
-                                  className={`rounded border p-3 text-sm ${
-                                    placedSongsheetSourceCoverage.missingLineCount ===
-                                    0
-                                      ? "border-green-900 bg-green-950/20 text-green-100"
-                                      : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                                  }`}
-                                >
-                                  <div className="font-medium">
-                                    {placedSongsheetSourceCoverage.missingLineCount ===
-                                    0
-                                      ? "✓"
-                                      : "⚠"}{" "}
-                                    Lyrics covered
-                                  </div>
-
-                                  {placedSongsheetSourceCoverage.missingLineCount >
-                                    0 && (
-                                    <div className="mt-1 text-xs">
-                                      {
-                                        placedSongsheetSourceCoverage.missingLineCount
-                                      }{" "}
-                                      lyric line
-                                      {placedSongsheetSourceCoverage.missingLineCount ===
-                                      1
-                                        ? ""
-                                        : "s"}{" "}
-                                      have no matching placement.
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div
-                                  className={`rounded border p-3 text-sm ${
-                                    !chordFitHasPlacementIssues
-                                      ? "border-green-900 bg-green-950/20 text-green-100"
-                                      : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
-                                  }`}
-                                >
-                                  <div className="font-medium">
-                                    {!chordFitHasPlacementIssues ? "✓" : "⚠"}{" "}
-                                    Chord positions
-                                  </div>
-
-                                  {chordFitHasPlacementIssues && (
-                                    <div className="mt-1 text-xs">
-                                      {
-                                        placedSongSheetQuality.placementIssues
-                                          .length
-                                      }{" "}
-                                      placement
-                                      {placedSongSheetQuality.placementIssues
-                                        .length === 1
-                                        ? ""
-                                        : "s"}{" "}
-                                      may need attention.
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {chordFitReviewItemCount > 0 && (
-                                <div className="mt-3 text-xs leading-5 text-yellow-200">
-                                  {chordFitReviewItemCount} review item
-                                  {chordFitReviewItemCount === 1
-                                    ? ""
-                                    : "s"}{" "}
-                                  found. This does not necessarily mean the song
-                                  is musically wrong.
-                                </div>
-                              )}
-
-                              {placedSongSheetQuality.outOfRangeChords > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => fixOutOfRangeChordPlacements()}
-                                  className="mt-3 w-full rounded border border-yellow-700 bg-yellow-950/20 px-3 py-2 text-sm font-medium text-yellow-100 hover:bg-yellow-950/40"
-                                >
-                                  Repair chord positions outside lyric lines
-                                </button>
-                              )}
-
-                              <details className="mt-3 rounded border border-gray-800 bg-gray-900">
-                                <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-gray-400">
-                                  Advanced fit details
-                                </summary>
-
-                                <div className="space-y-2 border-t border-gray-800 p-3 text-xs leading-5 text-gray-400">
-                                  <div>{placedSongSheetQuality.detail}</div>
-                                  <div>{placedSongsheetSourceMatch.detail}</div>
-                                  <div>
-                                    {placedSongsheetSourceCoverage.detail}
-                                  </div>
-
-                                  {songsheetReviewSummaryLine && (
-                                    <div className="text-yellow-200">
-                                      {songsheetReviewSummaryLine}
-                                    </div>
-                                  )}
-                                </div>
-                              </details>
-                            </>
-                          ) : (
-                            <div className="mt-4 rounded border border-dashed border-gray-800 bg-gray-900/40 p-3 text-sm text-gray-500">
-                              Fit chords to lyrics to run the check.
-                            </div>
-                          )}
-                        </div>
-
+                      <div>
                         {/* SELECTED LINE EDITOR */}
                         <div
                           ref={fitEditorRef}
@@ -20900,7 +20922,7 @@ ${buildRewriteInstruction(
                           </div>
 
                           {selectedPlacedLine ? (
-                            <div className="mt-4 max-h-[calc(100vh-500px)] overflow-auto pr-1">
+                            <div className="mt-4">
                               {(() => {
                                 const line = selectedPlacedLine;
                                 const lineIndex =
@@ -20923,10 +20945,24 @@ ${buildRewriteInstruction(
                                             value: line.lyric,
                                           })
                                         }
-                                        className="rounded border border-gray-700 bg-gray-900 px-3 py-1 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30"
+                                        disabled={sourceHasUnsavedChanges}
+                                        title={
+                                          sourceHasUnsavedChanges
+                                            ? "Save the current song changes before editing lyrics from the fitted sheet."
+                                            : undefined
+                                        }
+                                        className="rounded border border-gray-700 bg-gray-900 px-3 py-1 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:border-gray-800 disabled:text-gray-600 disabled:hover:bg-gray-900"
                                       >
                                         Edit lyric
                                       </button>
+
+                                      {sourceHasUnsavedChanges && (
+                                        <div className="mt-2 text-xs leading-5 text-yellow-200">
+                                          The song has unsaved lyric changes.
+                                          Save the song before editing lyrics
+                                          from the fitted sheet.
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3 font-mono text-sm leading-6">
@@ -21176,12 +21212,14 @@ ${buildRewriteInstruction(
                           </div>
 
                           <div
-                            className={`mt-1 text-sm ${
+                            className={`rounded px-2 py-1 text-xs font-medium ${
                               processedPreviewSourceAlignmentIsChecking
-                                ? "text-blue-200"
-                                : chordFitNeedsReview
-                                  ? "text-yellow-200"
-                                  : "text-green-200"
+                                ? "bg-blue-950/40 text-blue-200"
+                                : chordFitReviewAccepted
+                                  ? "bg-green-950/40 text-green-200"
+                                  : chordFitNeedsReview
+                                    ? "bg-yellow-950/40 text-yellow-200"
+                                    : "bg-green-950/40 text-green-200"
                             }`}
                           >
                             {processedPreviewSourceAlignmentIsChecking
@@ -27735,7 +27773,9 @@ ${buildRewriteInstruction(
                               type="button"
                               onClick={() => generateChords()}
                               disabled={
-                                generatingChords || !performanceSheet.trim()
+                                generatingChords ||
+                                !performanceSheet.trim() ||
+                                sourceHasUnsavedChanges
                               }
                               className="rounded border border-gray-800 px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-900 disabled:cursor-not-allowed disabled:text-gray-600"
                             >
