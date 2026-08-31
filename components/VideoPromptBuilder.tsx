@@ -125,6 +125,94 @@ const buildImageToVideoPrompt = (result: VideoResult) =>
     result.global_style,
   ].join("\n");
 
+const buildGeneralCharacterBrief = (result: VideoResult) =>
+  [
+    "CHARACTER CONSISTENCY BRIEF:",
+    "",
+    result.character_prompt,
+    "",
+    "CONTINUITY:",
+    "Keep the principal performer visually consistent across all scenes. Preserve face, age, build, hair, wardrobe logic, and overall screen presence unless the scene plan explicitly requires a change.",
+    "Keep supporting characters consistent where they recur.",
+    "Avoid unnecessary changes in identity, clothing, location details, lighting direction, or visual treatment between connected shots.",
+  ].join("\n");
+
+const buildGeneralPerformanceBrief = (result: VideoResult) =>
+  [
+    "PERFORMANCE BRIEF:",
+    "",
+    "Treat the performer as part of the established visual treatment rather than as a separate generic music-video insert.",
+    "Use natural, emotionally credible expression and restrained body language.",
+    "Use direct-to-camera singing only where it supports the scene and emotional moment.",
+    "Avoid exaggerated acting, repetitive performance gestures, or constant lip-sync coverage.",
+    "",
+    "CHARACTER:",
+    result.character_prompt,
+    "",
+    "VIDEO CONCEPT:",
+    result.video_concept,
+  ].join("\n");
+
+const buildGeneralMotionBrief = (result: VideoResult) =>
+  [
+    "MOTION / IMAGE-TO-VIDEO BRIEF:",
+    "",
+    "Preserve the established character identity, composition, wardrobe, lighting, colour treatment, and visual world.",
+    "Use natural subject movement, subtle environmental motion, and camera movement appropriate to the emotional purpose of the shot.",
+    "Prefer restrained, believable movement over unnecessary spectacle.",
+    "Maintain continuity between connected shots and avoid sudden changes in face, body, clothing, background, lighting, or camera geometry.",
+    "",
+    "VISUAL STYLE:",
+    result.global_style,
+    "",
+    "VIDEO CONCEPT:",
+    result.video_concept,
+  ].join("\n");
+
+const buildGeneralNegativeConstraints = () =>
+  [
+    "GENERAL VIDEO CONSTRAINTS:",
+    "",
+    "Avoid distorted or inconsistent faces, deformed hands, extra fingers or limbs, unstable anatomy, changing clothing, changing character identity, unintended text, logos, watermarks, flicker, jittery camera movement, abrupt lighting changes, implausible motion, exaggerated acting, and poor lip-sync.",
+    "Avoid introducing visual events, props, locations, or narrative details that contradict the approved visual treatment or scene plan.",
+    "Preserve continuity across shots unless a deliberate change is specified.",
+  ].join("\n");
+
+const buildGeneralVideoProductionBrief = (
+  result: VideoResult,
+  songTitle: string,
+  songVersionTitle: string,
+  generatedAt: string,
+) =>
+  [
+    "GENERAL VIDEO PRODUCTION BRIEF",
+    buildSongReference(songTitle, songVersionTitle, generatedAt),
+    "",
+    "VISUAL TREATMENT:",
+    result.global_style,
+    "",
+    "PRINCIPAL CHARACTER:",
+    result.character_prompt,
+    "",
+    "VIDEO CONCEPT:",
+    result.video_concept,
+    "",
+    buildGeneralCharacterBrief(result),
+    "",
+    buildGeneralPerformanceBrief(result),
+    "",
+    buildGeneralMotionBrief(result),
+    "",
+    "SCENE PLAN:",
+    ...result.scene_prompts.flatMap((scene, index) => [
+      "",
+      `${index + 1}. ${scene.section}`,
+      scene.prompt,
+    ]),
+    "",
+    buildGeneralNegativeConstraints(),
+  ].join("\n");
+
 const buildSocialTeaserPack = (
   result: VideoResult,
   songTitle: string,
@@ -1782,31 +1870,44 @@ export default function VideoPromptBuilder({
             </label>
           </div>
 
-          <div className="mt-2 grid gap-3 md:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-gray-300">
-                Creative DNA
-              </span>
-              <select
-                value={dnaId}
-                onChange={(event) => setDnaId(event.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-gray-100"
-              >
-                <option value="mpj-master">MPJ Master</option>
-                <option value="commercial-hit">Commercial Hit</option>
-                <option value="raw-folk">Raw Folk</option>
-              </select>
-            </label>
+          <details className="mt-2 rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
+            <summary className="cursor-pointer text-xs font-medium text-gray-400">
+              Advanced
+            </summary>
 
-            <label className="flex items-center gap-2 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-300">
-              <input
-                type="checkbox"
-                checked={multiVersion}
-                onChange={(event) => setMultiVersion(event.target.checked)}
-              />
-              Generate three DNA versions
-            </label>
-          </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-300">
+                  Creative DNA preset
+                </span>
+
+                <select
+                  value={dnaId}
+                  onChange={(event) => setDnaId(event.target.value)}
+                  className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100"
+                >
+                  <option value="mpj-master">MPJ Master</option>
+                  <option value="commercial-hit">Commercial Hit</option>
+                  <option value="raw-folk">Raw Folk</option>
+                </select>
+              </label>
+
+              <label className="flex items-center gap-2 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={multiVersion}
+                  onChange={(event) => setMultiVersion(event.target.checked)}
+                />
+                Generate three DNA versions
+              </label>
+            </div>
+
+            <p className="mt-2 text-xs text-gray-500">
+              These legacy DNA controls are kept for comparison and testing.
+              Normal Video direction is driven by the song profile, lyrics, and
+              visual focus.
+            </p>
+          </details>
         </div>
       )}
 
@@ -1828,7 +1929,7 @@ export default function VideoPromptBuilder({
                     ? "Add or load lyrics before generating video prompts."
                     : !hasSavedSongVersion
                       ? "Save the current song version before generating video prompts, so the video output can identify the song and version."
-                      : "Generate OpenArt-ready music video prompts from the saved song version."
+                      : "Generate a visual treatment and scene plan from the saved song version."
                 }
               >
                 {generating
@@ -1838,8 +1939,8 @@ export default function VideoPromptBuilder({
                     : !hasSavedSongVersion
                       ? "Save song version before video"
                       : results.length > 0
-                        ? "Regenerate video prompts"
-                        : "Generate video prompts"}
+                        ? "Regenerate visual treatment"
+                        : "Generate visual treatment"}
               </button>
 
               <button
@@ -1918,16 +2019,17 @@ export default function VideoPromptBuilder({
           {!hasGeneratedVideoPrompts && (
             <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
               <h4 className="text-sm font-semibold text-slate-100">
-                OpenArt workflow packs
+                Visual treatment
               </h4>
+
               <p className="mt-1 text-xs text-slate-400">
-                Generate video prompts first to unlock reusable OpenArt packs
-                for cover art, character consistency, visual planning,
-                production, and release promotion.
+                Generate a song-specific visual style, performer direction,
+                video concept, and scene plan.
               </p>
+
               <div className="mt-3 rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
-                The OpenArt copy packs will appear here after video prompts have
-                been generated for this saved song version.
+                Review the generated treatment first. Provider-specific handoff
+                material is available later in Make video.
               </div>
             </div>
           )}
@@ -2058,125 +2160,258 @@ export default function VideoPromptBuilder({
                 key={`${result.dna_id}-${index}`}
                 className="rounded border border-gray-700 bg-gray-950 p-4"
               >
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="mb-3 space-y-4">
                   <h3 className="text-base font-semibold text-gray-100">
                     {result.dna_name}
                   </h3>
 
                   {videoTask === "make" && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => copyVideoPack(result, index)}
-                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                      >
-                        {justCopiedIndex === index
-                          ? "Video pack copied ✓"
-                          : "Copy video pack"}
-                      </button>
+                    <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold text-slate-100">
+                          General video handoff
+                        </h4>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyVideoField(
-                            "OPENART SCENE CHAIN PACK:",
-                            buildSceneChainPack(
-                              result,
-                              songTitle,
-                              songVersionTitle,
-                              videoGeneratedAt,
-                            ),
-                            getVideoFieldKey(result, index, "scene-chain"),
-                          )
-                        }
-                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                      >
-                        {justCopiedField ===
-                        getVideoFieldKey(result, index, "scene-chain")
-                          ? "Scene chain copied ✓"
-                          : "Copy scene chain"}
-                      </button>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Provider-neutral production instructions that can be
+                          used with any suitable image or video generation
+                          service.
+                        </p>
+                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const fieldKey = getVideoFieldKey(
-                            result,
-                            index,
-                            "storyboard",
-                          );
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        <button
+                          type="button"
+                          className={workflowPackButtonClass}
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              buildGeneralVideoProductionBrief(
+                                result,
+                                songTitle,
+                                songVersionTitle,
+                                videoGeneratedAt,
+                              ),
+                            );
 
-                          navigator.clipboard.writeText(
-                            buildStoryboardPack(
-                              result,
-                              songTitle,
-                              songVersionTitle,
-                              videoGeneratedAt,
-                            ),
-                          );
+                            setJustCopiedField("generalVideoProductionBrief");
+                            window.setTimeout(
+                              () => setJustCopiedField(""),
+                              1500,
+                            );
+                          }}
+                        >
+                          {justCopiedField === "generalVideoProductionBrief"
+                            ? "Copied ✓"
+                            : "Copy full production brief"}
+                        </button>
 
-                          setJustCopiedField(fieldKey);
+                        <button
+                          type="button"
+                          className={workflowPackButtonClass}
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              buildGeneralCharacterBrief(result),
+                            );
 
-                          window.setTimeout(() => {
-                            setJustCopiedField("");
-                          }, 1800);
-                        }}
-                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                      >
-                        {justCopiedField ===
-                        getVideoFieldKey(result, index, "storyboard")
-                          ? "Storyboard copied ✓"
-                          : "Copy storyboard"}
-                      </button>
+                            setJustCopiedField("generalCharacterBrief");
+                            window.setTimeout(
+                              () => setJustCopiedField(""),
+                              1500,
+                            );
+                          }}
+                        >
+                          {justCopiedField === "generalCharacterBrief"
+                            ? "Copied ✓"
+                            : "Copy character brief"}
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const fieldKey = getVideoFieldKey(
-                            result,
-                            index,
-                            "social-teaser",
-                          );
+                        <button
+                          type="button"
+                          className={workflowPackButtonClass}
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              buildGeneralPerformanceBrief(result),
+                            );
 
-                          navigator.clipboard.writeText(
-                            buildSocialTeaserPack(
-                              result,
-                              songTitle,
-                              songVersionTitle,
-                              videoGeneratedAt,
-                            ),
-                          );
+                            setJustCopiedField("generalPerformanceBrief");
+                            window.setTimeout(
+                              () => setJustCopiedField(""),
+                              1500,
+                            );
+                          }}
+                        >
+                          {justCopiedField === "generalPerformanceBrief"
+                            ? "Copied ✓"
+                            : "Copy performance brief"}
+                        </button>
 
-                          setJustCopiedField(fieldKey);
+                        <button
+                          type="button"
+                          className={workflowPackButtonClass}
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              buildGeneralMotionBrief(result),
+                            );
 
-                          window.setTimeout(() => {
-                            setJustCopiedField("");
-                          }, 1800);
-                        }}
-                        className="rounded border border-purple-700 px-3 py-1.5 text-sm text-purple-200 hover:bg-purple-950/40"
-                      >
-                        {justCopiedField ===
-                        getVideoFieldKey(result, index, "social-teaser")
-                          ? "Social teaser copied ✓"
-                          : "Copy social teaser"}
-                      </button>
-                    </>
+                            setJustCopiedField("generalMotionBrief");
+                            window.setTimeout(
+                              () => setJustCopiedField(""),
+                              1500,
+                            );
+                          }}
+                        >
+                          {justCopiedField === "generalMotionBrief"
+                            ? "Copied ✓"
+                            : "Copy motion brief"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={workflowPackButtonClass}
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              buildGeneralNegativeConstraints(),
+                            );
+
+                            setJustCopiedField("generalNegativeConstraints");
+                            window.setTimeout(
+                              () => setJustCopiedField(""),
+                              1500,
+                            );
+                          }}
+                        >
+                          {justCopiedField === "generalNegativeConstraints"
+                            ? "Copied ✓"
+                            : "Copy negative constraints"}
+                        </button>
+                      </div>
+                    </div>
                   )}
+
                   {videoTask === "make" && (
                     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-4">
                       <div className="mb-3">
                         <h4 className="text-sm font-semibold text-slate-100">
-                          OpenArt workflow packs
+                          OpenArt handoff
                         </h4>
                         <p className="mt-1 text-xs text-slate-400">
                           {hasGeneratedVideoPrompts
-                            ? "Copy reusable packs for cover art, character consistency, visual planning, production, and release promotion."
+                            ? "Use the current OpenArt-oriented prompts and workflow packs for production."
                             : "Generate video prompts first to unlock the OpenArt workflow packs."}
                         </p>
                       </div>
 
+                      <div className="mb-4">
+                        <div className="mb-2 text-xs font-medium text-slate-300">
+                          Quick OpenArt copies
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                          <button
+                            type="button"
+                            onClick={() => copyVideoPack(result, index)}
+                            className={workflowPackButtonClass}
+                          >
+                            {justCopiedIndex === index
+                              ? "Copied ✓"
+                              : "Copy video pack"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyVideoField(
+                                "OPENART SCENE CHAIN PACK:",
+                                buildSceneChainPack(
+                                  result,
+                                  songTitle,
+                                  songVersionTitle,
+                                  videoGeneratedAt,
+                                ),
+                                getVideoFieldKey(result, index, "scene-chain"),
+                              )
+                            }
+                            className={workflowPackButtonClass}
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "scene-chain")
+                              ? "Copied ✓"
+                              : "Copy scene chain"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const fieldKey = getVideoFieldKey(
+                                result,
+                                index,
+                                "storyboard",
+                              );
+
+                              navigator.clipboard.writeText(
+                                buildStoryboardPack(
+                                  result,
+                                  songTitle,
+                                  songVersionTitle,
+                                  videoGeneratedAt,
+                                ),
+                              );
+
+                              setJustCopiedField(fieldKey);
+
+                              window.setTimeout(() => {
+                                setJustCopiedField("");
+                              }, 1800);
+                            }}
+                            className={workflowPackButtonClass}
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "storyboard")
+                              ? "Copied ✓"
+                              : "Copy storyboard"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const fieldKey = getVideoFieldKey(
+                                result,
+                                index,
+                                "social-teaser",
+                              );
+
+                              navigator.clipboard.writeText(
+                                buildSocialTeaserPack(
+                                  result,
+                                  songTitle,
+                                  songVersionTitle,
+                                  videoGeneratedAt,
+                                ),
+                              );
+
+                              setJustCopiedField(fieldKey);
+
+                              window.setTimeout(() => {
+                                setJustCopiedField("");
+                              }, 1800);
+                            }}
+                            className={workflowPackButtonClass}
+                          >
+                            {justCopiedField ===
+                            getVideoFieldKey(result, index, "social-teaser")
+                              ? "Copied ✓"
+                              : "Copy social teaser"}
+                          </button>
+                        </div>
+                      </div>
+
                       {hasGeneratedVideoPrompts ? (
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+  <details className="mt-3 rounded border border-gray-800 bg-gray-950/70 px-3 py-2">
+    <summary className="cursor-pointer text-sm font-medium text-gray-300">
+      More OpenArt workflow packs
+    </summary>
+
+    <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                           <button
                             type="button"
                             className={workflowPackButtonClass}
@@ -2347,8 +2582,9 @@ export default function VideoPromptBuilder({
                               ? "Copied ✓"
                               : "Copy full OpenArt creative bundle"}
                           </button>
-                        </div>
-                      ) : (
+                            </div>
+  </details>
+) : (
                         <div className="rounded border border-slate-700 bg-slate-900/60 px-3 py-3 text-xs text-slate-400">
                           The OpenArt copy packs will appear here after video
                           prompts have been generated for this saved song
