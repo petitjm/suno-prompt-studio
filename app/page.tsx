@@ -493,6 +493,9 @@ export default function Page() {
     chordEventCount: number;
     guideSectionCount: number;
     audioDurationSeconds: number;
+    audioPersistenceStatus: "pending" | "saved" | "failed";
+    audioVersionId: string;
+    audioPersistenceMessage: string;
     sectionCoverage: {
       section: string;
       lyricLineCount: number;
@@ -6267,7 +6270,7 @@ export default function Page() {
       .join("\n");
   };
 
-  const persistGeneratedAudioWav = async ({
+  const persistGeneratedAudio = async ({
     blob,
     filename,
     rendererTempoBpm,
@@ -6286,7 +6289,7 @@ export default function Page() {
       return {
         saved: false,
         message:
-          "Generated WAV is available in this browser session but could not be saved because there is no active saved song version.",
+          "Generated musical guide… is available in this browser session but could not be saved because there is no active saved song version.",
       };
     }
 
@@ -6299,7 +6302,7 @@ export default function Page() {
       return {
         saved: false,
         message:
-          "Generated WAV is available in this browser session but could not be saved because the user session is unavailable.",
+          "Generated musical guide… is available in this browser session but could not be saved because the user session is unavailable.",
       };
     }
 
@@ -6309,13 +6312,13 @@ export default function Page() {
       user.id,
       activeProject.id,
       activeSongVersionId,
-      `${audioVersionId}.wav`,
+      `${audioVersionId}.mp3`,
     ].join("/");
 
     const { error: uploadError } = await supabase.storage
       .from("generated-audio")
       .upload(storagePath, blob, {
-        contentType: blob.type || "audio/wav",
+        contentType: blob.type || "audio/mpeg",
         upsert: false,
       });
 
@@ -6324,7 +6327,7 @@ export default function Page() {
 
       return {
         saved: false,
-        message: `Generated WAV is available in this browser session but persistent upload failed: ${uploadError.message}`,
+        message: `Generated musical guide… is available in this browser session but persistent upload failed: ${uploadError.message}`,
       };
     }
 
@@ -6347,7 +6350,8 @@ export default function Page() {
         project_id: activeProject.id,
         song_version_id: activeSongVersionId,
         chord_version_id: sourceChordVersionId,
-        title: filename.replace(/\.wav$/i, "") || "Generated musical guide",
+        title:
+          filename.replace(/\.(?:wav|mp3)$/i, "") || "Generated musical guide",
         storage_path: storagePath,
         tempo_bpm: persistedTempoBpm,
         duration_seconds: null,
@@ -6381,7 +6385,7 @@ export default function Page() {
 
       return {
         saved: false,
-        message: `Generated WAV is available in this browser session but its saved-audio record could not be created: ${metadataError.message}`,
+        message: `Generated musical WAV… is available in this browser session but its saved-audio record could not be created: ${metadataError.message}`,
       };
     }
 
@@ -6507,6 +6511,55 @@ export default function Page() {
       const contentLength = response.headers.get("Content-Length");
 
       const blob = await response.blob();
+      const persistentMp3Response = await fetch(
+        "/api/audio-preview/real-render",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            requestedTarget: "clickTrack",
+            enablePersistentMp3Render: true,
+            mixProfile: "musical-guide",
+            musicalGuideMixLevels,
+            melodyNotes: initialMelodyContours.flatMap(
+              (phrase) => phrase.notes,
+            ),
+            renderJobId:
+              typeof audioPreviewRenderJob?.id === "string"
+                ? audioPreviewRenderJob.id
+                : undefined,
+            tempoBpm: previewTempo,
+            includeCountIn: includeClickTrackCountIn,
+            includeBeatClicks: includeClickTrackBeatClicks,
+            includeSectionMarkers: includeClickTrackSectionMarkers,
+            includeChordMarkers: includeClickTrackChordMarkers,
+            includeChordToneGuide: true,
+            dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+            rendererInputContract: dryRunArtifactPackage.rendererInputContract,
+            realRenderGate: dryRunArtifactPackage.realRenderGate,
+            firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
+            realRenderConfiguration:
+              dryRunArtifactPackage.realRenderConfiguration,
+          }),
+        },
+      );
+
+      if (!persistentMp3Response.ok) {
+        const errorText = await persistentMp3Response.text();
+
+        throw new Error(
+          `Persistent MP3 render failed. HTTP ${persistentMp3Response.status}: ${errorText}`,
+        );
+      }
+
+      const persistentMp3Blob = await persistentMp3Response.blob();
+
+      const persistentMp3Filename =
+        getFilenameFromContentDisposition(
+          persistentMp3Response.headers.get("Content-Disposition"),
+        ) || "musical-guide.mp3";
       setGeneratedAudioChordMarkers(getCurrentGeneratedAudioChordMarkers());
       const filename =
         getFilenameFromContentDisposition(
@@ -6515,9 +6568,9 @@ export default function Page() {
 
       const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
 
-      const persistenceResult = await persistGeneratedAudioWav({
-        blob,
-        filename,
+      const persistenceResult = await persistGeneratedAudio({
+        blob: persistentMp3Blob,
+        filename: persistentMp3Filename,
         rendererTempoBpm,
         rendererSampleRate,
         rendererJobId,
@@ -6564,12 +6617,19 @@ export default function Page() {
             : "persistent save failed"
         }`,
       );
+      return persistenceResult;
     } catch (error) {
-      setClickTrackDownloadStatus(
+      const message =
         error instanceof Error
           ? error.message
-          : "Musical guide WAV download failed.",
-      );
+          : "Musical guide WAV download failed.";
+
+      setClickTrackDownloadStatus(message);
+
+      return {
+        saved: false,
+        message,
+      };
     } finally {
       setDownloadingMusicalGuideWav(false);
     }
@@ -17071,6 +17131,17 @@ export default function Page() {
           ? `${report.audioDurationSeconds.toFixed(1)} seconds`
           : "Not measured"
       }`,
+      `Persistent audio: ${
+        report.audioPersistenceStatus === "saved"
+          ? "Saved"
+          : report.audioPersistenceStatus === "failed"
+            ? "Failed"
+            : "Pending"
+      }`,
+      `Audio version ID: ${report.audioVersionId || "—"}`,
+      report.audioPersistenceMessage
+        ? `Persistence detail: ${report.audioPersistenceMessage}`
+        : "",
       "",
       "Warnings:",
       ...(report.warnings.length > 0
@@ -17119,6 +17190,16 @@ export default function Page() {
   };
 
   const startMakeSong = () => {
+    const previousMakeSongSourceChordVersionId =
+      makeSongRunReport?.chordVersionId || activeChordVersionId || "";
+
+    const previousMakeSongSourceChordVersion =
+      previousMakeSongSourceChordVersionId
+        ? chordVersions.find(
+            (version) => version.id === previousMakeSongSourceChordVersionId,
+          ) || null
+        : null;
+
     if (!performanceSheet.trim()) {
       setMakeSongStage("error");
       setMakeSongMessage("Add lyrics before making the song.");
@@ -17135,6 +17216,20 @@ export default function Page() {
       return;
     }
 
+    if (
+      !activeChordVersionId &&
+      previousMakeSongSourceChordVersion &&
+      previousMakeSongSourceChordVersion.song_version_id === activeSongVersionId
+    ) {
+      const savedChordData =
+        previousMakeSongSourceChordVersion.chord_data as ChordResponse;
+
+      setActiveChordVersionId(previousMakeSongSourceChordVersion.id);
+      setChords(savedChordData);
+      setChordsText(JSON.stringify(savedChordData, null, 2));
+      setChordVersionTitle(previousMakeSongSourceChordVersion.title || "");
+    }
+
     resetGeneratedAudioState();
 
     setMakeSongRunReport({
@@ -17144,9 +17239,11 @@ export default function Page() {
       projectTitle: activeProject?.title || "Untitled project",
       songVersionId: activeSongVersionId || "",
       songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
-      chordSource: "",
-      chordVersionId: "",
-      chordVersionTitle: "",
+      chordSource: previousMakeSongSourceChordVersion
+        ? "Saved chord checkpoint carried forward from previous Make Song run"
+        : "",
+      chordVersionId: previousMakeSongSourceChordVersion?.id || "",
+      chordVersionTitle: previousMakeSongSourceChordVersion?.title || "",
       finalChordState: "Working chord result not yet determined",
       tempoBpm: previewTempo,
       sourceLineCount: getMainSheetAudioPreviewLines().length,
@@ -17155,6 +17252,9 @@ export default function Page() {
       chordEventCount: 0,
       guideSectionCount: 0,
       audioDurationSeconds: 0,
+      audioPersistenceStatus: "pending",
+      audioVersionId: "",
+      audioPersistenceMessage: "",
       sectionCoverage: [],
       events: ["Starting song creation..."],
       warnings: [],
@@ -17552,7 +17652,39 @@ export default function Page() {
           }
 
           setMakeSongMessage("Rendering the musical guide...");
-          await downloadMusicalGuideWav();
+
+          const persistenceResult = await downloadMusicalGuideWav();
+
+          setMakeSongRunReport((current) =>
+            current
+              ? {
+                  ...current,
+                  audioPersistenceStatus: persistenceResult?.saved
+                    ? "saved"
+                    : "failed",
+                  audioVersionId:
+                    persistenceResult?.saved && persistenceResult.audioVersionId
+                      ? persistenceResult.audioVersionId
+                      : "",
+                  audioPersistenceMessage:
+                    persistenceResult?.message ||
+                    "Musical guide persistence result was unavailable.",
+                  events: [
+                    ...current.events,
+                    persistenceResult?.saved
+                      ? `Musical guide saved persistently${
+                          persistenceResult.audioVersionId
+                            ? ` as audio version ${persistenceResult.audioVersionId}`
+                            : ""
+                        }.`
+                      : `WARNING: Musical guide was created but persistent save failed: ${
+                          persistenceResult?.message ||
+                          "Unknown persistence error"
+                        }`,
+                  ],
+                }
+              : current,
+          );
 
           if (!cancelled) {
             setMakeSongStage("verify-audio");
@@ -17584,6 +17716,13 @@ export default function Page() {
           const sectionCoverage = getMakeSongSectionCoverage();
 
           const warnings: string[] = [];
+
+          if (makeSongRunReport?.audioPersistenceStatus === "failed") {
+            warnings.push(
+              makeSongRunReport.audioPersistenceMessage ||
+                "The musical guide was created but was not saved persistently.",
+            );
+          }
 
           if (placedLineCount === 0) {
             warnings.push("No placed lyric lines were produced.");
@@ -17668,7 +17807,7 @@ export default function Page() {
             );
           } else {
             setMakeSongMessage(
-              "Song guide ready. Open Sheet, Rehearse, or Perform to use it.",
+              "Song guide ready. Open Rehearse or Perform to use it.",
             );
           }
 
@@ -21523,6 +21662,31 @@ ${buildRewriteInstruction(
                               ? "Creating..."
                               : "Not created yet"}
                         </div>
+
+                        {makeSongRunReport?.audioPersistenceStatus !==
+                          "pending" && (
+                          <div
+                            className={`mt-1 text-xs ${
+                              makeSongRunReport?.audioPersistenceStatus ===
+                              "saved"
+                                ? "text-green-300"
+                                : "text-yellow-200"
+                            }`}
+                          >
+                            {makeSongRunReport?.audioPersistenceStatus ===
+                            "saved"
+                              ? `Saved persistently ✓${
+                                  makeSongRunReport.audioVersionId
+                                    ? ` · Audio ID ${makeSongRunReport.audioVersionId}`
+                                    : ""
+                                }`
+                              : `Persistent save failed${
+                                  makeSongRunReport?.audioPersistenceMessage
+                                    ? ` · ${makeSongRunReport.audioPersistenceMessage}`
+                                    : ""
+                                }`}
+                          </div>
+                        )}
 
                         {clickTrackAudioUrl && (
                           <audio

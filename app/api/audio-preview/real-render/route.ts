@@ -1,9 +1,12 @@
 import { buildChordMarkersFromCueSheetSections } from "@/lib/audio/build-chord-markers";
 
 import {
+  createClickTrackPcm16Samples,
   createReadyClickTrackWavDownload,
   renderClickTrackWav,
 } from "@/lib/audio/render-click-track-wav";
+
+import { encodePcm16MonoMp3 } from "@/lib/audio/encode-mp3";
 
 export const runtime = "nodejs";
 
@@ -407,6 +410,47 @@ export async function POST(req: Request) {
 
   const realDownloadRequested =
     requestBody.enableRealClickTrackWavDownload === true;
+
+  const persistentMp3Requested = requestBody.enablePersistentMp3Render === true;
+
+  if (
+    persistentMp3Requested &&
+    missingOrInvalidContractFields.length === 0 &&
+    missingOrInvalidConfigurationFields.length === 0
+  ) {
+    const pcmSamples = createClickTrackPcm16Samples(clickTrackRenderInput);
+
+    const mp3Bytes = encodePcm16MonoMp3(
+      pcmSamples,
+      clickTrackRenderInput.sampleRateHz,
+      128,
+    );
+
+    const mp3Body = new Uint8Array(mp3Bytes).buffer;
+
+    return new Response(mp3Body, {
+      status: 200,
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Content-Length": String(mp3Bytes.byteLength),
+        "Content-Disposition": `attachment; filename="${clickTrackRenderInput.renderJobId}-${clickTrackRenderInput.targetKey}-${clickTrackRenderInput.tempoBpm}bpm.mp3"`,
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Audio-Generated": "true",
+        "X-Audio-Delivered": "true",
+        "X-Renderer-Status": "ready-for-persistent-storage",
+        "X-Renderer-Name": "local-musical-guide-mp3-encoder",
+        "X-Renderer-Target": "clickTrack",
+        "X-Renderer-Tempo-BPM": String(clickTrackRenderInput.tempoBpm),
+        "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
+        "X-Renderer-Job-ID": clickTrackRenderInput.renderJobId,
+        "X-Renderer-Mix-Profile":
+          clickTrackRenderInput.mixProfile || "click-track",
+        "X-Persistent-Audio-Format": "mp3",
+        "X-Persistent-Audio-Bitrate-KBPS": "128",
+      },
+    });
+  }
 
   if (
     realDownloadRequested &&
