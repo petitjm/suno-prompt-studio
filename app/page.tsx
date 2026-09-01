@@ -4616,7 +4616,7 @@ export default function Page() {
     return `Loaded chord version: ${title} — linked to another song version. Rebuild preview from Source before saving or generating a guide plan.`;
   };
 
-  const loadChordVersionIntoEditor = (versionId: string) => {
+  const loadChordVersionIntoEditor = async (versionId: string) => {
     const selected = chordVersions.find((version) => version.id === versionId);
 
     if (!selected) {
@@ -4629,9 +4629,29 @@ export default function Page() {
     setLastAppliedTransposeSnapshot(null);
     setChordTransposeSemitones(0);
     setChordsText(JSON.stringify(selected.chord_data || {}, null, 2));
+
     resetAudioPreviewRequestState();
+    resetGeneratedAudioState();
+
     setChordExtractionMessage("");
     setProjectMessage(getChordVersionLoadMessage(selected));
+
+    if (
+      activeProject?.id &&
+      activeSongVersionId &&
+      selected.song_version_id === activeSongVersionId
+    ) {
+      clearChordWorkingDraft(activeProject.id, activeSongVersionId);
+
+      restoredChordWorkingDraftKeyRef.current = "";
+
+      await restorePersistedAudioForState({
+        projectId: activeProject.id,
+        songVersionId: activeSongVersionId,
+        chordVersionId: selected.id,
+        tempoBpm: previewTempo,
+      });
+    }
   };
 
   const copySongsheetReview = async () => {
@@ -16465,18 +16485,20 @@ export default function Page() {
 
       setChords(result);
       setChordsText(JSON.stringify(result, null, 2));
-      setActiveChordVersionId(null);
-      setChordVersionTitle((currentTitle) => {
-        const baseTitle = currentTitle
-          .trim()
-          .replace(
-            /(?:\s+—\s+Make Song result|\s+with songsheet and guide plan|\s+with guide plan|\s+with songsheet)+$/gi,
-            "",
-          )
-          .trim();
 
-        return `${baseTitle || "Basic chord draft"} with songsheet and guide plan`;
-      });
+      if (!activeChordVersionId) {
+        setChordVersionTitle((currentTitle) => {
+          const baseTitle = currentTitle
+            .trim()
+            .replace(
+              /(?:\s+—\s+Make Song result|\s+with songsheet and guide plan|\s+with guide plan|\s+with songsheet)+$/gi,
+              "",
+            )
+            .trim();
+
+          return `${baseTitle || "Basic chord draft"} with songsheet and guide plan`;
+        });
+      }
       setChordTransposeSemitones(0);
       setLastAppliedTransposeSnapshot(null);
       resetAudioPreviewRequestState();
