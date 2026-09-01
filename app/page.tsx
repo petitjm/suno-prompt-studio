@@ -526,6 +526,38 @@ export default function Page() {
   const [clickTrackAudioLabel, setClickTrackAudioLabel] = useState(
     "Latest generated WAV",
   );
+  type MusicalGuideAudioFormat = "mp3" | "wav";
+
+  const musicalGuideAudioFormatStorageKey =
+    "suno-prompt-studio-musical-guide-audio-format-v1";
+
+  const [musicalGuideAudioFormat, setMusicalGuideAudioFormat] =
+    useState<MusicalGuideAudioFormat>("mp3");
+
+  useEffect(() => {
+    try {
+      const storedFormat = window.localStorage.getItem(
+        musicalGuideAudioFormatStorageKey,
+      );
+
+      if (storedFormat === "mp3" || storedFormat === "wav") {
+        setMusicalGuideAudioFormat(storedFormat);
+      }
+    } catch {
+      // Ignore localStorage read failures.
+    }
+  }, [musicalGuideAudioFormatStorageKey]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        musicalGuideAudioFormatStorageKey,
+        musicalGuideAudioFormat,
+      );
+    } catch {
+      // Ignore localStorage write failures.
+    }
+  }, [musicalGuideAudioFormat, musicalGuideAudioFormatStorageKey]);
 
   const [generatedAudioChordMarkers, setGeneratedAudioChordMarkers] = useState<
     AudioChordMarker[]
@@ -6273,6 +6305,7 @@ export default function Page() {
   const persistGeneratedAudio = async ({
     blob,
     filename,
+    audioFormat,
     rendererTempoBpm,
     rendererSampleRate,
     rendererJobId,
@@ -6280,6 +6313,7 @@ export default function Page() {
   }: {
     blob: Blob;
     filename: string;
+    audioFormat: MusicalGuideAudioFormat;
     rendererTempoBpm: string | null;
     rendererSampleRate: string | null;
     rendererJobId: string | null;
@@ -6312,13 +6346,14 @@ export default function Page() {
       user.id,
       activeProject.id,
       activeSongVersionId,
-      `${audioVersionId}.mp3`,
+      `${audioVersionId}.${audioFormat}`,
     ].join("/");
 
     const { error: uploadError } = await supabase.storage
       .from("generated-audio")
       .upload(storagePath, blob, {
-        contentType: blob.type || "audio/mpeg",
+        contentType:
+          blob.type || (audioFormat === "mp3" ? "audio/mpeg" : "audio/wav"),
         upsert: false,
       });
 
@@ -6356,6 +6391,7 @@ export default function Page() {
         tempo_bpm: persistedTempoBpm,
         duration_seconds: null,
         render_settings: {
+          audioFormat,
           mixProfile: rendererMixProfile || "musical-guide",
           sampleRate: rendererSampleRate
             ? Number(rendererSampleRate) || null
@@ -6450,7 +6486,7 @@ export default function Page() {
     };
   };
 
-  const downloadMusicalGuideWav = async () => {
+  const downloadMusicalGuide = async () => {
     if (chordActionBlockedReason) {
       setClickTrackDownloadStatus(chordActionBlockedReason);
       return;
@@ -6458,12 +6494,16 @@ export default function Page() {
 
     if (!dryRunArtifactPackage) {
       setClickTrackDownloadStatus(
-        "Submit dry run before downloading the musical guide WAV.",
+        `Submit dry run before downloading the musical guide ${musicalGuideAudioFormat.toUpperCase()}.`,
       );
       return;
     }
 
-    setClickTrackDownloadStatus("Requesting musical guide WAV download...");
+    const formatLabel = musicalGuideAudioFormat.toUpperCase();
+
+    setClickTrackDownloadStatus(
+      `Requesting musical guide ${formatLabel} download...`,
+    );
     setDownloadingMusicalGuideWav(true);
 
     try {
@@ -6474,7 +6514,8 @@ export default function Page() {
         },
         body: JSON.stringify({
           requestedTarget: "clickTrack",
-          enableRealClickTrackWavDownload: true,
+          enableRealClickTrackWavDownload: musicalGuideAudioFormat === "wav",
+          enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
           mixProfile: "musical-guide",
           musicalGuideMixLevels,
           melodyNotes: initialMelodyContours.flatMap((phrase) => phrase.notes),
@@ -6499,78 +6540,31 @@ export default function Page() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        setClickTrackDownloadStatus(
-          `Musical guide WAV download failed. HTTP ${response.status}: ${errorText}`,
+
+        throw new Error(
+          `Musical guide ${formatLabel} download failed. HTTP ${response.status}: ${errorText}`,
         );
-        return;
       }
 
       const rendererTempoBpm = response.headers.get("X-Renderer-Tempo-BPM");
       const rendererSampleRate = response.headers.get("X-Renderer-Sample-Rate");
       const rendererJobId = response.headers.get("X-Renderer-Job-ID");
+      const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
       const contentLength = response.headers.get("Content-Length");
 
       const blob = await response.blob();
-      const persistentMp3Response = await fetch(
-        "/api/audio-preview/real-render",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            requestedTarget: "clickTrack",
-            enablePersistentMp3Render: true,
-            mixProfile: "musical-guide",
-            musicalGuideMixLevels,
-            melodyNotes: initialMelodyContours.flatMap(
-              (phrase) => phrase.notes,
-            ),
-            renderJobId:
-              typeof audioPreviewRenderJob?.id === "string"
-                ? audioPreviewRenderJob.id
-                : undefined,
-            tempoBpm: previewTempo,
-            includeCountIn: includeClickTrackCountIn,
-            includeBeatClicks: includeClickTrackBeatClicks,
-            includeSectionMarkers: includeClickTrackSectionMarkers,
-            includeChordMarkers: includeClickTrackChordMarkers,
-            includeChordToneGuide: true,
-            dryRunRenderPlan: audioPreviewDryRunRenderPlan,
-            rendererInputContract: dryRunArtifactPackage.rendererInputContract,
-            realRenderGate: dryRunArtifactPackage.realRenderGate,
-            firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
-            realRenderConfiguration:
-              dryRunArtifactPackage.realRenderConfiguration,
-          }),
-        },
-      );
 
-      if (!persistentMp3Response.ok) {
-        const errorText = await persistentMp3Response.text();
-
-        throw new Error(
-          `Persistent MP3 render failed. HTTP ${persistentMp3Response.status}: ${errorText}`,
-        );
-      }
-
-      const persistentMp3Blob = await persistentMp3Response.blob();
-
-      const persistentMp3Filename =
-        getFilenameFromContentDisposition(
-          persistentMp3Response.headers.get("Content-Disposition"),
-        ) || "musical-guide.mp3";
-      setGeneratedAudioChordMarkers(getCurrentGeneratedAudioChordMarkers());
       const filename =
         getFilenameFromContentDisposition(
           response.headers.get("Content-Disposition"),
-        ) || "musical-guide.wav";
+        ) || `musical-guide.${musicalGuideAudioFormat}`;
 
-      const rendererMixProfile = response.headers.get("X-Renderer-Mix-Profile");
+      setGeneratedAudioChordMarkers(getCurrentGeneratedAudioChordMarkers());
 
       const persistenceResult = await persistGeneratedAudio({
-        blob: persistentMp3Blob,
-        filename: persistentMp3Filename,
+        blob,
+        filename,
+        audioFormat: musicalGuideAudioFormat,
         rendererTempoBpm,
         rendererSampleRate,
         rendererJobId,
@@ -6579,23 +6573,27 @@ export default function Page() {
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
+
       link.href = url;
       link.download = filename.replace("clickTrack", "musicalGuide");
+
       document.body.appendChild(link);
       link.click();
       link.remove();
 
       setClickTrackAudioUrl(url);
+
       setClickTrackAudioLabel(
         !includeClickTrackCountIn &&
           !includeClickTrackBeatClicks &&
           !includeClickTrackSectionMarkers &&
           !includeClickTrackChordMarkers
-          ? "Latest generated music-only guide WAV"
-          : "Latest generated musical guide WAV",
+          ? `Latest generated music-only guide ${formatLabel}`
+          : `Latest generated musical guide ${formatLabel}`,
       );
 
       setGeneratedAudioDuration(0);
+
       updateGeneratedAudioPlaybackUi({
         currentTime: 0,
         duration: 0,
@@ -6605,7 +6603,7 @@ export default function Page() {
       revealGeneratedAudioWaveform();
 
       setClickTrackDownloadStatus(
-        `Downloaded musical guide WAV: ${link.download}${
+        `Downloaded musical guide ${formatLabel}: ${link.download}${
           rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
         }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
           rendererJobId ? ` | job ${rendererJobId}` : ""
@@ -6617,12 +6615,13 @@ export default function Page() {
             : "persistent save failed"
         }`,
       );
+
       return persistenceResult;
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Musical guide WAV download failed.";
+          : `Musical guide ${formatLabel} download failed.`;
 
       setClickTrackDownloadStatus(message);
 
@@ -17653,7 +17652,7 @@ export default function Page() {
 
           setMakeSongMessage("Rendering the musical guide...");
 
-          const persistenceResult = await downloadMusicalGuideWav();
+          const persistenceResult = await downloadMusicalGuide();
 
           setMakeSongRunReport((current) =>
             current
@@ -21647,6 +21646,44 @@ ${buildRewriteInstruction(
                           Musical guide
                         </div>
 
+                        <div className="mt-2">
+                          <div className="text-xs text-gray-500">File type</div>
+
+                          <div className="mt-1 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setMusicalGuideAudioFormat("mp3")}
+                              disabled={makeSongIsRunning}
+                              className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                                musicalGuideAudioFormat === "mp3"
+                                  ? "border-purple-500 bg-purple-950/40 text-purple-100"
+                                  : "border-gray-700 bg-gray-950 text-gray-400 hover:border-gray-600"
+                              } disabled:cursor-not-allowed disabled:opacity-50`}
+                            >
+                              MP3
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setMusicalGuideAudioFormat("wav")}
+                              disabled={makeSongIsRunning}
+                              className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                                musicalGuideAudioFormat === "wav"
+                                  ? "border-purple-500 bg-purple-950/40 text-purple-100"
+                                  : "border-gray-700 bg-gray-950 text-gray-400 hover:border-gray-600"
+                              } disabled:cursor-not-allowed disabled:opacity-50`}
+                            >
+                              WAV
+                            </button>
+                          </div>
+
+                          <div className="mt-1 text-xs text-gray-600">
+                            {musicalGuideAudioFormat === "mp3"
+                              ? "Smaller file • recommended"
+                              : "Larger uncompressed file"}
+                          </div>
+                        </div>
+
                         <div
                           className={`mt-1 text-sm font-medium ${
                             makeSongAudioIsReady
@@ -21657,7 +21694,7 @@ ${buildRewriteInstruction(
                           }`}
                         >
                           {makeSongAudioIsReady
-                            ? "WAV ready ✓"
+                            ? `${musicalGuideAudioFormat.toUpperCase()} ready ✓`
                             : makeSongIsRunning
                               ? "Creating..."
                               : "Not created yet"}
@@ -23060,7 +23097,7 @@ ${buildRewriteInstruction(
 
                                 <button
                                   type="button"
-                                  onClick={() => downloadMusicalGuideWav()}
+                                  onClick={() => downloadMusicalGuide()}
                                   disabled={
                                     downloadingMusicalGuideWav ||
                                     !dryRunArtifactPackage ||
