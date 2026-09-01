@@ -6472,6 +6472,7 @@ export default function Page() {
         .eq("song_version_id", activeSongVersionId)
         .eq("chord_version_id", sourceChordVersionId)
         .eq("tempo_bpm", persistedTempoBpm)
+        .eq("is_retained", false)
         .neq("id", audioVersionId);
 
     if (supersededAudioLookupError) {
