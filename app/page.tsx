@@ -543,6 +543,23 @@ export default function Page() {
   const [musicalGuideAudioFormat, setMusicalGuideAudioFormat] =
     useState<MusicalGuideAudioFormat>("mp3");
 
+  type SavedMusicalGuideVersion = {
+    id: string;
+    storage_path: string;
+    title: string | null;
+    tempo_bpm: number;
+    render_settings: Record<string, unknown> | null;
+    created_at: string;
+    is_retained: boolean;
+  };
+
+  const [savedMusicalGuideVersions, setSavedMusicalGuideVersions] = useState<
+    SavedMusicalGuideVersion[]
+  >([]);
+
+  const [updatingRetainedAudioVersionId, setUpdatingRetainedAudioVersionId] =
+    useState("");
+
   useEffect(() => {
     try {
       const storedFormat = window.localStorage.getItem(
@@ -3516,6 +3533,99 @@ export default function Page() {
     } catch (err: any) {
       console.error(err);
       setProjectMessage(err.message || "Failed to load projects");
+    }
+  };
+
+  const loadSavedMusicalGuideVersions = async ({
+    projectId,
+    songVersionId,
+    chordVersionId,
+  }: {
+    projectId: string;
+    songVersionId: string | null;
+    chordVersionId: string | null;
+  }) => {
+    if (!songVersionId || !chordVersionId) {
+      setSavedMusicalGuideVersions([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("audio_versions")
+      .select(
+        "id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained",
+      )
+      .eq("project_id", projectId)
+      .eq("song_version_id", songVersionId)
+      .eq("chord_version_id", chordVersionId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Saved musical guide list failed:", error);
+      setSavedMusicalGuideVersions([]);
+      return;
+    }
+
+    setSavedMusicalGuideVersions((data || []) as SavedMusicalGuideVersion[]);
+  };
+
+  useEffect(() => {
+    if (!activeProject?.id) {
+      setSavedMusicalGuideVersions([]);
+      return;
+    }
+
+    void loadSavedMusicalGuideVersions({
+      projectId: activeProject.id,
+      songVersionId: activeSongVersionId,
+      chordVersionId: activeChordVersionId,
+    });
+  }, [activeProject?.id, activeSongVersionId, activeChordVersionId]);
+
+  const updateSavedMusicalGuideRetained = async (
+    audioVersionId: string,
+    isRetained: boolean,
+  ) => {
+    setUpdatingRetainedAudioVersionId(audioVersionId);
+
+    try {
+      const { error } = await supabase
+        .from("audio_versions")
+        .update({
+          is_retained: isRetained,
+        })
+        .eq("id", audioVersionId);
+
+      if (error) {
+        throw error;
+      }
+
+      setSavedMusicalGuideVersions((current) =>
+        current.map((version) =>
+          version.id === audioVersionId
+            ? {
+                ...version,
+                is_retained: isRetained,
+              }
+            : version,
+        ),
+      );
+
+      setClickTrackDownloadStatus(
+        isRetained
+          ? "Saved musical guide retained."
+          : "Saved musical guide no longer retained.",
+      );
+    } catch (error) {
+      console.error("Could not update retained musical guide:", error);
+
+      setClickTrackDownloadStatus(
+        error instanceof Error
+          ? `Could not update saved guide: ${error.message}`
+          : "Could not update saved guide.",
+      );
+    } finally {
+      setUpdatingRetainedAudioVersionId("");
     }
   };
 
@@ -6517,6 +6627,12 @@ export default function Page() {
         }
       }
     }
+
+    await loadSavedMusicalGuideVersions({
+      projectId: activeProject.id,
+      songVersionId: activeSongVersionId,
+      chordVersionId: sourceChordVersionId,
+    });
 
     return {
       saved: true,
@@ -21806,6 +21922,93 @@ ${buildRewriteInstruction(
                               }
                             }}
                           />
+                        )}
+
+                        {savedMusicalGuideVersions.length > 0 && (
+                          <div className="mt-4 border-t border-gray-800 pt-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Saved guides
+                              </div>
+
+                              <div className="text-xs text-gray-600">
+                                {savedMusicalGuideVersions.length} saved
+                              </div>
+                            </div>
+
+                            <div className="mt-2 space-y-2">
+                              {savedMusicalGuideVersions.map((version) => {
+                                const renderSettings =
+                                  version.render_settings &&
+                                  typeof version.render_settings === "object" &&
+                                  !Array.isArray(version.render_settings)
+                                    ? version.render_settings
+                                    : null;
+
+                                const format: MusicalGuideAudioFormat =
+                                  renderSettings?.audioFormat === "wav" ||
+                                  version.storage_path
+                                    .toLowerCase()
+                                    .endsWith(".wav")
+                                    ? "wav"
+                                    : "mp3";
+
+                                const isCurrent =
+                                  restoredAudioVersionId === version.id ||
+                                  makeSongRunReport?.audioVersionId ===
+                                    version.id;
+
+                                return (
+                                  <div
+                                    key={version.id}
+                                    className="rounded border border-gray-800 bg-gray-950 px-3 py-2"
+                                  >
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div>
+                                        <div className="text-sm text-gray-200">
+                                          {format.toUpperCase()} ·{" "}
+                                          {version.tempo_bpm} BPM
+                                          {isCurrent ? " · Current" : ""}
+                                        </div>
+
+                                        <div className="mt-1 text-xs text-gray-500">
+                                          {new Date(
+                                            version.created_at,
+                                          ).toLocaleString("en-GB")}
+                                        </div>
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          void updateSavedMusicalGuideRetained(
+                                            version.id,
+                                            !version.is_retained,
+                                          )
+                                        }
+                                        disabled={
+                                          updatingRetainedAudioVersionId ===
+                                          version.id
+                                        }
+                                        className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                                          version.is_retained
+                                            ? "border-green-700 bg-green-950/30 text-green-200"
+                                            : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
+                                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                                      >
+                                        {updatingRetainedAudioVersionId ===
+                                        version.id
+                                          ? "Updating..."
+                                          : version.is_retained
+                                            ? "Retained ✓"
+                                            : "Retain"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
