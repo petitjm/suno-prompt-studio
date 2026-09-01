@@ -563,6 +563,9 @@ export default function Page() {
   const [loadingSavedAudioVersionId, setLoadingSavedAudioVersionId] =
     useState("");
 
+  const [deletingSavedAudioVersionId, setDeletingSavedAudioVersionId] =
+    useState("");
+
   useEffect(() => {
     try {
       const storedFormat = window.localStorage.getItem(
@@ -3663,6 +3666,82 @@ export default function Page() {
     }
   };
 
+  const deleteSavedMusicalGuideVersion = async (
+    version: SavedMusicalGuideVersion,
+  ) => {
+    const confirmed = window.confirm(
+      `Delete this saved musical guide (${version.tempo_bpm} BPM)? This cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingSavedAudioVersionId(version.id);
+
+    try {
+      const { error: storageDeleteError } = await supabase.storage
+        .from("generated-audio")
+        .remove([version.storage_path]);
+
+      if (storageDeleteError) {
+        throw new Error(
+          `Audio file could not be deleted: ${storageDeleteError.message}`,
+        );
+      }
+
+      const { error: metadataDeleteError } = await supabase
+        .from("audio_versions")
+        .delete()
+        .eq("id", version.id);
+
+      if (metadataDeleteError) {
+        throw new Error(
+          `Audio file was deleted, but its database record could not be removed: ${metadataDeleteError.message}`,
+        );
+      }
+
+      setSavedMusicalGuideVersions((current) =>
+        current.filter((savedVersion) => savedVersion.id !== version.id),
+      );
+
+      const deletedGuideIsCurrent =
+        restoredAudioVersionId === version.id ||
+        makeSongRunReport?.audioVersionId === version.id;
+
+      if (deletedGuideIsCurrent) {
+        resetGeneratedAudioState();
+
+        setGeneratedAudioSource("current-session");
+        setRestoredAudioVersionId("");
+        setRestoredAudioFormat(null);
+
+        setMakeSongRunReport((current) =>
+          current?.audioVersionId === version.id
+            ? {
+                ...current,
+                audioPersistenceStatus: "pending",
+                audioVersionId: "",
+                audioPersistenceMessage: "",
+              }
+            : current,
+        );
+      }
+
+      setClickTrackDownloadStatus("Saved musical guide deleted.");
+    } catch (error) {
+      console.error("Could not delete saved musical guide:", error);
+
+      setClickTrackDownloadStatus(
+        error instanceof Error
+          ? `Could not delete saved guide: ${error.message}`
+          : "Could not delete saved guide.",
+      );
+    } finally {
+      setDeletingSavedAudioVersionId("");
+    }
+  };
+
   const restorePersistedAudioForState = async ({
     projectId,
     songVersionId,
@@ -6555,9 +6634,8 @@ export default function Page() {
       };
     }
 
-    const sourceChordVersionId = makeSongHasUnsavedChordResult
-      ? null
-      : makeSongRunReport?.chordVersionId || activeChordVersionId || null;
+    const sourceChordVersionId =
+      makeSongRunReport?.chordVersionId || activeChordVersionId || null;
 
     const chordTimeline = getCurrentGeneratedAudioChordMarkers();
     const cueSections = getCurrentGeneratedAudioCueSections();
@@ -6614,16 +6692,22 @@ export default function Page() {
       };
     }
 
+    const supersededAudioQuery = supabase
+      .from("audio_versions")
+      .select("id, storage_path")
+      .eq("project_id", activeProject.id)
+      .eq("song_version_id", activeSongVersionId)
+      .eq("tempo_bpm", persistedTempoBpm)
+      .eq("is_retained", false)
+      .neq("id", audioVersionId);
+
     const { data: supersededAudioVersions, error: supersededAudioLookupError } =
-      await supabase
-        .from("audio_versions")
-        .select("id, storage_path")
-        .eq("project_id", activeProject.id)
-        .eq("song_version_id", activeSongVersionId)
-        .eq("chord_version_id", sourceChordVersionId)
-        .eq("tempo_bpm", persistedTempoBpm)
-        .eq("is_retained", false)
-        .neq("id", audioVersionId);
+      sourceChordVersionId
+        ? await supersededAudioQuery.eq(
+            "chord_version_id",
+            sourceChordVersionId,
+          )
+        : await supersededAudioQuery.is("chord_version_id", null);
 
     if (supersededAudioLookupError) {
       console.error(
@@ -22067,6 +22151,29 @@ ${buildRewriteInstruction(
                                             : version.is_retained
                                               ? "Retained ✓"
                                               : "Retain"}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void deleteSavedMusicalGuideVersion(
+                                              version,
+                                            )
+                                          }
+                                          disabled={
+                                            deletingSavedAudioVersionId ===
+                                              version.id ||
+                                            loadingSavedAudioVersionId ===
+                                              version.id ||
+                                            updatingRetainedAudioVersionId ===
+                                              version.id
+                                          }
+                                          className="rounded border border-red-900 bg-red-950/20 px-3 py-1.5 text-xs font-medium text-red-200 hover:border-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          {deletingSavedAudioVersionId ===
+                                          version.id
+                                            ? "Deleting..."
+                                            : "Delete"}
                                         </button>
                                       </div>
                                     </div>
