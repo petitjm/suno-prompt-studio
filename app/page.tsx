@@ -560,6 +560,9 @@ export default function Page() {
   const [updatingRetainedAudioVersionId, setUpdatingRetainedAudioVersionId] =
     useState("");
 
+  const [loadingSavedAudioVersionId, setLoadingSavedAudioVersionId] =
+    useState("");
+
   useEffect(() => {
     try {
       const storedFormat = window.localStorage.getItem(
@@ -3629,33 +3632,70 @@ export default function Page() {
     }
   };
 
+  const loadSavedMusicalGuideVersion = async (
+    version: SavedMusicalGuideVersion,
+  ) => {
+    if (!activeProject?.id || !activeSongVersionId || !activeChordVersionId) {
+      setClickTrackDownloadStatus(
+        "Select a saved song and chord checkpoint before loading a saved guide.",
+      );
+      return;
+    }
+
+    setLoadingSavedAudioVersionId(version.id);
+
+    try {
+      const restored = await restorePersistedAudioForState({
+        projectId: activeProject.id,
+        songVersionId: activeSongVersionId,
+        chordVersionId: activeChordVersionId,
+        tempoBpm: version.tempo_bpm,
+        audioVersionId: version.id,
+      });
+
+      if (!restored) {
+        setClickTrackDownloadStatus(
+          "Could not load the selected saved musical guide.",
+        );
+      }
+    } finally {
+      setLoadingSavedAudioVersionId("");
+    }
+  };
+
   const restorePersistedAudioForState = async ({
     projectId,
     songVersionId,
     chordVersionId,
     tempoBpm,
+    audioVersionId,
   }: {
     projectId: string;
     songVersionId: string | null;
     chordVersionId: string | null;
     tempoBpm: number;
+    audioVersionId?: string;
   }) => {
     if (!songVersionId || !chordVersionId) {
       return false;
     }
 
-    const { data: savedAudioVersion, error: savedAudioError } = await supabase
+    const savedAudioQuery = supabase
       .from("audio_versions")
       .select(
         "id, storage_path, title, tempo_bpm, duration_seconds, render_settings, created_at",
       )
       .eq("project_id", projectId)
       .eq("song_version_id", songVersionId)
-      .eq("chord_version_id", chordVersionId)
-      .eq("tempo_bpm", tempoBpm)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq("chord_version_id", chordVersionId);
+
+    const { data: savedAudioVersion, error: savedAudioError } = audioVersionId
+      ? await savedAudioQuery.eq("id", audioVersionId).maybeSingle()
+      : await savedAudioQuery
+          .eq("tempo_bpm", tempoBpm)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
     if (savedAudioError) {
       console.error("Saved audio version restore failed:", savedAudioError);
@@ -21953,10 +21993,13 @@ ${buildRewriteInstruction(
                                     ? "wav"
                                     : "mp3";
 
+                                const currentAudioVersionId =
+                                  generatedAudioSource === "persisted"
+                                    ? restoredAudioVersionId
+                                    : makeSongRunReport?.audioVersionId || "";
+
                                 const isCurrent =
-                                  restoredAudioVersionId === version.id ||
-                                  makeSongRunReport?.audioVersionId ===
-                                    version.id;
+                                  currentAudioVersionId === version.id;
 
                                 return (
                                   <div
@@ -21978,31 +22021,54 @@ ${buildRewriteInstruction(
                                         </div>
                                       </div>
 
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          void updateSavedMusicalGuideRetained(
-                                            version.id,
-                                            !version.is_retained,
-                                          )
-                                        }
-                                        disabled={
-                                          updatingRetainedAudioVersionId ===
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void loadSavedMusicalGuideVersion(
+                                              version,
+                                            )
+                                          }
+                                          disabled={
+                                            loadingSavedAudioVersionId ===
+                                              version.id || isCurrent
+                                          }
+                                          className="rounded border border-blue-800 bg-blue-950/30 px-3 py-1.5 text-xs font-medium text-blue-200 hover:border-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          {loadingSavedAudioVersionId ===
                                           version.id
-                                        }
-                                        className={`rounded border px-3 py-1.5 text-xs font-medium ${
-                                          version.is_retained
-                                            ? "border-green-700 bg-green-950/30 text-green-200"
-                                            : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
-                                        } disabled:cursor-not-allowed disabled:opacity-50`}
-                                      >
-                                        {updatingRetainedAudioVersionId ===
-                                        version.id
-                                          ? "Updating..."
-                                          : version.is_retained
-                                            ? "Retained ✓"
-                                            : "Retain"}
-                                      </button>
+                                            ? "Loading..."
+                                            : isCurrent
+                                              ? "Loaded ✓"
+                                              : "Load"}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void updateSavedMusicalGuideRetained(
+                                              version.id,
+                                              !version.is_retained,
+                                            )
+                                          }
+                                          disabled={
+                                            updatingRetainedAudioVersionId ===
+                                            version.id
+                                          }
+                                          className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                                            version.is_retained
+                                              ? "border-green-700 bg-green-950/30 text-green-200"
+                                              : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
+                                          } disabled:cursor-not-allowed disabled:opacity-50`}
+                                        >
+                                          {updatingRetainedAudioVersionId ===
+                                          version.id
+                                            ? "Updating..."
+                                            : version.is_retained
+                                              ? "Retained ✓"
+                                              : "Retain"}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 );
