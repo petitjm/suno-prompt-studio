@@ -526,6 +526,15 @@ export default function Page() {
   const [clickTrackAudioLabel, setClickTrackAudioLabel] = useState(
     "Latest generated WAV",
   );
+  type GeneratedAudioSource = "current-session" | "persisted";
+
+  const [generatedAudioSource, setGeneratedAudioSource] =
+    useState<GeneratedAudioSource>("current-session");
+
+  const [restoredAudioVersionId, setRestoredAudioVersionId] = useState("");
+
+  const [restoredAudioFormat, setRestoredAudioFormat] =
+    useState<MusicalGuideAudioFormat | null>(null);
   type MusicalGuideAudioFormat = "mp3" | "wav";
 
   const musicalGuideAudioFormatStorageKey =
@@ -3564,6 +3573,12 @@ export default function Page() {
         ? (savedAudioVersion.render_settings as Record<string, unknown>)
         : null;
 
+    const restoredFormat: MusicalGuideAudioFormat =
+      renderSettings?.audioFormat === "wav" ||
+      savedAudioVersion.storage_path.toLowerCase().endsWith(".wav")
+        ? "wav"
+        : "mp3";
+
     const restoredChordTimeline = Array.isArray(renderSettings?.chordTimeline)
       ? renderSettings.chordTimeline
           .map((marker) => {
@@ -3614,10 +3629,14 @@ export default function Page() {
 
     setClickTrackAudioUrl(signedAudio.signedUrl);
 
+    setGeneratedAudioSource("persisted");
+    setRestoredAudioVersionId(savedAudioVersion.id);
+    setRestoredAudioFormat(restoredFormat);
+
     setClickTrackAudioLabel(
       savedAudioVersion.title
         ? `Saved musical guide: ${savedAudioVersion.title}`
-        : "Saved musical guide WAV",
+        : `Saved musical guide ${restoredFormat.toUpperCase()}`,
     );
 
     setGeneratedAudioDuration(
@@ -3628,7 +3647,7 @@ export default function Page() {
     );
 
     setClickTrackDownloadStatus(
-      `Restored saved musical guide WAV for the current song version at ${savedAudioVersion.tempo_bpm} BPM.`,
+      `Restored saved musical guide ${restoredFormat.toUpperCase()} for the current song version at ${savedAudioVersion.tempo_bpm} BPM.`,
     );
 
     void loadGeneratedAudioWaveform(signedAudio.signedUrl);
@@ -6582,6 +6601,10 @@ export default function Page() {
       link.remove();
 
       setClickTrackAudioUrl(url);
+
+      setGeneratedAudioSource("current-session");
+      setRestoredAudioVersionId("");
+      setRestoredAudioFormat(null);
 
       setClickTrackAudioLabel(
         !includeClickTrackCountIn &&
@@ -21694,36 +21717,53 @@ ${buildRewriteInstruction(
                           }`}
                         >
                           {makeSongAudioIsReady
-                            ? `${musicalGuideAudioFormat.toUpperCase()} ready ✓`
+                            ? generatedAudioSource === "persisted"
+                              ? `Saved ${(
+                                  restoredAudioFormat || musicalGuideAudioFormat
+                                ).toUpperCase()} ready ✓`
+                              : `${musicalGuideAudioFormat.toUpperCase()} ready ✓`
                             : makeSongIsRunning
                               ? "Creating..."
                               : "Not created yet"}
                         </div>
 
-                        {makeSongRunReport?.audioPersistenceStatus !==
-                          "pending" && (
-                          <div
-                            className={`mt-1 text-xs ${
-                              makeSongRunReport?.audioPersistenceStatus ===
+                        {makeSongAudioIsReady &&
+                          generatedAudioSource === "persisted" && (
+                            <div className="mt-1 text-xs text-blue-200">
+                              Restored from saved audio
+                              {restoredAudioFormat
+                                ? ` · ${restoredAudioFormat.toUpperCase()}`
+                                : ""}
+                              {restoredAudioVersionId
+                                ? ` · Audio ID ${restoredAudioVersionId}`
+                                : ""}
+                            </div>
+                          )}
+                        {generatedAudioSource === "current-session" &&
+                          makeSongRunReport?.audioPersistenceStatus !==
+                            "pending" && (
+                            <div
+                              className={`mt-1 text-xs ${
+                                makeSongRunReport?.audioPersistenceStatus ===
+                                "saved"
+                                  ? "text-green-300"
+                                  : "text-yellow-200"
+                              }`}
+                            >
+                              {makeSongRunReport?.audioPersistenceStatus ===
                               "saved"
-                                ? "text-green-300"
-                                : "text-yellow-200"
-                            }`}
-                          >
-                            {makeSongRunReport?.audioPersistenceStatus ===
-                            "saved"
-                              ? `Saved persistently ✓${
-                                  makeSongRunReport.audioVersionId
-                                    ? ` · Audio ID ${makeSongRunReport.audioVersionId}`
-                                    : ""
-                                }`
-                              : `Persistent save failed${
-                                  makeSongRunReport?.audioPersistenceMessage
-                                    ? ` · ${makeSongRunReport.audioPersistenceMessage}`
-                                    : ""
-                                }`}
-                          </div>
-                        )}
+                                ? `Saved persistently ✓${
+                                    makeSongRunReport.audioVersionId
+                                      ? ` · Audio ID ${makeSongRunReport.audioVersionId}`
+                                      : ""
+                                  }`
+                                : `Persistent save failed${
+                                    makeSongRunReport?.audioPersistenceMessage
+                                      ? ` · ${makeSongRunReport.audioPersistenceMessage}`
+                                      : ""
+                                  }`}
+                            </div>
+                          )}
 
                         {clickTrackAudioUrl && (
                           <audio
