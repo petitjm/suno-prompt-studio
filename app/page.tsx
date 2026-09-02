@@ -3577,7 +3577,7 @@ export default function Page() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Saved musical guide list failed:", error);
+      console.error("Saved Audio Guide list failed:", error);
       setSavedMusicalGuideVersions([]);
       return;
     }
@@ -3595,7 +3595,7 @@ export default function Page() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Project saved musical guide list failed:", error);
+      console.error("Project saved Audio Guide list failed:", error);
       setProjectSavedMusicalGuideVersions([]);
       return;
     }
@@ -3669,11 +3669,11 @@ export default function Page() {
 
       setClickTrackDownloadStatus(
         isRetained
-          ? "Saved musical guide retained."
-          : "Saved musical guide no longer retained.",
+          ? "Saved Audio Guide retained."
+          : "Saved Audio Guide no longer retained.",
       );
     } catch (error) {
-      console.error("Could not update retained musical guide:", error);
+      console.error("Could not update retained Audio Guide:", error);
 
       setClickTrackDownloadStatus(
         error instanceof Error
@@ -3708,7 +3708,7 @@ export default function Page() {
 
       if (!restored) {
         setClickTrackDownloadStatus(
-          "Could not load the selected saved musical guide.",
+          "Could not load the selected saved Audio Guide.",
         );
       }
     } finally {
@@ -3720,7 +3720,7 @@ export default function Page() {
     version: SavedMusicalGuideVersion,
   ) => {
     const confirmed = window.confirm(
-      `Delete this saved musical guide (${version.tempo_bpm} BPM)? This cannot be undone.`,
+      `Delete this saved Audio Guide (${version.tempo_bpm} BPM)? This cannot be undone.`,
     );
 
     if (!confirmed) {
@@ -3782,9 +3782,9 @@ export default function Page() {
         );
       }
 
-      setClickTrackDownloadStatus("Saved musical guide deleted.");
+      setClickTrackDownloadStatus("Saved Audio Guide deleted.");
     } catch (error) {
-      console.error("Could not delete saved musical guide:", error);
+      console.error("Could not delete saved Audio Guide:", error);
 
       setClickTrackDownloadStatus(
         error instanceof Error
@@ -3918,8 +3918,8 @@ export default function Page() {
 
     setClickTrackAudioLabel(
       savedAudioVersion.title
-        ? `Saved musical guide: ${savedAudioVersion.title}`
-        : `Saved musical guide ${restoredFormat.toUpperCase()}`,
+        ? `Saved Audio Guide: ${savedAudioVersion.title}`
+        : `Saved Audio Guide ${restoredFormat.toUpperCase()}`,
     );
 
     setGeneratedAudioDuration(
@@ -3930,7 +3930,7 @@ export default function Page() {
     );
 
     setClickTrackDownloadStatus(
-      `Restored saved musical guide ${restoredFormat.toUpperCase()} for the current song version at ${savedAudioVersion.tempo_bpm} BPM.`,
+      `Restored saved Audio Guide ${restoredFormat.toUpperCase()} for the current song version at ${savedAudioVersion.tempo_bpm} BPM.`,
     );
 
     void loadGeneratedAudioWaveform(signedAudio.signedUrl);
@@ -6645,7 +6645,7 @@ export default function Page() {
       return {
         saved: false,
         message:
-          "Generated musical guide… is available in this browser session but could not be saved because there is no active saved song version.",
+          "Generated Audio Guide… is available in this browser session but could not be saved because there is no active saved song version.",
       };
     }
 
@@ -6658,7 +6658,7 @@ export default function Page() {
       return {
         saved: false,
         message:
-          "Generated musical guide… is available in this browser session but could not be saved because the user session is unavailable.",
+          "Generated Audio Guide… is available in this browser session but could not be saved because the user session is unavailable.",
       };
     }
 
@@ -6684,7 +6684,7 @@ export default function Page() {
 
       return {
         saved: false,
-        message: `Generated musical guide… is available in this browser session but persistent upload failed: ${uploadError.message}`,
+        message: `Generated Audio Guide… is available in this browser session but persistent upload failed: ${uploadError.message}`,
       };
     }
 
@@ -6707,7 +6707,7 @@ export default function Page() {
         song_version_id: activeSongVersionId,
         chord_version_id: sourceChordVersionId,
         title:
-          filename.replace(/\.(?:wav|mp3)$/i, "") || "Generated musical guide",
+          filename.replace(/\.(?:wav|mp3)$/i, "") || "Generated Audio Guide",
         storage_path: storagePath,
         tempo_bpm: persistedTempoBpm,
         duration_seconds: null,
@@ -6818,7 +6818,7 @@ export default function Page() {
       saved: true,
       audioVersionId,
       storagePath,
-      message: "Generated musical guide saved for this song version.",
+      message: "Generated Audio Guide saved for this song version.",
     };
   };
 
@@ -6830,7 +6830,7 @@ export default function Page() {
 
     if (!dryRunArtifactPackage) {
       setClickTrackDownloadStatus(
-        `Submit dry run before downloading the musical guide ${musicalGuideAudioFormat.toUpperCase()}.`,
+        `Submit dry run before downloading the Audio Guide ${musicalGuideAudioFormat.toUpperCase()}.`,
       );
       return;
     }
@@ -6838,7 +6838,7 @@ export default function Page() {
     const formatLabel = musicalGuideAudioFormat.toUpperCase();
 
     setClickTrackDownloadStatus(
-      `Requesting musical guide ${formatLabel} download...`,
+      `Requesting Audio Guide ${formatLabel} download...`,
     );
     setDownloadingMusicalGuideWav(true);
 
@@ -6878,7 +6878,7 @@ export default function Page() {
         const errorText = await response.text();
 
         throw new Error(
-          `Musical guide ${formatLabel} download failed. HTTP ${response.status}: ${errorText}`,
+          `Audio Guide ${formatLabel} download failed. HTTP ${response.status}: ${errorText}`,
         );
       }
 
@@ -6929,7 +6929,7 @@ export default function Page() {
           !includeClickTrackSectionMarkers &&
           !includeClickTrackChordMarkers
           ? `Latest generated music-only guide ${formatLabel}`
-          : `Latest generated musical guide ${formatLabel}`,
+          : `Latest generated Audio Guide ${formatLabel}`,
       );
 
       setGeneratedAudioDuration(0);
@@ -6943,7 +6943,7 @@ export default function Page() {
       revealGeneratedAudioWaveform();
 
       setClickTrackDownloadStatus(
-        `Downloaded musical guide ${formatLabel}: ${link.download}${
+        `Downloaded Audio Guide ${formatLabel}: ${link.download}${
           rendererTempoBpm ? ` | ${rendererTempoBpm} BPM` : ""
         }${rendererSampleRate ? ` | ${rendererSampleRate} Hz` : ""}${
           rendererJobId ? ` | job ${rendererJobId}` : ""
@@ -6961,7 +6961,7 @@ export default function Page() {
       const message =
         error instanceof Error
           ? error.message
-          : `Musical guide ${formatLabel} download failed.`;
+          : `Audio Guide ${formatLabel} download failed.`;
 
       setClickTrackDownloadStatus(message);
 
@@ -17294,7 +17294,7 @@ export default function Page() {
         working: makeSongStage === "dry-run",
       },
       {
-        label: "Musical guide ready",
+        label: "Audio Guide ready",
         complete: Boolean(clickTrackAudioUrl),
         working: makeSongStage === "audio" || makeSongStage === "verify-audio",
       },
@@ -17889,7 +17889,7 @@ export default function Page() {
           const sectionRows = getGuideTrackSectionPlanRows(chordData);
 
           if (guideRows.length === 0 || sectionRows.length === 0) {
-            setMakeSongMessage("Creating the musical guide plan...");
+            setMakeSongMessage("Creating the Audio Guide plan...");
 
             const generatedGuidePlan = await generateGuideTrackPlan();
 
@@ -18006,7 +18006,7 @@ export default function Page() {
             );
           }
 
-          setMakeSongMessage("Rendering the musical guide...");
+          setMakeSongMessage("Rendering the Audio Guide...");
 
           const persistenceResult = await downloadMusicalGuide();
 
@@ -18023,16 +18023,16 @@ export default function Page() {
                       : "",
                   audioPersistenceMessage:
                     persistenceResult?.message ||
-                    "Musical guide persistence result was unavailable.",
+                    "Audio Guide persistence result was unavailable.",
                   events: [
                     ...current.events,
                     persistenceResult?.saved
-                      ? `Musical guide saved persistently${
+                      ? `Audio Guide saved persistently${
                           persistenceResult.audioVersionId
                             ? ` as audio version ${persistenceResult.audioVersionId}`
                             : ""
                         }.`
-                      : `WARNING: Musical guide was created but persistent save failed: ${
+                      : `WARNING: Audio Guide was created but persistent save failed: ${
                           persistenceResult?.message ||
                           "Unknown persistence error"
                         }`,
@@ -18051,12 +18051,12 @@ export default function Page() {
         if (makeSongStage === "verify-audio") {
           if (!clickTrackAudioUrl) {
             throw new Error(
-              "The musical guide WAV was not created. Review the audio status below.",
+              "The Audio Guide WAV was not created. Review the audio status below.",
             );
           }
 
           if (generatedAudioDuration <= 0) {
-            setMakeSongMessage("Finalising musical guide audio details...");
+            setMakeSongMessage("Finalising Audio Guide details...");
             return;
           }
 
@@ -18075,7 +18075,7 @@ export default function Page() {
           if (makeSongRunReport?.audioPersistenceStatus === "failed") {
             warnings.push(
               makeSongRunReport.audioPersistenceMessage ||
-                "The musical guide was created but was not saved persistently.",
+                "The Audio Guide was created but was not saved persistently.",
             );
           }
 
@@ -21864,7 +21864,7 @@ ${buildRewriteInstruction(
 
                         <p className="text-sm text-gray-400">
                           Turn the saved song, harmony and lyric/chord fit into
-                          a usable musical guide.
+                          a usable Audio Guide.
                         </p>
                       </div>
 
@@ -21879,7 +21879,7 @@ ${buildRewriteInstruction(
                       >
                         <div className="font-semibold">
                           {makeSongStage === "complete"
-                            ? "Musical guide ready ✓"
+                            ? "Audio Guide ready ✓"
                             : makeSongHasSavedSourceCheckpoint
                               ? "Saved checkpoint ready ✓"
                               : "Save a checkpoint first"}
@@ -21996,10 +21996,10 @@ ${buildRewriteInstruction(
                         </div>
                       </div>
 
-                      {/* MUSICAL GUIDE */}
+                      {/* AUDIO GUIDE */}
                       <div className="rounded border border-gray-800 bg-gray-900 p-3">
                         <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Musical guide
+                          Audio Guide
                         </div>
 
                         <div className="mt-2">
@@ -22069,7 +22069,7 @@ ${buildRewriteInstruction(
 
                               <div className="text-gray-200">
                                 {currentSavedMusicalGuideVersion?.title?.trim() ||
-                                  "Generated musical guide"}
+                                  "Generated Audio Guide"}
                               </div>
 
                               <div>
@@ -22184,7 +22184,7 @@ ${buildRewriteInstruction(
                                         <div className="flex flex-wrap items-center gap-2">
                                           <div className="truncate text-sm font-medium text-gray-100">
                                             {version.title?.trim() ||
-                                              "Generated musical guide"}
+                                              "Generated Audio Guide"}
                                           </div>
 
                                           {isCurrent && (
@@ -22311,7 +22311,7 @@ ${buildRewriteInstruction(
                           {projectSavedGuidesOpen && (
                             <div className="mt-3 space-y-2">
                               <div className="text-xs leading-5 text-gray-500">
-                                All musical guides saved for{" "}
+                                All Audio Guides saved for{" "}
                                 <span className="font-medium text-gray-300">
                                   {activeProject?.title || "this project"}
                                 </span>
@@ -22320,7 +22320,7 @@ ${buildRewriteInstruction(
 
                               {projectSavedMusicalGuideVersions.length === 0 ? (
                                 <div className="rounded border border-gray-800 bg-gray-950 px-3 py-3 text-sm text-gray-500">
-                                  No saved musical guides for this project.
+                                  No saved Audio Guides for this project.
                                 </div>
                               ) : (
                                 projectSavedMusicalGuideVersions.map(
@@ -22369,7 +22369,7 @@ ${buildRewriteInstruction(
                                         <div className="flex flex-wrap items-center gap-2">
                                           <div className="text-sm font-medium text-gray-100">
                                             {version.title?.trim() ||
-                                              "Generated musical guide"}
+                                              "Generated Audio Guide"}
                                           </div>
 
                                           {isCurrent && (
@@ -22463,7 +22463,7 @@ ${buildRewriteInstruction(
                     <div className="rounded border border-gray-800 bg-gray-950 p-3">
                       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                         <h3 className="text-sm font-semibold text-gray-100">
-                          Build musical guide
+                          Build Audio Guide
                         </h3>
 
                         <p className="text-xs text-gray-500">
@@ -23554,7 +23554,7 @@ ${buildRewriteInstruction(
                                       }
                                       className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
                                     >
-                                      Musical guide
+                                      Audio Guide
                                     </button>
 
                                     <button
@@ -23664,7 +23664,7 @@ ${buildRewriteInstruction(
 
                                   <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
                                     <div className="mb-2 text-xs font-semibold text-blue-100">
-                                      Musical guide mix for next render
+                                      Audio Guide mix for next render
                                     </div>
 
                                     <div className="grid gap-3 md:grid-cols-2">
@@ -23781,12 +23781,12 @@ ${buildRewriteInstruction(
                                     !dryRunArtifactPackage ||
                                     Boolean(chordActionBlockedReason)
                                   }
-                                  title="Generate and download a more musical guide WAV using chord tones, arpeggio, and bass root layers."
+                                  title="Generate and download an Audio Guide WAV using chord tones, arpeggio, and bass root layers."
                                   className="rounded border border-blue-800 px-3 py-1 text-xs font-medium text-blue-100 hover:bg-blue-950 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500"
                                 >
                                   {downloadingMusicalGuideWav
-                                    ? "Downloading musical guide WAV..."
-                                    : "Download musical guide WAV"}
+                                    ? "Downloading Audio Guide WAV..."
+                                    : "Download Audio Guide WAV"}
                                 </button>
 
                                 {clickTrackDownloadStatus ? (
@@ -28002,9 +28002,9 @@ ${buildRewriteInstruction(
                           </h2>
 
                           <div className="mt-1 max-w-2xl text-sm leading-6 text-gray-400">
-                            Build a usable musical guide from the current
-                            lyrics. Existing chord, songsheet, guide-plan, and
-                            audio stages are reused when they are already ready.
+                            Build a usable Audio Guide from the current lyrics.
+                            Existing chord, songsheet, guide-plan, and audio
+                            stages are reused when they are already ready.
                           </div>
                         </div>
 
@@ -28099,7 +28099,7 @@ ${buildRewriteInstruction(
 
                         <div className="mt-2 text-[11px] text-purple-200">
                           These settings shape the melody generated for the next
-                          musical guide. They do not change an already-rendered
+                          Audio Guide. They do not change an already-rendered
                           WAV.
                         </div>
                       </div>
@@ -28318,12 +28318,12 @@ ${buildRewriteInstruction(
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <h3 className="text-sm font-semibold text-gray-100">
-                              3. Prepare musical guide
+                              3. Prepare Audio Guide
                             </h3>
 
                             <div className="mt-1 text-xs text-gray-400">
                               Complete the required preparation steps before
-                              generating the musical guide.
+                              generating the Audio Guide.
                             </div>
                           </div>
 
@@ -29074,7 +29074,7 @@ ${buildRewriteInstruction(
                     <div className="mb-4 rounded border border-green-900 bg-green-950/30 p-3">
                       <div className="mb-2">
                         <div className="text-sm font-medium text-green-100">
-                          Musical guide
+                          Audio Guide
                         </div>
                         <div className="mt-1 text-xs text-green-300">
                           Generated Make Song WAV is available for performance
