@@ -6890,11 +6890,20 @@ export default function Page() {
         null
       : null;
 
+    const persistedOriginalKey = getOriginalKeyLabel() || "";
+    const persistedSongKey =
+      getDisplayedKeyLabel() || persistedOriginalKey || "";
+
+    const persistedTransposeSemitones = chordTransposeSemitones;
+
     const audioGuideTitle = [
       sourceSongVersion?.title?.trim() || "Untitled song version",
       sourceChordVersion?.title?.trim() || "Untitled chord checkpoint",
+      persistedSongKey ? `Key ${persistedSongKey}` : "",
       `${persistedTempoBpm} BPM`,
-    ].join(" · ");
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
     const { error: metadataError } = await supabase
       .from("audio_versions")
@@ -6909,6 +6918,9 @@ export default function Page() {
         duration_seconds: null,
         render_settings: {
           audioFormat,
+          originalKey: persistedOriginalKey || null,
+          songKey: persistedSongKey || null,
+          transposeSemitones: persistedTransposeSemitones,
           mixProfile: rendererMixProfile || "musical-guide",
           sampleRate: rendererSampleRate
             ? Number(rendererSampleRate) || null
@@ -6944,7 +6956,7 @@ export default function Page() {
 
     const supersededAudioQuery = supabase
       .from("audio_versions")
-      .select("id, storage_path")
+      .select("id, storage_path, render_settings")
       .eq("project_id", activeProject.id)
       .eq("song_version_id", activeSongVersionId)
       .eq("tempo_bpm", persistedTempoBpm)
@@ -6965,7 +6977,23 @@ export default function Page() {
         supersededAudioLookupError,
       );
     } else if (supersededAudioVersions?.length) {
-      const supersededStoragePaths = supersededAudioVersions
+      const sameKeySupersededAudioVersions = supersededAudioVersions.filter(
+        (version) => {
+          const settings =
+            version.render_settings &&
+            typeof version.render_settings === "object" &&
+            !Array.isArray(version.render_settings)
+              ? (version.render_settings as Record<string, unknown>)
+              : null;
+
+          const savedSongKey =
+            typeof settings?.songKey === "string" ? settings.songKey : "";
+
+          return savedSongKey === persistedSongKey;
+        },
+      );
+
+      const supersededStoragePaths = sameKeySupersededAudioVersions
         .map((version) => version.storage_path)
         .filter(
           (path): path is string =>
@@ -6983,7 +7011,7 @@ export default function Page() {
             supersededStorageDeleteError,
           );
         } else {
-          const supersededIds = supersededAudioVersions.map(
+          const supersededIds = sameKeySupersededAudioVersions.map(
             (version) => version.id,
           );
 
