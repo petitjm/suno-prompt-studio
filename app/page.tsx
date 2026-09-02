@@ -345,11 +345,9 @@ export default function Page() {
           chordsTask === "check" && generatingPlacedSongsheet
             ? ("working" as const)
             : placedSongSheetPreview
-              ? chordFitNeedsReview
-                ? chordFitReviewAccepted
-                  ? ("reviewed" as const)
-                  : ("ready" as const)
-                : ("complete" as const)
+              ? chordFitReviewAccepted
+                ? ("complete" as const)
+                : ("ready" as const)
               : hasUsableChordData()
                 ? ("ready" as const)
                 : ("blocked" as const),
@@ -15648,7 +15646,11 @@ export default function Page() {
     return occurrenceMap;
   };
 
-  const syncChordPlacementsToCurrentSongVersion = () => {
+  const syncChordPlacementsToCurrentSongVersion = (
+    options: {
+      preserveTranspose?: boolean;
+    } = {},
+  ) => {
     const currentSongLines = getMainSheetAudioPreviewLines();
 
     if (currentSongLines.length === 0) {
@@ -15708,7 +15710,11 @@ export default function Page() {
     setChords(nextRecord);
     setChordsText(JSON.stringify(nextRecord, null, 2));
     setActiveChordVersionId(null);
-    setChordTransposeSemitones(0);
+
+    if (!options.preserveTranspose) {
+      setChordTransposeSemitones(0);
+    }
+
     setLastAppliedTransposeSnapshot(null);
     resetAudioPreviewRequestState();
     setProjectMessage("");
@@ -16793,8 +16799,10 @@ export default function Page() {
   const chordFitNeedsReview =
     processedPreviewHasAlignmentIssue || chordFitHasPlacementIssues;
 
-  const chordFitCanBeAcceptedAsReviewed =
-    !processedPreviewHasAlignmentIssue && chordFitHasPlacementIssues;
+  const chordFitCanBeMarkedComplete =
+    Boolean(placedSongSheetPreview) &&
+    !processedPreviewHasAlignmentIssue &&
+    !processedPreviewSourceAlignmentIsChecking;
 
   const currentChordFitSignature = JSON.stringify({
     placedLines: getPlacedSongSheetLines(getChordDataFromEditorJson()),
@@ -16804,7 +16812,7 @@ export default function Page() {
   });
 
   const chordFitReviewAccepted =
-    chordFitCanBeAcceptedAsReviewed &&
+    chordFitCanBeMarkedComplete &&
     reviewedChordFitSignature === currentChordFitSignature;
 
   const chordFitReviewItemCount =
@@ -16994,7 +17002,6 @@ export default function Page() {
           return `${baseTitle || "Basic chord draft"} with songsheet and guide plan`;
         });
       }
-      setChordTransposeSemitones(0);
       setLastAppliedTransposeSnapshot(null);
       resetAudioPreviewRequestState();
       setChordExtractionMessage("Guide track plan generated.");
@@ -17997,7 +18004,9 @@ export default function Page() {
             "Aligning the chorded songsheet with the current Source...",
           );
 
-          syncChordPlacementsToCurrentSongVersion();
+          syncChordPlacementsToCurrentSongVersion({
+            preserveTranspose: true,
+          });
 
           if (!cancelled) {
             setMakeSongStage("verify-align");
@@ -20441,13 +20450,11 @@ ${buildRewriteInstruction(
                   const statusText =
                     task.status === "complete"
                       ? "Complete"
-                      : task.status === "reviewed"
-                        ? "Reviewed"
-                        : task.status === "working"
-                          ? "In progress"
-                          : task.status === "blocked"
-                            ? "Waiting"
-                            : "Ready";
+                      : task.status === "working"
+                        ? "In progress"
+                        : task.status === "blocked"
+                          ? "Waiting"
+                          : "Ready";
 
                   return (
                     <button
@@ -20465,17 +20472,14 @@ ${buildRewriteInstruction(
                           className={`mt-0.5 shrink-0 text-xs ${
                             task.status === "complete"
                               ? "text-green-400"
-                              : task.status === "reviewed"
-                                ? "text-green-300"
-                                : task.status === "working"
-                                  ? "text-blue-300"
-                                  : task.status === "blocked"
-                                    ? "text-gray-600"
-                                    : "text-purple-300"
+                              : task.status === "working"
+                                ? "text-blue-300"
+                                : task.status === "blocked"
+                                  ? "text-gray-600"
+                                  : "text-purple-300"
                           }`}
                         >
-                          {task.status === "complete" ||
-                          task.status === "reviewed"
+                          {task.status === "complete"
                             ? "✓"
                             : task.status === "working"
                               ? "●"
@@ -20491,13 +20495,11 @@ ${buildRewriteInstruction(
                             className={`mt-0.5 text-[10px] ${
                               task.status === "complete"
                                 ? "text-green-400"
-                                : task.status === "reviewed"
-                                  ? "text-green-300"
-                                  : task.status === "working"
-                                    ? "text-blue-300"
-                                    : task.status === "blocked"
-                                      ? "text-gray-600"
-                                      : "text-gray-500"
+                                : task.status === "working"
+                                  ? "text-blue-300"
+                                  : task.status === "blocked"
+                                    ? "text-gray-600"
+                                    : "text-gray-500"
                             }`}
                           >
                             {statusText}
@@ -21312,10 +21314,10 @@ ${buildRewriteInstruction(
                               {processedPreviewSourceAlignmentIsChecking
                                 ? "Checking..."
                                 : chordFitReviewAccepted
-                                  ? "Reviewed"
+                                  ? "Fit complete"
                                   : chordFitNeedsReview
                                     ? "Review needed"
-                                    : "Looks good"}
+                                    : "Review in progress"}
                             </div>
                           </div>
 
@@ -21376,55 +21378,59 @@ ${buildRewriteInstruction(
                                     {songsheetReviewSummaryLine}
                                   </div>
                                 )}
-                                {chordFitNeedsReview && (
-                                  <div className="mt-3 border-t border-gray-800 pt-3">
-                                    {processedPreviewHasAlignmentIssue ? (
-                                      <div className="text-xs leading-5 text-yellow-200">
-                                        The fitted sheet no longer matches the
-                                        saved song source. Rebuild the fit from
-                                        the current saved song before
-                                        continuing.
+                                <div className="mt-3 border-t border-gray-800 pt-3">
+                                  {processedPreviewHasAlignmentIssue ? (
+                                    <div className="text-xs leading-5 text-yellow-200">
+                                      The fitted sheet no longer matches the
+                                      saved song source. Rebuild the fit from
+                                      the current saved song before continuing.
+                                    </div>
+                                  ) : chordFitReviewAccepted ? (
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="text-xs text-green-200">
+                                        ✓ You have completed review of this
+                                        lyric/chord fit.
                                       </div>
-                                    ) : chordFitReviewAccepted ? (
-                                      <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <div className="text-xs text-green-200">
-                                          ✓ Chord placement reviewed and
-                                          accepted for the current fit.
-                                        </div>
 
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setReviewedChordFitSignature(null)
-                                          }
-                                          className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
-                                        >
-                                          Review again
-                                        </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setReviewedChordFitSignature(null)
+                                        }
+                                        className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                      >
+                                        Review again
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <div
+                                        className={`text-xs leading-5 ${
+                                          chordFitHasPlacementIssues
+                                            ? "text-yellow-200"
+                                            : "text-gray-400"
+                                        }`}
+                                      >
+                                        {chordFitHasPlacementIssues
+                                          ? "There are placement warnings to consider. Continue reviewing the whole song before marking the fit complete."
+                                          : "Review the lyric and chord placement through the whole song. Mark the fit complete only when you are satisfied."}
                                       </div>
-                                    ) : chordFitCanBeAcceptedAsReviewed ? (
-                                      <div>
-                                        <div className="text-xs leading-5 text-yellow-200">
-                                          Review the chord placement warning. If
-                                          the placement is intentional, you can
-                                          accept it.
-                                        </div>
 
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setReviewedChordFitSignature(
-                                              currentChordFitSignature,
-                                            )
-                                          }
-                                          className="mt-2 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500"
-                                        >
-                                          Mark reviewed
-                                        </button>
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                )}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setReviewedChordFitSignature(
+                                            currentChordFitSignature,
+                                          )
+                                        }
+                                        disabled={!chordFitCanBeMarkedComplete}
+                                        className="mt-2 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                                      >
+                                        Mark fit complete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -22059,13 +22065,14 @@ ${buildRewriteInstruction(
                             !activeProject ||
                             savingChords ||
                             !chordsText.trim() ||
-                            chordActionsAreBlocked
+                            chordActionsAreBlocked ||
+                            Boolean(activeChordVersionId)
                           }
                           className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                         >
                           {savingChords
                             ? "Saving checkpoint..."
-                            : justSavedChords
+                            : justSavedChords || activeChordVersionId
                               ? "Checkpoint saved ✓"
                               : "Save checkpoint"}
                         </button>
@@ -22115,6 +22122,173 @@ ${buildRewriteInstruction(
                             : makeSongHasSavedSourceCheckpoint
                               ? "Saved checkpoint ready ✓"
                               : "Save a checkpoint first"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded border border-gray-800 bg-gray-950 p-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-100">
+                          Creation settings
+                        </h3>
+
+                        <p className="mt-1 text-xs leading-5 text-gray-500">
+                          Check the musical settings that will be used before
+                          creating the Audio Guide.
+                        </p>
+                      </div>
+
+                      <div className="text-xs text-gray-500">
+                        Changes to tempo affect the next Audio Guide.
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Original Key - {getOriginalKeyLabel() || "—"}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-[minmax(0,1fr)_120px] gap-4">
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChordTransposeSemitones(
+                                  (value) => value - 1,
+                                );
+                                resetGeneratedAudioState();
+                              }}
+                              disabled={
+                                makeSongIsRunning || !placedSongSheetPreview
+                              }
+                              className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-600"
+                            >
+                              −1 semitone
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChordTransposeSemitones(0);
+                                resetGeneratedAudioState();
+                              }}
+                              disabled={
+                                makeSongIsRunning ||
+                                chordTransposeSemitones === 0
+                              }
+                              className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs font-medium text-gray-400 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-600"
+                            >
+                              Reset to saved key
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChordTransposeSemitones(
+                                  (value) => value + 1,
+                                );
+                                resetGeneratedAudioState();
+                              }}
+                              disabled={
+                                makeSongIsRunning || !placedSongSheetPreview
+                              }
+                              className="w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-600"
+                            >
+                              +1 semitone
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Song Key
+                            </div>
+
+                            <div className="mt-2 min-w-[72px] rounded border border-purple-800 bg-purple-950/30 px-4 py-2 text-center text-lg font-semibold text-purple-100">
+                              {getDisplayedKeyLabel() ||
+                                getOriginalKeyLabel() ||
+                                "—"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <label>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">
+                            Tempo
+                          </span>
+
+                          <div className="mt-2 flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={40}
+                              max={220}
+                              step={1}
+                              value={previewTempo}
+                              disabled={makeSongIsRunning}
+                              onChange={(event) => {
+                                const nextTempo = Number(event.target.value);
+
+                                if (
+                                  Number.isFinite(nextTempo) &&
+                                  nextTempo >= 40 &&
+                                  nextTempo <= 220
+                                ) {
+                                  handlePreviewTempoChange(nextTempo);
+                                }
+                              }}
+                              className="w-24 rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm font-medium text-gray-100 outline-none focus:border-purple-500 disabled:cursor-not-allowed disabled:text-gray-600"
+                            />
+
+                            <span className="text-sm text-gray-400">BPM</span>
+                          </div>
+                        </label>
+
+                        <div className="mt-2 text-xs leading-5 text-gray-500">
+                          This BPM is sent to the Audio Guide renderer.
+                        </div>
+                      </div>
+
+                      <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          File type
+                        </div>
+
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setMusicalGuideAudioFormat("mp3")}
+                            disabled={makeSongIsRunning}
+                            className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                              musicalGuideAudioFormat === "mp3"
+                                ? "border-purple-500 bg-purple-950/40 text-purple-100"
+                                : "border-gray-700 bg-gray-950 text-gray-400 hover:border-gray-600"
+                            } disabled:cursor-not-allowed disabled:opacity-50`}
+                          >
+                            MP3
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setMusicalGuideAudioFormat("wav")}
+                            disabled={makeSongIsRunning}
+                            className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                              musicalGuideAudioFormat === "wav"
+                                ? "border-purple-500 bg-purple-950/40 text-purple-100"
+                                : "border-gray-700 bg-gray-950 text-gray-400 hover:border-gray-600"
+                            } disabled:cursor-not-allowed disabled:opacity-50`}
+                          >
+                            WAV
+                          </button>
+                        </div>
+
+                        <div className="mt-2 text-xs text-gray-500">
+                          {musicalGuideAudioFormat === "mp3"
+                            ? "MP3 • smaller file • recommended"
+                            : "WAV • larger uncompressed file"}
                         </div>
                       </div>
                     </div>
