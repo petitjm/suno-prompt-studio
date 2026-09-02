@@ -545,6 +545,9 @@ export default function Page() {
 
   type SavedMusicalGuideVersion = {
     id: string;
+    project_id: string;
+    song_version_id: string;
+    chord_version_id: string | null;
     storage_path: string;
     title: string | null;
     tempo_bpm: number;
@@ -556,6 +559,13 @@ export default function Page() {
   const [savedMusicalGuideVersions, setSavedMusicalGuideVersions] = useState<
     SavedMusicalGuideVersion[]
   >([]);
+
+  const [
+    projectSavedMusicalGuideVersions,
+    setProjectSavedMusicalGuideVersions,
+  ] = useState<SavedMusicalGuideVersion[]>([]);
+
+  const [projectSavedGuidesOpen, setProjectSavedGuidesOpen] = useState(false);
 
   const [updatingRetainedAudioVersionId, setUpdatingRetainedAudioVersionId] =
     useState("");
@@ -3559,7 +3569,7 @@ export default function Page() {
     const { data, error } = await supabase
       .from("audio_versions")
       .select(
-        "id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained",
+        "id, project_id, song_version_id, chord_version_id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained",
       )
       .eq("project_id", projectId)
       .eq("song_version_id", songVersionId)
@@ -3575,6 +3585,26 @@ export default function Page() {
     setSavedMusicalGuideVersions((data || []) as SavedMusicalGuideVersion[]);
   };
 
+  const loadProjectSavedMusicalGuideVersions = async (projectId: string) => {
+    const { data, error } = await supabase
+      .from("audio_versions")
+      .select(
+        "id, project_id, song_version_id, chord_version_id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained",
+      )
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Project saved musical guide list failed:", error);
+      setProjectSavedMusicalGuideVersions([]);
+      return;
+    }
+
+    setProjectSavedMusicalGuideVersions(
+      (data || []) as SavedMusicalGuideVersion[],
+    );
+  };
+
   useEffect(() => {
     if (!activeProject?.id) {
       setSavedMusicalGuideVersions([]);
@@ -3587,6 +3617,15 @@ export default function Page() {
       chordVersionId: activeChordVersionId,
     });
   }, [activeProject?.id, activeSongVersionId, activeChordVersionId]);
+
+  useEffect(() => {
+    if (!activeProject?.id) {
+      setProjectSavedMusicalGuideVersions([]);
+      return;
+    }
+
+    void loadProjectSavedMusicalGuideVersions(activeProject.id);
+  }, [activeProject?.id]);
 
   const updateSavedMusicalGuideRetained = async (
     audioVersionId: string,
@@ -3607,6 +3646,17 @@ export default function Page() {
       }
 
       setSavedMusicalGuideVersions((current) =>
+        current.map((version) =>
+          version.id === audioVersionId
+            ? {
+                ...version,
+                is_retained: isRetained,
+              }
+            : version,
+        ),
+      );
+
+      setProjectSavedMusicalGuideVersions((current) =>
         current.map((version) =>
           version.id === audioVersionId
             ? {
@@ -3702,6 +3752,10 @@ export default function Page() {
       }
 
       setSavedMusicalGuideVersions((current) =>
+        current.filter((savedVersion) => savedVersion.id !== version.id),
+      );
+
+      setProjectSavedMusicalGuideVersions((current) =>
         current.filter((savedVersion) => savedVersion.id !== version.id),
       );
 
@@ -6757,6 +6811,8 @@ export default function Page() {
       songVersionId: activeSongVersionId,
       chordVersionId: sourceChordVersionId,
     });
+
+    await loadProjectSavedMusicalGuideVersions(activeProject.id);
 
     return {
       saved: true,
@@ -17459,6 +17515,20 @@ export default function Page() {
 
   const makeSongAudioIsReady = Boolean(clickTrackAudioUrl);
 
+  const currentMusicalGuideAudioVersionId =
+    generatedAudioSource === "persisted"
+      ? restoredAudioVersionId
+      : makeSongRunReport?.audioVersionId || "";
+
+  const currentSavedMusicalGuideVersion =
+    savedMusicalGuideVersions.find(
+      (version) => version.id === currentMusicalGuideAudioVersionId,
+    ) ||
+    projectSavedMusicalGuideVersions.find(
+      (version) => version.id === currentMusicalGuideAudioVersionId,
+    ) ||
+    null;
+
   const copyMakeSongRunReport = async () => {
     const text = buildMakeSongRunReportCopyText();
 
@@ -21992,14 +22062,33 @@ ${buildRewriteInstruction(
 
                         {makeSongAudioIsReady &&
                           generatedAudioSource === "persisted" && (
-                            <div className="mt-1 text-xs text-blue-200">
-                              Restored from saved audio
-                              {restoredAudioFormat
-                                ? ` · ${restoredAudioFormat.toUpperCase()}`
-                                : ""}
-                              {restoredAudioVersionId
-                                ? ` · Audio ID ${restoredAudioVersionId}`
-                                : ""}
+                            <div className="mt-1 space-y-1 text-xs text-blue-200">
+                              <div className="font-medium">
+                                Playing saved guide:
+                              </div>
+
+                              <div className="text-gray-200">
+                                {currentSavedMusicalGuideVersion?.title?.trim() ||
+                                  "Generated musical guide"}
+                              </div>
+
+                              <div>
+                                {(
+                                  restoredAudioFormat || musicalGuideAudioFormat
+                                ).toUpperCase()}
+                                {currentSavedMusicalGuideVersion
+                                  ? ` · ${currentSavedMusicalGuideVersion.tempo_bpm} BPM`
+                                  : ""}
+                                {currentSavedMusicalGuideVersion?.is_retained
+                                  ? " · Retained"
+                                  : ""}
+                              </div>
+
+                              {restoredAudioVersionId && (
+                                <div className="text-gray-500">
+                                  Audio ID {restoredAudioVersionId}
+                                </div>
+                              )}
                             </div>
                           )}
                         {generatedAudioSource === "current-session" &&
@@ -22077,35 +22166,53 @@ ${buildRewriteInstruction(
                                     ? "wav"
                                     : "mp3";
 
-                                const currentAudioVersionId =
-                                  generatedAudioSource === "persisted"
-                                    ? restoredAudioVersionId
-                                    : makeSongRunReport?.audioVersionId || "";
-
                                 const isCurrent =
-                                  currentAudioVersionId === version.id;
+                                  currentMusicalGuideAudioVersionId ===
+                                  version.id;
 
                                 return (
                                   <div
                                     key={version.id}
-                                    className="rounded border border-gray-800 bg-gray-950 px-3 py-2"
+                                    className={`rounded border px-3 py-2 ${
+                                      isCurrent
+                                        ? "border-blue-800 bg-blue-950/20"
+                                        : "border-gray-800 bg-gray-950"
+                                    }`}
                                   >
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                      <div>
-                                        <div className="text-sm text-gray-200">
-                                          {format.toUpperCase()} ·{" "}
-                                          {version.tempo_bpm} BPM
-                                          {isCurrent ? " · Current" : ""}
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                      <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <div className="truncate text-sm font-medium text-gray-100">
+                                            {version.title?.trim() ||
+                                              "Generated musical guide"}
+                                          </div>
+
+                                          {isCurrent && (
+                                            <span className="rounded border border-blue-700 bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-200">
+                                              Current
+                                            </span>
+                                          )}
+
+                                          {version.is_retained && (
+                                            <span className="rounded border border-green-700 bg-green-950/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-200">
+                                              Retained
+                                            </span>
+                                          )}
                                         </div>
 
-                                        <div className="mt-1 text-xs text-gray-500">
+                                        <div className="mt-1 text-xs text-gray-400">
+                                          {format.toUpperCase()} ·{" "}
+                                          {version.tempo_bpm} BPM
+                                        </div>
+
+                                        <div className="mt-1 text-xs text-gray-600">
                                           {new Date(
                                             version.created_at,
                                           ).toLocaleString("en-GB")}
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex flex-wrap items-center gap-2">
                                         <button
                                           type="button"
                                           onClick={() =>
@@ -22183,6 +22290,138 @@ ${buildRewriteInstruction(
                             </div>
                           </div>
                         )}
+                        <div className="mt-4 border-t border-gray-800 pt-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProjectSavedGuidesOpen((current) => !current)
+                            }
+                            className="flex w-full items-center justify-between gap-3 text-left"
+                          >
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Project saved guides
+                            </span>
+
+                            <span className="text-xs text-gray-600">
+                              {projectSavedMusicalGuideVersions.length} saved ·{" "}
+                              {projectSavedGuidesOpen ? "Hide" : "Show"}
+                            </span>
+                          </button>
+
+                          {projectSavedGuidesOpen && (
+                            <div className="mt-3 space-y-2">
+                              <div className="text-xs leading-5 text-gray-500">
+                                All musical guides saved for{" "}
+                                <span className="font-medium text-gray-300">
+                                  {activeProject?.title || "this project"}
+                                </span>
+                                .
+                              </div>
+
+                              {projectSavedMusicalGuideVersions.length === 0 ? (
+                                <div className="rounded border border-gray-800 bg-gray-950 px-3 py-3 text-sm text-gray-500">
+                                  No saved musical guides for this project.
+                                </div>
+                              ) : (
+                                projectSavedMusicalGuideVersions.map(
+                                  (version) => {
+                                    const renderSettings =
+                                      version.render_settings &&
+                                      typeof version.render_settings ===
+                                        "object" &&
+                                      !Array.isArray(version.render_settings)
+                                        ? version.render_settings
+                                        : null;
+
+                                    const format: MusicalGuideAudioFormat =
+                                      renderSettings?.audioFormat === "wav" ||
+                                      version.storage_path
+                                        .toLowerCase()
+                                        .endsWith(".wav")
+                                        ? "wav"
+                                        : "mp3";
+
+                                    const songVersion =
+                                      songVersions.find(
+                                        (song) =>
+                                          song.id === version.song_version_id,
+                                      ) || null;
+
+                                    const chordVersion =
+                                      chordVersions.find(
+                                        (chord) =>
+                                          chord.id === version.chord_version_id,
+                                      ) || null;
+
+                                    const isCurrent =
+                                      currentMusicalGuideAudioVersionId ===
+                                      version.id;
+
+                                    return (
+                                      <div
+                                        key={version.id}
+                                        className={`rounded border px-3 py-3 ${
+                                          isCurrent
+                                            ? "border-blue-800 bg-blue-950/20"
+                                            : "border-gray-800 bg-gray-950"
+                                        }`}
+                                      >
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <div className="text-sm font-medium text-gray-100">
+                                            {version.title?.trim() ||
+                                              "Generated musical guide"}
+                                          </div>
+
+                                          {isCurrent && (
+                                            <span className="rounded border border-blue-700 bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-200">
+                                              Current
+                                            </span>
+                                          )}
+
+                                          {version.is_retained && (
+                                            <span className="rounded border border-green-700 bg-green-950/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-200">
+                                              Retained
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="mt-2 space-y-1 text-xs text-gray-400">
+                                          <div>
+                                            Song version:{" "}
+                                            <span className="text-gray-200">
+                                              {songVersion?.title ||
+                                                version.song_version_id}
+                                            </span>
+                                          </div>
+
+                                          <div>
+                                            Chord checkpoint:{" "}
+                                            <span className="text-gray-200">
+                                              {chordVersion?.title ||
+                                                version.chord_version_id ||
+                                                "No saved checkpoint"}
+                                            </span>
+                                          </div>
+
+                                          <div>
+                                            {format.toUpperCase()} ·{" "}
+                                            {version.tempo_bpm} BPM
+                                          </div>
+
+                                          <div className="text-gray-600">
+                                            {new Date(
+                                              version.created_at,
+                                            ).toLocaleString("en-GB")}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  },
+                                )
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
