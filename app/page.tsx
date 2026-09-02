@@ -22206,7 +22206,8 @@ ${buildRewriteInstruction(
                               )}
                             </div>
                           )}
-                        {generatedAudioSource === "current-session" &&
+                        {makeSongAudioIsReady &&
+                          generatedAudioSource === "current-session" &&
                           makeSongRunReport?.audioPersistenceStatus !==
                             "pending" && (
                             <div
