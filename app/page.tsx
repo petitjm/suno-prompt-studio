@@ -6807,6 +6807,21 @@ export default function Page() {
         ? Number(rendererTempoBpm)
         : previewTempo;
 
+    const sourceSongVersion =
+      songVersions.find((version) => version.id === activeSongVersionId) ||
+      null;
+
+    const sourceChordVersion = sourceChordVersionId
+      ? chordVersions.find((version) => version.id === sourceChordVersionId) ||
+        null
+      : null;
+
+    const audioGuideTitle = [
+      sourceSongVersion?.title?.trim() || "Untitled song version",
+      sourceChordVersion?.title?.trim() || "Untitled chord checkpoint",
+      `${persistedTempoBpm} BPM`,
+    ].join(" · ");
+
     const { error: metadataError } = await supabase
       .from("audio_versions")
       .insert({
@@ -6814,8 +6829,7 @@ export default function Page() {
         project_id: activeProject.id,
         song_version_id: activeSongVersionId,
         chord_version_id: sourceChordVersionId,
-        title:
-          filename.replace(/\.(?:wav|mp3)$/i, "") || "Generated Audio Guide",
+        title: audioGuideTitle,
         storage_path: storagePath,
         tempo_bpm: persistedTempoBpm,
         duration_seconds: null,
