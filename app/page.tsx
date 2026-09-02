@@ -3716,6 +3716,114 @@ export default function Page() {
     }
   };
 
+  const loadProjectSavedMusicalGuideVersion = async (
+    version: SavedMusicalGuideVersion,
+  ) => {
+    if (!activeProject?.id || version.project_id !== activeProject.id) {
+      setClickTrackDownloadStatus(
+        "This Audio Guide does not belong to the current project.",
+      );
+      return;
+    }
+
+    if (!version.song_version_id || !version.chord_version_id) {
+      setClickTrackDownloadStatus(
+        "This Audio Guide cannot be loaded because its saved song or chord checkpoint is missing.",
+      );
+      return;
+    }
+
+    const songVersion =
+      songVersions.find((song) => song.id === version.song_version_id) || null;
+
+    const chordVersion =
+      chordVersions.find((chord) => chord.id === version.chord_version_id) ||
+      null;
+
+    if (!songVersion || !chordVersion) {
+      setClickTrackDownloadStatus(
+        "The saved song version or chord checkpoint for this Audio Guide is not available.",
+      );
+      return;
+    }
+
+    if (chordVersion.song_version_id !== songVersion.id) {
+      setClickTrackDownloadStatus(
+        "This Audio Guide has inconsistent song and chord checkpoint provenance and was not loaded.",
+      );
+      return;
+    }
+
+    setLoadingSavedAudioVersionId(version.id);
+
+    try {
+      const lyrics = getSongVersionLyrics(songVersion);
+      const restoredMusicalIntent = getSongVersionMusicalIntent(songVersion);
+
+      resetAudioPreviewRequestState();
+      resetGeneratedAudioState();
+
+      setActiveSongVersionId(songVersion.id);
+      setSourceSongVersionId(songVersion.id);
+      setPerformanceSheet(lyrics);
+      setSongVersionTitle(songVersion.title || "");
+
+      setMelodyCharacter(restoredMusicalIntent.character);
+      setMelodySectionIntents(restoredMusicalIntent.sectionIntents);
+
+      setActiveChordVersionId(chordVersion.id);
+      setChordVersionTitle(chordVersion.title || "Untitled chord version");
+      setChords(chordVersion.chord_data || null);
+      setChordsText(JSON.stringify(chordVersion.chord_data || {}, null, 2));
+
+      setChordTransposeSemitones(0);
+      setLastAppliedTransposeSnapshot(null);
+      setSourceHasUnsavedChanges(false);
+
+      clearChordWorkingDraft(activeProject.id, songVersion.id);
+      restoredChordWorkingDraftKeyRef.current = "";
+
+      setChordExtractionMessage(
+        `Loaded saved chord checkpoint: ${
+          chordVersion.title || "Untitled chord version"
+        }.`,
+      );
+
+      const restored = await restorePersistedAudioForState({
+        projectId: activeProject.id,
+        songVersionId: songVersion.id,
+        chordVersionId: chordVersion.id,
+        tempoBpm: version.tempo_bpm,
+        audioVersionId: version.id,
+      });
+
+      if (!restored) {
+        setClickTrackDownloadStatus(
+          "The song and chord checkpoint were loaded, but the selected Audio Guide could not be restored.",
+        );
+        return;
+      }
+
+      setProjectMessage(
+        `Loaded Audio Guide for song version "${
+          songVersion.title || "Untitled version"
+        }" and chord checkpoint "${
+          chordVersion.title || "Untitled chord version"
+        }".`,
+      );
+    } catch (error) {
+      console.error("Could not load project Audio Guide:", error);
+
+      setClickTrackDownloadStatus(
+        error instanceof Error
+          ? `Could not load project Audio Guide: ${error.message}`
+          : "Could not load project Audio Guide.",
+      );
+    } finally {
+      setLoadingSavedAudioVersionId("");
+    }
+  };
+
   const deleteSavedMusicalGuideVersion = async (
     version: SavedMusicalGuideVersion,
   ) => {
@@ -22141,7 +22249,7 @@ ${buildRewriteInstruction(
                           <div className="mt-4 border-t border-gray-800 pt-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Saved guides
+                                Saved Audio Guides
                               </div>
 
                               <div className="text-xs text-gray-600">
@@ -22299,7 +22407,7 @@ ${buildRewriteInstruction(
                             className="flex w-full items-center justify-between gap-3 text-left"
                           >
                             <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Project saved guides
+                              Project Audio Guides
                             </span>
 
                             <span className="text-xs text-gray-600">
@@ -22412,6 +22520,38 @@ ${buildRewriteInstruction(
                                             {new Date(
                                               version.created_at,
                                             ).toLocaleString("en-GB")}
+                                          </div>
+                                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                void loadProjectSavedMusicalGuideVersion(
+                                                  version,
+                                                )
+                                              }
+                                              disabled={
+                                                loadingSavedAudioVersionId ===
+                                                  version.id ||
+                                                isCurrent ||
+                                                !version.song_version_id ||
+                                                !version.chord_version_id
+                                              }
+                                              className="rounded border border-blue-800 bg-blue-950/30 px-3 py-1.5 text-xs font-medium text-blue-200 hover:border-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                              {loadingSavedAudioVersionId ===
+                                              version.id
+                                                ? "Loading..."
+                                                : isCurrent
+                                                  ? "Loaded ✓"
+                                                  : "Load"}
+                                            </button>
+
+                                            {!version.chord_version_id && (
+                                              <span className="text-xs text-yellow-300">
+                                                Cannot load · no saved chord
+                                                checkpoint
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                       </div>
