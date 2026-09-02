@@ -22107,7 +22107,7 @@ ${buildRewriteInstruction(
                       {/* AUDIO GUIDE */}
                       <div className="rounded border border-gray-800 bg-gray-900 p-3">
                         <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Audio Guide
+                          Current Audio Guide
                         </div>
 
                         <div className="mt-2">
@@ -22165,7 +22165,14 @@ ${buildRewriteInstruction(
                               : `${musicalGuideAudioFormat.toUpperCase()} ready ✓`
                             : makeSongIsRunning
                               ? "Creating..."
-                              : "Not created yet"}
+                              : "No Audio Guide loaded"}
+
+                          {!makeSongAudioIsReady && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              Create a new Audio Guide or load one from Project
+                              Audio Guides.
+                            </div>
+                          )}
                         </div>
 
                         {makeSongAudioIsReady &&
@@ -22245,160 +22252,7 @@ ${buildRewriteInstruction(
                           />
                         )}
 
-                        {savedMusicalGuideVersions.length > 0 && (
-                          <div className="mt-4 border-t border-gray-800 pt-3">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Saved Audio Guides
-                              </div>
-
-                              <div className="text-xs text-gray-600">
-                                {savedMusicalGuideVersions.length} saved
-                              </div>
-                            </div>
-
-                            <div className="mt-2 space-y-2">
-                              {savedMusicalGuideVersions.map((version) => {
-                                const renderSettings =
-                                  version.render_settings &&
-                                  typeof version.render_settings === "object" &&
-                                  !Array.isArray(version.render_settings)
-                                    ? version.render_settings
-                                    : null;
-
-                                const format: MusicalGuideAudioFormat =
-                                  renderSettings?.audioFormat === "wav" ||
-                                  version.storage_path
-                                    .toLowerCase()
-                                    .endsWith(".wav")
-                                    ? "wav"
-                                    : "mp3";
-
-                                const isCurrent =
-                                  currentMusicalGuideAudioVersionId ===
-                                  version.id;
-
-                                return (
-                                  <div
-                                    key={version.id}
-                                    className={`rounded border px-3 py-2 ${
-                                      isCurrent
-                                        ? "border-blue-800 bg-blue-950/20"
-                                        : "border-gray-800 bg-gray-950"
-                                    }`}
-                                  >
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                      <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <div className="truncate text-sm font-medium text-gray-100">
-                                            {version.title?.trim() ||
-                                              "Generated Audio Guide"}
-                                          </div>
-
-                                          {isCurrent && (
-                                            <span className="rounded border border-blue-700 bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-200">
-                                              Current
-                                            </span>
-                                          )}
-
-                                          {version.is_retained && (
-                                            <span className="rounded border border-green-700 bg-green-950/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-200">
-                                              Retained
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        <div className="mt-1 text-xs text-gray-400">
-                                          {format.toUpperCase()} ·{" "}
-                                          {version.tempo_bpm} BPM
-                                        </div>
-
-                                        <div className="mt-1 text-xs text-gray-600">
-                                          {new Date(
-                                            version.created_at,
-                                          ).toLocaleString("en-GB")}
-                                        </div>
-                                      </div>
-
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            void loadSavedMusicalGuideVersion(
-                                              version,
-                                            )
-                                          }
-                                          disabled={
-                                            loadingSavedAudioVersionId ===
-                                              version.id || isCurrent
-                                          }
-                                          className="rounded border border-blue-800 bg-blue-950/30 px-3 py-1.5 text-xs font-medium text-blue-200 hover:border-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                          {loadingSavedAudioVersionId ===
-                                          version.id
-                                            ? "Loading..."
-                                            : isCurrent
-                                              ? "Loaded ✓"
-                                              : "Load"}
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            void updateSavedMusicalGuideRetained(
-                                              version.id,
-                                              !version.is_retained,
-                                            )
-                                          }
-                                          disabled={
-                                            updatingRetainedAudioVersionId ===
-                                            version.id
-                                          }
-                                          className={`rounded border px-3 py-1.5 text-xs font-medium ${
-                                            version.is_retained
-                                              ? "border-green-700 bg-green-950/30 text-green-200"
-                                              : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
-                                          } disabled:cursor-not-allowed disabled:opacity-50`}
-                                        >
-                                          {updatingRetainedAudioVersionId ===
-                                          version.id
-                                            ? "Updating..."
-                                            : version.is_retained
-                                              ? "Retained ✓"
-                                              : "Retain"}
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            void deleteSavedMusicalGuideVersion(
-                                              version,
-                                            )
-                                          }
-                                          disabled={
-                                            deletingSavedAudioVersionId ===
-                                              version.id ||
-                                            loadingSavedAudioVersionId ===
-                                              version.id ||
-                                            updatingRetainedAudioVersionId ===
-                                              version.id
-                                          }
-                                          className="rounded border border-red-900 bg-red-950/20 px-3 py-1.5 text-xs font-medium text-red-200 hover:border-red-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                          {deletingSavedAudioVersionId ===
-                                          version.id
-                                            ? "Deleting..."
-                                            : "Delete"}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                        <div className="mt-4 border-t border-gray-800 pt-3">
+                        <div className="mt-6 border-t-2 border-gray-700 pt-4">
                           <button
                             type="button"
                             onClick={() =>
@@ -22544,6 +22398,55 @@ ${buildRewriteInstruction(
                                                 : isCurrent
                                                   ? "Loaded ✓"
                                                   : "Load"}
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                void updateSavedMusicalGuideRetained(
+                                                  version.id,
+                                                  !version.is_retained,
+                                                )
+                                              }
+                                              disabled={
+                                                updatingRetainedAudioVersionId ===
+                                                version.id
+                                              }
+                                              className={`rounded border px-3 py-1.5 text-xs font-medium ${
+                                                version.is_retained
+                                                  ? "border-green-700 bg-green-950/30 text-green-200"
+                                                  : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
+                                              } disabled:cursor-not-allowed disabled:opacity-50`}
+                                            >
+                                              {updatingRetainedAudioVersionId ===
+                                              version.id
+                                                ? "Updating..."
+                                                : version.is_retained
+                                                  ? "Retained ✓"
+                                                  : "Retain"}
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                void deleteSavedMusicalGuideVersion(
+                                                  version,
+                                                )
+                                              }
+                                              disabled={
+                                                deletingSavedAudioVersionId ===
+                                                  version.id ||
+                                                loadingSavedAudioVersionId ===
+                                                  version.id ||
+                                                updatingRetainedAudioVersionId ===
+                                                  version.id
+                                              }
+                                              className="rounded border border-red-900 bg-red-950/20 px-3 py-1.5 text-xs font-medium text-red-200 hover:border-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                              {deletingSavedAudioVersionId ===
+                                              version.id
+                                                ? "Deleting..."
+                                                : "Delete"}
                                             </button>
 
                                             {!version.chord_version_id && (
