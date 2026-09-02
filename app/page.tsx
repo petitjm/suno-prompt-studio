@@ -543,6 +543,8 @@ export default function Page() {
   const [musicalGuideAudioFormat, setMusicalGuideAudioFormat] =
     useState<MusicalGuideAudioFormat>("mp3");
 
+  type AudioGuideReviewStatus = "unreviewed" | "useful" | "not_useful";
+
   type SavedMusicalGuideVersion = {
     id: string;
     project_id: string;
@@ -554,6 +556,9 @@ export default function Page() {
     render_settings: Record<string, unknown> | null;
     created_at: string;
     is_retained: boolean;
+    review_status: AudioGuideReviewStatus;
+    review_note: string | null;
+    reviewed_at: string | null;
   };
 
   const [savedMusicalGuideVersions, setSavedMusicalGuideVersions] = useState<
@@ -574,6 +579,14 @@ export default function Page() {
     useState("");
 
   const [deletingSavedAudioVersionId, setDeletingSavedAudioVersionId] =
+    useState("");
+
+  const [reviewingSavedAudioVersionId, setReviewingSavedAudioVersionId] =
+    useState("");
+
+  const [savingAudioGuideReviewId, setSavingAudioGuideReviewId] = useState("");
+
+  const [audioGuideReviewNoteDraft, setAudioGuideReviewNoteDraft] =
     useState("");
 
   useEffect(() => {
@@ -3569,7 +3582,7 @@ export default function Page() {
     const { data, error } = await supabase
       .from("audio_versions")
       .select(
-        "id, project_id, song_version_id, chord_version_id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained",
+        "id, project_id, song_version_id, chord_version_id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained, review_status, review_note, reviewed_at",
       )
       .eq("project_id", projectId)
       .eq("song_version_id", songVersionId)
@@ -3589,7 +3602,7 @@ export default function Page() {
     const { data, error } = await supabase
       .from("audio_versions")
       .select(
-        "id, project_id, song_version_id, chord_version_id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained",
+        "id, project_id, song_version_id, chord_version_id, storage_path, title, tempo_bpm, render_settings, created_at, is_retained, review_status, review_note, reviewed_at",
       )
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
@@ -3682,6 +3695,69 @@ export default function Page() {
       );
     } finally {
       setUpdatingRetainedAudioVersionId("");
+    }
+  };
+
+  const saveAudioGuideReview = async (
+    version: SavedMusicalGuideVersion,
+    reviewStatus: AudioGuideReviewStatus,
+  ) => {
+    setSavingAudioGuideReviewId(version.id);
+
+    try {
+      const reviewNote = audioGuideReviewNoteDraft.trim() || null;
+      const reviewedAt =
+        reviewStatus === "unreviewed" ? null : new Date().toISOString();
+
+      const { error } = await supabase
+        .from("audio_versions")
+        .update({
+          review_status: reviewStatus,
+          review_note: reviewStatus === "unreviewed" ? null : reviewNote,
+          reviewed_at: reviewedAt,
+        })
+        .eq("id", version.id);
+
+      if (error) {
+        throw error;
+      }
+
+      const updateVersion = (savedVersion: SavedMusicalGuideVersion) =>
+        savedVersion.id === version.id
+          ? {
+              ...savedVersion,
+              review_status: reviewStatus,
+              review_note: reviewStatus === "unreviewed" ? null : reviewNote,
+              reviewed_at: reviewedAt,
+            }
+          : savedVersion;
+
+      setSavedMusicalGuideVersions((current) => current.map(updateVersion));
+
+      setProjectSavedMusicalGuideVersions((current) =>
+        current.map(updateVersion),
+      );
+
+      setReviewingSavedAudioVersionId("");
+      setAudioGuideReviewNoteDraft("");
+
+      setClickTrackDownloadStatus(
+        reviewStatus === "unreviewed"
+          ? "Audio Guide review cleared."
+          : reviewStatus === "useful"
+            ? "Audio Guide marked useful."
+            : "Audio Guide marked not useful.",
+      );
+    } catch (error) {
+      console.error("Could not save Audio Guide review:", error);
+
+      setClickTrackDownloadStatus(
+        error instanceof Error
+          ? `Could not save Audio Guide review: ${error.message}`
+          : "Could not save Audio Guide review.",
+      );
+    } finally {
+      setSavingAudioGuideReviewId("");
     }
   };
 
@@ -21411,7 +21487,7 @@ ${buildRewriteInstruction(
                       </p>
                     </div>
                   ) : (
-                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)] xl:items-start">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)] lg:items-start">
                       {/* LEFT: PERFORMANCE SHEET */}
                       <div className="rounded border border-gray-800 bg-gray-950">
                         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-800 p-4">
@@ -21520,7 +21596,7 @@ ${buildRewriteInstruction(
                       </div>
 
                       {/* RIGHT: EDIT + FIT CHECK */}
-                      <div>
+                      <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-32px)] lg:overflow-y-auto lg:pr-1">
                         {/* SELECTED LINE EDITOR */}
                         <div
                           ref={fitEditorRef}
@@ -21692,37 +21768,71 @@ ${buildRewriteInstruction(
                                         )}
                                       </div>
 
-                                      <div className="mt-3 flex flex-wrap gap-1.5">
+                                      <div className="mt-3 flex flex-wrap gap-x-2 gap-y-2">
                                         {getLyricWordPositions(line.lyric).map(
                                           (word) => {
                                             const canPlaceHere =
                                               movingChordTarget?.lineIndex ===
                                               lineIndex;
 
-                                            return (
-                                              <button
-                                                key={`${word.charIndex}-${word.word}`}
-                                                type="button"
-                                                disabled={!canPlaceHere}
-                                                onClick={() => {
-                                                  if (!movingChordTarget) {
-                                                    return;
-                                                  }
+                                            if (!canPlaceHere) {
+                                              return (
+                                                <span
+                                                  key={`${word.charIndex}-${word.word}`}
+                                                  className="rounded border border-transparent px-1 py-1 text-sm text-gray-300"
+                                                >
+                                                  {word.word}
+                                                </span>
+                                              );
+                                            }
 
-                                                  movePlacedChordToWord(
-                                                    lineIndex,
-                                                    movingChordTarget.chordIndex,
-                                                    word.charIndex,
-                                                  );
-                                                }}
-                                                className={`rounded px-2 py-1 text-sm ${
-                                                  canPlaceHere
-                                                    ? "border border-purple-700 bg-purple-950/30 text-purple-100 hover:bg-purple-900/50"
-                                                    : "border border-transparent text-gray-300"
-                                                }`}
+                                            return (
+                                              <span
+                                                key={`${word.charIndex}-${word.word}`}
+                                                className="inline-flex overflow-hidden rounded border border-purple-800 bg-purple-950/20"
                                               >
-                                                {word.word}
-                                              </button>
+                                                {word.word
+                                                  .split("")
+                                                  .map(
+                                                    (
+                                                      character,
+                                                      characterOffset,
+                                                    ) => {
+                                                      const charIndex =
+                                                        word.charIndex +
+                                                        characterOffset;
+
+                                                      return (
+                                                        <button
+                                                          key={`${charIndex}-${characterOffset}`}
+                                                          type="button"
+                                                          onClick={() => {
+                                                            if (
+                                                              !movingChordTarget
+                                                            ) {
+                                                              return;
+                                                            }
+
+                                                            movePlacedChordToWord(
+                                                              lineIndex,
+                                                              movingChordTarget.chordIndex,
+                                                              charIndex,
+                                                            );
+                                                          }}
+                                                          title={
+                                                            characterOffset ===
+                                                            0
+                                                              ? `Place chord at start of "${word.word}"`
+                                                              : `Place chord before "${character}"`
+                                                          }
+                                                          className="min-w-[1.25rem] border-r border-purple-900/60 px-0.5 py-1 text-center text-sm text-purple-100 last:border-r-0 hover:bg-purple-700 hover:text-white"
+                                                        >
+                                                          {character}
+                                                        </button>
+                                                      );
+                                                    },
+                                                  )}
+                                              </span>
                                             );
                                           },
                                         )}
@@ -22389,6 +22499,168 @@ ${buildRewriteInstruction(
                                             {new Date(
                                               version.created_at,
                                             ).toLocaleString("en-GB")}
+                                          </div>
+
+                                          <div className="mt-3 border-t border-gray-800 pt-3">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                              <div className="flex flex-wrap items-center gap-2">
+                                                {version.review_status ===
+                                                "useful" ? (
+                                                  <span className="rounded border border-green-700 bg-green-950/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-200">
+                                                    Useful
+                                                  </span>
+                                                ) : version.review_status ===
+                                                  "not_useful" ? (
+                                                  <span className="rounded border border-red-800 bg-red-950/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-200">
+                                                    Not useful
+                                                  </span>
+                                                ) : (
+                                                  <span className="rounded border border-yellow-800 bg-yellow-950/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-yellow-200">
+                                                    Unreviewed
+                                                  </span>
+                                                )}
+
+                                                {version.reviewed_at && (
+                                                  <span className="text-[10px] text-gray-600">
+                                                    Reviewed{" "}
+                                                    {new Date(
+                                                      version.reviewed_at,
+                                                    ).toLocaleString("en-GB")}
+                                                  </span>
+                                                )}
+                                              </div>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (
+                                                    reviewingSavedAudioVersionId ===
+                                                    version.id
+                                                  ) {
+                                                    setReviewingSavedAudioVersionId(
+                                                      "",
+                                                    );
+                                                    setAudioGuideReviewNoteDraft(
+                                                      "",
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  setReviewingSavedAudioVersionId(
+                                                    version.id,
+                                                  );
+                                                  setAudioGuideReviewNoteDraft(
+                                                    version.review_note || "",
+                                                  );
+                                                }}
+                                                disabled={
+                                                  savingAudioGuideReviewId ===
+                                                  version.id
+                                                }
+                                                className="rounded border border-gray-700 bg-gray-900 px-2.5 py-1 text-xs font-medium text-gray-300 hover:border-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                              >
+                                                {reviewingSavedAudioVersionId ===
+                                                version.id
+                                                  ? "Cancel review"
+                                                  : version.review_status ===
+                                                      "unreviewed"
+                                                    ? "Review"
+                                                    : "Edit review"}
+                                              </button>
+                                            </div>
+
+                                            {version.review_note &&
+                                              reviewingSavedAudioVersionId !==
+                                                version.id && (
+                                                <div className="mt-2 text-xs leading-5 text-gray-300">
+                                                  {version.review_note}
+                                                </div>
+                                              )}
+
+                                            {reviewingSavedAudioVersionId ===
+                                              version.id && (
+                                              <div className="mt-3 rounded border border-gray-800 bg-gray-950/60 p-3">
+                                                <label className="block text-xs font-medium text-gray-300">
+                                                  Review note
+                                                </label>
+
+                                                <textarea
+                                                  value={
+                                                    audioGuideReviewNoteDraft
+                                                  }
+                                                  onChange={(event) =>
+                                                    setAudioGuideReviewNoteDraft(
+                                                      event.target.value,
+                                                    )
+                                                  }
+                                                  rows={3}
+                                                  placeholder="Optional: what was useful, weak, misleading, or worth changing?"
+                                                  className="mt-2 w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 outline-none focus:border-blue-600"
+                                                />
+
+                                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                      void saveAudioGuideReview(
+                                                        version,
+                                                        "useful",
+                                                      )
+                                                    }
+                                                    disabled={
+                                                      savingAudioGuideReviewId ===
+                                                      version.id
+                                                    }
+                                                    className="rounded border border-green-700 bg-green-950/30 px-3 py-1.5 text-xs font-medium text-green-200 hover:border-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                  >
+                                                    {savingAudioGuideReviewId ===
+                                                    version.id
+                                                      ? "Saving..."
+                                                      : "Useful"}
+                                                  </button>
+
+                                                  <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                      void saveAudioGuideReview(
+                                                        version,
+                                                        "not_useful",
+                                                      )
+                                                    }
+                                                    disabled={
+                                                      savingAudioGuideReviewId ===
+                                                      version.id
+                                                    }
+                                                    className="rounded border border-red-800 bg-red-950/20 px-3 py-1.5 text-xs font-medium text-red-200 hover:border-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                  >
+                                                    {savingAudioGuideReviewId ===
+                                                    version.id
+                                                      ? "Saving..."
+                                                      : "Not useful"}
+                                                  </button>
+
+                                                  {version.review_status !==
+                                                    "unreviewed" && (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        void saveAudioGuideReview(
+                                                          version,
+                                                          "unreviewed",
+                                                        )
+                                                      }
+                                                      disabled={
+                                                        savingAudioGuideReviewId ===
+                                                        version.id
+                                                      }
+                                                      className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:border-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                      Clear review
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
                                           </div>
                                           <div className="mt-3 flex flex-wrap items-center gap-2">
                                             <button
