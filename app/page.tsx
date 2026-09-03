@@ -15073,6 +15073,8 @@ export default function Page() {
   type PlacedChord = {
     chord: string;
     charIndex: number;
+    bar?: number;
+    beat?: number;
   };
 
   type PlacedSongSheetLine = {
@@ -15796,6 +15798,9 @@ export default function Page() {
               getNumberValue(chordRecord.index) ??
               getNumberValue(chordRecord.position);
 
+            const rawBar = getNumberValue(chordRecord.bar);
+            const rawBeat = getNumberValue(chordRecord.beat);
+
             if (!chord || rawIndex === null) {
               return null;
             }
@@ -15803,6 +15808,10 @@ export default function Page() {
             return {
               chord,
               charIndex: Math.max(0, Math.floor(rawIndex)),
+              ...(rawBar !== null && rawBar >= 1
+                ? { bar: Math.floor(rawBar) }
+                : {}),
+              ...(rawBeat !== null && rawBeat >= 1 ? { beat: rawBeat } : {}),
             };
           })
           .filter((chord): chord is PlacedChord => Boolean(chord));
