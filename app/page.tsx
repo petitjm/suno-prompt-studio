@@ -294,9 +294,27 @@ export default function Page() {
     string | null
   >(null);
   const getChordTasks = () => {
-    const hasSavedChordCheckpoint = Boolean(
-      activeChordVersionId || makeSongRunReport?.chordVersionId,
+    const activeSavedChordCheckpointIsValid = Boolean(
+      activeChordVersionId &&
+      activeChordVersion?.song_version_id &&
+      activeSongVersionId &&
+      activeChordVersion.song_version_id === activeSongVersionId,
     );
+
+    const makeSongSourceChordVersion = makeSongRunReport?.chordVersionId
+      ? chordVersions.find(
+          (version) => version.id === makeSongRunReport.chordVersionId,
+        ) || null
+      : null;
+
+    const makeSongSavedChordCheckpointIsValid = Boolean(
+      makeSongSourceChordVersion?.song_version_id &&
+      activeSongVersionId &&
+      makeSongSourceChordVersion.song_version_id === activeSongVersionId,
+    );
+
+    const hasSavedChordCheckpoint =
+      activeSavedChordCheckpointIsValid || makeSongSavedChordCheckpointIsValid;
 
     const hasPendingMakeSongChordRevision =
       makeSongRunReport?.finalChordState ===
@@ -2300,6 +2318,22 @@ export default function Page() {
     audioVersionId: string;
   };
 
+  const rememberSongChordContext = (
+    projectId: string,
+    songVersionId: string | null,
+    chordVersionId: string | null,
+  ) => {
+    if (!songVersionId || !chordVersionId) {
+      return;
+    }
+
+    saveLastUsedSongContext(projectId, {
+      songVersionId,
+      chordVersionId,
+      audioVersionId: "",
+    });
+  };
+
   const getLastUsedSongContextStorageKey = (projectId: string) =>
     `suno-prompt-studio:last-used-song-context:${projectId}`;
 
@@ -2467,6 +2501,14 @@ export default function Page() {
       );
       setChords(matchingChordData);
       setChordsText(JSON.stringify(matchingChordData || {}, null, 2));
+
+      if (activeProject?.id) {
+        rememberSongChordContext(
+          activeProject.id,
+          selectedSongVersion.id,
+          matchingChordVersion.id,
+        );
+      }
 
       setChordExtractionMessage(
         `Loaded saved chords linked to song version: ${
@@ -5239,6 +5281,18 @@ export default function Page() {
     setLastAppliedTransposeSnapshot(null);
     setChordTransposeSemitones(0);
     setChordsText(JSON.stringify(selected.chord_data || {}, null, 2));
+
+    if (
+      activeProject?.id &&
+      activeSongVersionId &&
+      selected.song_version_id === activeSongVersionId
+    ) {
+      rememberSongChordContext(
+        activeProject.id,
+        activeSongVersionId,
+        selected.id,
+      );
+    }
 
     resetAudioPreviewRequestState();
     resetGeneratedAudioState();
@@ -17022,13 +17076,15 @@ export default function Page() {
     ? "Save Source before using chord-dependent actions."
     : !activeSongVersionId
       ? "Save Source before using chord-dependent actions."
-      : activeChordVersionBelongsToAnotherSongVersion
-        ? "This chord version belongs to another song version. Rebuild preview from Source before using chord-dependent actions."
-        : processedPreviewSourceAlignmentIsChecking
-          ? "Source alignment is still being checked."
-          : processedPreviewHasAlignmentIssue
-            ? "Rebuild preview from Source before using chord-dependent actions."
-            : "";
+      : activeChordVersion && !activeChordVersion.song_version_id
+        ? "This old chord version is not linked to a saved song version. Rebuild it from the current Source before saving a new checkpoint or making the song."
+        : activeChordVersionBelongsToAnotherSongVersion
+          ? "This chord version belongs to another song version. Rebuild preview from Source before using chord-dependent actions."
+          : processedPreviewSourceAlignmentIsChecking
+            ? "Source alignment is still being checked."
+            : processedPreviewHasAlignmentIssue
+              ? "Rebuild preview from Source before using chord-dependent actions."
+              : "";
   const chordActionsAreBlocked = Boolean(chordActionBlockedReason);
 
   const performanceIntentRows = getPerformanceIntentRows(
@@ -18734,6 +18790,12 @@ export default function Page() {
           savedVersion,
           ...current.filter((version) => version.id !== savedVersion.id),
         ]);
+
+        rememberSongChordContext(
+          activeProject.id,
+          activeSongVersionId,
+          savedVersion.id,
+        );
       }
 
       const savedChordTitle = savedVersion?.title || chordTitleToSave;
