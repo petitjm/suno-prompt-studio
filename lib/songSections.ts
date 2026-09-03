@@ -1,224 +1,216 @@
-
-import { looksLikeChordLine } from '@/lib/chords'
+import { looksLikeChordLine } from "@/lib/chords";
 
 const knownSectionNames = [
-  'verse',
-  'verse 1',
-  'verse 2',
-  'verse 3',
-  'verse 4',
-  'chorus',
-  'pre-chorus',
-  'pre chorus',
-  'bridge',
-  'middle 8',
-  'intro',
-  'outro',
-  'hook',
-  'refrain',
-  'solo',
-  'instrumental',
-]
+  "verse",
+  "verse 1",
+  "verse 2",
+  "verse 3",
+  "verse 4",
+  "chorus",
+  "final chorus",
+  "pre-chorus",
+  "pre chorus",
+  "bridge",
+  "middle 8",
+  "intro",
+  "outro",
+  "hook",
+  "refrain",
+  "solo",
+  "instrumental",
+];
 
 export const isSectionHeader = (line: string) => {
-  const trimmed = line.trim()
-  if (!trimmed) return false
+  const trimmed = line.trim();
+  if (!trimmed) return false;
 
   // Never treat chord-only lines as section headings
-  if (looksLikeChordLine(trimmed)) return false
+  if (looksLikeChordLine(trimmed)) return false;
 
   // [Verse 1]
-  if (/^\[.+\]$/.test(trimmed)) return true
+  if (/^\[.+\]$/.test(trimmed)) return true;
 
   // Verse 1:
-  if (/^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)) return true
+  if (/^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)) return true;
 
-  const normalised = normaliseSectionName(trimmed)
+  const normalised = normaliseSectionName(trimmed);
 
   // Common song section names, with optional numbers
   if (
-    /^(intro|verse|pre chorus|pre-chorus|chorus|bridge|middle 8|solo|instrumental|break|outro|tag|refrain)(\s+\d+)?$/.test(
-      normalised
+    /^(intro|verse|pre chorus|pre-chorus|chorus|final chorus|bridge|middle 8|solo|instrumental|break|outro|tag|refrain)(\s+\d+)?$/.test(
+      normalised,
     )
   ) {
-    return true
+    return true;
   }
 
-  return knownSectionNames.includes(normalised)
-}
-
+  return knownSectionNames.includes(normalised);
+};
 
 export type DetectedSection = {
-  id: string
-  label: string
-}
+  id: string;
+  label: string;
+};
 
 export const normaliseSectionName = (value: string) =>
   value
     .trim()
     .toLowerCase()
-    .replace(/^\[/, '')
-    .replace(/\]$/, '')
-    .replace(/:$/, '')
-    .replace(/\s*#\d+$/, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+    .replace(/^\[/, "")
+    .replace(/\]$/, "")
+    .replace(/:$/, "")
+    .replace(/\s*#\d+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 export const parseSectionTarget = (sectionName: string) => {
-  const clean = sectionName.replace(/\s*#\d+$/, '').trim()
-  const instanceMatch = sectionName.match(/#(\d+)$/)
+  const clean = sectionName.replace(/\s*#\d+$/, "").trim();
+  const instanceMatch = sectionName.match(/#(\d+)$/);
 
   return {
     label: normaliseSectionName(clean),
     instance: instanceMatch ? Number(instanceMatch[1]) : 1,
-  }
-}
+  };
+};
 
 export const isSectionBoundary = (
   line: string,
-  looksLikeChordLine: (line: string) => boolean
+  looksLikeChordLine: (line: string) => boolean,
 ) => {
-  const trimmed = line.trim()
-  if (!trimmed) return false
-  if (looksLikeChordLine(trimmed)) return false
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  if (looksLikeChordLine(trimmed)) return false;
 
   return (
     /^\[[^\]]+\]$/.test(trimmed) ||
     /^[A-Za-z0-9][A-Za-z0-9\s\-\/]*:$/.test(trimmed)
-  )
-}
+  );
+};
 
 export const detectSections = (
   text: string,
-  isSectionHeader: (line: string) => boolean
+  isSectionHeader: (line: string) => boolean,
 ): DetectedSection[] => {
-  const counts: Record<string, number> = {}
+  const counts: Record<string, number> = {};
 
   return text
-    .split('\n')
+    .split("\n")
     .map((line) => line.trim())
     .filter((line) => isSectionHeader(line))
     .map((line) => {
       const label = line
-        .replace(/^\[/, '')
-        .replace(/\]$/, '')
-        .replace(/:$/, '')
-        .trim()
+        .replace(/^\[/, "")
+        .replace(/\]$/, "")
+        .replace(/:$/, "")
+        .trim();
 
-      const key = label.toLowerCase()
-      counts[key] = (counts[key] || 0) + 1
+      const key = label.toLowerCase();
+      counts[key] = (counts[key] || 0) + 1;
 
       return {
         id: `${key}-${counts[key]}`,
         label: `${label} #${counts[key]}`,
-      }
-    })
-}
-
+      };
+    });
+};
 
 export const extractSectionTextStrict = (
   text: string,
   sectionName: string,
-  isSectionBoundary: (line: string) => boolean
+  isSectionBoundary: (line: string) => boolean,
 ) => {
-  if (!sectionName.trim()) return ''
+  if (!sectionName.trim()) return "";
 
-  const target = parseSectionTarget(sectionName)
-  const lines = text.split('\n')
+  const target = parseSectionTarget(sectionName);
+  const lines = text.split("\n");
 
   const sectionIndexes = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line))
+    .filter(({ line }) => isSectionBoundary(line));
 
-  let matchCount = 0
+  let matchCount = 0;
 
   const targetBoundary = sectionIndexes.find(({ line }) => {
-    if (normaliseSectionName(line) !== target.label) return false
-    matchCount += 1
-    return matchCount === target.instance
-  })
+    if (normaliseSectionName(line) !== target.label) return false;
+    matchCount += 1;
+    return matchCount === target.instance;
+  });
 
-  if (!targetBoundary) return ''
+  if (!targetBoundary) return "";
 
-  const startIndex = targetBoundary.index
+  const startIndex = targetBoundary.index;
 
-  const nextBoundary = sectionIndexes.find(
-    ({ index }) => index > startIndex
-  )
+  const nextBoundary = sectionIndexes.find(({ index }) => index > startIndex);
 
-  const endIndex = nextBoundary ? nextBoundary.index : lines.length
+  const endIndex = nextBoundary ? nextBoundary.index : lines.length;
 
-  return lines.slice(startIndex, endIndex).join('\n').trim()
-}
+  return lines.slice(startIndex, endIndex).join("\n").trim();
+};
 
 export const replaceSectionText = (
   fullText: string,
   sectionName: string,
   newSectionText: string,
-  isSectionBoundary: (line: string) => boolean
+  isSectionBoundary: (line: string) => boolean,
 ) => {
-  if (!sectionName.trim()) return fullText
+  if (!sectionName.trim()) return fullText;
 
-  const target = parseSectionTarget(sectionName)
-  const lines = fullText.split('\n')
+  const target = parseSectionTarget(sectionName);
+  const lines = fullText.split("\n");
 
   const sectionIndexes = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => isSectionBoundary(line))
+    .filter(({ line }) => isSectionBoundary(line));
 
-  let matchCount = 0
+  let matchCount = 0;
 
   const targetBoundary = sectionIndexes.find(({ line }) => {
-    if (normaliseSectionName(line) !== target.label) return false
-    matchCount += 1
-    return matchCount === target.instance
-  })
+    if (normaliseSectionName(line) !== target.label) return false;
+    matchCount += 1;
+    return matchCount === target.instance;
+  });
 
-  if (!targetBoundary) return fullText
+  if (!targetBoundary) return fullText;
 
-  const startIndex = targetBoundary.index
+  const startIndex = targetBoundary.index;
 
-  const nextBoundary = sectionIndexes.find(
-    ({ index }) => index > startIndex
-  )
+  const nextBoundary = sectionIndexes.find(({ index }) => index > startIndex);
 
-  const endIndex = nextBoundary ? nextBoundary.index : lines.length
-  const originalHeader = lines[startIndex]
+  const endIndex = nextBoundary ? nextBoundary.index : lines.length;
+  const originalHeader = lines[startIndex];
 
   const replacementLyricLines = newSectionText
-    .split('\n')
+    .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !isSectionBoundary(line))
+    .filter((line) => line.length > 0 && !isSectionBoundary(line));
 
-  const originalSectionLines = lines.slice(startIndex, endIndex)
+  const originalSectionLines = lines.slice(startIndex, endIndex);
 
-  let replacementIndex = 0
+  let replacementIndex = 0;
 
   const rebuiltSection = originalSectionLines.map((line, index) => {
     // Keep the original section heading exactly as it was.
-    if (index === 0) return line
+    if (index === 0) return line;
 
     // Preserve blank spacer lines so the diff preview stays aligned.
-    if (!line.trim()) return line
+    if (!line.trim()) return line;
 
     // Preserve any unexpected nested boundary.
-    if (isSectionBoundary(line)) return line
+    if (isSectionBoundary(line)) return line;
 
     // Replace lyric lines only.
     if (replacementIndex < replacementLyricLines.length) {
-      const nextLine = replacementLyricLines[replacementIndex]
-      replacementIndex += 1
-      return nextLine
+      const nextLine = replacementLyricLines[replacementIndex];
+      replacementIndex += 1;
+      return nextLine;
     }
 
-    return line
-  })
+    return line;
+  });
 
   return [
     ...lines.slice(0, startIndex),
     ...rebuiltSection,
     ...lines.slice(endIndex),
-  ].join('\n')
-}
-
-
+  ].join("\n");
+};
