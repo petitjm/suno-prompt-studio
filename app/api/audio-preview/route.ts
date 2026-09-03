@@ -35,6 +35,8 @@ type GuideTrackSectionPlanItem = {
 type AudioPreviewChordPlacement = {
   chord: string;
   charIndex: number;
+  bar?: number;
+  beat?: number;
 };
 
 type AudioPreviewSongSheetLine = {
@@ -93,6 +95,20 @@ function normalizeChordPlacement(
       ? Math.max(0, Math.floor(record.charIndex))
       : 0;
 
+  const bar =
+    typeof record.bar === "number" &&
+    Number.isFinite(record.bar) &&
+    record.bar >= 1
+      ? Math.floor(record.bar)
+      : undefined;
+
+  const beat =
+    typeof record.beat === "number" &&
+    Number.isFinite(record.beat) &&
+    record.beat >= 1
+      ? record.beat
+      : undefined;
+
   if (!chord) {
     return null;
   }
@@ -100,6 +116,8 @@ function normalizeChordPlacement(
   return {
     chord,
     charIndex,
+    ...(bar !== undefined ? { bar } : {}),
+    ...(beat !== undefined ? { beat } : {}),
   };
 }
 

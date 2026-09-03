@@ -45,6 +45,8 @@ type SongSheetLine = {
   chords?: {
     chord: string;
     charIndex: number;
+    bar?: number;
+    beat?: number;
   }[];
 };
 
@@ -103,6 +105,20 @@ function normalizePlacedChord(item: unknown) {
       ? record.charIndex
       : null;
 
+  const bar =
+    typeof record.bar === "number" &&
+    Number.isFinite(record.bar) &&
+    record.bar >= 1
+      ? Math.floor(record.bar)
+      : undefined;
+
+  const beat =
+    typeof record.beat === "number" &&
+    Number.isFinite(record.beat) &&
+    record.beat >= 1
+      ? record.beat
+      : undefined;
+
   if (!chord || charIndex === null || charIndex < 0) {
     return null;
   }
@@ -110,6 +126,8 @@ function normalizePlacedChord(item: unknown) {
   return {
     chord,
     charIndex,
+    ...(bar !== undefined ? { bar } : {}),
+    ...(beat !== undefined ? { beat } : {}),
   };
 }
 
@@ -314,6 +332,8 @@ function buildDryRunCueSheet(
         lineIndex,
         charIndex: chord.charIndex,
         lyricLength,
+        ...(chord.bar !== undefined ? { bar: chord.bar } : {}),
+        ...(chord.beat !== undefined ? { beat: chord.beat } : {}),
       }));
     });
 
