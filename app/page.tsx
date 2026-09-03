@@ -4041,6 +4041,15 @@ export default function Page() {
         current.filter((savedVersion) => savedVersion.id !== version.id),
       );
 
+      const rememberedContext = readLastUsedSongContext(version.project_id);
+
+      if (rememberedContext?.audioVersionId === version.id) {
+        saveLastUsedSongContext(version.project_id, {
+          ...rememberedContext,
+          audioVersionId: "",
+        });
+      }
+
       const deletedGuideIsCurrent =
         restoredAudioVersionId === version.id ||
         makeSongRunReport?.audioVersionId === version.id;
