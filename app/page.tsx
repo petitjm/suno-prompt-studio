@@ -2294,6 +2294,64 @@ export default function Page() {
     string | null
   >(null);
 
+  type LastUsedSongContext = {
+    songVersionId: string;
+    chordVersionId: string;
+    audioVersionId: string;
+  };
+
+  const getLastUsedSongContextStorageKey = (projectId: string) =>
+    `suno-prompt-studio:last-used-song-context:${projectId}`;
+
+  const readLastUsedSongContext = (
+    projectId: string,
+  ): LastUsedSongContext | null => {
+    try {
+      const raw = window.localStorage.getItem(
+        getLastUsedSongContextStorageKey(projectId),
+      );
+
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed) ||
+        typeof parsed.songVersionId !== "string" ||
+        typeof parsed.chordVersionId !== "string" ||
+        typeof parsed.audioVersionId !== "string"
+      ) {
+        return null;
+      }
+
+      return {
+        songVersionId: parsed.songVersionId,
+        chordVersionId: parsed.chordVersionId,
+        audioVersionId: parsed.audioVersionId,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const saveLastUsedSongContext = (
+    projectId: string,
+    context: LastUsedSongContext,
+  ) => {
+    try {
+      window.localStorage.setItem(
+        getLastUsedSongContextStorageKey(projectId),
+        JSON.stringify(context),
+      );
+    } catch {
+      // Ignore localStorage write failures.
+    }
+  };
+
   const activeSongVersion = songVersions.find(
     (version) => version.id === activeSongVersionId,
   );
@@ -4044,6 +4102,18 @@ export default function Page() {
         ? "wav"
         : "mp3";
 
+    const restoredTransposeSemitones =
+      typeof renderSettings?.transposeSemitones === "number" &&
+      Number.isFinite(renderSettings.transposeSemitones)
+        ? renderSettings.transposeSemitones
+        : 0;
+
+    const restoredTempoBpm =
+      typeof savedAudioVersion.tempo_bpm === "number" &&
+      Number.isFinite(savedAudioVersion.tempo_bpm)
+        ? savedAudioVersion.tempo_bpm
+        : tempoBpm;
+
     const restoredChordTimeline = Array.isArray(renderSettings?.chordTimeline)
       ? renderSettings.chordTimeline
           .map((marker) => {
@@ -4092,11 +4162,21 @@ export default function Page() {
 
     setGeneratedAudioChordMarkers(restoredChordTimeline);
 
+    setPreviewTempo(restoredTempoBpm);
+    setChordTransposeSemitones(restoredTransposeSemitones);
+    setLastAppliedTransposeSnapshot(null);
+
     setClickTrackAudioUrl(signedAudio.signedUrl);
 
     setGeneratedAudioSource("persisted");
     setRestoredAudioVersionId(savedAudioVersion.id);
     setRestoredAudioFormat(restoredFormat);
+
+    saveLastUsedSongContext(projectId, {
+      songVersionId,
+      chordVersionId,
+      audioVersionId: savedAudioVersion.id,
+    });
 
     setClickTrackAudioLabel(
       savedAudioVersion.title
@@ -4112,7 +4192,7 @@ export default function Page() {
     );
 
     setClickTrackDownloadStatus(
-      `Restored saved Audio Guide ${restoredFormat.toUpperCase()} for the current song version at ${savedAudioVersion.tempo_bpm} BPM.`,
+      `Restored saved Audio Guide ${restoredFormat.toUpperCase()} for the current song version at ${restoredTempoBpm} BPM.`,
     );
 
     void loadGeneratedAudioWaveform(signedAudio.signedUrl);
@@ -4180,32 +4260,69 @@ export default function Page() {
       );
 
       setChordVersions(normalisedProjectData.chordVersions);
-      setActiveSongVersionId(normalisedProjectData.activeSongVersionId);
-      setSourceSongVersionId(normalisedProjectData.activeSongVersionId);
-      setActiveChordVersionId(normalisedProjectData.activeChordVersionId);
 
-      const latestSongVersion =
+      const rememberedContext = readLastUsedSongContext(projectId);
+
+      const rememberedSongVersion = rememberedContext
+        ? normalisedProjectData.songVersions.find(
+            (version) => version.id === rememberedContext.songVersionId,
+          ) || null
+        : null;
+
+      const selectedSongVersion =
+        rememberedSongVersion ||
         normalisedProjectData.songVersions.find(
           (version) => version.id === normalisedProjectData.activeSongVersionId,
-        ) || null;
+        ) ||
+        null;
+
+      const rememberedChordVersion =
+        rememberedContext && selectedSongVersion
+          ? normalisedProjectData.chordVersions.find(
+              (version) =>
+                version.id === rememberedContext.chordVersionId &&
+                version.song_version_id === selectedSongVersion.id,
+            ) || null
+          : null;
+
+      const selectedChordVersion =
+        rememberedChordVersion ||
+        normalisedProjectData.chordVersions.find(
+          (version) =>
+            version.id === normalisedProjectData.activeChordVersionId &&
+            version.song_version_id === selectedSongVersion?.id,
+        ) ||
+        null;
+
+      const selectedSongVersionId = selectedSongVersion?.id || null;
+      const selectedChordVersionId = selectedChordVersion?.id || null;
+      const selectedChordData = selectedChordVersion?.chord_data || null;
+
+      setActiveSongVersionId(selectedSongVersionId);
+      setSourceSongVersionId(selectedSongVersionId);
+      setActiveChordVersionId(selectedChordVersionId);
 
       const restoredMusicalIntent =
-        getSongVersionMusicalIntent(latestSongVersion);
+        getSongVersionMusicalIntent(selectedSongVersion);
 
       setMelodyCharacter(restoredMusicalIntent.character);
       setMelodySectionIntents(restoredMusicalIntent.sectionIntents);
 
-      setPerformanceSheet(normalisedProjectData.latestLyrics);
-      setChords(normalisedProjectData.latestChords);
-      setChordsText(
-        JSON.stringify(normalisedProjectData.latestChords || {}, null, 2),
-      );
-      setChordVersionTitle(
-        normalisedProjectData.latestChordVersion?.title || "",
+      setPerformanceSheet(
+        selectedSongVersion ? getSongVersionLyrics(selectedSongVersion) : "",
       );
 
-      const workingDraftSongVersionId =
-        normalisedProjectData.activeSongVersionId;
+      setChords(selectedChordData);
+
+      setReviewedChordFitSignature(
+        getStoredChordFitReviewSignature(selectedChordData),
+      );
+
+      setChordsText(JSON.stringify(selectedChordData || {}, null, 2));
+
+      setChordVersionTitle(selectedChordVersion?.title || "");
+
+      const workingDraftSongVersionId = selectedSongVersionId;
 
       const workingDraft = workingDraftSongVersionId
         ? readChordWorkingDraft(projectId, workingDraftSongVersionId)
@@ -4234,12 +4351,21 @@ export default function Page() {
         );
       }
 
-      await restorePersistedAudioForState({
-        projectId,
-        songVersionId: normalisedProjectData.activeSongVersionId,
-        chordVersionId: normalisedProjectData.activeChordVersionId,
-        tempoBpm: previewTempo,
-      });
+      if (
+        rememberedContext?.audioVersionId &&
+        selectedSongVersionId &&
+        selectedChordVersionId &&
+        rememberedContext.songVersionId === selectedSongVersionId &&
+        rememberedContext.chordVersionId === selectedChordVersionId
+      ) {
+        await restorePersistedAudioForState({
+          projectId,
+          songVersionId: selectedSongVersionId,
+          chordVersionId: selectedChordVersionId,
+          tempoBpm: previewTempo,
+          audioVersionId: rememberedContext.audioVersionId,
+        });
+      }
 
       if (projectVersionResult.song.ok && projectVersionResult.chord.ok) {
         setProjectMessage("");
@@ -5081,6 +5207,22 @@ export default function Page() {
     return `Loaded chord version: ${title} — linked to another song version. Rebuild preview from Source before saving or generating a guide plan.`;
   };
 
+  const getStoredChordFitReviewSignature = (
+    chordData: unknown,
+  ): string | null => {
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return null;
+    }
+
+    const signature = (chordData as Record<string, unknown>).fitReviewSignature;
+
+    return typeof signature === "string" && signature.trim() ? signature : null;
+  };
+
   const loadChordVersionIntoEditor = async (versionId: string) => {
     const selected = chordVersions.find((version) => version.id === versionId);
 
@@ -5091,6 +5233,9 @@ export default function Page() {
     setActiveChordVersionId(selected.id);
     setChordVersionTitle(selected.title || "Untitled chord version");
     setChords(selected.chord_data || null);
+    setReviewedChordFitSignature(
+      getStoredChordFitReviewSignature(selected.chord_data),
+    );
     setLastAppliedTransposeSnapshot(null);
     setChordTransposeSemitones(0);
     setChordsText(JSON.stringify(selected.chord_data || {}, null, 2));
@@ -18556,6 +18701,13 @@ export default function Page() {
         ? `${baseChordTitle || "Basic chord draft"} — Make Song result`
         : baseChordTitle;
 
+      const chordsToSaveWithFitReview: ChordResponse = {
+        ...chordsToSave,
+        fitReviewSignature: chordFitReviewAccepted
+          ? currentChordFitSignature
+          : null,
+      };
+
       const res = await fetch("/api/chord-versions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -18563,7 +18715,7 @@ export default function Page() {
           project_id: activeProject.id,
           song_version_id: activeSongVersionId,
           title: chordTitleToSave,
-          chord_data: chordsToSave,
+          chord_data: chordsToSaveWithFitReview,
         }),
       });
 
