@@ -184,9 +184,11 @@ The JSON must use this shape:
       "lyric": "Actual lyric line here",
       "chords": [
         {
-          "chord": "G",
-          "charIndex": 0
-        }
+  "chord": "G",
+  "charIndex": 0,
+  "bar": 1,
+  "beat": 1
+}
       ]
     }
   ]
@@ -202,21 +204,30 @@ Requirements:
 - Each lyric line should appear once.
 - Do not invent new lyrics.
 - Do not omit lyric lines.
-- Put chords only where chord changes happen, and place each chord above the lyric syllable or word where the singer should feel the change.
-- charIndex is zero-based.
-- charIndex means the chord should appear above that character in the lyric line.
-- Place chords above the syllable or word where the change should happen for natural performance phrasing.
+- Put chords only where actual chord changes happen.
+- Every chord placement must contain both visual lyric placement and musical timing.
+- charIndex is zero-based and means where the chord should appear above the lyric line.
+- bar is the 1-based musical bar number within the current section.
+- beat is the 1-based beat within that bar.
+- Example: {"chord":"G","charIndex":0,"bar":1,"beat":1} means display G at character 0 and change to G on bar 1 beat 1.
+- Example: {"chord":"C","charIndex":12,"bar":1,"beat":3} means display C at character 12 and change to C on bar 1 beat 3.
+- Place charIndex above the syllable or word where the singer should feel the chord change for natural performance phrasing.
+- Determine bar and beat from the intended harmonic rhythm, time signature, tempo, groove, vocal phrasing, breath points, pickups, held notes, and instrumental movement.
+- Do not derive bar or beat from charIndex, lyric length, word spacing, or distance across the lyric line.
+- Two words that are visually close together may occur on different beats or bars.
+- Words that are visually far apart may occur within one held musical phrase.
+- Keep bar numbers continuous within each section and reset bar numbering to 1 at the start of each new section.
+- beat must be valid for the chosen timeSignature. For example, use beats 1 through 4 in 4/4 and beats 1 through 3 in 3/4.
+- Fractional beats may be used only when the musical change genuinely occurs between main beats, for example beat 2.5.
 - Do not place every chord at the start of the line unless the change truly happens there.
-- Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose chord rhythm and phrasing.
+- Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose harmonic rhythm and phrasing.
 - Keep placements practical for a singer-guitarist reading a songsheet.
 - If a lyric line has no chord change, include the line with an empty chords array.
-- Review the songSheetLines before final output.
+- Review songSheetLines before final output for both visual placement and musical timing.
 - Avoid placing most chords at charIndex 0.
-- At least half of the chord placements should normally fall after character 0 unless the song genuinely changes chords only at line starts.
-- Spread chord placements across the lyric line according to natural vocal phrasing.
-- Prefer fewer meaningful chord placements over too many mechanical placements.
+- At least half of the visual chord placements should normally fall after character 0 unless the song genuinely changes chords only at line starts.
+- Prefer fewer meaningful chord changes over too many mechanical placements.
 - Make sure every charIndex points to a valid character position in that lyric line.
-- If the lyric line is "Hold on through the stormy weather" and the chord changes on "through", charIndex should point near the "t" in "through", not automatically to 0.
 - Return the final checked JSON only.
 Performance intent requirements:
 - Include tempoBpm as a realistic number for the song style.
@@ -226,9 +237,8 @@ Performance intent requirements:
 - Include vocalDelivery describing the emotional and rhythmic delivery.
 - Include guitarPattern describing the likely accompaniment pattern.
 - Make guideTrackPlan specific enough that a simple audio-preview feature could use it later.
-- Use these performance intent fields to guide songSheetLines chord placement.
-- If a chord occurs after the final sung word on a line, describe its purpose through the performance feel or notes, such as turnaround, held chord, pickup, breath, or instrumental response.
-Guide track plan requirements:
+- Use these performance intent fields to guide both songSheetLines visual chord placement and musical bar/beat timing.
+- If a chord occurs after the final sung word on a line, keep its charIndex near the end of the lyric line but give it the true bar and beat for the turnaround, held chord, pickup, breath, or instrumental response.
 - Include guideTrackPlan as a practical plan for a future simple audio guide track.
 - The guide track is not a finished production.
 - It should help the songwriter remember tempo, groove, phrasing, chord timing, vocal entry points, and dynamic shape.
