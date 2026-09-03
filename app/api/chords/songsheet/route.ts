@@ -95,6 +95,8 @@ function parseModelJson(text: string) {
 type SongsheetChordPlacement = {
   chord: string;
   charIndex: number;
+  bar?: number;
+  beat?: number;
 };
 
 type SongsheetLine = {
@@ -163,6 +165,20 @@ function getChordPlacements(value: unknown): SongsheetChordPlacement[] {
           ? chordItem[1]
           : 0;
 
+      const bar =
+        typeof chordItem[2] === "number" &&
+        Number.isFinite(chordItem[2]) &&
+        chordItem[2] >= 1
+          ? Math.floor(chordItem[2])
+          : undefined;
+
+      const beat =
+        typeof chordItem[3] === "number" &&
+        Number.isFinite(chordItem[3]) &&
+        chordItem[3] >= 1
+          ? chordItem[3]
+          : undefined;
+
       if (!chord) {
         return [];
       }
@@ -171,6 +187,8 @@ function getChordPlacements(value: unknown): SongsheetChordPlacement[] {
         {
           chord,
           charIndex: Math.max(0, Math.floor(charIndex)),
+          ...(bar !== undefined ? { bar } : {}),
+          ...(beat !== undefined ? { beat } : {}),
         },
       ];
     }
@@ -188,6 +206,20 @@ function getChordPlacements(value: unknown): SongsheetChordPlacement[] {
         ? chordItem.charIndex
         : 0;
 
+    const bar =
+      typeof chordItem.bar === "number" &&
+      Number.isFinite(chordItem.bar) &&
+      chordItem.bar >= 1
+        ? Math.floor(chordItem.bar)
+        : undefined;
+
+    const beat =
+      typeof chordItem.beat === "number" &&
+      Number.isFinite(chordItem.beat) &&
+      chordItem.beat >= 1
+        ? chordItem.beat
+        : undefined;
+
     if (!chord) {
       return [];
     }
@@ -196,6 +228,8 @@ function getChordPlacements(value: unknown): SongsheetChordPlacement[] {
       {
         chord,
         charIndex: Math.max(0, Math.floor(charIndex)),
+        ...(bar !== undefined ? { bar } : {}),
+        ...(beat !== undefined ? { beat } : {}),
       },
     ];
   });
@@ -428,9 +462,9 @@ Return this exact JSON shape:
         "section": "Verse 1",
         "lineNumber": 1,
         "chords": [
-          ["Em", 0],
-          ["C", 12]
-        ]
+  ["Em", 0, 1, 1],
+  ["C", 12, 1, 3]
+]
       }
     ],
       "songsheetNotes": "One or two short notes only."
@@ -443,11 +477,18 @@ Requirements:
 - lineNumber must be the 1-based number from the source lyric list.
 - Preserve source lyric order.
 - Include each source sung lyric line once.
-- Place chords above the word or syllable where the chord should change, using zero-based charIndex positions within that source lyric line.
-- Use compact chord tuples: ["ChordName", charIndex]. Do not use {"chord":"...","charIndex":...} objects.
+- For every chord change, provide both visual lyric placement and musical timing.
+- charIndex is the zero-based character position where the chord should appear above the source lyric line.
+- bar is the 1-based musical bar number within the current section.
+- beat is the 1-based beat within that bar.
+- Use compact chord tuples: ["ChordName", charIndex, bar, beat].
+- Example: ["Em", 0, 1, 1] means display Em at character 0 and change to Em on bar 1 beat 1.
+- Example: ["C", 12, 1, 3] means display C at character 12 and change to C on bar 1 beat 3.
+- Do not infer bar or beat from character spacing. Decide bar and beat from the intended musical phrasing, harmonic rhythm, time signature, groove, and chord progression.
+- Chords that visually align with words close together may still occur on different beats, and words far apart may occur within the same beat or held phrase.
 - Do not put every chord at charIndex 0.
 - Header/section label lines may have no chords.
-- If a chord belongs after the lyric line as a turnaround or held chord, place it near the end of the line and explain briefly in songsheetNotes.
+- If a chord belongs after the lyric line as a turnaround or held chord, keep its charIndex near the end of the line but still give its true musical bar and beat.
 - Use the existing chord data as the harmonic source.
 - Keep the result practical for acoustic guitar performance.
 - Keep songsheetNotes under 60 words.
