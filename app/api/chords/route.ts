@@ -151,6 +151,27 @@ The JSON must use this shape:
   "genre": "",
   "tempoBpm": 82,
   "timeSignature": "4/4",
+   "musicalTimingPlan": {
+    "sections": [
+      {
+        "section": "Verse 1",
+        "bars": 8,
+        "timeSignature": "4/4",
+        "meterChanges": []
+      },
+      {
+        "section": "Bridge",
+        "bars": 7,
+        "timeSignature": "4/4",
+        "meterChanges": [
+          {
+            "bar": 5,
+            "timeSignature": "3/4"
+          }
+        ]
+      }
+    ]
+  },
   "groove": "",
   "performanceFeel": "",
   "phrasingNotes": "",
@@ -229,9 +250,25 @@ Requirements:
 - Prefer fewer meaningful chord changes over too many mechanical placements.
 - Make sure every charIndex points to a valid character position in that lyric line.
 - Return the final checked JSON only.
+Musical timing plan requirements:
+- Include musicalTimingPlan as the authoritative musical timeline for the song.
+- Include one section entry for every section instance represented in songSheetLines, in song order.
+- section must match the corresponding songSheetLines section name.
+- bars is the total number of musical bars in that section, including sung bars, held bars, rests, pickups resolved into the section, turnarounds, and instrumental space that belong to the section.
+- Do not calculate bars from the number of lyric lines.
+- A lyric line may occupy less than one bar, one bar, or several bars.
+- Sections may contain any number of lyric lines; do not force conventional 4-line, 8-line, or other fixed section shapes.
+- timeSignature is the time signature in effect at bar 1 of that section.
+- If the time signature changes within a section, include each change in meterChanges using the 1-based bar at which the new time signature begins.
+- If the meter does not change within the section, return an empty meterChanges array.
+- Do not invent meter changes merely to create variety.
+- bar values in songSheetLines chord placements must refer to the same bar numbering used by musicalTimingPlan for that section.
+- No chord placement may reference a bar greater than that section's bars value.
+- Determine section length from the intended musical phrasing, harmonic rhythm, meter, groove, vocal phrasing, held notes, rests, turnarounds, pickups, and instrumental movement.
+- Review musicalTimingPlan and songSheetLines together before returning the final JSON so their bar numbering is internally consistent.
 Performance intent requirements:
 - Include tempoBpm as a realistic number for the song style.
-- Include timeSignature, usually "4/4" unless another feel is clearly better.
+- Include timeSignature as the song's opening or primary time signature, usually "4/4" unless another meter is clearly better. Use musicalTimingPlan for section-level timing and any later meter changes.
 - Include groove, describing the rhythmic feel, for example "laid-back fingerpicked 8th-note feel" or "steady brushed country ballad pulse".
 - Include phrasingNotes describing how the vocal should sit against the guitar rhythm.
 - Include vocalDelivery describing the emotional and rhythmic delivery.
