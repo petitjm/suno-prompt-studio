@@ -36,6 +36,7 @@ export const buildChordMarkersFromCueSheetSections = (
     const startSeconds = getNumber(cueSection.startSeconds);
     const endSeconds = getNumber(cueSection.endSeconds);
     const estimatedBars = getNumber(cueSection.estimatedBars) ?? 0;
+    const beatsPerBar = getNumber(cueSection.beatsPerBar);
     const chordPlacements = getArray(cueSection.chordPlacements);
 
     if (
@@ -60,6 +61,11 @@ export const buildChordMarkersFromCueSheetSections = (
         ? suppliedLyricLineCount
         : Math.max(1, chordPlacements.length);
 
+    const secondsPerBeat =
+      estimatedBars > 0 && beatsPerBar !== null && beatsPerBar > 0
+        ? sectionDurationSeconds / (estimatedBars * beatsPerBar)
+        : null;
+
     return chordPlacements
       .map((placement, index) => {
         const record = getRecord(placement);
@@ -72,9 +78,42 @@ export const buildChordMarkersFromCueSheetSections = (
         const lineIndex = getNumber(record.lineIndex);
         const charIndex = getNumber(record.charIndex);
         const lyricLength = getNumber(record.lyricLength);
+        const bar = getNumber(record.bar);
+        const beat = getNumber(record.beat);
+
+        if (!chord) {
+          return null;
+        }
+
+        const hasMusicalTiming =
+          bar !== null &&
+          bar >= 1 &&
+          beat !== null &&
+          beat >= 1 &&
+          beatsPerBar !== null &&
+          beatsPerBar > 0 &&
+          secondsPerBeat !== null;
+
+        if (hasMusicalTiming) {
+          const safeBar = Math.min(Math.floor(bar), Math.max(1, estimatedBars));
+          const safeBeat = Math.min(beat, beatsPerBar);
+
+          const beatOffset =
+            (safeBar - 1) * beatsPerBar + Math.max(0, safeBeat - 1);
+
+          return {
+            section,
+            chord,
+            timeSeconds: Number(
+              Math.min(
+                endSeconds,
+                startSeconds + beatOffset * secondsPerBeat,
+              ).toFixed(3),
+            ),
+          };
+        }
 
         if (
-          !chord ||
           lineIndex === null ||
           charIndex === null ||
           lyricLength === null ||
@@ -83,6 +122,8 @@ export const buildChordMarkersFromCueSheetSections = (
           return null;
         }
 
+        // Temporary compatibility fallback for older chord placements that
+        // do not yet contain explicit musical bar/beat timing.
         const linePosition = Math.min(
           0.98,
           Math.max(

@@ -346,6 +346,7 @@ function buildDryRunCueSheet(
       estimatedSeconds,
       startSeconds,
       endSeconds,
+      beatsPerBar,
       lyricLineCount: section.lyricLineCount,
       chordPlacementCount: section.chordPlacementCount,
       chordPlacements,
