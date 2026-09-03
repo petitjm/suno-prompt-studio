@@ -23257,33 +23257,76 @@ ${buildRewriteInstruction(
                     <div className="rounded border border-gray-800 bg-gray-950 p-3">
                       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                         <h3 className="text-sm font-semibold text-gray-100">
-                          Continue with your song
+                          After listening
                         </h3>
 
                         <p className="text-xs text-gray-500">
-                          Use the guide while reviewing, rehearsing or
-                          performing the song.
+                          Decide whether the guide helps the song or whether
+                          something needs another pass.
                         </p>
                       </div>
 
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange("rehearse")}
-                          disabled={!makeSongAudioIsReady}
-                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-green-700 hover:bg-green-950/20 disabled:cursor-not-allowed disabled:text-gray-600"
-                        >
-                          Rehearse
-                        </button>
+                      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-sm font-medium text-gray-200">
+                            This is helping the song
+                          </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange("perform")}
-                          disabled={!makeSongAudioIsReady}
-                          className="rounded bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
-                        >
-                          Perform
-                        </button>
+                          <p className="mt-1 text-xs leading-5 text-gray-500">
+                            Keep working with this guide in rehearsal or
+                            performance.
+                          </p>
+
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <button
+                              type="button"
+                              onClick={() => handleModeChange("rehearse")}
+                              disabled={!makeSongAudioIsReady}
+                              className="rounded border border-gray-700 bg-gray-950 px-4 py-2 text-sm font-medium text-gray-200 hover:border-green-700 hover:bg-green-950/20 disabled:cursor-not-allowed disabled:text-gray-600"
+                            >
+                              Rehearse
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleModeChange("perform")}
+                              disabled={!makeSongAudioIsReady}
+                              className="rounded bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                            >
+                              Perform
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-sm font-medium text-gray-200">
+                            Something needs changing
+                          </div>
+
+                          <p className="mt-1 text-xs leading-5 text-gray-500">
+                            Change key, tempo or melody settings here and Make
+                            again, or return to the songwriting steps if the
+                            harmony or chord placement needs work.
+                          </p>
+
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <button
+                              type="button"
+                              onClick={() => setChordsTask("shape")}
+                              className="rounded border border-gray-700 bg-gray-950 px-4 py-2 text-sm font-medium text-gray-200 hover:border-purple-600 hover:bg-purple-950/30"
+                            >
+                              Shape harmony
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setChordsTask("check")}
+                              className="rounded border border-gray-700 bg-gray-950 px-4 py-2 text-sm font-medium text-gray-200 hover:border-purple-600 hover:bg-purple-950/30"
+                            >
+                              Fit chords & lyrics
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
