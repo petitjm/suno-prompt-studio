@@ -457,22 +457,33 @@ ${JSON.stringify(chordData, null, 2)}
 Return this exact JSON shape:
 
     {
+      "musicalTimingPlan": {
+        "sections": [
+          {
+            "section": "Verse 1",
+            "bars": 8,
+            "timeSignature": "4/4",
+            "meterChanges": []
+          }
+        ]
+      },
       "songSheetLineRefs": [
-      {
-        "section": "Verse 1",
-        "lineNumber": 1,
-        "chords": [
-  ["Em", 0, 1, 1],
-  ["C", 12, 1, 3]
-]
-      }
-    ],
+        {
+          "section": "Verse 1",
+          "lineNumber": 1,
+          "chords": [
+            ["Em", 0, 1, 1],
+            ["C", 12, 1, 3]
+          ]
+        }
+      ],
       "songsheetNotes": "One or two short notes only."
     }
 
 Requirements:
 - Do not return lyric text.
-- Keep JSON compact. Use no extra fields beyond section, lineNumber, chords, and songsheetNotes.
+- Keep JSON compact. Return only musicalTimingPlan, songSheetLineRefs, and songsheetNotes at the top level.
+- Within songSheetLineRefs, use only section, lineNumber, and chords.
 - Use lineNumber to refer to the numbered source sung lyric lines.
 - lineNumber must be the 1-based number from the source lyric list.
 - Preserve source lyric order.
@@ -482,6 +493,27 @@ Requirements:
 - bar is the 1-based musical bar number within the current section.
 - beat is the 1-based beat within that bar.
 - Use compact chord tuples: ["ChordName", charIndex, bar, beat].
+Musical timing plan requirements:
+- musicalTimingPlan is the authoritative musical timeline for this songsheet.
+- Include one musicalTimingPlan section entry for every section instance in the song, in song order.
+- section must correspond to the section names used in songSheetLineRefs.
+- bars is the total number of musical bars occupied by that complete section.
+- timeSignature is the time signature in effect at bar 1 of that section.
+- If the time signature changes within a section, include the 1-based bar where each new meter begins in meterChanges.
+- If the meter does not change, use an empty meterChanges array.
+- Do not invent meter changes merely for variety.
+- Every chord bar and beat must use the same bar numbering and meter described by musicalTimingPlan.
+- No chord event may reference a bar greater than that section's bars value.
+
+Musical phrasing requirements:
+- Never calculate section length by multiplying lyric-line count by a fixed number of bars.
+- Do not assume one bar, two bars, or any other fixed duration per lyric line.
+- Do not use "2 bars per line", "1 bar per line", or a similar formula as the basis for timing.
+- Determine musical duration from the supplied harmony together with intended vocal phrasing, harmonic rhythm, tempo feel, pickups, held notes, rests, breaths, turnarounds, and instrumental movement.
+- Different lyric lines within the same section may occupy different amounts of musical time.
+- Multiple short lyric lines may share musical space, while one sustained lyric phrase may extend across several bars.
+- Equal phrase lengths are valid when musically intended, but must not be inferred merely because the lyrics are written on separate lines.
+- Before returning the result, verify that the section bar count can be justified musically without referring to the number of lyric lines.
 - Example: ["Em", 0, 1, 1] means display Em at character 0 and change to Em on bar 1 beat 1.
 - Example: ["C", 12, 1, 3] means display C at character 12 and change to C on bar 1 beat 3.
 - Do not infer bar or beat from character spacing. Decide bar and beat from the intended musical phrasing, harmonic rhythm, time signature, groove, and chord progression.
@@ -489,7 +521,11 @@ Requirements:
 - Do not put every chord at charIndex 0.
 - Header/section label lines may have no chords.
 - If a chord belongs after the lyric line as a turnaround or held chord, keep its charIndex near the end of the line but still give its true musical bar and beat.
-- Use the existing chord data as the harmonic source.
+- Treat the existing chord data as the harmonic source of truth.
+- Preserve the supplied chord names and progression rather than composing a replacement progression.
+- Your job is to place and time the supplied harmony against the lyrics, not to reharmonize the song.
+- Do not add substitute chords merely because another progression seems preferable.
+- If the existing chord data contains repeated chords or deliberate holds, preserve that musical intent.
 - Keep the result practical for acoustic guitar performance.
 - Keep songsheetNotes under 60 words.
 - Do not explain every section.
