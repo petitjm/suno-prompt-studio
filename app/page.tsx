@@ -293,6 +293,8 @@ export default function Page() {
   const [reviewedChordFitSignature, setReviewedChordFitSignature] = useState<
     string | null
   >(null);
+  const [reviewedChordTimingSignature, setReviewedChordTimingSignature] =
+    useState<string | null>(null);
   const getChordTasks = () => {
     const activeSavedChordCheckpointIsValid = Boolean(
       activeChordVersionId &&
@@ -4368,6 +4370,11 @@ export default function Page() {
       setReviewedChordFitSignature(
         getStoredChordFitReviewSignature(selectedChordData),
       );
+      setReviewedChordTimingSignature(
+        getStoredChordTimingReviewSignature(selectedChordData),
+      );
+
+      setChordsText(JSON.stringify(selectedChordData || {}, null, 2));
 
       setChordsText(JSON.stringify(selectedChordData || {}, null, 2));
 
@@ -5287,6 +5294,9 @@ export default function Page() {
     setReviewedChordFitSignature(
       getStoredChordFitReviewSignature(selected.chord_data),
     );
+    setReviewedChordTimingSignature(
+      getStoredChordTimingReviewSignature(selected.chord_data),
+    );
     setLastAppliedTransposeSnapshot(null);
     setChordTransposeSemitones(0);
     setChordsText(JSON.stringify(selected.chord_data || {}, null, 2));
@@ -5325,6 +5335,23 @@ export default function Page() {
         tempoBpm: previewTempo,
       });
     }
+  };
+
+  const getStoredChordTimingReviewSignature = (
+    chordData: unknown,
+  ): string | null => {
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return null;
+    }
+
+    const signature = (chordData as Record<string, unknown>)
+      .timingReviewSignature;
+
+    return typeof signature === "string" && signature.trim() ? signature : null;
   };
 
   const copySongsheetReview = async () => {
@@ -17114,6 +17141,115 @@ export default function Page() {
     chordFitCanBeMarkedComplete &&
     reviewedChordFitSignature === currentChordFitSignature;
 
+  const chordDataForTimingSignature = getChordDataFromEditorJson();
+
+  const rawMusicalTimingPlan =
+    chordDataForTimingSignature &&
+    typeof chordDataForTimingSignature === "object" &&
+    !Array.isArray(chordDataForTimingSignature)
+      ? (chordDataForTimingSignature as Record<string, unknown>)
+          .musicalTimingPlan
+      : null;
+
+  const normalizedMusicalTimingPlan =
+    rawMusicalTimingPlan &&
+    typeof rawMusicalTimingPlan === "object" &&
+    !Array.isArray(rawMusicalTimingPlan)
+      ? {
+          sections: Array.isArray(
+            (rawMusicalTimingPlan as Record<string, unknown>).sections,
+          )
+            ? (
+                (rawMusicalTimingPlan as Record<string, unknown>)
+                  .sections as unknown[]
+              )
+                .map((section) => {
+                  if (
+                    !section ||
+                    typeof section !== "object" ||
+                    Array.isArray(section)
+                  ) {
+                    return null;
+                  }
+
+                  const sectionRecord = section as Record<string, unknown>;
+
+                  return {
+                    section:
+                      typeof sectionRecord.section === "string"
+                        ? sectionRecord.section
+                        : "",
+                    bars:
+                      typeof sectionRecord.bars === "number"
+                        ? sectionRecord.bars
+                        : null,
+                    timeSignature:
+                      typeof sectionRecord.timeSignature === "string"
+                        ? sectionRecord.timeSignature
+                        : "",
+                    meterChanges: Array.isArray(sectionRecord.meterChanges)
+                      ? sectionRecord.meterChanges
+                          .map((change) => {
+                            if (
+                              !change ||
+                              typeof change !== "object" ||
+                              Array.isArray(change)
+                            ) {
+                              return null;
+                            }
+
+                            const changeRecord = change as Record<
+                              string,
+                              unknown
+                            >;
+
+                            return {
+                              bar:
+                                typeof changeRecord.bar === "number"
+                                  ? changeRecord.bar
+                                  : null,
+                              timeSignature:
+                                typeof changeRecord.timeSignature === "string"
+                                  ? changeRecord.timeSignature
+                                  : "",
+                            };
+                          })
+                          .filter(Boolean)
+                      : [],
+                  };
+                })
+                .filter(Boolean)
+            : [],
+        }
+      : null;
+
+  const currentChordTimingSignature = JSON.stringify({
+    musicalTimingPlan: normalizedMusicalTimingPlan,
+    timedChordEvents: getPlacedSongSheetLines(chordDataForTimingSignature).map(
+      (line) => ({
+        section: line.section,
+        lyric: line.lyric,
+        chords: line.chords.map((placement) => ({
+          chord: placement.chord,
+          bar: placement.bar ?? null,
+          beat: placement.beat ?? null,
+        })),
+      }),
+    ),
+  });
+
+  const chordTimingCanBeMarkedComplete = Boolean(
+    musicalTimingProvenance &&
+    getChordDataFromEditorJson() &&
+    typeof getChordDataFromEditorJson() === "object" &&
+    !Array.isArray(getChordDataFromEditorJson()) &&
+    (getChordDataFromEditorJson() as Record<string, unknown>).musicalTimingPlan,
+  );
+
+  const chordTimingReviewAccepted =
+    chordTimingCanBeMarkedComplete &&
+    reviewedChordTimingSignature === currentChordTimingSignature;
+
   const chordFitReviewItemCount =
     placedSongsheetSourceCoverage.missingLineCount +
     placedSongsheetSourceMatch.unmatchedCount +
@@ -18855,6 +18991,9 @@ export default function Page() {
         fitReviewSignature: chordFitReviewAccepted
           ? currentChordFitSignature
           : null,
+        timingReviewSignature: chordTimingReviewAccepted
+          ? currentChordTimingSignature
+          : null,
       };
 
       const res = await fetch("/api/chord-versions", {
@@ -18873,8 +19012,8 @@ export default function Page() {
 
       const savedVersion = data.version;
 
-      setChords(chordsToSave);
-      setChordsText(JSON.stringify(chordsToSave, null, 2));
+      setChords(chordsToSaveWithFitReview);
+      setChordsText(JSON.stringify(chordsToSaveWithFitReview, null, 2));
 
       if (savedVersion?.id) {
         setActiveChordVersionId(savedVersion.id);
@@ -21713,8 +21852,8 @@ ${buildRewriteInstruction(
                                   </div>
 
                                   <div className="rounded bg-yellow-950/60 px-2 py-1 text-xs font-medium text-yellow-200">
-                                    {musicalTimingProvenance.authoritative
-                                      ? "Confirmed timing"
+                                    {chordTimingReviewAccepted
+                                      ? "Timing confirmed"
                                       : musicalTimingProvenance.status ===
                                           "needs-timing-review"
                                         ? "Needs timing review"
@@ -21727,6 +21866,51 @@ ${buildRewriteInstruction(
                                     {musicalTimingProvenance.detail}
                                   </div>
                                 )}
+
+                                <div className="mt-3 border-t border-yellow-900/50 pt-3">
+                                  {chordTimingReviewAccepted ? (
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="text-xs text-green-200">
+                                        ✓ You have confirmed the bars, beats and
+                                        meter for this timing plan.
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setReviewedChordTimingSignature(null)
+                                        }
+                                        className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                      >
+                                        Review timing again
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <div className="text-xs leading-5 text-yellow-100/80">
+                                        Review the section lengths, meter and
+                                        chord-change bars/beats before
+                                        confirming this timing for Audio Guide
+                                        use.
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setReviewedChordTimingSignature(
+                                            currentChordTimingSignature,
+                                          )
+                                        }
+                                        disabled={
+                                          !chordTimingCanBeMarkedComplete
+                                        }
+                                        className="mt-2 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                                      >
+                                        Mark timing confirmed
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
 
