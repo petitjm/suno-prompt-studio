@@ -515,11 +515,22 @@ Musical phrasing requirements:
 - Never calculate section length by multiplying lyric-line count by a fixed number of bars.
 - Do not assume one bar, two bars, or any other fixed duration per lyric line.
 - Do not use "2 bars per line", "1 bar per line", or a similar formula as the basis for timing.
+- IMPORTANT: the way chords were written above lyric lines in the source is visual notation only. It does not define bar boundaries, phrase duration, or harmonic rhythm.
+- A source pair such as one chord line above one lyric line must NOT be interpreted as meaning that the lyric line occupies exactly one bar.
+- Two chord names written above one lyric line must NOT automatically be interpreted as beat 1 and beat 3 of one bar.
+- A chord change visually positioned halfway across a lyric line must NOT automatically be placed halfway through that line's musical duration.
+- First determine the intended musical phrase length independently of the lyric line breaks and visual chord spacing.
+- Then assign the supplied chord changes to bars and beats within that musical phrase.
 - Determine musical duration from the supplied harmony together with intended vocal phrasing, harmonic rhythm, tempo feel, pickups, held notes, rests, breaths, turnarounds, and instrumental movement.
 - Different lyric lines within the same section may occupy different amounts of musical time.
-- Multiple short lyric lines may share musical space, while one sustained lyric phrase may extend across several bars.
-- Equal phrase lengths are valid when musically intended, but must not be inferred merely because the lyrics are written on separate lines.
-- Before returning the result, verify that the section bar count can be justified musically without referring to the number of lyric lines.
+- Multiple short lyric lines may occur within one bar or one musical phrase.
+- A single lyric line may extend across multiple bars.
+- Consecutive lyric lines may begin within the same bar when the phrasing supports it.
+- Chord changes associated visually with the same lyric line may occur in the same bar, in different bars, or across a held phrase depending on the intended musical timing.
+- Equal phrase lengths are valid only when that repeated duration is a deliberate musical phrasing choice, not because the lyrics are printed on separate lines.
+- Do not choose section bars merely so that every lyric line starts on a new bar.
+- Before returning the result, verify that the timing would still make musical sense if the same lyrics were reformatted with different line breaks.
+- Before returning the result, verify that the section bar count can be justified musically without referring to the number of lyric lines or source chord-line formatting.
 - Example: ["Em", 0, 1, 1] means display Em at character 0 and change to Em on bar 1 beat 1.
 - Example: ["C", 12, 1, 3] means display C at character 12 and change to C on bar 1 beat 3.
 - Do not infer bar or beat from character spacing. Decide bar and beat from the intended musical phrasing, harmonic rhythm, time signature, groove, and chord progression.
@@ -622,9 +633,27 @@ Musical phrasing requirements:
 
     const { songSheetLineRefs, ...cleanSongsheetRecord } = songsheetRecord;
 
+    const timingProvenance =
+      chordData.source === "embedded-song-sheet"
+        ? {
+            source: "inferred-from-existing-chords",
+            status: "needs-timing-review",
+            authoritative: false,
+            detail:
+              "Bar and beat timing was inferred from existing chord data and lyric phrasing. The imported chord sheet does not contain enough information to establish exact musical timing.",
+          }
+        : {
+            source: "generated-arrangement",
+            status: "proposed",
+            authoritative: false,
+            detail:
+              "Bar and beat timing is part of the generated musical arrangement and should be reviewed before use as final performance timing.",
+          };
+
     return NextResponse.json({
       ...chordData,
       ...cleanSongsheetRecord,
+      musicalTimingProvenance: timingProvenance,
       generationMeta: getOpenAIUsageMeta(
         "chords/songsheet",
         SONGSHEET_MODEL,

@@ -14665,6 +14665,7 @@ export default function Page() {
       "chorus",
       "bridge",
       "outro",
+      "source",
       "sections",
       "notes",
       "songsheetNotes",
@@ -15487,6 +15488,38 @@ export default function Page() {
     };
   };
 
+  const getMusicalTimingProvenance = () => {
+    const chordData = getChordDataFromEditorJson();
+
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return null;
+    }
+
+    const provenance = (chordData as Record<string, unknown>)
+      .musicalTimingProvenance;
+
+    if (
+      !provenance ||
+      typeof provenance !== "object" ||
+      Array.isArray(provenance)
+    ) {
+      return null;
+    }
+
+    const record = provenance as Record<string, unknown>;
+
+    return {
+      source: typeof record.source === "string" ? record.source : "",
+      status: typeof record.status === "string" ? record.status : "",
+      authoritative: record.authoritative === true,
+      detail: typeof record.detail === "string" ? record.detail : "",
+    };
+  };
+
   const getSongsheetServerValidation = () => {
     const chordData = getChordDataFromEditorJson();
 
@@ -15669,7 +15702,23 @@ export default function Page() {
 
   const getPlacedSongSheetQuality = () => {
     const chordData = getChordDataFromEditorJson();
-    const lines = getPlacedSongSheetLines(chordData);
+
+    const lines = getPlacedSongSheetLines(chordData).filter((line) => {
+      const lyric = line.lyric.trim();
+
+      if (!lyric) {
+        return false;
+      }
+
+      const normalizedLyric = normalizeLyricMatchText(lyric);
+      const normalizedSection = normalizeLyricMatchText(line.section || "");
+
+      if (normalizedSection && normalizedLyric === normalizedSection) {
+        return false;
+      }
+
+      return true;
+    });
 
     if (lines.length === 0) {
       return {
@@ -17031,6 +17080,7 @@ export default function Page() {
   const placedSongsheetSourceMatch = getPlacedSongsheetSourceMatch();
   const songsheetServerValidation = getSongsheetServerValidation();
   const placedSongsheetSourceCoverage = getPlacedSongsheetSourceCoverage();
+  const musicalTimingProvenance = getMusicalTimingProvenance();
 
   const processedPreviewSourceAlignmentIsChecking =
     placedSongsheetSourceCoverage.isChecking ||
@@ -21655,6 +21705,31 @@ ${buildRewriteInstruction(
                               positions
                             </div>
 
+                            {musicalTimingProvenance && (
+                              <div className="mt-2 rounded border border-yellow-900/60 bg-yellow-950/20 p-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="text-xs font-semibold uppercase tracking-wide text-yellow-300">
+                                    Timing status
+                                  </div>
+
+                                  <div className="rounded bg-yellow-950/60 px-2 py-1 text-xs font-medium text-yellow-200">
+                                    {musicalTimingProvenance.authoritative
+                                      ? "Confirmed timing"
+                                      : musicalTimingProvenance.status ===
+                                          "needs-timing-review"
+                                        ? "Needs timing review"
+                                        : "Proposed timing"}
+                                  </div>
+                                </div>
+
+                                {musicalTimingProvenance.detail && (
+                                  <div className="mt-2 text-xs leading-5 text-yellow-100/80">
+                                    {musicalTimingProvenance.detail}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             <div className="mt-3 border-t border-gray-800 pt-3">
                               <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 Fit details
@@ -21749,6 +21824,26 @@ ${buildRewriteInstruction(
                             : placedSongSheetPreview
                               ? "Refit chords to lyrics"
                               : "Fit chords to lyrics"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(chordsText);
+                              setChordExtractionMessage(
+                                "Fitted chord JSON copied.",
+                              );
+                            } catch {
+                              setChordExtractionMessage(
+                                "Could not copy fitted chord JSON.",
+                              );
+                            }
+                          }}
+                          disabled={!chordsText.trim()}
+                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-500"
+                        >
+                          Copy fitted JSON
                         </button>
 
                         <button
