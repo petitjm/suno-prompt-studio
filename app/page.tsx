@@ -15355,6 +15355,10 @@ export default function Page() {
       return false;
     }
 
+    if (looksLikeChordLine(trimmed)) {
+      return false;
+    }
+
     if (/^\[[^\]]+\]$/.test(trimmed)) {
       return false;
     }
@@ -17611,25 +17615,25 @@ export default function Page() {
   };
 
   const startNewChordDraft = () => {
-  setChords(null);
-  setChordsText("");
-  setChordVersionTitle("");
-  setActiveChordVersionId(null);
-  setChordTransposeSemitones(0);
-  setLastAppliedTransposeSnapshot(null);
+    setChords(null);
+    setChordsText("");
+    setChordVersionTitle("");
+    setActiveChordVersionId(null);
+    setChordTransposeSemitones(0);
+    setLastAppliedTransposeSnapshot(null);
 
-  setProposedHarmonyRevision(null);
-  setHarmonyBeforeRevision(null);
-  setHarmonyRevisionSummary(null);
-  setHarmonyRevisionMessage("");
+    setProposedHarmonyRevision(null);
+    setHarmonyBeforeRevision(null);
+    setHarmonyRevisionSummary(null);
+    setHarmonyRevisionMessage("");
 
-  resetAudioPreviewRequestState();
+    resetAudioPreviewRequestState();
 
-  setProjectMessage("");
-  setChordExtractionMessage(
-    "Started a new chord draft. Your saved chord versions have not been changed.",
-  );
-};
+    setProjectMessage("");
+    setChordExtractionMessage(
+      "Started a new chord draft. Your saved chord versions have not been changed.",
+    );
+  };
 
   const clearChordEditor = () => {
     setChords(null);
@@ -21001,25 +21005,24 @@ ${buildRewriteInstruction(
                         You now have a starting harmony for this song.
                       </p>
 
-                     
-                        <div className="mt-4 flex flex-wrap gap-3">
-  <button
-    type="button"
-    onClick={() => setChordsTask("shape")}
-    className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500"
-  >
-    Shape the harmony
-  </button>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setChordsTask("shape")}
+                          className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500"
+                        >
+                          Shape the harmony
+                        </button>
 
-  <button
-    type="button"
-    onClick={startNewChordDraft}
-    disabled={generatingChords}
-    className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-500"
-  >
-    Start new chord draft
-  </button>
-</div>
+                        <button
+                          type="button"
+                          onClick={startNewChordDraft}
+                          disabled={generatingChords}
+                          className="rounded border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-gray-200 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-500"
+                        >
+                          Start new chord draft
+                        </button>
+                      </div>
                       <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>

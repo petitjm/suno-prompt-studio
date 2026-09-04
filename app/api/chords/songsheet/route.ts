@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
+import { looksLikeChordLine } from "@/lib/chords";
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -119,6 +121,10 @@ function isSourceLyricContentLine(line: string) {
   const trimmed = line.trim();
 
   if (!trimmed) {
+    return false;
+  }
+
+  if (looksLikeChordLine(trimmed)) {
     return false;
   }
 
