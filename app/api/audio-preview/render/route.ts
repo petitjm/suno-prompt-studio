@@ -303,13 +303,66 @@ function buildDryRunCueSheet(
   const tempoBpm = getTempoBpm(payload.tempo);
   const beatsPerBar = getBeatsPerBar(payload);
 
+  const musicalTimingPlan =
+    payload.musicalTimingPlan &&
+    typeof payload.musicalTimingPlan === "object" &&
+    !Array.isArray(payload.musicalTimingPlan)
+      ? payload.musicalTimingPlan
+      : null;
+
+  const timingSections =
+    musicalTimingPlan && Array.isArray(musicalTimingPlan.sections)
+      ? musicalTimingPlan.sections
+          .map((item) => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const section = getString(record.section);
+            const bars =
+              typeof record.bars === "number" &&
+              Number.isFinite(record.bars) &&
+              record.bars > 0
+                ? Math.floor(record.bars)
+                : null;
+
+            if (!section || bars === null) {
+              return null;
+            }
+
+            return {
+              section,
+              bars,
+              timeSignature: getString(record.timeSignature),
+            };
+          })
+          .filter((item) => item !== null)
+      : [];
+
+  const timingSectionOccurrenceCounts = new Map<string, number>();
+
   let cumulativeSeconds = 0;
 
   const sections = timeline.map((section) => {
-    const estimatedBars = Math.max(2, section.lyricLineCount * 2);
-    const estimatedSeconds = Number(
-      (((estimatedBars * beatsPerBar) / tempoBpm) * 60).toFixed(1),
+    const sectionOccurrence =
+      (timingSectionOccurrenceCounts.get(section.section) || 0) + 1;
+
+    timingSectionOccurrenceCounts.set(section.section, sectionOccurrence);
+
+    const matchingTimingSections = timingSections.filter(
+      (timingSection) => timingSection.section === section.section,
     );
+
+    const matchingTimingSection =
+      matchingTimingSections[sectionOccurrence - 1] || null;
+
+    const confirmedBars = matchingTimingSection?.bars ?? 0;
+
+    const estimatedSeconds = Number(
+      (((confirmedBars * beatsPerBar) / tempoBpm) * 60).toFixed(1),
+    );
+
     const startSeconds = Number(cumulativeSeconds.toFixed(1));
     const endSeconds = Number(
       (cumulativeSeconds + estimatedSeconds).toFixed(1),
@@ -345,7 +398,13 @@ function buildDryRunCueSheet(
       section: section.section,
       sectionInstanceId: section.sectionInstanceId,
       sourceLineIndexes: section.sourceLineIndexes,
-      estimatedBars,
+      bars: confirmedBars,
+
+      // Retained temporarily for downstream dry-run compatibility.
+      estimatedBars: confirmedBars,
+
+      barSource: "confirmed-musical-timing-plan",
+      timeSignature: matchingTimingSection?.timeSignature || "",
       estimatedSeconds,
       startSeconds,
       endSeconds,
@@ -359,19 +418,19 @@ function buildDryRunCueSheet(
   return {
     type: "audio-preview-dry-run-cue-sheet",
     version: 1,
-    timingStatus: "estimated",
+    timingStatus: "confirmed-bars",
     tempoBpm,
     beatsPerBar,
     totalEstimatedSeconds: Number(cumulativeSeconds.toFixed(1)),
     totalEstimatedBars: sections.reduce(
-      (total, section) => total + section.estimatedBars,
+      (total, section) => total + section.bars,
       0,
     ),
     sections,
     notes: [
-      "Timing is estimated from lyric line counts and detected tempo/groove.",
-      "This is not final musical timing.",
-      "Actual audio generation should revise these estimates from rendered audio or explicit bar counts.",
+      "Section bar counts come from the confirmed musical timing plan.",
+      "Section seconds are still calculated from tempo and the renderer's current beats-per-bar handling.",
+      "Chord event timing has not yet been converted to absolute timestamps.",
     ],
   };
 }
@@ -606,7 +665,7 @@ function validateDryRunCueSheet(cueSheet: {
     missing.push("type");
   }
 
-  if (cueSheet.timingStatus !== "estimated") {
+  if (cueSheet.timingStatus !== "confirmed-bars") {
     missing.push("timingStatus");
   }
 
