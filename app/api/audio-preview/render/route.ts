@@ -743,31 +743,30 @@ function validateDryRunCueSheet(cueSheet: {
         const record = section as Record<string, unknown>;
 
         if (
-       
-  typeof record.section !== "string" ||
-  !record.section.trim() ||
-  typeof record.estimatedBars !== "number" ||
-  record.estimatedBars <= 0 ||
-  typeof record.estimatedSeconds !== "number" ||
-  record.estimatedSeconds <= 0 ||
-  typeof record.startSeconds !== "number" ||
-  typeof record.endSeconds !== "number" ||
-  record.endSeconds <= record.startSeconds
-) {
-  return true;
-}
+          typeof record.section !== "string" ||
+          !record.section.trim() ||
+          typeof record.estimatedBars !== "number" ||
+          record.estimatedBars <= 0 ||
+          typeof record.estimatedSeconds !== "number" ||
+          record.estimatedSeconds <= 0 ||
+          typeof record.startSeconds !== "number" ||
+          typeof record.endSeconds !== "number" ||
+          record.endSeconds <= record.startSeconds
+        ) {
+          return true;
+        }
 
-const sectionStartSeconds = record.startSeconds;
-const sectionEndSeconds = record.endSeconds;
+        const sectionStartSeconds = record.startSeconds;
+        const sectionEndSeconds = record.endSeconds;
 
-if (
-  !Array.isArray(record.chordPlacements) ||
-  record.chordPlacements.length === 0
-) {
-  return true;
-}
+        if (
+          !Array.isArray(record.chordPlacements) ||
+          record.chordPlacements.length === 0
+        ) {
+          return true;
+        }
 
-return record.chordPlacements.some((placement) => {
+        return record.chordPlacements.some((placement) => {
           if (
             !placement ||
             typeof placement !== "object" ||
@@ -788,7 +787,7 @@ return record.chordPlacements.some((placement) => {
             typeof chord.absoluteSeconds !== "number" ||
             !Number.isFinite(chord.absoluteSeconds) ||
             chord.absoluteSeconds < sectionStartSeconds ||
-chord.absoluteSeconds >= sectionEndSeconds ||
+            chord.absoluteSeconds >= sectionEndSeconds ||
             chord.timingSource !== "confirmed-bar-beat"
           );
         });
@@ -883,7 +882,7 @@ function buildDryRunRenderManifest({
         "vocalGuideTrack",
       ],
       requiredBeforeRealRender: [
-        "Confirm cue sheet timings or replace estimates with final bar/time data.",
+        "Use the confirmed cue-sheet section bars and chord timestamps as the timing source of truth.",
         "Choose actual output audio format.",
         "Connect an audio renderer capable of using the placed songsheet and section instructions.",
         "Persist generated audio URLs after render completion.",
@@ -907,7 +906,7 @@ function buildDryRunRenderManifest({
         status: "not-generated",
         role: "timing-reference",
         description:
-          "Simple timing reference aligned to the cue sheet and section timing estimates.",
+          "Simple timing reference aligned to the cue sheet, confirmed section bars, and confirmed chord timing.",
         suggestedFileName: "click-track.wav",
         format: "unknown",
         url: null,
@@ -1190,7 +1189,7 @@ function buildDryRunHandoffBundle({
     },
     nextActions: allValidationsPassed
       ? [
-          "Review the dry-run cue sheet timing estimates.",
+          "Review the confirmed cue-sheet section and chord timing.",
           "Choose real audio output formats.",
           "Connect a renderer that can consume the manifest contract.",
           "Keep all output slots not-generated until files are actually written.",
@@ -1332,7 +1331,7 @@ function buildDryRunArtifactPackage({
         "No real audio renderer is connected yet.",
         "Output audio format has not been selected.",
         "Generated audio file storage has not been configured.",
-        "Cue sheet timings are still estimated and need final confirmation before real rendering.",
+        "Cue sheet section bars and chord timestamps are confirmed; real rendering remains blocked until renderer, format, and storage are configured.",
       ],
       requiredDecisions: [
         "Choose renderer implementation.",
