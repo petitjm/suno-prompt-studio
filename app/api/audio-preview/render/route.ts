@@ -10,6 +10,9 @@ type RendererPayload = {
   key?: string;
   transposeSemitones?: number;
   audioPreviewSourceMode?: string;
+  musicalTimingPlan?: Record<string, unknown> | null;
+  timingReviewSignature?: string | null;
+  timingConfirmed?: boolean;
   songsheetStatus?: string;
   songsheetReview?: string;
   tempo?: string;
@@ -415,6 +418,30 @@ function validateRendererPayload(payload: RendererPayload) {
     missing.push("renderSteps");
   }
 
+  const musicalTimingPlan =
+    payload.musicalTimingPlan &&
+    typeof payload.musicalTimingPlan === "object" &&
+    !Array.isArray(payload.musicalTimingPlan)
+      ? payload.musicalTimingPlan
+      : null;
+
+  const timingSections =
+    musicalTimingPlan && Array.isArray(musicalTimingPlan.sections)
+      ? musicalTimingPlan.sections
+      : [];
+
+  if (!musicalTimingPlan || timingSections.length === 0) {
+    missing.push("musicalTimingPlan");
+  }
+
+  if (!getString(payload.timingReviewSignature)) {
+    missing.push("timingReviewSignature");
+  }
+
+  if (payload.timingConfirmed !== true) {
+    missing.push("timingConfirmed");
+  }
+
   if (payload.validation?.ready !== true) {
     missing.push("validation.ready");
   }
@@ -422,9 +449,18 @@ function validateRendererPayload(payload: RendererPayload) {
   return {
     ready: missing.length === 0,
     missing,
+    timingGate: {
+      musicalTimingPlanPresent: Boolean(
+        musicalTimingPlan && timingSections.length > 0,
+      ),
+      timingReviewSignaturePresent: Boolean(
+        getString(payload.timingReviewSignature),
+      ),
+      timingConfirmed: payload.timingConfirmed === true,
+    },
     detail:
       missing.length === 0
-        ? "Renderer payload is ready for dry-run audio preview handoff."
+        ? "Renderer payload is ready for dry-run audio preview handoff with confirmed musical timing."
         : `Renderer payload cannot be handed off yet. Missing or invalid: ${missing.join(", ")}.`,
   };
 }
