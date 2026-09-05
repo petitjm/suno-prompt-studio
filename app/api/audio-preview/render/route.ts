@@ -383,14 +383,43 @@ function buildDryRunCueSheet(
     const chordPlacements = sectionLines.flatMap((line, lineIndex) => {
       const lyricLength = Math.max(1, line.lyric?.length || 1);
 
-      return (line.chords || []).map((chord) => ({
-        chord: chord.chord,
-        lineIndex,
-        charIndex: chord.charIndex,
-        lyricLength,
-        ...(chord.bar !== undefined ? { bar: chord.bar } : {}),
-        ...(chord.beat !== undefined ? { beat: chord.beat } : {}),
-      }));
+      return (line.chords || []).map((chord) => {
+        const chordBar = chord.bar;
+        const chordBeat = chord.beat;
+
+        const hasConfirmedMusicalPosition =
+          typeof chordBar === "number" &&
+          Number.isFinite(chordBar) &&
+          chordBar >= 1 &&
+          chordBar <= confirmedBars &&
+          typeof chordBeat === "number" &&
+          Number.isFinite(chordBeat) &&
+          chordBeat >= 1 &&
+          chordBeat <= beatsPerBar;
+
+        const absoluteSeconds = hasConfirmedMusicalPosition
+          ? Number(
+              (
+                startSeconds +
+                (((chordBar - 1) * beatsPerBar + (chordBeat - 1)) / tempoBpm) *
+                  60
+              ).toFixed(3),
+            )
+          : null;
+
+        return {
+          chord: chord.chord,
+          lineIndex,
+          charIndex: chord.charIndex,
+          lyricLength,
+          ...(chordBar !== undefined ? { bar: chordBar } : {}),
+          ...(chordBeat !== undefined ? { beat: chordBeat } : {}),
+          absoluteSeconds,
+          timingSource: hasConfirmedMusicalPosition
+            ? "confirmed-bar-beat"
+            : "missing-confirmed-bar-beat",
+        };
+      });
     });
 
     return {
@@ -430,7 +459,7 @@ function buildDryRunCueSheet(
     notes: [
       "Section bar counts come from the confirmed musical timing plan.",
       "Section seconds are still calculated from tempo and the renderer's current beats-per-bar handling.",
-      "Chord event timing has not yet been converted to absolute timestamps.",
+      "Chord event absolute timestamps are calculated from confirmed bar and beat positions.",
     ],
   };
 }
@@ -713,17 +742,56 @@ function validateDryRunCueSheet(cueSheet: {
 
         const record = section as Record<string, unknown>;
 
-        return (
-          typeof record.section !== "string" ||
-          !record.section.trim() ||
-          typeof record.estimatedBars !== "number" ||
-          record.estimatedBars <= 0 ||
-          typeof record.estimatedSeconds !== "number" ||
-          record.estimatedSeconds <= 0 ||
-          typeof record.startSeconds !== "number" ||
-          typeof record.endSeconds !== "number" ||
-          record.endSeconds <= record.startSeconds
-        );
+        if (
+       
+  typeof record.section !== "string" ||
+  !record.section.trim() ||
+  typeof record.estimatedBars !== "number" ||
+  record.estimatedBars <= 0 ||
+  typeof record.estimatedSeconds !== "number" ||
+  record.estimatedSeconds <= 0 ||
+  typeof record.startSeconds !== "number" ||
+  typeof record.endSeconds !== "number" ||
+  record.endSeconds <= record.startSeconds
+) {
+  return true;
+}
+
+const sectionStartSeconds = record.startSeconds;
+const sectionEndSeconds = record.endSeconds;
+
+if (
+  !Array.isArray(record.chordPlacements) ||
+  record.chordPlacements.length === 0
+) {
+  return true;
+}
+
+return record.chordPlacements.some((placement) => {
+          if (
+            !placement ||
+            typeof placement !== "object" ||
+            Array.isArray(placement)
+          ) {
+            return true;
+          }
+
+          const chord = placement as Record<string, unknown>;
+
+          return (
+            typeof chord.bar !== "number" ||
+            !Number.isFinite(chord.bar) ||
+            chord.bar < 1 ||
+            typeof chord.beat !== "number" ||
+            !Number.isFinite(chord.beat) ||
+            chord.beat < 1 ||
+            typeof chord.absoluteSeconds !== "number" ||
+            !Number.isFinite(chord.absoluteSeconds) ||
+            chord.absoluteSeconds < sectionStartSeconds ||
+chord.absoluteSeconds >= sectionEndSeconds ||
+            chord.timingSource !== "confirmed-bar-beat"
+          );
+        });
       })
     : true;
 
