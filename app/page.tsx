@@ -5243,9 +5243,23 @@ export default function Page() {
   const getChordVersionSelectLabel = (version: ChordVersionRecord) => {
     const title = version.title || "Untitled chord version";
 
-    const createdLabel = version.created_at
-      ? new Date(version.created_at).toLocaleString()
-      : "Unknown date";
+    const createdAt =
+  version.created_at &&
+  !/[zZ]|[+-]\d{2}:\d{2}$/.test(version.created_at)
+    ? `${version.created_at}Z`
+    : version.created_at;
+
+const createdLabel = createdAt
+  ? new Date(createdAt).toLocaleString("en-GB", {
+      timeZone: "Europe/London",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+  : "Unknown date";
 
     if (!version.song_version_id) {
       return `[Old/unlinked] ${title} — ${createdLabel}`;
@@ -22729,6 +22743,28 @@ ${buildRewriteInstruction(
                               {chordFitReviewItemCount === 1 ? "" : "s"}
                             </div>
                           )}
+                        </div>
+
+                        <div className="rounded border border-gray-800 bg-gray-900 p-3">
+                          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                            Timing check
+                          </div>
+
+                          <div
+                            className={`rounded px-2 py-1 text-xs font-medium ${
+                              chordTimingReviewAccepted
+                                ? "bg-green-950/40 text-green-200"
+                                : musicalTimingProvenance
+                                  ? "bg-yellow-950/40 text-yellow-200"
+                                  : "bg-gray-950 text-gray-400"
+                            }`}
+                          >
+                            {chordTimingReviewAccepted
+                              ? "Timing confirmed"
+                              : musicalTimingProvenance
+                                ? "Timing not confirmed"
+                                : "No timing plan"}
+                          </div>
                         </div>
 
                         <div className="rounded border border-gray-800 bg-gray-900 p-3">
