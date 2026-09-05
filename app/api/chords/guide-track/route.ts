@@ -187,6 +187,64 @@ Requirements:
           model: GUIDE_TRACK_MODEL,
           messages: [{ role: "user", content: prompt }],
           reasoning_effort: "low",
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "guide_track_plan",
+              strict: true,
+              schema: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  guideTrackPlan: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                      purpose: { type: "string" },
+                      countIn: { type: "string" },
+                      instrumentation: { type: "string" },
+                      guitarTone: { type: "string" },
+                      rhythmReference: { type: "string" },
+                      vocalGuideStyle: { type: "string" },
+                      sectionPlan: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          additionalProperties: false,
+                          properties: {
+                            section: { type: "string" },
+                            feel: { type: "string" },
+                            guitarApproach: { type: "string" },
+                            vocalApproach: { type: "string" },
+                            dynamicShape: { type: "string" },
+                            notes: { type: "string" },
+                          },
+                          required: [
+                            "section",
+                            "feel",
+                            "guitarApproach",
+                            "vocalApproach",
+                            "dynamicShape",
+                            "notes",
+                          ],
+                        },
+                      },
+                    },
+                    required: [
+                      "purpose",
+                      "countIn",
+                      "instrumentation",
+                      "guitarTone",
+                      "rhythmReference",
+                      "vocalGuideStyle",
+                      "sectionPlan",
+                    ],
+                  },
+                },
+                required: ["guideTrackPlan"],
+              },
+            },
+          },
         },
         {
           signal: controller.signal,

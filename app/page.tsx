@@ -2802,6 +2802,11 @@ export default function Page() {
       return;
     }
 
+    if (skipNextChordWorkingDraftSaveRef.current) {
+      skipNextChordWorkingDraftSaveRef.current = false;
+      return;
+    }
+
     // Only preserve genuinely unsaved chord-development work.
     if (activeChordVersionId) {
       return;
@@ -2812,11 +2817,6 @@ export default function Page() {
     }
 
     const key = getChordWorkingDraftKey(activeProject.id, activeSongVersionId);
-
-    if (skipNextChordWorkingDraftSaveRef.current) {
-      skipNextChordWorkingDraftSaveRef.current = false;
-      return;
-    }
 
     const chordData = getChordDataFromEditorJson();
 
@@ -5234,21 +5234,28 @@ export default function Page() {
       return rankDifference;
     }
 
-    return chordVersions.indexOf(a) - chordVersions.indexOf(b);
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+
+    return bTime - aTime;
   });
 
   const getChordVersionSelectLabel = (version: ChordVersionRecord) => {
     const title = version.title || "Untitled chord version";
 
+    const createdLabel = version.created_at
+      ? new Date(version.created_at).toLocaleString()
+      : "Unknown date";
+
     if (!version.song_version_id) {
-      return `[Old/unlinked] ${title}`;
+      return `[Old/unlinked] ${title} — ${createdLabel}`;
     }
 
     if (version.song_version_id === activeSongVersionId) {
-      return `[Current song] ${title}`;
+      return `[Current song] ${title} — ${createdLabel}`;
     }
 
-    return `[Other song] ${title}`;
+    return `[Other song] ${title} — ${createdLabel}`;
   };
 
   const getChordVersionLoadMessage = (version: ChordVersionRecord) => {
@@ -10860,6 +10867,115 @@ export default function Page() {
     const songsheetLines = getAudioPreviewSourceLines();
     const readiness = getAudioGuideReadiness();
 
+    const musicalTimingPlan =
+      record &&
+      record.musicalTimingPlan &&
+      typeof record.musicalTimingPlan === "object" &&
+      !Array.isArray(record.musicalTimingPlan)
+        ? record.musicalTimingPlan
+        : null;
+
+    const timingReviewSignature =
+      record && typeof record.timingReviewSignature === "string"
+        ? record.timingReviewSignature
+        : null;
+
+    const timingConfirmed =
+      audioPreviewSourceMode === "chord-editor" &&
+      Boolean(musicalTimingPlan) &&
+      Boolean(timingReviewSignature) &&
+      timingReviewSignature ===
+        JSON.stringify({
+          musicalTimingPlan:
+            musicalTimingPlan &&
+            typeof musicalTimingPlan === "object" &&
+            !Array.isArray(musicalTimingPlan)
+              ? {
+                  sections: Array.isArray(
+                    (musicalTimingPlan as Record<string, unknown>).sections,
+                  )
+                    ? (
+                        (musicalTimingPlan as Record<string, unknown>)
+                          .sections as unknown[]
+                      )
+                        .map((section) => {
+                          if (
+                            !section ||
+                            typeof section !== "object" ||
+                            Array.isArray(section)
+                          ) {
+                            return null;
+                          }
+
+                          const sectionRecord = section as Record<
+                            string,
+                            unknown
+                          >;
+
+                          return {
+                            section:
+                              typeof sectionRecord.section === "string"
+                                ? sectionRecord.section
+                                : "",
+                            bars:
+                              typeof sectionRecord.bars === "number"
+                                ? sectionRecord.bars
+                                : null,
+                            timeSignature:
+                              typeof sectionRecord.timeSignature === "string"
+                                ? sectionRecord.timeSignature
+                                : "",
+                            meterChanges: Array.isArray(
+                              sectionRecord.meterChanges,
+                            )
+                              ? sectionRecord.meterChanges
+                                  .map((change) => {
+                                    if (
+                                      !change ||
+                                      typeof change !== "object" ||
+                                      Array.isArray(change)
+                                    ) {
+                                      return null;
+                                    }
+
+                                    const changeRecord = change as Record<
+                                      string,
+                                      unknown
+                                    >;
+
+                                    return {
+                                      bar:
+                                        typeof changeRecord.bar === "number"
+                                          ? changeRecord.bar
+                                          : null,
+                                      timeSignature:
+                                        typeof changeRecord.timeSignature ===
+                                        "string"
+                                          ? changeRecord.timeSignature
+                                          : "",
+                                    };
+                                  })
+                                  .filter(Boolean)
+                              : [],
+                          };
+                        })
+                        .filter(Boolean)
+                    : [],
+                }
+              : null,
+          timedChordEvents: getPlacedSongSheetLines(record)
+            .filter((line) => line.chords.length > 0)
+            .map((line) => ({
+              section: line.section,
+              lyric: line.lyric,
+              chords: line.chords.map((placement) => ({
+                chord: placement.chord,
+                bar: placement.bar ?? null,
+                beat: placement.beat ?? null,
+              })),
+            })),
+        });
+
     if (intentRows.length === 0 && songsheetLines.length === 0) {
       return "";
     }
@@ -10877,6 +10993,9 @@ export default function Page() {
       key: getDisplayedKeyLabel() || getOriginalKeyLabel() || "",
       transposeSemitones: chordTransposeSemitones,
       audioPreviewSourceMode,
+      musicalTimingPlan,
+      timingReviewSignature,
+      timingConfirmed,
       readiness: {
         label: readiness.label,
         detail: readiness.detail,
@@ -17225,8 +17344,9 @@ export default function Page() {
 
   const currentChordTimingSignature = JSON.stringify({
     musicalTimingPlan: normalizedMusicalTimingPlan,
-    timedChordEvents: getPlacedSongSheetLines(chordDataForTimingSignature).map(
-      (line) => ({
+    timedChordEvents: getPlacedSongSheetLines(chordDataForTimingSignature)
+      .filter((line) => line.chords.length > 0)
+      .map((line) => ({
         section: line.section,
         lyric: line.lyric,
         chords: line.chords.map((placement) => ({
@@ -17234,8 +17354,7 @@ export default function Page() {
           bar: placement.bar ?? null,
           beat: placement.beat ?? null,
         })),
-      }),
-    ),
+      })),
   });
 
   const chordTimingCanBeMarkedComplete = Boolean(
@@ -17423,8 +17542,30 @@ export default function Page() {
         return null;
       }
 
-      setChords(result);
-      setChordsText(JSON.stringify(result, null, 2));
+      const nextChordData = {
+        ...chordData,
+        guideTrackPlan:
+          result.guideTrackPlan &&
+          typeof result.guideTrackPlan === "object" &&
+          !Array.isArray(result.guideTrackPlan)
+            ? result.guideTrackPlan
+            : null,
+        generationMeta:
+          result.generationMeta &&
+          typeof result.generationMeta === "object" &&
+          !Array.isArray(result.generationMeta)
+            ? result.generationMeta
+            : undefined,
+        draftType:
+          typeof result.draftType === "string"
+            ? result.draftType
+            : typeof chordData.draftType === "string"
+              ? chordData.draftType
+              : "chord-draft-with-guide-track-plan",
+      };
+
+      setChords(nextChordData);
+      setChordsText(JSON.stringify(nextChordData, null, 2));
 
       if (!activeChordVersionId) {
         setChordVersionTitle((currentTitle) => {
@@ -17442,7 +17583,7 @@ export default function Page() {
       setLastAppliedTransposeSnapshot(null);
       resetAudioPreviewRequestState();
       setChordExtractionMessage("Guide track plan generated.");
-      return result;
+      return nextChordData;
     } catch {
       setChordExtractionMessage("Could not generate guide track plan.");
       return null;
@@ -19012,6 +19153,8 @@ export default function Page() {
 
       const savedVersion = data.version;
 
+      skipNextChordWorkingDraftSaveRef.current = true;
+
       setChords(chordsToSaveWithFitReview);
       setChordsText(JSON.stringify(chordsToSaveWithFitReview, null, 2));
 
@@ -19841,8 +19984,49 @@ export default function Page() {
     }
   };
 
+  const getSavedChordKeyForCurrentSong = () => {
+    if (!activeSongVersionId) {
+      return "";
+    }
+
+    const savedVersionsForCurrentSong = chordVersions
+      .filter(
+        (version) =>
+          version.song_version_id === activeSongVersionId &&
+          version.chord_data &&
+          typeof version.chord_data === "object" &&
+          !Array.isArray(version.chord_data),
+      )
+      .sort((a, b) => {
+        const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+
+        return bTime - aTime;
+      });
+
+    for (const version of savedVersionsForCurrentSong) {
+      const key = getStringValue(
+        (version.chord_data as Record<string, unknown>).key,
+      );
+
+      if (key) {
+        return key;
+      }
+    }
+
+    return "";
+  };
+
   const extractChordsFromCurrentSong = () => {
     const extracted = extractEmbeddedChordsToJson(performanceSheet);
+    const savedKey = getSavedChordKeyForCurrentSong();
+
+    const extractedWithKey = savedKey
+      ? {
+          ...extracted,
+          key: savedKey,
+        }
+      : extracted;
 
     if (!Object.keys(extracted.sections).length) {
       setChordExtractionMessage(
@@ -19851,8 +20035,8 @@ export default function Page() {
       return;
     }
 
-    setChords(extracted);
-    setChordsText(JSON.stringify(extracted, null, 2));
+    setChords(extractedWithKey);
+    setChordsText(JSON.stringify(extractedWithKey, null, 2));
     setActiveChordVersionId(null);
     setChordVersionTitle("Chords from current song");
     setChordTransposeSemitones(0);
@@ -21877,9 +22061,10 @@ ${buildRewriteInstruction(
 
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          setReviewedChordTimingSignature(null)
-                                        }
+                                        onClick={() => {
+                                          setReviewedChordTimingSignature(null);
+                                          setActiveChordVersionId(null);
+                                        }}
                                         className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
                                       >
                                         Review timing again
@@ -21896,11 +22081,12 @@ ${buildRewriteInstruction(
 
                                       <button
                                         type="button"
-                                        onClick={() =>
+                                        onClick={() => {
                                           setReviewedChordTimingSignature(
                                             currentChordTimingSignature,
-                                          )
-                                        }
+                                          );
+                                          setActiveChordVersionId(null);
+                                        }}
                                         disabled={
                                           !chordTimingCanBeMarkedComplete
                                         }
@@ -21947,9 +22133,10 @@ ${buildRewriteInstruction(
 
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          setReviewedChordFitSignature(null)
-                                        }
+                                        onClick={() => {
+                                          setReviewedChordFitSignature(null);
+                                          setActiveChordVersionId(null);
+                                        }}
                                         className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
                                       >
                                         Review again
@@ -22529,9 +22716,11 @@ ${buildRewriteInstruction(
                           >
                             {processedPreviewSourceAlignmentIsChecking
                               ? "Checking..."
-                              : chordFitNeedsReview
-                                ? "Review recommended"
-                                : "Looks good"}
+                              : chordFitReviewAccepted
+                                ? "Fit complete"
+                                : chordFitNeedsReview
+                                  ? "Review recommended"
+                                  : "Fit not confirmed"}
                           </div>
 
                           {chordFitReviewItemCount > 0 && (

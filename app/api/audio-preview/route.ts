@@ -9,6 +9,9 @@ type AudioPreviewSpec = {
   key?: string;
   transposeSemitones?: number;
   audioPreviewSourceMode?: string;
+  musicalTimingPlan?: Record<string, unknown> | null;
+  timingReviewSignature?: string | null;
+  timingConfirmed?: boolean;
   songsheetStatus?: string;
   songsheetReview?: string;
   readiness?: {
@@ -481,6 +484,17 @@ export async function POST(req: Request) {
       key: body.key || "",
       transposeSemitones: body.transposeSemitones ?? 0,
       audioPreviewSourceMode,
+      musicalTimingPlan:
+        body.musicalTimingPlan &&
+        typeof body.musicalTimingPlan === "object" &&
+        !Array.isArray(body.musicalTimingPlan)
+          ? body.musicalTimingPlan
+          : null,
+      timingReviewSignature:
+        typeof body.timingReviewSignature === "string"
+          ? body.timingReviewSignature
+          : null,
+      timingConfirmed: body.timingConfirmed === true,
       songsheetStatus: body.songsheetStatus || "",
       songsheetReview: body.songsheetReview || "",
       tempo,
