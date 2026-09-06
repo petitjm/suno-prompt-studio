@@ -296,12 +296,25 @@ function getBeatsPerBar(payload: RendererPayload) {
   return 4;
 }
 
+function getBeatsPerBarFromTimeSignature(value: unknown) {
+  const timeSignature = getString(value);
+  const match = timeSignature.match(/^(\d+)\s*\/\s*(\d+)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const beatsPerBar = Number(match[1]);
+
+  return Number.isFinite(beatsPerBar) && beatsPerBar > 0 ? beatsPerBar : null;
+}
+
 function buildDryRunCueSheet(
   payload: RendererPayload,
   timeline: TimelineSection[],
 ) {
   const tempoBpm = getTempoBpm(payload.tempo);
-  const beatsPerBar = getBeatsPerBar(payload);
+  const fallbackBeatsPerBar = getBeatsPerBar(payload);
 
   const musicalTimingPlan =
     payload.musicalTimingPlan &&
@@ -331,10 +344,50 @@ function buildDryRunCueSheet(
               return null;
             }
 
+            const meterChanges = Array.isArray(record.meterChanges)
+              ? record.meterChanges
+                  .map((item) => {
+                    if (
+                      !item ||
+                      typeof item !== "object" ||
+                      Array.isArray(item)
+                    ) {
+                      return null;
+                    }
+
+                    const meterChange = item as Record<string, unknown>;
+
+                    const bar =
+                      typeof meterChange.bar === "number" &&
+                      Number.isFinite(meterChange.bar) &&
+                      meterChange.bar >= 1
+                        ? Math.floor(meterChange.bar)
+                        : null;
+
+                    const timeSignature = getString(meterChange.timeSignature);
+
+                    if (
+                      bar === null ||
+                      bar > bars ||
+                      getBeatsPerBarFromTimeSignature(timeSignature) === null
+                    ) {
+                      return null;
+                    }
+
+                    return {
+                      bar,
+                      timeSignature,
+                    };
+                  })
+                  .filter((item) => item !== null)
+                  .sort((a, b) => a.bar - b.bar)
+              : [];
+
             return {
               section,
               bars,
               timeSignature: getString(record.timeSignature),
+              meterChanges,
             };
           })
           .filter((item) => item !== null)
@@ -359,8 +412,47 @@ function buildDryRunCueSheet(
 
     const confirmedBars = matchingTimingSection?.bars ?? 0;
 
+    const confirmedBeatsPerBar = getBeatsPerBarFromTimeSignature(
+      matchingTimingSection?.timeSignature,
+    );
+
+    const sectionBeatsPerBar = confirmedBeatsPerBar ?? fallbackBeatsPerBar;
+
+    const meterChanges = matchingTimingSection?.meterChanges ?? [];
+
+    const getBarBeatsPerBar = (bar: number) => {
+      const applicableMeterChange = meterChanges
+        .filter((change) => change.bar <= bar)
+        .at(-1);
+
+      return (
+        getBeatsPerBarFromTimeSignature(applicableMeterChange?.timeSignature) ??
+        sectionBeatsPerBar
+      );
+    };
+
+    const barTiming = Array.from({ length: confirmedBars }, (_, index) => {
+      const bar = index + 1;
+      const beatsPerBar = getBarBeatsPerBar(bar);
+
+      return {
+        bar,
+        beatsPerBar,
+        timeSignature:
+          meterChanges.filter((change) => change.bar <= bar).at(-1)
+            ?.timeSignature ??
+          matchingTimingSection?.timeSignature ??
+          "",
+      };
+    });
+
+    const totalSectionBeats = barTiming.reduce(
+      (total, bar) => total + bar.beatsPerBar,
+      0,
+    );
+
     const estimatedSeconds = Number(
-      (((confirmedBars * beatsPerBar) / tempoBpm) * 60).toFixed(1),
+      ((totalSectionBeats / tempoBpm) * 60).toFixed(1),
     );
 
     const startSeconds = Number(cumulativeSeconds.toFixed(1));
@@ -386,6 +478,10 @@ function buildDryRunCueSheet(
       return (line.chords || []).map((chord) => {
         const chordBar = chord.bar;
         const chordBeat = chord.beat;
+        const chordBarBeatsPerBar =
+          typeof chordBar === "number" && Number.isFinite(chordBar)
+            ? getBarBeatsPerBar(chordBar)
+            : null;
 
         const hasConfirmedMusicalPosition =
           typeof chordBar === "number" &&
@@ -395,14 +491,21 @@ function buildDryRunCueSheet(
           typeof chordBeat === "number" &&
           Number.isFinite(chordBeat) &&
           chordBeat >= 1 &&
-          chordBeat <= beatsPerBar;
+          chordBarBeatsPerBar !== null &&
+          chordBeat <= chordBarBeatsPerBar;
+
+        const beatsBeforeChordBar =
+          hasConfirmedMusicalPosition && typeof chordBar === "number"
+            ? barTiming
+                .filter((bar) => bar.bar < chordBar)
+                .reduce((total, bar) => total + bar.beatsPerBar, 0)
+            : 0;
 
         const absoluteSeconds = hasConfirmedMusicalPosition
           ? Number(
               (
                 startSeconds +
-                (((chordBar - 1) * beatsPerBar + (chordBeat - 1)) / tempoBpm) *
-                  60
+                ((beatsBeforeChordBar + (chordBeat - 1)) / tempoBpm) * 60
               ).toFixed(3),
             )
           : null;
@@ -434,10 +537,16 @@ function buildDryRunCueSheet(
 
       barSource: "confirmed-musical-timing-plan",
       timeSignature: matchingTimingSection?.timeSignature || "",
+      beatsPerBar: sectionBeatsPerBar,
+      meterChanges,
+      barTiming,
+      meterSource:
+        confirmedBeatsPerBar !== null
+          ? "confirmed-time-signature"
+          : "payload-text-fallback",
       estimatedSeconds,
       startSeconds,
       endSeconds,
-      beatsPerBar,
       lyricLineCount: section.lyricLineCount,
       chordPlacementCount: section.chordPlacementCount,
       chordPlacements,
@@ -449,7 +558,7 @@ function buildDryRunCueSheet(
     version: 1,
     timingStatus: "confirmed-bars",
     tempoBpm,
-    beatsPerBar,
+    beatsPerBar: fallbackBeatsPerBar,
     totalEstimatedSeconds: Number(cumulativeSeconds.toFixed(1)),
     totalEstimatedBars: sections.reduce(
       (total, section) => total + section.bars,
@@ -458,7 +567,7 @@ function buildDryRunCueSheet(
     sections,
     notes: [
       "Section bar counts come from the confirmed musical timing plan.",
-      "Section seconds are still calculated from tempo and the renderer's current beats-per-bar handling.",
+      "Section seconds and chord timestamps use confirmed section meter plus any confirmed bar-level meter changes; payload text is used only when section meter is unavailable.",
       "Chord event absolute timestamps are calculated from confirmed bar and beat positions.",
     ],
   };
@@ -747,6 +856,9 @@ function validateDryRunCueSheet(cueSheet: {
           !record.section.trim() ||
           typeof record.estimatedBars !== "number" ||
           record.estimatedBars <= 0 ||
+          typeof record.beatsPerBar !== "number" ||
+          !Number.isFinite(record.beatsPerBar) ||
+          record.beatsPerBar <= 0 ||
           typeof record.estimatedSeconds !== "number" ||
           record.estimatedSeconds <= 0 ||
           typeof record.startSeconds !== "number" ||
@@ -803,7 +915,7 @@ function validateDryRunCueSheet(cueSheet: {
     missing,
     detail:
       missing.length === 0
-        ? "Dry-run cue sheet contains estimated section timing, total bars, total seconds, tempo, and meter."
+        ? "Dry-run cue sheet contains confirmed section bars, section-specific meter, absolute chord timestamps, total bars, total seconds, and tempo."
         : `Dry-run cue sheet is missing or invalid: ${missing.join(", ")}.`,
   };
 }
