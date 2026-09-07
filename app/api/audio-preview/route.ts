@@ -6,6 +6,7 @@ type AudioPreviewSpec = {
   project?: string;
   songVersion?: string;
   chordVersion?: string;
+  tempoBpm?: number;
   key?: string;
   transposeSemitones?: number;
   audioPreviewSourceMode?: string;
@@ -389,12 +390,19 @@ export async function POST(req: Request) {
       notes: item.notes || "",
     }));
 
+    const tempoBpm =
+      typeof body.tempoBpm === "number" && Number.isFinite(body.tempoBpm)
+        ? body.tempoBpm
+        : null;
+
     const tempo =
-      performanceIntent.Tempo ||
-      performanceIntent.tempo ||
-      guideRows.Tempo ||
-      guideRows.tempo ||
-      "";
+      tempoBpm !== null
+        ? `${tempoBpm} BPM`
+        : performanceIntent.Tempo ||
+          performanceIntent.tempo ||
+          guideRows.Tempo ||
+          guideRows.tempo ||
+          "";
 
     const groove =
       performanceIntent.Groove ||
@@ -497,6 +505,7 @@ export async function POST(req: Request) {
       timingConfirmed: body.timingConfirmed === true,
       songsheetStatus: body.songsheetStatus || "",
       songsheetReview: body.songsheetReview || "",
+      tempoBpm,
       tempo,
       groove,
       instrumentation,
@@ -527,6 +536,7 @@ export async function POST(req: Request) {
         transposeSemitones: body.transposeSemitones ?? 0,
         songsheetStatus: body.songsheetStatus || "",
         songsheetReview: body.songsheetReview || "",
+        tempoBpm,
         tempo,
         groove,
         instrumentation,
