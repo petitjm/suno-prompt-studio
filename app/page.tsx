@@ -4376,8 +4376,6 @@ export default function Page() {
 
       setChordsText(JSON.stringify(selectedChordData || {}, null, 2));
 
-      setChordsText(JSON.stringify(selectedChordData || {}, null, 2));
-
       setChordVersionTitle(selectedChordVersion?.title || "");
 
       const workingDraftSongVersionId = selectedSongVersionId;
@@ -4386,7 +4384,43 @@ export default function Page() {
         ? readChordWorkingDraft(projectId, workingDraftSongVersionId)
         : null;
 
-      if (workingDraft && workingDraftSongVersionId) {
+      const selectedChordDataRecord =
+        selectedChordData &&
+        typeof selectedChordData === "object" &&
+        !Array.isArray(selectedChordData)
+          ? (selectedChordData as Record<string, unknown>)
+          : null;
+
+      const workingDraftChordRecord =
+        workingDraft?.chords &&
+        typeof workingDraft.chords === "object" &&
+        !Array.isArray(workingDraft.chords)
+          ? (workingDraft.chords as Record<string, unknown>)
+          : null;
+
+      const selectedCheckpointHasConfirmedTiming = Boolean(
+        selectedChordDataRecord?.musicalTimingPlan &&
+        selectedChordDataRecord?.timingReviewSignature,
+      );
+
+      const workingDraftHasConfirmedTiming = Boolean(
+        workingDraftChordRecord?.musicalTimingPlan &&
+        workingDraftChordRecord?.timingReviewSignature,
+      );
+
+      const shouldRestoreChordWorkingDraft = Boolean(
+        workingDraft &&
+        workingDraftSongVersionId &&
+        (!selectedChordVersion ||
+          (!selectedCheckpointHasConfirmedTiming &&
+            workingDraftHasConfirmedTiming)),
+      );
+
+      if (
+        workingDraft &&
+        workingDraftSongVersionId &&
+        shouldRestoreChordWorkingDraft
+      ) {
         const workingDraftKey = getChordWorkingDraftKey(
           projectId,
           workingDraftSongVersionId,
@@ -5244,22 +5278,21 @@ export default function Page() {
     const title = version.title || "Untitled chord version";
 
     const createdAt =
-  version.created_at &&
-  !/[zZ]|[+-]\d{2}:\d{2}$/.test(version.created_at)
-    ? `${version.created_at}Z`
-    : version.created_at;
+      version.created_at && !/[zZ]|[+-]\d{2}:\d{2}$/.test(version.created_at)
+        ? `${version.created_at}Z`
+        : version.created_at;
 
-const createdLabel = createdAt
-  ? new Date(createdAt).toLocaleString("en-GB", {
-      timeZone: "Europe/London",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    })
-  : "Unknown date";
+    const createdLabel = createdAt
+      ? new Date(createdAt).toLocaleString("en-GB", {
+          timeZone: "Europe/London",
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      : "Unknown date";
 
     if (!version.song_version_id) {
       return `[Old/unlinked] ${title} — ${createdLabel}`;
@@ -5895,14 +5928,15 @@ const createdLabel = createdAt
       setAudioPreviewRenderResponse(JSON.stringify(result, null, 2));
 
       if (!response.ok) {
-        setAudioPreviewRenderMessage(
+        const failureMessage =
           typeof result.error === "string"
             ? result.error
             : typeof result.validation?.detail === "string"
               ? result.validation.detail
-              : "Renderer payload submission failed.",
-        );
-        return;
+              : "Renderer payload submission failed.";
+
+        setAudioPreviewRenderMessage(failureMessage);
+        throw new Error(failureMessage);
       }
 
       setAudioPreviewRenderMessage(
@@ -10863,7 +10897,9 @@ const createdLabel = createdAt
   };
 
   const buildAudioPreviewSpecCopyText = () => {
-    const chordData = getChordDataFromEditorJson();
+    const chordData =
+      getChordDataFromEditorJson() || activeChordVersion?.chord_data;
+
     const record =
       chordData && typeof chordData === "object" && !Array.isArray(chordData)
         ? (chordData as Record<string, unknown>)
@@ -10873,7 +10909,12 @@ const createdLabel = createdAt
       return "";
     }
 
-    const intentRows = record ? getPerformanceIntentRows(record) : [];
+    const intentRows = record
+      ? getPerformanceIntentRows({
+          ...record,
+          tempoBpm: previewTempo,
+        })
+      : [];
     const guideTrackPlanRows = record ? getGuideTrackPlanRows(record) : [];
     const guideTrackSectionPlanRows = record
       ? getGuideTrackSectionPlanRows(record)
@@ -10894,105 +10935,97 @@ const createdLabel = createdAt
         ? record.timingReviewSignature
         : null;
 
+    const currentTimingReviewSignature = JSON.stringify({
+      musicalTimingPlan:
+        musicalTimingPlan &&
+        typeof musicalTimingPlan === "object" &&
+        !Array.isArray(musicalTimingPlan)
+          ? {
+              sections: Array.isArray(
+                (musicalTimingPlan as Record<string, unknown>).sections,
+              )
+                ? (
+                    (musicalTimingPlan as Record<string, unknown>)
+                      .sections as unknown[]
+                  )
+                    .map((section) => {
+                      if (
+                        !section ||
+                        typeof section !== "object" ||
+                        Array.isArray(section)
+                      ) {
+                        return null;
+                      }
+
+                      const sectionRecord = section as Record<string, unknown>;
+
+                      return {
+                        section:
+                          typeof sectionRecord.section === "string"
+                            ? getGuideSectionMatchKey(sectionRecord.section)
+                            : "",
+                        bars:
+                          typeof sectionRecord.bars === "number"
+                            ? sectionRecord.bars
+                            : null,
+                        timeSignature:
+                          typeof sectionRecord.timeSignature === "string"
+                            ? sectionRecord.timeSignature
+                            : "",
+                        meterChanges: Array.isArray(sectionRecord.meterChanges)
+                          ? sectionRecord.meterChanges
+                              .map((change) => {
+                                if (
+                                  !change ||
+                                  typeof change !== "object" ||
+                                  Array.isArray(change)
+                                ) {
+                                  return null;
+                                }
+
+                                const changeRecord = change as Record<
+                                  string,
+                                  unknown
+                                >;
+
+                                return {
+                                  bar:
+                                    typeof changeRecord.bar === "number"
+                                      ? changeRecord.bar
+                                      : null,
+                                  timeSignature:
+                                    typeof changeRecord.timeSignature ===
+                                    "string"
+                                      ? changeRecord.timeSignature
+                                      : "",
+                                };
+                              })
+                              .filter(Boolean)
+                          : [],
+                      };
+                    })
+                    .filter(Boolean)
+                : [],
+            }
+          : null,
+      timedChordEvents: getPlacedSongSheetLines(record)
+        .filter((line) => line.chords.length > 0)
+        .map((line) => ({
+          section: getGuideSectionMatchKey(line.section),
+          lyric: line.lyric,
+          chords: line.chords.map((placement) => ({
+            chord: placement.chord,
+            bar: placement.bar ?? null,
+            beat: placement.beat ?? null,
+          })),
+        })),
+    });
+
     const timingConfirmed =
       audioPreviewSourceMode === "chord-editor" &&
       Boolean(musicalTimingPlan) &&
       Boolean(timingReviewSignature) &&
-      timingReviewSignature ===
-        JSON.stringify({
-          musicalTimingPlan:
-            musicalTimingPlan &&
-            typeof musicalTimingPlan === "object" &&
-            !Array.isArray(musicalTimingPlan)
-              ? {
-                  sections: Array.isArray(
-                    (musicalTimingPlan as Record<string, unknown>).sections,
-                  )
-                    ? (
-                        (musicalTimingPlan as Record<string, unknown>)
-                          .sections as unknown[]
-                      )
-                        .map((section) => {
-                          if (
-                            !section ||
-                            typeof section !== "object" ||
-                            Array.isArray(section)
-                          ) {
-                            return null;
-                          }
-
-                          const sectionRecord = section as Record<
-                            string,
-                            unknown
-                          >;
-
-                          return {
-                            section:
-                              typeof sectionRecord.section === "string"
-                                ? sectionRecord.section
-                                : "",
-                            bars:
-                              typeof sectionRecord.bars === "number"
-                                ? sectionRecord.bars
-                                : null,
-                            timeSignature:
-                              typeof sectionRecord.timeSignature === "string"
-                                ? sectionRecord.timeSignature
-                                : "",
-                            meterChanges: Array.isArray(
-                              sectionRecord.meterChanges,
-                            )
-                              ? sectionRecord.meterChanges
-                                  .map((change) => {
-                                    if (
-                                      !change ||
-                                      typeof change !== "object" ||
-                                      Array.isArray(change)
-                                    ) {
-                                      return null;
-                                    }
-
-                                    const changeRecord = change as Record<
-                                      string,
-                                      unknown
-                                    >;
-
-                                    return {
-                                      bar:
-                                        typeof changeRecord.bar === "number"
-                                          ? changeRecord.bar
-                                          : null,
-                                      timeSignature:
-                                        typeof changeRecord.timeSignature ===
-                                        "string"
-                                          ? changeRecord.timeSignature
-                                          : "",
-                                    };
-                                  })
-                                  .filter(Boolean)
-                              : [],
-                          };
-                        })
-                        .filter(Boolean)
-                    : [],
-                }
-              : null,
-          timedChordEvents: getPlacedSongSheetLines(record)
-            .filter((line) => line.chords.length > 0)
-            .map((line) => ({
-              section: line.section,
-              lyric: line.lyric,
-              chords: line.chords.map((placement) => ({
-                chord: placement.chord,
-                bar: placement.bar ?? null,
-                beat: placement.beat ?? null,
-              })),
-            })),
-        });
-
-    if (intentRows.length === 0 && songsheetLines.length === 0) {
-      return "";
-    }
+      timingReviewSignature === currentTimingReviewSignature;
 
     const spec = {
       type: "audio-preview-spec",
@@ -11007,6 +11040,7 @@ const createdLabel = createdAt
       key: getDisplayedKeyLabel() || getOriginalKeyLabel() || "",
       transposeSemitones: chordTransposeSemitones,
       audioPreviewSourceMode,
+      tempoBpm: previewTempo,
       musicalTimingPlan,
       timingReviewSignature,
       timingConfirmed,
@@ -16160,6 +16194,17 @@ const createdLabel = createdAt
       };
     });
 
+    const placementsChanged =
+      JSON.stringify(existingPlacedLines) !== JSON.stringify(syncedLines);
+
+    if (!placementsChanged) {
+      setProjectMessage("");
+      setChordExtractionMessage(
+        "Chord placements already match the current saved song source.",
+      );
+      return;
+    }
+
     const nextRecord = {
       ...record,
       songSheetLines: syncedLines,
@@ -17310,7 +17355,7 @@ const createdLabel = createdAt
                   return {
                     section:
                       typeof sectionRecord.section === "string"
-                        ? sectionRecord.section
+                        ? getGuideSectionMatchKey(sectionRecord.section)
                         : "",
                     bars:
                       typeof sectionRecord.bars === "number"
@@ -17361,7 +17406,7 @@ const createdLabel = createdAt
     timedChordEvents: getPlacedSongSheetLines(chordDataForTimingSignature)
       .filter((line) => line.chords.length > 0)
       .map((line) => ({
-        section: line.section,
+        section: getGuideSectionMatchKey(line.section),
         lyric: line.lyric,
         chords: line.chords.map((placement) => ({
           chord: placement.chord,
@@ -18434,6 +18479,7 @@ const createdLabel = createdAt
     });
 
     setMakeSongReportCopied(false);
+    resetAudioPreviewRequestState();
     setMakeSongMessage("Starting song creation...");
     setMakeSongStage("chords");
   };
