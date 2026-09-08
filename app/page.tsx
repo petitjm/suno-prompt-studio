@@ -295,6 +295,10 @@ export default function Page() {
   >(null);
   const [reviewedChordTimingSignature, setReviewedChordTimingSignature] =
     useState<string | null>(null);
+  const [timingPlanDraft, setTimingPlanDraft] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const getChordTasks = () => {
     const activeSavedChordCheckpointIsValid = Boolean(
       activeChordVersionId &&
@@ -17416,6 +17420,383 @@ export default function Page() {
       })),
   });
 
+  const supportedTimingSignatures = ["4/4", "3/4", "2/4", "6/8", "9/8", "12/8"];
+
+  const getTimingSectionDurationSeconds = (
+    bars: number,
+    timeSignature: string,
+    meterChanges: Array<{
+      bar: number;
+      timeSignature: string;
+    }> = [],
+  ) => {
+    if (!Number.isFinite(previewTempo) || previewTempo <= 0) {
+      return null;
+    }
+
+    const getQuarterNotesPerBar = (signature: string) => {
+      const match = signature.match(/^(\d+)\s*\/\s*(\d+)$/);
+
+      if (!match) {
+        return null;
+      }
+
+      const numerator = Number(match[1]);
+      const denominator = Number(match[2]);
+
+      if (
+        !Number.isFinite(numerator) ||
+        numerator <= 0 ||
+        !Number.isFinite(denominator) ||
+        denominator <= 0
+      ) {
+        return null;
+      }
+
+      return numerator * (4 / denominator);
+    };
+
+    if (!Number.isFinite(bars) || bars <= 0) {
+      return null;
+    }
+
+    const orderedMeterChanges = [...meterChanges]
+      .filter(
+        (change) =>
+          Number.isFinite(change.bar) &&
+          change.bar >= 1 &&
+          change.bar <= bars &&
+          supportedTimingSignatures.includes(change.timeSignature),
+      )
+      .sort((a, b) => a.bar - b.bar);
+
+    let totalQuarterNotes = 0;
+
+    for (let bar = 1; bar <= bars; bar += 1) {
+      const activeMeterChange = [...orderedMeterChanges]
+        .reverse()
+        .find((change) => change.bar <= bar);
+
+      const activeTimeSignature =
+        activeMeterChange?.timeSignature || timeSignature;
+
+      const quarterNotesPerBar = getQuarterNotesPerBar(activeTimeSignature);
+
+      if (quarterNotesPerBar === null) {
+        return null;
+      }
+
+      totalQuarterNotes += quarterNotesPerBar;
+    }
+
+    return totalQuarterNotes * (60 / previewTempo);
+  };
+
+  const startTimingPlanEdit = () => {
+    if (
+      !normalizedMusicalTimingPlan ||
+      typeof normalizedMusicalTimingPlan !== "object" ||
+      Array.isArray(normalizedMusicalTimingPlan)
+    ) {
+      return;
+    }
+
+    setTimingPlanDraft(
+      JSON.parse(JSON.stringify(normalizedMusicalTimingPlan)) as Record<
+        string,
+        unknown
+      >,
+    );
+  };
+
+  const cancelTimingPlanEdit = () => {
+    setTimingPlanDraft(null);
+  };
+
+  const updateTimingPlanDraftSection = (
+    sectionIndex: number,
+    updates: {
+      bars?: number;
+      timeSignature?: string;
+    },
+  ) => {
+    setTimingPlanDraft((current) => {
+      if (!current || !Array.isArray(current.sections)) {
+        return current;
+      }
+
+      const nextSections = current.sections.map((section, index) => {
+        if (
+          index !== sectionIndex ||
+          !section ||
+          typeof section !== "object" ||
+          Array.isArray(section)
+        ) {
+          return section;
+        }
+
+        return {
+          ...(section as Record<string, unknown>),
+          ...updates,
+        };
+      });
+
+      return {
+        ...current,
+        sections: nextSections,
+      };
+    });
+  };
+
+  const applyTimingSignatureFromSectionToEnd = (
+    sectionIndex: number,
+    timeSignature: string,
+  ) => {
+    setTimingPlanDraft((current) => {
+      if (!current || !Array.isArray(current.sections)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        sections: current.sections.map((section, index) => {
+          if (
+            index < sectionIndex ||
+            !section ||
+            typeof section !== "object" ||
+            Array.isArray(section)
+          ) {
+            return section;
+          }
+
+          return {
+            ...(section as Record<string, unknown>),
+            timeSignature,
+          };
+        }),
+      };
+    });
+  };
+
+  const updateTimingPlanDraftMeterChange = (
+    sectionIndex: number,
+    meterChangeIndex: number,
+    updates: {
+      bar?: number;
+      timeSignature?: string;
+    },
+  ) => {
+    setTimingPlanDraft((current) => {
+      if (!current || !Array.isArray(current.sections)) {
+        return current;
+      }
+
+      const nextSections = current.sections.map((section, index) => {
+        if (
+          index !== sectionIndex ||
+          !section ||
+          typeof section !== "object" ||
+          Array.isArray(section)
+        ) {
+          return section;
+        }
+
+        const sectionRecord = section as Record<string, unknown>;
+
+        const currentMeterChanges = Array.isArray(sectionRecord.meterChanges)
+          ? sectionRecord.meterChanges
+          : [];
+
+        const nextMeterChanges = currentMeterChanges.map(
+          (change, changeIndex) => {
+            if (
+              changeIndex !== meterChangeIndex ||
+              !change ||
+              typeof change !== "object" ||
+              Array.isArray(change)
+            ) {
+              return change;
+            }
+
+            return {
+              ...(change as Record<string, unknown>),
+              ...updates,
+            };
+          },
+        );
+
+        return {
+          ...sectionRecord,
+          meterChanges: nextMeterChanges,
+        };
+      });
+
+      return {
+        ...current,
+        sections: nextSections,
+      };
+    });
+  };
+
+  const addTimingPlanDraftMeterChange = (sectionIndex: number) => {
+    setTimingPlanDraft((current) => {
+      if (!current || !Array.isArray(current.sections)) {
+        return current;
+      }
+
+      const nextSections = current.sections.map((section, index) => {
+        if (
+          index !== sectionIndex ||
+          !section ||
+          typeof section !== "object" ||
+          Array.isArray(section)
+        ) {
+          return section;
+        }
+
+        const sectionRecord = section as Record<string, unknown>;
+
+        const bars =
+          typeof sectionRecord.bars === "number" && sectionRecord.bars > 0
+            ? Math.round(sectionRecord.bars)
+            : 1;
+
+        const currentMeterChanges = Array.isArray(sectionRecord.meterChanges)
+          ? sectionRecord.meterChanges
+          : [];
+
+        const usedBars = new Set(
+          currentMeterChanges
+            .map((change) => {
+              if (
+                !change ||
+                typeof change !== "object" ||
+                Array.isArray(change)
+              ) {
+                return null;
+              }
+
+              const bar = (change as Record<string, unknown>).bar;
+
+              return typeof bar === "number" ? bar : null;
+            })
+            .filter((bar): bar is number => bar !== null),
+        );
+
+        let newChangeBar = 2;
+
+        while (newChangeBar <= bars && usedBars.has(newChangeBar)) {
+          newChangeBar += 1;
+        }
+
+        if (newChangeBar > bars) {
+          return section;
+        }
+
+        return {
+          ...sectionRecord,
+          meterChanges: [
+            ...currentMeterChanges,
+            {
+              bar: newChangeBar,
+              timeSignature:
+                typeof sectionRecord.timeSignature === "string"
+                  ? sectionRecord.timeSignature
+                  : "4/4",
+            },
+          ],
+        };
+      });
+
+      return {
+        ...current,
+        sections: nextSections,
+      };
+    });
+  };
+
+  const removeTimingPlanDraftMeterChange = (
+    sectionIndex: number,
+    meterChangeIndex: number,
+  ) => {
+    setTimingPlanDraft((current) => {
+      if (!current || !Array.isArray(current.sections)) {
+        return current;
+      }
+
+      const nextSections = current.sections.map((section, index) => {
+        if (
+          index !== sectionIndex ||
+          !section ||
+          typeof section !== "object" ||
+          Array.isArray(section)
+        ) {
+          return section;
+        }
+
+        const sectionRecord = section as Record<string, unknown>;
+
+        const currentMeterChanges = Array.isArray(sectionRecord.meterChanges)
+          ? sectionRecord.meterChanges
+          : [];
+
+        return {
+          ...sectionRecord,
+          meterChanges: currentMeterChanges.filter(
+            (_, changeIndex) => changeIndex !== meterChangeIndex,
+          ),
+        };
+      });
+
+      return {
+        ...current,
+        sections: nextSections,
+      };
+    });
+  };
+
+  const applyTimingPlanDraft = () => {
+    if (!timingPlanDraft) {
+      return;
+    }
+
+    const chordData = getChordDataFromEditorJson();
+
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return;
+    }
+
+    const record = chordData as Record<string, unknown>;
+
+    const nextRecord = {
+      ...record,
+      musicalTimingPlan: timingPlanDraft,
+    };
+
+    setChords(nextRecord as ChordResponse);
+    setChordsText(JSON.stringify(nextRecord, null, 2));
+
+    setReviewedChordTimingSignature(null);
+    setActiveChordVersionId(null);
+    resetAudioPreviewRequestState();
+    setTimingPlanDraft(null);
+
+    setChordExtractionMessage(
+      "Timing plan changed. Review and confirm timing before making the song.",
+    );
+  };
+
+  const timingPlanEditorSource = timingPlanDraft || normalizedMusicalTimingPlan;
+
+  const editableMusicalTimingSections =
+    timingPlanEditorSource && Array.isArray(timingPlanEditorSource.sections)
+      ? timingPlanEditorSource.sections
+      : [];
+
   const chordTimingCanBeMarkedComplete = Boolean(
     musicalTimingProvenance &&
     getChordDataFromEditorJson() &&
@@ -22110,6 +22491,472 @@ ${buildRewriteInstruction(
                                     {musicalTimingProvenance.detail}
                                   </div>
                                 )}
+
+                                {editableMusicalTimingSections.length > 0 && (
+                                  <div className="mt-3 space-y-3 border-t border-yellow-900/50 pt-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="text-xs font-semibold uppercase tracking-wide text-yellow-300">
+                                        Section timing
+                                      </div>
+
+                                      {!timingPlanDraft ? (
+                                        <button
+                                          type="button"
+                                          onClick={startTimingPlanEdit}
+                                          className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                        >
+                                          Edit timing
+                                        </button>
+                                      ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={cancelTimingPlanEdit}
+                                            className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                          >
+                                            Cancel
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            onClick={applyTimingPlanDraft}
+                                            className="rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500"
+                                          >
+                                            Apply changes
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {editableMusicalTimingSections.map(
+                                      (section, sectionIndex) => {
+                                        const sectionRecord = section as Record<
+                                          string,
+                                          unknown
+                                        >;
+
+                                        const sectionName =
+                                          typeof sectionRecord.section ===
+                                          "string"
+                                            ? sectionRecord.section
+                                            : `Section ${sectionIndex + 1}`;
+
+                                        const bars =
+                                          typeof sectionRecord.bars === "number"
+                                            ? sectionRecord.bars
+                                            : 1;
+
+                                        const timeSignature =
+                                          typeof sectionRecord.timeSignature ===
+                                          "string"
+                                            ? sectionRecord.timeSignature
+                                            : "4/4";
+
+                                        const meterChanges = Array.isArray(
+                                          sectionRecord.meterChanges,
+                                        )
+                                          ? sectionRecord.meterChanges
+                                              .map((change) => {
+                                                if (
+                                                  !change ||
+                                                  typeof change !== "object" ||
+                                                  Array.isArray(change)
+                                                ) {
+                                                  return null;
+                                                }
+
+                                                const matchingPlacedLines =
+                                                  getPlacedSongSheetLines(
+                                                    getChordDataFromEditorJson(),
+                                                  ).filter(
+                                                    (line) =>
+                                                      getGuideSectionMatchKey(
+                                                        line.section,
+                                                      ) ===
+                                                      getGuideSectionMatchKey(
+                                                        sectionName,
+                                                      ),
+                                                  );
+
+                                                const highestUsedChordBar =
+                                                  matchingPlacedLines.reduce(
+                                                    (highest, line) => {
+                                                      const lineHighest =
+                                                        line.chords.reduce(
+                                                          (
+                                                            lineMax,
+                                                            placement,
+                                                          ) => {
+                                                            return typeof placement.bar ===
+                                                              "number"
+                                                              ? Math.max(
+                                                                  lineMax,
+                                                                  placement.bar,
+                                                                )
+                                                              : lineMax;
+                                                          },
+                                                          0,
+                                                        );
+
+                                                      return Math.max(
+                                                        highest,
+                                                        lineHighest,
+                                                      );
+                                                    },
+                                                    0,
+                                                  );
+
+                                                const barsBelowUsedChordTiming =
+                                                  highestUsedChordBar > 0 &&
+                                                  bars < highestUsedChordBar;
+
+                                                const changeRecord =
+                                                  change as Record<
+                                                    string,
+                                                    unknown
+                                                  >;
+
+                                                return {
+                                                  bar:
+                                                    typeof changeRecord.bar ===
+                                                    "number"
+                                                      ? changeRecord.bar
+                                                      : 1,
+                                                  timeSignature:
+                                                    typeof changeRecord.timeSignature ===
+                                                    "string"
+                                                      ? changeRecord.timeSignature
+                                                      : timeSignature,
+                                                };
+                                              })
+                                              .filter(
+                                                (
+                                                  change,
+                                                ): change is {
+                                                  bar: number;
+                                                  timeSignature: string;
+                                                } => Boolean(change),
+                                              )
+                                          : [];
+
+                                        const matchingPlacedLines =
+                                          getPlacedSongSheetLines(
+                                            getChordDataFromEditorJson(),
+                                          ).filter(
+                                            (line) =>
+                                              getGuideSectionMatchKey(
+                                                line.section,
+                                              ) ===
+                                              getGuideSectionMatchKey(
+                                                sectionName,
+                                              ),
+                                          );
+
+                                        const highestUsedChordBar =
+                                          matchingPlacedLines.reduce(
+                                            (highest, line) => {
+                                              const lineHighest =
+                                                line.chords.reduce(
+                                                  (lineMax, placement) => {
+                                                    return typeof placement.bar ===
+                                                      "number"
+                                                      ? Math.max(
+                                                          lineMax,
+                                                          placement.bar,
+                                                        )
+                                                      : lineMax;
+                                                  },
+                                                  0,
+                                                );
+
+                                              return Math.max(
+                                                highest,
+                                                lineHighest,
+                                              );
+                                            },
+                                            0,
+                                          );
+
+                                        const barsBelowUsedChordTiming =
+                                          highestUsedChordBar > 0 &&
+                                          bars < highestUsedChordBar;
+
+                                        const durationSeconds =
+                                          getTimingSectionDurationSeconds(
+                                            bars,
+                                            timeSignature,
+                                            meterChanges,
+                                          );
+
+                                        return (
+                                          <div
+                                            key={`${sectionName}-${sectionIndex}`}
+                                            className="rounded border border-yellow-900/50 bg-gray-950/40 p-3"
+                                          >
+                                            <div className="text-sm font-medium text-gray-100">
+                                              {sectionName}
+                                            </div>
+
+                                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                              <label>
+                                                <span className="text-xs text-gray-400">
+                                                  Bars
+                                                </span>
+
+                                                <input
+                                                  type="number"
+                                                  min={1}
+                                                  step={1}
+                                                  value={bars}
+                                                  disabled={!timingPlanDraft}
+                                                  onChange={(event) => {
+                                                    const requestedBars =
+                                                      Math.max(
+                                                        1,
+                                                        Math.round(
+                                                          Number(
+                                                            event.target.value,
+                                                          ) || 1,
+                                                        ),
+                                                      );
+
+                                                    const nextBars =
+                                                      highestUsedChordBar > 0
+                                                        ? Math.max(
+                                                            requestedBars,
+                                                            highestUsedChordBar,
+                                                          )
+                                                        : requestedBars;
+
+                                                    updateTimingPlanDraftSection(
+                                                      sectionIndex,
+                                                      {
+                                                        bars: nextBars,
+                                                      },
+                                                    );
+                                                  }}
+                                                  className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-purple-500 disabled:cursor-not-allowed disabled:bg-gray-950 disabled:text-gray-500"
+                                                />
+
+                                                {highestUsedChordBar > 0 && (
+                                                  <div className="mt-1 text-xs text-gray-500">
+                                                    Chord timing currently uses
+                                                    up to bar{" "}
+                                                    {highestUsedChordBar}.
+                                                  </div>
+                                                )}
+                                              </label>
+
+                                              <label>
+                                                <span className="text-xs text-gray-400">
+                                                  Time signature
+                                                </span>
+
+                                                <select
+                                                  value={timeSignature}
+                                                  disabled={!timingPlanDraft}
+                                                  onChange={(event) =>
+                                                    updateTimingPlanDraftSection(
+                                                      sectionIndex,
+                                                      {
+                                                        timeSignature:
+                                                          event.target.value,
+                                                      },
+                                                    )
+                                                  }
+                                                  className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-purple-500 disabled:cursor-not-allowed disabled:bg-gray-950 disabled:text-gray-500"
+                                                >
+                                                  {supportedTimingSignatures.map(
+                                                    (signature) => (
+                                                      <option
+                                                        key={signature}
+                                                        value={signature}
+                                                      >
+                                                        {signature}
+                                                      </option>
+                                                    ),
+                                                  )}
+                                                </select>
+
+                                                {timingPlanDraft &&
+                                                  sectionIndex <
+                                                    editableMusicalTimingSections.length -
+                                                      1 && (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        applyTimingSignatureFromSectionToEnd(
+                                                          sectionIndex,
+                                                          timeSignature,
+                                                        )
+                                                      }
+                                                      className="mt-2 text-left text-xs font-medium text-purple-300 hover:text-purple-200"
+                                                    >
+                                                      Use {timeSignature} from
+                                                      here to end
+                                                    </button>
+                                                  )}
+                                              </label>
+                                            </div>
+
+                                            <div className="mt-3 border-t border-gray-800 pt-3">
+                                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <div className="text-xs font-medium text-gray-400">
+                                                  Meter changes
+                                                </div>
+
+                                                {timingPlanDraft &&
+                                                  bars > 1 && (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        addTimingPlanDraftMeterChange(
+                                                          sectionIndex,
+                                                        )
+                                                      }
+                                                      className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                                    >
+                                                      + Add meter change
+                                                    </button>
+                                                  )}
+                                              </div>
+
+                                              {meterChanges.length === 0 ? (
+                                                <div className="mt-2 text-xs text-gray-500">
+                                                  No meter changes in this
+                                                  section.
+                                                </div>
+                                              ) : (
+                                                <div className="mt-2 space-y-2">
+                                                  {meterChanges.map(
+                                                    (
+                                                      change,
+                                                      meterChangeIndex,
+                                                    ) => (
+                                                      <div
+                                                        key={`${sectionIndex}-${meterChangeIndex}`}
+                                                        className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+                                                      >
+                                                        <label>
+                                                          <span className="text-xs text-gray-500">
+                                                            From bar
+                                                          </span>
+
+                                                          <input
+                                                            type="number"
+                                                            min={2}
+                                                            max={bars}
+                                                            step={1}
+                                                            value={change.bar}
+                                                            disabled={
+                                                              !timingPlanDraft
+                                                            }
+                                                            onChange={(
+                                                              event,
+                                                            ) => {
+                                                              const nextBar =
+                                                                Math.min(
+                                                                  bars,
+                                                                  Math.max(
+                                                                    2,
+                                                                    Math.round(
+                                                                      Number(
+                                                                        event
+                                                                          .target
+                                                                          .value,
+                                                                      ) || 2,
+                                                                    ),
+                                                                  ),
+                                                                );
+
+                                                              updateTimingPlanDraftMeterChange(
+                                                                sectionIndex,
+                                                                meterChangeIndex,
+                                                                {
+                                                                  bar: nextBar,
+                                                                },
+                                                              );
+                                                            }}
+                                                            className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-purple-500 disabled:cursor-not-allowed disabled:bg-gray-950 disabled:text-gray-500"
+                                                          />
+                                                        </label>
+
+                                                        <label>
+                                                          <span className="text-xs text-gray-500">
+                                                            Time signature
+                                                          </span>
+
+                                                          <select
+                                                            value={
+                                                              change.timeSignature
+                                                            }
+                                                            disabled={
+                                                              !timingPlanDraft
+                                                            }
+                                                            onChange={(event) =>
+                                                              updateTimingPlanDraftMeterChange(
+                                                                sectionIndex,
+                                                                meterChangeIndex,
+                                                                {
+                                                                  timeSignature:
+                                                                    event.target
+                                                                      .value,
+                                                                },
+                                                              )
+                                                            }
+                                                            className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 outline-none focus:border-purple-500 disabled:cursor-not-allowed disabled:bg-gray-950 disabled:text-gray-500"
+                                                          >
+                                                            {supportedTimingSignatures.map(
+                                                              (signature) => (
+                                                                <option
+                                                                  key={
+                                                                    signature
+                                                                  }
+                                                                  value={
+                                                                    signature
+                                                                  }
+                                                                >
+                                                                  {signature}
+                                                                </option>
+                                                              ),
+                                                            )}
+                                                          </select>
+                                                        </label>
+
+                                                        {timingPlanDraft && (
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              removeTimingPlanDraftMeterChange(
+                                                                sectionIndex,
+                                                                meterChangeIndex,
+                                                              )
+                                                            }
+                                                            className="self-end rounded border border-red-900 bg-red-950/20 px-3 py-2 text-xs font-medium text-red-200 hover:bg-red-950/40"
+                                                          >
+                                                            Remove
+                                                          </button>
+                                                        )}
+                                                      </div>
+                                                    ),
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            <div className="mt-2 text-xs text-gray-400">
+                                              {durationSeconds !== null
+                                                ? `${durationSeconds.toFixed(2)} sec at ${previewTempo} BPM`
+                                                : "Duration unavailable"}
+                                            </div>
+                                          </div>
+                                        );
+                                      },
+                                    )}
+                                  </div>
+                                )}
+
+                               
 
                                 <div className="mt-3 border-t border-yellow-900/50 pt-3">
                                   {chordTimingReviewAccepted ? (
