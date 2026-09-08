@@ -16,6 +16,7 @@ type RendererPayload = {
   songsheetStatus?: string;
   songsheetReview?: string;
   tempo?: string;
+  tempoBpm?: number | null;
   groove?: string;
   instrumentation?: string;
   countIn?: string;
@@ -346,7 +347,13 @@ function buildDryRunCueSheet(
   payload: RendererPayload,
   timeline: TimelineSection[],
 ) {
-  const tempoBpm = getTempoBpm(payload.tempo);
+  const tempoBpm =
+    typeof payload.tempoBpm === "number" &&
+    Number.isFinite(payload.tempoBpm) &&
+    payload.tempoBpm > 0
+      ? payload.tempoBpm
+      : getTempoBpm(payload.tempo);
+
   const fallbackBeatsPerBar = getBeatsPerBar(payload);
 
   const musicalTimingPlan =

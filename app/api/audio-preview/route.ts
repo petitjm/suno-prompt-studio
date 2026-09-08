@@ -416,10 +416,37 @@ export async function POST(req: Request) {
       guideRows.instrumentation ||
       "Sparse acoustic guitar guide";
 
+    const firstTimingSection =
+      body.musicalTimingPlan &&
+      typeof body.musicalTimingPlan === "object" &&
+      !Array.isArray(body.musicalTimingPlan) &&
+      Array.isArray(
+        (body.musicalTimingPlan as Record<string, unknown>).sections,
+      )
+        ? (
+            (body.musicalTimingPlan as Record<string, unknown>)
+              .sections as unknown[]
+          )[0]
+        : null;
+
+    const openingTimeSignature =
+      firstTimingSection &&
+      typeof firstTimingSection === "object" &&
+      !Array.isArray(firstTimingSection) &&
+      typeof (firstTimingSection as Record<string, unknown>).timeSignature ===
+        "string"
+        ? ((firstTimingSection as Record<string, unknown>)
+            .timeSignature as string)
+        : "";
+
     const countIn =
-      guideRows["Count-in"] ||
-      guideRows.countIn ||
-      "Simple count-in before first section";
+      tempoBpm !== null && openingTimeSignature
+        ? `Simple count-in at ${tempoBpm} BPM in ${openingTimeSignature}`
+        : tempoBpm !== null
+          ? `Simple count-in at ${tempoBpm} BPM`
+          : openingTimeSignature
+            ? `Simple count-in in ${openingTimeSignature}`
+            : "Simple count-in before first section";
 
     const vocalGuideStyle =
       guideRows["Vocal guide style"] ||
