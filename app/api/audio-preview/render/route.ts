@@ -309,6 +309,39 @@ function getBeatsPerBarFromTimeSignature(value: unknown) {
   return Number.isFinite(beatsPerBar) && beatsPerBar > 0 ? beatsPerBar : null;
 }
 
+function getMeterFromTimeSignature(value: unknown) {
+  const timeSignature = getString(value);
+  const match = timeSignature.match(/^(\d+)\s*\/\s*(\d+)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const numerator = Number(match[1]);
+  const denominator = Number(match[2]);
+
+  if (
+    !Number.isFinite(numerator) ||
+    numerator <= 0 ||
+    !Number.isFinite(denominator) ||
+    denominator <= 0
+  ) {
+    return null;
+  }
+
+  const quarterNotesPerBeat = 4 / denominator;
+  const quarterNotesPerBar = numerator * quarterNotesPerBeat;
+
+  return {
+    timeSignature,
+    numerator,
+    denominator,
+    beatsPerBar: numerator,
+    quarterNotesPerBeat,
+    quarterNotesPerBar,
+  };
+}
+
 function buildDryRunCueSheet(
   payload: RendererPayload,
   timeline: TimelineSection[],
@@ -412,47 +445,63 @@ function buildDryRunCueSheet(
 
     const confirmedBars = matchingTimingSection?.bars ?? 0;
 
-    const confirmedBeatsPerBar = getBeatsPerBarFromTimeSignature(
+    const confirmedSectionMeter = getMeterFromTimeSignature(
       matchingTimingSection?.timeSignature,
     );
 
-    const sectionBeatsPerBar = confirmedBeatsPerBar ?? fallbackBeatsPerBar;
+    const sectionBeatsPerBar =
+      confirmedSectionMeter?.beatsPerBar ?? fallbackBeatsPerBar;
 
     const meterChanges = matchingTimingSection?.meterChanges ?? [];
 
-    const getBarBeatsPerBar = (bar: number) => {
+    const getBarMeter = (bar: number) => {
       const applicableMeterChange = meterChanges
         .filter((change) => change.bar <= bar)
         .at(-1);
 
-      return (
-        getBeatsPerBarFromTimeSignature(applicableMeterChange?.timeSignature) ??
-        sectionBeatsPerBar
+      const changedMeter = getMeterFromTimeSignature(
+        applicableMeterChange?.timeSignature,
       );
+
+      if (changedMeter) {
+        return changedMeter;
+      }
+
+      if (confirmedSectionMeter) {
+        return confirmedSectionMeter;
+      }
+
+      return {
+        timeSignature: "",
+        numerator: fallbackBeatsPerBar,
+        denominator: 4,
+        beatsPerBar: fallbackBeatsPerBar,
+        quarterNotesPerBeat: 1,
+        quarterNotesPerBar: fallbackBeatsPerBar,
+      };
     };
 
     const barTiming = Array.from({ length: confirmedBars }, (_, index) => {
       const bar = index + 1;
-      const beatsPerBar = getBarBeatsPerBar(bar);
+      const meter = getBarMeter(bar);
 
       return {
         bar,
-        beatsPerBar,
-        timeSignature:
-          meterChanges.filter((change) => change.bar <= bar).at(-1)
-            ?.timeSignature ??
-          matchingTimingSection?.timeSignature ??
-          "",
+        timeSignature: meter.timeSignature,
+        beatsPerBar: meter.beatsPerBar,
+        denominator: meter.denominator,
+        quarterNotesPerBeat: meter.quarterNotesPerBeat,
+        quarterNotesPerBar: meter.quarterNotesPerBar,
       };
     });
 
-    const totalSectionBeats = barTiming.reduce(
-      (total, bar) => total + bar.beatsPerBar,
+    const totalSectionQuarterNotes = barTiming.reduce(
+      (total, bar) => total + bar.quarterNotesPerBar,
       0,
     );
 
     const estimatedSeconds = Number(
-      ((totalSectionBeats / tempoBpm) * 60).toFixed(1),
+      ((totalSectionQuarterNotes / tempoBpm) * 60).toFixed(1),
     );
 
     const startSeconds = Number(cumulativeSeconds.toFixed(1));
@@ -478,9 +527,9 @@ function buildDryRunCueSheet(
       return (line.chords || []).map((chord) => {
         const chordBar = chord.bar;
         const chordBeat = chord.beat;
-        const chordBarBeatsPerBar =
+        const chordBarMeter =
           typeof chordBar === "number" && Number.isFinite(chordBar)
-            ? getBarBeatsPerBar(chordBar)
+            ? getBarMeter(chordBar)
             : null;
 
         const hasConfirmedMusicalPosition =
@@ -491,21 +540,28 @@ function buildDryRunCueSheet(
           typeof chordBeat === "number" &&
           Number.isFinite(chordBeat) &&
           chordBeat >= 1 &&
-          chordBarBeatsPerBar !== null &&
-          chordBeat <= chordBarBeatsPerBar;
+          chordBarMeter !== null &&
+          chordBeat <= chordBarMeter.beatsPerBar;
 
-        const beatsBeforeChordBar =
+        const quarterNotesBeforeChordBar =
           hasConfirmedMusicalPosition && typeof chordBar === "number"
             ? barTiming
                 .filter((bar) => bar.bar < chordBar)
-                .reduce((total, bar) => total + bar.beatsPerBar, 0)
+                .reduce((total, bar) => total + bar.quarterNotesPerBar, 0)
+            : 0;
+
+        const quarterNotesIntoChordBar =
+          hasConfirmedMusicalPosition && chordBarMeter
+            ? (chordBeat - 1) * chordBarMeter.quarterNotesPerBeat
             : 0;
 
         const absoluteSeconds = hasConfirmedMusicalPosition
           ? Number(
               (
                 startSeconds +
-                ((beatsBeforeChordBar + (chordBeat - 1)) / tempoBpm) * 60
+                ((quarterNotesBeforeChordBar + quarterNotesIntoChordBar) /
+                  tempoBpm) *
+                  60
               ).toFixed(3),
             )
           : null;
@@ -541,7 +597,7 @@ function buildDryRunCueSheet(
       meterChanges,
       barTiming,
       meterSource:
-        confirmedBeatsPerBar !== null
+        confirmedSectionMeter !== null
           ? "confirmed-time-signature"
           : "payload-text-fallback",
       estimatedSeconds,
@@ -567,7 +623,7 @@ function buildDryRunCueSheet(
     sections,
     notes: [
       "Section bar counts come from the confirmed musical timing plan.",
-      "Section seconds and chord timestamps use confirmed section meter plus any confirmed bar-level meter changes; payload text is used only when section meter is unavailable.",
+      "Section seconds and chord timestamps use denominator-aware confirmed meter, including bar-level meter changes; numeric tempo is interpreted as quarter-note BPM.",
       "Chord event absolute timestamps are calculated from confirmed bar and beat positions.",
     ],
   };
