@@ -226,6 +226,16 @@ export async function POST(req: Request) {
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
   const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
+
+  const firstCueSheetSection = getRecord(getArray(dryRunCueSheet?.sections)[0]);
+
+  const firstBarTiming = getRecord(
+    getArray(firstCueSheetSection?.barTiming)[0],
+  );
+
+  const openingQuarterNotesPerBar =
+    getNumber(firstBarTiming?.quarterNotesPerBar) || undefined;
+
   const chordMarkers = buildChordMarkersFromCueSheetSections(cueSheetSections);
   const melodyNotes = getMelodyNotes(bodyRecord?.melodyNotes);
 
@@ -403,6 +413,7 @@ export async function POST(req: Request) {
     outputFormat: "wav" as const,
     storageProvider: "browser-download" as const,
     countInBars: 1,
+    openingQuarterNotesPerBar,
     totalDurationSeconds: 10,
   };
 

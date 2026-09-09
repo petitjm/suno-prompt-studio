@@ -28,6 +28,7 @@ export type ClickTrackWavRenderInput = {
   outputFormat: "wav";
   storageProvider: "browser-download";
   countInBars: number;
+  openingQuarterNotesPerBar?: number;
   totalDurationSeconds: number;
   totalBars?: number;
   totalEstimatedSeconds?: number;
@@ -275,8 +276,6 @@ function getCountInDurationSeconds(input: ClickTrackWavRenderInput): number {
     return 0;
   }
 
-  const beatsPerBar = 4;
-
   if (
     typeof input.countInBars !== "number" ||
     !Number.isFinite(input.countInBars) ||
@@ -287,7 +286,14 @@ function getCountInDurationSeconds(input: ClickTrackWavRenderInput): number {
     return 0;
   }
 
-  return input.countInBars * beatsPerBar * (60 / input.tempoBpm);
+  const openingQuarterNotesPerBar =
+    typeof input.openingQuarterNotesPerBar === "number" &&
+    Number.isFinite(input.openingQuarterNotesPerBar) &&
+    input.openingQuarterNotesPerBar > 0
+      ? input.openingQuarterNotesPerBar
+      : 4;
+
+  return input.countInBars * openingQuarterNotesPerBar * (60 / input.tempoBpm);
 }
 
 function getSectionStartTimesSeconds(
