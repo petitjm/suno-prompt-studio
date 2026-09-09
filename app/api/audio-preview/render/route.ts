@@ -664,7 +664,6 @@ function buildDryRunCueSheet(
     version: 1,
     timingStatus: "confirmed-bars",
     tempoBpm,
-    beatsPerBar: fallbackBeatsPerBar,
     totalEstimatedSeconds: Number(cumulativeSeconds.toFixed(1)),
     totalEstimatedBars: sections.reduce(
       (total, section) => total + section.bars,
@@ -898,7 +897,6 @@ function validateDryRunCueSheet(cueSheet: {
   type?: string;
   timingStatus?: string;
   tempoBpm?: number;
-  beatsPerBar?: number;
   totalEstimatedSeconds?: number;
   totalEstimatedBars?: number;
   sections?: unknown[];
@@ -919,14 +917,6 @@ function validateDryRunCueSheet(cueSheet: {
     cueSheet.tempoBpm <= 0
   ) {
     missing.push("tempoBpm");
-  }
-
-  if (
-    typeof cueSheet.beatsPerBar !== "number" ||
-    !Number.isFinite(cueSheet.beatsPerBar) ||
-    cueSheet.beatsPerBar <= 0
-  ) {
-    missing.push("beatsPerBar");
   }
 
   if (
