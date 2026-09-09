@@ -343,6 +343,46 @@ function getMeterFromTimeSignature(value: unknown) {
   };
 }
 
+function getTimingSectionMatchKey(value: unknown) {
+  const normalised = getString(value)
+    .toLowerCase()
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9:\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const canonicalVerseMatch = normalised.match(/^verse:(\d+)$/);
+
+  if (canonicalVerseMatch) {
+    return `verse:${canonicalVerseMatch[1]}`;
+  }
+
+  const verseMatch = normalised.match(/\bverse\s*(\d+)\b/);
+
+  if (verseMatch) {
+    return `verse:${verseMatch[1]}`;
+  }
+
+  if (normalised.includes("final chorus")) {
+    return "final chorus";
+  }
+
+  if (normalised.includes("chorus")) {
+    return "chorus";
+  }
+
+  if (normalised.includes("bridge")) {
+    return "bridge";
+  }
+
+  if (normalised.includes("outro") || normalised.includes("tag")) {
+    return "final chorus";
+  }
+
+  return normalised;
+}
+
 function buildDryRunCueSheet(
   payload: RendererPayload,
   timeline: TimelineSection[],
@@ -438,13 +478,16 @@ function buildDryRunCueSheet(
   let cumulativeSeconds = 0;
 
   const sections = timeline.map((section) => {
-    const sectionOccurrence =
-      (timingSectionOccurrenceCounts.get(section.section) || 0) + 1;
+    const sectionMatchKey = getTimingSectionMatchKey(section.section);
 
-    timingSectionOccurrenceCounts.set(section.section, sectionOccurrence);
+    const sectionOccurrence =
+      (timingSectionOccurrenceCounts.get(sectionMatchKey) || 0) + 1;
+
+    timingSectionOccurrenceCounts.set(sectionMatchKey, sectionOccurrence);
 
     const matchingTimingSections = timingSections.filter(
-      (timingSection) => timingSection.section === section.section,
+      (timingSection) =>
+        getTimingSectionMatchKey(timingSection.section) === sectionMatchKey,
     );
 
     const matchingTimingSection =
