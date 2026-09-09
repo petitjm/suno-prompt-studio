@@ -10934,6 +10934,10 @@ export default function Page() {
         ? record.musicalTimingPlan
         : null;
 
+    const audioPreviewIntentRows = musicalTimingPlan
+      ? intentRows.filter((row) => row.label !== "Time signature")
+      : intentRows;
+
     const timingReviewSignature =
       record && typeof record.timingReviewSignature === "string"
         ? record.timingReviewSignature
@@ -11056,7 +11060,7 @@ export default function Page() {
       songsheetStatus: getSongsheetReviewStatusLabel(),
       songsheetReview: getSongsheetReviewSummaryLine(),
       performanceIntent: Object.fromEntries(
-        intentRows.map((row) => [row.label, row.value]),
+        audioPreviewIntentRows.map((row) => [row.label, row.value]),
       ),
       guideTrackPlan: {
         rows: Object.fromEntries(
