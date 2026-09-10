@@ -17811,6 +17811,17 @@ export default function Page() {
       return;
     }
 
+    if (
+      rawMusicalTimingPlan &&
+      typeof rawMusicalTimingPlan === "object" &&
+      !Array.isArray(rawMusicalTimingPlan) &&
+      JSON.stringify(timingPlanDraft) === JSON.stringify(rawMusicalTimingPlan)
+    ) {
+      setTimingPlanDraft(null);
+      setChordExtractionMessage("Timing plan unchanged.");
+      return;
+    }
+
     const chordData = getChordDataFromEditorJson();
 
     if (
@@ -22910,6 +22921,14 @@ ${buildRewriteInstruction(
                                   className="rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                                 >
                                   Apply changes
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={cancelTimingPlanEdit}
+                                  className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+                                >
+                                  Cancel
                                 </button>
                               </div>
                             )}
