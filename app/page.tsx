@@ -17506,6 +17506,35 @@ export default function Page() {
     return totalQuarterNotes * (60 / previewTempo);
   };
 
+  const getRedundantMeterChangeIndexes = (
+    baseTimeSignature: string,
+    meterChanges: Array<{
+      bar: number;
+      timeSignature: string;
+    }>,
+  ) => {
+    const redundantIndexes = new Set<number>();
+
+    const orderedChanges = meterChanges
+      .map((change, index) => ({
+        ...change,
+        originalIndex: index,
+      }))
+      .sort((a, b) => a.bar - b.bar);
+
+    let activeTimeSignature = baseTimeSignature;
+
+    orderedChanges.forEach((change) => {
+      if (change.timeSignature === activeTimeSignature) {
+        redundantIndexes.add(change.originalIndex);
+      } else {
+        activeTimeSignature = change.timeSignature;
+      }
+    });
+
+    return redundantIndexes;
+  };
+
   const startTimingPlanEdit = () => {
     if (
       !rawMusicalTimingPlan ||
@@ -23018,6 +23047,22 @@ ${buildRewriteInstruction(
                                       )
                                   : [];
 
+                                const redundantMeterChangeIndexes =
+                                  getRedundantMeterChangeIndexes(
+                                    timeSignature,
+                                    meterChanges,
+                                  );
+
+                                const endingTimeSignature =
+                                  meterChanges.length > 0
+                                    ? [...meterChanges].sort(
+                                        (a, b) => a.bar - b.bar,
+                                      )[meterChanges.length - 1].timeSignature
+                                    : timeSignature;
+
+                                const sectionChangesMeter =
+                                  endingTimeSignature !== timeSignature;
+
                                 const matchingPlacedLines =
                                   getPlacedSongSheetLines(
                                     getChordDataFromEditorJson(),
@@ -23069,7 +23114,10 @@ ${buildRewriteInstruction(
                                           </div>
 
                                           <div className="text-xs text-gray-300">
-                                            {bars} bars · {timeSignature}
+                                            {bars} bars ·{" "}
+                                            {sectionChangesMeter
+                                              ? `starts ${timeSignature} · ends ${endingTimeSignature}`
+                                              : timeSignature}
                                             {durationSeconds !== null
                                               ? ` · ${durationSeconds.toFixed(2)} sec`
                                               : ""}
@@ -23082,9 +23130,21 @@ ${buildRewriteInstruction(
                                               (change, meterChangeIndex) => (
                                                 <div
                                                   key={`${sectionIndex}-summary-${meterChangeIndex}`}
+                                                  className={
+                                                    redundantMeterChangeIndexes.has(
+                                                      meterChangeIndex,
+                                                    )
+                                                      ? "text-yellow-300"
+                                                      : ""
+                                                  }
                                                 >
                                                   Meter change: bar {change.bar}{" "}
                                                   → {change.timeSignature}
+                                                  {redundantMeterChangeIndexes.has(
+                                                    meterChangeIndex,
+                                                  )
+                                                    ? " · redundant"
+                                                    : ""}
                                                 </div>
                                               ),
                                             )}
@@ -23338,6 +23398,15 @@ ${buildRewriteInstruction(
                                                         Remove
                                                       </button>
                                                     </div>
+                                                    {redundantMeterChangeIndexes.has(
+                                                      meterChangeIndex,
+                                                    ) && (
+                                                      <div className="sm:col-span-2 text-xs text-yellow-300">
+                                                        This meter change is
+                                                        redundant because this
+                                                        meter is already active.
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 ),
                                               )}
