@@ -14,6 +14,7 @@ type RealRenderBlockedResponse = {
   ok: false;
   status: "blocked";
   clickTrackRendererResult: ReturnType<typeof renderClickTrackWav>;
+
   audioStatus: "not-generated";
   rendererStatus: "not-connected";
   storageStatus: "not-configured";
@@ -104,6 +105,46 @@ function getCueSheetSections(value: unknown) {
         startSeconds,
         endSeconds,
         lyricLineCount,
+        timeSignature: getString(record.timeSignature) || undefined,
+        beatsPerBar: getNumber(record.beatsPerBar) || undefined,
+        barTiming: getArray(record.barTiming)
+          .map((barTimingEntry) => {
+            const barRecord = getRecord(barTimingEntry);
+
+            if (!barRecord) {
+              return null;
+            }
+
+            const bar = getNumber(barRecord.bar);
+            const timeSignature = getString(barRecord.timeSignature);
+            const beatsPerBar = getNumber(barRecord.beatsPerBar);
+            const denominator = getNumber(barRecord.denominator);
+            const quarterNotesPerBeat = getNumber(
+              barRecord.quarterNotesPerBeat,
+            );
+            const quarterNotesPerBar = getNumber(barRecord.quarterNotesPerBar);
+
+            if (
+              bar === null ||
+              !timeSignature ||
+              beatsPerBar === null ||
+              denominator === null ||
+              quarterNotesPerBeat === null ||
+              quarterNotesPerBar === null
+            ) {
+              return null;
+            }
+
+            return {
+              bar,
+              timeSignature,
+              beatsPerBar,
+              denominator,
+              quarterNotesPerBeat,
+              quarterNotesPerBar,
+            };
+          })
+          .filter((barTimingEntry) => barTimingEntry !== null),
         chordPlacements: getArray(record.chordPlacements),
       };
     })
@@ -394,7 +435,7 @@ export async function POST(req: Request) {
       getNumber(dryRunCueSheet?.totalEstimatedSeconds) || undefined,
     cueSheetSectionCount:
       getArray(dryRunCueSheet?.sections).length || undefined,
-    cueSheetSections,
+
     chordMarkers,
     melodyNotes,
     includeCountIn,
@@ -509,6 +550,7 @@ export async function POST(req: Request) {
     ok: false,
     status: "blocked",
     clickTrackRendererResult,
+
     audioStatus: "not-generated",
     rendererStatus: "not-connected",
     storageStatus: "not-configured",

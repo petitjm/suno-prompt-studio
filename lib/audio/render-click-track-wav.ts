@@ -1,3 +1,12 @@
+export type ClickTrackBarTiming = {
+  bar: number;
+  timeSignature: string;
+  beatsPerBar: number;
+  denominator: number;
+  quarterNotesPerBeat: number;
+  quarterNotesPerBar: number;
+};
+
 export type ClickTrackCueSheetSection = {
   order: number;
   section: string;
@@ -5,6 +14,9 @@ export type ClickTrackCueSheetSection = {
   estimatedSeconds: number;
   startSeconds: number;
   endSeconds: number;
+  timeSignature?: string;
+  beatsPerBar?: number;
+  barTiming?: ClickTrackBarTiming[];
 };
 
 export type ClickTrackChordMarker = {
@@ -320,6 +332,67 @@ function getSectionSummaries(input: ClickTrackWavRenderInput) {
         endSeconds: section.endSeconds,
       }))
     : [];
+}
+
+function getSongBeatClickEvents(input: ClickTrackWavRenderInput): {
+  timeSeconds: number;
+  isDownbeat: boolean;
+}[] {
+  if (
+    input.tempoBpm <= 0 ||
+    !Number.isFinite(input.tempoBpm) ||
+    !Array.isArray(input.cueSheetSections)
+  ) {
+    return [];
+  }
+
+  const secondsPerQuarterNote = 60 / input.tempoBpm;
+  const events: {
+    timeSeconds: number;
+    isDownbeat: boolean;
+  }[] = [];
+
+  for (const section of input.cueSheetSections) {
+    if (!Array.isArray(section.barTiming) || section.barTiming.length === 0) {
+      continue;
+    }
+
+    let quarterNotesFromSectionStart = 0;
+
+    for (const barTiming of section.barTiming) {
+      if (
+        !Number.isFinite(barTiming.beatsPerBar) ||
+        barTiming.beatsPerBar <= 0 ||
+        !Number.isFinite(barTiming.quarterNotesPerBeat) ||
+        barTiming.quarterNotesPerBeat <= 0 ||
+        !Number.isFinite(barTiming.quarterNotesPerBar) ||
+        barTiming.quarterNotesPerBar <= 0
+      ) {
+        continue;
+      }
+
+      for (
+        let beatIndex = 0;
+        beatIndex < barTiming.beatsPerBar;
+        beatIndex += 1
+      ) {
+        const quarterNotesFromBarStart =
+          beatIndex * barTiming.quarterNotesPerBeat;
+
+        events.push({
+          timeSeconds:
+            section.startSeconds +
+            (quarterNotesFromSectionStart + quarterNotesFromBarStart) *
+              secondsPerQuarterNote,
+          isDownbeat: beatIndex === 0,
+        });
+      }
+
+      quarterNotesFromSectionStart += barTiming.quarterNotesPerBar;
+    }
+  }
+
+  return events;
 }
 
 function isNearSectionStartSample(
@@ -1263,52 +1336,107 @@ export function createClickTrackPcm16Samples(
     }
   }
 
-  for (
-    let beatStartSample = countInEndSample, beatIndex = 0;
-    beatStartSample < totalSamples;
-    beatStartSample += samplesPerBeat, beatIndex += 1
-  ) {
-    const isDownbeat = beatIndex % 4 === 0;
-    const isSectionStart = isNearSectionStartSample(
-      beatStartSample,
-      sectionStartSamples,
-      sectionStartToleranceSamples,
-    );
+  const songBeatClickEvents = getSongBeatClickEvents(input);
 
-    if (isSectionStart) {
+  if (songBeatClickEvents.length > 0) {
+    for (const beatEvent of songBeatClickEvents) {
+      const beatStartSample = Math.round(
+        (beatEvent.timeSeconds + countInDurationSeconds) * input.sampleRateHz,
+      );
+
+      if (beatStartSample >= totalSamples) {
+        continue;
+      }
+
+      const isSectionStart = isNearSectionStartSample(
+        beatStartSample,
+        sectionStartSamples,
+        sectionStartToleranceSamples,
+      );
+
+      if (isSectionStart) {
+        addClickToSamples({
+          samples,
+          startSample: beatStartSample,
+          sampleRateHz: input.sampleRateHz,
+          lengthSamples: sectionClickLengthSamples,
+          amplitude: sectionAmplitude,
+          frequencyHz: sectionClickFrequencyHz,
+        });
+
+        addClickToSamples({
+          samples,
+          startSample: beatStartSample + Math.round(input.sampleRateHz * 0.09),
+          sampleRateHz: input.sampleRateHz,
+          lengthSamples: sectionClickLengthSamples,
+          amplitude: sectionAmplitude,
+          frequencyHz: sectionClickFrequencyHz,
+        });
+
+        continue;
+      }
+
+      if (input.includeBeatClicks === false) {
+        continue;
+      }
+
       addClickToSamples({
         samples,
         startSample: beatStartSample,
         sampleRateHz: input.sampleRateHz,
-        lengthSamples: sectionClickLengthSamples,
-        amplitude: sectionAmplitude,
-        frequencyHz: sectionClickFrequencyHz,
+        lengthSamples: clickLengthSamples,
+        amplitude: beatEvent.isDownbeat ? accentAmplitude : normalAmplitude,
+        frequencyHz: beatEvent.isDownbeat ? 1400 : clickFrequencyHz,
       });
+    }
+  } else {
+    for (
+      let beatStartSample = countInEndSample, beatIndex = 0;
+      beatStartSample < totalSamples;
+      beatStartSample += samplesPerBeat, beatIndex += 1
+    ) {
+      const isDownbeat = beatIndex % 4 === 0;
+      const isSectionStart = isNearSectionStartSample(
+        beatStartSample,
+        sectionStartSamples,
+        sectionStartToleranceSamples,
+      );
+
+      if (isSectionStart) {
+        addClickToSamples({
+          samples,
+          startSample: beatStartSample,
+          sampleRateHz: input.sampleRateHz,
+          lengthSamples: sectionClickLengthSamples,
+          amplitude: sectionAmplitude,
+          frequencyHz: sectionClickFrequencyHz,
+        });
+
+        addClickToSamples({
+          samples,
+          startSample: beatStartSample + Math.round(input.sampleRateHz * 0.09),
+          sampleRateHz: input.sampleRateHz,
+          lengthSamples: sectionClickLengthSamples,
+          amplitude: sectionAmplitude,
+          frequencyHz: sectionClickFrequencyHz,
+        });
+
+        continue;
+      }
+
+      if (input.includeBeatClicks === false) {
+        continue;
+      }
 
       addClickToSamples({
         samples,
-        startSample: beatStartSample + Math.round(input.sampleRateHz * 0.09),
+        startSample: beatStartSample,
         sampleRateHz: input.sampleRateHz,
-        lengthSamples: sectionClickLengthSamples,
-        amplitude: sectionAmplitude,
-        frequencyHz: sectionClickFrequencyHz,
+        lengthSamples: clickLengthSamples,
+        amplitude: isDownbeat ? accentAmplitude : normalAmplitude,
+        frequencyHz: isDownbeat ? 1400 : clickFrequencyHz,
       });
-
-      continue;
     }
-
-    if (input.includeBeatClicks === false) {
-      continue;
-    }
-
-    addClickToSamples({
-      samples,
-      startSample: beatStartSample,
-      sampleRateHz: input.sampleRateHz,
-      lengthSamples: clickLengthSamples,
-      amplitude: isDownbeat ? accentAmplitude : normalAmplitude,
-      frequencyHz: isDownbeat ? 1400 : clickFrequencyHz,
-    });
   }
 
   for (const chordMarkerEvent of chordMarkerEvents) {
