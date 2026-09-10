@@ -28,6 +28,8 @@ export type ClickTrackWavRenderInput = {
   outputFormat: "wav";
   storageProvider: "browser-download";
   countInBars: number;
+  openingBeatsPerBar?: number;
+  openingQuarterNotesPerBeat?: number;
   openingQuarterNotesPerBar?: number;
   totalDurationSeconds: number;
   totalBars?: number;
@@ -1216,12 +1218,56 @@ export function createClickTrackPcm16Samples(
     countInDurationSeconds * input.sampleRateHz,
   );
 
+  if (input.includeCountIn !== false && countInEndSample > 0) {
+    const openingBeatsPerBar =
+      typeof input.openingBeatsPerBar === "number" &&
+      Number.isFinite(input.openingBeatsPerBar) &&
+      input.openingBeatsPerBar > 0
+        ? input.openingBeatsPerBar
+        : 4;
+
+    const openingQuarterNotesPerBeat =
+      typeof input.openingQuarterNotesPerBeat === "number" &&
+      Number.isFinite(input.openingQuarterNotesPerBeat) &&
+      input.openingQuarterNotesPerBeat > 0
+        ? input.openingQuarterNotesPerBeat
+        : 1;
+
+    const countInSamplesPerBeat = Math.max(
+      1,
+      Math.round(
+        secondsPerBeat * openingQuarterNotesPerBeat * input.sampleRateHz,
+      ),
+    );
+
+    const countInBeatCount = Math.max(
+      1,
+      Math.round(input.countInBars * openingBeatsPerBar),
+    );
+
+    for (let beatIndex = 0; beatIndex < countInBeatCount; beatIndex += 1) {
+      const beatStartSample = beatIndex * countInSamplesPerBeat;
+
+      if (beatStartSample >= countInEndSample) {
+        break;
+      }
+
+      addClickToSamples({
+        samples,
+        startSample: beatStartSample,
+        sampleRateHz: input.sampleRateHz,
+        lengthSamples: sectionClickLengthSamples,
+        amplitude: sectionAmplitude,
+        frequencyHz: sectionClickFrequencyHz,
+      });
+    }
+  }
+
   for (
-    let beatStartSample = 0, beatIndex = 0;
+    let beatStartSample = countInEndSample, beatIndex = 0;
     beatStartSample < totalSamples;
     beatStartSample += samplesPerBeat, beatIndex += 1
   ) {
-    const isCountIn = beatStartSample < countInEndSample;
     const isDownbeat = beatIndex % 4 === 0;
     const isSectionStart = isNearSectionStartSample(
       beatStartSample,
@@ -1251,7 +1297,7 @@ export function createClickTrackPcm16Samples(
       continue;
     }
 
-    if (!isCountIn && input.includeBeatClicks === false) {
+    if (input.includeBeatClicks === false) {
       continue;
     }
 
@@ -1259,17 +1305,9 @@ export function createClickTrackPcm16Samples(
       samples,
       startSample: beatStartSample,
       sampleRateHz: input.sampleRateHz,
-      lengthSamples: isCountIn ? sectionClickLengthSamples : clickLengthSamples,
-      amplitude: isCountIn
-        ? sectionAmplitude
-        : isDownbeat
-          ? accentAmplitude
-          : normalAmplitude,
-      frequencyHz: isCountIn
-        ? sectionClickFrequencyHz
-        : isDownbeat
-          ? 1400
-          : clickFrequencyHz,
+      lengthSamples: clickLengthSamples,
+      amplitude: isDownbeat ? accentAmplitude : normalAmplitude,
+      frequencyHz: isDownbeat ? 1400 : clickFrequencyHz,
     });
   }
 

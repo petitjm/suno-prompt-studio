@@ -233,6 +233,12 @@ export async function POST(req: Request) {
     getArray(firstCueSheetSection?.barTiming)[0],
   );
 
+  const openingBeatsPerBar =
+    getNumber(firstBarTiming?.beatsPerBar) || undefined;
+
+  const openingQuarterNotesPerBeat =
+    getNumber(firstBarTiming?.quarterNotesPerBeat) || undefined;
+
   const openingQuarterNotesPerBar =
     getNumber(firstBarTiming?.quarterNotesPerBar) || undefined;
 
@@ -413,6 +419,8 @@ export async function POST(req: Request) {
     outputFormat: "wav" as const,
     storageProvider: "browser-download" as const,
     countInBars: 1,
+    openingBeatsPerBar,
+    openingQuarterNotesPerBeat,
     openingQuarterNotesPerBar,
     totalDurationSeconds: 10,
   };
