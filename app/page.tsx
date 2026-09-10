@@ -5888,19 +5888,19 @@ export default function Page() {
   const submitAudioPreviewRendererPayload = async () => {
     if (chordActionBlockedReason) {
       setAudioPreviewRenderMessage(chordActionBlockedReason);
-      return;
+      return false;
     }
 
     if (!audioPreviewRendererPayload) {
       setAudioPreviewRenderMessage("No renderer payload available to submit.");
-      return;
+      return false;
     }
 
     if (audioPreviewRendererPayloadValidation?.ready !== true) {
       setAudioPreviewRenderMessage(
         "Renderer payload validation has not passed. Review the payload before submitting.",
       );
-      return;
+      return false;
     }
 
     setSubmittingAudioPreviewRender(true);
@@ -6036,8 +6036,10 @@ export default function Page() {
           ? result.dryRunArtifactPackageValidation
           : null,
       );
+      return true;
     } catch {
       setAudioPreviewRenderMessage("Could not submit renderer payload.");
+      return false;
     } finally {
       setSubmittingAudioPreviewRender(false);
     }
@@ -6048,7 +6050,7 @@ export default function Page() {
       setChordExtractionMessage(
         "Save Source before requesting an audio preview.",
       );
-      return;
+      return false;
     }
 
     if (!activeSongVersionId) {
@@ -6056,7 +6058,7 @@ export default function Page() {
       setChordExtractionMessage(
         "Save Source before requesting an audio preview.",
       );
-      return;
+      return false;
     }
 
     if (processedPreviewSourceAlignmentIsChecking) {
@@ -6066,7 +6068,7 @@ export default function Page() {
       setChordExtractionMessage(
         "Source alignment is still being checked. Try requesting the audio preview again in a moment.",
       );
-      return;
+      return false;
     }
 
     if (processedPreviewHasAlignmentIssue) {
@@ -6076,7 +6078,7 @@ export default function Page() {
       setChordExtractionMessage(
         "Rebuild preview from Source before requesting an audio preview.",
       );
-      return;
+      return false;
     }
 
     if (activeChordVersionBelongsToAnotherSongVersion) {
@@ -6086,14 +6088,14 @@ export default function Page() {
       setChordExtractionMessage(
         "Rebuild preview from Source before requesting an audio preview for this song version.",
       );
-      return;
+      return false;
     }
 
     const previewSpec = buildAudioPreviewSpecCopyText();
 
     if (!previewSpec) {
       setAudioPreviewMessage("No audio preview spec available.");
-      return;
+      return false;
     }
 
     setRequestingAudioPreview(true);
@@ -6135,7 +6137,7 @@ export default function Page() {
             ? result.error
             : "Audio preview request failed.",
         );
-        return;
+        return false;
       }
 
       setAudioPreviewRendererPayloadValidation(
@@ -6193,8 +6195,10 @@ export default function Page() {
           ? result.sectionGuideText
           : "",
       );
+      return true;
     } catch {
       setAudioPreviewMessage("Could not send audio preview spec.");
+      return false;
     } finally {
       setRequestingAudioPreview(false);
     }
@@ -6852,11 +6856,16 @@ export default function Page() {
     }
 
     if (!dryRunArtifactPackage) {
-      setRealRenderRouteTestResponse({
-        ok: false,
-        status: "missing-dry-run-artifact-package",
-        message: "Submit dry run before testing the blocked real-render route.",
-      });
+      setMakeSongMessage("Preparing the render package...");
+
+      const dryRunSubmitted = await submitAudioPreviewRendererPayload();
+
+      if (!dryRunSubmitted) {
+        throw new Error(
+          "The render package could not be created. Review the audio controls.",
+        );
+      }
+
       return;
     }
 
@@ -19410,12 +19419,25 @@ export default function Page() {
             );
           }
 
+          if (requestingAudioPreview) {
+            return;
+          }
+
           if (
             !audioPreviewRendererPayload ||
             audioPreviewRendererPayloadValidation?.ready !== true
           ) {
             setMakeSongMessage("Preparing the audio...");
-            await requestAudioPreview();
+
+            const previewRequested = await requestAudioPreview();
+
+            if (!previewRequested) {
+              throw new Error(
+                "The Audio Guide payload could not be prepared. Review the audio controls.",
+              );
+            }
+
+            return;
           }
 
           if (!cancelled) {
@@ -19438,6 +19460,7 @@ export default function Page() {
           if (!dryRunArtifactPackage) {
             setMakeSongMessage("Preparing the render package...");
             await submitAudioPreviewRendererPayload();
+            return;
           }
 
           if (!cancelled) {
@@ -19648,7 +19671,13 @@ export default function Page() {
     return () => {
       cancelled = true;
     };
-  }, [makeSongStage, makeSongAlignmentCheck, generatedAudioDuration]);
+  }, [
+    makeSongStage,
+    makeSongAlignmentCheck,
+    generatedAudioDuration,
+    dryRunArtifactPackage,
+    requestingAudioPreview,
+  ]);
 
   const saveChords = async () => {
     try {

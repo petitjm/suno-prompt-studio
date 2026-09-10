@@ -100,6 +100,7 @@ As a song develops:
 - creating a new song version should not blindly discard established musical work.
 
 The long-term target is a structured relationship between lyric phrases, phrase timing, chord events, and melody notes so that changes made during songwriting can be embodied reliably in subsequent song versions and musical guides.
+
 ### Song-specific musical intent
 
 The current musical-guide work has shown that fixed section rules are useful as development defaults, but they must not become the final artistic model.
@@ -184,6 +185,18 @@ Artist-level identity and song-level identity should remain distinct:
 
 Where useful, downstream systems may combine both.
 
+## Version provenance and working context
+
+Saved song versions, chord checkpoints, and Audio Guides form an explicit provenance chain.
+
+```text
+Saved song version
+        ↓
+Linked saved chord checkpoint
+        ↓
+Audio Guide derived from that exact pairing
+```
+
 ## Task-driven workspace UI
 
 The application should behave as a songwriter's workbench rather than as a collection of implementation panels.
@@ -222,6 +235,9 @@ Song
 shared visual intent
   ↓
 OpenArt-oriented handoff / future provider / plain visual brief
+
+
+```
 
 ### Iterative songwriting loop
 
