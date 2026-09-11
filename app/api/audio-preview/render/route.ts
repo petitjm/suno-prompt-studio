@@ -1155,7 +1155,9 @@ function validateDryRunCueSheet(cueSheet: {
           return true;
         }
 
-        if (chordPlacementCount !== record.chordPlacements.length) {
+        const chordPlacements = record.chordPlacements;
+
+        if (chordPlacementCount !== chordPlacements.length) {
           return true;
         }
 
@@ -1163,7 +1165,7 @@ function validateDryRunCueSheet(cueSheet: {
           return false;
         }
 
-        return record.chordPlacements.some((placement) => {
+        return chordPlacements.some((placement, placementIndex) => {
           if (
             !placement ||
             typeof placement !== "object" ||
@@ -1183,6 +1185,38 @@ function validateDryRunCueSheet(cueSheet: {
             typeof chord.beat === "number" && Number.isFinite(chord.beat)
               ? chord.beat
               : null;
+
+          const previousPlacement =
+            placementIndex > 0 ? chordPlacements[placementIndex - 1] : null;
+
+          const previousChord =
+            previousPlacement &&
+            typeof previousPlacement === "object" &&
+            !Array.isArray(previousPlacement)
+              ? (previousPlacement as Record<string, unknown>)
+              : null;
+
+          const previousChordBar =
+            previousChord &&
+            typeof previousChord.bar === "number" &&
+            Number.isFinite(previousChord.bar)
+              ? previousChord.bar
+              : null;
+
+          const previousChordBeat =
+            previousChord &&
+            typeof previousChord.beat === "number" &&
+            Number.isFinite(previousChord.beat)
+              ? previousChord.beat
+              : null;
+
+          const chordPlacementMovesBackward =
+            previousChordBar !== null &&
+            previousChordBeat !== null &&
+            chordBar !== null &&
+            chordBeat !== null &&
+            (chordBar < previousChordBar ||
+              (chordBar === previousChordBar && chordBeat < previousChordBeat));
 
           const chordBarTiming =
             chordBar !== null
@@ -1232,6 +1266,7 @@ function validateDryRunCueSheet(cueSheet: {
             chordBeat === null ||
             chordBeat < 1 ||
             chordBeatOutsideActiveMeter ||
+            chordPlacementMovesBackward ||
             typeof chord.absoluteSeconds !== "number" ||
             !Number.isFinite(chord.absoluteSeconds) ||
             chord.absoluteSeconds < sectionStartSeconds ||
