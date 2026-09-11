@@ -23176,14 +23176,70 @@ ${buildRewriteInstruction(
                                 const sectionChangesMeter =
                                   endingTimeSignature !== timeSignature;
 
+                                const sectionMatchKey =
+                                  getGuideSectionMatchKey(sectionName);
+
+                                const sectionOccurrence =
+                                  editableMusicalTimingSections
+                                    .slice(0, sectionIndex + 1)
+                                    .filter((candidateSection) => {
+                                      if (
+                                        !candidateSection ||
+                                        typeof candidateSection !== "object" ||
+                                        Array.isArray(candidateSection)
+                                      ) {
+                                        return false;
+                                      }
+
+                                      const candidateRecord =
+                                        candidateSection as Record<
+                                          string,
+                                          unknown
+                                        >;
+
+                                      return (
+                                        typeof candidateRecord.section ===
+                                          "string" &&
+                                        getGuideSectionMatchKey(
+                                          candidateRecord.section,
+                                        ) === sectionMatchKey
+                                      );
+                                    }).length;
+
+                                const placedSectionOccurrenceCounts: Record<
+                                  string,
+                                  number
+                                > = {};
+                                let previousPlacedSectionKey = "";
+
                                 const matchingPlacedLines =
                                   getPlacedSongSheetLines(
                                     getChordDataFromEditorJson(),
-                                  ).filter(
-                                    (line) =>
-                                      getGuideSectionMatchKey(line.section) ===
-                                      getGuideSectionMatchKey(sectionName),
-                                  );
+                                  ).filter((line) => {
+                                    const lineSectionKey =
+                                      getGuideSectionMatchKey(line.section);
+
+                                    if (
+                                      lineSectionKey !==
+                                      previousPlacedSectionKey
+                                    ) {
+                                      placedSectionOccurrenceCounts[
+                                        lineSectionKey
+                                      ] =
+                                        (placedSectionOccurrenceCounts[
+                                          lineSectionKey
+                                        ] || 0) + 1;
+
+                                      previousPlacedSectionKey = lineSectionKey;
+                                    }
+
+                                    return (
+                                      lineSectionKey === sectionMatchKey &&
+                                      placedSectionOccurrenceCounts[
+                                        lineSectionKey
+                                      ] === sectionOccurrence
+                                    );
+                                  });
 
                                 const highestUsedChordBar =
                                   matchingPlacedLines.reduce(
