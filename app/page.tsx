@@ -16086,9 +16086,7 @@ export default function Page() {
             return {
               chord,
               charIndex: Math.max(0, Math.floor(rawIndex)),
-              ...(rawBar !== null && rawBar >= 1
-                ? { bar: Math.floor(rawBar) }
-                : {}),
+              ...(rawBar !== null && rawBar >= 1 ? { bar: rawBar } : {}),
               ...(rawBeat !== null && rawBeat >= 1 ? { beat: rawBeat } : {}),
             };
           })
@@ -18244,6 +18242,17 @@ export default function Page() {
 
         const placementBar = placement.bar;
         const placementBeat = placement.beat;
+
+        if (
+          !Number.isFinite(placementBar) ||
+          placementBar < 1 ||
+          !Number.isInteger(placementBar)
+        ) {
+          issues.push(
+            `${sectionLabel}: chord ${placement.chord} uses bar ${placementBar}; chord bars must be positive whole numbers.`,
+          );
+          return;
+        }
 
         const activeMeterChange = [...validMeterChanges]
           .reverse()

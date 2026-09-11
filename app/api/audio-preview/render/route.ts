@@ -112,8 +112,9 @@ function normalizePlacedChord(item: unknown) {
   const bar =
     typeof record.bar === "number" &&
     Number.isFinite(record.bar) &&
+    Number.isInteger(record.bar) &&
     record.bar >= 1
-      ? Math.floor(record.bar)
+      ? record.bar
       : undefined;
 
   const beat =
