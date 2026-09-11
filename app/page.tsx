@@ -17965,6 +17965,11 @@ export default function Page() {
     const fittedSections: {
       matchKey: string;
       highestUsedChordBar: number;
+      chordPlacements: {
+        chord: string;
+        bar?: number;
+        beat?: number;
+      }[];
     }[] = [];
 
     let previousFittedSectionIdentity = "";
@@ -17981,6 +17986,7 @@ export default function Page() {
         fittedSections.push({
           matchKey: sectionMatchKey,
           highestUsedChordBar: 0,
+          chordPlacements: [],
         });
 
         previousFittedSectionIdentity = sectionIdentity;
@@ -17993,6 +17999,14 @@ export default function Page() {
       }
 
       line.chords.forEach((placement) => {
+        currentFittedSection.chordPlacements.push({
+          chord: placement.chord,
+          ...(typeof placement.bar === "number" ? { bar: placement.bar } : {}),
+          ...(typeof placement.beat === "number"
+            ? { beat: placement.beat }
+            : {}),
+        });
+
         if (typeof placement.bar === "number") {
           currentFittedSection.highestUsedChordBar = Math.max(
             currentFittedSection.highestUsedChordBar,
@@ -18020,6 +18034,15 @@ export default function Page() {
 
     const timingSectionHighestUsedChordBars = new Map<number, number>();
 
+    const timingSectionChordPlacements = new Map<
+      number,
+      {
+        chord: string;
+        bar?: number;
+        beat?: number;
+      }[]
+    >();
+
     if (fittedSections.length > 0) {
       let timingSectionIndex = 0;
       let fittedSectionsAreCovered = true;
@@ -18040,6 +18063,11 @@ export default function Page() {
         timingSectionHighestUsedChordBars.set(
           timingSectionIndex,
           fittedSection.highestUsedChordBar,
+        );
+
+        timingSectionChordPlacements.set(
+          timingSectionIndex,
+          fittedSection.chordPlacements,
         );
 
         timingSectionIndex += 1;
@@ -18121,6 +18149,84 @@ export default function Page() {
           issues.push(`${sectionLabel}: contains an invalid meter change.`);
           return;
         }
+
+        const sectionChordPlacements =
+          timingSectionChordPlacements.get(sectionIndex) || [];
+
+        const validMeterChanges = meterChanges
+          .flatMap((change) => {
+            if (
+              !change ||
+              typeof change !== "object" ||
+              Array.isArray(change)
+            ) {
+              return [];
+            }
+
+            const changeRecord = change as Record<string, unknown>;
+
+            const bar =
+              typeof changeRecord.bar === "number" ? changeRecord.bar : null;
+
+            const changeTimeSignature =
+              typeof changeRecord.timeSignature === "string"
+                ? changeRecord.timeSignature
+                : "";
+
+            if (
+              bar === null ||
+              !Number.isFinite(bar) ||
+              !Number.isInteger(bar) ||
+              !supportedTimingSignatures.includes(changeTimeSignature)
+            ) {
+              return [];
+            }
+
+            return [
+              {
+                bar,
+                timeSignature: changeTimeSignature,
+              },
+            ];
+          })
+          .sort((a, b) => a.bar - b.bar);
+
+        sectionChordPlacements.forEach((placement) => {
+          if (
+            typeof placement.bar !== "number" ||
+            typeof placement.beat !== "number"
+          ) {
+            return;
+          }
+
+          const placementBar = placement.bar;
+          const placementBeat = placement.beat;
+
+          const activeMeterChange = [...validMeterChanges]
+            .reverse()
+            .find((change) => change.bar <= placementBar);
+
+          const activeTimeSignature =
+            activeMeterChange?.timeSignature || timeSignature;
+
+          const meterMatch = activeTimeSignature.match(/^(\d+)\s*\/\s*(\d+)$/);
+
+          if (!meterMatch) {
+            return;
+          }
+
+          const beatsPerBar = Number(meterMatch[1]);
+
+          if (
+            !Number.isFinite(placementBeat) ||
+            placementBeat < 1 ||
+            placementBeat > beatsPerBar
+          ) {
+            issues.push(
+              `${sectionLabel}: chord ${placement.chord} at bar ${placementBar}, beat ${placementBeat} is outside ${activeTimeSignature}.`,
+            );
+          }
+        });
 
         const changeRecord = change as Record<string, unknown>;
 
