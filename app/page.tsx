@@ -18150,84 +18150,6 @@ export default function Page() {
           return;
         }
 
-        const sectionChordPlacements =
-          timingSectionChordPlacements.get(sectionIndex) || [];
-
-        const validMeterChanges = meterChanges
-          .flatMap((change) => {
-            if (
-              !change ||
-              typeof change !== "object" ||
-              Array.isArray(change)
-            ) {
-              return [];
-            }
-
-            const changeRecord = change as Record<string, unknown>;
-
-            const bar =
-              typeof changeRecord.bar === "number" ? changeRecord.bar : null;
-
-            const changeTimeSignature =
-              typeof changeRecord.timeSignature === "string"
-                ? changeRecord.timeSignature
-                : "";
-
-            if (
-              bar === null ||
-              !Number.isFinite(bar) ||
-              !Number.isInteger(bar) ||
-              !supportedTimingSignatures.includes(changeTimeSignature)
-            ) {
-              return [];
-            }
-
-            return [
-              {
-                bar,
-                timeSignature: changeTimeSignature,
-              },
-            ];
-          })
-          .sort((a, b) => a.bar - b.bar);
-
-        sectionChordPlacements.forEach((placement) => {
-          if (
-            typeof placement.bar !== "number" ||
-            typeof placement.beat !== "number"
-          ) {
-            return;
-          }
-
-          const placementBar = placement.bar;
-          const placementBeat = placement.beat;
-
-          const activeMeterChange = [...validMeterChanges]
-            .reverse()
-            .find((change) => change.bar <= placementBar);
-
-          const activeTimeSignature =
-            activeMeterChange?.timeSignature || timeSignature;
-
-          const meterMatch = activeTimeSignature.match(/^(\d+)\s*\/\s*(\d+)$/);
-
-          if (!meterMatch) {
-            return;
-          }
-
-          const beatsPerBar = Number(meterMatch[1]);
-
-          if (
-            !Number.isFinite(placementBeat) ||
-            placementBeat < 1 ||
-            placementBeat > beatsPerBar
-          ) {
-            issues.push(
-              `${sectionLabel}: chord ${placement.chord} at bar ${placementBar}, beat ${placementBeat} is outside ${activeTimeSignature}.`,
-            );
-          }
-        });
-
         const changeRecord = change as Record<string, unknown>;
 
         const changeBar =
@@ -18271,6 +18193,80 @@ export default function Page() {
         if (!supportedTimingSignatures.includes(changeTimeSignature)) {
           issues.push(
             `${sectionLabel}: "${changeTimeSignature || "missing"}" is not a supported meter-change time signature.`,
+          );
+        }
+      });
+
+      const sectionChordPlacements =
+        timingSectionChordPlacements.get(sectionIndex) || [];
+
+      const validMeterChanges = meterChanges
+        .flatMap((change) => {
+          if (!change || typeof change !== "object" || Array.isArray(change)) {
+            return [];
+          }
+
+          const changeRecord = change as Record<string, unknown>;
+
+          const bar =
+            typeof changeRecord.bar === "number" ? changeRecord.bar : null;
+
+          const changeTimeSignature =
+            typeof changeRecord.timeSignature === "string"
+              ? changeRecord.timeSignature
+              : "";
+
+          if (
+            bar === null ||
+            !Number.isFinite(bar) ||
+            !Number.isInteger(bar) ||
+            !supportedTimingSignatures.includes(changeTimeSignature)
+          ) {
+            return [];
+          }
+
+          return [
+            {
+              bar,
+              timeSignature: changeTimeSignature,
+            },
+          ];
+        })
+        .sort((a, b) => a.bar - b.bar);
+
+      sectionChordPlacements.forEach((placement) => {
+        if (
+          typeof placement.bar !== "number" ||
+          typeof placement.beat !== "number"
+        ) {
+          return;
+        }
+
+        const placementBar = placement.bar;
+        const placementBeat = placement.beat;
+
+        const activeMeterChange = [...validMeterChanges]
+          .reverse()
+          .find((change) => change.bar <= placementBar);
+
+        const activeTimeSignature =
+          activeMeterChange?.timeSignature || timeSignature;
+
+        const meterMatch = activeTimeSignature.match(/^(\d+)\s*\/\s*(\d+)$/);
+
+        if (!meterMatch) {
+          return;
+        }
+
+        const beatsPerBar = Number(meterMatch[1]);
+
+        if (
+          !Number.isFinite(placementBeat) ||
+          placementBeat < 1 ||
+          placementBeat > beatsPerBar
+        ) {
+          issues.push(
+            `${sectionLabel}: chord ${placement.chord} at bar ${placementBar}, beat ${placementBeat} is outside ${activeTimeSignature}.`,
           );
         }
       });
