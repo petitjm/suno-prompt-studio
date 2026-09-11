@@ -1075,6 +1075,30 @@ function validateDryRunCueSheet(cueSheet: {
           return true;
         }
 
+        const tempoBpm =
+          typeof cueSheet.tempoBpm === "number" &&
+          Number.isFinite(cueSheet.tempoBpm) &&
+          cueSheet.tempoBpm > 0
+            ? cueSheet.tempoBpm
+            : null;
+
+        if (tempoBpm === null) {
+          return true;
+        }
+
+        const totalSectionQuarterNotes = barTiming.reduce(
+          (total, barTimingEntry) => total + barTimingEntry.quarterNotesPerBar,
+          0,
+        );
+
+        const expectedSectionSeconds = Number(
+          ((totalSectionQuarterNotes / tempoBpm) * 60).toFixed(1),
+        );
+
+        if (record.estimatedSeconds !== expectedSectionSeconds) {
+          return true;
+        }
+
         const chordPlacementCount =
           typeof record.chordPlacementCount === "number" &&
           Number.isFinite(record.chordPlacementCount) &&
