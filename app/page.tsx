@@ -17962,6 +17962,65 @@ export default function Page() {
       return issues;
     }
 
+    const fittedSectionSequence: string[] = [];
+    let previousFittedSectionIdentity = "";
+
+    getPlacedSongSheetLines(getChordDataFromEditorJson()).forEach((line) => {
+      if (!line.lyric.trim() && line.chords.length === 0) {
+        return;
+      }
+
+      const sectionIdentity = normaliseGuideSectionMatchLabel(line.section);
+      const sectionMatchKey = getGuideSectionMatchKey(line.section);
+
+      if (sectionIdentity !== previousFittedSectionIdentity) {
+        fittedSectionSequence.push(sectionMatchKey);
+        previousFittedSectionIdentity = sectionIdentity;
+      }
+    });
+
+    const timingSectionSequence = plan.sections.map((section) => {
+      if (!section || typeof section !== "object" || Array.isArray(section)) {
+        return "";
+      }
+
+      const sectionRecord = section as Record<string, unknown>;
+
+      return typeof sectionRecord.section === "string"
+        ? getGuideSectionMatchKey(sectionRecord.section)
+        : "";
+    });
+
+    if (fittedSectionSequence.length > 0) {
+      let timingSectionIndex = 0;
+
+      const fittedSectionsAreCovered = fittedSectionSequence.every(
+        (fittedSectionKey) => {
+          while (
+            timingSectionIndex < timingSectionSequence.length &&
+            timingSectionSequence[timingSectionIndex] !== fittedSectionKey
+          ) {
+            timingSectionIndex += 1;
+          }
+
+          if (timingSectionIndex >= timingSectionSequence.length) {
+            return false;
+          }
+
+          timingSectionIndex += 1;
+          return true;
+        },
+      );
+
+      if (!fittedSectionsAreCovered) {
+        issues.push(
+          `Timing-plan section order does not cover the fitted song. Fitted song: ${fittedSectionSequence.join(
+            " → ",
+          )}. Timing plan: ${timingSectionSequence.join(" → ")}.`,
+        );
+      }
+    }
+
     plan.sections.forEach((section, sectionIndex) => {
       if (!section || typeof section !== "object" || Array.isArray(section)) {
         issues.push(
