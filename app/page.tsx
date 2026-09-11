@@ -17840,11 +17840,56 @@ export default function Page() {
       return;
     }
 
+    const normalizedTimingPlanDraft = {
+      ...timingPlanDraft,
+      sections: Array.isArray(timingPlanDraft.sections)
+        ? timingPlanDraft.sections.map((section) => {
+            if (
+              !section ||
+              typeof section !== "object" ||
+              Array.isArray(section)
+            ) {
+              return section;
+            }
+
+            const sectionRecord = section as Record<string, unknown>;
+
+            const sortedMeterChanges = Array.isArray(sectionRecord.meterChanges)
+              ? [...sectionRecord.meterChanges].sort((a, b) => {
+                  const aBar =
+                    a &&
+                    typeof a === "object" &&
+                    !Array.isArray(a) &&
+                    typeof (a as Record<string, unknown>).bar === "number"
+                      ? ((a as Record<string, unknown>).bar as number)
+                      : 0;
+
+                  const bBar =
+                    b &&
+                    typeof b === "object" &&
+                    !Array.isArray(b) &&
+                    typeof (b as Record<string, unknown>).bar === "number"
+                      ? ((b as Record<string, unknown>).bar as number)
+                      : 0;
+
+                  return aBar - bBar;
+                })
+              : [];
+
+            return {
+              ...sectionRecord,
+              meterChanges: sortedMeterChanges,
+            };
+          })
+        : [],
+    };
+
     if (
       rawMusicalTimingPlan &&
       typeof rawMusicalTimingPlan === "object" &&
       !Array.isArray(rawMusicalTimingPlan) &&
-      JSON.stringify(timingPlanDraft) === JSON.stringify(rawMusicalTimingPlan)
+      JSON.stringify(normalizedTimingPlanDraft) ===
+        JSON.stringify(rawMusicalTimingPlan)
     ) {
       setTimingPlanDraft(null);
       setChordExtractionMessage("Timing plan unchanged.");
@@ -17865,9 +17910,9 @@ export default function Page() {
 
     const nextRecord = {
       ...record,
-      musicalTimingPlan: timingPlanDraft,
+      musicalTimingPlan: normalizedTimingPlanDraft,
+      timingReviewSignature: null,
     };
-
     setChords(nextRecord as ChordResponse);
     setChordsText(JSON.stringify(nextRecord, null, 2));
 
@@ -22806,8 +22851,35 @@ ${buildRewriteInstruction(
                                       <button
                                         type="button"
                                         onClick={() => {
+                                          const chordData =
+                                            getChordDataFromEditorJson();
+
+                                          if (
+                                            !chordData ||
+                                            typeof chordData !== "object" ||
+                                            Array.isArray(chordData)
+                                          ) {
+                                            return;
+                                          }
+
+                                          const nextRecord = {
+                                            ...(chordData as Record<
+                                              string,
+                                              unknown
+                                            >),
+                                            timingReviewSignature: null,
+                                          };
+
+                                          setChords(
+                                            nextRecord as ChordResponse,
+                                          );
+                                          setChordsText(
+                                            JSON.stringify(nextRecord, null, 2),
+                                          );
+
                                           setReviewedChordTimingSignature(null);
                                           setActiveChordVersionId(null);
+                                          resetAudioPreviewRequestState();
                                         }}
                                         className="rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
                                       >
@@ -22826,10 +22898,38 @@ ${buildRewriteInstruction(
                                       <button
                                         type="button"
                                         onClick={() => {
+                                          const chordData =
+                                            getChordDataFromEditorJson();
+
+                                          if (
+                                            !chordData ||
+                                            typeof chordData !== "object" ||
+                                            Array.isArray(chordData)
+                                          ) {
+                                            return;
+                                          }
+
+                                          const nextRecord = {
+                                            ...(chordData as Record<
+                                              string,
+                                              unknown
+                                            >),
+                                            timingReviewSignature:
+                                              currentChordTimingSignature,
+                                          };
+
+                                          setChords(
+                                            nextRecord as ChordResponse,
+                                          );
+                                          setChordsText(
+                                            JSON.stringify(nextRecord, null, 2),
+                                          );
+
                                           setReviewedChordTimingSignature(
                                             currentChordTimingSignature,
                                           );
                                           setActiveChordVersionId(null);
+                                          resetAudioPreviewRequestState();
                                         }}
                                         disabled={
                                           !chordTimingCanBeMarkedComplete
