@@ -986,17 +986,50 @@ function validateDryRunCueSheet(cueSheet: {
                   ? barTimingRecord.bar
                   : null;
 
+              const timeSignature =
+                typeof barTimingRecord.timeSignature === "string"
+                  ? barTimingRecord.timeSignature
+                  : "";
+
               const beatsPerBar =
                 typeof barTimingRecord.beatsPerBar === "number" &&
                 Number.isFinite(barTimingRecord.beatsPerBar)
                   ? barTimingRecord.beatsPerBar
                   : null;
 
+              const denominator =
+                typeof barTimingRecord.denominator === "number" &&
+                Number.isFinite(barTimingRecord.denominator)
+                  ? barTimingRecord.denominator
+                  : null;
+
+              const quarterNotesPerBeat =
+                typeof barTimingRecord.quarterNotesPerBeat === "number" &&
+                Number.isFinite(barTimingRecord.quarterNotesPerBeat)
+                  ? barTimingRecord.quarterNotesPerBeat
+                  : null;
+
+              const quarterNotesPerBar =
+                typeof barTimingRecord.quarterNotesPerBar === "number" &&
+                Number.isFinite(barTimingRecord.quarterNotesPerBar)
+                  ? barTimingRecord.quarterNotesPerBar
+                  : null;
+
+              const meter = getMeterFromTimeSignature(timeSignature);
+
               if (
                 bar === null ||
                 beatsPerBar === null ||
+                denominator === null ||
+                quarterNotesPerBeat === null ||
+                quarterNotesPerBar === null ||
                 bar < 1 ||
-                beatsPerBar < 1
+                !Number.isInteger(bar) ||
+                meter === null ||
+                beatsPerBar !== meter.beatsPerBar ||
+                denominator !== meter.denominator ||
+                quarterNotesPerBeat !== meter.quarterNotesPerBeat ||
+                quarterNotesPerBar !== meter.quarterNotesPerBar
               ) {
                 return [];
               }
@@ -1004,7 +1037,11 @@ function validateDryRunCueSheet(cueSheet: {
               return [
                 {
                   bar,
+                  timeSignature,
                   beatsPerBar,
+                  denominator,
+                  quarterNotesPerBeat,
+                  quarterNotesPerBar,
                 },
               ];
             })
