@@ -965,6 +965,15 @@ function validateDryRunCueSheet(cueSheet: {
           return true;
         }
 
+        const sectionMeter = getMeterFromTimeSignature(record.timeSignature);
+
+        if (
+          sectionMeter === null ||
+          record.beatsPerBar !== sectionMeter.beatsPerBar
+        ) {
+          return true;
+        }
+
         const sectionStartSeconds = record.startSeconds;
         const sectionEndSeconds = record.endSeconds;
 
