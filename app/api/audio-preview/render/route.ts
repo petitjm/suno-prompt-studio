@@ -941,7 +941,7 @@ function validateDryRunCueSheet(cueSheet: {
   }
 
   const sectionTimingInvalid = Array.isArray(cueSheet.sections)
-    ? cueSheet.sections.some((section) => {
+    ? cueSheet.sections.some((section, sectionIndex) => {
         if (!section || typeof section !== "object" || Array.isArray(section)) {
           return true;
         }
@@ -1097,6 +1097,48 @@ function validateDryRunCueSheet(cueSheet: {
 
         if (record.estimatedSeconds !== expectedSectionSeconds) {
           return true;
+        }
+
+        const sectionTimelineDuration = Number(
+          (sectionEndSeconds - sectionStartSeconds).toFixed(1),
+        );
+
+        if (sectionTimelineDuration !== record.estimatedSeconds) {
+          return true;
+        }
+
+        if (sectionIndex === 0) {
+          if (sectionStartSeconds !== 0) {
+            return true;
+          }
+        } else {
+          const previousSection = cueSheet.sections?.[sectionIndex - 1];
+
+          if (
+            !previousSection ||
+            typeof previousSection !== "object" ||
+            Array.isArray(previousSection)
+          ) {
+            return true;
+          }
+
+          const previousSectionRecord = previousSection as Record<
+            string,
+            unknown
+          >;
+
+          const previousSectionEndSeconds =
+            typeof previousSectionRecord.endSeconds === "number" &&
+            Number.isFinite(previousSectionRecord.endSeconds)
+              ? previousSectionRecord.endSeconds
+              : null;
+
+          if (
+            previousSectionEndSeconds === null ||
+            sectionStartSeconds !== previousSectionEndSeconds
+          ) {
+            return true;
+          }
         }
 
         const chordPlacementCount =
