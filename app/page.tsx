@@ -17962,7 +17962,11 @@ export default function Page() {
       return issues;
     }
 
-    const fittedSectionSequence: string[] = [];
+    const fittedSections: {
+      matchKey: string;
+      highestUsedChordBar: number;
+    }[] = [];
+
     let previousFittedSectionIdentity = "";
 
     getPlacedSongSheetLines(getChordDataFromEditorJson()).forEach((line) => {
@@ -17974,10 +17978,33 @@ export default function Page() {
       const sectionMatchKey = getGuideSectionMatchKey(line.section);
 
       if (sectionIdentity !== previousFittedSectionIdentity) {
-        fittedSectionSequence.push(sectionMatchKey);
+        fittedSections.push({
+          matchKey: sectionMatchKey,
+          highestUsedChordBar: 0,
+        });
+
         previousFittedSectionIdentity = sectionIdentity;
       }
+
+      const currentFittedSection = fittedSections[fittedSections.length - 1];
+
+      if (!currentFittedSection) {
+        return;
+      }
+
+      line.chords.forEach((placement) => {
+        if (typeof placement.bar === "number") {
+          currentFittedSection.highestUsedChordBar = Math.max(
+            currentFittedSection.highestUsedChordBar,
+            placement.bar,
+          );
+        }
+      });
     });
+
+    const fittedSectionSequence = fittedSections.map(
+      (section) => section.matchKey,
+    );
 
     const timingSectionSequence = plan.sections.map((section) => {
       if (!section || typeof section !== "object" || Array.isArray(section)) {
@@ -17991,26 +18018,32 @@ export default function Page() {
         : "";
     });
 
-    if (fittedSectionSequence.length > 0) {
+    const timingSectionHighestUsedChordBars = new Map<number, number>();
+
+    if (fittedSections.length > 0) {
       let timingSectionIndex = 0;
+      let fittedSectionsAreCovered = true;
 
-      const fittedSectionsAreCovered = fittedSectionSequence.every(
-        (fittedSectionKey) => {
-          while (
-            timingSectionIndex < timingSectionSequence.length &&
-            timingSectionSequence[timingSectionIndex] !== fittedSectionKey
-          ) {
-            timingSectionIndex += 1;
-          }
-
-          if (timingSectionIndex >= timingSectionSequence.length) {
-            return false;
-          }
-
+      for (const fittedSection of fittedSections) {
+        while (
+          timingSectionIndex < timingSectionSequence.length &&
+          timingSectionSequence[timingSectionIndex] !== fittedSection.matchKey
+        ) {
           timingSectionIndex += 1;
-          return true;
-        },
-      );
+        }
+
+        if (timingSectionIndex >= timingSectionSequence.length) {
+          fittedSectionsAreCovered = false;
+          break;
+        }
+
+        timingSectionHighestUsedChordBars.set(
+          timingSectionIndex,
+          fittedSection.highestUsedChordBar,
+        );
+
+        timingSectionIndex += 1;
+      }
 
       if (!fittedSectionsAreCovered) {
         issues.push(
@@ -18048,6 +18081,21 @@ export default function Page() {
       ) {
         issues.push(
           `${sectionLabel}: bar count must be a positive whole number.`,
+        );
+      }
+
+      const highestUsedChordBar =
+        timingSectionHighestUsedChordBars.get(sectionIndex) || 0;
+
+      if (
+        bars !== null &&
+        Number.isFinite(bars) &&
+        Number.isInteger(bars) &&
+        bars >= 1 &&
+        highestUsedChordBar > bars
+      ) {
+        issues.push(
+          `${sectionLabel}: section has ${bars} bars, but chord timing uses up to bar ${highestUsedChordBar}.`,
         );
       }
 
