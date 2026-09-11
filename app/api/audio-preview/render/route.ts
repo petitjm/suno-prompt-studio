@@ -1010,6 +1010,25 @@ function validateDryRunCueSheet(cueSheet: {
             })
           : [];
 
+        const expectedBarCount =
+          typeof record.estimatedBars === "number" &&
+          Number.isFinite(record.estimatedBars) &&
+          Number.isInteger(record.estimatedBars) &&
+          record.estimatedBars > 0
+            ? record.estimatedBars
+            : null;
+
+        const barTimingCoversSection =
+          expectedBarCount !== null &&
+          barTiming.length === expectedBarCount &&
+          barTiming.every(
+            (barTimingEntry, index) => barTimingEntry.bar === index + 1,
+          );
+
+        if (!barTimingCoversSection) {
+          return true;
+        }
+
         const chordPlacementCount =
           typeof record.chordPlacementCount === "number" &&
           Number.isFinite(record.chordPlacementCount) &&
