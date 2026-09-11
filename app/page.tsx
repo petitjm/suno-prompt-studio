@@ -18237,6 +18237,9 @@ export default function Page() {
           typeof placement.bar !== "number" ||
           typeof placement.beat !== "number"
         ) {
+          issues.push(
+            `${sectionLabel}: chord ${placement.chord} is missing confirmed bar/beat timing.`,
+          );
           return;
         }
 
