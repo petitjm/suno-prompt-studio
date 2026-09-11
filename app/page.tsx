@@ -11018,7 +11018,20 @@ export default function Page() {
                                       : "",
                                 };
                               })
-                              .filter(Boolean)
+                              .filter(
+                                (
+                                  change,
+                                ): change is {
+                                  bar: number | null;
+                                  timeSignature: string;
+                                } => Boolean(change),
+                              )
+                              .sort((a, b) => {
+                                const aBar = a.bar ?? Number.MAX_SAFE_INTEGER;
+                                const bBar = b.bar ?? Number.MAX_SAFE_INTEGER;
+
+                                return aBar - bBar;
+                              })
                           : [],
                       };
                     })
