@@ -1010,11 +1010,26 @@ function validateDryRunCueSheet(cueSheet: {
             })
           : [];
 
+        const chordPlacementCount =
+          typeof record.chordPlacementCount === "number" &&
+          Number.isFinite(record.chordPlacementCount) &&
+          record.chordPlacementCount >= 0
+            ? record.chordPlacementCount
+            : null;
+
         if (
-          !Array.isArray(record.chordPlacements) ||
-          record.chordPlacements.length === 0
+          chordPlacementCount === null ||
+          !Array.isArray(record.chordPlacements)
         ) {
           return true;
+        }
+
+        if (chordPlacementCount !== record.chordPlacements.length) {
+          return true;
+        }
+
+        if (chordPlacementCount === 0) {
+          return false;
         }
 
         return record.chordPlacements.some((placement) => {
