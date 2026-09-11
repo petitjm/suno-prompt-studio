@@ -967,6 +967,48 @@ function validateDryRunCueSheet(cueSheet: {
         const sectionStartSeconds = record.startSeconds;
         const sectionEndSeconds = record.endSeconds;
 
+        const barTiming = Array.isArray(record.barTiming)
+          ? record.barTiming.flatMap((barTimingEntry) => {
+              if (
+                !barTimingEntry ||
+                typeof barTimingEntry !== "object" ||
+                Array.isArray(barTimingEntry)
+              ) {
+                return [];
+              }
+
+              const barTimingRecord = barTimingEntry as Record<string, unknown>;
+
+              const bar =
+                typeof barTimingRecord.bar === "number" &&
+                Number.isFinite(barTimingRecord.bar)
+                  ? barTimingRecord.bar
+                  : null;
+
+              const beatsPerBar =
+                typeof barTimingRecord.beatsPerBar === "number" &&
+                Number.isFinite(barTimingRecord.beatsPerBar)
+                  ? barTimingRecord.beatsPerBar
+                  : null;
+
+              if (
+                bar === null ||
+                beatsPerBar === null ||
+                bar < 1 ||
+                beatsPerBar < 1
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  bar,
+                  beatsPerBar,
+                },
+              ];
+            })
+          : [];
+
         if (
           !Array.isArray(record.chordPlacements) ||
           record.chordPlacements.length === 0
@@ -985,13 +1027,35 @@ function validateDryRunCueSheet(cueSheet: {
 
           const chord = placement as Record<string, unknown>;
 
+          const chordBar =
+            typeof chord.bar === "number" && Number.isFinite(chord.bar)
+              ? chord.bar
+              : null;
+
+          const chordBeat =
+            typeof chord.beat === "number" && Number.isFinite(chord.beat)
+              ? chord.beat
+              : null;
+
+          const chordBarTiming =
+            chordBar !== null
+              ? barTiming.find(
+                  (barTimingEntry) => barTimingEntry.bar === chordBar,
+                )
+              : undefined;
+
+          const chordBeatOutsideActiveMeter =
+            chordBeat !== null &&
+            chordBarTiming !== undefined &&
+            chordBeat > chordBarTiming.beatsPerBar;
+
           return (
-            typeof chord.bar !== "number" ||
-            !Number.isFinite(chord.bar) ||
-            chord.bar < 1 ||
-            typeof chord.beat !== "number" ||
-            !Number.isFinite(chord.beat) ||
-            chord.beat < 1 ||
+            chordBar === null ||
+            chordBar < 1 ||
+            chordBarTiming === undefined ||
+            chordBeat === null ||
+            chordBeat < 1 ||
+            chordBeatOutsideActiveMeter ||
             typeof chord.absoluteSeconds !== "number" ||
             !Number.isFinite(chord.absoluteSeconds) ||
             chord.absoluteSeconds < sectionStartSeconds ||
