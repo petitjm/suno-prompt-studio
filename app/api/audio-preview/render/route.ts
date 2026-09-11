@@ -1217,6 +1217,71 @@ function validateDryRunCueSheet(cueSheet: {
     missing.push("sectionTiming");
   }
 
+  const cueSheetTotalsInvalid =
+    Array.isArray(cueSheet.sections) && cueSheet.sections.length > 0
+      ? (() => {
+          const sectionRecords = cueSheet.sections.flatMap((section) => {
+            if (
+              !section ||
+              typeof section !== "object" ||
+              Array.isArray(section)
+            ) {
+              return [];
+            }
+
+            return [section as Record<string, unknown>];
+          });
+
+          if (sectionRecords.length !== cueSheet.sections.length) {
+            return true;
+          }
+
+          const summedEstimatedBars = sectionRecords.reduce(
+            (total, sectionRecord) =>
+              total +
+              (typeof sectionRecord.estimatedBars === "number" &&
+              Number.isFinite(sectionRecord.estimatedBars)
+                ? sectionRecord.estimatedBars
+                : 0),
+            0,
+          );
+
+          const summedEstimatedSeconds = Number(
+            sectionRecords
+              .reduce(
+                (total, sectionRecord) =>
+                  total +
+                  (typeof sectionRecord.estimatedSeconds === "number" &&
+                  Number.isFinite(sectionRecord.estimatedSeconds)
+                    ? sectionRecord.estimatedSeconds
+                    : 0),
+                0,
+              )
+              .toFixed(1),
+          );
+
+          const finalSection = sectionRecords.at(-1);
+
+          const finalSectionEndSeconds =
+            finalSection &&
+            typeof finalSection.endSeconds === "number" &&
+            Number.isFinite(finalSection.endSeconds)
+              ? finalSection.endSeconds
+              : null;
+
+          return (
+            cueSheet.totalEstimatedBars !== summedEstimatedBars ||
+            cueSheet.totalEstimatedSeconds !== summedEstimatedSeconds ||
+            finalSectionEndSeconds === null ||
+            cueSheet.totalEstimatedSeconds !== finalSectionEndSeconds
+          );
+        })()
+      : true;
+
+  if (cueSheetTotalsInvalid) {
+    missing.push("cueSheetTotals");
+  }
+
   return {
     ready: missing.length === 0,
     missing,
