@@ -1196,6 +1196,35 @@ function validateDryRunCueSheet(cueSheet: {
             chordBarTiming !== undefined &&
             chordBeat > chordBarTiming.beatsPerBar;
 
+          const quarterNotesBeforeChordBar =
+            chordBar !== null
+              ? barTiming
+                  .filter((barTimingEntry) => barTimingEntry.bar < chordBar)
+                  .reduce(
+                    (total, barTimingEntry) =>
+                      total + barTimingEntry.quarterNotesPerBar,
+                    0,
+                  )
+              : null;
+
+          const quarterNotesIntoChordBar =
+            chordBeat !== null && chordBarTiming !== undefined
+              ? (chordBeat - 1) * chordBarTiming.quarterNotesPerBeat
+              : null;
+
+          const expectedAbsoluteSeconds =
+            quarterNotesBeforeChordBar !== null &&
+            quarterNotesIntoChordBar !== null
+              ? Number(
+                  (
+                    sectionStartSeconds +
+                    ((quarterNotesBeforeChordBar + quarterNotesIntoChordBar) /
+                      tempoBpm) *
+                      60
+                  ).toFixed(3),
+                )
+              : null;
+
           return (
             chordBar === null ||
             chordBar < 1 ||
@@ -1207,6 +1236,8 @@ function validateDryRunCueSheet(cueSheet: {
             !Number.isFinite(chord.absoluteSeconds) ||
             chord.absoluteSeconds < sectionStartSeconds ||
             chord.absoluteSeconds >= sectionEndSeconds ||
+            expectedAbsoluteSeconds === null ||
+            chord.absoluteSeconds !== expectedAbsoluteSeconds ||
             chord.timingSource !== "confirmed-bar-beat"
           );
         });
