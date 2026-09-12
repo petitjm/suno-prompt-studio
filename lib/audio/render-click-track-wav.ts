@@ -167,12 +167,6 @@ const BYTES_PER_SAMPLE = BITS_PER_SAMPLE / 8;
 function getResolvedTotalDurationSeconds(
   input: ClickTrackWavRenderInput,
 ): number {
-  const beatsPerBar = 4;
-  const secondsPerBar =
-    input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
-      ? (60 / input.tempoBpm) * beatsPerBar
-      : 0;
-
   if (
     typeof input.totalEstimatedSeconds === "number" &&
     Number.isFinite(input.totalEstimatedSeconds) &&
@@ -182,12 +176,18 @@ function getResolvedTotalDurationSeconds(
   }
 
   if (
-    typeof input.totalBars === "number" &&
-    Number.isFinite(input.totalBars) &&
-    input.totalBars > 0 &&
-    secondsPerBar > 0
+    Array.isArray(input.cueSheetSections) &&
+    input.cueSheetSections.length > 0
   ) {
-    return input.totalBars * secondsPerBar;
+    const finalSection = input.cueSheetSections.at(-1);
+
+    if (
+      finalSection &&
+      Number.isFinite(finalSection.endSeconds) &&
+      finalSection.endSeconds > 0
+    ) {
+      return finalSection.endSeconds;
+    }
   }
 
   return input.totalDurationSeconds;
