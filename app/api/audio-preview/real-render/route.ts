@@ -435,6 +435,7 @@ export async function POST(req: Request) {
       getNumber(dryRunCueSheet?.totalEstimatedSeconds) || undefined,
     cueSheetSectionCount:
       getArray(dryRunCueSheet?.sections).length || undefined,
+    cueSheetSections,
 
     chordMarkers,
     melodyNotes,
