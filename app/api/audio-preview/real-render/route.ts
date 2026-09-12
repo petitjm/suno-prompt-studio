@@ -286,6 +286,14 @@ export async function POST(req: Request) {
   const openingQuarterNotesPerBar =
     getNumber(firstBarTiming?.quarterNotesPerBar) || undefined;
 
+  const openingTimingReady =
+    typeof openingBeatsPerBar === "number" &&
+    openingBeatsPerBar > 0 &&
+    typeof openingQuarterNotesPerBeat === "number" &&
+    openingQuarterNotesPerBeat > 0 &&
+    typeof openingQuarterNotesPerBar === "number" &&
+    openingQuarterNotesPerBar > 0;
+
   const chordMarkers = buildChordMarkersFromCueSheetSections(cueSheetSections);
   const melodyNotes = getMelodyNotes(bodyRecord?.melodyNotes);
 
@@ -327,6 +335,10 @@ export async function POST(req: Request) {
 
   if (dryRunCueSheetValidation?.ready !== true) {
     missingOrInvalidContractFields.push("dryRunCueSheetValidation.ready");
+  }
+
+  if (!openingTimingReady) {
+    missingOrInvalidContractFields.push("openingBarTiming");
   }
 
   if (requestedTarget !== "clickTrack") {
