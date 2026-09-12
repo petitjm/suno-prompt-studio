@@ -1389,54 +1389,6 @@ export function createClickTrackPcm16Samples(
         frequencyHz: beatEvent.isDownbeat ? 1400 : clickFrequencyHz,
       });
     }
-  } else {
-    for (
-      let beatStartSample = countInEndSample, beatIndex = 0;
-      beatStartSample < totalSamples;
-      beatStartSample += samplesPerBeat, beatIndex += 1
-    ) {
-      const isDownbeat = beatIndex % 4 === 0;
-      const isSectionStart = isNearSectionStartSample(
-        beatStartSample,
-        sectionStartSamples,
-        sectionStartToleranceSamples,
-      );
-
-      if (isSectionStart) {
-        addClickToSamples({
-          samples,
-          startSample: beatStartSample,
-          sampleRateHz: input.sampleRateHz,
-          lengthSamples: sectionClickLengthSamples,
-          amplitude: sectionAmplitude,
-          frequencyHz: sectionClickFrequencyHz,
-        });
-
-        addClickToSamples({
-          samples,
-          startSample: beatStartSample + Math.round(input.sampleRateHz * 0.09),
-          sampleRateHz: input.sampleRateHz,
-          lengthSamples: sectionClickLengthSamples,
-          amplitude: sectionAmplitude,
-          frequencyHz: sectionClickFrequencyHz,
-        });
-
-        continue;
-      }
-
-      if (input.includeBeatClicks === false) {
-        continue;
-      }
-
-      addClickToSamples({
-        samples,
-        startSample: beatStartSample,
-        sampleRateHz: input.sampleRateHz,
-        lengthSamples: clickLengthSamples,
-        amplitude: isDownbeat ? accentAmplitude : normalAmplitude,
-        frequencyHz: isDownbeat ? 1400 : clickFrequencyHz,
-      });
-    }
   }
 
   for (const chordMarkerEvent of chordMarkerEvents) {
