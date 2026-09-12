@@ -265,6 +265,9 @@ export async function POST(req: Request) {
   };
   const requestedRenderJobId = getString(bodyRecord?.renderJobId);
   const dryRunRenderPlan = getRecord(bodyRecord?.dryRunRenderPlan);
+  const dryRunCueSheetValidation = getRecord(
+    bodyRecord?.dryRunCueSheetValidation,
+  );
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
   const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
 
@@ -320,6 +323,10 @@ export async function POST(req: Request) {
 
   if (!isRecord(realRenderConfiguration)) {
     missingOrInvalidContractFields.push("realRenderConfiguration");
+  }
+
+  if (dryRunCueSheetValidation?.ready !== true) {
+    missingOrInvalidContractFields.push("dryRunCueSheetValidation.ready");
   }
 
   if (requestedTarget !== "clickTrack") {

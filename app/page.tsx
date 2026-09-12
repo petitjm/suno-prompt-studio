@@ -6892,7 +6892,8 @@ export default function Page() {
           includeChordToneGuide: includeClickTrackChordToneGuide,
           mixProfile: "musical-guide",
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
-
+          dryRunCueSheetValidation:
+            dryRunArtifactPackage.dryRunCueSheetValidation,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -6957,6 +6958,8 @@ export default function Page() {
           includeChordMarkers: includeClickTrackChordMarkers,
           includeChordToneGuide: true,
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+          dryRunCueSheetValidation:
+            dryRunArtifactPackage.dryRunCueSheetValidation,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
@@ -7394,6 +7397,8 @@ export default function Page() {
           includeChordMarkers: includeClickTrackChordMarkers,
           includeChordToneGuide: true,
           dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+          dryRunCueSheetValidation:
+            dryRunArtifactPackage.dryRunCueSheetValidation,
           rendererInputContract: dryRunArtifactPackage.rendererInputContract,
           realRenderGate: dryRunArtifactPackage.realRenderGate,
           firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
