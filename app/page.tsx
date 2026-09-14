@@ -14955,7 +14955,6 @@ export default function Page() {
       "sections",
       "notes",
       "songsheetNotes",
-      "generationHistory",
     ];
 
     return Object.fromEntries(
