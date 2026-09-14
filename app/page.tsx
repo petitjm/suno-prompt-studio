@@ -17178,10 +17178,8 @@ export default function Page() {
     const guideTrackSectionPlanRows = getGuideTrackSectionPlanRows(chordData);
     const placedLines = getPlacedSongSheetLines(chordData);
 
-    const hasIntentTempo = intentRows.some((row) => row.label === "Tempo");
-    const hasPreviewTempo =
+    const hasTempo =
       typeof previewTempo === "number" && Number.isFinite(previewTempo);
-    const hasTempo = hasIntentTempo || hasPreviewTempo;
     const hasGroove = intentRows.some((row) => row.label === "Groove");
     const hasPerformanceIntent = intentRows.length > 0;
     const hasGuideTrackPlan = guideTrackPlanRows.length > 0;
@@ -17199,11 +17197,9 @@ export default function Page() {
       {
         label: "Tempo",
         passed: hasTempo,
-        detail: hasIntentTempo
-          ? "Tempo is available from performance intent."
-          : hasPreviewTempo
-            ? `Tempo is available from preview tempo: ${previewTempo} BPM.`
-            : "Tempo is missing.",
+        detail: hasTempo
+          ? `Tempo is available from the current performance tempo: ${previewTempo} BPM.`
+          : "Tempo is missing.",
       },
       {
         label: "Groove",
@@ -23897,6 +23893,64 @@ ${buildRewriteInstruction(
                               Select a lyric line to edit its wording or chord
                               positions.
                             </p>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                                Performance key
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChordTransposeSemitones(
+                                    (value) => value - 1,
+                                  );
+                                  resetGeneratedAudioState();
+                                }}
+                                disabled={!placedSongSheetPreview}
+                                className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-600"
+                              >
+                                −1
+                              </button>
+
+                              <div className="min-w-[64px] rounded border border-purple-800 bg-purple-950/30 px-3 py-1 text-center text-sm font-semibold text-purple-100">
+                                {getDisplayedKeyLabel() ||
+                                  getOriginalKeyLabel() ||
+                                  "—"}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChordTransposeSemitones(
+                                    (value) => value + 1,
+                                  );
+                                  resetGeneratedAudioState();
+                                }}
+                                disabled={!placedSongSheetPreview}
+                                className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs font-medium text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 disabled:cursor-not-allowed disabled:text-gray-600"
+                              >
+                                +1
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChordTransposeSemitones(0);
+                                  resetGeneratedAudioState();
+                                }}
+                                disabled={chordTransposeSemitones === 0}
+                                className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs font-medium text-gray-400 hover:bg-gray-800 disabled:cursor-not-allowed disabled:text-gray-600"
+                              >
+                                Saved key
+                              </button>
+
+                              {getOriginalKeyLabel() && (
+                                <span className="text-[11px] text-gray-500">
+                                  Saved chord key: {getOriginalKeyLabel()}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex flex-wrap gap-2">
@@ -23935,7 +23989,9 @@ ${buildRewriteInstruction(
                             <div className="space-y-2">
                               {placedSongSheetLines.map((line, lineIndex) => {
                                 const [chordLine, lyricLine] =
-                                  renderPlacedSongSheetLine(line);
+                                  renderPlacedSongSheetLine(
+                                    transposePlacedSongSheetLine(line),
+                                  );
 
                                 const isSelected =
                                   lineIndex ===
@@ -24017,7 +24073,9 @@ ${buildRewriteInstruction(
                                 const lineIndex =
                                   effectiveSelectedPlacedLineIndex;
                                 const [chordLine, lyricLine] =
-                                  renderPlacedSongSheetLine(line);
+                                  renderPlacedSongSheetLine(
+                                    transposePlacedSongSheetLine(line),
+                                  );
 
                                 return (
                                   <div>
@@ -24157,8 +24215,14 @@ ${buildRewriteInstruction(
                                                 }`}
                                               >
                                                 {isMoving
-                                                  ? `Moving ${placement.chord}`
-                                                  : placement.chord}
+                                                  ? `Moving ${transposeChordSymbol(
+                                                      placement.chord,
+                                                      chordTransposeSemitones,
+                                                    )}`
+                                                  : transposeChordSymbol(
+                                                      placement.chord,
+                                                      chordTransposeSemitones,
+                                                    )}
                                               </button>
                                             );
                                           },
@@ -24618,7 +24682,7 @@ ${buildRewriteInstruction(
 
                           <div className="flex flex-col items-center justify-center">
                             <div className="text-xs uppercase tracking-wide text-gray-500">
-                              Song Key
+                              Performance key
                             </div>
 
                             <div className="mt-2 min-w-[72px] rounded border border-purple-800 bg-purple-950/30 px-4 py-2 text-center text-lg font-semibold text-purple-100">
@@ -24626,6 +24690,12 @@ ${buildRewriteInstruction(
                                 getOriginalKeyLabel() ||
                                 "—"}
                             </div>
+
+                            {getOriginalKeyLabel() && (
+                              <div className="mt-2 text-center text-[11px] text-gray-500">
+                                Saved chord key: {getOriginalKeyLabel()}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -31777,9 +31847,11 @@ ${buildRewriteInstruction(
 
                         <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
                           <div className="text-xs leading-5 text-gray-500">
-                            Raw editable chord-placement data. Most songwriting
-                            work should use the songsheet preview above; use
-                            this only for copying, debugging, or manual repair.
+                            Raw editable chord-checkpoint data. Chords are
+                            stored in the saved chord key, not the current
+                            transposed performance key. Most songwriting work
+                            should use the songsheet preview above; use this
+                            only for copying, debugging, or manual repair.
                           </div>
 
                           <button
