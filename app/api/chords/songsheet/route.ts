@@ -255,57 +255,6 @@ function validateSongSheetLines(
     };
   }
 
-  function expandSongSheetLineRefs(
-    value: unknown,
-    sourceLyricLines: string[],
-  ): {
-    lines: SongsheetLine[];
-    rejectedLines: string[];
-  } {
-    if (!Array.isArray(value)) {
-      return {
-        lines: [],
-        rejectedLines: [],
-      };
-    }
-
-    const rejectedLines: string[] = [];
-
-    const lines = value.flatMap((item): SongsheetLine[] => {
-      if (!isRecord(item)) {
-        return [];
-      }
-
-      const section =
-        typeof item.section === "string" ? item.section.trim() : "";
-
-      const lineNumber =
-        typeof item.lineNumber === "number" && Number.isFinite(item.lineNumber)
-          ? Math.floor(item.lineNumber)
-          : 0;
-
-      const lyric = sourceLyricLines[lineNumber - 1];
-
-      if (!lyric) {
-        rejectedLines.push(`Invalid lineNumber: ${lineNumber}`);
-        return [];
-      }
-
-      return [
-        {
-          section,
-          lyric,
-          chords: getChordPlacements(item.chords),
-        },
-      ];
-    });
-
-    return {
-      lines,
-      rejectedLines,
-    };
-  }
-
   const exactSourceLines = new Set(sourceLyricLines);
   const normalizedSourceLineMap = new Map(
     sourceLyricLines.map((line: string) => [normalizeMatchText(line), line]),
@@ -322,11 +271,17 @@ function validateSongSheetLines(
     const section = typeof item.section === "string" ? item.section.trim() : "";
 
     if (!rawLyric) {
+      const chords = getChordPlacements(item.chords);
+
+      if (!section || chords.length === 0) {
+        return [];
+      }
+
       return [
         {
           section,
           lyric: "",
-          chords: [],
+          chords,
         },
       ];
     }
@@ -380,10 +335,29 @@ function expandSongSheetLineRefs(
 
     const section = typeof item.section === "string" ? item.section.trim() : "";
 
+    const chords = getChordPlacements(item.chords);
+
     const lineNumber =
       typeof item.lineNumber === "number" && Number.isFinite(item.lineNumber)
         ? Math.floor(item.lineNumber)
-        : 0;
+        : null;
+
+    if (lineNumber === null) {
+      if (!section || chords.length === 0) {
+        rejectedLines.push(
+          `Invalid instrumental songsheet row: ${section || "missing section"}`,
+        );
+        return [];
+      }
+
+      return [
+        {
+          section,
+          lyric: "",
+          chords,
+        },
+      ];
+    }
 
     const lyric = sourceLyricLines[lineNumber - 1];
 
@@ -396,7 +370,7 @@ function expandSongSheetLineRefs(
       {
         section,
         lyric,
-        chords: getChordPlacements(item.chords),
+        chords,
       },
     ];
   });
@@ -474,15 +448,23 @@ Return this exact JSON shape:
         ]
       },
       "songSheetLineRefs": [
-        {
-          "section": "Verse 1",
-          "lineNumber": 1,
-          "chords": [
-            ["Em", 0, 1, 1],
-            ["C", 12, 1, 3]
-          ]
-        }
-      ],
+  {
+    "section": "Intro",
+    "lineNumber": null,
+    "chords": [
+      ["Em", 0, 1, 1],
+      ["Cmaj7", 0, 2, 1]
+    ]
+  },
+  {
+    "section": "Verse 1",
+    "lineNumber": 1,
+    "chords": [
+      ["Em", 0, 1, 1],
+      ["C", 12, 1, 3]
+    ]
+  }
+],
       "songsheetNotes": "One or two short notes only."
     }
 
@@ -490,8 +472,13 @@ Requirements:
 - Do not return lyric text.
 - Keep JSON compact. Return only musicalTimingPlan, songSheetLineRefs, and songsheetNotes at the top level.
 - Within songSheetLineRefs, use only section, lineNumber, and chords.
-- Use lineNumber to refer to the numbered source sung lyric lines.
-- lineNumber must be the 1-based number from the source lyric list.
+- For sung lyric rows, use lineNumber to refer to the numbered source sung lyric lines.
+- For sung lyric rows, lineNumber must be the 1-based number from the source lyric list.
+- For instrumental performance sections with no sung lyric, use lineNumber: null.
+- Instrumental rows must include a section name and one or more structured chord placements.
+- Use charIndex 0 for instrumental chord placements because there is no lyric text to align visually.
+- Include instrumental sections such as Intro, Interlude, Tag, Solo, Turnaround, and Outro when they are part of the supplied arrangement.
+- Preserve the complete performance order, including instrumental sections and sung sections.
 - Preserve source lyric order.
 - Include each source sung lyric line once.
 - For every chord change, provide both visual lyric placement and musical timing.
@@ -502,7 +489,9 @@ Requirements:
 Musical timing plan requirements:
 - musicalTimingPlan is the authoritative musical timeline for this songsheet.
 - Include one musicalTimingPlan section entry for every section instance in the song, in song order.
-- section must correspond to the section names used in songSheetLineRefs.
+- Every musicalTimingPlan section must have corresponding songSheetLineRefs coverage.
+- Sung sections are represented by their lyric rows.
+- Instrumental sections are represented by one or more rows with lineNumber: null.
 - bars is the total number of musical bars occupied by that complete section.
 - timeSignature is the time signature in effect at bar 1 of that section.
 - If the time signature changes within a section, include the 1-based bar where each new meter begins in meterChanges.
