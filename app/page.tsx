@@ -5962,25 +5962,23 @@ export default function Page() {
   };
 
   const getSongsheetTransposeCopyRows = () => {
-  const savedChordKey = getOriginalKeyLabel();
-  const performanceKey = getDisplayedKeyLabel();
-  const transposeLabel = getTransposeLabel();
+    const savedChordKey = getOriginalKeyLabel();
+    const performanceKey = getDisplayedKeyLabel();
+    const transposeLabel = getTransposeLabel();
 
-  if (chordTransposeSemitones === 0) {
+    if (chordTransposeSemitones === 0) {
+      return [
+        performanceKey ? `Performance key: ${performanceKey}` : "",
+        "Transpose: None",
+      ].filter(Boolean);
+    }
+
     return [
+      savedChordKey ? `Saved chord key: ${savedChordKey}` : "",
       performanceKey ? `Performance key: ${performanceKey}` : "",
-      "Transpose: None",
+      `Transpose: ${transposeLabel}`,
     ].filter(Boolean);
-  }
-
-  return [
-    savedChordKey ? `Saved chord key: ${savedChordKey}` : "",
-    performanceKey ? `Performance key: ${performanceKey}` : "",
-    `Transpose: ${transposeLabel}`,
-  ].filter(Boolean);
-};
-
-    
+  };
 
   const getTransposeLabel = () => {
     if (chordTransposeSemitones === 0) {
@@ -15136,7 +15134,7 @@ export default function Page() {
         label: "Performance intent",
         complete: hasPerformanceIntent,
         detail: hasPerformanceIntent
-          ? "Tempo, groove, feel, or delivery information is available."
+          ? "Groove, feel, phrasing, or delivery information is available."
           : "Generate a basic draft or full chord draft.",
       },
 
@@ -30485,10 +30483,10 @@ ${buildRewriteInstruction(
                           Chords placed above the lyric position where the
                           change happens.
                           {getOriginalKeyLabel()
-  ? ` Saved chord key: ${getOriginalKeyLabel()}. Performance key: ${
-      getDisplayedKeyLabel() || getOriginalKeyLabel()
-    }.`
-  : ""}
+                            ? ` Saved chord key: ${getOriginalKeyLabel()}. Performance key: ${
+                                getDisplayedKeyLabel() || getOriginalKeyLabel()
+                              }.`
+                            : ""}
                         </p>
                       </div>
 
