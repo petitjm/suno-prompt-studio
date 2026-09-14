@@ -5962,23 +5962,25 @@ export default function Page() {
   };
 
   const getSongsheetTransposeCopyRows = () => {
-    const originalKey = getOriginalKeyLabel();
-    const displayedKey = getDisplayedKeyLabel();
-    const transposeLabel = getTransposeLabel();
+  const savedChordKey = getOriginalKeyLabel();
+  const performanceKey = getDisplayedKeyLabel();
+  const transposeLabel = getTransposeLabel();
 
-    if (chordTransposeSemitones === 0) {
-      return [
-        originalKey ? `Key: ${originalKey}` : "",
-        "Transpose: None",
-      ].filter(Boolean);
-    }
-
+  if (chordTransposeSemitones === 0) {
     return [
-      originalKey ? `Original key: ${originalKey}` : "",
-      displayedKey ? `Displayed key: ${displayedKey}` : "",
-      `Transpose: ${transposeLabel}`,
+      performanceKey ? `Performance key: ${performanceKey}` : "",
+      "Transpose: None",
     ].filter(Boolean);
-  };
+  }
+
+  return [
+    savedChordKey ? `Saved chord key: ${savedChordKey}` : "",
+    performanceKey ? `Performance key: ${performanceKey}` : "",
+    `Transpose: ${transposeLabel}`,
+  ].filter(Boolean);
+};
+
+    
 
   const getTransposeLabel = () => {
     if (chordTransposeSemitones === 0) {
@@ -15341,7 +15343,7 @@ export default function Page() {
       `Project: ${activeProject?.title || "Untitled project"}`,
       `Song version: ${activeSongVersion?.title || songVersionTitle || "Unsaved or untitled version"}`,
       `Chord version: ${chordVersionTitle || "Unsaved or untitled chord version"}`,
-      keyValue ? `Key: ${keyValue}` : "",
+      keyValue ? `Saved chord key: ${keyValue}` : "",
       capoValue ? `Capo: ${capoValue}` : "",
       tuningValue ? `Tuning: ${tuningValue}` : "",
       "",
@@ -24627,7 +24629,7 @@ ${buildRewriteInstruction(
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="rounded border border-gray-800 bg-gray-900 p-3">
                         <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Original Key - {getOriginalKeyLabel() || "—"}
+                          Saved chord key - {getOriginalKeyLabel() || "—"}
                         </div>
 
                         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_120px] gap-4">
@@ -30483,8 +30485,10 @@ ${buildRewriteInstruction(
                           Chords placed above the lyric position where the
                           change happens.
                           {getOriginalKeyLabel()
-                            ? ` Key metadata: ${getOriginalKeyLabel()}. Use transpose controls to change actual chord symbols.`
-                            : ""}
+  ? ` Saved chord key: ${getOriginalKeyLabel()}. Performance key: ${
+      getDisplayedKeyLabel() || getOriginalKeyLabel()
+    }.`
+  : ""}
                         </p>
                       </div>
 
