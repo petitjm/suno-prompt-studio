@@ -639,8 +639,10 @@ Musical phrasing requirements:
               "Bar and beat timing is part of the generated musical arrangement and should be reviewed before use as final performance timing.",
           };
 
+    const { tempoBpm: _legacyTempoBpm, ...chordDataWithoutTempo } = chordData;
+
     return NextResponse.json({
-      ...chordData,
+      ...chordDataWithoutTempo,
       ...cleanSongsheetRecord,
       musicalTimingProvenance: timingProvenance,
       generationMeta: getOpenAIUsageMeta(

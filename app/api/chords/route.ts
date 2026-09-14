@@ -149,7 +149,6 @@ The JSON must use this shape:
   "capo": "",
   "tuning": "",
   "genre": "",
-  "tempoBpm": 82,
   "timeSignature": "4/4",
    "musicalTimingPlan": {
     "sections": [
@@ -267,7 +266,6 @@ Musical timing plan requirements:
 - Determine section length from the intended musical phrasing, harmonic rhythm, meter, groove, vocal phrasing, held notes, rests, turnarounds, pickups, and instrumental movement.
 - Review musicalTimingPlan and songSheetLines together before returning the final JSON so their bar numbering is internally consistent.
 Performance intent requirements:
-- Include tempoBpm as a realistic number for the song style.
 - Include timeSignature as the song's opening or primary time signature, usually "4/4" unless another meter is clearly better. Use musicalTimingPlan for section-level timing and any later meter changes.
 - Include groove, describing the rhythmic feel, for example "laid-back fingerpicked 8th-note feel" or "steady brushed country ballad pulse".
 - Include phrasingNotes describing how the vocal should sit against the guitar rhythm.

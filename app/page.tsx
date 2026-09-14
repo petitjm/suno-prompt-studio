@@ -671,15 +671,15 @@ export default function Page() {
     useState(false);
 
   const musicalGuideMixStorageKey =
-    "suno-prompt-studio-musical-guide-mix-levels-v3";
+    "suno-prompt-studio-musical-guide-mix-levels-v4";
   const [musicalGuideMixLevels, setMusicalGuideMixLevels] = useState({
-    click: 0.5,
-    section: 0.6,
-    chordMarker: 0.7,
-    pad: 0.75,
-    arpeggio: 0.35,
-    bass: 0.75,
-    melody: 1.7,
+    click: 0.3,
+    section: 0.45,
+    chordMarker: 0.45,
+    pad: 0.28,
+    arpeggio: 0.7,
+    bass: 0.42,
+    melody: 0,
   });
 
   useEffect(() => {
@@ -1435,6 +1435,49 @@ export default function Page() {
 
     if (normalised.includes("outro") || normalised.includes("tag")) {
       return "final chorus";
+    }
+
+    return normalised;
+  };
+
+  const getMusicalTimingSectionMatchKey = (value: string) => {
+    const normalised = normaliseGuideSectionMatchLabel(value)
+      .replace(/\[[^\]]*\]/g, " ")
+      .replace(/\([^)]*\)/g, " ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (normalised.includes("final chorus") || normalised.includes("chorus")) {
+      return "chorus";
+    }
+
+    const verseMatch = normalised.match(/\bverse\s*(\d+)\b/);
+
+    if (verseMatch) {
+      return `verse:${verseMatch[1]}`;
+    }
+
+    if (normalised.includes("bridge")) {
+      return "bridge";
+    }
+
+    if (normalised.includes("intro")) {
+      return "intro";
+    }
+
+    if (normalised.includes("outro")) {
+      return "outro";
+    }
+
+    const tagMatch = normalised.match(/\btag\s*(\d+)\b/);
+
+    if (tagMatch) {
+      return `tag:${tagMatch[1]}`;
+    }
+
+    if (normalised.includes("tag")) {
+      return "tag";
     }
 
     return normalised;
@@ -5411,6 +5454,116 @@ export default function Page() {
       .timingReviewSignature;
 
     return typeof signature === "string" && signature.trim() ? signature : null;
+  };
+  const buildChordTimingReviewSignature = (chordData: unknown): string => {
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return "";
+    }
+
+    const record = chordData as Record<string, unknown>;
+
+    const rawTimingPlan =
+      record.musicalTimingPlan &&
+      typeof record.musicalTimingPlan === "object" &&
+      !Array.isArray(record.musicalTimingPlan)
+        ? (record.musicalTimingPlan as Record<string, unknown>)
+        : null;
+
+    const normalizedTimingPlan = rawTimingPlan
+      ? {
+          sections: Array.isArray(rawTimingPlan.sections)
+            ? rawTimingPlan.sections
+                .map((section) => {
+                  if (
+                    !section ||
+                    typeof section !== "object" ||
+                    Array.isArray(section)
+                  ) {
+                    return null;
+                  }
+
+                  const sectionRecord = section as Record<string, unknown>;
+
+                  return {
+                    section:
+                      typeof sectionRecord.section === "string"
+                        ? getGuideSectionMatchKey(sectionRecord.section)
+                        : "",
+                    bars:
+                      typeof sectionRecord.bars === "number"
+                        ? sectionRecord.bars
+                        : null,
+                    timeSignature:
+                      typeof sectionRecord.timeSignature === "string"
+                        ? sectionRecord.timeSignature
+                        : "",
+                    meterChanges: Array.isArray(sectionRecord.meterChanges)
+                      ? sectionRecord.meterChanges
+                          .map((change) => {
+                            if (
+                              !change ||
+                              typeof change !== "object" ||
+                              Array.isArray(change)
+                            ) {
+                              return null;
+                            }
+
+                            const changeRecord = change as Record<
+                              string,
+                              unknown
+                            >;
+
+                            return {
+                              bar:
+                                typeof changeRecord.bar === "number"
+                                  ? changeRecord.bar
+                                  : null,
+                              timeSignature:
+                                typeof changeRecord.timeSignature === "string"
+                                  ? changeRecord.timeSignature
+                                  : "",
+                            };
+                          })
+                          .filter(
+                            (
+                              change,
+                            ): change is {
+                              bar: number | null;
+                              timeSignature: string;
+                            } => Boolean(change),
+                          )
+                          .sort((a, b) => {
+                            const aBar = a.bar ?? Number.MAX_SAFE_INTEGER;
+                            const bBar = b.bar ?? Number.MAX_SAFE_INTEGER;
+
+                            return aBar - bBar;
+                          })
+                      : [],
+                  };
+                })
+                .filter(Boolean)
+            : [],
+        }
+      : null;
+
+    return JSON.stringify({
+      musicalTimingPlan: normalizedTimingPlan,
+      timedChordEvents: getPlacedSongSheetLines(record)
+        .filter((line) => line.chords.length > 0)
+        .map((line) => ({
+          section: getGuideSectionMatchKey(line.section),
+          lyric: line.lyric,
+          chords: line.chords.map((placement) => ({
+            chord: placement.chord,
+            bar: placement.bar ?? null,
+            beat: placement.beat ?? null,
+          })),
+        })),
+    });
   };
 
   const copySongsheetReview = async () => {
@@ -10958,104 +11111,8 @@ export default function Page() {
         ? record.timingReviewSignature
         : null;
 
-    const currentTimingReviewSignature = JSON.stringify({
-      musicalTimingPlan:
-        musicalTimingPlan &&
-        typeof musicalTimingPlan === "object" &&
-        !Array.isArray(musicalTimingPlan)
-          ? {
-              sections: Array.isArray(
-                (musicalTimingPlan as Record<string, unknown>).sections,
-              )
-                ? (
-                    (musicalTimingPlan as Record<string, unknown>)
-                      .sections as unknown[]
-                  )
-                    .map((section) => {
-                      if (
-                        !section ||
-                        typeof section !== "object" ||
-                        Array.isArray(section)
-                      ) {
-                        return null;
-                      }
-
-                      const sectionRecord = section as Record<string, unknown>;
-
-                      return {
-                        section:
-                          typeof sectionRecord.section === "string"
-                            ? getGuideSectionMatchKey(sectionRecord.section)
-                            : "",
-                        bars:
-                          typeof sectionRecord.bars === "number"
-                            ? sectionRecord.bars
-                            : null,
-                        timeSignature:
-                          typeof sectionRecord.timeSignature === "string"
-                            ? sectionRecord.timeSignature
-                            : "",
-                        meterChanges: Array.isArray(sectionRecord.meterChanges)
-                          ? sectionRecord.meterChanges
-                              .map((change) => {
-                                if (
-                                  !change ||
-                                  typeof change !== "object" ||
-                                  Array.isArray(change)
-                                ) {
-                                  return null;
-                                }
-
-                                const changeRecord = change as Record<
-                                  string,
-                                  unknown
-                                >;
-
-                                return {
-                                  bar:
-                                    typeof changeRecord.bar === "number"
-                                      ? changeRecord.bar
-                                      : null,
-                                  timeSignature:
-                                    typeof changeRecord.timeSignature ===
-                                    "string"
-                                      ? changeRecord.timeSignature
-                                      : "",
-                                };
-                              })
-                              .filter(
-                                (
-                                  change,
-                                ): change is {
-                                  bar: number | null;
-                                  timeSignature: string;
-                                } => Boolean(change),
-                              )
-                              .sort((a, b) => {
-                                const aBar = a.bar ?? Number.MAX_SAFE_INTEGER;
-                                const bBar = b.bar ?? Number.MAX_SAFE_INTEGER;
-
-                                return aBar - bBar;
-                              })
-                          : [],
-                      };
-                    })
-                    .filter(Boolean)
-                : [],
-            }
-          : null,
-      timedChordEvents: getPlacedSongSheetLines(record)
-        .filter((line) => line.chords.length > 0)
-        .map((line) => ({
-          section: getGuideSectionMatchKey(line.section),
-          lyric: line.lyric,
-          chords: line.chords.map((placement) => ({
-            chord: placement.chord,
-            bar: placement.bar ?? null,
-            beat: placement.beat ?? null,
-          })),
-        })),
-    });
+    const currentTimingReviewSignature =
+      buildChordTimingReviewSignature(record);
 
     const timingConfirmed =
       audioPreviewSourceMode === "chord-editor" &&
@@ -14883,7 +14940,6 @@ export default function Page() {
       "capo",
       "tuning",
       "genre",
-      "tempoBpm",
       "timeSignature",
       "groove",
       "performanceFeel",
@@ -15361,7 +15417,6 @@ export default function Page() {
     setChordsText(JSON.stringify(nextRecord, null, 2));
     resetAudioPreviewRequestState();
     setActiveChordVersionId(null);
-    setLastAppliedTransposeSnapshot(null);
     setChordExtractionMessage(
       "After-lyric chord placements moved to the final lyric character. Review the phrasing before saving.",
     );
@@ -15376,7 +15431,6 @@ export default function Page() {
     const record = value as Record<string, unknown>;
 
     const fields = [
-      ["Tempo", record.tempoBpm ? `${record.tempoBpm} BPM` : ""],
       ["Time signature", record.timeSignature],
       ["Groove", record.groove],
       ["Performance feel", record.performanceFeel],
@@ -16242,10 +16296,12 @@ export default function Page() {
     const nextRecord = {
       ...record,
       songSheetLines: syncedLines,
+      timingReviewSignature: null,
     };
 
     setChords(nextRecord);
     setChordsText(JSON.stringify(nextRecord, null, 2));
+    setReviewedChordTimingSignature(null);
     setActiveChordVersionId(null);
 
     if (!options.preserveTranspose) {
@@ -17363,92 +17419,9 @@ export default function Page() {
           .musicalTimingPlan
       : null;
 
-  const normalizedMusicalTimingPlan =
-    rawMusicalTimingPlan &&
-    typeof rawMusicalTimingPlan === "object" &&
-    !Array.isArray(rawMusicalTimingPlan)
-      ? {
-          sections: Array.isArray(
-            (rawMusicalTimingPlan as Record<string, unknown>).sections,
-          )
-            ? (
-                (rawMusicalTimingPlan as Record<string, unknown>)
-                  .sections as unknown[]
-              )
-                .map((section) => {
-                  if (
-                    !section ||
-                    typeof section !== "object" ||
-                    Array.isArray(section)
-                  ) {
-                    return null;
-                  }
-
-                  const sectionRecord = section as Record<string, unknown>;
-
-                  return {
-                    section:
-                      typeof sectionRecord.section === "string"
-                        ? getGuideSectionMatchKey(sectionRecord.section)
-                        : "",
-                    bars:
-                      typeof sectionRecord.bars === "number"
-                        ? sectionRecord.bars
-                        : null,
-                    timeSignature:
-                      typeof sectionRecord.timeSignature === "string"
-                        ? sectionRecord.timeSignature
-                        : "",
-                    meterChanges: Array.isArray(sectionRecord.meterChanges)
-                      ? sectionRecord.meterChanges
-                          .map((change) => {
-                            if (
-                              !change ||
-                              typeof change !== "object" ||
-                              Array.isArray(change)
-                            ) {
-                              return null;
-                            }
-
-                            const changeRecord = change as Record<
-                              string,
-                              unknown
-                            >;
-
-                            return {
-                              bar:
-                                typeof changeRecord.bar === "number"
-                                  ? changeRecord.bar
-                                  : null,
-                              timeSignature:
-                                typeof changeRecord.timeSignature === "string"
-                                  ? changeRecord.timeSignature
-                                  : "",
-                            };
-                          })
-                          .filter(Boolean)
-                      : [],
-                  };
-                })
-                .filter(Boolean)
-            : [],
-        }
-      : null;
-
-  const currentChordTimingSignature = JSON.stringify({
-    musicalTimingPlan: normalizedMusicalTimingPlan,
-    timedChordEvents: getPlacedSongSheetLines(chordDataForTimingSignature)
-      .filter((line) => line.chords.length > 0)
-      .map((line) => ({
-        section: getGuideSectionMatchKey(line.section),
-        lyric: line.lyric,
-        chords: line.chords.map((placement) => ({
-          chord: placement.chord,
-          bar: placement.bar ?? null,
-          beat: placement.beat ?? null,
-        })),
-      })),
-  });
+  const currentChordTimingSignature = buildChordTimingReviewSignature(
+    chordDataForTimingSignature,
+  );
 
   const supportedTimingSignatures = ["4/4", "3/4", "2/4", "6/8", "9/8", "12/8"];
 
@@ -17983,7 +17956,7 @@ export default function Page() {
       }
 
       const sectionIdentity = normaliseGuideSectionMatchLabel(line.section);
-      const sectionMatchKey = getGuideSectionMatchKey(line.section);
+      const sectionMatchKey = getMusicalTimingSectionMatchKey(line.section);
 
       if (sectionIdentity !== previousFittedSectionIdentity) {
         fittedSections.push({
@@ -18031,7 +18004,7 @@ export default function Page() {
       const sectionRecord = section as Record<string, unknown>;
 
       return typeof sectionRecord.section === "string"
-        ? getGuideSectionMatchKey(sectionRecord.section)
+        ? getMusicalTimingSectionMatchKey(sectionRecord.section)
         : "";
     });
 
@@ -19575,12 +19548,24 @@ export default function Page() {
           }
 
           setMakeSongMessage(
-            "Aligning the chorded songsheet with the current Source...",
+            "Checking the chorded songsheet against the current Source...",
           );
 
-          syncChordPlacementsToCurrentSongVersion({
-            preserveTranspose: true,
-          });
+          if (processedPreviewSourceAlignmentIsChecking) {
+            window.setTimeout(() => {
+              if (!cancelled) {
+                setMakeSongAlignmentCheck((value) => value + 1);
+              }
+            }, 250);
+
+            return;
+          }
+
+          if (processedPreviewHasAlignmentIssue) {
+            throw new Error(
+              "The chorded songsheet no longer matches the current Source. Rebuild and review the chord placements before running Make Song.",
+            );
+          }
 
           if (!cancelled) {
             setMakeSongStage("verify-align");
