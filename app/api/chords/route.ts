@@ -201,11 +201,8 @@ The JSON must use this shape:
         }
       ]
     },
-  "verse": "",
-  "chorus": "",
-  "bridge": "",
   "notes": "",
-  "songSheetLines": [
+"songSheetLines": [
     {
       "section": "Verse 1",
       "lyric": "Actual lyric line here",
@@ -285,7 +282,7 @@ Performance intent requirements:
 - If a chord occurs after the final sung word on a line, keep its charIndex near the end of the lyric line but give it the true bar and beat for the turnaround, held chord, pickup, breath, or instrumental response.
 - Include guideTrackPlan as a practical plan for a future simple audio guide track.
 - The guide track is not a finished production.
-- It should help the songwriter remember tempo, groove, phrasing, chord timing, vocal entry points, and dynamic shape.
+- It should help the songwriter remember the supplied performance tempo, groove, phrasing, chord timing, vocal entry points, and dynamic shape.
 - Keep instrumentation sparse, usually acoustic guitar plus optional light count-in, foot tap, or metronome.
 - Do not suggest full-band production unless the song clearly requires it.
 - Use sectionPlan to describe how each major section should feel and develop.
