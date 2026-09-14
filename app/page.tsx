@@ -18450,6 +18450,7 @@ export default function Page() {
             ...(compactChordContext || {}),
             songSheetLines: compactSongSheetContext,
           },
+          tempoBpm: previewTempo,
           songTitle: activeProject?.title || "",
           songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
         }),

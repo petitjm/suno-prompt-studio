@@ -100,6 +100,10 @@ export async function POST(req: Request) {
     const songTitle = typeof body.songTitle === "string" ? body.songTitle : "";
     const songVersionTitle =
       typeof body.songVersionTitle === "string" ? body.songVersionTitle : "";
+    const tempoBpm =
+      typeof body.tempoBpm === "number" && Number.isFinite(body.tempoBpm)
+        ? body.tempoBpm
+        : null;
 
     const chordData =
       body.chordData &&
@@ -129,6 +133,7 @@ Return JSON only. No markdown. No commentary.
 
 Song title: ${songTitle || "Untitled song"}
 Song version: ${songVersionTitle || "Untitled version"}
+Current performance tempo: ${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
 
 Lyrics:
 ${lyrics}
@@ -161,7 +166,9 @@ Return this exact JSON shape:
 
 Requirements:
 - This is a guide track plan, not finished production.
-- Preserve tempo, groove, phrasing, chord timing, vocal entry points, and dynamic shape.
+- Treat the supplied current performance tempo as authoritative when present.
+- Preserve groove, phrasing, chord timing, vocal entry points, and dynamic shape.
+- Do not infer a different tempo from the chord data.
 - Keep instrumentation sparse and rehearsal-focused.
 - Prefer acoustic guitar as the main timing and harmony reference.
 - Include count-in guidance.
