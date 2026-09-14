@@ -122,6 +122,11 @@ export async function POST(req: Request) {
     const songVersionTitle =
       typeof body.songVersionTitle === "string" ? body.songVersionTitle : "";
 
+    const tempoBpm =
+      typeof body.tempoBpm === "number" && Number.isFinite(body.tempoBpm)
+        ? body.tempoBpm
+        : null;
+
     const prompt = `
 You are a professional songwriter, acoustic arranger, and live performance songsheet editor.
 
@@ -129,6 +134,8 @@ Create playable acoustic-guitar chords and a performance songsheet for these lyr
 
 Song title: ${songTitle || "Untitled song"}
 Song version: ${songVersionTitle || "Untitled version"}
+
+Current performance tempo: ${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
 
 Genre: ${body.genre || ""}
 Mood: ${Array.isArray(body.moods) ? body.moods.join(", ") : ""}
@@ -219,7 +226,7 @@ Requirements:
 - Use the artist DNA where helpful, especially for vocal range, style, harmonic richness, and live-performance suitability.
 - Think like a songwriter and live acoustic performer.
 - The output should help the performer remember phrasing, rhythm, melody feel, and chord timing.
-- The placed chord positions must reflect the intended performance feel, tempo, groove, phrasing, breath points, and instrumental movement. They are more important than a generic chord progression summary.
+- The placed chord positions must reflect the intended performance feel, groove, phrasing, breath points, instrumental movement, and the supplied current performance tempo when present.
 - songSheetLines must preserve the actual lyric lines in order.
 - Each lyric line should appear once.
 - Do not invent new lyrics.
@@ -232,7 +239,9 @@ Requirements:
 - Example: {"chord":"G","charIndex":0,"bar":1,"beat":1} means display G at character 0 and change to G on bar 1 beat 1.
 - Example: {"chord":"C","charIndex":12,"bar":1,"beat":3} means display C at character 12 and change to C on bar 1 beat 3.
 - Place charIndex above the syllable or word where the singer should feel the chord change for natural performance phrasing.
-- Determine bar and beat from the intended harmonic rhythm, time signature, tempo, groove, vocal phrasing, breath points, pickups, held notes, and instrumental movement.
+- Determine bar and beat from the intended harmonic rhythm, time signature, groove, vocal phrasing, breath points, pickups, held notes, instrumental movement, and the supplied current performance tempo when present.
+- Treat the supplied current performance tempo as authoritative when present.
+- Do not infer a different tempo from the chord data.
 - Do not derive bar or beat from charIndex, lyric length, word spacing, or distance across the lyric line.
 - Two words that are visually close together may occur on different beats or bars.
 - Words that are visually far apart may occur within one held musical phrase.
