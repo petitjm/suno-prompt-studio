@@ -4881,6 +4881,37 @@ export default function Page() {
     return `${baseTitle} with songsheet and guide plan`;
   };
 
+  const appendChordGenerationHistory = (
+    chordData: unknown,
+    generationMeta: unknown,
+  ) => {
+    const existingHistory =
+      chordData &&
+      typeof chordData === "object" &&
+      !Array.isArray(chordData) &&
+      Array.isArray((chordData as Record<string, unknown>).generationHistory)
+        ? (
+            (chordData as Record<string, unknown>)
+              .generationHistory as unknown[]
+          ).filter(
+            (entry): entry is Record<string, unknown> =>
+              Boolean(entry) &&
+              typeof entry === "object" &&
+              !Array.isArray(entry),
+          )
+        : [];
+
+    if (
+      !generationMeta ||
+      typeof generationMeta !== "object" ||
+      Array.isArray(generationMeta)
+    ) {
+      return existingHistory;
+    }
+
+    return [...existingHistory, generationMeta];
+  };
+
   const buildChordGenerationUsageCopyText = () => {
     const chordData = getChordDataFromEditorJson();
 
@@ -18468,6 +18499,10 @@ export default function Page() {
 
       const nextChordData = {
         ...chordData,
+        generationHistory: appendChordGenerationHistory(
+          chordData,
+          result.generationMeta,
+        ),
         guideTrackPlan:
           result.guideTrackPlan &&
           typeof result.guideTrackPlan === "object" &&
@@ -18568,7 +18603,13 @@ export default function Page() {
         return;
       }
 
-      let nextChordData = result;
+      let nextChordData = {
+        ...result,
+        generationHistory: appendChordGenerationHistory(
+          chordData,
+          result.generationMeta,
+        ),
+      };
 
       if (
         options.preserveExistingChordPlacements &&
@@ -18601,7 +18642,7 @@ export default function Page() {
         });
 
         nextChordData = {
-          ...result,
+          ...nextChordData,
           songSheetLines: mergedPlacedLines,
         };
       }
@@ -18672,8 +18713,16 @@ export default function Page() {
         return;
       }
 
-      setChords(result);
-      setChordsText(JSON.stringify(result, null, 2));
+      const nextChordData = {
+        ...result,
+        generationHistory: appendChordGenerationHistory(
+          null,
+          result.generationMeta,
+        ),
+      };
+
+      setChords(nextChordData);
+      setChordsText(JSON.stringify(nextChordData, null, 2));
       setChordVersionTitle("Basic chord draft");
       setActiveChordVersionId(null);
       setChordTransposeSemitones(0);
