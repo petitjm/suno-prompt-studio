@@ -61,6 +61,7 @@ export type ClickTrackWavRenderInput = {
   includeChordMarkers?: boolean;
   includeChordToneGuide?: boolean;
   mixProfile?: "click-track" | "musical-guide";
+  instrumentation?: string;
   musicalGuideMixLevels?: {
     click?: number;
     section?: number;
@@ -1864,12 +1865,19 @@ export function createClickTrackPcm16Samples(
     }
   }
 
+  const bassExplicitlyDisabled =
+    isMusicalGuideMix &&
+    typeof input.instrumentation === "string" &&
+    (/\bno\s+bass\b/i.test(input.instrumentation) ||
+      /\bwithout\s+bass\b/i.test(input.instrumentation) ||
+      /\bbass\s*:\s*(?:none|off)\b/i.test(input.instrumentation));
+
   const secondsPerBassPulse =
     input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
       ? 60 / input.tempoBpm
       : 0;
 
-  if (secondsPerBassPulse > 0) {
+  if (secondsPerBassPulse > 0 && !bassExplicitlyDisabled) {
     for (const segment of chordToneGuideSegments) {
       const sectionLevel = isMusicalGuideMix
         ? getMusicalGuideSectionLevel(segment.section)

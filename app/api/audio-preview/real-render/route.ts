@@ -511,8 +511,6 @@ export async function POST(req: Request) {
     totalDurationSeconds: 10,
   };
 
-
-
   const clickTrackRendererResult = renderClickTrackWav(clickTrackRenderInput);
 
   const realDownloadRequested =
