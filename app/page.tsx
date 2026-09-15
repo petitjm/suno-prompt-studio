@@ -19349,6 +19349,16 @@ export default function Page() {
       return;
     }
 
+    if (!chordTimingReviewAccepted) {
+      setMakeSongStage("error");
+      setMakeSongMessage(
+        musicalTimingPlanValidationIssues.length > 0
+          ? "The chord timing needs attention. Go back to Step 4, correct the timing issues, and confirm the timing before making the song."
+          : "Confirm the chord timing in Step 4 before making the song.",
+      );
+      return;
+    }
+
     if (!activeChordVersionId) {
       const currentChordData = getChordDataFromEditorJson();
 
@@ -24609,7 +24619,9 @@ ${buildRewriteInstruction(
                           <button
                             type="button"
                             onClick={() => setChordsTask("make")}
-                            disabled={savingChords}
+                            disabled={
+                              savingChords || !chordTimingReviewAccepted
+                            }
                             className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                           >
                             Continue to Make Song
@@ -24638,20 +24650,31 @@ ${buildRewriteInstruction(
 
                       <div
                         className={`rounded border px-3 py-2 text-xs ${
-                          makeSongStage === "complete"
-                            ? "border-green-900 bg-green-950/20 text-green-100"
-                            : makeSongHasSavedSourceCheckpoint
-                              ? "border-blue-900 bg-blue-950/20 text-blue-100"
-                              : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                          !chordTimingReviewAccepted
+                            ? "border-yellow-900 bg-yellow-950/20 text-yellow-100"
+                            : makeSongStage === "complete"
+                              ? "border-green-900 bg-green-950/20 text-green-100"
+                              : makeSongHasSavedSourceCheckpoint
+                                ? "border-blue-900 bg-blue-950/20 text-blue-100"
+                                : "border-yellow-900 bg-yellow-950/20 text-yellow-100"
                         }`}
                       >
                         <div className="font-semibold">
-                          {makeSongStage === "complete"
-                            ? "Audio Guide ready ✓"
-                            : makeSongHasSavedSourceCheckpoint
-                              ? "Saved checkpoint ready ✓"
-                              : "Save a checkpoint first"}
+                          {!chordTimingReviewAccepted
+                            ? "Timing needs review"
+                            : makeSongStage === "complete"
+                              ? "Audio Guide ready ✓"
+                              : makeSongHasSavedSourceCheckpoint
+                                ? "Saved checkpoint ready ✓"
+                                : "Save a checkpoint first"}
                         </div>
+
+                        {!chordTimingReviewAccepted && (
+                          <div className="mt-1 leading-5">
+                            Go back to Step 4 and confirm the chord timing
+                            before making the song.
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
