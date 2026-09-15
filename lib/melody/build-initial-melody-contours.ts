@@ -301,6 +301,18 @@ function shouldHoldPreviousMelodyPitch(word: string) {
   return lightWords.has(cleaned);
 }
 
+function isMelodicallySignificantWord(word: string) {
+  const cleaned = word
+    .replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, "")
+    .toLowerCase();
+
+  if (!cleaned || cleaned.length < 4) {
+    return false;
+  }
+
+  return !shouldHoldPreviousMelodyPitch(cleaned);
+}
+
 function getMelodySectionFamily(section: string) {
   const normalised = section.trim().toLowerCase();
 
@@ -600,9 +612,16 @@ export function buildInitialMelodyContours({
 
         const isGesturePivot = wordIndex === gesturePivotIndex;
 
+        const isSignificantWord =
+          isMelodicallySignificantWord(word.word) &&
+          wordIndex > 0 &&
+          !isFinalWordInUnit &&
+          phraseNoteIndex % 3 === 0;
+
         const isGestureAnchor =
           isGestureStart ||
           isGesturePivot ||
+          isSignificantWord ||
           harmonyChanged ||
           isFinalWordInUnit;
 
