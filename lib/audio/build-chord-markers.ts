@@ -35,39 +35,20 @@ export const buildChordMarkersFromCueSheetSections = (
     const section = getString(cueSection.section);
     const startSeconds = getNumber(cueSection.startSeconds);
     const endSeconds = getNumber(cueSection.endSeconds);
-    const estimatedBars = getNumber(cueSection.estimatedBars) ?? 0;
-    const beatsPerBar = getNumber(cueSection.beatsPerBar);
     const chordPlacements = getArray(cueSection.chordPlacements);
 
     if (
       !section ||
       startSeconds === null ||
       endSeconds === null ||
+      endSeconds <= startSeconds ||
       chordPlacements.length === 0
     ) {
       return [];
     }
 
-    const sectionDurationSeconds = endSeconds - startSeconds;
-
-    if (sectionDurationSeconds <= 0) {
-      return [];
-    }
-
-    const suppliedLyricLineCount = getNumber(cueSection.lyricLineCount);
-
-    const lyricLineCount =
-      suppliedLyricLineCount !== null && suppliedLyricLineCount > 0
-        ? suppliedLyricLineCount
-        : Math.max(1, chordPlacements.length);
-
-    const secondsPerBeat =
-      estimatedBars > 0 && beatsPerBar !== null && beatsPerBar > 0
-        ? sectionDurationSeconds / (estimatedBars * beatsPerBar)
-        : null;
-
     return chordPlacements
-      .map((placement, index) => {
+      .map((placement) => {
         const record = getRecord(placement);
 
         if (!record) {
@@ -75,74 +56,23 @@ export const buildChordMarkersFromCueSheetSections = (
         }
 
         const chord = getString(record.chord);
-        const lineIndex = getNumber(record.lineIndex);
-        const charIndex = getNumber(record.charIndex);
-        const lyricLength = getNumber(record.lyricLength);
-        const bar = getNumber(record.bar);
-        const beat = getNumber(record.beat);
-
-        if (!chord) {
-          return null;
-        }
-
-        const hasMusicalTiming =
-          bar !== null &&
-          bar >= 1 &&
-          beat !== null &&
-          beat >= 1 &&
-          beatsPerBar !== null &&
-          beatsPerBar > 0 &&
-          secondsPerBeat !== null;
-
-        if (hasMusicalTiming) {
-          const safeBar = Math.min(Math.floor(bar), Math.max(1, estimatedBars));
-          const safeBeat = Math.min(beat, beatsPerBar);
-
-          const beatOffset =
-            (safeBar - 1) * beatsPerBar + Math.max(0, safeBeat - 1);
-
-          return {
-            section,
-            chord,
-            timeSeconds: Number(
-              Math.min(
-                endSeconds,
-                startSeconds + beatOffset * secondsPerBeat,
-              ).toFixed(3),
-            ),
-          };
-        }
+        const absoluteSeconds = getNumber(record.absoluteSeconds);
+        const timingSource = getString(record.timingSource);
 
         if (
-          lineIndex === null ||
-          charIndex === null ||
-          lyricLength === null ||
-          lyricLength <= 0
+          !chord ||
+          absoluteSeconds === null ||
+          absoluteSeconds < startSeconds ||
+          absoluteSeconds >= endSeconds ||
+          timingSource !== "confirmed-bar-beat"
         ) {
           return null;
         }
 
-        // Temporary compatibility fallback for older chord placements that
-        // do not yet contain explicit musical bar/beat timing.
-        const linePosition = Math.min(
-          0.98,
-          Math.max(
-            0.02,
-            (lineIndex + charIndex / lyricLength) / lyricLineCount,
-          ),
-        );
-
-        const fallbackPosition = (index + 1) / (chordPlacements.length + 1);
-
-        const lineFraction =
-          estimatedBars > 0 ? linePosition : fallbackPosition;
-
         return {
           section,
           chord,
-          timeSeconds: Number(
-            (startSeconds + sectionDurationSeconds * lineFraction).toFixed(3),
-          ),
+          timeSeconds: absoluteSeconds,
         };
       })
       .filter((marker): marker is AudioChordMarker => marker !== null);
