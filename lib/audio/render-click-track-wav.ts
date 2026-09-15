@@ -2032,9 +2032,12 @@ export function createClickTrackPcm16Samples(
       const noteStartSeconds =
         countInDurationSeconds + Math.max(0, melodyNote.startSeconds);
 
+      const melodyDurationMultiplier = acousticGuitarIsPrimary ? 0.86 : 1;
+
       const noteEndSeconds = Math.min(
         totalDurationSeconds,
-        noteStartSeconds + melodyNote.durationSeconds,
+        noteStartSeconds +
+          melodyNote.durationSeconds * melodyDurationMultiplier,
       );
 
       if (noteEndSeconds <= noteStartSeconds) {
@@ -2043,17 +2046,19 @@ export function createClickTrackPcm16Samples(
 
       const frequencyHz = getMidiFrequencyHz(melodyNote.pitchMidi);
 
+      const melodyLevelMultiplier = acousticGuitarIsPrimary ? 0.68 : 1;
+
       addWarmToneToSamples({
         samples,
         startSample: Math.round(noteStartSeconds * input.sampleRateHz),
         endSample: Math.round(noteEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: melodyAmplitude,
+        amplitude: Math.round(melodyAmplitude * melodyLevelMultiplier),
         frequencyHz,
-        secondHarmonicLevel: 0.32,
-        thirdHarmonicLevel: 0.1,
-        fadeInSeconds: 0.025,
-        fadeOutSeconds: 0.08,
+        secondHarmonicLevel: 0.24,
+        thirdHarmonicLevel: 0.06,
+        fadeInSeconds: 0.035,
+        fadeOutSeconds: 0.1,
       });
     }
   }
