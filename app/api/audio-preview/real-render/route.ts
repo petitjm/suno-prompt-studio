@@ -69,9 +69,14 @@ function getArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function getCueSheetSections(value: unknown) {
+function getCueSheetSections(
+  value: unknown,
+  arrangementSectionsValue: unknown = [],
+) {
+  const arrangementSections = getArray(arrangementSectionsValue);
+
   return getArray(value)
-    .map((section) => {
+    .map((section, index) => {
       const record = getRecord(section);
 
       if (!record) {
@@ -96,6 +101,15 @@ function getCueSheetSections(value: unknown) {
       ) {
         return null;
       }
+
+      const arrangementRecord =
+        getRecord(
+          arrangementSections.find((item) => {
+            const itemRecord = getRecord(item);
+
+            return itemRecord && getNumber(itemRecord.order) === order;
+          }),
+        ) || getRecord(arrangementSections[index]);
 
       return {
         order,
@@ -146,6 +160,14 @@ function getCueSheetSections(value: unknown) {
           })
           .filter((barTimingEntry) => barTimingEntry !== null),
         chordPlacements: getArray(record.chordPlacements),
+        goal: getString(arrangementRecord?.goal) || undefined,
+        guitarInstruction:
+          getString(arrangementRecord?.guitarInstruction) || undefined,
+        vocalInstruction:
+          getString(arrangementRecord?.vocalInstruction) || undefined,
+        dynamicInstruction:
+          getString(arrangementRecord?.dynamicInstruction) || undefined,
+        notes: getString(arrangementRecord?.notes) || undefined,
       };
     })
     .filter((section) => section !== null);
@@ -269,7 +291,10 @@ export async function POST(req: Request) {
     bodyRecord?.dryRunCueSheetValidation,
   );
   const dryRunCueSheet = getRecord(dryRunRenderPlan?.cueSheet);
-  const cueSheetSections = getCueSheetSections(dryRunCueSheet?.sections);
+  const cueSheetSections = getCueSheetSections(
+    dryRunCueSheet?.sections,
+    dryRunRenderPlan?.sections,
+  );
 
   const firstCueSheetSection = getRecord(getArray(dryRunCueSheet?.sections)[0]);
 
@@ -485,6 +510,8 @@ export async function POST(req: Request) {
     openingQuarterNotesPerBar,
     totalDurationSeconds: 10,
   };
+
+
 
   const clickTrackRendererResult = renderClickTrackWav(clickTrackRenderInput);
 

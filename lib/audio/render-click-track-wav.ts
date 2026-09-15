@@ -17,6 +17,11 @@ export type ClickTrackCueSheetSection = {
   timeSignature?: string;
   beatsPerBar?: number;
   barTiming?: ClickTrackBarTiming[];
+  goal?: string;
+  guitarInstruction?: string;
+  vocalInstruction?: string;
+  dynamicInstruction?: string;
+  notes?: string;
 };
 
 export type ClickTrackChordMarker = {
@@ -793,6 +798,80 @@ function addTonePulseToSamples({
   }
 }
 
+type MusicalGuideAccompanimentRole =
+  "fingerpick" | "strum" | "arpeggio" | "sustain" | "mixed";
+
+function getMusicalGuideAccompanimentRole({
+  input,
+  section,
+  segmentStartSeconds,
+  countInDurationSeconds,
+}: {
+  input: ClickTrackWavRenderInput;
+  section: string;
+  segmentStartSeconds: number;
+  countInDurationSeconds: number;
+}): MusicalGuideAccompanimentRole {
+  const matchingCueSection = Array.isArray(input.cueSheetSections)
+    ? input.cueSheetSections.find((cueSection) => {
+        const cueStartSeconds =
+          cueSection.startSeconds + countInDurationSeconds;
+        const cueEndSeconds = cueSection.endSeconds + countInDurationSeconds;
+
+        return (
+          segmentStartSeconds >= cueStartSeconds - 0.001 &&
+          segmentStartSeconds < cueEndSeconds
+        );
+      })
+    : null;
+
+  const guitarInstruction = matchingCueSection?.guitarInstruction
+    ?.trim()
+    .toLowerCase();
+
+  if (guitarInstruction) {
+    if (
+      guitarInstruction.includes("fingerpick") ||
+      guitarInstruction.includes("fingerpicked") ||
+      guitarInstruction.includes("travis")
+    ) {
+      return "fingerpick";
+    }
+
+    if (guitarInstruction.includes("arpeggiat")) {
+      return "arpeggio";
+    }
+
+    if (
+      guitarInstruction.includes("strum") ||
+      guitarInstruction.includes("down-up") ||
+      guitarInstruction.includes("down up")
+    ) {
+      return "strum";
+    }
+
+    if (
+      guitarInstruction.includes("ring-out") ||
+      guitarInstruction.includes("ring out") ||
+      guitarInstruction.includes("no extra fills") ||
+      (guitarInstruction.includes("let") && guitarInstruction.includes("ring"))
+    ) {
+      return "sustain";
+    }
+  }
+
+  const normalizedSection = section.trim().toLowerCase();
+
+  if (
+    normalizedSection.includes("outro") ||
+    normalizedSection.includes("ending")
+  ) {
+    return "sustain";
+  }
+
+  return "mixed";
+}
+
 function getMusicalGuideSectionLevel(section: string) {
   const normalizedSection = section.trim().toLowerCase();
 
@@ -1556,6 +1635,21 @@ export function createClickTrackPcm16Samples(
         continue;
       }
 
+      const accompanimentRole = getMusicalGuideAccompanimentRole({
+        input,
+        section: segment.section,
+        segmentStartSeconds: segment.startSeconds,
+        countInDurationSeconds,
+      });
+
+      if (
+        accompanimentRole === "fingerpick" ||
+        accompanimentRole === "arpeggio" ||
+        accompanimentRole === "sustain"
+      ) {
+        continue;
+      }
+
       const sectionLevel = getMusicalGuideSectionLevel(segment.section);
       let strumIndex = 0;
 
@@ -1661,6 +1755,20 @@ export function createClickTrackPcm16Samples(
   if (secondsPerArpeggioNote > 0) {
     for (const segment of chordToneGuideSegments) {
       if (segment.frequenciesHz.length === 0) {
+        continue;
+      }
+
+      const accompanimentRole = getMusicalGuideAccompanimentRole({
+        input,
+        section: segment.section,
+        segmentStartSeconds: segment.startSeconds,
+        countInDurationSeconds,
+      });
+
+      if (
+        isMusicalGuideMix &&
+        (accompanimentRole === "strum" || accompanimentRole === "sustain")
+      ) {
         continue;
       }
 
