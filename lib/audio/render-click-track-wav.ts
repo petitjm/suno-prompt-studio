@@ -1482,10 +1482,32 @@ export function createClickTrackPcm16Samples(
     });
   }
 
+  const acousticGuitarIsPrimary =
+    isMusicalGuideMix &&
+    typeof input.instrumentation === "string" &&
+    (/\bprimary\s*:\s*acoustic guitar\b/i.test(input.instrumentation) ||
+      /\bacoustic guitar\b[^.\n]*\bprimary\b/i.test(input.instrumentation));
+
   for (const segment of chordToneGuideSegments) {
     const sectionLevel = isMusicalGuideMix
       ? getMusicalGuideSectionLevel(segment.section)
       : 1;
+
+    const accompanimentRole = isMusicalGuideMix
+      ? getMusicalGuideAccompanimentRole({
+          input,
+          section: segment.section,
+          segmentStartSeconds: segment.startSeconds,
+          countInDurationSeconds,
+        })
+      : "mixed";
+
+    const padRoleMultiplier = acousticGuitarIsPrimary
+      ? accompanimentRole === "sustain"
+        ? 0.65
+        : 0.18
+      : 1;
+
     const padTransitionReleaseSeconds = isMusicalGuideMix ? 0.18 : 0;
 
     const padStartSeconds = Math.max(
@@ -1504,7 +1526,9 @@ export function createClickTrackPcm16Samples(
         startSample: Math.round(padStartSeconds * input.sampleRateHz),
         endSample: Math.round(padEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: Math.round(chordPadAmplitude * sectionLevel),
+        amplitude: Math.round(
+          chordPadAmplitude * sectionLevel * padRoleMultiplier,
+        ),
         frequencyHz,
         secondHarmonicLevel: 0.22,
         thirdHarmonicLevel: 0.08,
