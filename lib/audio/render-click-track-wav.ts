@@ -1434,73 +1434,158 @@ export function createClickTrackPcm16Samples(
     });
   }
 
-  if (isMusicalGuideMix && secondsPerBeat > 0) {
-    const strumSubdivisionSeconds = secondsPerBeat / 2;
+  if (
+    isMusicalGuideMix &&
+    secondsPerBeat > 0 &&
+    Array.isArray(input.cueSheetSections)
+  ) {
     const strumNoteStaggerSeconds = 0.012;
 
-    for (const segment of chordToneGuideSegments) {
-      if (segment.frequenciesHz.length === 0) {
-        continue;
+    const getScaledStrumPattern = (
+      section: string,
+      subdivisionCount: number,
+    ): number[] => {
+      if (subdivisionCount <= 0) {
+        return [];
       }
 
-      const normalizedSection = segment.section.trim().toLowerCase();
-      const sectionLevel = getMusicalGuideSectionLevel(segment.section);
+      const normalizedSection = section.trim().toLowerCase();
 
-      let strumPattern: number[];
+      let referencePattern: number[];
 
       if (
         normalizedSection.includes("intro") ||
         normalizedSection.includes("outro") ||
         normalizedSection.includes("ending")
       ) {
-        // Sparse half-note pulse.
-        strumPattern = [0, 4];
+        referencePattern = [0, 4];
       } else if (normalizedSection.includes("verse")) {
-        // Folk/acoustic-style: 1, &2, 3, &4.
-        strumPattern = [0, 3, 4, 7];
+        referencePattern = [0, 3, 4, 7];
       } else if (
         normalizedSection.includes("pre-chorus") ||
         normalizedSection.includes("prechorus") ||
         normalizedSection.includes("lift")
       ) {
-        // Increasing movement into the chorus.
-        strumPattern = [0, 2, 3, 4, 6, 7];
+        referencePattern = [0, 2, 3, 4, 6, 7];
       } else if (
         normalizedSection.includes("chorus") ||
         normalizedSection.includes("hook") ||
         normalizedSection.includes("refrain")
       ) {
-        // Full eighth-note drive.
-        strumPattern = [0, 1, 2, 3, 4, 5, 6, 7];
+        referencePattern = [0, 1, 2, 3, 4, 5, 6, 7];
       } else if (
         normalizedSection.includes("bridge") ||
         normalizedSection.includes("middle")
       ) {
-        // Different syncopation to distinguish the bridge.
-        strumPattern = [0, 2, 3, 5, 6, 7];
+        referencePattern = [0, 2, 3, 5, 6, 7];
       } else {
-        // Safe quarter-note fallback.
-        strumPattern = [0, 2, 4, 6];
+        referencePattern = [0, 2, 4, 6];
       }
 
-      const barDurationSeconds = secondsPerBeat * 4;
+      if (subdivisionCount === 8) {
+        return referencePattern;
+      }
+
+      return Array.from(
+        new Set(
+          referencePattern.map((referenceStep) =>
+            Math.min(
+              subdivisionCount - 1,
+              Math.round((referenceStep / 7) * (subdivisionCount - 1)),
+            ),
+          ),
+        ),
+      ).sort((first, second) => first - second);
+    };
+
+    const meterAwareBars = input.cueSheetSections.flatMap((section) => {
+      if (!Array.isArray(section.barTiming) || section.barTiming.length === 0) {
+        return [];
+      }
+
+      let quarterNotesFromSectionStart = 0;
+
+      return section.barTiming.flatMap((barTiming) => {
+        if (
+          !Number.isFinite(barTiming.beatsPerBar) ||
+          barTiming.beatsPerBar <= 0 ||
+          !Number.isFinite(barTiming.quarterNotesPerBeat) ||
+          barTiming.quarterNotesPerBeat <= 0 ||
+          !Number.isFinite(barTiming.quarterNotesPerBar) ||
+          barTiming.quarterNotesPerBar <= 0
+        ) {
+          return [];
+        }
+
+        const barStartSeconds =
+          countInDurationSeconds +
+          section.startSeconds +
+          quarterNotesFromSectionStart * secondsPerBeat;
+
+        const barEndSeconds =
+          countInDurationSeconds +
+          section.startSeconds +
+          (quarterNotesFromSectionStart + barTiming.quarterNotesPerBar) *
+            secondsPerBeat;
+
+        quarterNotesFromSectionStart += barTiming.quarterNotesPerBar;
+
+        const subdivisionsPerBeat = barTiming.denominator >= 8 ? 1 : 2;
+        const subdivisionCount = Math.max(
+          1,
+          Math.round(barTiming.beatsPerBar * subdivisionsPerBeat),
+        );
+
+        const subdivisionSeconds =
+          (barEndSeconds - barStartSeconds) / subdivisionCount;
+
+        return [
+          {
+            section: section.section,
+            barStartSeconds,
+            barEndSeconds,
+            subdivisionCount,
+            subdivisionSeconds,
+          },
+        ];
+      });
+    });
+
+    for (const segment of chordToneGuideSegments) {
+      if (segment.frequenciesHz.length === 0) {
+        continue;
+      }
+
+      const sectionLevel = getMusicalGuideSectionLevel(segment.section);
       let strumIndex = 0;
 
-      for (
-        let barStartSeconds = segment.startSeconds;
-        barStartSeconds < segment.endSeconds;
-        barStartSeconds += barDurationSeconds
-      ) {
+      const matchingBars = meterAwareBars.filter(
+        (bar) =>
+          bar.barEndSeconds > segment.startSeconds &&
+          bar.barStartSeconds < segment.endSeconds,
+      );
+
+      for (const bar of matchingBars) {
+        const strumPattern = getScaledStrumPattern(
+          segment.section,
+          bar.subdivisionCount,
+        );
+
         for (const patternStep of strumPattern) {
           const scheduledStartSeconds =
-            barStartSeconds + patternStep * strumSubdivisionSeconds;
+            bar.barStartSeconds + patternStep * bar.subdivisionSeconds;
 
-          if (scheduledStartSeconds >= segment.endSeconds) {
+          if (
+            scheduledStartSeconds < segment.startSeconds ||
+            scheduledStartSeconds >= segment.endSeconds
+          ) {
             continue;
           }
 
           const isUpStrum = patternStep % 2 === 1;
-          const isStrongBeat = patternStep === 0 || patternStep === 4;
+          const isStrongBeat =
+            patternStep === 0 ||
+            patternStep === Math.floor(bar.subdivisionCount / 2);
 
           const humanisedStartSeconds = Math.max(
             segment.startSeconds,
@@ -1540,7 +1625,7 @@ export function createClickTrackPcm16Samples(
 
             const noteEndSeconds = Math.min(
               strumReleaseEndSeconds,
-              noteStartSeconds + Math.min(secondsPerBeat * 0.62, 0.55),
+              noteStartSeconds + Math.min(bar.subdivisionSeconds * 1.24, 0.55),
             );
 
             if (noteEndSeconds <= noteStartSeconds) {
