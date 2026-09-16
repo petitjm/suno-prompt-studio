@@ -6,6 +6,7 @@ export type LyricWordTiming = {
   startSeconds: number;
   endSeconds: number;
   durationSeconds: number;
+  weight: number;
 };
 
 export type LyricWordTimingUnit = {
@@ -228,6 +229,7 @@ export function buildLyricWordTimings(
             durationSeconds: Number(
               Math.max(0, endSeconds - startSeconds).toFixed(3),
             ),
+            weight: weights[index],
           };
         });
 
