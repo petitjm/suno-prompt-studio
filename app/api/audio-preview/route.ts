@@ -167,6 +167,26 @@ function renderPreviewChordLine(line: AudioPreviewSongSheetLine) {
     return "";
   }
 
+  if (!line.lyric.trim()) {
+    return line.chords
+      .slice()
+      .sort((a, b) => {
+        const aBar = a.bar ?? Number.MAX_SAFE_INTEGER;
+        const bBar = b.bar ?? Number.MAX_SAFE_INTEGER;
+
+        if (aBar !== bBar) {
+          return aBar - bBar;
+        }
+
+        const aBeat = a.beat ?? Number.MAX_SAFE_INTEGER;
+        const bBeat = b.beat ?? Number.MAX_SAFE_INTEGER;
+
+        return aBeat - bBeat;
+      })
+      .map((placement) => placement.chord)
+      .join("  ");
+  }
+
   const lyricLength = line.lyric.length;
   const lineWidth = Math.max(
     lyricLength,
