@@ -636,25 +636,11 @@ function getChordToneGuideSegments({
     return [];
   }
 
-  const songStartSeconds = countInDurationSeconds;
-  const firstMarker = markers[0];
-
-  const markersWithOpeningChord =
-    firstMarker.startSeconds > songStartSeconds
-      ? [
-          {
-            ...firstMarker,
-            startSeconds: songStartSeconds,
-          },
-          ...markers,
-        ]
-      : markers;
-
   let previousFrequenciesHz: number[] = [];
 
-  return markersWithOpeningChord
+  return markers
     .map((marker, index) => {
-      const nextMarker = markersWithOpeningChord[index + 1];
+      const nextMarker = markers[index + 1];
       const endSeconds = nextMarker
         ? nextMarker.startSeconds
         : totalDurationSeconds;
