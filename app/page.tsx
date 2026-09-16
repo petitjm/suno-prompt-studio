@@ -3040,15 +3040,46 @@ export default function Page() {
         ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
         : null;
 
-    const sourceLines = performanceSheet
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(
-        (line) =>
-          line.length > 0 &&
-          !(line.startsWith("{") && line.endsWith("}")) &&
-          !(line.startsWith("[") && line.endsWith("]")),
-      );
+    const chordRecord =
+      chords && typeof chords === "object" && !Array.isArray(chords)
+        ? (chords as Record<string, unknown>)
+        : null;
+
+    const sourceSongSheetLines = chordRecord
+      ? Array.isArray(chordRecord.songSheetLines)
+        ? chordRecord.songSheetLines
+        : Array.isArray(chordRecord.songsheetLines)
+          ? chordRecord.songsheetLines
+          : Array.isArray(chordRecord.performanceSongSheetLines)
+            ? chordRecord.performanceSongSheetLines
+            : Array.isArray(chordRecord.performanceSheetLines)
+              ? chordRecord.performanceSheetLines
+              : Array.isArray(chordRecord.lines)
+                ? chordRecord.lines
+                : []
+      : [];
+
+    const sourceLines = sourceSongSheetLines.map((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return "";
+      }
+
+      const lineRecord = entry as Record<string, unknown>;
+
+      if (typeof lineRecord.lyric === "string") {
+        return lineRecord.lyric.trim();
+      }
+
+      if (typeof lineRecord.text === "string") {
+        return lineRecord.text.trim();
+      }
+
+      if (typeof lineRecord.line === "string") {
+        return lineRecord.line.trim();
+      }
+
+      return "";
+    });
 
     const sections = Array.isArray(dryRunCueSheet?.sections)
       ? dryRunCueSheet.sections
