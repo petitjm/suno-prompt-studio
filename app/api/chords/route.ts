@@ -247,6 +247,12 @@ Requirements:
 - Fractional beats may be used only when the musical change genuinely occurs between main beats, for example beat 2.5.
 - Do not place every chord at the start of the line unless the change truly happens there.
 - Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose harmonic rhythm and phrasing.
+- Treat instrumental sections such as Intro, Interlude, Turnaround, Solo, and Outro as genuine songwriting sections with their own harmonic purpose.
+- Do not automatically copy or preview the harmony of the adjacent sung section.
+- Consider whether the instrumental section should create contrast, tension, release, anticipation, harmonic colour, or a smoother transition into or out of the neighbouring section.
+- When musically appropriate, you may use borrowed, chromatic, modal, pedal-tone, suspended, or otherwise contrasting harmony, provided it remains convincing in the song and practical for the intended acoustic performance.
+- For an Intro especially, consider the first chord of the following sung section and choose whether the Intro should establish it, delay it, approach it, or create a stronger lift into it.
+- Any harmonic choice made for an instrumental section must be represented explicitly in songSheetLines with its real chord symbols and bar/beat timing. Do not leave instrumental harmony only in notes, guideTrackPlan, or prose fields.
 - Keep placements practical for a singer-guitarist reading a songsheet.
 - If a lyric line has no chord change, include the line with an empty chords array.
 - Review songSheetLines before final output for both visual placement and musical timing.

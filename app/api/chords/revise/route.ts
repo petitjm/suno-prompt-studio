@@ -221,13 +221,21 @@ IMPORTANT RULES
 3. Prefer musically meaningful changes over theoretical complexity.
 4. Keep the result practical for a singer-songwriter performing with acoustic guitar.
 5. Consider vocal support, section contrast, tension and release, and emotional storytelling.
-6. A chorus may need greater harmonic lift than a verse, but do not force this if the song does not need it.
-7. Respect any explicit "keep" section directions.
-8. Do not invent or rewrite lyrics.
-9. Do not produce chord-over-lyric placement unless that structure is already part of the supplied chord object.
-10. Preserve useful existing metadata unless there is a musical reason to change it.
-11. Return the COMPLETE revised chord object, not only the fields you changed.
-12. Keep the output compatible with the structure of CURRENT CHORD DATA.
+6. Treat instrumental sections such as Intro, Interlude, Turnaround, Solo, and Outro as genuine songwriting sections with their own harmonic purpose.
+7. Do not automatically copy the harmony of an adjacent sung section into an instrumental section.
+8. When revising an instrumental section, first preserve any distinctive harmonic idea that already gives that section useful contrast, anticipation, tension, release, colour, or transition.
+9. Preserve instrumental sections as instrumental: if an existing songSheetLines section has no sung lyric, keep its lyric field blank or whitespace-only. Do not replace the lyric with the section name such as "Intro" or "Outro".
+10. Change instrumental harmony only when the songwriter's requested direction or the musical context justifies it.
+11. For an Intro especially, consider the first chord of the following sung section and decide whether the Intro should establish it, delay it, approach it, or create a stronger lift into it.
+12. Borrowed, chromatic, modal, pedal-tone, suspended, extended, inverted, or otherwise contrasting harmony may be retained or introduced when it genuinely improves the transition and remains practical for the intended acoustic performance.
+13. If CURRENT CHORD DATA contains timed chord placements for an instrumental section, preserve that section as an explicit songSheetLines section with its own real chord symbols and bar/beat timing. Do not replace it with the neighbouring verse or chorus progression merely for consistency.
+14. A chorus may need greater harmonic lift than a verse, but do not force this if the song does not need it.
+15. Respect any explicit "keep" section directions.
+16. Do not invent or rewrite lyrics.
+17. Do not produce chord-over-lyric placement unless that structure is already part of the supplied chord object.
+18. Preserve useful existing metadata unless there is a musical reason to change it.
+19. Return the COMPLETE revised chord object, not only the fields you changed.
+20. Keep the output compatible with the structure of CURRENT CHORD DATA.
 
 Return valid JSON only.
 
@@ -284,6 +292,47 @@ The response must have this exact top-level shape:
         { status: 500 },
       );
     }
+
+    const revisedChords = parsed.chords as Record<string, unknown>;
+    const currentChordRecord = currentChords as Record<string, unknown>;
+
+    const revisedTimingPlan =
+      revisedChords.musicalTimingPlan &&
+      typeof revisedChords.musicalTimingPlan === "object" &&
+      !Array.isArray(revisedChords.musicalTimingPlan)
+        ? revisedChords.musicalTimingPlan
+        : currentChordRecord.musicalTimingPlan &&
+            typeof currentChordRecord.musicalTimingPlan === "object" &&
+            !Array.isArray(currentChordRecord.musicalTimingPlan)
+          ? currentChordRecord.musicalTimingPlan
+          : null;
+
+    if (revisedTimingPlan) {
+      revisedChords.musicalTimingPlan = revisedTimingPlan;
+
+      revisedChords.musicalTimingProvenance =
+        currentChordRecord.musicalTimingProvenance &&
+        typeof currentChordRecord.musicalTimingProvenance === "object" &&
+        !Array.isArray(currentChordRecord.musicalTimingProvenance)
+          ? currentChordRecord.musicalTimingProvenance
+          : currentChordRecord.source === "embedded-song-sheet"
+            ? {
+                source: "inferred-from-existing-chords",
+                status: "needs-timing-review",
+                authoritative: false,
+                detail:
+                  "Bar and beat timing was inferred from existing chord data and lyric phrasing. Review the timing before using it for Audio Guide rendering.",
+              }
+            : {
+                source: "generated-arrangement",
+                status: "proposed",
+                authoritative: false,
+                detail:
+                  "Bar and beat timing is part of the revised musical arrangement and should be reviewed before use as final performance timing.",
+              };
+    }
+
+    revisedChords.timingReviewSignature = null;
 
     return NextResponse.json(parsed);
   } catch (error) {

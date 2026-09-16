@@ -370,7 +370,7 @@ export default function Page() {
           chordsTask === "check" && generatingPlacedSongsheet
             ? ("working" as const)
             : placedSongSheetPreview
-              ? chordFitReviewAccepted
+              ? chordFitReviewAccepted && chordTimingReviewAccepted
                 ? ("complete" as const)
                 : ("ready" as const)
               : hasUsableChordData()
@@ -400,7 +400,7 @@ export default function Page() {
             ? ("complete" as const)
             : makeSongIsRunning
               ? ("working" as const)
-              : hasSavedChordCheckpoint
+              : hasSavedChordCheckpoint && chordTimingReviewAccepted
                 ? ("ready" as const)
                 : ("blocked" as const),
       },
@@ -16644,6 +16644,32 @@ export default function Page() {
 
   const renderPlacedSongSheetLine = (line: PlacedSongSheetLine) => {
     const lyric = line.lyric;
+
+    if (!lyric.trim()) {
+      const chordLine = [...line.chords]
+        .sort((left, right) => {
+          const leftBar = left.bar ?? Number.MAX_SAFE_INTEGER;
+          const rightBar = right.bar ?? Number.MAX_SAFE_INTEGER;
+
+          if (leftBar !== rightBar) {
+            return leftBar - rightBar;
+          }
+
+          const leftBeat = left.beat ?? Number.MAX_SAFE_INTEGER;
+          const rightBeat = right.beat ?? Number.MAX_SAFE_INTEGER;
+
+          if (leftBeat !== rightBeat) {
+            return leftBeat - rightBeat;
+          }
+
+          return left.charIndex - right.charIndex;
+        })
+        .map((placement) => placement.chord)
+        .join("  ");
+
+      return [chordLine, lyric];
+    }
+
     const baseLength = Math.max(lyric.length, 1);
     const chordCharacters = Array.from({ length: baseLength }, () => " ");
 
@@ -18927,6 +18953,7 @@ export default function Page() {
     setChordTransposeSemitones(0);
     setLastAppliedTransposeSnapshot(null);
     resetAudioPreviewRequestState();
+    resetGeneratedAudioState();
 
     setProposedHarmonyRevision(null);
     setHarmonyBeforeRevision(null);
