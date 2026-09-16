@@ -336,18 +336,13 @@ function getMelodyMotifKey(
   frameworkPhrase: MelodyPitchFrameworkPhrase,
   character: MelodyCharacter,
   entry: NonNullable<MelodySectionIntent["entry"]>,
+  sectionPhraseIndex: number,
 ) {
-  const normalisedLyric = phrase.sourceLyric
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}' ]/gu, "")
-    .replace(/\s+/g, " ");
-
   const chordSequence = frameworkPhrase.chords.join("|");
 
   return [
     getMelodySectionFamily(phrase.section),
-    normalisedLyric,
+    `phrase-${sectionPhraseIndex}`,
     chordSequence,
     character.register,
     character.lift,
@@ -512,6 +507,7 @@ export function buildInitialMelodyContours({
       frameworkPhrase,
       effectiveCharacter,
       effectiveEntryForPhrase,
+      sectionPhraseIndex,
     );
     const establishedPitchSequence = establishedMotifs.get(motifKey);
 
@@ -684,10 +680,12 @@ export function buildInitialMelodyContours({
       });
     });
 
-    establishedMotifs.set(
-      motifKey,
-      notes.map((note) => note.pitchMidi),
-    );
+    if (!establishedPitchSequence) {
+      establishedMotifs.set(
+        motifKey,
+        notes.map((note) => note.pitchMidi),
+      );
+    }
 
     return {
       ...anchorPhrase,
