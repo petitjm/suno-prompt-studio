@@ -399,3 +399,33 @@ Current direction:
 For the current implementation, the richer `generateChords` route is the normal Generate chords action because it contains more song-specific musical reasoning. `generateBasicChords` remains available as an Advanced simple/quick chord sketch while the chord architecture is developed.
 
 Long term, prefer one strong chord-generation path followed by meaningful songwriter-controlled harmonic development over maintaining two competing generators.
+
+### Musical timing, harmony, lyric placement, and rendered time
+
+Musical structure, harmony, lyric placement, vocal phrasing, and rendered playback time are related but distinct concepts. They must not be collapsed into one representation merely because the current implementation can derive one from another.
+
+The durable relationship is:
+
+```text
+Song + songwriting intent
+        ↓
+Musical structure
+musicalTimingPlan
+        ↓
+Harmony composition
+harmonicTimeline
+(section + chord + bar + beat)
+        ↓
+Chord / lyric visual fitting
+songSheetLines
+(lyric + charIndex + preserved harmonic event)
+        ↓
+Vocal phrasing
+lyricTimingPlan
+(text span + musical start/end)
+        ↓
+Performance interpretation
+tempo map / expressive timing
+        ↓
+Rendered seconds / Audio Guide
+```

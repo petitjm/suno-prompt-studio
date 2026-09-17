@@ -158,27 +158,27 @@ The JSON must use this shape:
   "genre": "",
   "timeSignature": "4/4",
    "musicalTimingPlan": {
-    "sections": [
-      {
-        "section": "Verse 1",
-        "bars": 8,
-        "timeSignature": "4/4",
-        "meterChanges": []
-      },
-      {
-        "section": "Bridge",
-        "bars": 7,
-        "timeSignature": "4/4",
-        "meterChanges": [
-          {
-            "bar": 5,
-            "timeSignature": "3/4"
-          }
-        ]
-      }
-    ]
-  },
-  "groove": "",
+  "sections": [
+    {
+      "section": "Verse 1",
+      "bars": 8,
+      "timeSignature": "4/4",
+      "meterChanges": []
+    },
+    {
+      "section": "Bridge",
+      "bars": 7,
+      "timeSignature": "4/4",
+      "meterChanges": [
+        {
+          "bar": 5,
+          "timeSignature": "3/4"
+        }
+      ]
+    }
+  ]
+},
+"groove": "",
   "performanceFeel": "",
   "phrasingNotes": "",
   "vocalDelivery": "",
@@ -202,20 +202,23 @@ The JSON must use this shape:
       ]
     },
   "notes": "",
-"songSheetLines": [
-    {
-      "section": "Verse 1",
-      "lyric": "Actual lyric line here",
-      "chords": [
-        {
-  "chord": "G",
-  "charIndex": 0,
-  "bar": 1,
-  "beat": 1
-}
-      ]
-    }
-  ]
+"harmonicTimeline": [
+  {
+    "section": "Verse 1",
+    "events": [
+      {
+        "chord": "G",
+        "bar": 1,
+        "beat": 1
+      },
+      {
+        "chord": "C",
+        "bar": 2,
+        "beat": 3
+      }
+    ]
+  }
+]
 }
 
 Requirements:
@@ -223,60 +226,54 @@ Requirements:
 - Use the artist DNA where helpful, especially for vocal range, style, harmonic richness, and live-performance suitability.
 - Think like a songwriter and live acoustic performer.
 - The output should help the performer remember phrasing, rhythm, melody feel, and chord timing.
-- The placed chord positions must reflect the intended performance feel, groove, phrasing, breath points, instrumental movement, and the supplied current performance tempo when present.
-- songSheetLines must preserve the actual lyric lines in order.
-- Each lyric line should appear once.
-- Do not invent new lyrics.
-- Do not omit lyric lines.
-- Put chords only where actual chord changes happen.
-- Every chord placement must contain both visual lyric placement and musical timing.
-- charIndex is zero-based and means where the chord should appear above the lyric line.
+- First compose the musical structure and harmony independently of the printed lyric-line layout.
+- harmonicTimeline is the authoritative chord-event timeline produced by this generation pass.
+- harmonicTimeline must contain one entry for each section instance that contains harmony, in song order.
+- Each harmonicTimeline event must contain only chord, bar, and beat.
+- Do not include lyric text, lyric line indexes, charIndex, or visual chord placement in harmonicTimeline.
+- Do not attach chord events to printed lyric lines in this generation pass.
 - bar is the 1-based musical bar number within the current section.
 - beat is the 1-based beat within that bar.
-- Example: {"chord":"G","charIndex":0,"bar":1,"beat":1} means display G at character 0 and change to G on bar 1 beat 1.
-- Example: {"chord":"C","charIndex":12,"bar":1,"beat":3} means display C at character 12 and change to C on bar 1 beat 3.
-- Place charIndex above the syllable or word where the singer should feel the chord change for natural performance phrasing.
-- Determine bar and beat from the intended harmonic rhythm, time signature, groove, vocal phrasing, breath points, pickups, held notes, instrumental movement, and the supplied current performance tempo when present.
+- Determine chord bar and beat from musical phrasing, harmonic rhythm, time signature, groove, vocal phrasing, breath points, pickups, held notes, rests, instrumental movement, and the supplied current performance tempo when present.
 - Treat the supplied current performance tempo as authoritative when present.
-- Do not infer a different tempo from the chord data.
-- Do not derive bar or beat from charIndex, lyric length, word spacing, or distance across the lyric line.
-- Two words that are visually close together may occur on different beats or bars.
-- Words that are visually far apart may occur within one held musical phrase.
+- Do not infer a different tempo from lyric length or formatting.
+- Never derive bar or beat from lyric-line count, character position, word spacing, line width, punctuation spacing, or printed line breaks.
+- Do not assume one bar, two bars, or any fixed duration per printed lyric line.
+- Several printed lyric lines may occur within one musical phrase.
+- One printed lyric line may span several musical bars.
+- Consecutive printed lyric lines may begin within the same bar when musically appropriate.
+- Phrase boundaries do not need to coincide with printed line breaks.
+- Chord changes do not need to coincide with printed line starts.
 - Keep bar numbers continuous within each section and reset bar numbering to 1 at the start of each new section.
-- beat must be valid for the chosen timeSignature. For example, use beats 1 through 4 in 4/4 and beats 1 through 3 in 3/4.
+- beat must be valid for the meter active at that bar.
 - Fractional beats may be used only when the musical change genuinely occurs between main beats, for example beat 2.5.
-- Do not place every chord at the start of the line unless the change truly happens there.
 - Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose harmonic rhythm and phrasing.
 - Treat instrumental sections such as Intro, Interlude, Turnaround, Solo, and Outro as genuine songwriting sections with their own harmonic purpose.
-- Do not automatically copy or preview the harmony of the adjacent sung section.
-- Consider whether the instrumental section should create contrast, tension, release, anticipation, harmonic colour, or a smoother transition into or out of the neighbouring section.
-- When musically appropriate, you may use borrowed, chromatic, modal, pedal-tone, suspended, or otherwise contrasting harmony, provided it remains convincing in the song and practical for the intended acoustic performance.
-- For an Intro especially, consider the first chord of the following sung section and choose whether the Intro should establish it, delay it, approach it, or create a stronger lift into it.
-- Any harmonic choice made for an instrumental section must be represented explicitly in songSheetLines with its real chord symbols and bar/beat timing. Do not leave instrumental harmony only in notes, guideTrackPlan, or prose fields.
-- Keep placements practical for a singer-guitarist reading a songsheet.
-- If a lyric line has no chord change, include the line with an empty chords array.
-- Review songSheetLines before final output for both visual placement and musical timing.
-- Avoid placing most chords at charIndex 0.
-- At least half of the visual chord placements should normally fall after character 0 unless the song genuinely changes chords only at line starts.
-- Prefer fewer meaningful chord changes over too many mechanical placements.
-- Make sure every charIndex points to a valid character position in that lyric line.
+- Do not automatically copy the harmony of the adjacent sung section.
+- Consider whether an instrumental section should create contrast, tension, release, anticipation, harmonic colour, or a smoother transition.
+- When musically appropriate, borrowed, chromatic, modal, pedal-tone, suspended, or otherwise contrasting harmony is allowed provided it remains convincing and practical for acoustic performance.
+- Any instrumental harmony must appear explicitly in harmonicTimeline with its actual bar/beat timing.
+- Prefer musically meaningful harmonic movement over a mechanically regular grid.
+- Repeated harmonic durations are valid when they are an intentional musical pattern, but not merely because the lyrics are printed in similarly sized lines.
+- Before returning the result, verify that harmonicTimeline would still make musical sense if the exact same lyrics were reformatted into completely different printed line breaks.
 - Return the final checked JSON only.
 Musical timing plan requirements:
-- Include musicalTimingPlan as the authoritative musical timeline for the song.
-- Include one section entry for every section instance represented in songSheetLines, in song order.
-- section must match the corresponding songSheetLines section name.
-- bars is the total number of musical bars in that section, including sung bars, held bars, rests, pickups resolved into the section, turnarounds, and instrumental space that belong to the section.
+- Include musicalTimingPlan as the authoritative section-level musical timeline for the song.
+- Include one section entry for every section instance represented in harmonicTimeline, in song order.
+- section must match the corresponding harmonicTimeline section name.
+- bars is the total number of musical bars in that complete section, including sung time, held bars, rests, turnarounds, pickups resolved into the section, and instrumental space.
+- Determine section length before considering how the lyrics happen to be printed into lines.
 - Do not calculate bars from the number of lyric lines.
-- A lyric line may occupy less than one bar, one bar, or several bars.
-- Sections may contain any number of lyric lines; do not force conventional 4-line, 8-line, or other fixed section shapes.
-- timeSignature is the time signature in effect at bar 1 of that section.
-- If the time signature changes within a section, include each change in meterChanges using the 1-based bar at which the new time signature begins.
-- If the meter does not change within the section, return an empty meterChanges array.
+- Do not multiply lyric-line count by any fixed number of bars.
+- Do not choose section length merely so that each printed line receives an equal amount of musical time.
+- timeSignature is the meter active at bar 1 of the section.
+- If the meter changes within a section, include each change in meterChanges using the 1-based bar where the new meter begins.
+- If the meter does not change, return an empty meterChanges array.
 - Do not invent meter changes merely to create variety.
-- bar values in songSheetLines chord placements must refer to the same bar numbering used by musicalTimingPlan for that section.
-- No chord placement may reference a bar greater than that section's bars value.
-- Determine section length from the intended musical phrasing, harmonic rhythm, meter, groove, vocal phrasing, held notes, rests, turnarounds, pickups, and instrumental movement.
-- Review musicalTimingPlan and songSheetLines together before returning the final JSON so their bar numbering is internally consistent.
+- Every harmonicTimeline bar/beat event must use the same section-local bar numbering and meter defined by musicalTimingPlan.
+- No harmonic event may reference a bar greater than that section's bars value.
+- Determine section length from intended musical phrasing, harmonic rhythm, meter, groove, vocal phrasing, held notes, rests, turnarounds, pickups, and instrumental movement.
+- Review musicalTimingPlan and harmonicTimeline together before returning the JSON so they describe one coherent musical performance.
 Performance intent requirements:
 - Include timeSignature as the song's opening or primary time signature, usually "4/4" unless another meter is clearly better. Use musicalTimingPlan for section-level timing and any later meter changes.
 - Include groove, describing the rhythmic feel, for example "laid-back fingerpicked 8th-note feel" or "steady brushed country ballad pulse".
@@ -284,8 +281,7 @@ Performance intent requirements:
 - Include vocalDelivery describing the emotional and rhythmic delivery.
 - Include guitarPattern describing the likely accompaniment pattern.
 - Make guideTrackPlan specific enough that a simple audio-preview feature could use it later.
-- Use these performance intent fields to guide both songSheetLines visual chord placement and musical bar/beat timing.
-- If a chord occurs after the final sung word on a line, keep its charIndex near the end of the lyric line but give it the true bar and beat for the turnaround, held chord, pickup, breath, or instrumental response.
+- Use these performance intent fields to guide musicalTimingPlan and harmonicTimeline bar/beat timing.
 - Include guideTrackPlan as a practical plan for a future simple audio guide track.
 - The guide track is not a finished production.
 - It should help the songwriter remember the supplied performance tempo, groove, phrasing, chord timing, vocal entry points, and dynamic shape.
@@ -328,6 +324,581 @@ Performance intent requirements:
         {
           error: "Invalid JSON from model",
           raw: text,
+        },
+        { status: 500 },
+      );
+    }
+
+    const chordDataRecord =
+      chordData && typeof chordData === "object" && !Array.isArray(chordData)
+        ? (chordData as Record<string, unknown>)
+        : null;
+
+    if (!chordDataRecord) {
+      return NextResponse.json(
+        {
+          error: "Chord generation returned invalid chord data.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const harmonicTimeline =
+      chordDataRecord && Array.isArray(chordDataRecord.harmonicTimeline)
+        ? chordDataRecord.harmonicTimeline
+        : null;
+
+    if (!harmonicTimeline) {
+      return NextResponse.json(
+        {
+          error: "Chord generation did not return a harmonicTimeline.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const placementPrompt = `
+You are fitting an already-composed harmonic timeline visually to the supplied lyrics.
+
+The music has already been composed.
+
+Do NOT compose or replace chords.
+Do NOT change section timing.
+Do NOT change bar numbers.
+Do NOT change beat numbers.
+Do NOT change musicalTimingPlan.
+Do NOT change harmonicTimeline.
+
+Your only task is to decide:
+1. which lyric row each existing harmonic event should be displayed above; and
+2. the charIndex where that chord should appear visually.
+
+Lyrics:
+${lyrics}
+
+Completed musical data:
+${JSON.stringify(chordData, null, 2)}
+
+The harmonicTimeline array is authoritative.
+
+Each harmonicTimeline section has a zero-based sectionIndex equal to its position in that array.
+Each event inside that section has a zero-based eventIndex equal to its position in that section's events array.
+
+Return ONLY valid JSON using this exact shape:
+
+{
+  "rows": [
+    {
+      "sectionIndex": 0,
+      "lyric": "",
+      "placements": [
+        {
+          "eventIndex": 0,
+          "charIndex": 0
+        }
+      ]
+    },
+    {
+      "sectionIndex": 1,
+      "lyric": "Exact lyric line from the supplied lyrics",
+      "placements": [
+        {
+          "eventIndex": 0,
+          "charIndex": 4
+        }
+      ]
+    }
+  ]
+}
+
+Requirements:
+
+- Preserve the complete song order.
+- Include every sung lyric line exactly once and in its original order.
+- Copy sung lyric text exactly from the supplied lyrics.
+- Do not rewrite, shorten, normalize, paraphrase, or combine lyric lines.
+- Do not invent lyric text.
+
+- sectionIndex refers to the zero-based position of the corresponding section in harmonicTimeline.
+- eventIndex refers to the zero-based position of an event in that harmonicTimeline section.
+- Every harmonicTimeline event must appear exactly once in placements.
+- Do not omit an existing harmonic event.
+- Do not duplicate an existing harmonic event.
+- Do not invent additional harmonic events.
+
+- For sung rows, lyric must be the exact lyric line that should visually carry those chord symbols.
+- If a sung lyric line has no chord event, still return the row with placements: [].
+- For instrumental sections with no sung lyric, return one or more rows with lyric: "".
+- Instrumental events should use charIndex 0.
+
+- charIndex is visual placement only.
+- charIndex is zero-based.
+- For sung rows, charIndex must point to a valid character position in that exact lyric string.
+- Place the chord above the word or syllable where the performer should visually feel the already-timed harmonic event.
+- Do not infer musical time from charIndex.
+- Do not use charIndex to alter the underlying bar or beat.
+- A chord may be displayed partway through a lyric line even when its musical event happens before or after the singer's precise word onset.
+- A turnaround or held chord may be displayed near the end of the most relevant lyric line.
+- Several harmonic events may belong to one lyric row.
+- A lyric row may have no harmonic event.
+- Do not force one chord per lyric line.
+- Do not distribute chords evenly merely because the lyric lines have similar lengths.
+
+- The supplied harmonicTimeline has already determined harmonic rhythm.
+- Printed lyric line breaks do not define bar boundaries.
+- Your result should still make sense if the same lyrics were printed with different line lengths.
+
+Return rows only.
+`.trim();
+
+    const placementController = new AbortController();
+
+    const placementTimeoutId = setTimeout(() => {
+      placementController.abort();
+    }, CHORD_GENERATION_TIMEOUT_MS);
+
+    let placementCompletion;
+
+    try {
+      placementCompletion = await openai.chat.completions.create(
+        {
+          model: "gpt-5",
+          messages: [{ role: "user", content: placementPrompt }],
+        },
+        {
+          signal: placementController.signal,
+        },
+      );
+    } finally {
+      clearTimeout(placementTimeoutId);
+    }
+
+    const placementText =
+      placementCompletion.choices[0].message.content || "{}";
+
+    let placementResult;
+
+    try {
+      placementResult = parseModelJson(placementText);
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid chord placement JSON from model",
+          raw: placementText,
+        },
+        { status: 500 },
+      );
+    }
+
+    const placementRows =
+      placementResult &&
+      typeof placementResult === "object" &&
+      !Array.isArray(placementResult) &&
+      Array.isArray(placementResult.rows)
+        ? placementResult.rows
+        : null;
+
+    if (!placementRows) {
+      return NextResponse.json(
+        {
+          error: "Chord placement pass returned invalid row data.",
+          raw: placementText,
+        },
+        { status: 500 },
+      );
+    }
+
+    const rebuiltSongSheetLines = placementRows.flatMap(
+      (
+        row: unknown,
+      ): Array<{
+        section: string;
+        lyric: string;
+        chords: Array<{
+          chord: string;
+          charIndex: number;
+          bar: number;
+          beat: number;
+        }>;
+      }> => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return [];
+        }
+
+        const rowRecord = row as Record<string, unknown>;
+
+        const sectionIndex =
+          typeof rowRecord.sectionIndex === "number" &&
+          Number.isInteger(rowRecord.sectionIndex)
+            ? rowRecord.sectionIndex
+            : -1;
+
+        const timelineSection = harmonicTimeline[sectionIndex];
+
+        if (
+          !timelineSection ||
+          typeof timelineSection !== "object" ||
+          Array.isArray(timelineSection)
+        ) {
+          return [];
+        }
+
+        const timelineSectionRecord = timelineSection as Record<
+          string,
+          unknown
+        >;
+
+        const section =
+          typeof timelineSectionRecord.section === "string"
+            ? timelineSectionRecord.section
+            : "";
+
+        const events = Array.isArray(timelineSectionRecord.events)
+          ? timelineSectionRecord.events
+          : [];
+
+        const lyric =
+          typeof rowRecord.lyric === "string" ? rowRecord.lyric : "";
+
+        const placements = Array.isArray(rowRecord.placements)
+          ? rowRecord.placements
+          : [];
+
+        const chords = placements.flatMap(
+          (
+            placement: unknown,
+          ): Array<{
+            chord: string;
+            charIndex: number;
+            bar: number;
+            beat: number;
+          }> => {
+            if (
+              !placement ||
+              typeof placement !== "object" ||
+              Array.isArray(placement)
+            ) {
+              return [];
+            }
+
+            const placementRecord = placement as Record<string, unknown>;
+
+            const eventIndex =
+              typeof placementRecord.eventIndex === "number" &&
+              Number.isInteger(placementRecord.eventIndex)
+                ? placementRecord.eventIndex
+                : -1;
+
+            const event = events[eventIndex];
+
+            if (!event || typeof event !== "object" || Array.isArray(event)) {
+              return [];
+            }
+
+            const eventRecord = event as Record<string, unknown>;
+
+            const chord =
+              typeof eventRecord.chord === "string"
+                ? eventRecord.chord.trim()
+                : "";
+
+            const bar =
+              typeof eventRecord.bar === "number" &&
+              Number.isFinite(eventRecord.bar)
+                ? eventRecord.bar
+                : null;
+
+            const beat =
+              typeof eventRecord.beat === "number" &&
+              Number.isFinite(eventRecord.beat)
+                ? eventRecord.beat
+                : null;
+
+            if (!chord || bar === null || beat === null) {
+              return [];
+            }
+
+            const requestedCharIndex =
+              typeof placementRecord.charIndex === "number" &&
+              Number.isFinite(placementRecord.charIndex)
+                ? Math.floor(placementRecord.charIndex)
+                : 0;
+
+            const charIndex =
+              lyric.length > 0
+                ? Math.max(0, Math.min(requestedCharIndex, lyric.length - 1))
+                : 0;
+
+            return [
+              {
+                chord,
+                charIndex,
+                bar,
+                beat,
+              },
+            ];
+          },
+        );
+
+        return [
+          {
+            section,
+            lyric,
+            chords,
+          },
+        ];
+      },
+    );
+
+    const expectedEventKeys = new Set<string>();
+
+    harmonicTimeline.forEach((timelineSection, sectionIndex) => {
+      if (
+        !timelineSection ||
+        typeof timelineSection !== "object" ||
+        Array.isArray(timelineSection)
+      ) {
+        return;
+      }
+
+      const timelineSectionRecord = timelineSection as Record<string, unknown>;
+
+      const events = Array.isArray(timelineSectionRecord.events)
+        ? timelineSectionRecord.events
+        : [];
+
+      events.forEach((_event, eventIndex) => {
+        expectedEventKeys.add(`${sectionIndex}:${eventIndex}`);
+      });
+    });
+
+    const seenEventKeys = new Set<string>();
+    let invalidPlacementReference = false;
+    let duplicatePlacementReference = false;
+
+    for (const row of placementRows) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) {
+        continue;
+      }
+
+      const rowRecord = row as Record<string, unknown>;
+
+      const sectionIndex =
+        typeof rowRecord.sectionIndex === "number" &&
+        Number.isInteger(rowRecord.sectionIndex)
+          ? rowRecord.sectionIndex
+          : -1;
+
+      const placements = Array.isArray(rowRecord.placements)
+        ? rowRecord.placements
+        : [];
+
+      for (const placement of placements) {
+        if (
+          !placement ||
+          typeof placement !== "object" ||
+          Array.isArray(placement)
+        ) {
+          invalidPlacementReference = true;
+          continue;
+        }
+
+        const placementRecord = placement as Record<string, unknown>;
+
+        const eventIndex =
+          typeof placementRecord.eventIndex === "number" &&
+          Number.isInteger(placementRecord.eventIndex)
+            ? placementRecord.eventIndex
+            : -1;
+
+        const eventKey = `${sectionIndex}:${eventIndex}`;
+
+        if (!expectedEventKeys.has(eventKey)) {
+          invalidPlacementReference = true;
+          continue;
+        }
+
+        if (seenEventKeys.has(eventKey)) {
+          duplicatePlacementReference = true;
+          continue;
+        }
+
+        seenEventKeys.add(eventKey);
+      }
+    }
+
+    const missingEventKeys = Array.from(expectedEventKeys).filter(
+      (eventKey) => !seenEventKeys.has(eventKey),
+    );
+
+    if (
+      invalidPlacementReference ||
+      duplicatePlacementReference ||
+      missingEventKeys.length > 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Chord placement pass did not preserve every harmonic event exactly once.",
+          invalidPlacementReference,
+          duplicatePlacementReference,
+          missingEventKeys,
+          raw: placementText,
+        },
+        { status: 500 },
+      );
+    }
+
+    chordDataRecord.songSheetLines = rebuiltSongSheetLines;
+
+    chordDataRecord.songSheetLines = rebuiltSongSheetLines;
+
+    const lyricTimingPrompt = `
+You are determining vocal phrase timing for an already-composed song arrangement.
+
+Do NOT rewrite the lyrics.
+Do NOT reharmonize the song.
+Do NOT change chord names.
+Do NOT change chord bar/beat positions.
+Do NOT change musicalTimingPlan.
+Do NOT change section lengths or meter.
+
+Your only task is to identify natural sung phrase boundaries and place those phrase boundaries in the existing musical timeline.
+
+Current performance tempo:
+${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
+
+Existing completed chord and timing data:
+${JSON.stringify(chordData, null, 2)}
+
+Return ONLY valid JSON using this exact top-level shape:
+
+{
+  "lyricTimingPlan": {
+    "phrases": [
+      {
+        "section": "Verse 1",
+        "startSourceLineIndex": 1,
+        "startCharIndex": 0,
+        "endSourceLineIndex": 2,
+        "endCharIndex": 18,
+        "startBar": 1,
+        "startBeat": 2,
+        "endBar": 3,
+        "endBeat": 1
+      }
+    ]
+  }
+}
+
+Requirements:
+
+- songSheetLines is the authoritative source for lyric text and its order.
+- musicalTimingPlan is the authoritative source for section bars, meter, and meter changes.
+- songSheetLines chord bar/beat values are the authoritative harmonic events.
+- Determine vocal phrasing only after considering all of those existing decisions together.
+
+- Do not assume printed lyric lines are musical phrases.
+- Do not divide a section evenly according to its number of lyric lines.
+- Do not automatically group every two lyric lines together.
+- Do not automatically give every lyric line or every pair of lyric lines the same number of bars.
+- Do not force phrases to start on beat 1.
+- Do not force phrases to end on beat 1.
+- Do not force phrase boundaries to coincide with chord changes.
+- Do not force phrase boundaries to coincide with printed line breaks.
+
+- Phrase boundaries should reflect how a singer would naturally perform the lyric over the supplied harmony, groove, meter, tempo, phrasing notes, vocal delivery, and arrangement.
+- Consider natural language stress, breath, pickup notes, held words, rests, syncopation, anticipation, delayed entries, and melodic continuity.
+- Preserve useful empty musical space between vocal phrases.
+- Different verses do not need identical phrase timing merely because their printed structure looks similar.
+- Repeated choruses may use similar phrasing when musically appropriate, but do not copy timing mechanically when the lyric or arrangement suggests a different delivery.
+
+- A phrase may occupy part of one printed lyric line.
+- One printed lyric line may contain more than one musical phrase.
+- A phrase may span two or more printed lyric lines.
+- Several short printed lines may belong to one continuous sung phrase.
+
+- Use startSourceLineIndex and endSourceLineIndex as zero-based indexes into songSheetLines.
+- Do not include instrumental-only songSheetLines rows inside sung phrases.
+- startCharIndex identifies the first lyric character included in the phrase.
+- endCharIndex is exclusive and identifies the character position immediately after the final lyric character included in the phrase.
+- Character positions identify lyric membership only.
+- Never calculate musical time from charIndex, lyric length, visual spacing, or line width.
+
+- startBar and startBeat identify the actual musical entry point of the phrase.
+- endBar and endBeat identify the exclusive musical boundary immediately after the phrase.
+- These bar/beat positions are musical coordinates, not fixed elapsed seconds.
+- Fractional beats may be used when a genuine pickup, anticipation, syncopation, breath, or phrase ending occurs between main beats.
+
+- Lyric timing must use the same section-local bar numbering as musicalTimingPlan.
+- startBar must be within the section.
+- A phrase may end at bar N+1 beat 1 when that represents the boundary immediately after the final bar of an N-bar section.
+- If endBar is one greater than the section's bar count, endBeat must be 1.
+- Otherwise beats must be valid for the meter active at that bar.
+
+- Use the actual chord bar/beat positions as harmonic context, but remember that the vocal may enter before a chord change, after it, or continue through several chord changes.
+- The first chord visually associated with a printed lyric line is not automatically the start of the vocal phrase.
+
+- Before returning the JSON, inspect the complete result for mechanical regularity.
+- If most phrases begin on beat 1, end on beat 1, cover exactly the same number of printed lines, or occupy exactly the same number of bars, verify that this is a genuine musical decision rather than a formatting shortcut.
+- The result should still make musical sense if the same lyric text were printed with different line breaks.
+
+Return the lyricTimingPlan only.
+`.trim();
+
+    const lyricTimingController = new AbortController();
+
+    const lyricTimingTimeoutId = setTimeout(() => {
+      lyricTimingController.abort();
+    }, CHORD_GENERATION_TIMEOUT_MS);
+
+    let lyricTimingCompletion;
+
+    try {
+      lyricTimingCompletion = await openai.chat.completions.create(
+        {
+          model: "gpt-5",
+          messages: [{ role: "user", content: lyricTimingPrompt }],
+        },
+        {
+          signal: lyricTimingController.signal,
+        },
+      );
+    } finally {
+      clearTimeout(lyricTimingTimeoutId);
+    }
+
+    const lyricTimingText =
+      lyricTimingCompletion.choices[0].message.content || "{}";
+
+    let lyricTimingResult;
+
+    try {
+      lyricTimingResult = parseModelJson(lyricTimingText);
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid lyric timing JSON from model",
+          raw: lyricTimingText,
+        },
+        { status: 500 },
+      );
+    }
+
+    if (
+      lyricTimingResult &&
+      typeof lyricTimingResult === "object" &&
+      !Array.isArray(lyricTimingResult) &&
+      lyricTimingResult.lyricTimingPlan &&
+      typeof lyricTimingResult.lyricTimingPlan === "object" &&
+      !Array.isArray(lyricTimingResult.lyricTimingPlan)
+    ) {
+      chordData.lyricTimingPlan = lyricTimingResult.lyricTimingPlan;
+    } else {
+      return NextResponse.json(
+        {
+          error: "Lyric timing pass returned invalid timing data.",
+          raw: lyricTimingText,
         },
         { status: 500 },
       );
