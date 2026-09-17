@@ -751,10 +751,84 @@ Return rows only.
 
     chordDataRecord.songSheetLines = rebuiltSongSheetLines;
 
-    chordDataRecord.songSheetLines = rebuiltSongSheetLines;
+    const songSheetLinesForTiming = rebuiltSongSheetLines;
+
+    const sungWordEntries: Array<{
+      wordIndex: number;
+      word: string;
+      section: string;
+      sourceLineIndex: number;
+      startCharIndex: number;
+      endCharIndex: number;
+    }> = [];
+
+    songSheetLinesForTiming.forEach(
+      (
+        line: {
+          section: string;
+          lyric: string;
+          chords: Array<{
+            chord: string;
+            charIndex: number;
+            bar: number;
+            beat: number;
+          }>;
+        },
+        sourceLineIndex: number,
+      ) => {
+        const lyric = typeof line.lyric === "string" ? line.lyric : "";
+        const section = typeof line.section === "string" ? line.section : "";
+
+        if (!lyric.trim()) {
+          return;
+        }
+
+        for (const match of lyric.matchAll(/\S+/g)) {
+          const word = match[0];
+          const startCharIndex = match.index ?? 0;
+
+          sungWordEntries.push({
+            wordIndex: sungWordEntries.length,
+            word,
+            section,
+            sourceLineIndex,
+            startCharIndex,
+            endCharIndex: startCharIndex + word.length,
+          });
+        }
+      },
+    );
+
+    if (sungWordEntries.length === 0) {
+      return NextResponse.json(
+        {
+          error: "Could not build sung-word timing input.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const indexedSungWords = sungWordEntries
+      .map((entry) => `${entry.wordIndex}. [${entry.section}] ${entry.word}`)
+      .join("\n");
+
+    const lyricTimingMusicalContext = {
+      musicalTimingPlan: chordDataRecord.musicalTimingPlan,
+      harmonicTimeline: chordDataRecord.harmonicTimeline,
+      groove: chordDataRecord.groove,
+      performanceFeel: chordDataRecord.performanceFeel,
+      phrasingNotes: chordDataRecord.phrasingNotes,
+      vocalDelivery: chordDataRecord.vocalDelivery,
+      guitarPattern: chordDataRecord.guitarPattern,
+      guideTrackPlan: chordDataRecord.guideTrackPlan,
+    };
 
     const lyricTimingPrompt = `
-You are determining vocal phrase timing for an already-composed song arrangement.
+You are determining natural vocal phrase timing for an already-composed song.
+
+The lyrics below have deliberately been converted into one ordered stream of indexed sung words.
+
+The original printed lyric-line boundaries are NOT provided to you because typography must not determine vocal phrase boundaries.
 
 Do NOT rewrite the lyrics.
 Do NOT reharmonize the song.
@@ -763,87 +837,93 @@ Do NOT change chord bar/beat positions.
 Do NOT change musicalTimingPlan.
 Do NOT change section lengths or meter.
 
-Your only task is to identify natural sung phrase boundaries and place those phrase boundaries in the existing musical timeline.
+Your task has two musical parts:
+
+1. Identify natural sung phrase spans using the indexed word stream.
+2. Place those phrases into the existing musical timeline using bar and beat coordinates.
 
 Current performance tempo:
 ${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
 
-Existing completed chord and timing data:
-${JSON.stringify(chordData, null, 2)}
+Indexed sung-word stream:
+${indexedSungWords}
+
+Existing musical context:
+${JSON.stringify(lyricTimingMusicalContext, null, 2)}
 
 Return ONLY valid JSON using this exact top-level shape:
 
 {
-  "lyricTimingPlan": {
+  "wordTimingPlan": {
     "phrases": [
       {
         "section": "Verse 1",
-        "startSourceLineIndex": 1,
-        "startCharIndex": 0,
-        "endSourceLineIndex": 2,
-        "endCharIndex": 18,
+        "startWordIndex": 0,
+        "endWordIndexExclusive": 7,
         "startBar": 1,
-        "startBeat": 2,
+        "startBeat": 1.5,
+        "endBar": 2,
+        "endBeat": 3
+      },
+      {
+        "section": "Verse 1",
+        "startWordIndex": 7,
+        "endWordIndexExclusive": 12,
+        "startBar": 2,
+        "startBeat": 3.5,
         "endBar": 3,
-        "endBeat": 1
+        "endBeat": 4
       }
     ]
   }
 }
 
-Requirements:
+Word-span requirements:
+- startWordIndex identifies the first sung word belonging to the phrase.
+- endWordIndexExclusive identifies the first word after the phrase.
+- Therefore a phrase containing words 4, 5, and 6 uses startWordIndex 4 and endWordIndexExclusive 7.
+- Word spans must be in ascending song order.
+- A phrase must contain at least one word.
+- A phrase must not cross a section boundary.
+- Use the section labels shown in the indexed word stream.
+- Do not invent words or word indexes.
+- Do not use punctuation or regular word counts as an automatic phrase-boundary rule.
 
-- songSheetLines is the authoritative source for lyric text and its order.
-- musicalTimingPlan is the authoritative source for section bars, meter, and meter changes.
-- songSheetLines chord bar/beat values are the authoritative harmonic events.
-- Determine vocal phrasing only after considering all of those existing decisions together.
+Phrase-construction requirements:
+- First decide the sung phrase boundaries from language, meaning, stress, delivery, breath, melodic continuity, and emotional intent.
+- Only after deciding the phrase spans should you assign bar and beat timing.
+- Ask where a singer would naturally begin, continue, breathe, hold, interrupt, complete, or carry forward a thought.
+- Preserve useful breathing room and rests between phrases.
+- A phrase may be short or long.
+- Adjacent phrases do not need equal numbers of words.
+- Do not group words into equal-sized blocks merely to make the result regular.
+- Do not divide a section into equal phrase lengths merely because that is convenient.
+- Repeated verses may share a vocal concept when appropriate, but their phrase spans do not have to be mechanically identical.
+- Repeated choruses may use similar phrasing when musically justified.
 
-- Do not assume printed lyric lines are musical phrases.
-- Do not divide a section evenly according to its number of lyric lines.
-- Do not automatically group every two lyric lines together.
-- Do not automatically give every lyric line or every pair of lyric lines the same number of bars.
+Musical timing requirements:
+- musicalTimingPlan is authoritative for section bars, meter, and meter changes.
+- harmonicTimeline is authoritative for chord names and chord bar/beat positions.
+- startBar and startBeat identify the actual musical entry of the phrase.
+- endBar and endBeat identify the exclusive musical boundary immediately after the phrase.
+- Bar/beat values are musical coordinates, not fixed elapsed seconds.
 - Do not force phrases to start on beat 1.
 - Do not force phrases to end on beat 1.
 - Do not force phrase boundaries to coincide with chord changes.
-- Do not force phrase boundaries to coincide with printed line breaks.
-
-- Phrase boundaries should reflect how a singer would naturally perform the lyric over the supplied harmony, groove, meter, tempo, phrasing notes, vocal delivery, and arrangement.
-- Consider natural language stress, breath, pickup notes, held words, rests, syncopation, anticipation, delayed entries, and melodic continuity.
-- Preserve useful empty musical space between vocal phrases.
-- Different verses do not need identical phrase timing merely because their printed structure looks similar.
-- Repeated choruses may use similar phrasing when musically appropriate, but do not copy timing mechanically when the lyric or arrangement suggests a different delivery.
-
-- A phrase may occupy part of one printed lyric line.
-- One printed lyric line may contain more than one musical phrase.
-- A phrase may span two or more printed lyric lines.
-- Several short printed lines may belong to one continuous sung phrase.
-
-- Use startSourceLineIndex and endSourceLineIndex as zero-based indexes into songSheetLines.
-- Do not include instrumental-only songSheetLines rows inside sung phrases.
-- startCharIndex identifies the first lyric character included in the phrase.
-- endCharIndex is exclusive and identifies the character position immediately after the final lyric character included in the phrase.
-- Character positions identify lyric membership only.
-- Never calculate musical time from charIndex, lyric length, visual spacing, or line width.
-
-- startBar and startBeat identify the actual musical entry point of the phrase.
-- endBar and endBeat identify the exclusive musical boundary immediately after the phrase.
-- These bar/beat positions are musical coordinates, not fixed elapsed seconds.
-- Fractional beats may be used when a genuine pickup, anticipation, syncopation, breath, or phrase ending occurs between main beats.
-
-- Lyric timing must use the same section-local bar numbering as musicalTimingPlan.
-- startBar must be within the section.
-- A phrase may end at bar N+1 beat 1 when that represents the boundary immediately after the final bar of an N-bar section.
-- If endBar is one greater than the section's bar count, endBeat must be 1.
+- A vocal phrase may begin before a chord change, after it, or continue through several chord events.
+- Fractional beats may be used for genuine pickups, anticipations, syncopations, rests, breaths, or phrase endings.
+- startBar must lie within the section.
+- A phrase may end at bar N+1 beat 1 when that is the boundary immediately after the final bar of an N-bar section.
+- If endBar is one greater than the section bar count, endBeat must be 1.
 - Otherwise beats must be valid for the meter active at that bar.
 
-- Use the actual chord bar/beat positions as harmonic context, but remember that the vocal may enter before a chord change, after it, or continue through several chord changes.
-- The first chord visually associated with a printed lyric line is not automatically the start of the vocal phrase.
+Final review:
+- Inspect the complete result before returning it.
+- If most phrases contain exactly the same number of words, reconsider whether you have created a mechanical grid.
+- If most phrases begin on beat 1, end on beat 1, or occupy identical numbers of bars, verify that this is genuinely justified by the performance.
+- Musical regularity is allowed when the song genuinely calls for it, but it must come from the song rather than from a formatting shortcut.
 
-- Before returning the JSON, inspect the complete result for mechanical regularity.
-- If most phrases begin on beat 1, end on beat 1, cover exactly the same number of printed lines, or occupy exactly the same number of bars, verify that this is a genuine musical decision rather than a formatting shortcut.
-- The result should still make musical sense if the same lyric text were printed with different line breaks.
-
-Return the lyricTimingPlan only.
+Return wordTimingPlan only.
 `.trim();
 
     const lyricTimingController = new AbortController();
@@ -885,16 +965,39 @@ Return the lyricTimingPlan only.
       );
     }
 
-    if (
+    const lyricTimingRecord =
       lyricTimingResult &&
       typeof lyricTimingResult === "object" &&
-      !Array.isArray(lyricTimingResult) &&
-      lyricTimingResult.lyricTimingPlan &&
-      typeof lyricTimingResult.lyricTimingPlan === "object" &&
-      !Array.isArray(lyricTimingResult.lyricTimingPlan)
-    ) {
-      chordData.lyricTimingPlan = lyricTimingResult.lyricTimingPlan;
-    } else {
+      !Array.isArray(lyricTimingResult)
+        ? (lyricTimingResult as Record<string, unknown>)
+        : null;
+
+    const wordTimingPlan =
+      lyricTimingRecord &&
+      lyricTimingRecord.wordTimingPlan &&
+      typeof lyricTimingRecord.wordTimingPlan === "object" &&
+      !Array.isArray(lyricTimingRecord.wordTimingPlan)
+        ? (lyricTimingRecord.wordTimingPlan as Record<string, unknown>)
+        : null;
+
+    const wordTimingPhrases =
+      wordTimingPlan && Array.isArray(wordTimingPlan.phrases)
+        ? wordTimingPlan.phrases
+        : null;
+
+    const musicalTimingPlanRecord =
+      chordDataRecord.musicalTimingPlan &&
+      typeof chordDataRecord.musicalTimingPlan === "object" &&
+      !Array.isArray(chordDataRecord.musicalTimingPlan)
+        ? (chordDataRecord.musicalTimingPlan as Record<string, unknown>)
+        : null;
+
+    const musicalTimingSections =
+      musicalTimingPlanRecord && Array.isArray(musicalTimingPlanRecord.sections)
+        ? musicalTimingPlanRecord.sections
+        : null;
+
+    if (!wordTimingPhrases || !musicalTimingSections) {
       return NextResponse.json(
         {
           error: "Lyric timing pass returned invalid timing data.",
@@ -903,6 +1006,573 @@ Return the lyricTimingPlan only.
         { status: 500 },
       );
     }
+
+    const wordTimingConversionErrors: string[] = [];
+
+    const convertedLyricTimingPhrases = wordTimingPhrases.flatMap(
+      (
+        phrase: unknown,
+        phraseIndex,
+      ): Array<{
+        section: string;
+        startSourceLineIndex: number;
+        startCharIndex: number;
+        endSourceLineIndex: number;
+        endCharIndex: number;
+        startBar: number;
+        startBeat: number;
+        endBar: number;
+        endBeat: number;
+      }> => {
+        if (!phrase || typeof phrase !== "object" || Array.isArray(phrase)) {
+          wordTimingConversionErrors.push(
+            `Phrase ${phraseIndex + 1} is not an object.`,
+          );
+          return [];
+        }
+
+        const phraseRecord = phrase as Record<string, unknown>;
+
+        const section =
+          typeof phraseRecord.section === "string"
+            ? phraseRecord.section.trim()
+            : "";
+
+        const startWordIndex =
+          typeof phraseRecord.startWordIndex === "number" &&
+          Number.isInteger(phraseRecord.startWordIndex)
+            ? phraseRecord.startWordIndex
+            : null;
+
+        const endWordIndexExclusive =
+          typeof phraseRecord.endWordIndexExclusive === "number" &&
+          Number.isInteger(phraseRecord.endWordIndexExclusive)
+            ? phraseRecord.endWordIndexExclusive
+            : null;
+
+        const startBar =
+          typeof phraseRecord.startBar === "number" &&
+          Number.isInteger(phraseRecord.startBar)
+            ? phraseRecord.startBar
+            : null;
+
+        const startBeat =
+          typeof phraseRecord.startBeat === "number" &&
+          Number.isFinite(phraseRecord.startBeat)
+            ? phraseRecord.startBeat
+            : null;
+
+        const endBar =
+          typeof phraseRecord.endBar === "number" &&
+          Number.isInteger(phraseRecord.endBar)
+            ? phraseRecord.endBar
+            : null;
+
+        const endBeat =
+          typeof phraseRecord.endBeat === "number" &&
+          Number.isFinite(phraseRecord.endBeat)
+            ? phraseRecord.endBeat
+            : null;
+
+        if (
+          !section ||
+          startWordIndex === null ||
+          endWordIndexExclusive === null ||
+          startBar === null ||
+          startBeat === null ||
+          endBar === null ||
+          endBeat === null
+        ) {
+          wordTimingConversionErrors.push(
+            `Phrase ${phraseIndex + 1} has missing or invalid word-timing fields.`,
+          );
+          return [];
+        }
+
+        if (
+          startWordIndex < 0 ||
+          endWordIndexExclusive <= startWordIndex ||
+          endWordIndexExclusive > sungWordEntries.length
+        ) {
+          wordTimingConversionErrors.push(
+            `Phrase ${phraseIndex + 1} has an invalid word span.`,
+          );
+          return [];
+        }
+
+        const phraseWords = sungWordEntries.slice(
+          startWordIndex,
+          endWordIndexExclusive,
+        );
+
+        const startWord = phraseWords[0];
+        const endWord = phraseWords[phraseWords.length - 1];
+
+        if (!startWord || !endWord) {
+          wordTimingConversionErrors.push(
+            `Phrase ${phraseIndex + 1} could not resolve its word span.`,
+          );
+          return [];
+        }
+
+        if (
+          startWord.section !== section ||
+          endWord.section !== section ||
+          phraseWords.some((word) => word.section !== section)
+        ) {
+          wordTimingConversionErrors.push(
+            `Phrase ${phraseIndex + 1} crosses a section boundary or has the wrong section label.`,
+          );
+          return [];
+        }
+
+        return [
+          {
+            section,
+            startSourceLineIndex: startWord.sourceLineIndex,
+            startCharIndex: startWord.startCharIndex,
+            endSourceLineIndex: endWord.sourceLineIndex,
+            endCharIndex: endWord.endCharIndex,
+            startBar,
+            startBeat,
+            endBar,
+            endBeat,
+          },
+        ];
+      },
+    );
+
+    if (wordTimingConversionErrors.length > 0) {
+      console.error(
+        "Lyric word timing conversion failed:",
+        wordTimingConversionErrors,
+      );
+
+      return NextResponse.json(
+        {
+          error: `Lyric timing pass returned invalid word spans: ${wordTimingConversionErrors
+            .slice(0, 3)
+            .join(" | ")}`,
+          validationErrors: wordTimingConversionErrors,
+          raw: lyricTimingText,
+        },
+        { status: 500 },
+      );
+    }
+
+    const lyricTimingPlan = {
+      phrases: convertedLyricTimingPhrases,
+    };
+
+    const lyricTimingPhrases = convertedLyricTimingPhrases;
+    musicalTimingPlanRecord && Array.isArray(musicalTimingPlanRecord.sections)
+      ? musicalTimingPlanRecord.sections
+      : null;
+
+    if (
+      !lyricTimingPhrases ||
+      !songSheetLinesForTiming ||
+      !musicalTimingSections
+    ) {
+      return NextResponse.json(
+        {
+          error: "Lyric timing pass returned invalid timing data.",
+          raw: lyricTimingText,
+        },
+        { status: 500 },
+      );
+    }
+
+    const parseMeterBeats = (value: unknown) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+
+      const match = value.trim().match(/^(\d+)\/(\d+)$/);
+
+      if (!match) {
+        return null;
+      }
+
+      const beats = Number(match[1]);
+
+      return Number.isFinite(beats) && beats >= 1 ? beats : null;
+    };
+
+    const getActiveBeatsForBar = (
+      sectionRecord: Record<string, unknown>,
+      bar: number,
+    ) => {
+      let beats = parseMeterBeats(sectionRecord.timeSignature);
+
+      if (beats === null) {
+        return null;
+      }
+
+      const meterChanges = Array.isArray(sectionRecord.meterChanges)
+        ? sectionRecord.meterChanges
+        : [];
+
+      const orderedChanges = meterChanges
+        .flatMap(
+          (
+            change: unknown,
+          ): Array<{
+            bar: number;
+            beats: number;
+          }> => {
+            if (
+              !change ||
+              typeof change !== "object" ||
+              Array.isArray(change)
+            ) {
+              return [];
+            }
+
+            const changeRecord = change as Record<string, unknown>;
+
+            const changeBar =
+              typeof changeRecord.bar === "number" &&
+              Number.isInteger(changeRecord.bar) &&
+              changeRecord.bar >= 1
+                ? changeRecord.bar
+                : null;
+
+            const changeBeats = parseMeterBeats(changeRecord.timeSignature);
+
+            if (changeBar === null || changeBeats === null) {
+              return [];
+            }
+
+            return [
+              {
+                bar: changeBar,
+                beats: changeBeats,
+              },
+            ];
+          },
+        )
+        .sort((a, b) => a.bar - b.bar);
+
+      for (const change of orderedChanges) {
+        if (change.bar > bar) {
+          break;
+        }
+
+        beats = change.beats;
+      }
+
+      return beats;
+    };
+
+    const timingValidationErrors: string[] = [];
+
+    let previousEndSourceLineIndex = -1;
+    let previousEndCharIndex = -1;
+
+    lyricTimingPhrases.forEach((phrase, phraseIndex) => {
+      if (!phrase || typeof phrase !== "object" || Array.isArray(phrase)) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} is not an object.`,
+        );
+        return;
+      }
+
+      const phraseRecord = phrase as Record<string, unknown>;
+
+      const section =
+        typeof phraseRecord.section === "string"
+          ? phraseRecord.section.trim()
+          : "";
+
+      const startSourceLineIndex =
+        typeof phraseRecord.startSourceLineIndex === "number" &&
+        Number.isInteger(phraseRecord.startSourceLineIndex)
+          ? phraseRecord.startSourceLineIndex
+          : null;
+
+      const endSourceLineIndex =
+        typeof phraseRecord.endSourceLineIndex === "number" &&
+        Number.isInteger(phraseRecord.endSourceLineIndex)
+          ? phraseRecord.endSourceLineIndex
+          : null;
+
+      const startCharIndex =
+        typeof phraseRecord.startCharIndex === "number" &&
+        Number.isInteger(phraseRecord.startCharIndex)
+          ? phraseRecord.startCharIndex
+          : null;
+
+      const endCharIndex =
+        typeof phraseRecord.endCharIndex === "number" &&
+        Number.isInteger(phraseRecord.endCharIndex)
+          ? phraseRecord.endCharIndex
+          : null;
+
+      const startBar =
+        typeof phraseRecord.startBar === "number" &&
+        Number.isInteger(phraseRecord.startBar)
+          ? phraseRecord.startBar
+          : null;
+
+      const startBeat =
+        typeof phraseRecord.startBeat === "number" &&
+        Number.isFinite(phraseRecord.startBeat)
+          ? phraseRecord.startBeat
+          : null;
+
+      const endBar =
+        typeof phraseRecord.endBar === "number" &&
+        Number.isInteger(phraseRecord.endBar)
+          ? phraseRecord.endBar
+          : null;
+
+      const endBeat =
+        typeof phraseRecord.endBeat === "number" &&
+        Number.isFinite(phraseRecord.endBeat)
+          ? phraseRecord.endBeat
+          : null;
+
+      if (
+        !section ||
+        startSourceLineIndex === null ||
+        endSourceLineIndex === null ||
+        startCharIndex === null ||
+        endCharIndex === null ||
+        startBar === null ||
+        startBeat === null ||
+        endBar === null ||
+        endBeat === null
+      ) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} has missing or invalid fields.`,
+        );
+        return;
+      }
+
+      if (
+        startSourceLineIndex < 0 ||
+        endSourceLineIndex < startSourceLineIndex ||
+        endSourceLineIndex >= songSheetLinesForTiming.length
+      ) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} has an invalid source-line span.`,
+        );
+        return;
+      }
+
+      const startLine = songSheetLinesForTiming[startSourceLineIndex];
+      const endLine = songSheetLinesForTiming[endSourceLineIndex];
+
+      if (
+        !startLine ||
+        typeof startLine !== "object" ||
+        Array.isArray(startLine) ||
+        !endLine ||
+        typeof endLine !== "object" ||
+        Array.isArray(endLine)
+      ) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} refers to invalid songsheet rows.`,
+        );
+        return;
+      }
+
+      const startLineRecord = startLine as Record<string, unknown>;
+      const endLineRecord = endLine as Record<string, unknown>;
+
+      const startLyric =
+        typeof startLineRecord.lyric === "string" ? startLineRecord.lyric : "";
+
+      const endLyric =
+        typeof endLineRecord.lyric === "string" ? endLineRecord.lyric : "";
+
+      if (!startLyric.trim() || !endLyric.trim()) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} starts or ends on an instrumental row.`,
+        );
+      }
+
+      if (startCharIndex < 0 || startCharIndex >= startLyric.length) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} has an invalid startCharIndex.`,
+        );
+      }
+
+      if (endCharIndex <= 0 || endCharIndex > endLyric.length) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} has an invalid exclusive endCharIndex.`,
+        );
+      }
+
+      if (
+        startSourceLineIndex === endSourceLineIndex &&
+        endCharIndex <= startCharIndex
+      ) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} has an empty or reversed lyric span.`,
+        );
+      }
+
+      for (
+        let lineIndex = startSourceLineIndex;
+        lineIndex <= endSourceLineIndex;
+        lineIndex += 1
+      ) {
+        const line = songSheetLinesForTiming[lineIndex];
+
+        if (!line || typeof line !== "object" || Array.isArray(line)) {
+          timingValidationErrors.push(
+            `Phrase ${phraseIndex + 1} contains an invalid songsheet row.`,
+          );
+          continue;
+        }
+
+        const lineRecord = line as Record<string, unknown>;
+
+        const lineSection =
+          typeof lineRecord.section === "string"
+            ? lineRecord.section.trim()
+            : "";
+
+        const lineLyric =
+          typeof lineRecord.lyric === "string" ? lineRecord.lyric : "";
+
+        if (!lineLyric.trim()) {
+          timingValidationErrors.push(
+            `Phrase ${phraseIndex + 1} crosses an instrumental row.`,
+          );
+        }
+
+        if (lineSection !== section) {
+          timingValidationErrors.push(
+            `Phrase ${phraseIndex + 1} crosses a section boundary.`,
+          );
+        }
+      }
+
+      const matchingTimingSections = musicalTimingSections.flatMap(
+        (timingSection: unknown): Array<Record<string, unknown>> => {
+          if (
+            !timingSection ||
+            typeof timingSection !== "object" ||
+            Array.isArray(timingSection)
+          ) {
+            return [];
+          }
+
+          const timingSectionRecord = timingSection as Record<string, unknown>;
+
+          return timingSectionRecord.section === section
+            ? [timingSectionRecord]
+            : [];
+        },
+      );
+
+      if (matchingTimingSections.length === 0) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} refers to unknown section "${section}".`,
+        );
+      } else {
+        const timingRangeIsValid = matchingTimingSections.some(
+          (timingSectionRecord) => {
+            const bars =
+              typeof timingSectionRecord.bars === "number" &&
+              Number.isInteger(timingSectionRecord.bars) &&
+              timingSectionRecord.bars >= 1
+                ? timingSectionRecord.bars
+                : null;
+
+            if (bars === null) {
+              return false;
+            }
+
+            if (
+              startBar < 1 ||
+              startBar > bars ||
+              endBar < startBar ||
+              endBar > bars + 1
+            ) {
+              return false;
+            }
+
+            if (endBar === bars + 1 && endBeat !== 1) {
+              return false;
+            }
+
+            const startBeatsInBar = getActiveBeatsForBar(
+              timingSectionRecord,
+              startBar,
+            );
+
+            if (
+              startBeatsInBar === null ||
+              startBeat < 1 ||
+              startBeat > startBeatsInBar
+            ) {
+              return false;
+            }
+
+            if (endBar <= bars) {
+              const endBeatsInBar = getActiveBeatsForBar(
+                timingSectionRecord,
+                endBar,
+              );
+
+              if (
+                endBeatsInBar === null ||
+                endBeat < 1 ||
+                endBeat > endBeatsInBar
+              ) {
+                return false;
+              }
+            }
+
+            if (startBar === endBar && endBeat <= startBeat) {
+              return false;
+            }
+
+            return true;
+          },
+        );
+
+        if (!timingRangeIsValid) {
+          timingValidationErrors.push(
+            `Phrase ${phraseIndex + 1} has invalid bar/beat timing for section "${section}".`,
+          );
+        }
+      }
+
+      if (
+        previousEndSourceLineIndex > startSourceLineIndex ||
+        (previousEndSourceLineIndex === startSourceLineIndex &&
+          previousEndCharIndex > startCharIndex)
+      ) {
+        timingValidationErrors.push(
+          `Phrase ${phraseIndex + 1} overlaps or appears out of lyric order.`,
+        );
+      }
+
+      previousEndSourceLineIndex = endSourceLineIndex;
+      previousEndCharIndex = endCharIndex;
+    });
+
+    if (timingValidationErrors.length > 0) {
+      console.error("Lyric timing validation failed:", timingValidationErrors);
+
+      return NextResponse.json(
+        {
+          error: `Lyric timing pass returned invalid phrase timing: ${timingValidationErrors
+            .slice(0, 3)
+            .join(" | ")}`,
+          validationErrors: timingValidationErrors,
+          raw: lyricTimingText,
+        },
+        { status: 500 },
+      );
+    }
+
+    chordDataRecord.lyricTimingPlan = lyricTimingPlan;
 
     if (body.project_id) {
       const supabase = await createClient();
