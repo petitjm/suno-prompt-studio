@@ -481,58 +481,58 @@ Requirements:
 - Preserve the complete performance order, including instrumental sections and sung sections.
 - Preserve source lyric order.
 - Include each source sung lyric line once.
-- For every chord change, provide both visual lyric placement and musical timing.
+- For every chord change, preserve its supplied musical timing and provide the visual lyric placement.
 - charIndex is the zero-based character position where the chord should appear above the source lyric line.
-- bar is the 1-based musical bar number within the current section.
-- beat is the 1-based beat within that bar.
+- bar is the supplied 1-based musical bar number within the current section.
+- beat is the supplied 1-based beat within that bar.
 - Use compact chord tuples: ["ChordName", charIndex, bar, beat].
-Musical timing plan requirements:
-- musicalTimingPlan is the authoritative musical timeline for this songsheet.
-- Include one musicalTimingPlan section entry for every section instance in the song, in song order.
-- Every musicalTimingPlan section must have corresponding songSheetLineRefs coverage.
-- Sung sections are represented by their lyric rows.
-- Instrumental sections are represented by one or more rows with lineNumber: null.
-- bars is the total number of musical bars occupied by that complete section.
-- timeSignature is the time signature in effect at bar 1 of that section.
-- If the time signature changes within a section, include the 1-based bar where each new meter begins in meterChanges.
-- If the meter does not change, use an empty meterChanges array.
-- Do not invent meter changes merely for variety.
-- Every chord bar and beat must use the same bar numbering and meter described by musicalTimingPlan.
-- No chord event may reference a bar greater than that section's bars value.
+Musical timing preservation requirements:
+- Treat the existing musicalTimingPlan as authoritative.
+- Preserve its section order, section names, bar counts, opening time signatures, and meterChanges exactly.
+- Do not lengthen or shorten sections.
+- Do not recalculate section bars from lyric-line count or printed lyric layout.
+- Treat existing chord bar and beat values as authoritative musical positions when they are present and valid.
+- Preserve every existing chord name, section, bar, and beat.
+- Do not move an existing chord to a different bar or beat merely to make the visual lyric alignment look neater.
+- Do not create a new harmonic rhythm when valid bar/beat timing already exists.
+- If an existing chord event lacks usable bar/beat timing, infer only the missing timing needed for that event while leaving all valid existing musical timing unchanged.
+- Any inferred timing must use the existing musicalTimingPlan section-local bar numbering and meter.
+- No chord event may reference a bar greater than the existing section's bars value.
 
-Musical phrasing requirements:
-- Never calculate section length by multiplying lyric-line count by a fixed number of bars.
-- Do not assume one bar, two bars, or any other fixed duration per lyric line.
-- Do not use "2 bars per line", "1 bar per line", or a similar formula as the basis for timing.
-- IMPORTANT: the way chords were written above lyric lines in the source is visual notation only. It does not define bar boundaries, phrase duration, or harmonic rhythm.
-- A source pair such as one chord line above one lyric line must NOT be interpreted as meaning that the lyric line occupies exactly one bar.
-- Two chord names written above one lyric line must NOT automatically be interpreted as beat 1 and beat 3 of one bar.
-- A chord change visually positioned halfway across a lyric line must NOT automatically be placed halfway through that line's musical duration.
-- First determine the intended musical phrase length independently of the lyric line breaks and visual chord spacing.
-- Then assign the supplied chord changes to bars and beats within that musical phrase.
-- Determine musical duration from the supplied harmony together with intended vocal phrasing, harmonic rhythm, tempo feel, pickups, held notes, rests, breaths, turnarounds, and instrumental movement.
-- Different lyric lines within the same section may occupy different amounts of musical time.
-- Multiple short lyric lines may occur within one bar or one musical phrase.
-- A single lyric line may extend across multiple bars.
-- Consecutive lyric lines may begin within the same bar when the phrasing supports it.
-- Chord changes associated visually with the same lyric line may occur in the same bar, in different bars, or across a held phrase depending on the intended musical timing.
-- Equal phrase lengths are valid only when that repeated duration is a deliberate musical phrasing choice, not because the lyrics are printed on separate lines.
-- Do not choose section bars merely so that every lyric line starts on a new bar.
-- Before returning the result, verify that the timing would still make musical sense if the same lyrics were reformatted with different line breaks.
-- Before returning the result, verify that the section bar count can be justified musically without referring to the number of lyric lines or source chord-line formatting.
-- Example: ["Em", 0, 1, 1] means display Em at character 0 and change to Em on bar 1 beat 1.
-- Example: ["C", 12, 1, 3] means display C at character 12 and change to C on bar 1 beat 3.
-- Do not infer bar or beat from character spacing. Decide bar and beat from the intended musical phrasing, harmonic rhythm, time signature, groove, and chord progression.
-- Chords that visually align with words close together may still occur on different beats, and words far apart may occur within the same beat or held phrase.
-- Do not put every chord at charIndex 0.
-- Header/section label lines may have no chords.
-- If a chord belongs after the lyric line as a turnaround or held chord, keep its charIndex near the end of the line but still give its true musical bar and beat.
+Chord-to-lyric fit requirements:
+- Your primary task is visual and semantic chord-to-lyric placement.
+- For sung lyric rows, choose the correct source lineNumber for each supplied chord event and choose a charIndex that places the chord above the word or syllable where the singer should feel that already-timed chord change.
+- charIndex is visual placement only.
+- Never derive or modify bar or beat from charIndex, lyric length, word spacing, line width, or printed line breaks.
+- A chord may occur musically before the first sung word on its printed line, after a word begins, between words, or after the final sung word.
+- The first chord associated with a printed lyric line does not imply that the lyric line begins at that chord's bar and beat.
+- Several existing chord events may belong to one lyric line.
+- One lyric line may contain no chord change and must still be included once with an empty chords array.
+- A chord event may visually belong near the end of one lyric line even when its musical timing represents a turnaround, held chord, pickup, or transition into the next phrase.
+- Do not force one chord change per lyric line.
+- Do not force every lyric line to begin on a new bar.
+- Do not assume one bar, two bars, or any fixed duration per printed lyric line.
+- The result should still make sense if the same lyrics were reformatted with different line breaks.
+
+Harmony preservation requirements:
 - Treat the existing chord data as the harmonic source of truth.
-- Preserve the supplied chord names and progression rather than composing a replacement progression.
-- Your job is to place and time the supplied harmony against the lyrics, not to reharmonize the song.
+- Preserve the supplied chord names and progression.
+- Do not reharmonize the song.
 - Do not add substitute chords merely because another progression seems preferable.
-- If the existing chord data contains repeated chords or deliberate holds, preserve that musical intent.
-- Keep the result practical for acoustic guitar performance.
+- Preserve repeated chords and deliberate holds.
+- Preserve instrumental sections and their existing timed harmony.
+- For instrumental performance sections with no sung lyric, use lineNumber: null and charIndex 0.
+
+Output requirements:
+- Do not return lyric text.
+- Keep JSON compact.
+- Return only musicalTimingPlan, songSheetLineRefs, and songsheetNotes at the top level.
+- Return musicalTimingPlan unchanged from the existing chord data.
+- Within songSheetLineRefs, use only section, lineNumber, and chords.
+- For sung lyric rows, lineNumber must be the 1-based number from the supplied source sung lyric list.
+- Preserve source lyric order.
+- Include each source sung lyric line once.
+- Use compact chord tuples: ["ChordName", charIndex, bar, beat].
 - Keep songsheetNotes under 60 words.
 - Do not explain every section.
 - Do not repeat the full chord progression in songsheetNotes.

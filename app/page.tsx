@@ -18643,6 +18643,7 @@ export default function Page() {
         },
         body: JSON.stringify({
           lyrics: performanceSheet,
+          chordData,
           tempoBpm: previewTempo,
           songTitle: activeProject?.title || "",
           songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
