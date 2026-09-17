@@ -3067,15 +3067,15 @@ export default function Page() {
       const lineRecord = entry as Record<string, unknown>;
 
       if (typeof lineRecord.lyric === "string") {
-        return lineRecord.lyric.trim();
+        return lineRecord.lyric;
       }
 
       if (typeof lineRecord.text === "string") {
-        return lineRecord.text.trim();
+        return lineRecord.text;
       }
 
       if (typeof lineRecord.line === "string") {
-        return lineRecord.line.trim();
+        return lineRecord.line;
       }
 
       return "";
@@ -3085,9 +3085,26 @@ export default function Page() {
       ? dryRunCueSheet.sections
       : generatedAudioCueSections;
 
+    const lyricTimingPlan =
+      chordRecord &&
+      chordRecord.lyricTimingPlan &&
+      typeof chordRecord.lyricTimingPlan === "object" &&
+      !Array.isArray(chordRecord.lyricTimingPlan)
+        ? chordRecord.lyricTimingPlan
+        : null;
+
+    const cueSheetTempoBpm =
+      typeof dryRunCueSheet?.tempoBpm === "number" &&
+      Number.isFinite(dryRunCueSheet.tempoBpm) &&
+      dryRunCueSheet.tempoBpm > 0
+        ? dryRunCueSheet.tempoBpm
+        : previewTempo;
+
     return buildMelodyPhraseScaffoldFromGuideSections({
       sections,
       sourceLines,
+      lyricTimingPlan,
+      tempoBpm: cueSheetTempoBpm,
     });
   })();
 
@@ -32337,6 +32354,10 @@ ${buildRewriteInstruction(
                               section: phrase.section,
                               sectionInstanceId: phrase.sectionInstanceId,
                               sourceLineIndex: phrase.sourceLineIndex,
+                              startSourceLineIndex: phrase.startSourceLineIndex,
+                              startCharIndex: phrase.startCharIndex,
+                              endSourceLineIndex: phrase.endSourceLineIndex,
+                              endCharIndex: phrase.endCharIndex,
                               sourceLyric: phrase.sourceLyric,
                               startSeconds: phrase.startSeconds,
                               endSeconds: phrase.endSeconds,

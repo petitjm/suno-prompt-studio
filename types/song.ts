@@ -100,7 +100,16 @@ export type MelodyNote = {
 export type MelodyPhrase = {
   section: string;
   sectionInstanceId: string | null;
+
+  // Retained for downstream compatibility. This is the first source line
+  // touched by the phrase, not a declaration that one line equals one phrase.
   sourceLineIndex: number;
+
+  startSourceLineIndex: number;
+  startCharIndex: number;
+  endSourceLineIndex: number;
+  endCharIndex: number;
+
   sourceLyric: string;
   startSeconds: number;
   endSeconds: number;

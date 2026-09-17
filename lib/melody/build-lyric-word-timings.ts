@@ -130,48 +130,10 @@ export function buildLyricWordTimings(
           };
         }
 
-        const isFirstUnit = unitIndex === 0;
         const isFinalUnit = unitIndex === group.units.length - 1;
-        const nextGroup = groups[groupIndex + 1];
 
-        const isBridgeToChorusTransition =
-          isFinalUnit &&
-          isBridgeSection(group.phrase.section) &&
-          Boolean(nextGroup) &&
-          isChorusSection(nextGroup.phrase.section);
-
-        const unitDurationSeconds = Math.max(
-          0,
-          unit.endSeconds - unit.startSeconds,
-        );
-
-        const phraseEntrySeconds = isFirstUnit
-          ? delivery === "spacious"
-            ? Math.min(0.16, unitDurationSeconds * 0.07)
-            : delivery === "deliberate"
-              ? Math.min(0.12, unitDurationSeconds * 0.05)
-              : Math.min(0.1, unitDurationSeconds * 0.04)
-          : 0;
-
-        const phraseBreakSeconds = isBridgeToChorusTransition
-          ? Math.min(0.28, unitDurationSeconds * 0.12)
-          : isFinalUnit
-            ? 0
-            : delivery === "spacious"
-              ? Math.min(0.24, unitDurationSeconds * 0.12)
-              : delivery === "deliberate"
-                ? Math.min(0.18, unitDurationSeconds * 0.09)
-                : Math.min(0.16, unitDurationSeconds * 0.08);
-
-        const soundingUnitStartSeconds = Math.min(
-          unit.endSeconds,
-          unit.startSeconds + phraseEntrySeconds,
-        );
-
-        const soundingUnitEndSeconds = Math.max(
-          soundingUnitStartSeconds,
-          unit.endSeconds - phraseBreakSeconds,
-        );
+        const soundingUnitStartSeconds = unit.startSeconds;
+        const soundingUnitEndSeconds = unit.endSeconds;
 
         const soundingUnitDurationSeconds = Math.max(
           0,
