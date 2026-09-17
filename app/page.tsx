@@ -3403,8 +3403,51 @@ export default function Page() {
 
   const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
   const lyricPhraseUnits = buildLyricPhraseUnits(initialMelodyAnchors);
+
+  const melodyWordTimingContext = (() => {
+    const dryRunCueSheet =
+      typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
+      audioPreviewDryRunRenderPlan?.cueSheet !== null &&
+      !Array.isArray(audioPreviewDryRunRenderPlan.cueSheet)
+        ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
+        : null;
+
+    const chordRecord =
+      chords && typeof chords === "object" && !Array.isArray(chords)
+        ? (chords as Record<string, unknown>)
+        : null;
+
+    const sections = Array.isArray(dryRunCueSheet?.sections)
+      ? dryRunCueSheet.sections
+      : generatedAudioCueSections;
+
+    const tempoBpm =
+      typeof dryRunCueSheet?.tempoBpm === "number" &&
+      Number.isFinite(dryRunCueSheet.tempoBpm) &&
+      dryRunCueSheet.tempoBpm > 0
+        ? dryRunCueSheet.tempoBpm
+        : previewTempo;
+
+    const wordRhythmPlan =
+      chordRecord &&
+      chordRecord.wordRhythmPlan &&
+      typeof chordRecord.wordRhythmPlan === "object" &&
+      !Array.isArray(chordRecord.wordRhythmPlan)
+        ? chordRecord.wordRhythmPlan
+        : null;
+
+    return {
+      sections,
+      tempoBpm,
+      wordRhythmPlan,
+    };
+  })();
+
   const lyricWordTimings = buildLyricWordTimings(
     lyricPhraseUnits,
+    melodyWordTimingContext.wordRhythmPlan,
+    melodyWordTimingContext.sections,
+    melodyWordTimingContext.tempoBpm,
     melodyVersionData?.sectionIntents,
   );
 

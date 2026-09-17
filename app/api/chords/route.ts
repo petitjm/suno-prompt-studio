@@ -1572,7 +1572,585 @@ Return wordTimingPlan only.
       );
     }
 
+    const confirmedPhraseWordRanges = wordTimingPhrases.flatMap(
+      (
+        rawPhrase: unknown,
+        phraseIndex,
+      ): Array<{
+        phraseIndex: number;
+        section: string;
+        startWordIndex: number;
+        endWordIndexExclusive: number;
+        startBar: number;
+        startBeat: number;
+        endBar: number;
+        endBeat: number;
+      }> => {
+        if (
+          !rawPhrase ||
+          typeof rawPhrase !== "object" ||
+          Array.isArray(rawPhrase)
+        ) {
+          return [];
+        }
+
+        const rawPhraseRecord = rawPhrase as Record<string, unknown>;
+        const convertedPhrase = convertedLyricTimingPhrases[phraseIndex];
+
+        if (!convertedPhrase) {
+          return [];
+        }
+
+        const startWordIndex =
+          typeof rawPhraseRecord.startWordIndex === "number" &&
+          Number.isInteger(rawPhraseRecord.startWordIndex)
+            ? rawPhraseRecord.startWordIndex
+            : null;
+
+        const endWordIndexExclusive =
+          typeof rawPhraseRecord.endWordIndexExclusive === "number" &&
+          Number.isInteger(rawPhraseRecord.endWordIndexExclusive)
+            ? rawPhraseRecord.endWordIndexExclusive
+            : null;
+
+        if (
+          startWordIndex === null ||
+          endWordIndexExclusive === null ||
+          startWordIndex < 0 ||
+          endWordIndexExclusive <= startWordIndex ||
+          endWordIndexExclusive > sungWordEntries.length
+        ) {
+          return [];
+        }
+
+        return [
+          {
+            phraseIndex,
+            section: convertedPhrase.section,
+            startWordIndex,
+            endWordIndexExclusive,
+            startBar: convertedPhrase.startBar,
+            startBeat: convertedPhrase.startBeat,
+            endBar: convertedPhrase.endBar,
+            endBeat: convertedPhrase.endBeat,
+          },
+        ];
+      },
+    );
+
+    if (
+      confirmedPhraseWordRanges.length !== convertedLyricTimingPhrases.length
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Could not construct confirmed phrase word ranges for word-rhythm generation.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const phraseWordRhythmContext = confirmedPhraseWordRanges.map((phrase) => ({
+      phraseIndex: phrase.phraseIndex,
+      section: phrase.section,
+      startWordIndex: phrase.startWordIndex,
+      endWordIndexExclusive: phrase.endWordIndexExclusive,
+      startBar: phrase.startBar,
+      startBeat: phrase.startBeat,
+      endBar: phrase.endBar,
+      endBeat: phrase.endBeat,
+      words: sungWordEntries
+        .slice(phrase.startWordIndex, phrase.endWordIndexExclusive)
+        .map((word) => ({
+          wordIndex: word.wordIndex,
+          word: word.word,
+        })),
+    }));
+
+    const wordRhythmPrompt = `
+You are determining the sung rhythm of individual lyric words inside vocal phrases that have already been approved.
+
+Do NOT change the lyrics.
+Do NOT change word order.
+Do NOT change phrase boundaries.
+Do NOT change phrase start or end positions.
+Do NOT change chord names, harmony, musicalTimingPlan, section lengths, or meter.
+
+The vocal phrase structure is already authoritative.
+
+Your only task is to decide where each word begins and ends musically inside its confirmed phrase.
+
+Current performance tempo:
+${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
+
+Confirmed vocal phrases and their words:
+${JSON.stringify(phraseWordRhythmContext, null, 2)}
+
+Existing musical context:
+${JSON.stringify(lyricTimingMusicalContext, null, 2)}
+
+Return ONLY valid JSON using this exact shape:
+
+{
+  "wordRhythmPlan": {
+    "words": [
+      {
+        "phraseIndex": 0,
+        "wordIndex": 0,
+        "startBar": 1,
+        "startBeat": 1.5,
+        "endBar": 1,
+        "endBeat": 2
+      },
+      {
+        "phraseIndex": 0,
+        "wordIndex": 1,
+        "startBar": 1,
+        "startBeat": 2,
+        "endBar": 1,
+        "endBeat": 2.75
+      }
+    ]
+  }
+}
+
+Requirements:
+
+- Return exactly one timing entry for every word listed in the confirmed phrases.
+- Use the supplied wordIndex exactly.
+- Use the supplied phraseIndex exactly.
+- Do not invent, omit, duplicate, reorder, merge, or split words.
+- Every word must remain inside its confirmed phrase.
+- Word timing must remain in lyric order.
+- A word's end may equal the next word's start, but words must not overlap.
+- Musical space between words is allowed when natural.
+- The first word may start exactly at the phrase start or later.
+- The final word may end exactly at the phrase end or earlier.
+- Never place a word before its phrase start.
+- Never place a word after its phrase end.
+
+Rhythmic decisions should reflect how a singer would actually deliver the lyric:
+- natural language stress
+- syllabic density
+- pickups and anticipations
+- syncopation
+- repeated-word emphasis
+- punctuation as expressive context rather than a mechanical timing rule
+- held or emphasized words
+- compressed runs of lighter words
+- intentional rests and breathing space
+- section character and vocal delivery
+- melodic continuity
+
+Do not divide a phrase evenly by word count.
+Do not assign identical durations merely because words have similar lengths.
+Do not use lexical word length as the primary timing rule.
+Do not automatically stretch only the final word.
+Do not force every word onto a main beat.
+Do not force every word boundary onto a chord change.
+
+musicalTimingPlan is authoritative for meter and bar structure.
+harmonicTimeline is authoritative for harmonic context.
+
+Bar and beat values are musical coordinates, not elapsed seconds.
+
+A word ending at the boundary after a final section bar may use bar N+1 beat 1 only when its containing phrase already permits that boundary.
+
+Return wordRhythmPlan only.
+`.trim();
+
+    const wordRhythmController = new AbortController();
+
+    const wordRhythmTimeoutId = setTimeout(() => {
+      wordRhythmController.abort();
+    }, CHORD_GENERATION_TIMEOUT_MS);
+
+    let wordRhythmCompletion;
+
+    try {
+      wordRhythmCompletion = await openai.chat.completions.create(
+        {
+          model: "gpt-5",
+          messages: [{ role: "user", content: wordRhythmPrompt }],
+        },
+        {
+          signal: wordRhythmController.signal,
+        },
+      );
+    } finally {
+      clearTimeout(wordRhythmTimeoutId);
+    }
+
+    const wordRhythmText =
+      wordRhythmCompletion.choices[0].message.content || "{}";
+
+    let wordRhythmResult;
+
+    try {
+      wordRhythmResult = parseModelJson(wordRhythmText);
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid word-rhythm JSON from model",
+          raw: wordRhythmText,
+        },
+        { status: 500 },
+      );
+    }
+
+    const wordRhythmRecord =
+      wordRhythmResult &&
+      typeof wordRhythmResult === "object" &&
+      !Array.isArray(wordRhythmResult)
+        ? (wordRhythmResult as Record<string, unknown>)
+        : null;
+
+    const wordRhythmPlan =
+      wordRhythmRecord &&
+      wordRhythmRecord.wordRhythmPlan &&
+      typeof wordRhythmRecord.wordRhythmPlan === "object" &&
+      !Array.isArray(wordRhythmRecord.wordRhythmPlan)
+        ? (wordRhythmRecord.wordRhythmPlan as Record<string, unknown>)
+        : null;
+
+    const wordRhythmWords =
+      wordRhythmPlan && Array.isArray(wordRhythmPlan.words)
+        ? wordRhythmPlan.words
+        : null;
+
+    if (!wordRhythmWords) {
+      return NextResponse.json(
+        {
+          error: "Word-rhythm pass returned invalid timing data.",
+          raw: wordRhythmText,
+        },
+        { status: 500 },
+      );
+    }
+
+    const compareMusicalPositions = (
+      leftBar: number,
+      leftBeat: number,
+      rightBar: number,
+      rightBeat: number,
+    ) => {
+      if (leftBar !== rightBar) {
+        return leftBar - rightBar;
+      }
+
+      return leftBeat - rightBeat;
+    };
+
+    const expectedWordRhythmEntries = new Map<
+      number,
+      {
+        phraseIndex: number;
+        section: string;
+        phraseStartBar: number;
+        phraseStartBeat: number;
+        phraseEndBar: number;
+        phraseEndBeat: number;
+      }
+    >();
+
+    confirmedPhraseWordRanges.forEach((phrase) => {
+      for (
+        let wordIndex = phrase.startWordIndex;
+        wordIndex < phrase.endWordIndexExclusive;
+        wordIndex += 1
+      ) {
+        expectedWordRhythmEntries.set(wordIndex, {
+          phraseIndex: phrase.phraseIndex,
+          section: phrase.section,
+          phraseStartBar: phrase.startBar,
+          phraseStartBeat: phrase.startBeat,
+          phraseEndBar: phrase.endBar,
+          phraseEndBeat: phrase.endBeat,
+        });
+      }
+    });
+
+    const wordRhythmValidationErrors: string[] = [];
+    const seenWordRhythmIndexes = new Set<number>();
+
+    let previousWordEndBar: number | null = null;
+    let previousWordEndBeat: number | null = null;
+    let previousWordPhraseIndex: number | null = null;
+
+    const validatedWordRhythmWords = wordRhythmWords.flatMap(
+      (
+        rawWord: unknown,
+        resultIndex,
+      ): Array<{
+        phraseIndex: number;
+        wordIndex: number;
+        word: string;
+        section: string;
+        startBar: number;
+        startBeat: number;
+        endBar: number;
+        endBeat: number;
+      }> => {
+        if (!rawWord || typeof rawWord !== "object" || Array.isArray(rawWord)) {
+          wordRhythmValidationErrors.push(
+            `Word rhythm entry ${resultIndex + 1} is not an object.`,
+          );
+          return [];
+        }
+
+        const wordRecord = rawWord as Record<string, unknown>;
+
+        const phraseIndex =
+          typeof wordRecord.phraseIndex === "number" &&
+          Number.isInteger(wordRecord.phraseIndex)
+            ? wordRecord.phraseIndex
+            : null;
+
+        const wordIndex =
+          typeof wordRecord.wordIndex === "number" &&
+          Number.isInteger(wordRecord.wordIndex)
+            ? wordRecord.wordIndex
+            : null;
+
+        const startBar =
+          typeof wordRecord.startBar === "number" &&
+          Number.isInteger(wordRecord.startBar)
+            ? wordRecord.startBar
+            : null;
+
+        const startBeat =
+          typeof wordRecord.startBeat === "number" &&
+          Number.isFinite(wordRecord.startBeat)
+            ? wordRecord.startBeat
+            : null;
+
+        const endBar =
+          typeof wordRecord.endBar === "number" &&
+          Number.isInteger(wordRecord.endBar)
+            ? wordRecord.endBar
+            : null;
+
+        const endBeat =
+          typeof wordRecord.endBeat === "number" &&
+          Number.isFinite(wordRecord.endBeat)
+            ? wordRecord.endBeat
+            : null;
+
+        if (
+          phraseIndex === null ||
+          wordIndex === null ||
+          startBar === null ||
+          startBeat === null ||
+          endBar === null ||
+          endBeat === null
+        ) {
+          wordRhythmValidationErrors.push(
+            `Word rhythm entry ${resultIndex + 1} has missing or invalid fields.`,
+          );
+          return [];
+        }
+
+        const expected = expectedWordRhythmEntries.get(wordIndex);
+        const sourceWord = sungWordEntries[wordIndex];
+
+        if (!expected || !sourceWord) {
+          wordRhythmValidationErrors.push(
+            `Word rhythm entry ${resultIndex + 1} refers to unknown wordIndex ${wordIndex}.`,
+          );
+          return [];
+        }
+
+        if (seenWordRhythmIndexes.has(wordIndex)) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} appears more than once in wordRhythmPlan.`,
+          );
+          return [];
+        }
+
+        seenWordRhythmIndexes.add(wordIndex);
+
+        if (phraseIndex !== expected.phraseIndex) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} was assigned to the wrong phrase.`,
+          );
+        }
+
+        if (sourceWord.section !== expected.section) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} does not belong to section "${expected.section}".`,
+          );
+        }
+
+        if (
+          compareMusicalPositions(startBar, startBeat, endBar, endBeat) >= 0
+        ) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} has an empty or reversed musical span.`,
+          );
+        }
+
+        if (
+          compareMusicalPositions(
+            startBar,
+            startBeat,
+            expected.phraseStartBar,
+            expected.phraseStartBeat,
+          ) < 0
+        ) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} starts before its confirmed phrase.`,
+          );
+        }
+
+        if (
+          compareMusicalPositions(
+            endBar,
+            endBeat,
+            expected.phraseEndBar,
+            expected.phraseEndBeat,
+          ) > 0
+        ) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} ends after its confirmed phrase.`,
+          );
+        }
+
+        if (
+          previousWordEndBar !== null &&
+          previousWordEndBeat !== null &&
+          previousWordPhraseIndex === phraseIndex &&
+          compareMusicalPositions(
+            startBar,
+            startBeat,
+            previousWordEndBar,
+            previousWordEndBeat,
+          ) < 0
+        ) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} overlaps the previous word in its phrase.`,
+          );
+        }
+
+        const matchingTimingSections = musicalTimingSections.flatMap(
+          (timingSection: unknown): Array<Record<string, unknown>> => {
+            if (
+              !timingSection ||
+              typeof timingSection !== "object" ||
+              Array.isArray(timingSection)
+            ) {
+              return [];
+            }
+
+            const timingSectionRecord = timingSection as Record<
+              string,
+              unknown
+            >;
+
+            return timingSectionRecord.section === expected.section
+              ? [timingSectionRecord]
+              : [];
+          },
+        );
+
+        const musicalPositionIsValid = matchingTimingSections.some(
+          (timingSectionRecord) => {
+            const bars =
+              typeof timingSectionRecord.bars === "number" &&
+              Number.isInteger(timingSectionRecord.bars) &&
+              timingSectionRecord.bars >= 1
+                ? timingSectionRecord.bars
+                : null;
+
+            if (bars === null) {
+              return false;
+            }
+
+            const positionIsValid = (bar: number, beat: number) => {
+              if (bar === bars + 1) {
+                return beat === 1;
+              }
+
+              if (bar < 1 || bar > bars) {
+                return false;
+              }
+
+              const beatsInBar = getActiveBeatsForBar(timingSectionRecord, bar);
+
+              return beatsInBar !== null && beat >= 1 && beat <= beatsInBar;
+            };
+
+            return (
+              positionIsValid(startBar, startBeat) &&
+              positionIsValid(endBar, endBeat)
+            );
+          },
+        );
+
+        if (!musicalPositionIsValid) {
+          wordRhythmValidationErrors.push(
+            `wordIndex ${wordIndex} has invalid bar/beat coordinates for section "${expected.section}".`,
+          );
+        }
+
+        previousWordEndBar = endBar;
+        previousWordEndBeat = endBeat;
+        previousWordPhraseIndex = phraseIndex;
+
+        return [
+          {
+            phraseIndex,
+            wordIndex,
+            word: sourceWord.word,
+            section: expected.section,
+            startBar,
+            startBeat,
+            endBar,
+            endBeat,
+          },
+        ];
+      },
+    );
+
+    const missingWordRhythmIndexes = Array.from(
+      expectedWordRhythmEntries.keys(),
+    ).filter((wordIndex) => !seenWordRhythmIndexes.has(wordIndex));
+
+    if (missingWordRhythmIndexes.length > 0) {
+      wordRhythmValidationErrors.push(
+        `wordRhythmPlan is missing word indexes: ${missingWordRhythmIndexes
+          .slice(0, 12)
+          .join(", ")}${missingWordRhythmIndexes.length > 12 ? ", ..." : ""}.`,
+      );
+    }
+
+    if (validatedWordRhythmWords.length !== expectedWordRhythmEntries.size) {
+      wordRhythmValidationErrors.push(
+        `wordRhythmPlan returned ${validatedWordRhythmWords.length} valid word entries; expected ${expectedWordRhythmEntries.size}.`,
+      );
+    }
+
+    if (wordRhythmValidationErrors.length > 0) {
+      console.error(
+        "Word rhythm validation failed:",
+        wordRhythmValidationErrors,
+      );
+
+      return NextResponse.json(
+        {
+          error: `Word-rhythm pass returned invalid timing: ${wordRhythmValidationErrors
+            .slice(0, 3)
+            .join(" | ")}`,
+          validationErrors: wordRhythmValidationErrors,
+          raw: wordRhythmText,
+        },
+        { status: 500 },
+      );
+    }
+
     chordDataRecord.lyricTimingPlan = lyricTimingPlan;
+    chordDataRecord.wordRhythmPlan = {
+      words: validatedWordRhythmWords,
+    };
 
     if (body.project_id) {
       const supabase = await createClient();
