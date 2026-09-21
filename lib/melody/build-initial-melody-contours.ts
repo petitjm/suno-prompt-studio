@@ -211,20 +211,14 @@ function getActiveHarmonyEvent(
 
 function getPhraseShapeDirection({
   section,
-  noteIndex,
-  noteCount,
+  progress,
   lift,
 }: {
   section: string;
-  noteIndex: number;
-  noteCount: number;
+  progress: number;
   lift: MelodyCharacter["lift"];
 }): ContourDirection {
-  if (noteCount <= 1) {
-    return "level";
-  }
-
-  const progress = noteIndex / Math.max(1, noteCount - 1);
+  const normalisedProgress = Math.min(1, Math.max(0, progress));
   const normalisedSection = section.toLowerCase();
 
   const isChorus =
@@ -237,11 +231,11 @@ function getPhraseShapeDirection({
     normalisedSection.includes("middle");
 
   if (isChorus) {
-    if (progress < 0.45) {
+    if (normalisedProgress < 0.45) {
       return applyMelodyLiftBias("up", lift);
     }
 
-    if (progress < 0.7) {
+    if (normalisedProgress < 0.7) {
       return applyMelodyLiftBias("level", lift);
     }
 
@@ -249,23 +243,23 @@ function getPhraseShapeDirection({
   }
 
   if (isBridge) {
-    if (progress < 0.35) {
+    if (normalisedProgress < 0.35) {
       return applyMelodyLiftBias("up", lift);
     }
 
-    if (progress < 0.65) {
+    if (normalisedProgress < 0.65) {
       return applyMelodyLiftBias("down", lift);
     }
 
     return applyMelodyLiftBias("level", lift);
   }
 
-  if (progress < 0.3) {
-    return applyMelodyLiftBias("level", lift);
+  if (normalisedProgress < 0.5) {
+    return applyMelodyLiftBias("up", lift);
   }
 
-  if (progress < 0.6) {
-    return applyMelodyLiftBias("up", lift);
+  if (normalisedProgress < 0.75) {
+    return applyMelodyLiftBias("level", lift);
   }
 
   return applyMelodyLiftBias("down", lift);
@@ -520,15 +514,28 @@ export function buildInitialMelodyContours({
       const reusedNotes: MelodyNote[] = [];
 
       wordTimingGroup.units.forEach((unit) => {
-        unit.words.forEach((word) => {
+        const averageWordDuration =
+          unit.words.length > 0
+            ? unit.words.reduce(
+                (total, timedWord) => total + timedWord.durationSeconds,
+                0,
+              ) / unit.words.length
+            : 0;
+
+        unit.words.forEach((word, wordIndex) => {
           const pitchMidi =
             establishedPitchSequence[reusedNoteIndex] ?? anchorNote.pitchMidi;
+
+          const isFinalWordInPhrase = reusedNoteIndex === totalWordCount - 1;
+
+          const renderedDurationSeconds =
+            word.durationSeconds * (isFinalWordInPhrase ? 0.94 : 0.88);
 
           reusedNotes.push({
             pitchMidi,
             startSeconds: word.startSeconds,
             durationSeconds: Number(
-              Math.max(0.1, word.durationSeconds * 0.88).toFixed(3),
+              Math.max(0.1, renderedDurationSeconds).toFixed(3),
             ),
             lyricText: word.word,
           });
@@ -543,18 +550,14 @@ export function buildInitialMelodyContours({
       };
     }
 
-    wordTimingGroup.units.forEach((unit, unitIndex) => {
-      const baseDirection = getSectionContourDirection(
-        anchorPhrase.section,
-        unitIndex,
-        effectiveCharacter.lift,
-      );
-
-      const direction =
-        entryAppliesToPhrase && unitIndex === 0
-          ? applySectionEntryBias(baseDirection, effectiveEntryForPhrase)
-          : baseDirection;
-
+    wordTimingGroup.units.forEach((unit) => {
+      const averageWordDuration =
+        unit.words.length > 0
+          ? unit.words.reduce(
+              (total, timedWord) => total + timedWord.durationSeconds,
+              0,
+            ) / unit.words.length
+          : 0;
       unit.words.forEach((word, wordIndex) => {
         const noteMidpointSeconds =
           word.startSeconds + word.durationSeconds / 2;
@@ -596,16 +599,28 @@ export function buildInitialMelodyContours({
 
         const isGesturePivot = wordIndex === gesturePivotIndex;
 
-        const isSignificantWord =
-          word.weight >= 1 &&
+        const previousWord = wordIndex > 0 ? unit.words[wordIndex - 1] : null;
+
+        const gapBeforeWordSeconds =
+          previousWord !== null
+            ? Math.max(0, word.startSeconds - previousWord.endSeconds)
+            : 0;
+
+        const entersAfterRhythmicSpace =
+          previousWord !== null &&
+          gapBeforeWordSeconds >= Math.max(0.12, averageWordDuration * 0.35);
+
+        const isRhythmicallyExtended =
           wordIndex > 0 &&
           !isFinalWordInUnit &&
-          phraseNoteIndex % 3 === 0;
+          averageWordDuration > 0 &&
+          word.durationSeconds >= averageWordDuration * 1.45;
 
         const isGestureAnchor =
           isGestureStart ||
           isGesturePivot ||
-          isSignificantWord ||
+          entersAfterRhythmicSpace ||
+          isRhythmicallyExtended ||
           harmonyChanged ||
           isFinalWordInUnit;
 
@@ -638,10 +653,21 @@ export function buildInitialMelodyContours({
               : best,
           );
         } else if (phraseNoteIndex > 0 && !holdPreviousPitch) {
+          const phraseDurationSeconds = Math.max(
+            0.001,
+            anchorPhrase.endSeconds - anchorPhrase.startSeconds,
+          );
+
+          const wordMidpointSeconds =
+            word.startSeconds + word.durationSeconds / 2;
+
+          const phraseProgress =
+            (wordMidpointSeconds - anchorPhrase.startSeconds) /
+            phraseDurationSeconds;
+
           const basePhraseShapeDirection = getPhraseShapeDirection({
             section: anchorPhrase.section,
-            noteIndex: phraseNoteIndex,
-            noteCount: totalWordCount,
+            progress: phraseProgress,
             lift: effectiveCharacter.lift,
           });
 
@@ -652,26 +678,26 @@ export function buildInitialMelodyContours({
               )
             : basePhraseShapeDirection;
 
-          const noteDirection =
-            harmonyChanged || isFinalWordInUnit
-              ? direction
-              : phraseShapeDirection;
-
           currentPitch = chooseNearbyPitch(
             preferredCandidates,
             currentPitch,
-            noteDirection,
+            phraseShapeDirection,
           );
         }
 
         previousHarmonyChord =
           activeHarmonyEvent?.chord ?? previousHarmonyChord;
 
+        const isFinalWordInPhrase = phraseNoteIndex === totalWordCount - 1;
+
+        const renderedDurationSeconds =
+          word.durationSeconds * (isFinalWordInPhrase ? 0.94 : 0.88);
+
         notes.push({
           pitchMidi: currentPitch,
           startSeconds: word.startSeconds,
           durationSeconds: Number(
-            Math.max(0.1, word.durationSeconds * 0.88).toFixed(3),
+            Math.max(0.1, renderedDurationSeconds).toFixed(3),
           ),
           lyricText: word.word,
         });

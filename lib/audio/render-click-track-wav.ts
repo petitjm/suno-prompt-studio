@@ -799,6 +799,11 @@ function getMusicalGuideAccompanimentRole({
   segmentStartSeconds: number;
   countInDurationSeconds: number;
 }): MusicalGuideAccompanimentRole {
+  const diagnosticAccompanimentRole: MusicalGuideAccompanimentRole = "strum";
+
+  if (input.mixProfile === "musical-guide") {
+    return diagnosticAccompanimentRole;
+  }
   const matchingCueSection = Array.isArray(input.cueSheetSections)
     ? input.cueSheetSections.find((cueSection) => {
         const cueStartSeconds =
@@ -1550,7 +1555,7 @@ export function createClickTrackPcm16Samples(
       ) {
         referencePattern = [0, 4];
       } else if (normalizedSection.includes("verse")) {
-        referencePattern = [0, 3, 4, 7];
+        referencePattern = [0, 4];
       } else if (
         normalizedSection.includes("pre-chorus") ||
         normalizedSection.includes("prechorus") ||
@@ -1562,7 +1567,7 @@ export function createClickTrackPcm16Samples(
         normalizedSection.includes("hook") ||
         normalizedSection.includes("refrain")
       ) {
-        referencePattern = [0, 1, 2, 3, 4, 5, 6, 7];
+        referencePattern = [0, 4];
       } else if (
         normalizedSection.includes("bridge") ||
         normalizedSection.includes("middle")
@@ -1706,7 +1711,7 @@ export function createClickTrackPcm16Samples(
             arpeggioAmplitude *
             0.32 *
             sectionLevel *
-            (isStrongBeat ? 1.12 : isUpStrum ? 0.78 : 0.92);
+            (isStrongBeat ? 1 : isUpStrum ? 0.78 : 0.92);
 
           const humanisedStrumAmplitude = getMusicalGuideHumanisedLevel({
             baseAmplitude: baseStrumAmplitude,
@@ -1718,6 +1723,10 @@ export function createClickTrackPcm16Samples(
           const orderedFrequenciesHz = isUpStrum
             ? [...segment.frequenciesHz].reverse()
             : segment.frequenciesHz;
+
+          const strumVoiceAmplitude =
+            humanisedStrumAmplitude /
+            Math.sqrt(Math.max(1, orderedFrequenciesHz.length));
 
           orderedFrequenciesHz.forEach((frequencyHz, noteIndex) => {
             const noteStartSeconds =
@@ -1742,7 +1751,7 @@ export function createClickTrackPcm16Samples(
               startSample: Math.round(noteStartSeconds * input.sampleRateHz),
               endSample: Math.round(noteEndSeconds * input.sampleRateHz),
               sampleRateHz: input.sampleRateHz,
-              amplitude: humanisedStrumAmplitude,
+              amplitude: Math.round(strumVoiceAmplitude),
               frequencyHz,
               secondHarmonicLevel: 0.16,
               thirdHarmonicLevel: 0.035,
@@ -2050,7 +2059,7 @@ export function createClickTrackPcm16Samples(
   }
 
   if (isMusicalGuideMix) {
-    applySampleGain(samples, 2.35);
+    applySampleGain(samples, 3.8);
   }
 
   return convertFloatSamplesToPcm16Samples(

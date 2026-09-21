@@ -475,6 +475,11 @@ export default function Page() {
   const [chordVersionTitle, setChordVersionTitle] = useState("");
   const [chordsText, setChordsText] = useState("{}");
   const [generatingChords, setGeneratingChords] = useState(false);
+  const [chordGenerationResumeData, setChordGenerationResumeData] =
+    useState<Record<string, unknown> | null>(null);
+  const [chordGenerationResumeKey, setChordGenerationResumeKey] = useState<
+    string | null
+  >(null);
   const [generatingBasicChords, setGeneratingBasicChords] = useState(false);
   const [generatingPlacedSongsheet, setGeneratingPlacedSongsheet] =
     useState(false);
@@ -15483,9 +15488,12 @@ export default function Page() {
     charIndex: number;
     bar?: number;
     beat?: number;
+    sectionIndex?: number;
+    eventIndex?: number;
   };
 
   type PlacedSongSheetLine = {
+    sourceLineIndex?: number;
     section: string;
     lyric: string;
     chords: PlacedChord[];
@@ -15904,24 +15912,50 @@ export default function Page() {
       return null;
     }
 
-    const provenance = (chordData as Record<string, unknown>)
-      .musicalTimingProvenance;
+    const chordRecord = chordData as Record<string, unknown>;
+    const provenance = chordRecord.musicalTimingProvenance;
 
     if (
-      !provenance ||
-      typeof provenance !== "object" ||
-      Array.isArray(provenance)
+      provenance &&
+      typeof provenance === "object" &&
+      !Array.isArray(provenance)
+    ) {
+      const record = provenance as Record<string, unknown>;
+
+      return {
+        source: typeof record.source === "string" ? record.source : "",
+        status: typeof record.status === "string" ? record.status : "",
+        authoritative: record.authoritative === true,
+        detail: typeof record.detail === "string" ? record.detail : "",
+      };
+    }
+
+    const musicalTimingPlan = chordRecord.musicalTimingPlan;
+
+    if (
+      !musicalTimingPlan ||
+      typeof musicalTimingPlan !== "object" ||
+      Array.isArray(musicalTimingPlan)
     ) {
       return null;
     }
 
-    const record = provenance as Record<string, unknown>;
+    if (chordRecord.source === "embedded-song-sheet") {
+      return {
+        source: "inferred-from-existing-chords",
+        status: "needs-timing-review",
+        authoritative: false,
+        detail:
+          "Bar and beat timing was inferred from existing chord data and lyric phrasing. Review the timing before using it for Audio Guide rendering.",
+      };
+    }
 
     return {
-      source: typeof record.source === "string" ? record.source : "",
-      status: typeof record.status === "string" ? record.status : "",
-      authoritative: record.authoritative === true,
-      detail: typeof record.detail === "string" ? record.detail : "",
+      source: "generated-arrangement",
+      status: "proposed",
+      authoritative: false,
+      detail:
+        "Bar and beat timing is part of the generated musical arrangement and should be reviewed before use as final performance timing.",
     };
   };
 
@@ -16221,7 +16255,7 @@ export default function Page() {
     }
 
     return candidateLines
-      .map((entry) => {
+      .map<PlacedSongSheetLine | null>((entry, sourceLineIndex) => {
         if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
           return null;
         }
@@ -16259,6 +16293,9 @@ export default function Page() {
             const rawBar = getNumberValue(chordRecord.bar);
             const rawBeat = getNumberValue(chordRecord.beat);
 
+            const rawSectionIndex = getNumberValue(chordRecord.sectionIndex);
+            const rawEventIndex = getNumberValue(chordRecord.eventIndex);
+
             if (!chord || rawIndex === null) {
               return null;
             }
@@ -16268,6 +16305,16 @@ export default function Page() {
               charIndex: Math.max(0, Math.floor(rawIndex)),
               ...(rawBar !== null && rawBar >= 1 ? { bar: rawBar } : {}),
               ...(rawBeat !== null && rawBeat >= 1 ? { beat: rawBeat } : {}),
+              ...(rawSectionIndex !== null &&
+              rawSectionIndex >= 0 &&
+              Number.isInteger(rawSectionIndex)
+                ? { sectionIndex: rawSectionIndex }
+                : {}),
+              ...(rawEventIndex !== null &&
+              rawEventIndex >= 0 &&
+              Number.isInteger(rawEventIndex)
+                ? { eventIndex: rawEventIndex }
+                : {}),
             };
           })
           .filter((chord): chord is PlacedChord => Boolean(chord));
@@ -16277,12 +16324,13 @@ export default function Page() {
         }
 
         return {
+          sourceLineIndex,
           section,
           lyric,
           chords,
         };
       })
-      .filter((line): line is PlacedSongSheetLine => Boolean(line));
+      .filter((line): line is PlacedSongSheetLine => line !== null);
   };
 
   const getPlacedLineSectionFamily = (section: string) => {
@@ -16765,6 +16813,12 @@ export default function Page() {
     chordIndex: number,
     wordStartIndex: number,
   ) => {
+    console.log("Fit chord move invoked:", {
+      lineIndex,
+      chordIndex,
+      wordStartIndex,
+    });
+
     const chordData = getChordDataFromEditorJson();
 
     if (
@@ -16772,49 +16826,278 @@ export default function Page() {
       typeof chordData !== "object" ||
       Array.isArray(chordData)
     ) {
+      console.log("Fit chord move: no usable chordData");
       return;
     }
 
     const record = chordData as Record<string, unknown>;
     const lines = getPlacedSongSheetLines(chordData);
+    const selectedLine = lines[lineIndex];
+    const selectedPlacement = selectedLine?.chords[chordIndex];
 
-    if (!lines[lineIndex] || !lines[lineIndex].chords[chordIndex]) {
+    if (!selectedLine || !selectedPlacement) {
+      setChordExtractionMessage("Could not resolve the selected fitted chord.");
       return;
     }
 
-    const updatedLines = lines.map((line, currentLineIndex) => {
-      if (currentLineIndex !== lineIndex) {
-        return line;
+    const rawSourceLine =
+      selectedLine.sourceLineIndex !== undefined &&
+      Array.isArray(record.songSheetLines)
+        ? record.songSheetLines[selectedLine.sourceLineIndex]
+        : null;
+
+    const rawSourceLineRecord =
+      rawSourceLine &&
+      typeof rawSourceLine === "object" &&
+      !Array.isArray(rawSourceLine)
+        ? (rawSourceLine as Record<string, unknown>)
+        : null;
+
+    const rawSourceChords =
+      rawSourceLineRecord && Array.isArray(rawSourceLineRecord.chords)
+        ? rawSourceLineRecord.chords
+        : [];
+
+    const rawSourceChord = rawSourceChords[chordIndex];
+
+    if (
+      selectedLine.sourceLineIndex === undefined ||
+      selectedPlacement.sectionIndex === undefined ||
+      selectedPlacement.eventIndex === undefined
+    ) {
+      setChordExtractionMessage(
+        `Missing timing provenance: sourceLineIndex=${
+          selectedLine.sourceLineIndex ?? "missing"
+        }, sectionIndex=${
+          selectedPlacement.sectionIndex ?? "missing"
+        }, eventIndex=${
+          selectedPlacement.eventIndex ?? "missing"
+        }. Raw chord: ${JSON.stringify(rawSourceChord)}`,
+      );
+      return;
+    }
+
+    const timing = getWordRhythmTimingForPlacedLyricPosition(
+      selectedLine.sourceLineIndex,
+      wordStartIndex,
+    );
+
+    if (!timing) {
+      setChordExtractionMessage(
+        "Could not resolve this lyric position to a word-rhythm timing.",
+      );
+      return;
+    }
+
+    const harmonicTimeline = Array.isArray(record.harmonicTimeline)
+      ? record.harmonicTimeline
+      : null;
+
+    const songSheetLines = Array.isArray(record.songSheetLines)
+      ? record.songSheetLines
+      : null;
+
+    if (!harmonicTimeline || !songSheetLines) {
+      setChordExtractionMessage(
+        "Chord timing data is incomplete, so this placement was not changed.",
+      );
+      return;
+    }
+
+    const sectionIndex = selectedPlacement.sectionIndex;
+    const eventIndex = selectedPlacement.eventIndex;
+
+    const rawTimelineSection = harmonicTimeline[sectionIndex];
+
+    if (
+      !rawTimelineSection ||
+      typeof rawTimelineSection !== "object" ||
+      Array.isArray(rawTimelineSection)
+    ) {
+      setChordExtractionMessage(
+        `Could not find harmonicTimeline section ${sectionIndex} for this chord.`,
+      );
+      return;
+    }
+
+    const timelineSection = rawTimelineSection as Record<string, unknown>;
+    const events = Array.isArray(timelineSection.events)
+      ? timelineSection.events
+      : [];
+
+    const rawEvent = events[eventIndex];
+
+    if (!rawEvent || typeof rawEvent !== "object" || Array.isArray(rawEvent)) {
+      setChordExtractionMessage(
+        `Could not find harmonicTimeline event ${eventIndex} in section ${sectionIndex}.`,
+      );
+      return;
+    }
+
+    const comparePositions = (
+      leftBar: number,
+      leftBeat: number,
+      rightBar: number,
+      rightBeat: number,
+    ) => {
+      if (leftBar !== rightBar) {
+        return leftBar - rightBar;
+      }
+
+      return leftBeat - rightBeat;
+    };
+
+    const getEventPosition = (event: unknown) => {
+      if (!event || typeof event !== "object" || Array.isArray(event)) {
+        return null;
+      }
+
+      const eventRecord = event as Record<string, unknown>;
+      const bar = getNumberValue(eventRecord.bar);
+      const beat = getNumberValue(eventRecord.beat);
+
+      if (bar === null || beat === null) {
+        return null;
+      }
+
+      return { bar, beat };
+    };
+
+    const previousPosition =
+      eventIndex > 0 ? getEventPosition(events[eventIndex - 1]) : null;
+
+    const nextPosition =
+      eventIndex + 1 < events.length
+        ? getEventPosition(events[eventIndex + 1])
+        : null;
+
+    if (
+      previousPosition &&
+      comparePositions(
+        timing.startBar,
+        timing.startBeat,
+        previousPosition.bar,
+        previousPosition.beat,
+      ) <= 0
+    ) {
+      setChordExtractionMessage(
+        "That lyric position would move this chord to or before the previous chord. Placement was not changed.",
+      );
+      return;
+    }
+
+    if (
+      nextPosition &&
+      comparePositions(
+        timing.startBar,
+        timing.startBeat,
+        nextPosition.bar,
+        nextPosition.beat,
+      ) >= 0
+    ) {
+      setChordExtractionMessage(
+        "That lyric position would move this chord to or after the next chord. Placement was not changed.",
+      );
+      return;
+    }
+
+    const updatedEvents = events.map((event, currentEventIndex) => {
+      if (currentEventIndex !== eventIndex) {
+        return event;
+      }
+
+      if (!event || typeof event !== "object" || Array.isArray(event)) {
+        return event;
       }
 
       return {
-        ...line,
-        chords: line.chords.map((placement, currentChordIndex) =>
-          currentChordIndex === chordIndex
-            ? {
-                ...placement,
-                charIndex: wordStartIndex,
-              }
-            : placement,
-        ),
+        ...(event as Record<string, unknown>),
+        bar: timing.startBar,
+        beat: timing.startBeat,
       };
     });
 
+    const updatedHarmonicTimeline = harmonicTimeline.map(
+      (section, currentSectionIndex) => {
+        if (currentSectionIndex !== sectionIndex) {
+          return section;
+        }
+
+        if (!section || typeof section !== "object" || Array.isArray(section)) {
+          return section;
+        }
+
+        return {
+          ...(section as Record<string, unknown>),
+          events: updatedEvents,
+        };
+      },
+    );
+
+    const updatedSongSheetLines = songSheetLines.map(
+      (rawLine, currentSourceLineIndex) => {
+        if (currentSourceLineIndex !== selectedLine.sourceLineIndex) {
+          return rawLine;
+        }
+
+        if (!rawLine || typeof rawLine !== "object" || Array.isArray(rawLine)) {
+          return rawLine;
+        }
+
+        const lineRecord = rawLine as Record<string, unknown>;
+        const rawChords = Array.isArray(lineRecord.chords)
+          ? lineRecord.chords
+          : [];
+
+        const updatedChords = rawChords.map((rawChord) => {
+          if (
+            !rawChord ||
+            typeof rawChord !== "object" ||
+            Array.isArray(rawChord)
+          ) {
+            return rawChord;
+          }
+
+          const chordRecord = rawChord as Record<string, unknown>;
+
+          if (
+            chordRecord.sectionIndex !== sectionIndex ||
+            chordRecord.eventIndex !== eventIndex
+          ) {
+            return rawChord;
+          }
+
+          return {
+            ...chordRecord,
+            charIndex: wordStartIndex,
+            bar: timing.startBar,
+            beat: timing.startBeat,
+          };
+        });
+
+        return {
+          ...lineRecord,
+          chords: updatedChords,
+        };
+      },
+    );
+
     const updatedChordData = {
       ...record,
-      songSheetLines: updatedLines,
+      harmonicTimeline: updatedHarmonicTimeline,
+      songSheetLines: updatedSongSheetLines,
     };
 
     setChords(updatedChordData);
     setChordsText(JSON.stringify(updatedChordData, null, 2));
     setActiveChordVersionId(null);
-    setChordVersionTitle("Adjusted chord placement");
+    setChordVersionTitle("Adjusted chord timing");
     resetAudioPreviewRequestState();
-
+    resetGeneratedAudioState();
     setMovingChordTarget(null);
 
     setChordExtractionMessage(
-      "Chord placement adjusted. Review the lyric/chord fit before saving.",
+      `Chord moved to "${timing.word}" at bar ${timing.startBar}, beat ${timing.startBeat}. Review before saving.`,
     );
   };
 
@@ -16825,6 +17108,119 @@ export default function Page() {
       word: match[0],
       charIndex: match.index ?? 0,
     }));
+  };
+
+  const getWordRhythmTimingForPlacedLyricPosition = (
+    sourceLineIndex: number,
+    charIndex: number,
+  ) => {
+    const chordData = getChordDataFromEditorJson();
+
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      return null;
+    }
+
+    const record = chordData as Record<string, unknown>;
+
+    const candidateLines =
+      record.songSheetLines ||
+      record.songsheetLines ||
+      record.performanceSongSheetLines ||
+      record.performanceSheetLines ||
+      record.lines;
+
+    if (!Array.isArray(candidateLines)) {
+      return null;
+    }
+
+    const wordRhythmPlan =
+      record.wordRhythmPlan &&
+      typeof record.wordRhythmPlan === "object" &&
+      !Array.isArray(record.wordRhythmPlan)
+        ? (record.wordRhythmPlan as Record<string, unknown>)
+        : null;
+
+    const rhythmWords =
+      wordRhythmPlan && Array.isArray(wordRhythmPlan.words)
+        ? wordRhythmPlan.words
+        : [];
+
+    let globalWordIndex = 0;
+
+    for (let lineIndex = 0; lineIndex < candidateLines.length; lineIndex += 1) {
+      const rawLine = candidateLines[lineIndex];
+
+      if (!rawLine || typeof rawLine !== "object" || Array.isArray(rawLine)) {
+        continue;
+      }
+
+      const lineRecord = rawLine as Record<string, unknown>;
+      const lyric =
+        getStringValue(lineRecord.lyric) ||
+        getStringValue(lineRecord.text) ||
+        getStringValue(lineRecord.line);
+
+      if (!lyric.trim()) {
+        continue;
+      }
+
+      for (const match of lyric.matchAll(/\S+/g)) {
+        const startCharIndex = match.index ?? 0;
+        const endCharIndex = startCharIndex + match[0].length;
+
+        if (
+          lineIndex === sourceLineIndex &&
+          charIndex >= startCharIndex &&
+          charIndex < endCharIndex
+        ) {
+          const rawRhythmWord = rhythmWords.find((entry) => {
+            if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+              return false;
+            }
+
+            return (
+              (entry as Record<string, unknown>).wordIndex === globalWordIndex
+            );
+          });
+
+          if (
+            !rawRhythmWord ||
+            typeof rawRhythmWord !== "object" ||
+            Array.isArray(rawRhythmWord)
+          ) {
+            return null;
+          }
+
+          const rhythmWord = rawRhythmWord as Record<string, unknown>;
+          const startBar = getNumberValue(rhythmWord.startBar);
+          const startBeat = getNumberValue(rhythmWord.startBeat);
+
+          if (
+            startBar === null ||
+            startBar < 1 ||
+            startBeat === null ||
+            startBeat < 1
+          ) {
+            return null;
+          }
+
+          return {
+            wordIndex: globalWordIndex,
+            word: match[0],
+            startBar,
+            startBeat,
+          };
+        }
+
+        globalWordIndex += 1;
+      }
+    }
+
+    return null;
   };
 
   const adjustChordPlacementsForLyricEdit = (
@@ -18866,6 +19262,18 @@ export default function Page() {
       return;
     }
 
+    const currentChordGenerationResumeKey = JSON.stringify({
+      lyrics: performanceSheet,
+      tempoBpm: previewTempo,
+      songTitle: activeProject?.title || "",
+      songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+    });
+
+    const usableChordGenerationResumeData =
+      chordGenerationResumeKey === currentChordGenerationResumeKey
+        ? chordGenerationResumeData
+        : null;
+
     setGeneratingChords(true);
     setChordExtractionMessage("Generating chords...");
     setProjectMessage("");
@@ -18879,10 +19287,22 @@ export default function Page() {
           tempoBpm: previewTempo,
           songTitle: activeProject?.title || "",
           songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+          resumeChordData: usableChordGenerationResumeData,
         }),
       });
 
       const data = await readJsonSafe(res);
+
+      if (
+        data?.resumeChordData &&
+        typeof data.resumeChordData === "object" &&
+        !Array.isArray(data.resumeChordData)
+      ) {
+        setChordGenerationResumeData(
+          data.resumeChordData as Record<string, unknown>,
+        );
+        setChordGenerationResumeKey(currentChordGenerationResumeKey);
+      }
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to generate chords.");
@@ -18902,6 +19322,8 @@ export default function Page() {
 
       setChords(generatedChords);
       setChordsText(JSON.stringify(generatedChords, null, 2));
+      setChordGenerationResumeData(null);
+      setChordGenerationResumeKey(null);
       setShowAddedChordsReview(true);
       setLastAppliedTransposeSnapshot(null);
       setChordTransposeSemitones(0);
@@ -20332,6 +20754,9 @@ export default function Page() {
 
       setChordVersionTitle(savedChordTitle);
       setLastAppliedTransposeSnapshot(null);
+
+      resetAudioPreviewRequestState();
+      resetGeneratedAudioState();
 
       if (makeSongHasUnsavedChordResult) {
         setMakeSongRunReport((current) =>
@@ -24446,10 +24871,23 @@ ${buildRewriteInstruction(
                                                         <button
                                                           key={`${charIndex}-${characterOffset}`}
                                                           type="button"
+
                                                           onClick={() => {
+                                                            console.log(
+                                                              "Fit lyric character clicked:",
+                                                              {
+                                                                lineIndex,
+                                                                charIndex,
+                                                                movingChordTarget,
+                                                              },
+                                                            );
+
                                                             if (
                                                               !movingChordTarget
                                                             ) {
+                                                              console.log(
+                                                                "Fit lyric character click: no movingChordTarget",
+                                                              );
                                                               return;
                                                             }
 

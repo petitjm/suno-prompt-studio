@@ -187,25 +187,40 @@ function renderPreviewChordLine(line: AudioPreviewSongSheetLine) {
       .join("  ");
   }
 
-  const lyricLength = line.lyric.length;
-  const lineWidth = Math.max(
-    lyricLength,
-    ...line.chords.map((chord) => chord.charIndex + chord.chord.length),
-  );
-
-  const chars = Array.from({ length: lineWidth }, () => " ");
+  const chars = Array.from({ length: line.lyric.length }, () => " ");
+  let nextAvailableIndex = 0;
 
   line.chords
     .slice()
-    .sort((a, b) => a.charIndex - b.charIndex)
-    .forEach((placement) => {
-      placement.chord.split("").forEach((char, offset) => {
-        const targetIndex = placement.charIndex + offset;
+    .sort((a, b) => {
+      if (a.charIndex !== b.charIndex) {
+        return a.charIndex - b.charIndex;
+      }
 
-        if (targetIndex >= 0 && targetIndex < chars.length) {
-          chars[targetIndex] = char;
-        }
+      const aBar = a.bar ?? Number.MAX_SAFE_INTEGER;
+      const bBar = b.bar ?? Number.MAX_SAFE_INTEGER;
+
+      if (aBar !== bBar) {
+        return aBar - bBar;
+      }
+
+      return (
+        (a.beat ?? Number.MAX_SAFE_INTEGER) -
+        (b.beat ?? Number.MAX_SAFE_INTEGER)
+      );
+    })
+    .forEach((placement) => {
+      const targetStart = Math.max(placement.charIndex, nextAvailableIndex);
+
+      while (chars.length < targetStart + placement.chord.length) {
+        chars.push(" ");
+      }
+
+      placement.chord.split("").forEach((char, offset) => {
+        chars[targetStart + offset] = char;
       });
+
+      nextAvailableIndex = targetStart + placement.chord.length + 2;
     });
 
   return chars.join("").trimEnd();

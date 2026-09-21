@@ -320,6 +320,7 @@ export async function POST(req: Request) {
     openingQuarterNotesPerBar > 0;
 
   const chordMarkers = buildChordMarkersFromCueSheetSections(cueSheetSections);
+
   const melodyNotes = getMelodyNotes(bodyRecord?.melodyNotes);
 
   const requestedTarget =
