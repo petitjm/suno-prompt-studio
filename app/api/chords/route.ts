@@ -169,11 +169,11 @@ The JSON must use this shape:
    "musicalTimingPlan": {
   "sections": [
     {
-      "section": "Verse 1",
-      "bars": 8,
-      "timeSignature": "4/4",
-      "meterChanges": []
-    },
+  "section": "Verse 1",
+  "bars": 16,
+  "timeSignature": "4/4",
+  "meterChanges": []
+},
     {
       "section": "Bridge",
       "bars": 7,
@@ -282,6 +282,10 @@ Musical timing plan requirements:
 - Every harmonicTimeline bar/beat event must use the same section-local bar numbering and meter defined by musicalTimingPlan.
 - No harmonic event may reference a bar greater than that section's bars value.
 - Determine section length from intended musical phrasing, harmonic rhythm, meter, groove, vocal phrasing, held notes, rests, turnarounds, pickups, and instrumental movement.
+- For sung sections, verify that the chosen bar count leaves practical vocal space at the supplied tempo for the actual number of sung words, including normal phrase gaps, breaths, held syllables, and expressive timing.
+- Do not choose a section length that only works by compressing most lyric phrases close to the minimum singable word density.
+- If the lyric content would make the section feel rushed or unnaturally packed at the supplied tempo, increase the section bar count before finalizing musicalTimingPlan.
+- Prefer musically natural breathing room over the smallest technically valid section length.
 - Review musicalTimingPlan and harmonicTimeline together before returning the JSON so they describe one coherent musical performance.
 Performance intent requirements:
 - Include timeSignature as the song's opening or primary time signature, usually "4/4" unless another meter is clearly better. Use musicalTimingPlan for section-level timing and any later meter changes.
