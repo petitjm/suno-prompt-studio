@@ -3543,6 +3543,7 @@ Return wordRhythmPlan only.
         {
           error: "Invalid word-rhythm JSON from model",
           raw: wordRhythmText,
+          resumeChordData: generationCheckpoint,
         },
         { status: 500 },
       );
@@ -3573,6 +3574,7 @@ Return wordRhythmPlan only.
         {
           error: "Word-rhythm pass returned invalid timing data.",
           raw: wordRhythmText,
+          resumeChordData: generationCheckpoint,
         },
         { status: 500 },
       );
@@ -3995,6 +3997,7 @@ Return wordRhythmPlan only.
             .join(" | ")}`,
           validationErrors: wordRhythmValidationErrors,
           raw: wordRhythmText,
+          resumeChordData: generationCheckpoint,
         },
         { status: 500 },
       );

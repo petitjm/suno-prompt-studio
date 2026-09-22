@@ -16813,12 +16813,6 @@ export default function Page() {
     chordIndex: number,
     wordStartIndex: number,
   ) => {
-    console.log("Fit chord move invoked:", {
-      lineIndex,
-      chordIndex,
-      wordStartIndex,
-    });
-
     const chordData = getChordDataFromEditorJson();
 
     if (
@@ -16826,7 +16820,6 @@ export default function Page() {
       typeof chordData !== "object" ||
       Array.isArray(chordData)
     ) {
-      console.log("Fit chord move: no usable chordData");
       return;
     }
 
@@ -24873,15 +24866,6 @@ ${buildRewriteInstruction(
                                                           type="button"
 
                                                           onClick={() => {
-                                                            console.log(
-                                                              "Fit lyric character clicked:",
-                                                              {
-                                                                lineIndex,
-                                                                charIndex,
-                                                                movingChordTarget,
-                                                              },
-                                                            );
-
                                                             if (
                                                               !movingChordTarget
                                                             ) {
