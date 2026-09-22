@@ -345,70 +345,6 @@ function getMelodyMotifKey(
   ].join("::");
 }
 
-function mergeAdjacentSamePitchMelodyNotes(
-  notes: MelodyNote[],
-  frameworkPhrase: MelodyPitchFrameworkPhrase,
-) {
-  const mergedNotes: MelodyNote[] = [];
-
-  notes.forEach((note) => {
-    const previousNote = mergedNotes[mergedNotes.length - 1];
-
-    if (!previousNote) {
-      mergedNotes.push({ ...note });
-      return;
-    }
-
-    const previousMidpointSeconds =
-      previousNote.startSeconds + previousNote.durationSeconds / 2;
-
-    const noteMidpointSeconds = note.startSeconds + note.durationSeconds / 2;
-
-    const previousHarmonyEvent = getActiveHarmonyEvent(
-      frameworkPhrase,
-      previousMidpointSeconds,
-    );
-
-    const currentHarmonyEvent = getActiveHarmonyEvent(
-      frameworkPhrase,
-      noteMidpointSeconds,
-    );
-
-    const sameHarmony =
-      previousHarmonyEvent?.chord === currentHarmonyEvent?.chord;
-
-    const previousEndSeconds =
-      previousNote.startSeconds + previousNote.durationSeconds;
-
-    const gapSeconds = Math.max(0, note.startSeconds - previousEndSeconds);
-
-    const canMerge =
-      previousNote.pitchMidi === note.pitchMidi &&
-      sameHarmony &&
-      gapSeconds <= 0.2;
-
-    if (!canMerge) {
-      mergedNotes.push({ ...note });
-      return;
-    }
-
-    const noteEndSeconds = note.startSeconds + note.durationSeconds;
-
-    previousNote.durationSeconds = Number(
-      Math.max(0.1, noteEndSeconds - previousNote.startSeconds).toFixed(3),
-    );
-
-    const previousLyric = previousNote.lyricText?.trim() || "";
-    const currentLyric = note.lyricText?.trim() || "";
-
-    previousNote.lyricText = [previousLyric, currentLyric]
-      .filter(Boolean)
-      .join(" ");
-  });
-
-  return mergedNotes;
-}
-
 export function buildInitialMelodyContours({
   anchors,
   wordTimings,
@@ -546,7 +482,7 @@ export function buildInitialMelodyContours({
 
       return {
         ...anchorPhrase,
-        notes: mergeAdjacentSamePitchMelodyNotes(reusedNotes, frameworkPhrase),
+        notes: reusedNotes,
       };
     }
 
@@ -715,7 +651,7 @@ export function buildInitialMelodyContours({
 
     return {
       ...anchorPhrase,
-      notes: mergeAdjacentSamePitchMelodyNotes(notes, frameworkPhrase),
+      notes,
     };
   });
 }
