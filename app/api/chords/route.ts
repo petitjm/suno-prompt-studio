@@ -175,12 +175,21 @@ The JSON must use this shape:
   "meterChanges": []
 },
     {
-      "section": "Bridge",
-      "bars": 7,
+      "musicalTimingPlan": {
+  "sections": [
+    {
+      "section": "Section name",
+      "bars": 12,
+      "timeSignature": "4/4",
+      "meterChanges": []
+    },
+    {
+      "section": "Another section",
+      "bars": 9,
       "timeSignature": "4/4",
       "meterChanges": [
         {
-          "bar": 5,
+          "bar": 6,
           "timeSignature": "3/4"
         }
       ]
