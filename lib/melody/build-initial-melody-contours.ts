@@ -218,10 +218,12 @@ function getPhraseShapeDirection({
   section,
   progress,
   lift,
+  sectionPhraseIndex,
 }: {
   section: string;
   progress: number;
   lift: MelodyCharacter["lift"];
+  sectionPhraseIndex: number;
 }): ContourDirection {
   const normalisedProgress = Math.min(1, Math.max(0, progress));
   const normalisedSection = section.toLowerCase();
@@ -259,6 +261,32 @@ function getPhraseShapeDirection({
     return applyMelodyLiftBias("level", lift);
   }
 
+  const phraseShapeVariant = sectionPhraseIndex % 3;
+
+  if (phraseShapeVariant === 1) {
+    if (normalisedProgress < 0.4) {
+      return applyMelodyLiftBias("level", lift);
+    }
+
+    if (normalisedProgress < 0.75) {
+      return applyMelodyLiftBias("up", lift);
+    }
+
+    return applyMelodyLiftBias("down", lift);
+  }
+
+  if (phraseShapeVariant === 2) {
+    if (normalisedProgress < 0.35) {
+      return applyMelodyLiftBias("down", lift);
+    }
+
+    if (normalisedProgress < 0.7) {
+      return applyMelodyLiftBias("level", lift);
+    }
+
+    return applyMelodyLiftBias("up", lift);
+  }
+
   if (normalisedProgress < 0.5) {
     return applyMelodyLiftBias("up", lift);
   }
@@ -269,7 +297,6 @@ function getPhraseShapeDirection({
 
   return applyMelodyLiftBias("down", lift);
 }
-
 function shouldHoldPreviousMelodyPitch(word: string) {
   const cleaned = word
     .replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, "")
@@ -613,6 +640,7 @@ export function buildInitialMelodyContours({
             section: anchorPhrase.section,
             progress: phraseProgress,
             lift: effectiveCharacter.lift,
+            sectionPhraseIndex,
           });
 
           const phraseShapeDirection = entryAppliesToPhrase
