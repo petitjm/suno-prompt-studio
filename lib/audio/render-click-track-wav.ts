@@ -865,43 +865,7 @@ function getMusicalGuideAccompanimentRole({
 }
 
 function getMusicalGuideSectionLevel(section: string) {
-  const normalizedSection = section.trim().toLowerCase();
-
-  if (
-    normalizedSection.includes("chorus") ||
-    normalizedSection.includes("hook") ||
-    normalizedSection.includes("refrain")
-  ) {
-    return 1.75;
-  }
-
-  if (
-    normalizedSection.includes("pre-chorus") ||
-    normalizedSection.includes("prechorus") ||
-    normalizedSection.includes("lift")
-  ) {
-    return 1.35;
-  }
-
-  if (
-    normalizedSection.includes("bridge") ||
-    normalizedSection.includes("middle")
-  ) {
-    return 1.45;
-  }
-
-  if (
-    normalizedSection.includes("intro") ||
-    normalizedSection.includes("outro") ||
-    normalizedSection.includes("ending")
-  ) {
-    return 0.55;
-  }
-
-  if (normalizedSection.includes("verse")) {
-    return 0.72;
-  }
-
+  void section;
   return 1;
 }
 
