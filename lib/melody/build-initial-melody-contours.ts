@@ -405,6 +405,9 @@ export function buildInitialMelodyContours({
 }): MelodyPhrase[] {
   const establishedMotifs = new Map<string, number[]>();
 
+  let previousPhraseEndPitch: number | null = null;
+  let previousPhraseSectionInstanceId: string | null | undefined;
+
   return anchors.map((anchorPhrase, phraseIndex) => {
     const anchorNote = anchorPhrase.notes[0];
     const wordTimingGroup = wordTimings[phraseIndex];
@@ -527,6 +530,11 @@ export function buildInitialMelodyContours({
         });
       });
 
+      if (reusedNotes.length > 0) {
+        previousPhraseEndPitch = reusedNotes[reusedNotes.length - 1].pitchMidi;
+        previousPhraseSectionInstanceId = anchorPhrase.sectionInstanceId;
+      }
+
       return {
         ...anchorPhrase,
         notes: reusedNotes,
@@ -633,8 +641,15 @@ export function buildInitialMelodyContours({
               : candidates;
 
         if (phraseNoteIndex === 0 && preferChordTone) {
+          const phraseStartReferencePitch =
+            previousPhraseEndPitch !== null &&
+            anchorPhrase.sectionInstanceId === previousPhraseSectionInstanceId
+              ? previousPhraseEndPitch
+              : currentPitch;
+
           currentPitch = preferredCandidates.reduce((best, candidate) =>
-            Math.abs(candidate - currentPitch) < Math.abs(best - currentPitch)
+            Math.abs(candidate - phraseStartReferencePitch) <
+            Math.abs(best - phraseStartReferencePitch)
               ? candidate
               : best,
           );
@@ -700,6 +715,11 @@ export function buildInitialMelodyContours({
         motifKey,
         notes.map((note) => note.pitchMidi),
       );
+    }
+
+    if (notes.length > 0) {
+      previousPhraseEndPitch = notes[notes.length - 1].pitchMidi;
+      previousPhraseSectionInstanceId = anchorPhrase.sectionInstanceId;
     }
 
     return {
