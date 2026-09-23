@@ -679,7 +679,8 @@ export function buildInitialMelodyContours({
         const isFinalWordInPhrase = phraseNoteIndex === totalWordCount - 1;
 
         const renderedDurationSeconds =
-          word.durationSeconds * (isFinalWordInPhrase ? 0.94 : 0.88);
+          word.durationSeconds *
+          getRenderedMelodyDurationMultiplier(word.weight, isFinalWordInPhrase);
 
         notes.push({
           pitchMidi: currentPitch,
