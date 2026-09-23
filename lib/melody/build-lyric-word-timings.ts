@@ -413,18 +413,35 @@ export function buildLyricWordTimings(
       },
     );
 
+    let wordOffset = 0;
+
+    const timingUnits: LyricWordTimingUnit[] = group.units.flatMap((unit) => {
+      const unitWords = wordTimings.slice(
+        wordOffset,
+        wordOffset + unit.wordCount,
+      );
+
+      wordOffset += unit.wordCount;
+
+      if (unitWords.length === 0) {
+        return [];
+      }
+
+      return [
+        {
+          text: unit.text,
+          startSeconds: unitWords[0].startSeconds,
+          endSeconds: unitWords[unitWords.length - 1].endSeconds,
+          words: unitWords,
+        },
+      ];
+    });
+
     return {
       section: group.phrase.section,
       sourceLineIndex: group.phrase.sourceLineIndex,
       sourceLyric: group.phrase.sourceLyric,
-      units: [
-        {
-          text: group.phrase.sourceLyric,
-          startSeconds: group.phrase.startSeconds,
-          endSeconds: group.phrase.endSeconds,
-          words: wordTimings,
-        },
-      ],
+      units: timingUnits,
     };
   });
 }
