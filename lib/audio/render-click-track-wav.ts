@@ -799,11 +799,6 @@ function getMusicalGuideAccompanimentRole({
   segmentStartSeconds: number;
   countInDurationSeconds: number;
 }): MusicalGuideAccompanimentRole {
-  const diagnosticAccompanimentRole: MusicalGuideAccompanimentRole = "strum";
-
-  if (input.mixProfile === "musical-guide") {
-    return diagnosticAccompanimentRole;
-  }
   const matchingCueSection = Array.isArray(input.cueSheetSections)
     ? input.cueSheetSections.find((cueSection) => {
         const cueStartSeconds =
