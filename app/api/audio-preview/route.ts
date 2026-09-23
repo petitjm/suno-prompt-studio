@@ -32,6 +32,8 @@ type GuideTrackSectionPlanItem = {
   feel?: string;
   guitarApproach?: string;
   vocalApproach?: string;
+  dynamicStart?: string;
+  dynamicEnd?: string;
   dynamicShape?: string;
   notes?: string;
 };
@@ -81,6 +83,10 @@ function normalizeSectionPlanItem(
         : "",
     dynamicShape:
       typeof record.dynamicShape === "string" ? record.dynamicShape.trim() : "",
+    dynamicStart:
+      typeof record.dynamicStart === "string" ? record.dynamicStart.trim() : "",
+    dynamicEnd:
+      typeof record.dynamicEnd === "string" ? record.dynamicEnd.trim() : "",
     notes: typeof record.notes === "string" ? record.notes.trim() : "",
   };
 }
@@ -422,6 +428,8 @@ export async function POST(req: Request) {
         "Use a simple guide melody or understated vocal reference only.",
       dynamicInstruction:
         item.dynamicShape || "Keep dynamics clear and rehearsal-focused.",
+      dynamicStart: item.dynamicStart || "",
+      dynamicEnd: item.dynamicEnd || "",
       notes: item.notes || "",
     }));
 

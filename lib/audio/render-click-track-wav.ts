@@ -21,6 +21,8 @@ export type ClickTrackCueSheetSection = {
   guitarInstruction?: string;
   vocalInstruction?: string;
   dynamicInstruction?: string;
+  dynamicStart?: string;
+  dynamicEnd?: string;
   notes?: string;
 };
 
@@ -815,7 +817,6 @@ function getMusicalGuideAccompanimentRole({
   const guitarInstruction = matchingCueSection?.guitarInstruction
     ?.trim()
     .toLowerCase();
-
   if (guitarInstruction) {
     if (
       guitarInstruction.includes("fingerpick") ||
@@ -825,16 +826,16 @@ function getMusicalGuideAccompanimentRole({
       return "fingerpick";
     }
 
-    if (guitarInstruction.includes("arpeggiat")) {
-      return "arpeggio";
-    }
-
     if (
       guitarInstruction.includes("strum") ||
       guitarInstruction.includes("down-up") ||
       guitarInstruction.includes("down up")
     ) {
       return "strum";
+    }
+
+    if (guitarInstruction.includes("arpeggiat")) {
+      return "arpeggio";
     }
 
     if (
@@ -859,9 +860,71 @@ function getMusicalGuideAccompanimentRole({
   return "mixed";
 }
 
-function getMusicalGuideSectionLevel(section: string) {
-  void section;
-  return 1;
+function getMusicalGuideDynamicLevel(value: string | undefined) {
+  switch (value?.trim().toLowerCase()) {
+    case "pp":
+      return 0.78;
+    case "p":
+      return 0.85;
+    case "mp":
+      return 0.93;
+    case "mf":
+      return 1;
+    case "f":
+      return 1.08;
+    case "ff":
+      return 1.16;
+    default:
+      return null;
+  }
+}
+
+function getMusicalGuideSectionLevel({
+  input,
+  segmentStartSeconds,
+  countInDurationSeconds,
+}: {
+  input: ClickTrackWavRenderInput;
+  segmentStartSeconds: number;
+  countInDurationSeconds: number;
+}) {
+  const matchingCueSection = Array.isArray(input.cueSheetSections)
+    ? input.cueSheetSections.find((cueSection) => {
+        const cueStartSeconds =
+          cueSection.startSeconds + countInDurationSeconds;
+        const cueEndSeconds = cueSection.endSeconds + countInDurationSeconds;
+
+        return (
+          segmentStartSeconds >= cueStartSeconds - 0.001 &&
+          segmentStartSeconds < cueEndSeconds
+        );
+      })
+    : null;
+
+  if (!matchingCueSection) {
+    return 1;
+  }
+
+  const startLevel =
+    getMusicalGuideDynamicLevel(matchingCueSection.dynamicStart) ?? 1;
+  const endLevel =
+    getMusicalGuideDynamicLevel(matchingCueSection.dynamicEnd) ?? startLevel;
+
+  const cueStartSeconds =
+    matchingCueSection.startSeconds + countInDurationSeconds;
+  const cueEndSeconds = matchingCueSection.endSeconds + countInDurationSeconds;
+  const cueDurationSeconds = cueEndSeconds - cueStartSeconds;
+
+  if (cueDurationSeconds <= 0) {
+    return startLevel;
+  }
+
+  const progress = Math.max(
+    0,
+    Math.min(1, (segmentStartSeconds - cueStartSeconds) / cueDurationSeconds),
+  );
+
+  return startLevel + (endLevel - startLevel) * progress;
 }
 
 function getMusicalGuideArpeggioPattern(section: string, noteCount: number) {
@@ -1407,22 +1470,11 @@ export function createClickTrackPcm16Samples(
 
   for (const segment of chordToneGuideSegments) {
     const sectionLevel = isMusicalGuideMix
-      ? getMusicalGuideSectionLevel(segment.section)
-      : 1;
-
-    const accompanimentRole = isMusicalGuideMix
-      ? getMusicalGuideAccompanimentRole({
+      ? getMusicalGuideSectionLevel({
           input,
-          section: segment.section,
           segmentStartSeconds: segment.startSeconds,
           countInDurationSeconds,
         })
-      : "mixed";
-
-    const padRoleMultiplier = acousticGuitarIsPrimary
-      ? accompanimentRole === "sustain"
-        ? 0.65
-        : 0.18
       : 1;
 
     const padTransitionReleaseSeconds = isMusicalGuideMix ? 0.18 : 0;
@@ -1443,9 +1495,7 @@ export function createClickTrackPcm16Samples(
         startSample: Math.round(padStartSeconds * input.sampleRateHz),
         endSample: Math.round(padEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: Math.round(
-          chordPadAmplitude * sectionLevel * padRoleMultiplier,
-        ),
+        amplitude: Math.round(chordPadAmplitude * sectionLevel),
         frequencyHz,
         secondHarmonicLevel: 0.22,
         thirdHarmonicLevel: 0.08,
@@ -1461,63 +1511,6 @@ export function createClickTrackPcm16Samples(
     Array.isArray(input.cueSheetSections)
   ) {
     const strumNoteStaggerSeconds = 0.012;
-
-    const getScaledStrumPattern = (
-      section: string,
-      subdivisionCount: number,
-    ): number[] => {
-      if (subdivisionCount <= 0) {
-        return [];
-      }
-
-      const normalizedSection = section.trim().toLowerCase();
-
-      let referencePattern: number[];
-
-      if (
-        normalizedSection.includes("intro") ||
-        normalizedSection.includes("outro") ||
-        normalizedSection.includes("ending")
-      ) {
-        referencePattern = [0, 4];
-      } else if (normalizedSection.includes("verse")) {
-        referencePattern = [0];
-      } else if (
-        normalizedSection.includes("pre-chorus") ||
-        normalizedSection.includes("prechorus") ||
-        normalizedSection.includes("lift")
-      ) {
-        referencePattern = [0, 2, 3, 4, 6, 7];
-      } else if (
-        normalizedSection.includes("chorus") ||
-        normalizedSection.includes("hook") ||
-        normalizedSection.includes("refrain")
-      ) {
-        referencePattern = [0, 4];
-      } else if (
-        normalizedSection.includes("bridge") ||
-        normalizedSection.includes("middle")
-      ) {
-        referencePattern = [0, 2, 3, 5, 6, 7];
-      } else {
-        referencePattern = [0, 2, 4, 6];
-      }
-
-      if (subdivisionCount === 8) {
-        return referencePattern;
-      }
-
-      return Array.from(
-        new Set(
-          referencePattern.map((referenceStep) =>
-            Math.min(
-              subdivisionCount - 1,
-              Math.round((referenceStep / 7) * (subdivisionCount - 1)),
-            ),
-          ),
-        ),
-      ).sort((first, second) => first - second);
-    };
 
     const meterAwareBars = input.cueSheetSections.flatMap((section) => {
       if (!Array.isArray(section.barTiming) || section.barTiming.length === 0) {
@@ -1592,103 +1585,93 @@ export function createClickTrackPcm16Samples(
         continue;
       }
 
-      const sectionLevel = getMusicalGuideSectionLevel(segment.section);
+      const sectionLevel = getMusicalGuideSectionLevel({
+        input,
+        segmentStartSeconds: segment.startSeconds,
+        countInDurationSeconds,
+      });
       let strumIndex = 0;
 
-      const matchingBars = meterAwareBars.filter(
+      const matchingBar = meterAwareBars.find(
         (bar) =>
-          bar.barEndSeconds > segment.startSeconds &&
-          bar.barStartSeconds < segment.endSeconds,
+          segment.startSeconds >= bar.barStartSeconds &&
+          segment.startSeconds < bar.barEndSeconds,
       );
 
-      for (const bar of matchingBars) {
-        const strumPattern = getScaledStrumPattern(
-          segment.section,
-          bar.subdivisionCount,
-        );
+      if (!matchingBar) {
+        continue;
+      }
 
-        for (const patternStep of strumPattern) {
-          const scheduledStartSeconds =
-            bar.barStartSeconds + patternStep * bar.subdivisionSeconds;
+      const scheduledStartSeconds = segment.startSeconds;
 
-          if (
-            scheduledStartSeconds < segment.startSeconds ||
-            scheduledStartSeconds >= segment.endSeconds
-          ) {
-            continue;
-          }
+      const isUpStrum = false;
+      const isStrongBeat = true;
 
-          const isUpStrum = patternStep % 2 === 1;
-          const isStrongBeat =
-            patternStep === 0 ||
-            patternStep === Math.floor(bar.subdivisionCount / 2);
-
-          const humanisedStartSeconds = Math.max(
-            segment.startSeconds,
-            scheduledStartSeconds +
-              getMusicalGuideHumanisedTimingOffsetSeconds({
-                section: segment.section,
-                index: strumIndex,
-                maxOffsetSeconds: 0.012,
-              }),
-          );
-
-          const baseStrumAmplitude =
-            arpeggioAmplitude *
-            0.22 *
-            sectionLevel *
-            (isStrongBeat ? 1 : isUpStrum ? 0.78 : 0.92);
-
-          const humanisedStrumAmplitude = getMusicalGuideHumanisedLevel({
-            baseAmplitude: baseStrumAmplitude,
+      const humanisedStartSeconds = Math.max(
+        segment.startSeconds,
+        scheduledStartSeconds +
+          getMusicalGuideHumanisedTimingOffsetSeconds({
             section: segment.section,
             index: strumIndex,
-            variationDepth: 0.1,
-          });
+            maxOffsetSeconds: 0.012,
+          }),
+      );
 
-          const orderedFrequenciesHz = isUpStrum
-            ? [...segment.frequenciesHz].reverse()
-            : segment.frequenciesHz;
+      const baseStrumAmplitude =
+        arpeggioAmplitude *
+        0.22 *
+        sectionLevel *
+        (isStrongBeat ? 1 : isUpStrum ? 0.78 : 0.92);
 
-          const strumVoiceAmplitude =
-            humanisedStrumAmplitude /
-            Math.sqrt(Math.max(1, orderedFrequenciesHz.length));
+      const humanisedStrumAmplitude = getMusicalGuideHumanisedLevel({
+        baseAmplitude: baseStrumAmplitude,
+        section: segment.section,
+        index: strumIndex,
+        variationDepth: 0.1,
+      });
 
-          orderedFrequenciesHz.forEach((frequencyHz, noteIndex) => {
-            const noteStartSeconds =
-              humanisedStartSeconds + noteIndex * strumNoteStaggerSeconds;
+      const orderedFrequenciesHz = isUpStrum
+        ? [...segment.frequenciesHz].reverse()
+        : segment.frequenciesHz;
 
-            const strumReleaseEndSeconds = Math.min(
-              totalDurationSeconds,
-              segment.endSeconds + 0.12,
-            );
+      const strumVoiceAmplitude =
+        humanisedStrumAmplitude /
+        Math.sqrt(Math.max(1, orderedFrequenciesHz.length));
 
-            const noteEndSeconds = Math.min(
-              strumReleaseEndSeconds,
-              noteStartSeconds + Math.min(bar.subdivisionSeconds * 0.7, 0.32),
-            );
+      orderedFrequenciesHz.forEach((frequencyHz, noteIndex) => {
+        const noteStartSeconds =
+          humanisedStartSeconds + noteIndex * strumNoteStaggerSeconds;
 
-            if (noteEndSeconds <= noteStartSeconds) {
-              return;
-            }
+        const strumReleaseEndSeconds = Math.min(
+          totalDurationSeconds,
+          segment.endSeconds + 0.12,
+        );
 
-            addWarmToneToSamples({
-              samples,
-              startSample: Math.round(noteStartSeconds * input.sampleRateHz),
-              endSample: Math.round(noteEndSeconds * input.sampleRateHz),
-              sampleRateHz: input.sampleRateHz,
-              amplitude: Math.round(strumVoiceAmplitude),
-              frequencyHz,
-              secondHarmonicLevel: 0.16,
-              thirdHarmonicLevel: 0.035,
-              fadeInSeconds: 0.012,
-              fadeOutSeconds: 0.12,
-            });
-          });
+        const noteEndSeconds = Math.min(
+          strumReleaseEndSeconds,
+          noteStartSeconds +
+            Math.min(matchingBar.subdivisionSeconds * 0.7, 0.32),
+        );
 
-          strumIndex += 1;
+        if (noteEndSeconds <= noteStartSeconds) {
+          return;
         }
-      }
+
+        addWarmToneToSamples({
+          samples,
+          startSample: Math.round(noteStartSeconds * input.sampleRateHz),
+          endSample: Math.round(noteEndSeconds * input.sampleRateHz),
+          sampleRateHz: input.sampleRateHz,
+          amplitude: Math.round(strumVoiceAmplitude),
+          frequencyHz,
+          secondHarmonicLevel: 0.16,
+          thirdHarmonicLevel: 0.035,
+          fadeInSeconds: 0.012,
+          fadeOutSeconds: 0.12,
+        });
+      });
+
+      strumIndex += 1;
     }
   }
 
@@ -1719,7 +1702,11 @@ export function createClickTrackPcm16Samples(
       }
 
       const sectionLevel = isMusicalGuideMix
-        ? getMusicalGuideSectionLevel(segment.section)
+        ? getMusicalGuideSectionLevel({
+            input,
+            segmentStartSeconds: segment.startSeconds,
+            countInDurationSeconds,
+          })
         : 1;
       const arpeggioPattern = isMusicalGuideMix
         ? getMusicalGuideArpeggioPattern(
@@ -1828,7 +1815,11 @@ export function createClickTrackPcm16Samples(
   if (secondsPerBassPulse > 0 && !bassExplicitlyDisabled) {
     for (const segment of chordToneGuideSegments) {
       const sectionLevel = isMusicalGuideMix
-        ? getMusicalGuideSectionLevel(segment.section)
+        ? getMusicalGuideSectionLevel({
+            input,
+            segmentStartSeconds: segment.startSeconds,
+            countInDurationSeconds,
+          })
         : 1;
       const bassStepSeconds = isMusicalGuideMix
         ? segment.endSeconds - segment.startSeconds + 0.001

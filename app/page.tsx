@@ -308,20 +308,7 @@ export default function Page() {
       activeChordVersion.song_version_id === activeSongVersionId,
     );
 
-    const makeSongSourceChordVersion = makeSongRunReport?.chordVersionId
-      ? chordVersions.find(
-          (version) => version.id === makeSongRunReport.chordVersionId,
-        ) || null
-      : null;
-
-    const makeSongSavedChordCheckpointIsValid = Boolean(
-      makeSongSourceChordVersion?.song_version_id &&
-      activeSongVersionId &&
-      makeSongSourceChordVersion.song_version_id === activeSongVersionId,
-    );
-
-    const hasSavedChordCheckpoint =
-      activeSavedChordCheckpointIsValid || makeSongSavedChordCheckpointIsValid;
+    const hasSavedChordCheckpoint = activeSavedChordCheckpointIsValid;
 
     const hasPendingMakeSongChordRevision =
       makeSongRunReport?.finalChordState ===
@@ -15662,6 +15649,8 @@ export default function Page() {
           guitarApproach: getStringValue(section.guitarApproach),
           vocalApproach: getStringValue(section.vocalApproach),
           dynamicShape: getStringValue(section.dynamicShape),
+          dynamicStart: getStringValue(section.dynamicStart),
+          dynamicEnd: getStringValue(section.dynamicEnd),
           notes: getStringValue(section.notes),
         };
       })
@@ -15674,6 +15663,8 @@ export default function Page() {
           guitarApproach: string;
           vocalApproach: string;
           dynamicShape: string;
+          dynamicStart: string;
+          dynamicEnd: string;
           notes: string;
         } => Boolean(row),
       );

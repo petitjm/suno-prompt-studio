@@ -39,6 +39,8 @@ type RenderStep = {
   goal?: string;
   guitarInstruction?: string;
   vocalInstruction?: string;
+  dynamicStart?: string;
+  dynamicEnd?: string;
   dynamicInstruction?: string;
   notes?: string;
 };
@@ -67,6 +69,8 @@ type TimelineSection = {
   guitarInstruction: string;
   vocalInstruction: string;
   dynamicInstruction: string;
+  dynamicStart: string;
+  dynamicEnd: string;
 };
 
 function getString(value: unknown) {
@@ -93,6 +97,8 @@ function normalizeRenderStep(item: unknown, index: number): RenderStep {
     guitarInstruction: getString(record.guitarInstruction),
     vocalInstruction: getString(record.vocalInstruction),
     dynamicInstruction: getString(record.dynamicInstruction),
+    dynamicStart: getString(record.dynamicStart),
+    dynamicEnd: getString(record.dynamicEnd),
     notes: getString(record.notes),
   };
 }
@@ -263,6 +269,8 @@ function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
       dynamicInstruction:
         matchingStep?.dynamicInstruction ||
         "Keep dynamics clear and rehearsal-focused.",
+      dynamicStart: matchingStep?.dynamicStart || "",
+      dynamicEnd: matchingStep?.dynamicEnd || "",
     };
   });
 }
@@ -808,6 +816,8 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
         "Use understated guide vocal or melody reference only.",
       dynamicInstruction:
         step.dynamicInstruction || "Keep dynamics clear and rehearsal-focused.",
+      dynamicStart: step.dynamicStart || "",
+      dynamicEnd: step.dynamicEnd || "",
       notes: step.notes || "",
     })),
     timeline,

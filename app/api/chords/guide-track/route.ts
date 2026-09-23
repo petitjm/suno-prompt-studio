@@ -158,7 +158,9 @@ Return this exact JSON shape:
         "guitarApproach": "",
         "vocalApproach": "",
         "dynamicShape": "",
-        "notes": ""
+"dynamicStart": "p",
+"dynamicEnd": "mp",
+"notes": ""
       }
     ]
   }
@@ -172,6 +174,8 @@ Requirements:
 - Keep instrumentation sparse and rehearsal-focused.
 - Prefer acoustic guitar as the main timing and harmony reference.
 - Include count-in guidance.
+- For each section, set dynamicStart and dynamicEnd to the broad musical dynamic trajectory using only pp, p, mp, mf, f, or ff.
+- Keep finer details such as temporary pulls, swells, fades, or bar-specific changes in dynamicShape.
 - Use the placed songsheet if available.
 - If songSheetLines are available, create sectionPlan items that follow those sections.
 - Keep sectionPlan practical and concise.
@@ -224,6 +228,14 @@ Requirements:
                             guitarApproach: { type: "string" },
                             vocalApproach: { type: "string" },
                             dynamicShape: { type: "string" },
+                            dynamicStart: {
+                              type: "string",
+                              enum: ["pp", "p", "mp", "mf", "f", "ff"],
+                            },
+                            dynamicEnd: {
+                              type: "string",
+                              enum: ["pp", "p", "mp", "mf", "f", "ff"],
+                            },
                             notes: { type: "string" },
                           },
                           required: [
@@ -232,6 +244,8 @@ Requirements:
                             "guitarApproach",
                             "vocalApproach",
                             "dynamicShape",
+                            "dynamicStart",
+                            "dynamicEnd",
                             "notes",
                           ],
                         },
