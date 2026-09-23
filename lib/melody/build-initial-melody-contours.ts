@@ -89,6 +89,7 @@ function chooseNearbyPitch(
   candidates: number[],
   currentPitch: number,
   direction: ContourDirection,
+  preferWiderStep = false,
 ) {
   if (candidates.length === 0) {
     return currentPitch;
@@ -105,7 +106,9 @@ function chooseNearbyPitch(
       .filter((candidate) => candidate > currentPitch)
       .sort((a, b) => a - b);
 
-    return upward[0] ?? currentPitch;
+    return (
+      (preferWiderStep ? upward[1] : undefined) ?? upward[0] ?? currentPitch
+    );
   }
 
   if (direction === "down") {
@@ -113,7 +116,9 @@ function chooseNearbyPitch(
       .filter((candidate) => candidate < currentPitch)
       .sort((a, b) => b - a);
 
-    return downward[0] ?? currentPitch;
+    return (
+      (preferWiderStep ? downward[1] : undefined) ?? downward[0] ?? currentPitch
+    );
   }
 
   return pool.reduce((best, candidate) =>
@@ -560,6 +565,9 @@ export function buildInitialMelodyContours({
           harmonyChanged ||
           isFinalWordInUnit;
 
+        const preferWiderStep =
+          isGesturePivot || entersAfterRhythmicSpace || harmonyChanged;
+
         const holdForMovement = shouldHoldForMelodyMovement(
           effectiveCharacter.movement,
           isGestureAnchor,
@@ -618,6 +626,7 @@ export function buildInitialMelodyContours({
             preferredCandidates,
             currentPitch,
             phraseShapeDirection,
+            preferWiderStep,
           );
         }
 
