@@ -1778,13 +1778,18 @@ export function createClickTrackPcm16Samples(
         continue;
       }
 
-      let noteIndex = 0;
-
       for (
-        let noteStartSeconds = segment.startSeconds;
-        noteStartSeconds < segment.endSeconds;
-        noteStartSeconds += arpeggioStepSeconds
+        let noteIndex = 0;
+        noteIndex < arpeggioPattern.length;
+        noteIndex += 1
       ) {
+        const noteStartSeconds =
+          segment.startSeconds +
+          noteIndex * Math.min(arpeggioStepSeconds, 0.055);
+
+        if (noteStartSeconds >= segment.endSeconds) {
+          break;
+        }
         const patternIndex =
           arpeggioPattern[noteIndex % arpeggioPattern.length];
         const frequencyHz =
@@ -1792,7 +1797,7 @@ export function createClickTrackPcm16Samples(
 
         const humanisedArpeggioAmplitude = isMusicalGuideMix
           ? getMusicalGuideHumanisedLevel({
-              baseAmplitude: arpeggioAmplitude * sectionLevel,
+              baseAmplitude: arpeggioAmplitude * 0.22 * sectionLevel,
               section: segment.section,
               index: noteIndex,
               variationDepth: 0.12,
@@ -1837,8 +1842,6 @@ export function createClickTrackPcm16Samples(
           fadeInSeconds: 0.018,
           fadeOutSeconds: 0.11,
         });
-
-        noteIndex += 1;
       }
     }
   }
