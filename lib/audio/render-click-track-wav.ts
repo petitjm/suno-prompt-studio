@@ -1555,7 +1555,7 @@ export function createClickTrackPcm16Samples(
       ) {
         referencePattern = [0, 4];
       } else if (normalizedSection.includes("verse")) {
-        referencePattern = [0, 4];
+        referencePattern = [0];
       } else if (
         normalizedSection.includes("pre-chorus") ||
         normalizedSection.includes("prechorus") ||
@@ -1709,7 +1709,7 @@ export function createClickTrackPcm16Samples(
 
           const baseStrumAmplitude =
             arpeggioAmplitude *
-            0.32 *
+            0.22 *
             sectionLevel *
             (isStrongBeat ? 1 : isUpStrum ? 0.78 : 0.92);
 
@@ -1739,7 +1739,7 @@ export function createClickTrackPcm16Samples(
 
             const noteEndSeconds = Math.min(
               strumReleaseEndSeconds,
-              noteStartSeconds + Math.min(bar.subdivisionSeconds * 1.24, 0.55),
+              noteStartSeconds + Math.min(bar.subdivisionSeconds * 0.7, 0.32),
             );
 
             if (noteEndSeconds <= noteStartSeconds) {
@@ -1755,8 +1755,8 @@ export function createClickTrackPcm16Samples(
               frequencyHz,
               secondHarmonicLevel: 0.16,
               thirdHarmonicLevel: 0.035,
-              fadeInSeconds: 0.035,
-              fadeOutSeconds: 0.1,
+              fadeInSeconds: 0.012,
+              fadeOutSeconds: 0.12,
             });
           });
 
