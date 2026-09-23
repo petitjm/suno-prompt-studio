@@ -128,6 +128,17 @@ function chooseNearbyPitch(
   );
 }
 
+function getRenderedMelodyDurationMultiplier(
+  weight: number,
+  isFinalWordInPhrase: boolean,
+) {
+  const baseMultiplier = isFinalWordInPhrase ? 0.94 : 0.88;
+
+  const weightAdjustment = Math.max(-0.06, Math.min(0.04, (weight - 1) * 0.04));
+
+  return Math.max(0.78, Math.min(0.98, baseMultiplier + weightAdjustment));
+}
+
 function getPitchCandidates(
   pitchClasses: string[],
   minimumMidi = 43,
@@ -497,7 +508,11 @@ export function buildInitialMelodyContours({
           const isFinalWordInPhrase = reusedNoteIndex === totalWordCount - 1;
 
           const renderedDurationSeconds =
-            word.durationSeconds * (isFinalWordInPhrase ? 0.94 : 0.88);
+            word.durationSeconds *
+            getRenderedMelodyDurationMultiplier(
+              word.weight,
+              isFinalWordInPhrase,
+            );
 
           reusedNotes.push({
             pitchMidi,
