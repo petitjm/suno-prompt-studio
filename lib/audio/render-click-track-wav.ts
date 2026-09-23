@@ -1002,39 +1002,6 @@ function addWarmToneToSamples({
   }
 }
 
-function getMusicalGuideBassStepMultiplier(section: string) {
-  const normalizedSection = section.trim().toLowerCase();
-
-  if (
-    normalizedSection.includes("intro") ||
-    normalizedSection.includes("outro") ||
-    normalizedSection.includes("ending")
-  ) {
-    return 4;
-  }
-
-  if (normalizedSection.includes("verse")) {
-    return 2;
-  }
-
-  if (
-    normalizedSection.includes("chorus") ||
-    normalizedSection.includes("hook") ||
-    normalizedSection.includes("refrain")
-  ) {
-    return 1;
-  }
-
-  if (
-    normalizedSection.includes("bridge") ||
-    normalizedSection.includes("middle")
-  ) {
-    return 1.5;
-  }
-
-  return 2;
-}
-
 function getMusicalGuideBassFrequencyMultiplier(
   section: string,
   pulseIndex: number,
@@ -1864,8 +1831,7 @@ export function createClickTrackPcm16Samples(
         ? getMusicalGuideSectionLevel(segment.section)
         : 1;
       const bassStepSeconds = isMusicalGuideMix
-        ? secondsPerBassPulse *
-          getMusicalGuideBassStepMultiplier(segment.section)
+        ? segment.endSeconds - segment.startSeconds + 0.001
         : secondsPerBassPulse;
       const bassPulseDurationSeconds = Math.min(
         secondsPerBassPulse * 0.72,
