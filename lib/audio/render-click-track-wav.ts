@@ -20,6 +20,11 @@ export type ClickTrackCueSheetSection = {
   goal?: string;
   guitarInstruction?: string;
   vocalInstruction?: string;
+  vocalRegister?: string;
+  vocalLift?: string;
+  vocalMovement?: string;
+  vocalDelivery?: string;
+  vocalEntry?: string;
   dynamicInstruction?: string;
   dynamicStart?: string;
   dynamicEnd?: string;

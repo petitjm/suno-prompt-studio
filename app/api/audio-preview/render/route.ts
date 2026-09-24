@@ -39,6 +39,11 @@ type RenderStep = {
   goal?: string;
   guitarInstruction?: string;
   vocalInstruction?: string;
+  vocalRegister?: string;
+  vocalLift?: string;
+  vocalMovement?: string;
+  vocalDelivery?: string;
+  vocalEntry?: string;
   dynamicStart?: string;
   dynamicEnd?: string;
   dynamicInstruction?: string;
@@ -68,6 +73,11 @@ type TimelineSection = {
   goal: string;
   guitarInstruction: string;
   vocalInstruction: string;
+  vocalRegister: string;
+  vocalLift: string;
+  vocalMovement: string;
+  vocalDelivery: string;
+  vocalEntry: string;
   dynamicInstruction: string;
   dynamicStart: string;
   dynamicEnd: string;
@@ -96,6 +106,11 @@ function normalizeRenderStep(item: unknown, index: number): RenderStep {
     goal: getString(record.goal),
     guitarInstruction: getString(record.guitarInstruction),
     vocalInstruction: getString(record.vocalInstruction),
+    vocalRegister: getString(record.vocalRegister),
+    vocalLift: getString(record.vocalLift),
+    vocalMovement: getString(record.vocalMovement),
+    vocalDelivery: getString(record.vocalDelivery),
+    vocalEntry: getString(record.vocalEntry),
     dynamicInstruction: getString(record.dynamicInstruction),
     dynamicStart: getString(record.dynamicStart),
     dynamicEnd: getString(record.dynamicEnd),
@@ -266,6 +281,11 @@ function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
       vocalInstruction:
         matchingStep?.vocalInstruction ||
         "Use understated guide vocal or melody reference only.",
+      vocalRegister: matchingStep?.vocalRegister || "",
+      vocalLift: matchingStep?.vocalLift || "",
+      vocalMovement: matchingStep?.vocalMovement || "",
+      vocalDelivery: matchingStep?.vocalDelivery || "",
+      vocalEntry: matchingStep?.vocalEntry || "",
       dynamicInstruction:
         matchingStep?.dynamicInstruction ||
         "Keep dynamics clear and rehearsal-focused.",
@@ -814,6 +834,11 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
       vocalInstruction:
         step.vocalInstruction ||
         "Use understated guide vocal or melody reference only.",
+      vocalRegister: step.vocalRegister || "",
+      vocalLift: step.vocalLift || "",
+      vocalMovement: step.vocalMovement || "",
+      vocalDelivery: step.vocalDelivery || "",
+      vocalEntry: step.vocalEntry || "",
       dynamicInstruction:
         step.dynamicInstruction || "Keep dynamics clear and rehearsal-focused.",
       dynamicStart: step.dynamicStart || "",

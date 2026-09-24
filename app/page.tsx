@@ -15648,6 +15648,11 @@ export default function Page() {
           feel: getStringValue(section.feel),
           guitarApproach: getStringValue(section.guitarApproach),
           vocalApproach: getStringValue(section.vocalApproach),
+          vocalRegister: getStringValue(section.vocalRegister),
+          vocalLift: getStringValue(section.vocalLift),
+          vocalMovement: getStringValue(section.vocalMovement),
+          vocalDelivery: getStringValue(section.vocalDelivery),
+          vocalEntry: getStringValue(section.vocalEntry),
           dynamicShape: getStringValue(section.dynamicShape),
           dynamicStart: getStringValue(section.dynamicStart),
           dynamicEnd: getStringValue(section.dynamicEnd),
@@ -15662,6 +15667,11 @@ export default function Page() {
           feel: string;
           guitarApproach: string;
           vocalApproach: string;
+          vocalRegister: string;
+          vocalLift: string;
+          vocalMovement: string;
+          vocalDelivery: string;
+          vocalEntry: string;
           dynamicShape: string;
           dynamicStart: string;
           dynamicEnd: string;
@@ -19022,6 +19032,233 @@ export default function Page() {
 
       setChords(nextChordData);
       setChordsText(JSON.stringify(nextChordData, null, 2));
+
+      const generatedGuideTrackPlan =
+        result.guideTrackPlan &&
+        typeof result.guideTrackPlan === "object" &&
+        !Array.isArray(result.guideTrackPlan)
+          ? (result.guideTrackPlan as Record<string, unknown>)
+          : null;
+
+      const previousGuideTrackPlan =
+        chordData.guideTrackPlan &&
+        typeof chordData.guideTrackPlan === "object" &&
+        !Array.isArray(chordData.guideTrackPlan)
+          ? (chordData.guideTrackPlan as Record<string, unknown>)
+          : null;
+
+      const generatedGuideSectionPlan = Array.isArray(
+        generatedGuideTrackPlan?.sectionPlan,
+      )
+        ? generatedGuideTrackPlan.sectionPlan
+        : [];
+
+      const previousGuideSectionPlan = Array.isArray(
+        previousGuideTrackPlan?.sectionPlan,
+      )
+        ? previousGuideTrackPlan.sectionPlan
+        : [];
+
+      const getMatchingGuideIntentSection = ({
+        sectionPlan,
+        target,
+        targetIndex,
+      }: {
+        sectionPlan: unknown[];
+        target: (typeof melodySectionIntentTargets)[number];
+        targetIndex: number;
+      }) => {
+        const normalizedTargetSection = normaliseGuideSectionMatchLabel(
+          target.section,
+        );
+
+        const targetOccurrenceIndex = melodySectionIntentTargets
+          .slice(0, targetIndex)
+          .filter(
+            (candidate) =>
+              normaliseGuideSectionMatchLabel(candidate.section) ===
+              normalizedTargetSection,
+          ).length;
+
+        const matchingSections = sectionPlan.filter((entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+            return false;
+          }
+
+          const section =
+            typeof (entry as Record<string, unknown>).section === "string"
+              ? String((entry as Record<string, unknown>).section)
+              : "";
+
+          return (
+            normaliseGuideSectionMatchLabel(section) === normalizedTargetSection
+          );
+        });
+
+        const matchingSection = matchingSections[targetOccurrenceIndex] || null;
+
+        return matchingSection &&
+          typeof matchingSection === "object" &&
+          !Array.isArray(matchingSection)
+          ? (matchingSection as Record<string, unknown>)
+          : null;
+      };
+
+      setMelodySectionIntents((current) => {
+        const nextIntents = [...current];
+
+        melodySectionIntentTargets.forEach((target, targetIndex) => {
+          const generatedSection = getMatchingGuideIntentSection({
+            sectionPlan: generatedGuideSectionPlan,
+            target,
+            targetIndex,
+          });
+
+          if (!generatedSection) {
+            return;
+          }
+
+          const previousSection = getMatchingGuideIntentSection({
+            sectionPlan: previousGuideSectionPlan,
+            target,
+            targetIndex,
+          });
+
+          const existingIndex = nextIntents.findIndex(
+            (intent) => intent.sectionInstanceId === target.sectionInstanceId,
+          );
+
+          const existing =
+            existingIndex >= 0
+              ? nextIntents[existingIndex]
+              : { sectionInstanceId: target.sectionInstanceId };
+
+          const nextIntent: MelodySectionIntent = {
+            ...existing,
+          };
+
+          const generatedRegister =
+            generatedSection.vocalRegister === "low" ||
+            generatedSection.vocalRegister === "mid" ||
+            generatedSection.vocalRegister === "high"
+              ? generatedSection.vocalRegister
+              : undefined;
+
+          const previousRegister =
+            previousSection?.vocalRegister === "low" ||
+            previousSection?.vocalRegister === "mid" ||
+            previousSection?.vocalRegister === "high"
+              ? previousSection.vocalRegister
+              : undefined;
+
+          if (
+            generatedRegister !== undefined &&
+            nextIntent.register === previousRegister
+          ) {
+            nextIntent.register = generatedRegister;
+          }
+
+          const generatedLift =
+            generatedSection.vocalLift === "restrained" ||
+            generatedSection.vocalLift === "balanced" ||
+            generatedSection.vocalLift === "strong"
+              ? generatedSection.vocalLift
+              : undefined;
+
+          const previousLift =
+            previousSection?.vocalLift === "restrained" ||
+            previousSection?.vocalLift === "balanced" ||
+            previousSection?.vocalLift === "strong"
+              ? previousSection.vocalLift
+              : undefined;
+
+          if (generatedLift !== undefined && nextIntent.lift === previousLift) {
+            nextIntent.lift = generatedLift;
+          }
+
+          const generatedMovement =
+            generatedSection.vocalMovement === "calm" ||
+            generatedSection.vocalMovement === "balanced" ||
+            generatedSection.vocalMovement === "active"
+              ? generatedSection.vocalMovement
+              : undefined;
+
+          const previousMovement =
+            previousSection?.vocalMovement === "calm" ||
+            previousSection?.vocalMovement === "balanced" ||
+            previousSection?.vocalMovement === "active"
+              ? previousSection.vocalMovement
+              : undefined;
+
+          if (
+            generatedMovement !== undefined &&
+            nextIntent.movement === previousMovement
+          ) {
+            nextIntent.movement = generatedMovement;
+          }
+
+          const generatedDelivery =
+            generatedSection.vocalDelivery === "natural" ||
+            generatedSection.vocalDelivery === "deliberate" ||
+            generatedSection.vocalDelivery === "spacious"
+              ? generatedSection.vocalDelivery
+              : undefined;
+
+          const previousDelivery =
+            previousSection?.vocalDelivery === "natural" ||
+            previousSection?.vocalDelivery === "deliberate" ||
+            previousSection?.vocalDelivery === "spacious"
+              ? previousSection.vocalDelivery
+              : undefined;
+
+          if (
+            generatedDelivery !== undefined &&
+            nextIntent.delivery === previousDelivery
+          ) {
+            nextIntent.delivery = generatedDelivery;
+          }
+
+          const generatedEntry =
+            generatedSection.vocalEntry === "natural" ||
+            generatedSection.vocalEntry === "gentle" ||
+            generatedSection.vocalEntry === "lifted"
+              ? generatedSection.vocalEntry
+              : undefined;
+
+          const previousEntry =
+            previousSection?.vocalEntry === "natural" ||
+            previousSection?.vocalEntry === "gentle" ||
+            previousSection?.vocalEntry === "lifted"
+              ? previousSection.vocalEntry
+              : undefined;
+
+          if (
+            generatedEntry !== undefined &&
+            nextIntent.entry === previousEntry
+          ) {
+            nextIntent.entry = generatedEntry;
+          }
+
+          const hasIntent =
+            nextIntent.register !== undefined ||
+            nextIntent.lift !== undefined ||
+            nextIntent.movement !== undefined ||
+            nextIntent.delivery !== undefined ||
+            nextIntent.entry !== undefined;
+
+          if (existingIndex >= 0) {
+            if (hasIntent) {
+              nextIntents[existingIndex] = nextIntent;
+            } else {
+              nextIntents.splice(existingIndex, 1);
+            }
+          } else if (hasIntent) {
+            nextIntents.push(nextIntent);
+          }
+        });
+
+        return nextIntents;
+      });
 
       if (!activeChordVersionId) {
         setChordVersionTitle((currentTitle) => {

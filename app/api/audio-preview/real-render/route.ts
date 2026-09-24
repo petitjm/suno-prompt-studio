@@ -165,6 +165,11 @@ function getCueSheetSections(
           getString(arrangementRecord?.guitarInstruction) || undefined,
         vocalInstruction:
           getString(arrangementRecord?.vocalInstruction) || undefined,
+        vocalRegister: getString(arrangementRecord?.vocalRegister) || undefined,
+        vocalLift: getString(arrangementRecord?.vocalLift) || undefined,
+        vocalMovement: getString(arrangementRecord?.vocalMovement) || undefined,
+        vocalDelivery: getString(arrangementRecord?.vocalDelivery) || undefined,
+        vocalEntry: getString(arrangementRecord?.vocalEntry) || undefined,
         dynamicInstruction:
           getString(arrangementRecord?.dynamicInstruction) || undefined,
         dynamicStart: getString(arrangementRecord?.dynamicStart) || undefined,

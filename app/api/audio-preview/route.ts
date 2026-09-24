@@ -32,6 +32,11 @@ type GuideTrackSectionPlanItem = {
   feel?: string;
   guitarApproach?: string;
   vocalApproach?: string;
+  vocalRegister?: string;
+  vocalLift?: string;
+  vocalMovement?: string;
+  vocalDelivery?: string;
+  vocalEntry?: string;
   dynamicStart?: string;
   dynamicEnd?: string;
   dynamicShape?: string;
@@ -81,6 +86,22 @@ function normalizeSectionPlanItem(
       typeof record.vocalApproach === "string"
         ? record.vocalApproach.trim()
         : "",
+    vocalRegister:
+      typeof record.vocalRegister === "string"
+        ? record.vocalRegister.trim()
+        : "",
+    vocalLift:
+      typeof record.vocalLift === "string" ? record.vocalLift.trim() : "",
+    vocalMovement:
+      typeof record.vocalMovement === "string"
+        ? record.vocalMovement.trim()
+        : "",
+    vocalDelivery:
+      typeof record.vocalDelivery === "string"
+        ? record.vocalDelivery.trim()
+        : "",
+    vocalEntry:
+      typeof record.vocalEntry === "string" ? record.vocalEntry.trim() : "",
     dynamicShape:
       typeof record.dynamicShape === "string" ? record.dynamicShape.trim() : "",
     dynamicStart:
@@ -426,6 +447,11 @@ export async function POST(req: Request) {
       vocalInstruction:
         item.vocalApproach ||
         "Use a simple guide melody or understated vocal reference only.",
+      vocalRegister: item.vocalRegister || "",
+      vocalLift: item.vocalLift || "",
+      vocalMovement: item.vocalMovement || "",
+      vocalDelivery: item.vocalDelivery || "",
+      vocalEntry: item.vocalEntry || "",
       dynamicInstruction:
         item.dynamicShape || "Keep dynamics clear and rehearsal-focused.",
       dynamicStart: item.dynamicStart || "",
