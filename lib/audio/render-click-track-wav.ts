@@ -1462,12 +1462,6 @@ export function createClickTrackPcm16Samples(
     });
   }
 
-  const acousticGuitarIsPrimary =
-    isMusicalGuideMix &&
-    typeof input.instrumentation === "string" &&
-    (/\bprimary\s*:\s*acoustic guitar\b/i.test(input.instrumentation) ||
-      /\bacoustic guitar\b[^.\n]*\bprimary\b/i.test(input.instrumentation));
-
   for (const segment of chordToneGuideSegments) {
     const sectionLevel = isMusicalGuideMix
       ? getMusicalGuideSectionLevel({
@@ -1946,12 +1940,9 @@ export function createClickTrackPcm16Samples(
       const noteStartSeconds =
         countInDurationSeconds + Math.max(0, melodyNote.startSeconds);
 
-      const melodyDurationMultiplier = acousticGuitarIsPrimary ? 0.86 : 1;
-
       const noteEndSeconds = Math.min(
         totalDurationSeconds,
-        noteStartSeconds +
-          melodyNote.durationSeconds * melodyDurationMultiplier,
+        noteStartSeconds + melodyNote.durationSeconds,
       );
 
       if (noteEndSeconds <= noteStartSeconds) {
@@ -1960,14 +1951,12 @@ export function createClickTrackPcm16Samples(
 
       const frequencyHz = getMidiFrequencyHz(melodyNote.pitchMidi);
 
-      const melodyLevelMultiplier = acousticGuitarIsPrimary ? 0.68 : 1;
-
       addWarmToneToSamples({
         samples,
         startSample: Math.round(noteStartSeconds * input.sampleRateHz),
         endSample: Math.round(noteEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: Math.round(melodyAmplitude * melodyLevelMultiplier),
+        amplitude: Math.round(melodyAmplitude),
         frequencyHz,
         secondHarmonicLevel: 0.24,
         thirdHarmonicLevel: 0.06,
