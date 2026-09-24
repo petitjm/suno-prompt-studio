@@ -25,6 +25,7 @@ export type ClickTrackCueSheetSection = {
   vocalMovement?: string;
   vocalDelivery?: string;
   vocalEntry?: string;
+  backbeat?: string;
   dynamicInstruction?: string;
   dynamicStart?: string;
   dynamicEnd?: string;
@@ -69,6 +70,7 @@ export type ClickTrackWavRenderInput = {
   includeChordToneGuide?: boolean;
   mixProfile?: "click-track" | "musical-guide";
   instrumentation?: string;
+  groove?: string;
   musicalGuideMixLevels?: {
     click?: number;
     section?: number;
@@ -350,6 +352,8 @@ function getSectionSummaries(input: ClickTrackWavRenderInput) {
 function getSongBeatClickEvents(input: ClickTrackWavRenderInput): {
   timeSeconds: number;
   isDownbeat: boolean;
+  beatIndex: number;
+  backbeat?: string;
 }[] {
   if (
     input.tempoBpm <= 0 ||
@@ -363,6 +367,8 @@ function getSongBeatClickEvents(input: ClickTrackWavRenderInput): {
   const events: {
     timeSeconds: number;
     isDownbeat: boolean;
+    beatIndex: number;
+    backbeat?: string;
   }[] = [];
 
   for (const section of input.cueSheetSections) {
@@ -398,6 +404,8 @@ function getSongBeatClickEvents(input: ClickTrackWavRenderInput): {
             (quarterNotesFromSectionStart + quarterNotesFromBarStart) *
               secondsPerQuarterNote,
           isDownbeat: beatIndex === 0,
+          beatIndex,
+          backbeat: section.backbeat,
         });
       }
 
@@ -1411,6 +1419,29 @@ export function createClickTrackPcm16Samples(
 
       if (beatStartSample >= totalSamples) {
         continue;
+      }
+
+      if (
+        isMusicalGuideMix &&
+        (beatEvent.beatIndex === 1 || beatEvent.beatIndex === 3)
+      ) {
+        const backbeatLevel =
+          beatEvent.backbeat === "clear"
+            ? 300
+            : beatEvent.backbeat === "soft"
+              ? 180
+              : 0;
+
+        if (backbeatLevel > 0) {
+          addTonePulseToSamples({
+            samples,
+            startSample: beatStartSample,
+            durationSamples: Math.max(1, Math.round(input.sampleRateHz * 0.11)),
+            sampleRateHz: input.sampleRateHz,
+            amplitude: backbeatLevel,
+            frequencyHz: 95,
+          });
+        }
       }
 
       const isSectionStart = isNearSectionStartSample(

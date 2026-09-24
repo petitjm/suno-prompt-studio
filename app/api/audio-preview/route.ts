@@ -37,6 +37,7 @@ type GuideTrackSectionPlanItem = {
   vocalMovement?: string;
   vocalDelivery?: string;
   vocalEntry?: string;
+  backbeat?: string;
   dynamicStart?: string;
   dynamicEnd?: string;
   dynamicShape?: string;
@@ -67,6 +68,7 @@ function normalizeSectionPlanItem(
   if (!item || typeof item !== "object" || Array.isArray(item)) {
     return {
       section: `Section ${index + 1}`,
+      backbeat: "",
     };
   }
 
@@ -102,6 +104,7 @@ function normalizeSectionPlanItem(
         : "",
     vocalEntry:
       typeof record.vocalEntry === "string" ? record.vocalEntry.trim() : "",
+    backbeat: typeof record.backbeat === "string" ? record.backbeat.trim() : "",
     dynamicShape:
       typeof record.dynamicShape === "string" ? record.dynamicShape.trim() : "",
     dynamicStart:
@@ -452,6 +455,7 @@ export async function POST(req: Request) {
       vocalMovement: item.vocalMovement || "",
       vocalDelivery: item.vocalDelivery || "",
       vocalEntry: item.vocalEntry || "",
+      backbeat: item.backbeat || "",
       dynamicInstruction:
         item.dynamicShape || "Keep dynamics clear and rehearsal-focused.",
       dynamicStart: item.dynamicStart || "",

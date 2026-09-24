@@ -15653,6 +15653,7 @@ export default function Page() {
           vocalMovement: getStringValue(section.vocalMovement),
           vocalDelivery: getStringValue(section.vocalDelivery),
           vocalEntry: getStringValue(section.vocalEntry),
+          backbeat: getStringValue(section.backbeat),
           dynamicShape: getStringValue(section.dynamicShape),
           dynamicStart: getStringValue(section.dynamicStart),
           dynamicEnd: getStringValue(section.dynamicEnd),
@@ -15672,6 +15673,7 @@ export default function Page() {
           vocalMovement: string;
           vocalDelivery: string;
           vocalEntry: string;
+          backbeat: string;
           dynamicShape: string;
           dynamicStart: string;
           dynamicEnd: string;

@@ -44,6 +44,7 @@ type RenderStep = {
   vocalMovement?: string;
   vocalDelivery?: string;
   vocalEntry?: string;
+  backbeat?: string;
   dynamicStart?: string;
   dynamicEnd?: string;
   dynamicInstruction?: string;
@@ -78,6 +79,7 @@ type TimelineSection = {
   vocalMovement: string;
   vocalDelivery: string;
   vocalEntry: string;
+  backbeat: string;
   dynamicInstruction: string;
   dynamicStart: string;
   dynamicEnd: string;
@@ -111,6 +113,7 @@ function normalizeRenderStep(item: unknown, index: number): RenderStep {
     vocalMovement: getString(record.vocalMovement),
     vocalDelivery: getString(record.vocalDelivery),
     vocalEntry: getString(record.vocalEntry),
+    backbeat: getString(record.backbeat),
     dynamicInstruction: getString(record.dynamicInstruction),
     dynamicStart: getString(record.dynamicStart),
     dynamicEnd: getString(record.dynamicEnd),
@@ -286,6 +289,7 @@ function buildDryRunTimeline(payload: RendererPayload): TimelineSection[] {
       vocalMovement: matchingStep?.vocalMovement || "",
       vocalDelivery: matchingStep?.vocalDelivery || "",
       vocalEntry: matchingStep?.vocalEntry || "",
+      backbeat: matchingStep?.backbeat || "",
       dynamicInstruction:
         matchingStep?.dynamicInstruction ||
         "Keep dynamics clear and rehearsal-focused.",
@@ -839,6 +843,7 @@ function buildDryRunRenderPlan(payload: RendererPayload) {
       vocalMovement: step.vocalMovement || "",
       vocalDelivery: step.vocalDelivery || "",
       vocalEntry: step.vocalEntry || "",
+      backbeat: step.backbeat || "",
       dynamicInstruction:
         step.dynamicInstruction || "Keep dynamics clear and rehearsal-focused.",
       dynamicStart: step.dynamicStart || "",

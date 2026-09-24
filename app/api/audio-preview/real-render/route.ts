@@ -170,6 +170,7 @@ function getCueSheetSections(
         vocalMovement: getString(arrangementRecord?.vocalMovement) || undefined,
         vocalDelivery: getString(arrangementRecord?.vocalDelivery) || undefined,
         vocalEntry: getString(arrangementRecord?.vocalEntry) || undefined,
+        backbeat: getString(arrangementRecord?.backbeat) || undefined,
         dynamicInstruction:
           getString(arrangementRecord?.dynamicInstruction) || undefined,
         dynamicStart: getString(arrangementRecord?.dynamicStart) || undefined,
@@ -489,6 +490,7 @@ export async function POST(req: Request) {
       getArray(dryRunCueSheet?.sections).length || undefined,
     cueSheetSections,
     instrumentation: getString(dryRunRenderPlan?.instrumentation) || undefined,
+    groove: getString(dryRunRenderPlan?.groove) || undefined,
     chordMarkers,
     melodyNotes,
     includeCountIn,
