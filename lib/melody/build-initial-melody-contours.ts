@@ -371,8 +371,6 @@ function getMelodySectionFamily(section: string) {
 function getMelodyMotifKey(
   phrase: MelodyPhrase,
   frameworkPhrase: MelodyPitchFrameworkPhrase,
-  character: MelodyCharacter,
-  entry: NonNullable<MelodySectionIntent["entry"]>,
   sectionPhraseIndex: number,
 ) {
   const chordSequence = frameworkPhrase.chords.join("|");
@@ -381,11 +379,27 @@ function getMelodyMotifKey(
     getMelodySectionFamily(phrase.section),
     `phrase-${sectionPhraseIndex}`,
     chordSequence,
-    character.register,
-    character.lift,
-    character.movement,
-    entry,
   ].join("::");
+}
+
+function getMelodyContourSequence(notes: MelodyNote[]): ContourDirection[] {
+  return notes.map((note, noteIndex) => {
+    if (noteIndex === 0) {
+      return "level";
+    }
+
+    const previousPitch = notes[noteIndex - 1].pitchMidi;
+
+    if (note.pitchMidi > previousPitch) {
+      return "up";
+    }
+
+    if (note.pitchMidi < previousPitch) {
+      return "down";
+    }
+
+    return "level";
+  });
 }
 
 export function buildInitialMelodyContours({
@@ -403,7 +417,7 @@ export function buildInitialMelodyContours({
   character?: MelodyCharacter;
   sectionIntents?: MelodySectionIntent[];
 }): MelodyPhrase[] {
-  const establishedMotifs = new Map<string, number[]>();
+  const establishedMotifs = new Map<string, ContourDirection[]>();
 
   let previousPhraseEndPitch: number | null = null;
   let previousPhraseSectionInstanceId: string | null | undefined;
@@ -481,17 +495,16 @@ export function buildInitialMelodyContours({
     const motifKey = getMelodyMotifKey(
       anchorPhrase,
       frameworkPhrase,
-      effectiveCharacter,
-      effectiveEntryForPhrase,
       sectionPhraseIndex,
     );
-    const establishedPitchSequence = establishedMotifs.get(motifKey);
+    const establishedContourSequence = establishedMotifs.get(motifKey);
 
     if (
-      establishedPitchSequence &&
-      establishedPitchSequence.length === totalWordCount
+      establishedContourSequence &&
+      establishedContourSequence.length === totalWordCount
     ) {
       let reusedNoteIndex = 0;
+      let reusedPreviousHarmonyChord: string | null = null;
 
       const reusedNotes: MelodyNote[] = [];
 
@@ -505,10 +518,136 @@ export function buildInitialMelodyContours({
             : 0;
 
         unit.words.forEach((word, wordIndex) => {
-          const pitchMidi =
-            establishedPitchSequence[reusedNoteIndex] ?? anchorNote.pitchMidi;
+          const noteMidpointSeconds =
+            word.startSeconds + word.durationSeconds / 2;
+
+          const activeHarmonyEvent = getActiveHarmonyEvent(
+            frameworkPhrase,
+            noteMidpointSeconds,
+          );
+
+          const activeHarmonyPitchClasses =
+            activeHarmonyEvent?.pitchClasses ?? frameworkPhrase.pitchClasses;
+
+          const chordCandidates = getPitchCandidates(
+            activeHarmonyPitchClasses,
+            melodyRange.minimumMidi,
+            melodyRange.maximumMidi,
+          );
+
+          const melodicPitchClasses = Array.from(
+            new Set([...scalePitchClasses, ...activeHarmonyPitchClasses]),
+          );
+
+          const melodicCandidates = getPitchCandidates(
+            melodicPitchClasses,
+            melodyRange.minimumMidi,
+            melodyRange.maximumMidi,
+          );
+
+          const harmonyChanged =
+            activeHarmonyEvent !== null &&
+            activeHarmonyEvent.chord !== reusedPreviousHarmonyChord;
+
+          const isFinalWordInUnit = wordIndex === unit.words.length - 1;
+
+          const isGestureStart = wordIndex === 0;
+
+          const gesturePivotIndex =
+            unit.words.length >= 5
+              ? Math.floor((unit.words.length - 1) / 2)
+              : -1;
+
+          const isGesturePivot = wordIndex === gesturePivotIndex;
+
+          const previousWord = wordIndex > 0 ? unit.words[wordIndex - 1] : null;
+
+          const gapBeforeWordSeconds =
+            previousWord !== null
+              ? Math.max(0, word.startSeconds - previousWord.endSeconds)
+              : 0;
+
+          const entersAfterRhythmicSpace =
+            previousWord !== null &&
+            gapBeforeWordSeconds >= Math.max(0.12, averageWordDuration * 0.35);
+
+          const isRhythmicallyExtended =
+            wordIndex > 0 &&
+            !isFinalWordInUnit &&
+            averageWordDuration > 0 &&
+            word.durationSeconds >= averageWordDuration * 1.45;
+
+          const isGestureAnchor =
+            isGestureStart ||
+            isGesturePivot ||
+            entersAfterRhythmicSpace ||
+            isRhythmicallyExtended ||
+            harmonyChanged ||
+            isFinalWordInUnit;
+
+          const preferWiderStep =
+            isGesturePivot || entersAfterRhythmicSpace || harmonyChanged;
+
+          const holdForMovement = shouldHoldForMelodyMovement(
+            effectiveCharacter.movement,
+            isGestureAnchor,
+            reusedNoteIndex,
+          );
+
+          const holdPreviousPitch =
+            reusedNoteIndex > 0 &&
+            (shouldHoldPreviousMelodyPitch(word.word) || holdForMovement) &&
+            !harmonyChanged &&
+            !isFinalWordInUnit;
 
           const isFinalWordInPhrase = reusedNoteIndex === totalWordCount - 1;
+
+          const preferChordTone =
+            reusedNoteIndex === 0 || harmonyChanged || isFinalWordInUnit;
+
+          const preferredCandidates =
+            preferChordTone && chordCandidates.length > 0
+              ? chordCandidates
+              : melodicCandidates.length > 0
+                ? melodicCandidates
+                : candidates;
+
+          const motifContourDirection =
+            establishedContourSequence[reusedNoteIndex] ?? "level";
+
+          const liftedContourDirection = applyMelodyLiftBias(
+            motifContourDirection,
+            effectiveCharacter.lift,
+          );
+
+          const realisedContourDirection = entryAppliesToPhrase
+            ? applySectionEntryBias(
+                liftedContourDirection,
+                effectiveEntryForPhrase,
+              )
+            : liftedContourDirection;
+
+          if (reusedNoteIndex === 0 && preferChordTone) {
+            const phraseStartReferencePitch =
+              previousPhraseEndPitch !== null &&
+              anchorPhrase.sectionInstanceId === previousPhraseSectionInstanceId
+                ? previousPhraseEndPitch
+                : currentPitch;
+
+            currentPitch = preferredCandidates.reduce((best, candidate) =>
+              Math.abs(candidate - phraseStartReferencePitch) <
+              Math.abs(best - phraseStartReferencePitch)
+                ? candidate
+                : best,
+            );
+          } else if (reusedNoteIndex > 0 && !holdPreviousPitch) {
+            currentPitch = chooseNearbyPitch(
+              preferredCandidates,
+              currentPitch,
+              realisedContourDirection,
+              preferWiderStep,
+            );
+          }
 
           const renderedDurationSeconds =
             word.durationSeconds *
@@ -518,13 +657,16 @@ export function buildInitialMelodyContours({
             );
 
           reusedNotes.push({
-            pitchMidi,
+            pitchMidi: currentPitch,
             startSeconds: word.startSeconds,
             durationSeconds: Number(
               Math.max(0.1, renderedDurationSeconds).toFixed(3),
             ),
             lyricText: word.word,
           });
+
+          reusedPreviousHarmonyChord =
+            activeHarmonyEvent?.chord ?? reusedPreviousHarmonyChord;
 
           reusedNoteIndex += 1;
         });
@@ -710,11 +852,8 @@ export function buildInitialMelodyContours({
       });
     });
 
-    if (!establishedPitchSequence) {
-      establishedMotifs.set(
-        motifKey,
-        notes.map((note) => note.pitchMidi),
-      );
+    if (!establishedContourSequence) {
+      establishedMotifs.set(motifKey, getMelodyContourSequence(notes));
     }
 
     if (notes.length > 0) {
