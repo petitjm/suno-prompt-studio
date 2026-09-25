@@ -197,6 +197,110 @@ Linked saved chord checkpoint
 Audio Guide derived from that exact pairing
 ```
 
+An Audio Guide is derived not only from a specific saved song/chord pairing, but from the Guide Track and structured musical intent associated with that pairing.
+
+## Make Song intent propagation
+
+Make Song uses a structured musical-intent pipeline rather than relying on free-form performance text alone.
+
+```text
+Saved song version
+        ↓
+Linked saved chord checkpoint
+        ↓
+Guide Track plan
+        ↓
+Structured section intent
+        ↓
+Melody engine + audio renderer
+        ↓
+Audio Guide
+```
+
+The Guide Track may contain both machine-readable structured intent and richer human-readable performance guidance.
+
+Structured intent should be used where the application can represent a musical decision deterministically. Free-form guidance should remain descriptive where the current melody or audio engine cannot represent it faithfully.
+
+### Currently enacted Make Song intent
+
+The following intent currently has a causal effect on generated Make Song audio:
+
+- tempo;
+- meter and bar timing;
+- chord progression and harmonic timing;
+- section dynamics through `dynamicStart` and `dynamicEnd`;
+- section vocal register;
+- section vocal lift;
+- section vocal movement;
+- section vocal delivery;
+- section vocal entry;
+- section guitar accompaniment role derived from `guitarApproach`;
+- section backbeat through `none`, `soft`, or `clear`;
+- explicit bass exclusion such as `no bass`.
+
+Section vocal intent is translated into melody-engine controls rather than interpreted directly from free-form vocal prose.
+
+Generated Guide Track vocal intent provides section-level melody defaults. Explicit songwriter changes to melody section controls take precedence over regenerated Guide Track defaults.
+
+### Preserved but not currently enacted
+
+Some musical intent is deliberately preserved without pretending that the current renderer supports it.
+
+This currently includes:
+
+- swing or swung subdivision feel;
+- half-time feel;
+- ritardando / rallentando or other tempo curves;
+- global guitar tone such as warm, woody, gritty, or period-specific tone;
+- detailed instrumentation beyond capabilities explicitly supported by the guide renderer;
+- global vocal guide style;
+- vocal colour and technique such as rasp, breathiness, vibrato, chest/head tone, or behind-the-beat delivery;
+- free-form section feel / goal;
+- free-form section notes.
+
+These fields remain valuable planning context and may later feed richer melody, arrangement, synthesis, or external-provider workflows.
+
+Do not make unsupported prose appear to have an audible effect merely because it reaches the renderer payload.
+
+### Structured intent rule
+
+A key design rule is:
+
+> Do not interpret free-form musical prose inside the renderer when a structured representation is required for deterministic audio behaviour.
+
+Where an intent becomes important enough for Make Song to enact, prefer adding a narrow structured representation and propagating it explicitly through the generation and rendering pipeline.
+
+This is the approach currently used for section dynamics, vocal melody intent, and backbeat.
+
+### Rehearsal and Make Song remain separate systems
+
+The Rehearsal preview engine and Make Song serve different purposes.
+
+Rehearsal controls are interactive audition controls. Make Song derives its musical-performance intent primarily from the saved chord checkpoint and Guide Track.
+
+Currently:
+
+- Rehearsal tempo is shared with Make Song;
+- Rehearsal feel does not directly control Make Song;
+- Rehearsal pattern does not directly control Make Song;
+- Rehearsal instrument does not directly control Make Song;
+- Rehearsal section selection does not directly control Make Song.
+
+Do not casually connect Rehearsal pattern, feel, or instrument controls into Make Song, because this would create a second competing authority for arrangement intent.
+
+The durable Make Song direction is:
+
+```text
+Song + saved chord checkpoint
+        ↓
+Guide Track / structured musical intent
+        ↓
+Make Song
+```
+
+while Rehearsal remains a lightweight interactive experimentation surface.
+
+
 ## Task-driven workspace UI
 
 The application should behave as a songwriter's workbench rather than as a collection of implementation panels.
