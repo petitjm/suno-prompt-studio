@@ -1986,6 +1986,17 @@ export function createClickTrackPcm16Samples(
       }
 
       const frequencyHz = getMidiFrequencyHz(melodyNote.pitchMidi);
+      const renderedNoteDurationSeconds = noteEndSeconds - noteStartSeconds;
+
+      const melodyFadeInSeconds = Math.min(
+        0.018,
+        renderedNoteDurationSeconds * 0.15,
+      );
+
+      const melodyFadeOutSeconds = Math.min(
+        0.055,
+        renderedNoteDurationSeconds * 0.3,
+      );
 
       addWarmToneToSamples({
         samples,
@@ -1996,8 +2007,8 @@ export function createClickTrackPcm16Samples(
         frequencyHz,
         secondHarmonicLevel: 0.24,
         thirdHarmonicLevel: 0.06,
-        fadeInSeconds: 0.035,
-        fadeOutSeconds: 0.1,
+        fadeInSeconds: melodyFadeInSeconds,
+        fadeOutSeconds: melodyFadeOutSeconds,
       });
     }
   }
