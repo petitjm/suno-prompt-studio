@@ -60,7 +60,7 @@ function shouldHoldForMelodyMovement(
     return !isGestureAnchor && phraseNoteIndex % 3 !== 0;
   }
 
-  return !isGestureAnchor;
+  return !isGestureAnchor && phraseNoteIndex % 2 === 1;
 }
 
 function getSectionContourDirection(
