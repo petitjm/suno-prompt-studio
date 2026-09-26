@@ -663,7 +663,7 @@ export default function Page() {
     useState(false);
 
   const musicalGuideMixStorageKey =
-    "suno-prompt-studio-musical-guide-mix-levels-v4";
+    "suno-prompt-studio-musical-guide-mix-levels-v5";
   const [musicalGuideMixLevels, setMusicalGuideMixLevels] = useState({
     click: 0.3,
     section: 0.45,
@@ -671,7 +671,7 @@ export default function Page() {
     pad: 0.28,
     arpeggio: 0.7,
     bass: 0.42,
-    melody: 0,
+    melody: 0.6,
   });
 
   useEffect(() => {

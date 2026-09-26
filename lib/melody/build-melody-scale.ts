@@ -58,7 +58,7 @@ export function buildMelodyScale({
   }
 
   const match = trimmedKey.match(
-    /^([A-G](?:#|b)?)(?:\s*(m|minor|major|maj))?$/i,
+    /^([A-G](?:#|b)?)(?:\s*(m|minor|major|maj))?(?:\s+\(.*\))?$/i,
   );
 
   if (!match) {
