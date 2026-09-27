@@ -18985,6 +18985,7 @@ export default function Page() {
         },
         body: JSON.stringify({
           lyrics: performanceSheet,
+          songCreativeProfile,
           chordData: {
             ...(compactChordContext || {}),
             songSheetLines: compactSongSheetContext,

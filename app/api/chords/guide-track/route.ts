@@ -100,6 +100,12 @@ export async function POST(req: Request) {
     const songTitle = typeof body.songTitle === "string" ? body.songTitle : "";
     const songVersionTitle =
       typeof body.songVersionTitle === "string" ? body.songVersionTitle : "";
+    const songCreativeProfile =
+      body.songCreativeProfile &&
+      typeof body.songCreativeProfile === "object" &&
+      !Array.isArray(body.songCreativeProfile)
+        ? body.songCreativeProfile
+        : null;
     const tempoBpm =
       typeof body.tempoBpm === "number" && Number.isFinite(body.tempoBpm)
         ? body.tempoBpm
@@ -134,6 +140,13 @@ Return JSON only. No markdown. No commentary.
 Song title: ${songTitle || "Untitled song"}
 Song version: ${songVersionTitle || "Untitled version"}
 Current performance tempo: ${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
+
+Song creative profile:
+${
+  songCreativeProfile
+    ? JSON.stringify(songCreativeProfile, null, 2)
+    : "Not supplied"
+}
 
 Lyrics:
 ${lyrics}
@@ -174,6 +187,8 @@ Return this exact JSON shape:
 
 Requirements:
 - This is a guide track plan, not finished production.
+- Use the supplied lyrics together with the Song Creative Profile to understand the song's emotional meaning and trajectory.
+- Let that emotional context inform section-specific vocal register, lift, movement, delivery, entry, dynamics, and accompaniment choices; do not apply generic section-label assumptions where the song's meaning suggests otherwise.
 - Treat the supplied current performance tempo as authoritative when present.
 - Preserve groove, phrasing, chord timing, vocal entry points, and dynamic shape.
 - Do not infer a different tempo from the chord data.
