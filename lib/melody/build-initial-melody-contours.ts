@@ -550,6 +550,7 @@ export function buildInitialMelodyContours({
             activeHarmonyEvent.chord !== reusedPreviousHarmonyChord;
 
           const isFinalWordInUnit = wordIndex === unit.words.length - 1;
+          const isFinalWordInPhrase = reusedNoteIndex === totalWordCount - 1;
 
           const isGestureStart = wordIndex === 0;
 
@@ -586,7 +587,10 @@ export function buildInitialMelodyContours({
             isFinalWordInUnit;
 
           const preferWiderStep =
-            isGesturePivot || entersAfterRhythmicSpace || harmonyChanged;
+            isGesturePivot ||
+            entersAfterRhythmicSpace ||
+            harmonyChanged ||
+            isFinalWordInPhrase;
 
           const holdForMovement = shouldHoldForMelodyMovement(
             effectiveCharacter.movement,
@@ -599,8 +603,6 @@ export function buildInitialMelodyContours({
             (shouldHoldPreviousMelodyPitch(word.word) || holdForMovement) &&
             !harmonyChanged &&
             !isFinalWordInUnit;
-
-          const isFinalWordInPhrase = reusedNoteIndex === totalWordCount - 1;
 
           const preferChordTone =
             reusedNoteIndex === 0 || harmonyChanged || isFinalWordInUnit;
@@ -724,6 +726,7 @@ export function buildInitialMelodyContours({
           activeHarmonyEvent.chord !== previousHarmonyChord;
 
         const isFinalWordInUnit = wordIndex === unit.words.length - 1;
+        const isFinalWordInPhrase = phraseNoteIndex === totalWordCount - 1;
 
         const isGestureStart = wordIndex === 0;
 
@@ -758,7 +761,10 @@ export function buildInitialMelodyContours({
           isFinalWordInUnit;
 
         const preferWiderStep =
-          isGesturePivot || entersAfterRhythmicSpace || harmonyChanged;
+          isGesturePivot ||
+          entersAfterRhythmicSpace ||
+          harmonyChanged ||
+          isFinalWordInPhrase;
 
         const holdForMovement = shouldHoldForMelodyMovement(
           effectiveCharacter.movement,
@@ -832,8 +838,6 @@ export function buildInitialMelodyContours({
 
         previousHarmonyChord =
           activeHarmonyEvent?.chord ?? previousHarmonyChord;
-
-        const isFinalWordInPhrase = phraseNoteIndex === totalWordCount - 1;
 
         const renderedDurationSeconds =
           word.durationSeconds *
