@@ -210,14 +210,36 @@ Linked saved chord checkpoint
         ↓
 Guide Track plan
         ↓
-Structured section intent
-        ↓
-Melody engine + audio renderer
-        ↓
-Audio Guide
+Structured section intent ─────────────┐
+                                       │
+Lyrics + harmony + musical timing      │
+        ↓                              │
+Lyric timing                           │
+        ↓                              │
+Structured phrase intent               │
+        ├─ contourIntent               │
+        ├─ emphasisIntent              │
+        └─ resolutionIntent            │
+        ↓                              │
+Melody phrase scaffold ────────────────┤
+                                       ↓
+                                 Melody engine
+                                       ↓
+                                 Audio renderer
+                                       ↓
+                                   Audio Guide
 ```
 
 The Guide Track may contain both machine-readable structured intent and richer human-readable performance guidance.
+
+Section intent and phrase intent are complementary rather than competing authorities.
+
+- Guide Track / structured section intent describes how a whole section should broadly behave.
+- Structured phrase intent describes how the meaning and emotional movement of an individual lyric phrase should move, be foregrounded, and arrive.
+- The melody engine combines section intent, phrase intent, word rhythm, harmony, and timing.
+- The audio renderer should render those structured decisions rather than reinterpret lyric meaning itself.
+
+Fresh full Generate Chords and the dedicated Guide Track route must produce the same structured section-intent fields.
 
 Structured intent should be used where the application can represent a musical decision deterministically. Free-form guidance should remain descriptive where the current melody or audio engine cannot represent it faithfully.
 
@@ -234,6 +256,9 @@ The following intent currently has a causal effect on generated Make Song audio:
 - section vocal movement;
 - section vocal delivery;
 - section vocal entry;
+- phrase contour intent through `settle`, `rise`, `arch`, `fall`, or `suspend`;
+- phrase emphasis intent through `restrained`, `normal`, or `strong`;
+- phrase resolution intent through `open`, `partial`, or `resolved`;
 - section guitar accompaniment role derived from `guitarApproach`;
 - section backbeat through `none`, `soft`, or `clear`;
 - explicit bass exclusion such as `no bass`.
@@ -241,6 +266,16 @@ The following intent currently has a causal effect on generated Make Song audio:
 Section vocal intent is translated into melody-engine controls rather than interpreted directly from free-form vocal prose.
 
 Generated Guide Track vocal intent provides section-level melody defaults. Explicit songwriter changes to melody section controls take precedence over regenerated Guide Track defaults.
+
+Phrase intent is determined upstream during lyric-timing analysis from lyric meaning, emotional movement, natural language stress, delivery, surrounding phrases, and musical context.
+
+Punctuation is weak optional evidence only and must not mechanically determine phrase contour, emphasis, resolution, or phrase boundaries.
+
+Explicit phrase intent outranks generic section-label melody assumptions.
+
+For reused motifs, established motif contour may remain authoritative where preserving recognisable melodic identity is musically useful. Occurrence-specific phrase emphasis and resolution may still vary independently of that reused contour.
+
+Older saved data without phrase-intent fields remains valid through optional `MelodyPhrase` fields and existing fallback behaviour.
 
 ### Preserved but not currently enacted
 
@@ -270,7 +305,7 @@ A key design rule is:
 
 Where an intent becomes important enough for Make Song to enact, prefer adding a narrow structured representation and propagating it explicitly through the generation and rendering pipeline.
 
-This is the approach currently used for section dynamics, vocal melody intent, and backbeat.
+This is the approach currently used for section dynamics, section vocal melody intent, phrase melodic intent, accompaniment behaviour, and backbeat.
 
 ### Rehearsal and Make Song remain separate systems
 
@@ -299,7 +334,6 @@ Make Song
 ```
 
 while Rehearsal remains a lightweight interactive experimentation surface.
-
 
 ## Task-driven workspace UI
 
