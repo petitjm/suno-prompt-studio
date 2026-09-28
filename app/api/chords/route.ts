@@ -209,15 +209,23 @@ The JSON must use this shape:
   "rhythmReference": "",
   "vocalGuideStyle": "",
   "sectionPlan": [
-    {
-          "section": "Verse 1",
-          "feel": "",
-          "guitarApproach": "",
-          "vocalApproach": "",
-          "dynamicShape": "",
-          "notes": ""
-        }
-      ]
+  {
+    "section": "Verse 1",
+    "feel": "",
+    "guitarApproach": "",
+    "vocalApproach": "",
+    "vocalRegister": "mid",
+    "vocalLift": "balanced",
+    "vocalMovement": "balanced",
+    "vocalDelivery": "natural",
+    "vocalEntry": "natural",
+    "backbeat": "soft",
+    "dynamicShape": "",
+    "dynamicStart": "p",
+    "dynamicEnd": "mp",
+    "notes": ""
+  }
+]
     },
   "notes": "",
 "harmonicTimeline": [
@@ -310,6 +318,17 @@ Performance intent requirements:
 - Keep instrumentation sparse, usually acoustic guitar plus optional light count-in, foot tap, or metronome.
 - Do not suggest full-band production unless the song clearly requires it.
 - Use sectionPlan to describe how each major section should feel and develop.
+- For each section, also set structured vocal intent fields that describe only what the melody engine can currently enact:
+- vocalRegister: low, mid, or high for the broad pitch range.
+- vocalLift: restrained, balanced, or strong for the amount of upward phrase lift.
+- vocalMovement: calm, balanced, or active for how frequently the melody should move between pitches.
+- vocalDelivery: natural, deliberate, or spacious for phrase-final emphasis and sustain.
+- vocalEntry: natural, gentle, or lifted for the opening contour of the first phrases in the section.
+- Keep vocal color and performance details such as breathiness, rasp, vibrato, chest/head tone, behind-the-beat phrasing, and breath placement in vocalApproach; do not try to encode those into the structured fields.
+- For each section, set backbeat to none, soft, or clear to describe the broad backbeat presence.
+- Keep finer details such as dropping the backbeat for part of a section, reintroducing it later, or muting it on a specific bar in the existing feel, guitarApproach, or notes text.
+- For each section, set dynamicStart and dynamicEnd to the broad musical dynamic trajectory using only pp, p, mp, mf, f, or ff.
+- Keep finer details such as temporary pulls, swells, fades, or bar-specific changes in dynamicShape.
 - Include vocalGuideStyle as a simple guide vocal or melody reference, not a polished lead vocal.
 - Include rhythmReference to describe the pulse clearly enough that it could later drive audio preview generation.
 `;
