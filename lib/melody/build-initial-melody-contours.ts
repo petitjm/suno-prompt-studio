@@ -230,13 +230,50 @@ function getPhraseShapeDirection({
   progress,
   lift,
   sectionPhraseIndex,
+  contourIntent,
 }: {
   section: string;
   progress: number;
   lift: MelodyCharacter["lift"];
   sectionPhraseIndex: number;
+  contourIntent?: MelodyPhrase["contourIntent"];
 }): ContourDirection {
   const normalisedProgress = Math.min(1, Math.max(0, progress));
+  if (contourIntent === "rise") {
+    return normalisedProgress < 0.78 ? "up" : "level";
+  }
+
+  if (contourIntent === "fall") {
+    return normalisedProgress < 0.78 ? "down" : "level";
+  }
+
+  if (contourIntent === "arch") {
+    if (normalisedProgress < 0.45) {
+      return "up";
+    }
+
+    if (normalisedProgress < 0.68) {
+      return "level";
+    }
+
+    return "down";
+  }
+
+  if (contourIntent === "settle") {
+    if (normalisedProgress < 0.55) {
+      return "level";
+    }
+
+    return "down";
+  }
+
+  if (contourIntent === "suspend") {
+    if (normalisedProgress < 0.55) {
+      return "level";
+    }
+
+    return "up";
+  }
   const normalisedSection = section.toLowerCase();
 
   const isChorus =
@@ -545,6 +582,10 @@ export function buildInitialMelodyContours({
             melodyRange.maximumMidi,
           );
 
+          const nonChordMelodicCandidates = melodicCandidates.filter(
+            (candidate) => !chordCandidates.includes(candidate),
+          );
+
           const harmonyChanged =
             activeHarmonyEvent !== null &&
             activeHarmonyEvent.chord !== reusedPreviousHarmonyChord;
@@ -607,12 +648,28 @@ export function buildInitialMelodyContours({
           const preferChordTone =
             reusedNoteIndex === 0 || harmonyChanged || isFinalWordInUnit;
 
+          const phraseEndingCandidates =
+            isFinalWordInPhrase && anchorPhrase.resolutionIntent === "resolved"
+              ? chordCandidates.length > 0
+                ? chordCandidates
+                : melodicCandidates
+              : isFinalWordInPhrase && anchorPhrase.resolutionIntent === "open"
+                ? nonChordMelodicCandidates.length > 0
+                  ? nonChordMelodicCandidates
+                  : melodicCandidates
+                : isFinalWordInPhrase &&
+                    anchorPhrase.resolutionIntent === "partial"
+                  ? melodicCandidates
+                  : null;
+
           const preferredCandidates =
-            preferChordTone && chordCandidates.length > 0
-              ? chordCandidates
-              : melodicCandidates.length > 0
-                ? melodicCandidates
-                : candidates;
+            phraseEndingCandidates && phraseEndingCandidates.length > 0
+              ? phraseEndingCandidates
+              : preferChordTone && chordCandidates.length > 0
+                ? chordCandidates
+                : melodicCandidates.length > 0
+                  ? melodicCandidates
+                  : candidates;
 
           const motifContourDirection =
             establishedContourSequence[reusedNoteIndex] ?? "level";
@@ -721,6 +778,10 @@ export function buildInitialMelodyContours({
           melodyRange.maximumMidi,
         );
 
+        const nonChordMelodicCandidates = melodicCandidates.filter(
+          (candidate) => !chordCandidates.includes(candidate),
+        );
+
         const harmonyChanged =
           activeHarmonyEvent !== null &&
           activeHarmonyEvent.chord !== previousHarmonyChord;
@@ -781,12 +842,28 @@ export function buildInitialMelodyContours({
         const preferChordTone =
           phraseNoteIndex === 0 || harmonyChanged || isFinalWordInUnit;
 
+        const phraseEndingCandidates =
+          isFinalWordInPhrase && anchorPhrase.resolutionIntent === "resolved"
+            ? chordCandidates.length > 0
+              ? chordCandidates
+              : melodicCandidates
+            : isFinalWordInPhrase && anchorPhrase.resolutionIntent === "open"
+              ? nonChordMelodicCandidates.length > 0
+                ? nonChordMelodicCandidates
+                : melodicCandidates
+              : isFinalWordInPhrase &&
+                  anchorPhrase.resolutionIntent === "partial"
+                ? melodicCandidates
+                : null;
+
         const preferredCandidates =
-          preferChordTone && chordCandidates.length > 0
-            ? chordCandidates
-            : melodicCandidates.length > 0
-              ? melodicCandidates
-              : candidates;
+          phraseEndingCandidates && phraseEndingCandidates.length > 0
+            ? phraseEndingCandidates
+            : preferChordTone && chordCandidates.length > 0
+              ? chordCandidates
+              : melodicCandidates.length > 0
+                ? melodicCandidates
+                : candidates;
 
         if (phraseNoteIndex === 0 && preferChordTone) {
           const phraseStartReferencePitch =
@@ -819,14 +896,16 @@ export function buildInitialMelodyContours({
             progress: phraseProgress,
             lift: effectiveCharacter.lift,
             sectionPhraseIndex,
+            contourIntent: anchorPhrase.contourIntent,
           });
 
-          const phraseShapeDirection = entryAppliesToPhrase
-            ? applySectionEntryBias(
-                basePhraseShapeDirection,
-                effectiveEntryForPhrase,
-              )
-            : basePhraseShapeDirection;
+          const phraseShapeDirection =
+            entryAppliesToPhrase && !anchorPhrase.contourIntent
+              ? applySectionEntryBias(
+                  basePhraseShapeDirection,
+                  effectiveEntryForPhrase,
+                )
+              : basePhraseShapeDirection;
 
           currentPitch = chooseNearbyPitch(
             preferredCandidates,

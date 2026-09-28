@@ -1133,23 +1133,29 @@ Return ONLY valid JSON using this exact top-level shape:
   "wordTimingPlan": {
     "phrases": [
       {
-        "section": "Verse 1",
-        "startWordIndex": 0,
-        "endWordIndexExclusive": 7,
-        "startBar": 1,
-        "startBeat": 1.5,
-        "endBar": 2,
-        "endBeat": 3
-      },
+  "section": "Verse 1",
+  "startWordIndex": 0,
+  "endWordIndexExclusive": 7,
+  "startBar": 1,
+  "startBeat": 1.5,
+  "endBar": 2,
+  "endBeat": 3,
+  "contourIntent": "arch",
+  "emphasisIntent": "normal",
+  "resolutionIntent": "partial"
+},
       {
-        "section": "Verse 1",
-        "startWordIndex": 7,
-        "endWordIndexExclusive": 12,
-        "startBar": 2,
-        "startBeat": 3.5,
-        "endBar": 3,
-        "endBeat": 4
-      }
+  "section": "Verse 1",
+  "startWordIndex": 7,
+  "endWordIndexExclusive": 12,
+  "startBar": 2,
+  "startBeat": 3.5,
+  "endBar": 3,
+  "endBeat": 4,
+  "contourIntent": "settle",
+  "emphasisIntent": "restrained",
+  "resolutionIntent": "resolved"
+}
     ]
   }
 }
@@ -1180,6 +1186,29 @@ Phrase-construction requirements:
 - Do not divide a section into equal phrase lengths merely because that is convenient.
 - Repeated verses may share a vocal concept when appropriate, but their phrase spans do not have to be mechanically identical.
 - Repeated choruses may use similar phrasing when musically justified.
+
+Phrase melodic-intent requirements:
+- For every phrase, also return contourIntent, emphasisIntent, and resolutionIntent.
+- Choose these from the lyric meaning, emotional movement, natural language stress, vocal delivery, surrounding phrases, and existing musical context.
+- Do not choose them mechanically from section labels, phrase length, punctuation, or word count.
+- Punctuation may provide expressive context when useful, but it must not determine the result.
+- contourIntent must be one of: settle, rise, arch, fall, suspend.
+- settle means the phrase should move toward a calmer or more grounded melodic destination.
+- rise means the phrase should broadly build upward toward its important material or ending.
+- arch means the phrase should rise toward an interior high point and then return or settle.
+- fall means the phrase should broadly descend through its delivery.
+- suspend means the phrase should avoid a complete melodic arrival because the thought or emotional tension carries forward.
+- emphasisIntent must be one of: restrained, normal, strong.
+- emphasisIntent describes how strongly the melody should foreground the phrase relative to its surrounding phrases; it does not mean simply making every note higher.
+- resolutionIntent must be one of: open, partial, resolved.
+- open means the phrase should retain clear melodic tension or continuation.
+- partial means it may arrive somewhat while still carrying forward.
+- resolved means it should have a comparatively complete sense of melodic arrival.
+- Treat these as local phrase instructions. They may differ materially between phrases inside the same section.
+- Do not assign repeated sections an identical sequence of phrase intents merely because their section labels or lyric structures are similar.
+- Repeated choruses may retain recognisable melodic relationships, but phrase intents should reflect any meaningful lyrical or emotional differences in that specific occurrence.
+- The Final Chorus should not automatically copy an earlier chorus's contour, emphasis, or resolution sequence; consider its distinct narrative and emotional role.
+- Review the complete sequence of phrase intents before returning it. If the intents form an obvious repeating pattern that is not justified by the lyric meaning, revise them.
 
 Musical timing requirements:
 - musicalTimingPlan is authoritative for section bars, meter, and meter changes.
@@ -1366,11 +1395,48 @@ Return wordTimingPlan only.
       };
     };
 
-    const resumedLyricTimingPhrases =
+    const suppliedResumeWordTimingPhrases =
       suppliedResumeChordData &&
       Array.isArray(suppliedResumeChordData.resumeWordTimingPhrases)
         ? suppliedResumeChordData.resumeWordTimingPhrases
         : null;
+
+    const resumedLyricTimingPhrases =
+      suppliedResumeWordTimingPhrases &&
+      suppliedResumeWordTimingPhrases.every((phrase) => {
+        if (!phrase || typeof phrase !== "object" || Array.isArray(phrase)) {
+          return false;
+        }
+
+        const phraseRecord = phrase as Record<string, unknown>;
+
+        const hasContourIntent =
+          phraseRecord.contourIntent === "settle" ||
+          phraseRecord.contourIntent === "rise" ||
+          phraseRecord.contourIntent === "arch" ||
+          phraseRecord.contourIntent === "fall" ||
+          phraseRecord.contourIntent === "suspend";
+
+        const hasEmphasisIntent =
+          phraseRecord.emphasisIntent === "restrained" ||
+          phraseRecord.emphasisIntent === "normal" ||
+          phraseRecord.emphasisIntent === "strong";
+
+        const hasResolutionIntent =
+          phraseRecord.resolutionIntent === "open" ||
+          phraseRecord.resolutionIntent === "partial" ||
+          phraseRecord.resolutionIntent === "resolved";
+
+        return hasContourIntent && hasEmphasisIntent && hasResolutionIntent;
+      })
+        ? suppliedResumeWordTimingPhrases
+        : null;
+
+    if (suppliedResumeWordTimingPhrases && resumedLyricTimingPhrases === null) {
+      console.log(
+        "[chords] supplied lyric-timing checkpoint predates phrase melodic intent; regenerating lyric timing",
+      );
+    }
 
     let lyricTimingText: string;
 
@@ -1445,6 +1511,9 @@ Return wordTimingPlan only.
           startBeat: number;
           endBar: number;
           endBeat: number;
+          contourIntent: "settle" | "rise" | "arch" | "fall" | "suspend";
+          emphasisIntent: "restrained" | "normal" | "strong";
+          resolutionIntent: "open" | "partial" | "resolved";
         }> => {
           if (!phrase || typeof phrase !== "object" || Array.isArray(phrase)) {
             conversionErrors.push(
@@ -1496,6 +1565,29 @@ Return wordTimingPlan only.
               ? phraseRecord.endBeat
               : null;
 
+          const contourIntent =
+            phraseRecord.contourIntent === "settle" ||
+            phraseRecord.contourIntent === "rise" ||
+            phraseRecord.contourIntent === "arch" ||
+            phraseRecord.contourIntent === "fall" ||
+            phraseRecord.contourIntent === "suspend"
+              ? phraseRecord.contourIntent
+              : null;
+
+          const emphasisIntent =
+            phraseRecord.emphasisIntent === "restrained" ||
+            phraseRecord.emphasisIntent === "normal" ||
+            phraseRecord.emphasisIntent === "strong"
+              ? phraseRecord.emphasisIntent
+              : null;
+
+          const resolutionIntent =
+            phraseRecord.resolutionIntent === "open" ||
+            phraseRecord.resolutionIntent === "partial" ||
+            phraseRecord.resolutionIntent === "resolved"
+              ? phraseRecord.resolutionIntent
+              : null;
+
           if (
             !section ||
             startWordIndex === null ||
@@ -1503,10 +1595,13 @@ Return wordTimingPlan only.
             startBar === null ||
             startBeat === null ||
             endBar === null ||
-            endBeat === null
+            endBeat === null ||
+            contourIntent === null ||
+            emphasisIntent === null ||
+            resolutionIntent === null
           ) {
             conversionErrors.push(
-              `Phrase ${phraseIndex + 1} has missing or invalid word-timing fields.`,
+              `Phrase ${phraseIndex + 1} has missing or invalid timing or melodic-intent fields.`,
             );
             return [];
           }
@@ -1565,6 +1660,9 @@ Return wordTimingPlan only.
               startBeat,
               endBar,
               endBeat,
+              contourIntent,
+              emphasisIntent,
+              resolutionIntent,
             },
           ];
         },
@@ -1673,6 +1771,7 @@ Repair requirements:
 - Preserve the exact number of phrases from the previous attempt.
 - Preserve the exact phrase order from the previous attempt.
 - Preserve each phrase's section exactly.
+- Preserve each phrase's contourIntent, emphasisIntent, and resolutionIntent exactly. This repair is for timing validation, not emotional or melodic reinterpretation.
 - Normally preserve each phrase's startWordIndex and endWordIndexExclusive exactly.
 - If a validation error says that a phrase crosses a section boundary or has the wrong section label, adjust that phrase's word-span boundary and, if necessary, its immediately adjacent phrase as little as possible so every phrase contains words from its own section only.
 - If a validation error says that a phrase overlaps or appears out of lyric order, adjust that phrase's word-span boundary and, if necessary, its immediately adjacent phrase as little as possible to restore ascending, non-overlapping lyric order.
@@ -3306,6 +3405,9 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
         startBeat: number;
         endBar: number;
         endBeat: number;
+        contourIntent: "settle" | "rise" | "arch" | "fall" | "suspend";
+        emphasisIntent: "restrained" | "normal" | "strong";
+        resolutionIntent: "open" | "partial" | "resolved";
       }> => {
         if (
           !rawPhrase ||
@@ -3355,6 +3457,9 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
             startBeat: convertedPhrase.startBeat,
             endBar: convertedPhrase.endBar,
             endBeat: convertedPhrase.endBeat,
+            contourIntent: convertedPhrase.contourIntent,
+            emphasisIntent: convertedPhrase.emphasisIntent,
+            resolutionIntent: convertedPhrase.resolutionIntent,
           },
         ];
       },
@@ -3384,6 +3489,9 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
         startBeat: phrase.startBeat,
         endBar: phrase.endBar,
         endBeat: phrase.endBeat,
+        contourIntent: phrase.contourIntent,
+        emphasisIntent: phrase.emphasisIntent,
+        resolutionIntent: phrase.resolutionIntent,
       })),
     };
 

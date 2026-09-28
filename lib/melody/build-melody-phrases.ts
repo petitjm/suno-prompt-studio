@@ -26,6 +26,9 @@ type LyricTimingPhraseLike = {
   startBeat?: unknown;
   endBar?: unknown;
   endBeat?: unknown;
+  contourIntent?: unknown;
+  emphasisIntent?: unknown;
+  resolutionIntent?: unknown;
 };
 
 type LyricTimingPlanLike = {
@@ -304,6 +307,29 @@ export function buildMelodyPhraseScaffoldFromGuideSections({
     const endBar = getInteger(phrase.endBar);
     const endBeat = getFiniteNumber(phrase.endBeat);
 
+    const contourIntent =
+      phrase.contourIntent === "settle" ||
+      phrase.contourIntent === "rise" ||
+      phrase.contourIntent === "arch" ||
+      phrase.contourIntent === "fall" ||
+      phrase.contourIntent === "suspend"
+        ? phrase.contourIntent
+        : undefined;
+
+    const emphasisIntent =
+      phrase.emphasisIntent === "restrained" ||
+      phrase.emphasisIntent === "normal" ||
+      phrase.emphasisIntent === "strong"
+        ? phrase.emphasisIntent
+        : undefined;
+
+    const resolutionIntent =
+      phrase.resolutionIntent === "open" ||
+      phrase.resolutionIntent === "partial" ||
+      phrase.resolutionIntent === "resolved"
+        ? phrase.resolutionIntent
+        : undefined;
+
     if (
       !section ||
       startSourceLineIndex === null ||
@@ -391,6 +417,9 @@ export function buildMelodyPhraseScaffoldFromGuideSections({
       sourceLyric,
       startSeconds,
       endSeconds,
+      contourIntent,
+      emphasisIntent,
+      resolutionIntent,
       notes: [],
     });
   });

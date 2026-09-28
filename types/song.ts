@@ -113,6 +113,9 @@ export type MelodyPhrase = {
   sourceLyric: string;
   startSeconds: number;
   endSeconds: number;
+  contourIntent?: "settle" | "rise" | "arch" | "fall" | "suspend";
+  emphasisIntent?: "restrained" | "normal" | "strong";
+  resolutionIntent?: "open" | "partial" | "resolved";
   notes: MelodyNote[];
 };
 
