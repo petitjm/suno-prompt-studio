@@ -627,11 +627,20 @@ export function buildInitialMelodyContours({
             harmonyChanged ||
             isFinalWordInUnit;
 
-          const preferWiderStep =
+          const basePreferWiderStep =
             isGesturePivot ||
             entersAfterRhythmicSpace ||
             harmonyChanged ||
             isFinalWordInPhrase;
+
+          const preferWiderStep =
+            !isFinalWordInPhrase && anchorPhrase.emphasisIntent === "restrained"
+              ? false
+              : !isFinalWordInPhrase &&
+                  anchorPhrase.emphasisIntent === "strong" &&
+                  isGestureAnchor
+                ? true
+                : basePreferWiderStep;
 
           const holdForMovement = shouldHoldForMelodyMovement(
             effectiveCharacter.movement,
@@ -821,11 +830,20 @@ export function buildInitialMelodyContours({
           harmonyChanged ||
           isFinalWordInUnit;
 
-        const preferWiderStep =
+        const basePreferWiderStep =
           isGesturePivot ||
           entersAfterRhythmicSpace ||
           harmonyChanged ||
           isFinalWordInPhrase;
+
+        const preferWiderStep =
+          !isFinalWordInPhrase && anchorPhrase.emphasisIntent === "restrained"
+            ? false
+            : !isFinalWordInPhrase &&
+                anchorPhrase.emphasisIntent === "strong" &&
+                isGestureAnchor
+              ? true
+              : basePreferWiderStep;
 
         const holdForMovement = shouldHoldForMelodyMovement(
           effectiveCharacter.movement,
