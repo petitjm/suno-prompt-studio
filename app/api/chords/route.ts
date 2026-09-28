@@ -3531,7 +3531,10 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
         })),
     }));
 
-    const wordRhythmPrompt = `
+    const buildWordRhythmPrompt = (
+      batchContext: typeof phraseWordRhythmContext,
+    ) =>
+      `
 You are determining the sung rhythm of individual lyric words inside vocal phrases that have already been approved.
 
 Do NOT change the lyrics.
@@ -3548,7 +3551,7 @@ Current performance tempo:
 ${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
 
 Confirmed vocal phrases and their words:
-${JSON.stringify(phraseWordRhythmContext, null, 2)}
+${JSON.stringify(batchContext, null, 2)}
 
 Existing musical context:
 ${JSON.stringify(lyricTimingMusicalContext, null, 2)}
@@ -3623,56 +3626,134 @@ A word ending at the boundary after a final section bar may use bar N+1 beat 1 o
 Return wordRhythmPlan only.
 `.trim();
 
-    const wordRhythmController = new AbortController();
-    const wordRhythmStartedAt = Date.now();
-    let wordRhythmLocalTimeoutTriggered = false;
+    const WORD_RHYTHM_PHRASES_PER_BATCH = 4;
+    const combinedWordRhythmWords: unknown[] = [];
 
-    console.log("[chords] word-rhythm started", {
-      promptChars: wordRhythmPrompt.length,
-    });
-
-    const wordRhythmTimeoutId = setTimeout(() => {
-      wordRhythmLocalTimeoutTriggered = true;
-      wordRhythmController.abort();
-    }, CHORD_GENERATION_TIMEOUT_MS);
-
-    let wordRhythmCompletion;
-
-    try {
-      wordRhythmCompletion = await openai.chat.completions.create(
-        {
-          model: "gpt-5",
-          messages: [{ role: "user", content: wordRhythmPrompt }],
-        },
-        {
-          signal: wordRhythmController.signal,
-        },
+    for (
+      let batchStart = 0;
+      batchStart < phraseWordRhythmContext.length;
+      batchStart += WORD_RHYTHM_PHRASES_PER_BATCH
+    ) {
+      const batchContext = phraseWordRhythmContext.slice(
+        batchStart,
+        batchStart + WORD_RHYTHM_PHRASES_PER_BATCH,
       );
 
-      console.log("[chords] word-rhythm completed", {
-        elapsedMs: Date.now() - wordRhythmStartedAt,
-      });
-    } catch (error) {
-      if (wordRhythmLocalTimeoutTriggered) {
-        console.error("[chords] word-rhythm hit local timeout", {
-          elapsedMs: Date.now() - wordRhythmStartedAt,
-          promptChars: wordRhythmPrompt.length,
-        });
+      const batchNumber =
+        Math.floor(batchStart / WORD_RHYTHM_PHRASES_PER_BATCH) + 1;
 
-        throw new Error(
-          `Word-rhythm generation timed out after ${
-            CHORD_GENERATION_TIMEOUT_MS / 60_000
-          } minutes.`,
+      const batchCount = Math.ceil(
+        phraseWordRhythmContext.length / WORD_RHYTHM_PHRASES_PER_BATCH,
+      );
+
+      const wordRhythmPrompt = buildWordRhythmPrompt(batchContext);
+
+      const wordRhythmController = new AbortController();
+      const wordRhythmStartedAt = Date.now();
+      let wordRhythmLocalTimeoutTriggered = false;
+
+      console.log("[chords] word-rhythm batch started", {
+        batchNumber,
+        batchCount,
+        phraseCount: batchContext.length,
+        promptChars: wordRhythmPrompt.length,
+      });
+
+      const wordRhythmTimeoutId = setTimeout(() => {
+        wordRhythmLocalTimeoutTriggered = true;
+        wordRhythmController.abort();
+      }, CHORD_GENERATION_TIMEOUT_MS);
+
+      let wordRhythmCompletion;
+
+      try {
+        wordRhythmCompletion = await openai.chat.completions.create(
+          {
+            model: "gpt-5",
+            messages: [{ role: "user", content: wordRhythmPrompt }],
+          },
+          {
+            signal: wordRhythmController.signal,
+          },
+        );
+
+        console.log("[chords] word-rhythm batch completed", {
+          batchNumber,
+          batchCount,
+          elapsedMs: Date.now() - wordRhythmStartedAt,
+        });
+      } catch (error) {
+        if (wordRhythmLocalTimeoutTriggered) {
+          console.error("[chords] word-rhythm batch hit local timeout", {
+            batchNumber,
+            batchCount,
+            elapsedMs: Date.now() - wordRhythmStartedAt,
+            promptChars: wordRhythmPrompt.length,
+          });
+
+          throw new Error(
+            `Word-rhythm batch ${batchNumber} of ${batchCount} timed out after ${
+              CHORD_GENERATION_TIMEOUT_MS / 60_000
+            } minutes.`,
+          );
+        }
+
+        throw error;
+      } finally {
+        clearTimeout(wordRhythmTimeoutId);
+      }
+
+      const batchText = wordRhythmCompletion.choices[0].message.content || "{}";
+
+      let batchResult: unknown;
+
+      try {
+        batchResult = parseModelJson(batchText);
+      } catch {
+        return NextResponse.json(
+          {
+            error: `Invalid word-rhythm JSON from batch ${batchNumber} of ${batchCount}`,
+            raw: batchText,
+            resumeChordData: generationCheckpoint,
+          },
+          { status: 500 },
         );
       }
 
-      throw error;
-    } finally {
-      clearTimeout(wordRhythmTimeoutId);
+      const batchRecord =
+        batchResult &&
+        typeof batchResult === "object" &&
+        !Array.isArray(batchResult)
+          ? (batchResult as Record<string, unknown>)
+          : null;
+
+      const batchPlan =
+        batchRecord &&
+        batchRecord.wordRhythmPlan &&
+        typeof batchRecord.wordRhythmPlan === "object" &&
+        !Array.isArray(batchRecord.wordRhythmPlan)
+          ? (batchRecord.wordRhythmPlan as Record<string, unknown>)
+          : null;
+
+      if (!batchPlan || !Array.isArray(batchPlan.words)) {
+        return NextResponse.json(
+          {
+            error: `Word-rhythm batch ${batchNumber} of ${batchCount} returned invalid timing data.`,
+            raw: batchText,
+            resumeChordData: generationCheckpoint,
+          },
+          { status: 500 },
+        );
+      }
+
+      combinedWordRhythmWords.push(...batchPlan.words);
     }
 
-    const wordRhythmText =
-      wordRhythmCompletion.choices[0].message.content || "{}";
+    const wordRhythmText = JSON.stringify({
+      wordRhythmPlan: {
+        words: combinedWordRhythmWords,
+      },
+    });
 
     let wordRhythmResult;
 
@@ -3818,13 +3899,13 @@ Return wordRhythmPlan only.
             ? wordRecord.startBeat
             : null;
 
-        const endBar =
+        let endBar =
           typeof wordRecord.endBar === "number" &&
           Number.isInteger(wordRecord.endBar)
             ? wordRecord.endBar
             : null;
 
-        const endBeat =
+        let endBeat =
           typeof wordRecord.endBeat === "number" &&
           Number.isFinite(wordRecord.endBeat)
             ? wordRecord.endBeat
@@ -3879,14 +3960,6 @@ Return wordRhythmPlan only.
         }
 
         if (
-          compareMusicalPositions(startBar, startBeat, endBar, endBeat) >= 0
-        ) {
-          wordRhythmValidationErrors.push(
-            `wordIndex ${wordIndex} has an empty or reversed musical span.`,
-          );
-        }
-
-        if (
           compareMusicalPositions(
             startBar,
             startBeat,
@@ -3894,9 +3967,8 @@ Return wordRhythmPlan only.
             expected.phraseStartBeat,
           ) < 0
         ) {
-          wordRhythmValidationErrors.push(
-            `wordIndex ${wordIndex} starts before its confirmed phrase.`,
-          );
+          startBar = expected.phraseStartBar;
+          startBeat = expected.phraseStartBeat;
         }
 
         if (
@@ -3907,8 +3979,15 @@ Return wordRhythmPlan only.
             expected.phraseEndBeat,
           ) > 0
         ) {
+          endBar = expected.phraseEndBar;
+          endBeat = expected.phraseEndBeat;
+        }
+
+        if (
+          compareMusicalPositions(startBar, startBeat, endBar, endBeat) >= 0
+        ) {
           wordRhythmValidationErrors.push(
-            `wordIndex ${wordIndex} ends after its confirmed phrase.`,
+            `wordIndex ${wordIndex} has an empty or reversed musical span after phrase-boundary repair.`,
           );
         }
 
