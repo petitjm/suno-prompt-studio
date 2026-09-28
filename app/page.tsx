@@ -19491,6 +19491,7 @@ export default function Page() {
       tempoBpm: previewTempo,
       songTitle: activeProject?.title || "",
       songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+      songCreativeProfile,
     });
 
     const usableChordGenerationResumeData =
@@ -19511,6 +19512,7 @@ export default function Page() {
           tempoBpm: previewTempo,
           songTitle: activeProject?.title || "",
           songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+          songCreativeProfile,
           resumeChordData: usableChordGenerationResumeData,
         }),
       });

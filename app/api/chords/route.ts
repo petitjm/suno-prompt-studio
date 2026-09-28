@@ -119,6 +119,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const artistDNA = await getArtistDNAString();
 
+    const songCreativeProfile =
+      body.songCreativeProfile &&
+      typeof body.songCreativeProfile === "object" &&
+      !Array.isArray(body.songCreativeProfile)
+        ? (body.songCreativeProfile as Record<string, unknown>)
+        : null;
+
     const lyrics = typeof body.lyrics === "string" ? body.lyrics : "";
     const songTitle = typeof body.songTitle === "string" ? body.songTitle : "";
     const songVersionTitle =
@@ -128,6 +135,35 @@ export async function POST(req: Request) {
       typeof body.tempoBpm === "number" && Number.isFinite(body.tempoBpm)
         ? body.tempoBpm
         : null;
+
+    const songGenre =
+      typeof songCreativeProfile?.genre === "string"
+        ? songCreativeProfile.genre
+        : typeof body.genre === "string"
+          ? body.genre
+          : "";
+
+    const songMoods = Array.isArray(songCreativeProfile?.moods)
+      ? songCreativeProfile.moods.filter(
+          (mood): mood is string => typeof mood === "string",
+        )
+      : Array.isArray(body.moods)
+        ? body.moods.filter(
+            (mood: unknown): mood is string => typeof mood === "string",
+          )
+        : [];
+
+    const songCoreTheme =
+      typeof songCreativeProfile?.coreTheme === "string"
+        ? songCreativeProfile.coreTheme
+        : typeof body.theme === "string"
+          ? body.theme
+          : "";
+
+    const songEmotionalCentre =
+      typeof songCreativeProfile?.emotionalCentre === "string"
+        ? songCreativeProfile.emotionalCentre
+        : "";
 
     const suppliedResumeChordData =
       body.resumeChordData &&
@@ -146,10 +182,11 @@ Song version: ${songVersionTitle || "Untitled version"}
 
 Current performance tempo: ${tempoBpm !== null ? `${tempoBpm} BPM` : "Not supplied"}
 
-Genre: ${body.genre || ""}
-Mood: ${Array.isArray(body.moods) ? body.moods.join(", ") : ""}
-Theme: ${body.theme || ""}
-Hook: ${body.hook || ""}
+Genre: ${songGenre}
+Moods: ${songMoods.join(", ")}
+Core theme: ${songCoreTheme}
+Emotional centre: ${songEmotionalCentre}
+Hook: ${typeof body.hook === "string" ? body.hook : ""}
 
 Lyrics:
 ${lyrics}
@@ -273,7 +310,8 @@ Requirements:
 - Keep bar numbers continuous within each section and reset bar numbering to 1 at the start of each new section.
 - beat must be valid for the meter active at that bar.
 - Fractional beats may be used only when the musical change genuinely occurs between main beats, for example beat 2.5.
-- Use the requested genre, mood, artist DNA, and live acoustic performance feel to choose harmonic rhythm and phrasing.
+- Use the supplied song creative profile, artist DNA, and live acoustic performance feel to choose harmony, harmonic rhythm, phrasing, and section development.
+- Treat the Song Creative Profile as song-specific context and Artist DNA as artist-level context; combine them where useful without allowing generic artist tendencies to override the specific song's emotional identity.
 - Treat instrumental sections such as Intro, Interlude, Turnaround, Solo, and Outro as genuine songwriting sections with their own harmonic purpose.
 - Do not automatically copy the harmony of the adjacent sung section.
 - Consider whether an instrumental section should create contrast, tension, release, anticipation, harmonic colour, or a smoother transition.
