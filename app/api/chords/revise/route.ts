@@ -296,6 +296,30 @@ The response must have this exact top-level shape:
     const revisedChords = parsed.chords as Record<string, unknown>;
     const currentChordRecord = currentChords as Record<string, unknown>;
 
+    revisedChords.harmonyRevisionIntent = {
+      genre: typeof genre === "string" ? genre : "",
+      emotionalDirection:
+        typeof emotionalDirection === "string" ? emotionalDirection : "",
+      songCharacterDescriptors: Array.isArray(songCharacterDescriptors)
+        ? songCharacterDescriptors.filter(
+            (value: unknown): value is string => typeof value === "string",
+          )
+        : [],
+      harmonyCharacterDescriptors: Array.isArray(harmonyCharacterDescriptors)
+        ? harmonyCharacterDescriptors.filter(
+            (value: unknown): value is string => typeof value === "string",
+          )
+        : [],
+      harmonyRichness:
+        typeof harmonyRichness === "string" ? harmonyRichness : "balanced",
+      harmonyGuitarFeel:
+        typeof harmonyGuitarFeel === "string" ? harmonyGuitarFeel : "mixed",
+      harmonyMovement:
+        typeof harmonyMovement === "string" ? harmonyMovement : "balanced",
+      sectionIntents: Array.isArray(sectionIntents) ? sectionIntents : [],
+      revisionNotes: typeof revisionNotes === "string" ? revisionNotes : "",
+    };
+
     const revisedTimingPlan =
       revisedChords.musicalTimingPlan &&
       typeof revisedChords.musicalTimingPlan === "object" &&
