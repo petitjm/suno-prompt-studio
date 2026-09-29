@@ -19694,8 +19694,17 @@ export default function Page() {
       return;
     }
 
-    setChords(proposedHarmonyRevision);
-    setChordsText(JSON.stringify(proposedHarmonyRevision, null, 2));
+    const acceptedHarmonyRevision = {
+      ...proposedHarmonyRevision,
+    };
+
+    delete acceptedHarmonyRevision.songSheetLines;
+    delete acceptedHarmonyRevision.guideTrackPlan;
+    delete acceptedHarmonyRevision.fitReviewSignature;
+    delete acceptedHarmonyRevision.timingReviewSignature;
+
+    setChords(acceptedHarmonyRevision);
+    setChordsText(JSON.stringify(acceptedHarmonyRevision, null, 2));
     setActiveChordVersionId(null);
     setChordVersionTitle("Revised harmony");
     setChordTransposeSemitones(0);
