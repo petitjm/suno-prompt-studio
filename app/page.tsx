@@ -5972,6 +5972,44 @@ export default function Page() {
       },
     );
 
+    if (Array.isArray(record.harmonicTimeline)) {
+      nextRecord.harmonicTimeline = record.harmonicTimeline.map((section) => {
+        if (!section || typeof section !== "object" || Array.isArray(section)) {
+          return section;
+        }
+
+        const sectionRecord = section as Record<string, unknown>;
+
+        return {
+          ...sectionRecord,
+          events: Array.isArray(sectionRecord.events)
+            ? sectionRecord.events.map((event) => {
+                if (
+                  !event ||
+                  typeof event !== "object" ||
+                  Array.isArray(event)
+                ) {
+                  return event;
+                }
+
+                const eventRecord = event as Record<string, unknown>;
+
+                return {
+                  ...eventRecord,
+                  chord:
+                    typeof eventRecord.chord === "string"
+                      ? transposeChordSymbol(
+                          eventRecord.chord,
+                          chordTransposeSemitones,
+                        )
+                      : eventRecord.chord,
+                };
+              })
+            : sectionRecord.events,
+        };
+      });
+    }
+
     const lines = getPlacedSongSheetLines(record);
 
     if (lines.length > 0) {
