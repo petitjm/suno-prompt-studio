@@ -15097,6 +15097,7 @@ export default function Page() {
       "performanceFeel",
       "vocalDelivery",
       "guitarPattern",
+      "harmonyRevisionIntent",
       "intro",
       "verse",
       "preChorus",
