@@ -4708,6 +4708,7 @@ export default function Page() {
       }
       const savedVersion = data.version;
 
+      let carriedChordVersion: ChordVersionRecord | null = null;
       let carriedChordVersionTitle = "";
       let chordCarryWarning = "";
 
@@ -4768,7 +4769,14 @@ export default function Page() {
             );
           }
 
-          carriedChordVersionTitle = chordData.version?.title || carriedTitle;
+          carriedChordVersion =
+            chordData.version &&
+            typeof chordData.version === "object" &&
+            !Array.isArray(chordData.version)
+              ? (chordData.version as ChordVersionRecord)
+              : null;
+
+          carriedChordVersionTitle = carriedChordVersion?.title || carriedTitle;
         } catch (error) {
           chordCarryWarning =
             error instanceof Error
@@ -4784,6 +4792,39 @@ export default function Page() {
       if (savedVersion?.id) {
         setActiveSongVersionId(savedVersion.id);
         setSourceSongVersionId(savedVersion.id);
+      }
+
+      if (
+        carriedChordVersion?.id &&
+        carriedChordVersion.chord_data &&
+        typeof carriedChordVersion.chord_data === "object" &&
+        !Array.isArray(carriedChordVersion.chord_data)
+      ) {
+        const carriedChordData =
+          carriedChordVersion.chord_data as ChordResponse;
+
+        setActiveChordVersionId(carriedChordVersion.id);
+        setChords(carriedChordData);
+        setChordsText(JSON.stringify(carriedChordData, null, 2));
+        setChordVersionTitle(
+          carriedChordVersion.title || carriedChordVersionTitle,
+        );
+        setReviewedChordFitSignature(
+          getStoredChordFitReviewSignature(carriedChordData),
+        );
+        setReviewedChordTimingSignature(
+          getStoredChordTimingReviewSignature(carriedChordData),
+        );
+        setChordTransposeSemitones(0);
+        setLastAppliedTransposeSnapshot(null);
+
+        if (savedVersion?.id) {
+          rememberSongChordContext(
+            activeProject.id,
+            savedVersion.id,
+            carriedChordVersion.id,
+          );
+        }
       }
 
       setSourceHasUnsavedChanges(false);
