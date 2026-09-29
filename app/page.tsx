@@ -4730,9 +4730,19 @@ export default function Page() {
           // against the newly saved lyrics.
           delete carriedChordData.songSheetLines;
 
+          // Lyric phrase timing and word rhythm belong to the old lyrics
+          // and must be regenerated for the newly saved song version.
+          delete carriedChordData.lyricTimingPlan;
+          delete carriedChordData.wordRhythmPlan;
+
           // The guide plan was created for the previous version.
           // It should be regenerated after the new lyric/chord alignment.
           delete carriedChordData.guideTrackPlan;
+
+          // Previous fit/timing approvals do not apply to the new lyrics.
+          // Preserve the musical arrangement, but require it to be reviewed again.
+          delete carriedChordData.fitReviewSignature;
+          delete carriedChordData.timingReviewSignature;
 
           const sourceChordTitle =
             sourceChordVersionForSave.title || "Saved chords";
