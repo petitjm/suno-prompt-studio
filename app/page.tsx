@@ -650,6 +650,19 @@ export default function Page() {
     useState<number | null>(null);
   const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
   const sheetGuideAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [songwriterReferenceFileName, setSongwriterReferenceFileName] =
+    useState("");
+  const [songwriterReferenceAudioUrl, setSongwriterReferenceAudioUrl] =
+    useState("");
+  const [songwriterReferenceDuration, setSongwriterReferenceDuration] =
+    useState(0);
+
+  const songwriterReferenceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const songwriterReferenceWaveformCanvasRef = useRef<HTMLCanvasElement | null>(
+    null,
+  );
+  const songwriterReferenceWaveformPeaksRef = useRef<number[]>([]);
+  const songwriterReferenceWaveformProgressRef = useRef(0);
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
@@ -966,6 +979,167 @@ export default function Page() {
     setGeneratedAudioActiveChord(
       getGeneratedAudioActiveChord(currentTimeSeconds),
     );
+  };
+
+  const drawSongwriterReferenceWaveform = (progress = 0) => {
+    const canvas = songwriterReferenceWaveformCanvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    const canvasWidth = Math.max(1, canvas.clientWidth);
+    const canvasHeight = Math.max(48, canvas.clientHeight || 72);
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    canvas.width = Math.round(canvasWidth * pixelRatio);
+    canvas.height = Math.round(canvasHeight * pixelRatio);
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    context.scale(pixelRatio, pixelRatio);
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    context.fillStyle = "rgba(88, 28, 135, 0.18)";
+    context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    const peaks = songwriterReferenceWaveformPeaksRef.current;
+
+    if (peaks.length === 0) {
+      context.fillStyle = "rgba(216, 180, 254, 0.75)";
+      context.font = "11px sans-serif";
+      context.fillText("Import a recording to see its waveform.", 10, 24);
+      return;
+    }
+
+    const centerY = canvasHeight / 2;
+    const barWidth = canvasWidth / peaks.length;
+
+    context.fillStyle = "rgba(216, 180, 254, 0.75)";
+
+    peaks.forEach((peak, index) => {
+      const safePeak = Math.max(0.02, Math.min(1, peak));
+      const barHeight = safePeak * (canvasHeight - 12);
+      const x = index * barWidth;
+      const y = centerY - barHeight / 2;
+
+      context.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
+    });
+
+    const safeProgress = Math.max(0, Math.min(1, progress));
+
+    context.fillStyle = "rgba(192, 132, 252, 0.22)";
+    context.fillRect(0, 0, canvasWidth * safeProgress, canvasHeight);
+
+    context.fillStyle = "rgba(243, 232, 255, 0.95)";
+    context.fillRect(canvasWidth * safeProgress, 0, 2, canvasHeight);
+  };
+
+  const importSongwriterReference = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("audio/")) {
+      setProjectMessage("Choose a valid audio recording.");
+      return;
+    }
+
+    try {
+      if (songwriterReferenceAudioUrl) {
+        URL.revokeObjectURL(songwriterReferenceAudioUrl);
+      }
+
+      const audioUrl = URL.createObjectURL(file);
+
+      setSongwriterReferenceFileName(file.name);
+      setSongwriterReferenceAudioUrl(audioUrl);
+      setSongwriterReferenceDuration(0);
+
+      songwriterReferenceWaveformProgressRef.current = 0;
+      songwriterReferenceWaveformPeaksRef.current = [];
+
+      const arrayBuffer = await file.arrayBuffer();
+
+      const AudioContextConstructor =
+        window.AudioContext ||
+        (
+          window as unknown as {
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
+
+      if (!AudioContextConstructor) {
+        return;
+      }
+
+      const audioContext = new AudioContextConstructor();
+      const audioBuffer = await audioContext.decodeAudioData(
+        arrayBuffer.slice(0),
+      );
+
+      const channelData = audioBuffer.getChannelData(0);
+      const barCount = 180;
+      const samplesPerBar = Math.max(
+        1,
+        Math.floor(channelData.length / barCount),
+      );
+
+      const peaks: number[] = [];
+
+      for (let index = 0; index < barCount; index += 1) {
+        const start = index * samplesPerBar;
+        const end = Math.min(channelData.length, start + samplesPerBar);
+
+        let peak = 0;
+
+        for (let sampleIndex = start; sampleIndex < end; sampleIndex += 1) {
+          peak = Math.max(peak, Math.abs(channelData[sampleIndex] || 0));
+        }
+
+        peaks.push(peak);
+      }
+
+      const largestPeak = Math.max(...peaks, 0.001);
+
+      songwriterReferenceWaveformPeaksRef.current = peaks.map((peak) =>
+        Math.min(1, peak / largestPeak),
+      );
+
+      setSongwriterReferenceDuration(audioBuffer.duration);
+      drawSongwriterReferenceWaveform(0);
+
+      await audioContext.close();
+    } catch (error) {
+      console.error("Could not import songwriter reference:", error);
+
+      setProjectMessage(
+        error instanceof Error
+          ? `Could not import songwriter reference: ${error.message}`
+          : "Could not import songwriter reference.",
+      );
+    }
+  };
+
+  const removeSongwriterReference = () => {
+    if (songwriterReferenceAudioUrl) {
+      URL.revokeObjectURL(songwriterReferenceAudioUrl);
+    }
+
+    songwriterReferenceAudioRef.current?.pause();
+
+    setSongwriterReferenceAudioUrl("");
+    setSongwriterReferenceFileName("");
+    setSongwriterReferenceDuration(0);
+
+    songwriterReferenceWaveformPeaksRef.current = [];
+    songwriterReferenceWaveformProgressRef.current = 0;
+
+    drawSongwriterReferenceWaveform(0);
   };
 
   const revealGeneratedAudioWaveform = () => {
@@ -31930,6 +32104,126 @@ ${buildRewriteInstruction(
                             ? "Make again"
                             : "Make Song"}
                       </button>
+                    </div>
+
+                    <div className="col-span-full mt-2 rounded border border-purple-800 bg-purple-950/30 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-purple-100">
+                            Songwriter reference
+                          </div>
+
+                          <div className="mt-1 max-w-3xl text-xs text-purple-200">
+                            Keep the original human performance beside the
+                            developing song. This recording is the creative
+                            reference for melody, phrasing, timing and emotional
+                            character.
+                          </div>
+                        </div>
+
+                        <label className="cursor-pointer rounded bg-purple-700 px-3 py-2 text-xs font-semibold text-white hover:bg-purple-600">
+                          Import recording
+                          <input
+                            type="file"
+                            accept="audio/*,.wav,.mp3,.m4a,.webm"
+                            className="hidden"
+                            onChange={(event) => {
+                              void importSongwriterReference(
+                                event.currentTarget.files?.[0] || null,
+                              );
+
+                              event.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {songwriterReferenceAudioUrl ? (
+                        <div className="mt-4 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <div className="text-xs font-medium text-purple-100">
+                                Original songwriter performance
+                              </div>
+
+                              <div className="mt-1 text-[11px] text-purple-300">
+                                {songwriterReferenceFileName}
+                                {songwriterReferenceDuration > 0
+                                  ? ` · ${formatGeneratedAudioTime(songwriterReferenceDuration)}`
+                                  : ""}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={removeSongwriterReference}
+                              className="rounded border border-purple-700 px-3 py-1 text-xs text-purple-200 hover:bg-purple-900"
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          <audio
+                            ref={songwriterReferenceAudioRef}
+                            controls
+                            src={songwriterReferenceAudioUrl}
+                            className="w-full"
+                            onLoadedMetadata={(event) => {
+                              const duration = event.currentTarget.duration;
+
+                              if (Number.isFinite(duration) && duration > 0) {
+                                setSongwriterReferenceDuration(duration);
+                              }
+                            }}
+                            onTimeUpdate={(event) => {
+                              const duration = event.currentTarget.duration;
+                              const currentTime =
+                                event.currentTarget.currentTime;
+
+                              const progress =
+                                Number.isFinite(duration) && duration > 0
+                                  ? currentTime / duration
+                                  : 0;
+
+                              songwriterReferenceWaveformProgressRef.current =
+                                progress;
+                              drawSongwriterReferenceWaveform(progress);
+                            }}
+                          />
+
+                          <canvas
+                            ref={songwriterReferenceWaveformCanvasRef}
+                            className="h-20 w-full cursor-pointer rounded border border-purple-800 bg-purple-950/40"
+                            onClick={(event) => {
+                              const audio = songwriterReferenceAudioRef.current;
+
+                              if (!audio || songwriterReferenceDuration <= 0) {
+                                return;
+                              }
+
+                              const rect =
+                                event.currentTarget.getBoundingClientRect();
+                              const progress =
+                                (event.clientX - rect.left) / rect.width;
+
+                              audio.currentTime =
+                                songwriterReferenceDuration *
+                                Math.max(0, Math.min(1, progress));
+                            }}
+                          />
+
+                          <div className="text-[11px] text-purple-300">
+                            This is the human reference. Later analysis should
+                            preserve its melodic identity and expressive
+                            roughness rather than automatically smoothing or
+                            quantising it.
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded border border-dashed border-purple-800 p-4 text-xs text-purple-300">
+                          No songwriter reference loaded yet.
+                        </div>
+                      )}
                     </div>
 
                     <div className="col-span-full mt-2 rounded border border-purple-900 bg-purple-950/20 p-3">
