@@ -8,6 +8,8 @@ import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
 
 import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
 
+import { buildMelodySectionIntentTargets } from "@/lib/melody/build-section-intent-targets";
+
 import { buildInitialMelodyContours } from "@/lib/melody/build-initial-melody-contours";
 
 import { buildLyricPhraseUnits } from "@/lib/melody/build-lyric-phrase-units";
@@ -3100,92 +3102,8 @@ export default function Page() {
     });
   })();
 
-  const melodySectionIntentTargets = (() => {
-    const sourceLines = performanceSections.flatMap((section) => {
-      const normalizedSectionLabel = String(section.label || "")
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}' ]/gu, "")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      return section.content
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter((line) => {
-          if (!line) {
-            return false;
-          }
-
-          if (
-            (line.startsWith("[") && line.endsWith("]")) ||
-            (line.startsWith("{") && line.endsWith("}"))
-          ) {
-            return false;
-          }
-
-          const normalizedLine = line
-            .toLowerCase()
-            .replace(/[^\p{L}\p{N}' ]/gu, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-          if (
-            normalizedSectionLabel &&
-            normalizedLine === normalizedSectionLabel
-          ) {
-            return false;
-          }
-
-          return true;
-        })
-        .map((lyric) => ({
-          section: section.label,
-          lyric,
-          chords: [],
-        }));
-    });
-
-    const sectionInstances: {
-      section: string;
-      sourceLineIndexes: number[];
-    }[] = [];
-
-    sourceLines.forEach((line, sourceLineIndex) => {
-      const section = line.section || "Unknown section";
-      const previousSection = sectionInstances[sectionInstances.length - 1];
-
-      if (previousSection && previousSection.section === section) {
-        previousSection.sourceLineIndexes.push(sourceLineIndex);
-        return;
-      }
-
-      sectionInstances.push({
-        section,
-        sourceLineIndexes: [sourceLineIndex],
-      });
-    });
-
-    return sectionInstances.map((sectionInstance, index) => {
-      const order = index + 1;
-
-      const sectionSlug =
-        sectionInstance.section
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "") || "section";
-
-      const sourceLineSlug =
-        sectionInstance.sourceLineIndexes.length > 0
-          ? sectionInstance.sourceLineIndexes.join("-")
-          : "none";
-
-      return {
-        section: sectionInstance.section,
-        sectionInstanceId: `${order}-${sectionSlug}-${sourceLineSlug}`,
-      };
-    });
-  })();
+  const melodySectionIntentTargets =
+    buildMelodySectionIntentTargets(performanceSections);
 
   const updateMelodySectionCharacter = (
     sectionInstanceId: string,
@@ -4655,6 +4573,72 @@ export default function Page() {
 
       const sourceSongVersionIdForSave = sourceSongVersionId;
 
+      const originalSongVersion = songVersions.find(
+        (version) => version.id === sourceSongVersionIdForSave,
+      );
+
+      const originalSectionTargets = originalSongVersion
+        ? buildMelodySectionIntentTargets(
+            parsePerformanceSections(getSongVersionLyrics(originalSongVersion)),
+          )
+        : [];
+
+      const revisedSectionTargets = buildMelodySectionIntentTargets(
+        parsePerformanceSections(performanceSheet),
+      );
+
+      const sectionSequencesMatch =
+        originalSectionTargets.length === revisedSectionTargets.length &&
+        originalSectionTargets.every(
+          (section, index) =>
+            section.section.trim().toLowerCase() ===
+            revisedSectionTargets[index].section.trim().toLowerCase(),
+        );
+
+      const sectionIdReplacements = new Map<string, string>();
+
+      if (originalSongVersion && sectionSequencesMatch) {
+        originalSectionTargets.forEach((section, index) => {
+          sectionIdReplacements.set(
+            section.sectionInstanceId,
+            revisedSectionTargets[index].sectionInstanceId,
+          );
+        });
+      }
+
+      const revisedSectionIds = new Set(
+        revisedSectionTargets.map((target) => target.sectionInstanceId),
+      );
+
+      const reconciledIntentMap = new Map<string, MelodySectionIntent>();
+
+      // Give priority to overrides already associated with
+      // the revised section identifiers.
+      melodySectionIntents.forEach((intent) => {
+        if (revisedSectionIds.has(intent.sectionInstanceId)) {
+          reconciledIntentMap.set(intent.sectionInstanceId, intent);
+        }
+      });
+
+      // Transfer remaining overrides without replacing an override
+      // already associated with the destination section.
+      melodySectionIntents.forEach((intent) => {
+        const nextSectionInstanceId =
+          sectionIdReplacements.get(intent.sectionInstanceId) ??
+          intent.sectionInstanceId;
+
+        if (!reconciledIntentMap.has(nextSectionInstanceId)) {
+          reconciledIntentMap.set(nextSectionInstanceId, {
+            ...intent,
+            sectionInstanceId: nextSectionInstanceId,
+          });
+        }
+      });
+
+      const reconciledMelodySectionIntents = Array.from(
+        reconciledIntentMap.values(),
+      );
+
       const activeSourceChordVersion =
         sourceSongVersionIdForSave && activeChordVersionId
           ? chordVersions.find(
@@ -4695,7 +4679,7 @@ export default function Page() {
             lyrics_full: performanceSheet,
             musical_intent: {
               melody_character: melodyCharacter,
-              section_intents: melodySectionIntents,
+              section_intents: reconciledMelodySectionIntents,
             },
           },
         }),
@@ -4786,6 +4770,9 @@ export default function Page() {
       }
 
       await loadProjectData(activeProject.id, { silent: true });
+
+      setMelodyCharacter(melodyCharacter);
+      setMelodySectionIntents(reconciledMelodySectionIntents);
 
       resetAudioPreviewRequestState();
 
