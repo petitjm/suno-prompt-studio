@@ -670,6 +670,25 @@ export default function Page() {
 
   const [songwriterReferenceSelectionEnd, setSongwriterReferenceSelectionEnd] =
     useState<number | null>(null);
+  type SongwriterReferenceRecord = {
+    id: string;
+    project_id: string;
+    song_version_id: string | null;
+    original_storage_path: string;
+    playback_storage_path: string | null;
+    original_filename: string;
+    original_content_type: string | null;
+    playback_content_type: string | null;
+    duration_seconds: number | null;
+    source_type: "imported" | "recorded";
+    created_at: string;
+  };
+
+  const [songwriterReferenceId, setSongwriterReferenceId] = useState("");
+  const [songwriterReferenceSaved, setSongwriterReferenceSaved] =
+    useState(false);
+
+  const latestSongwriterReferenceLoadRef = useRef(0);
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
@@ -1046,47 +1065,24 @@ export default function Page() {
     context.fillRect(canvasWidth * safeProgress, 0, 2, canvasHeight);
   };
 
-  const importSongwriterReference = async (file: File | null) => {
-    if (!file) {
-      return;
+  const loadSongwriterReferenceWaveformFromArrayBuffer = async (
+    arrayBuffer: ArrayBuffer,
+  ) => {
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (
+        window as unknown as {
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).webkitAudioContext;
+
+    if (!AudioContextConstructor) {
+      throw new Error("Web Audio is not available in this browser.");
     }
 
-    if (!file.type.startsWith("audio/")) {
-      setProjectMessage("Choose a valid audio recording.");
-      return;
-    }
+    const audioContext = new AudioContextConstructor();
 
     try {
-      if (songwriterReferenceAudioUrl) {
-        URL.revokeObjectURL(songwriterReferenceAudioUrl);
-      }
-
-      const audioUrl = URL.createObjectURL(file);
-
-      setSongwriterReferenceFileName(file.name);
-      setSongwriterReferenceAudioUrl(audioUrl);
-      setSongwriterReferenceDuration(0);
-      setSongwriterReferenceSelectionStart(null);
-      setSongwriterReferenceSelectionEnd(null);
-
-      songwriterReferenceWaveformProgressRef.current = 0;
-      songwriterReferenceWaveformPeaksRef.current = [];
-
-      const arrayBuffer = await file.arrayBuffer();
-
-      const AudioContextConstructor =
-        window.AudioContext ||
-        (
-          window as unknown as {
-            webkitAudioContext?: typeof AudioContext;
-          }
-        ).webkitAudioContext;
-
-      if (!AudioContextConstructor) {
-        return;
-      }
-
-      const audioContext = new AudioContextConstructor();
       const audioBuffer = await audioContext.decodeAudioData(
         arrayBuffer.slice(0),
       );
@@ -1120,22 +1116,257 @@ export default function Page() {
       );
 
       setSongwriterReferenceDuration(audioBuffer.duration);
-      drawSongwriterReferenceWaveform(0);
 
+      window.setTimeout(() => {
+        drawSongwriterReferenceWaveform(
+          songwriterReferenceWaveformProgressRef.current,
+        );
+      }, 0);
+
+      return audioBuffer.duration;
+    } finally {
       await audioContext.close();
+    }
+  };
+
+  const restoreLatestSongwriterReference = async (projectId: string) => {
+    const loadToken = Date.now();
+    latestSongwriterReferenceLoadRef.current = loadToken;
+
+    const { data: reference, error: referenceError } = await supabase
+      .from("songwriter_references")
+      .select(
+        "id, project_id, song_version_id, original_storage_path, playback_storage_path, original_filename, original_content_type, playback_content_type, duration_seconds, source_type, created_at",
+      )
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestSongwriterReferenceLoadRef.current !== loadToken) {
+      return;
+    }
+
+    if (referenceError) {
+      console.error(
+        "Could not restore songwriter reference metadata:",
+        referenceError,
+      );
+      return;
+    }
+
+    if (!reference) {
+      setSongwriterReferenceId("");
+      setSongwriterReferenceSaved(false);
+      setSongwriterReferenceAudioUrl("");
+      setSongwriterReferenceFileName("");
+      setSongwriterReferenceDuration(0);
+      setSongwriterReferenceSelectionStart(null);
+      setSongwriterReferenceSelectionEnd(null);
+
+      songwriterReferenceWaveformPeaksRef.current = [];
+      songwriterReferenceWaveformProgressRef.current = 0;
+
+      return;
+    }
+
+    const savedReference = reference as SongwriterReferenceRecord;
+
+    const playbackPath =
+      savedReference.playback_storage_path ||
+      savedReference.original_storage_path;
+
+    const { data: signedAudio, error: signedAudioError } =
+      await supabase.storage
+        .from("songwriter-references")
+        .createSignedUrl(playbackPath, 60 * 60 * 24);
+
+    if (latestSongwriterReferenceLoadRef.current !== loadToken) {
+      return;
+    }
+
+    if (signedAudioError || !signedAudio?.signedUrl) {
+      console.error(
+        "Could not create songwriter reference signed URL:",
+        signedAudioError,
+      );
+      return;
+    }
+
+    songwriterReferenceAudioRef.current?.pause();
+
+    if (songwriterReferenceAudioUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(songwriterReferenceAudioUrl);
+    }
+
+    setSongwriterReferenceId(savedReference.id);
+    setSongwriterReferenceSaved(true);
+    setSongwriterReferenceFileName(savedReference.original_filename);
+    setSongwriterReferenceAudioUrl(signedAudio.signedUrl);
+    setSongwriterReferenceDuration(
+      typeof savedReference.duration_seconds === "number"
+        ? savedReference.duration_seconds
+        : 0,
+    );
+    setSongwriterReferenceSelectionStart(null);
+    setSongwriterReferenceSelectionEnd(null);
+
+    songwriterReferenceWaveformProgressRef.current = 0;
+    songwriterReferenceWaveformPeaksRef.current = [];
+
+    try {
+      const response = await fetch(signedAudio.signedUrl);
+
+      if (!response.ok) {
+        throw new Error(`Reference audio returned ${response.status}.`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+
+      if (latestSongwriterReferenceLoadRef.current !== loadToken) {
+        return;
+      }
+
+      await loadSongwriterReferenceWaveformFromArrayBuffer(arrayBuffer);
+    } catch (error) {
+      console.error("Could not rebuild songwriter reference waveform:", error);
+    }
+  };
+
+  const importSongwriterReference = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (!activeProject?.id) {
+      setProjectMessage(
+        "Select or create a project before importing a songwriter reference.",
+      );
+      return;
+    }
+
+    if (!file.type.startsWith("audio/")) {
+      setProjectMessage("Choose a valid audio recording.");
+      return;
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const duration =
+        await loadSongwriterReferenceWaveformFromArrayBuffer(arrayBuffer);
+
+      songwriterReferenceAudioRef.current?.pause();
+
+      if (songwriterReferenceAudioUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(songwriterReferenceAudioUrl);
+      }
+
+      const audioUrl = URL.createObjectURL(file);
+
+      setSongwriterReferenceId("");
+      setSongwriterReferenceSaved(false);
+      setSongwriterReferenceFileName(file.name);
+      setSongwriterReferenceAudioUrl(audioUrl);
+      setSongwriterReferenceDuration(duration);
+      setSongwriterReferenceSelectionStart(null);
+      setSongwriterReferenceSelectionEnd(null);
+
+      songwriterReferenceWaveformProgressRef.current = 0;
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error(
+          "The recording is available in this browser session, but could not be saved because the user session is unavailable.",
+        );
+      }
+
+      const referenceId = crypto.randomUUID();
+
+      const safeFilename =
+        file.name
+          .trim()
+          .replace(/[^a-zA-Z0-9._-]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "original-audio";
+
+      const storagePath = [
+        user.id,
+        activeProject.id,
+        referenceId,
+        safeFilename,
+      ].join("/");
+
+      const { error: uploadError } = await supabase.storage
+        .from("songwriter-references")
+        .upload(storagePath, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(
+          `The recording is available in this browser session, but persistent upload failed: ${uploadError.message}`,
+        );
+      }
+
+      const { error: metadataError } = await supabase
+        .from("songwriter_references")
+        .insert({
+          id: referenceId,
+          project_id: activeProject.id,
+          song_version_id: activeSongVersionId || null,
+          original_storage_path: storagePath,
+          playback_storage_path: null,
+          original_filename: file.name,
+          original_content_type: file.type || null,
+          playback_content_type: null,
+          duration_seconds: duration,
+          source_type: "imported",
+        });
+
+      if (metadataError) {
+        const { error: cleanupError } = await supabase.storage
+          .from("songwriter-references")
+          .remove([storagePath]);
+
+        if (cleanupError) {
+          console.error(
+            "Songwriter reference upload cleanup failed:",
+            cleanupError,
+          );
+        }
+
+        throw new Error(
+          `The recording is available in this browser session, but its saved reference record could not be created: ${metadataError.message}`,
+        );
+      }
+
+      setSongwriterReferenceId(referenceId);
+      setSongwriterReferenceSaved(true);
+
+      setProjectMessage(`Saved songwriter reference: ${file.name}`);
     } catch (error) {
       console.error("Could not import songwriter reference:", error);
 
       setProjectMessage(
         error instanceof Error
-          ? `Could not import songwriter reference: ${error.message}`
-          : "Could not import songwriter reference.",
+          ? `Could not save songwriter reference: ${error.message}`
+          : "Could not save songwriter reference.",
       );
     }
   };
 
   const removeSongwriterReference = () => {
-    if (songwriterReferenceAudioUrl) {
+    if (songwriterReferenceSaved) {
+      setProjectMessage(
+        "The songwriter reference remains safely stored with this project. This only clears it from the current view.",
+      );
+    }
+
+    if (songwriterReferenceAudioUrl.startsWith("blob:")) {
       URL.revokeObjectURL(songwriterReferenceAudioUrl);
     }
 
@@ -1146,6 +1377,8 @@ export default function Page() {
     setSongwriterReferenceDuration(0);
     setSongwriterReferenceSelectionStart(null);
     setSongwriterReferenceSelectionEnd(null);
+    setSongwriterReferenceId("");
+    setSongwriterReferenceSaved(false);
 
     songwriterReferenceWaveformPeaksRef.current = [];
     songwriterReferenceWaveformProgressRef.current = 0;
@@ -4738,6 +4971,12 @@ export default function Page() {
           tempoBpm: previewTempo,
           audioVersionId: rememberedContext.audioVersionId,
         });
+      }
+
+      await restoreLatestSongwriterReference(projectId);
+
+      if (latestProjectLoadRef.current !== token) {
+        return;
       }
 
       if (projectVersionResult.song.ok && projectVersionResult.chord.ok) {
@@ -32210,6 +32449,11 @@ ${buildRewriteInstruction(
                                   ? ` · ${formatGeneratedAudioTime(songwriterReferenceDuration)}`
                                   : ""}
                               </div>
+                              {songwriterReferenceSaved && (
+                                <div className="mt-1 text-[11px] text-green-300">
+                                  Saved with project · restores automatically
+                                </div>
+                              )}
                             </div>
 
                             <button
