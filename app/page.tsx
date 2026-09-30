@@ -663,6 +663,13 @@ export default function Page() {
   );
   const songwriterReferenceWaveformPeaksRef = useRef<number[]>([]);
   const songwriterReferenceWaveformProgressRef = useRef(0);
+  const [
+    songwriterReferenceSelectionStart,
+    setSongwriterReferenceSelectionStart,
+  ] = useState<number | null>(null);
+
+  const [songwriterReferenceSelectionEnd, setSongwriterReferenceSelectionEnd] =
+    useState<number | null>(null);
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
@@ -1059,6 +1066,8 @@ export default function Page() {
       setSongwriterReferenceFileName(file.name);
       setSongwriterReferenceAudioUrl(audioUrl);
       setSongwriterReferenceDuration(0);
+      setSongwriterReferenceSelectionStart(null);
+      setSongwriterReferenceSelectionEnd(null);
 
       songwriterReferenceWaveformProgressRef.current = 0;
       songwriterReferenceWaveformPeaksRef.current = [];
@@ -1135,11 +1144,60 @@ export default function Page() {
     setSongwriterReferenceAudioUrl("");
     setSongwriterReferenceFileName("");
     setSongwriterReferenceDuration(0);
+    setSongwriterReferenceSelectionStart(null);
+    setSongwriterReferenceSelectionEnd(null);
 
     songwriterReferenceWaveformPeaksRef.current = [];
     songwriterReferenceWaveformProgressRef.current = 0;
 
     drawSongwriterReferenceWaveform(0);
+  };
+
+  const setSongwriterReferenceSelectionPoint = (point: "start" | "end") => {
+    const audio = songwriterReferenceAudioRef.current;
+
+    if (!audio || !Number.isFinite(audio.currentTime)) {
+      return;
+    }
+
+    const currentTime = Math.max(0, audio.currentTime);
+
+    if (point === "start") {
+      setSongwriterReferenceSelectionStart(currentTime);
+
+      if (
+        songwriterReferenceSelectionEnd !== null &&
+        songwriterReferenceSelectionEnd <= currentTime
+      ) {
+        setSongwriterReferenceSelectionEnd(null);
+      }
+
+      return;
+    }
+
+    if (
+      songwriterReferenceSelectionStart !== null &&
+      currentTime <= songwriterReferenceSelectionStart
+    ) {
+      return;
+    }
+
+    setSongwriterReferenceSelectionEnd(currentTime);
+  };
+
+  const playSongwriterReferenceSelection = () => {
+    const audio = songwriterReferenceAudioRef.current;
+
+    if (
+      !audio ||
+      songwriterReferenceSelectionStart === null ||
+      songwriterReferenceSelectionEnd === null
+    ) {
+      return;
+    }
+
+    audio.currentTime = songwriterReferenceSelectionStart;
+    void audio.play();
   };
 
   const revealGeneratedAudioWaveform = () => {
@@ -32188,8 +32246,83 @@ ${buildRewriteInstruction(
                               songwriterReferenceWaveformProgressRef.current =
                                 progress;
                               drawSongwriterReferenceWaveform(progress);
+                              if (
+                                songwriterReferenceSelectionStart !== null &&
+                                songwriterReferenceSelectionEnd !== null &&
+                                currentTime >=
+                                  songwriterReferenceSelectionEnd &&
+                                currentTime >= songwriterReferenceSelectionStart
+                              ) {
+                                event.currentTarget.pause();
+                                event.currentTarget.currentTime =
+                                  songwriterReferenceSelectionEnd;
+                              }
                             }}
                           />
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSongwriterReferenceSelectionPoint("start")
+                              }
+                              className="rounded border border-purple-700 px-3 py-1 text-purple-200 hover:bg-purple-900"
+                            >
+                              Set selection start
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSongwriterReferenceSelectionPoint("end")
+                              }
+                              className="rounded border border-purple-700 px-3 py-1 text-purple-200 hover:bg-purple-900"
+                            >
+                              Set selection end
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={playSongwriterReferenceSelection}
+                              disabled={
+                                songwriterReferenceSelectionStart === null ||
+                                songwriterReferenceSelectionEnd === null
+                              }
+                              className="rounded border border-purple-700 px-3 py-1 text-purple-200 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Play selection
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSongwriterReferenceSelectionStart(null);
+                                setSongwriterReferenceSelectionEnd(null);
+                              }}
+                              disabled={
+                                songwriterReferenceSelectionStart === null &&
+                                songwriterReferenceSelectionEnd === null
+                              }
+                              className="rounded border border-purple-800 px-3 py-1 text-purple-300 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Clear selection
+                            </button>
+
+                            <span className="text-purple-300">
+                              Start:{" "}
+                              {songwriterReferenceSelectionStart !== null
+                                ? formatGeneratedAudioTime(
+                                    songwriterReferenceSelectionStart,
+                                  )
+                                : "—"}
+                              {" · "}
+                              End:{" "}
+                              {songwriterReferenceSelectionEnd !== null
+                                ? formatGeneratedAudioTime(
+                                    songwriterReferenceSelectionEnd,
+                                  )
+                                : "—"}
+                            </span>
+                          </div>
 
                           <canvas
                             ref={songwriterReferenceWaveformCanvasRef}
