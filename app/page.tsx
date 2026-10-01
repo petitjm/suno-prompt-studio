@@ -761,6 +761,15 @@ export default function Page() {
     fromNoteName: string;
     toNoteName: string;
   };
+  type SongwriterReferenceInternalMovement = {
+    kind: "internal-dip" | "internal-rise" | "pitch-settling";
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+    startFrequencyHz: number;
+    extremeFrequencyHz: number;
+    endFrequencyHz: number;
+    movementCents: number;
+  };
   type SongwriterReferenceExpressiveEvent = {
     kind: "stable-note" | "expressive-dip" | "expressive-rise";
     startTimeSeconds: number;
@@ -776,6 +785,7 @@ export default function Page() {
     approach: SongwriterReferencePitchApproach | null;
     release: SongwriterReferencePitchRelease | null;
     transitionAfter: SongwriterReferencePitchTransition | null;
+    internalMovement: SongwriterReferenceInternalMovement | null;
 
     sourceCandidateIndexes: number[];
     description: string;
@@ -2153,6 +2163,119 @@ export default function Page() {
     };
   };
 
+  const detectSongwriterReferenceInternalMovement = ({
+    trace,
+    currentCandidate,
+    nextCandidate,
+  }: {
+    trace: SongwriterReferenceTracePoint[];
+    currentCandidate: SongwriterReferenceNoteCandidate;
+    nextCandidate: SongwriterReferenceNoteCandidate;
+  }): SongwriterReferenceInternalMovement | null => {
+    if (currentCandidate.midiNote !== nextCandidate.midiNote) {
+      return null;
+    }
+
+    const maximumGapSeconds = 0.35;
+    const minimumMovementCents = 55;
+    const minimumVoicedFrames = 4;
+
+    const gapSeconds =
+      nextCandidate.startTimeSeconds - currentCandidate.endTimeSeconds;
+
+    if (gapSeconds <= 0 || gapSeconds > maximumGapSeconds) {
+      return null;
+    }
+
+    const movementFrames = trace.filter(
+      (point) =>
+        point.timeSeconds > currentCandidate.endTimeSeconds &&
+        point.timeSeconds < nextCandidate.startTimeSeconds &&
+        typeof point.correctedFrequencyHz === "number" &&
+        Number.isFinite(point.correctedFrequencyHz),
+    );
+
+    if (movementFrames.length < minimumVoicedFrames) {
+      return null;
+    }
+
+    const frequencies = movementFrames.map(
+      (point) => point.correctedFrequencyHz as number,
+    );
+
+    const startFrequencyHz = medianNumber(
+      frequencies.slice(0, Math.min(3, frequencies.length)),
+    );
+
+    const endFrequencyHz = medianNumber(
+      frequencies.slice(Math.max(0, frequencies.length - 3)),
+    );
+
+    const minimumFrequencyHz = Math.min(...frequencies);
+
+    const maximumFrequencyHz = Math.max(...frequencies);
+
+    const downwardMovementCents =
+      1200 * Math.log2(minimumFrequencyHz / startFrequencyHz);
+
+    const upwardMovementCents =
+      1200 * Math.log2(maximumFrequencyHz / startFrequencyHz);
+
+    const endFromStartCents =
+      1200 * Math.log2(endFrequencyHz / startFrequencyHz);
+
+    const returnedNearStart = Math.abs(endFromStartCents) <= 40;
+
+    if (
+      returnedNearStart &&
+      Math.abs(downwardMovementCents) >= minimumMovementCents &&
+      Math.abs(downwardMovementCents) > Math.abs(upwardMovementCents)
+    ) {
+      return {
+        kind: "internal-dip",
+        startTimeSeconds: movementFrames[0].timeSeconds,
+        endTimeSeconds: movementFrames[movementFrames.length - 1].timeSeconds,
+        startFrequencyHz,
+        extremeFrequencyHz: minimumFrequencyHz,
+        endFrequencyHz,
+        movementCents: downwardMovementCents,
+      };
+    }
+
+    if (
+      returnedNearStart &&
+      Math.abs(upwardMovementCents) >= minimumMovementCents &&
+      Math.abs(upwardMovementCents) > Math.abs(downwardMovementCents)
+    ) {
+      return {
+        kind: "internal-rise",
+        startTimeSeconds: movementFrames[0].timeSeconds,
+        endTimeSeconds: movementFrames[movementFrames.length - 1].timeSeconds,
+        startFrequencyHz,
+        extremeFrequencyHz: maximumFrequencyHz,
+        endFrequencyHz,
+        movementCents: upwardMovementCents,
+      };
+    }
+
+    const overallMovementCents =
+      1200 * Math.log2(endFrequencyHz / startFrequencyHz);
+
+    if (Math.abs(overallMovementCents) >= minimumMovementCents) {
+      return {
+        kind: "pitch-settling",
+        startTimeSeconds: movementFrames[0].timeSeconds,
+        endTimeSeconds: movementFrames[movementFrames.length - 1].timeSeconds,
+        startFrequencyHz,
+        extremeFrequencyHz: endFrequencyHz,
+        endFrequencyHz,
+        movementCents: overallMovementCents,
+      };
+    }
+
+    return null;
+  };
+
   const buildSongwriterReferenceExpressiveEvents = (
     candidates: SongwriterReferenceNoteCandidate[],
     trace: SongwriterReferenceTracePoint[],
@@ -2213,6 +2336,7 @@ export default function Page() {
           approach: null,
           release: null,
           transitionAfter: null,
+          internalMovement: null,
           kind,
           startTimeSeconds: current.startTimeSeconds,
           endTimeSeconds: next.endTimeSeconds,
@@ -2279,6 +2403,15 @@ export default function Page() {
             })
           : null;
 
+      const internalMovement =
+        nextCandidate !== null && nextCandidate.midiNote === current.midiNote
+          ? detectSongwriterReferenceInternalMovement({
+              trace,
+              currentCandidate: current,
+              nextCandidate,
+            })
+          : null;
+
       const approachCharacter =
         approach?.kind === "rising-from-below"
           ? ` Approaches ${current.noteName} by rising from below.`
@@ -2299,6 +2432,15 @@ export default function Page() {
             ? ` Falling transition from ${current.noteName} toward ${transitionAfter.toNoteName}.`
             : "";
 
+      const internalMovementCharacter =
+        internalMovement?.kind === "internal-dip"
+          ? ` Brief internal dip within ${current.noteName}.`
+          : internalMovement?.kind === "internal-rise"
+            ? ` Brief internal rise within ${current.noteName}.`
+            : internalMovement?.kind === "pitch-settling"
+              ? ` Pitch settles within ${current.noteName}.`
+              : "";
+
       events.push({
         kind: "stable-note",
         startTimeSeconds: current.startTimeSeconds,
@@ -2314,6 +2456,7 @@ export default function Page() {
         approach,
         release,
         transitionAfter,
+        internalMovement,
 
         sourceCandidateIndexes: [index],
 
@@ -2321,6 +2464,7 @@ export default function Page() {
           `Stable ${current.noteName} region.` +
           approachCharacter +
           transitionCharacter +
+          internalMovementCharacter +
           releaseCharacter +
           pitchCharacter,
       });
