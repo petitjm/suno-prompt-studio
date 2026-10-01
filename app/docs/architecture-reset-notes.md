@@ -42,9 +42,9 @@ Before changing an established area:
 4. Preserve established creative workflows unless there is a specific reason to change them.
 5. Avoid solving a local symptom without checking its effect on the wider songwriting workflow.
 
-The current development challenge is primarily **cohesion and discoverability**, not wholesale rebuilding.
+The current development challenge is primarily **cohesion, discoverability, and musical fidelity**, not wholesale rebuilding.
 
-The building blocks of the songwriter's workbench are largely present.
+The building blocks of the songwriter's workbench are largely present. Current development is also establishing a songwriter-guided audio model so that the application can preserve and develop the musical identity already present in a human performance rather than relying only on generated melody and structured intent.
 
 ---
 
@@ -58,24 +58,274 @@ The desired long-term workflow is approximately:
 ```text
 Ideas / incomplete song
         ↓
-Write
+Write / develop / compare
         ↓
-Rewrite / develop / compare
-        ↓
-Approved saved song version
-        ↓
-Existing or newly developed chords
-        ↓
-Make Song
-        ↓
-Performance
-        ↓
-Musical guide
-        ↓
-Rehearse / Perform
-        ↓
-Suno / Video / Release support where useful
+Choose musical-development route
+        │
+        ├─ Songwriter-guided
+        │      ↓
+        │  Original human performance
+        │      ↓
+        │  Songwriter Audio Model
+        │      ↓
+        │  Preserve / refine melody, phrasing and expressive identity
+        │
+        └─ AI-assisted
+               ↓
+           Song Creative Profile
+           + lyrics
+           + harmony
+           + structured musical intent
+               ↓
+           Generated melodic / performance interpretation
+        │
+        └───────────────┬───────────────┘
+                        ↓
+              Saved song version
+              + chord checkpoint
+                        ↓
+                    Make Song
+                        ↓
+                  Musical guide
+                        ↓
+                Rehearse / Perform
+                        ↓
+          Suno / Video / Release support
+          where useful
 ```
+
+## Songwriter-guided and AI-assisted musical development
+
+Suno Prompt Studio must support two complementary approaches to musical development. Neither route should be treated as universally superior; the appropriate route depends on what creative material already exists and what the songwriter is trying to change.
+
+### Songwriter-guided
+
+The songwriter's own musical idea or performance is the creative authority.
+
+This route is appropriate when the songwriter already has some or all of:
+
+- a sung melody;
+- vocal phrasing;
+- rhythmic delivery;
+- expressive timing;
+- dynamic shape;
+- slides, scoops, rough intonation, strain, breath, pauses, or other human performance characteristics.
+
+The system should analyse, expose, preserve, and make those decisions developable without unnecessarily replacing them with generic generated alternatives.
+
+The goal is not transcription for its own sake. The goal is to preserve the musical and emotional identity already present in the songwriter's performance while allowing the song to be developed.
+
+### AI-assisted
+
+AI may originate or reinterpret melody, phrasing, harmony, arrangement, or performance direction from structured song knowledge.
+
+This route is useful when:
+
+- the song does not yet have an established melody;
+- the songwriter deliberately wants alternative musical ideas;
+- a genre or arrangement reinterpretation is being explored;
+- the existing musical identity is intended to change materially.
+
+AI assistance must not automatically imply polishing, smoothing, conventionalising, or replacing a songwriter's established musical identity.
+
+The two routes may be combined. For example, the songwriter's melodic and expressive identity may be preserved while AI explores a different arrangement, harmonic treatment, instrumentation, genre, or alternative section.
+
+## Why the Songwriter Audio Model exists
+
+Recent Make Song development exposed an important limitation in the previous architecture.
+
+A melody can be technically plausible, rhythmically aligned, harmonically compatible, and correctly rendered while still failing to feel like a convincing song.
+
+The missing information is often not another chord, scale rule, section label, or rendering parameter. It is the songwriter's own expressive intent as embodied in the performance.
+
+A human performance may communicate musical meaning through:
+
+- where a phrase enters or hesitates;
+- which syllables are leaned on or allowed to fall away;
+- imperfect or unstable pitch;
+- slides, scoops and expressive dips;
+- breath and pauses;
+- dynamic shape;
+- restrained, strained, intimate, raw, or deliberately unpolished delivery;
+- timing that deliberately sits ahead of or behind the beat;
+- melodic gestures that are difficult to describe adequately as discrete notes.
+
+These characteristics may carry much of the sentiment of the song.
+
+Previous generated-melody work largely attempted to construct a credible musical result from lyrics, harmony, timing, Song Creative Profile, section intent, and phrase intent. That remains valuable for AI-assisted development, especially when no established melody exists or when the songwriter deliberately wants a different musical interpretation.
+
+However, when a songwriter already has a musical idea, the system should not begin by replacing that idea with a newly fabricated melody.
+
+The songwriter-guided path should instead ask:
+
+> What musical and expressive information did the songwriter already put into this performance, and how can the application preserve it while helping develop the song?
+
+This creates an important distinction:
+
+```text
+AI-assisted
+    creates or reinterprets musical possibilities
+
+Songwriter-guided
+    preserves, exposes and develops existing human musical identity
+```
+
+The two approaches are complementary rather than competing.
+
+A songwriter may preserve the original melody and expressive identity while using AI to explore harmony, arrangement, instrumentation, genre, production direction, or alternative sections.
+
+The objective is therefore not to make every performance cleaner, smoother, more quantised, or more conventionally correct. The objective is to help create a stronger song without unnecessarily removing the human characteristics that gave the song its identity.
+
+## Songwriter Audio Model
+
+A songwriter's original performance may contain musical information that cannot be represented adequately by note names alone.
+
+The Songwriter Audio Model should therefore preserve multiple layers of information.
+
+```text
+Original human performance
+        ↓
+Performance analysis
+        │
+        ├─ continuous pitch gesture
+        ├─ timing / phrasing
+        ├─ dynamics / energy
+        ├─ pauses / breath
+        ├─ pitch instability
+        ├─ slides / scoops / inflections
+        └─ expressive delivery
+        ↓
+Songwriter Audio Model
+        │
+        ├─ melodic identity
+        └─ expressive identity
+        ↓
+Editable / developable musical decisions
+        ↓
+Make Song / rehearsal / downstream tools
+```
+
+The original recording is the creative source of truth.
+
+Derived analysis is interpretation, not replacement.
+
+The current authority hierarchy is:
+
+```text
+Original songwriter performance
+        = creative authority
+
+Optional vocal stem
+        = analysis aid
+
+Raw performance trace
+        = measured analysis
+
+Continuity-corrected trace
+        = derived interpretation
+
+Derived note candidates
+        = musical interpretation
+
+Phrase / expressive classifications
+        = higher-level interpretation
+```
+
+No derived representation should overwrite or silently replace the original performance.
+
+### Original performance and analysis aids
+
+The persisted songwriter reference belongs primarily to the project rather than to one particular saved song version.
+
+It represents source material that may predate and outlive individual lyric, chord, arrangement, or generated-audio versions.
+
+The original imported file should be retained unchanged. Optional derived playback formats may be created later, but the original source must remain available for re-analysis.
+
+A separated vocal stem may be used as an analysis aid when available.
+
+The vocal stem is not the creative authority. It exists to improve analysis where accompaniment interferes with vocal pitch detection.
+
+Current comparison work has established that:
+
+- isolated vocals can materially reduce accompaniment-related octave errors;
+- some pitch movement that initially appears to be detector instability is also present in the isolated vocal;
+- therefore vocal movement around note boundaries must not automatically be smoothed away;
+- mixed-audio and isolated-vocal analyses can be compared to distinguish likely accompaniment contamination from genuine vocal behaviour.
+
+### Continuous expression before discrete notes
+
+The songwriter-audio pipeline must not reduce a performance immediately to MIDI notes.
+
+The preferred order is:
+
+```text
+Original audio
+        ↓
+Raw pitch / clarity / energy trace
+        ↓
+Continuity-aware correction
+        ↓
+Local pitch interpretation
+        ↓
+Derived note candidates
+        ↓
+Phrase and expressive-event interpretation
+```
+
+Raw and corrected traces must remain available beneath later musical interpretations.
+
+A derived note is not automatically equivalent to an intended compositional note.
+
+Short pitch movements may instead represent:
+
+- a slide;
+- a scoop;
+- an expressive dip;
+- pitch settling;
+- vibrato or instability;
+- a passing inflection;
+- uncertain analysis.
+
+The developing model should therefore distinguish stable pitch events from expressive transitions rather than forcing all pitch movement into discrete note changes.
+
+### Expressive identity is musical data
+
+Timing looseness, delayed attacks, breath, strain, unstable sustain, roughness, restrained delivery, and imperfect pitch movement may be intentional parts of the song's identity.
+
+They must not automatically be treated as defects to quantise, tune, smooth, or remove.
+
+Where the system produces a cleaner or more conventional interpretation, that should be an explicit creative choice rather than an automatic consequence of analysis.
+
+The long-term goal is for the Songwriter Audio Model to support descriptions such as:
+
+```text
+Phrase
+  core pitch gesture: rises into E4
+  arrival: sustained E4
+  entry: soft and slightly delayed
+  approach: upward scoop
+  sustain: intentionally unstable
+  expressive dip: toward D#4
+  release: falls away rather than ending cleanly
+```
+
+This higher-level representation should remain linked back to the original performance trace so that musical interpretation can be reviewed against what the songwriter actually performed.
+
+### Current songwriter-audio implementation direction
+
+The current implementation has established the following foundation:
+
+- songwriter reference recordings are persisted as project-level human source material;
+- the original imported file is retained unchanged;
+- the reference restores automatically with the project;
+- a selected passage can be analysed for raw pitch, detector clarity, and signal energy;
+- continuity-aware correction reduces obvious octave and harmonic tracking errors while preserving the raw trace;
+- derived note candidates provide a simplified musical interpretation without replacing the continuous trace;
+- derived notes can be auditioned to check whether the analysis resembles the sung melody;
+- an optional vocal stem can be used as an analysis source without replacing the original performance as creative authority;
+- mixed-recording and vocal-stem comparison has demonstrated both accompaniment contamination and genuine expressive movement around note boundaries.
+
+The next development direction is to classify stable notes and expressive transitions such as slides, scoops, dips, settling, and uncertain movement before attempting deeper integration with the existing melody engine.
 
 ## Make Song and musical guide purpose
 
@@ -90,7 +340,7 @@ The generated musical guide should therefore be:
 
 Production polish is secondary to musical usefulness.
 
-The next major musical capability is melody. Melody, phrasing, and chord placement should progressively become explicit, editable, version-aware musical decisions rather than being treated only as rendered audio.
+Melody, phrasing, chord placement, and expressive performance should progressively become explicit, editable, version-aware musical decisions rather than being treated only as rendered audio. The songwriter-guided path should preserve established human musical identity; the AI-assisted path may generate or reinterpret musical decisions where appropriate.
 
 As a song develops:
 
@@ -187,15 +437,35 @@ Where useful, downstream systems may combine both.
 
 ## Version provenance and working context
 
-Saved song versions, chord checkpoints, and Audio Guides form an explicit provenance chain.
+Human creative provenance and generated-artifact provenance are related but distinct.
+
+Songwriter source provenance is project-level:
+
+```text
+Project
+   ↓
+Original songwriter reference
+   ↓
+Songwriter Audio Model / analysis derivatives
+```
+
+The songwriter reference is human source material, not a generated Audio Guide and not a chord-checkpoint derivative.
+
+It must not be invalidated merely because a new song version is created. Analysis derivatives may be regenerated as the analysis model improves while the original recording remains unchanged.
+
+Generated musical artifacts retain their stricter provenance chain:
 
 ```text
 Saved song version
         ↓
 Linked saved chord checkpoint
         ↓
-Audio Guide derived from that exact pairing
+Guide Track / structured musical intent
+        ↓
+Audio Guide derived from that exact source context
 ```
+
+A songwriter-guided development may later associate accepted melodic or expressive decisions with a saved song version, but that must not rewrite the provenance of the original project-level source recording.
 
 An Audio Guide is derived not only from a specific saved song/chord pairing, but from the Guide Track and structured musical intent associated with that pairing.
 
