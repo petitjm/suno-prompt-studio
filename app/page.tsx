@@ -743,6 +743,24 @@ export default function Page() {
     endFrequencyHz: number;
     movementCents: number;
   };
+  type SongwriterReferencePitchRelease = {
+    kind: "falls-away" | "rises-away";
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+    startFrequencyHz: number;
+    endFrequencyHz: number;
+    movementCents: number;
+  };
+  type SongwriterReferencePitchTransition = {
+    kind: "rising-transition" | "falling-transition";
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+    startFrequencyHz: number;
+    endFrequencyHz: number;
+    movementCents: number;
+    fromNoteName: string;
+    toNoteName: string;
+  };
   type SongwriterReferenceExpressiveEvent = {
     kind: "stable-note" | "expressive-dip" | "expressive-rise";
     startTimeSeconds: number;
@@ -756,6 +774,8 @@ export default function Page() {
 
     pitchOffsetCents: number | null;
     approach: SongwriterReferencePitchApproach | null;
+    release: SongwriterReferencePitchRelease | null;
+    transitionAfter: SongwriterReferencePitchTransition | null;
 
     sourceCandidateIndexes: number[];
     description: string;
@@ -1947,6 +1967,192 @@ export default function Page() {
     };
   };
 
+  const detectSongwriterReferencePitchRelease = ({
+    trace,
+    candidate,
+    nextCandidateStartTimeSeconds,
+  }: {
+    trace: SongwriterReferenceTracePoint[];
+    candidate: SongwriterReferenceNoteCandidate;
+    nextCandidateStartTimeSeconds: number | null;
+  }): SongwriterReferencePitchRelease | null => {
+    const maximumLookaheadSeconds = 0.22;
+    const minimumMovementCents = 90;
+    const minimumVoicedFrames = 5;
+
+    const searchEnd = Math.min(
+      candidate.endTimeSeconds + maximumLookaheadSeconds,
+      nextCandidateStartTimeSeconds ?? Number.POSITIVE_INFINITY,
+    );
+
+    const releaseFrames = trace.filter(
+      (point) =>
+        point.timeSeconds > candidate.endTimeSeconds &&
+        point.timeSeconds <= searchEnd &&
+        typeof point.correctedFrequencyHz === "number" &&
+        Number.isFinite(point.correctedFrequencyHz),
+    );
+
+    if (releaseFrames.length < minimumVoicedFrames) {
+      return null;
+    }
+
+    const frequencies = releaseFrames.map(
+      (point) => point.correctedFrequencyHz as number,
+    );
+
+    const startFrequencyHz = medianNumber(
+      frequencies.slice(0, Math.min(3, frequencies.length)),
+    );
+
+    const endFrequencyHz = medianNumber(
+      frequencies.slice(Math.max(0, frequencies.length - 3)),
+    );
+
+    if (startFrequencyHz <= 0 || endFrequencyHz <= 0) {
+      return null;
+    }
+
+    const movementCents = 1200 * Math.log2(endFrequencyHz / startFrequencyHz);
+
+    if (Math.abs(movementCents) < minimumMovementCents) {
+      return null;
+    }
+
+    let agreeingMoves = 0;
+    let measuredMoves = 0;
+
+    for (let index = 1; index < frequencies.length; index += 1) {
+      const previous = frequencies[index - 1];
+      const current = frequencies[index];
+
+      if (!Number.isFinite(previous) || !Number.isFinite(current)) {
+        continue;
+      }
+
+      const frameMovement = 1200 * Math.log2(current / previous);
+
+      if (Math.abs(frameMovement) < 8) {
+        continue;
+      }
+
+      measuredMoves += 1;
+
+      if (
+        (movementCents > 0 && frameMovement > 0) ||
+        (movementCents < 0 && frameMovement < 0)
+      ) {
+        agreeingMoves += 1;
+      }
+    }
+
+    if (measuredMoves > 0 && agreeingMoves / measuredMoves < 0.65) {
+      return null;
+    }
+
+    return {
+      kind: movementCents > 0 ? "rises-away" : "falls-away",
+      startTimeSeconds: releaseFrames[0].timeSeconds,
+      endTimeSeconds: releaseFrames[releaseFrames.length - 1].timeSeconds,
+      startFrequencyHz,
+      endFrequencyHz,
+      movementCents,
+    };
+  };
+
+  const detectSongwriterReferencePitchTransition = ({
+    trace,
+    currentCandidate,
+    nextCandidate,
+  }: {
+    trace: SongwriterReferenceTracePoint[];
+    currentCandidate: SongwriterReferenceNoteCandidate;
+    nextCandidate: SongwriterReferenceNoteCandidate;
+  }): SongwriterReferencePitchTransition | null => {
+    const maximumTransitionGapSeconds = 0.35;
+    const minimumMovementCents = 90;
+    const minimumVoicedFrames = 5;
+
+    const gapSeconds =
+      nextCandidate.startTimeSeconds - currentCandidate.endTimeSeconds;
+
+    if (gapSeconds <= 0 || gapSeconds > maximumTransitionGapSeconds) {
+      return null;
+    }
+
+    const transitionFrames = trace.filter(
+      (point) =>
+        point.timeSeconds > currentCandidate.endTimeSeconds &&
+        point.timeSeconds < nextCandidate.startTimeSeconds &&
+        typeof point.correctedFrequencyHz === "number" &&
+        Number.isFinite(point.correctedFrequencyHz),
+    );
+
+    if (transitionFrames.length < minimumVoicedFrames) {
+      return null;
+    }
+
+    const frequencies = transitionFrames.map(
+      (point) => point.correctedFrequencyHz as number,
+    );
+
+    const startFrequencyHz = medianNumber(
+      frequencies.slice(0, Math.min(3, frequencies.length)),
+    );
+
+    const endFrequencyHz = medianNumber(
+      frequencies.slice(Math.max(0, frequencies.length - 3)),
+    );
+
+    if (startFrequencyHz <= 0 || endFrequencyHz <= 0) {
+      return null;
+    }
+
+    const movementCents = 1200 * Math.log2(endFrequencyHz / startFrequencyHz);
+
+    if (Math.abs(movementCents) < minimumMovementCents) {
+      return null;
+    }
+
+    let agreeingMoves = 0;
+    let measuredMoves = 0;
+
+    for (let index = 1; index < frequencies.length; index += 1) {
+      const previous = frequencies[index - 1];
+      const current = frequencies[index];
+
+      const frameMovement = 1200 * Math.log2(current / previous);
+
+      if (Math.abs(frameMovement) < 8) {
+        continue;
+      }
+
+      measuredMoves += 1;
+
+      if (
+        (movementCents > 0 && frameMovement > 0) ||
+        (movementCents < 0 && frameMovement < 0)
+      ) {
+        agreeingMoves += 1;
+      }
+    }
+
+    if (measuredMoves > 0 && agreeingMoves / measuredMoves < 0.65) {
+      return null;
+    }
+
+    return {
+      kind: movementCents > 0 ? "rising-transition" : "falling-transition",
+      startTimeSeconds: transitionFrames[0].timeSeconds,
+      endTimeSeconds: transitionFrames[transitionFrames.length - 1].timeSeconds,
+      startFrequencyHz,
+      endFrequencyHz,
+      movementCents,
+      fromNoteName: currentCandidate.noteName,
+      toNoteName: nextCandidate.noteName,
+    };
+  };
+
   const buildSongwriterReferenceExpressiveEvents = (
     candidates: SongwriterReferenceNoteCandidate[],
     trace: SongwriterReferenceTracePoint[],
@@ -2005,6 +2211,8 @@ export default function Page() {
 
         events.push({
           approach: null,
+          release: null,
+          transitionAfter: null,
           kind,
           startTimeSeconds: current.startTimeSeconds,
           endTimeSeconds: next.endTimeSeconds,
@@ -2041,18 +2249,54 @@ export default function Page() {
 
       const previousCandidate = index > 0 ? candidates[index - 1] : null;
 
-      const approach = detectSongwriterReferencePitchApproach({
-        trace,
-        candidate: current,
-        previousCandidateEndTimeSeconds:
-          previousCandidate?.endTimeSeconds ?? null,
-      });
+      const nextCandidate =
+        index < candidates.length - 1 ? candidates[index + 1] : null;
+
+      const approach =
+        previousCandidate === null
+          ? detectSongwriterReferencePitchApproach({
+              trace,
+              candidate: current,
+              previousCandidateEndTimeSeconds: null,
+            })
+          : null;
+
+      const release =
+        nextCandidate === null
+          ? detectSongwriterReferencePitchRelease({
+              trace,
+              candidate: current,
+              nextCandidateStartTimeSeconds: null,
+            })
+          : null;
+
+      const transitionAfter =
+        nextCandidate !== null && nextCandidate.midiNote !== current.midiNote
+          ? detectSongwriterReferencePitchTransition({
+              trace,
+              currentCandidate: current,
+              nextCandidate,
+            })
+          : null;
 
       const approachCharacter =
         approach?.kind === "rising-from-below"
           ? ` Approaches ${current.noteName} by rising from below.`
           : approach?.kind === "falling-from-above"
             ? ` Approaches ${current.noteName} by falling from above.`
+            : "";
+      const releaseCharacter =
+        release?.kind === "falls-away"
+          ? ` Releases from ${current.noteName} by falling away.`
+          : release?.kind === "rises-away"
+            ? ` Releases from ${current.noteName} by rising away.`
+            : "";
+
+      const transitionCharacter =
+        transitionAfter?.kind === "rising-transition"
+          ? ` Rising transition from ${current.noteName} toward ${transitionAfter.toNoteName}.`
+          : transitionAfter?.kind === "falling-transition"
+            ? ` Falling transition from ${current.noteName} toward ${transitionAfter.toNoteName}.`
             : "";
 
       events.push({
@@ -2068,12 +2312,16 @@ export default function Page() {
 
         pitchOffsetCents,
         approach,
+        release,
+        transitionAfter,
 
         sourceCandidateIndexes: [index],
 
         description:
           `Stable ${current.noteName} region.` +
           approachCharacter +
+          transitionCharacter +
+          releaseCharacter +
           pitchCharacter,
       });
 
