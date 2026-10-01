@@ -652,6 +652,23 @@ export default function Page() {
     useState<number | null>(null);
   const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
   const sheetGuideAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [songwriterAnalysisStemFileName, setSongwriterAnalysisStemFileName] =
+    useState("");
+
+  const [songwriterAnalysisStemAudioUrl, setSongwriterAnalysisStemAudioUrl] =
+    useState("");
+
+  const songwriterAnalysisStemAudioBufferRef = useRef<AudioBuffer | null>(null);
+
+  const [
+    songwriterReferenceAnalysisSource,
+    setSongwriterReferenceAnalysisSource,
+  ] = useState<"original" | "vocal-stem">("original");
+  const [
+    songwriterReferenceAnalysedSource,
+    setSongwriterReferenceAnalysedSource,
+  ] = useState<"original" | "vocal-stem" | null>(null);
+
   const [songwriterReferenceFileName, setSongwriterReferenceFileName] =
     useState("");
   const [songwriterReferenceAudioUrl, setSongwriterReferenceAudioUrl] =
@@ -667,14 +684,33 @@ export default function Page() {
   const songwriterReferenceWaveformProgressRef = useRef(0);
   const songwriterReferenceAudioBufferRef = useRef<AudioBuffer | null>(null);
 
-  const [
-  analysingSongwriterReference,
-  setAnalysingSongwriterReference,
-] = useState(false);
+  const [analysingSongwriterReference, setAnalysingSongwriterReference] =
+    useState(false);
 
-const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
-  SongwriterReferenceTracePoint[]
->([]);
+  const [
+    songwriterReferenceNoteCandidates,
+    setSongwriterReferenceNoteCandidates,
+  ] = useState<SongwriterReferenceNoteCandidate[]>([]);
+
+  const [
+    songwriterReferenceExpressiveEvents,
+    setSongwriterReferenceExpressiveEvents,
+  ] = useState<SongwriterReferenceExpressiveEvent[]>([]);
+
+  const [
+    auditioningSongwriterReferenceNotes,
+    setAuditioningSongwriterReferenceNotes,
+  ] = useState(false);
+
+  const songwriterReferenceNoteAuditionSynthRef = useRef<Tone.PolySynth | null>(
+    null,
+  );
+
+  const songwriterReferenceNoteAuditionTimeoutRef = useRef<number | null>(null);
+
+  const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
+    SongwriterReferenceTracePoint[]
+  >([]);
 
   const [
     songwriterReferenceSelectionStart,
@@ -684,12 +720,46 @@ const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
   const [songwriterReferenceSelectionEnd, setSongwriterReferenceSelectionEnd] =
     useState<number | null>(null);
   type SongwriterReferenceTracePoint = {
-  timeSeconds: number;
-  frequencyHz: number | null;
-  correctedFrequencyHz: number | null;
-  clarity: number;
-  energy: number;
-};
+    timeSeconds: number;
+    frequencyHz: number | null;
+    correctedFrequencyHz: number | null;
+    clarity: number;
+    energy: number;
+  };
+  type SongwriterReferenceNoteCandidate = {
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+    medianFrequencyHz: number;
+    midiNote: number;
+    noteName: string;
+    averageClarity: number;
+    averageEnergy: number;
+  };
+  type SongwriterReferencePitchApproach = {
+    kind: "rising-from-below" | "falling-from-above";
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+    startFrequencyHz: number;
+    endFrequencyHz: number;
+    movementCents: number;
+  };
+  type SongwriterReferenceExpressiveEvent = {
+    kind: "stable-note" | "expressive-dip" | "expressive-rise";
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+
+    anchorNoteName: string;
+    anchorMidiNote: number;
+
+    inflectionNoteName: string | null;
+    inflectionMidiNote: number | null;
+
+    pitchOffsetCents: number | null;
+    approach: SongwriterReferencePitchApproach | null;
+
+    sourceCandidateIndexes: number[];
+    description: string;
+  };
   type SongwriterReferenceRecord = {
     id: string;
     project_id: string;
@@ -1027,6 +1097,68 @@ const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
     );
   };
 
+  const importSongwriterAnalysisStem = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("audio/")) {
+      setProjectMessage("Choose a valid vocal stem audio file.");
+      return;
+    }
+
+    try {
+      if (songwriterAnalysisStemAudioUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(songwriterAnalysisStemAudioUrl);
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+
+      const AudioContextConstructor =
+        window.AudioContext ||
+        (
+          window as unknown as {
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
+
+      if (!AudioContextConstructor) {
+        throw new Error("Web Audio is not available in this browser.");
+      }
+
+      const audioContext = new AudioContextConstructor();
+
+      try {
+        const audioBuffer = await audioContext.decodeAudioData(
+          arrayBuffer.slice(0),
+        );
+
+        songwriterAnalysisStemAudioBufferRef.current = audioBuffer;
+      } finally {
+        await audioContext.close();
+      }
+
+      setSongwriterAnalysisStemFileName(file.name);
+      setSongwriterAnalysisStemAudioUrl(URL.createObjectURL(file));
+      setSongwriterReferenceAnalysisSource("vocal-stem");
+
+      setSongwriterReferenceTrace([]);
+      setSongwriterReferenceNoteCandidates([]);
+      setSongwriterReferenceExpressiveEvents([]);
+      setSongwriterReferenceAnalysedSource(null);
+
+      setProjectMessage(`Loaded vocal stem for analysis: ${file.name}`);
+    } catch (error) {
+      console.error("Could not import vocal analysis stem:", error);
+
+      setProjectMessage(
+        error instanceof Error
+          ? `Could not import vocal stem: ${error.message}`
+          : "Could not import vocal stem.",
+      );
+    }
+  };
+
   const drawSongwriterReferenceWaveform = (progress = 0) => {
     const canvas = songwriterReferenceWaveformCanvasRef.current;
 
@@ -1186,6 +1318,9 @@ const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
       setSongwriterReferenceSelectionStart(null);
       setSongwriterReferenceSelectionEnd(null);
       setSongwriterReferenceTrace([]);
+      setSongwriterReferenceNoteCandidates([]);
+      setSongwriterReferenceExpressiveEvents([]);
+      setSongwriterReferenceAnalysedSource(null);
 
       songwriterReferenceWaveformPeaksRef.current = [];
       songwriterReferenceWaveformProgressRef.current = 0;
@@ -1234,6 +1369,9 @@ const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
     setSongwriterReferenceSelectionStart(null);
     setSongwriterReferenceSelectionEnd(null);
     setSongwriterReferenceTrace([]);
+    setSongwriterReferenceNoteCandidates([]);
+    setSongwriterReferenceExpressiveEvents([]);
+    setSongwriterReferenceAnalysedSource(null);
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
 
@@ -1399,11 +1537,14 @@ const [songwriterReferenceTrace, setSongwriterReferenceTrace] = useState<
     setSongwriterReferenceFileName("");
     setSongwriterReferenceDuration(0);
     setSongwriterReferenceSelectionStart(null);
-setSongwriterReferenceSelectionEnd(null);
-setSongwriterReferenceTrace([]);
+    setSongwriterReferenceSelectionEnd(null);
+    setSongwriterReferenceTrace([]);
+    setSongwriterReferenceNoteCandidates([]);
+    setSongwriterReferenceExpressiveEvents([]);
+    setSongwriterReferenceAnalysedSource(null);
 
-songwriterReferenceWaveformProgressRef.current = 0;
-songwriterReferenceWaveformPeaksRef.current = [];
+    songwriterReferenceWaveformProgressRef.current = 0;
+    songwriterReferenceWaveformPeaksRef.current = [];
 
     songwriterReferenceWaveformPeaksRef.current = [];
     songwriterReferenceWaveformProgressRef.current = 0;
@@ -1412,269 +1553,831 @@ songwriterReferenceWaveformPeaksRef.current = [];
   };
 
   const getContinuityCorrectedPitch = ({
-  frequencyHz,
-  recentReliablePitches,
-}: {
-  frequencyHz: number;
-  recentReliablePitches: number[];
-}) => {
-  if (!Number.isFinite(frequencyHz) || frequencyHz <= 0) {
-    return null;
-  }
-
-  if (recentReliablePitches.length < 3) {
-    return frequencyHz;
-  }
-
-  const sortedHistory = [...recentReliablePitches].sort(
-    (a, b) => a - b,
-  );
-
-  const middleIndex = Math.floor(sortedHistory.length / 2);
-
-  const referencePitch =
-    sortedHistory.length % 2 === 0
-      ? (sortedHistory[middleIndex - 1] +
-          sortedHistory[middleIndex]) /
-        2
-      : sortedHistory[middleIndex];
-
-  const candidates = [
     frequencyHz,
-    frequencyHz / 2,
-    frequencyHz * 2,
-    frequencyHz / 3,
-    frequencyHz * 3,
-  ].filter(
-    (candidate) =>
-      Number.isFinite(candidate) &&
-      candidate >= 60 &&
-      candidate <= 1200,
-  );
+    recentReliablePitches,
+  }: {
+    frequencyHz: number;
+    recentReliablePitches: number[];
+  }) => {
+    if (!Number.isFinite(frequencyHz) || frequencyHz <= 0) {
+      return null;
+    }
 
-  const centsFromReference = (candidate: number) =>
-    Math.abs(
-      1200 *
-        Math.log2(candidate / referencePitch),
+    if (recentReliablePitches.length < 3) {
+      return frequencyHz;
+    }
+
+    const sortedHistory = [...recentReliablePitches].sort((a, b) => a - b);
+
+    const middleIndex = Math.floor(sortedHistory.length / 2);
+
+    const referencePitch =
+      sortedHistory.length % 2 === 0
+        ? (sortedHistory[middleIndex - 1] + sortedHistory[middleIndex]) / 2
+        : sortedHistory[middleIndex];
+
+    const candidates = [
+      frequencyHz,
+      frequencyHz / 2,
+      frequencyHz * 2,
+      frequencyHz / 3,
+      frequencyHz * 3,
+    ].filter(
+      (candidate) =>
+        Number.isFinite(candidate) && candidate >= 60 && candidate <= 1200,
     );
 
-  const rawDistance =
-    centsFromReference(frequencyHz);
+    const centsFromReference = (candidate: number) =>
+      Math.abs(1200 * Math.log2(candidate / referencePitch));
 
-  const bestCandidate = candidates.reduce(
-    (best, candidate) =>
-      centsFromReference(candidate) <
-      centsFromReference(best)
-        ? candidate
-        : best,
-    frequencyHz,
-  );
+    const rawDistance = centsFromReference(frequencyHz);
 
-  const bestDistance =
-    centsFromReference(bestCandidate);
-
-  const shouldCorrect =
-    bestCandidate !== frequencyHz &&
-    rawDistance >= 650 &&
-    bestDistance <= 140;
-
-  return shouldCorrect
-    ? bestCandidate
-    : frequencyHz;
-};
-
-  const analyseSongwriterReferenceSelection = async () => {
-  const audioBuffer = songwriterReferenceAudioBufferRef.current;
-
-  if (!audioBuffer) {
-    setProjectMessage(
-      "The songwriter reference audio is not available for analysis.",
-    );
-    return;
-  }
-
-  if (
-    songwriterReferenceSelectionStart === null ||
-    songwriterReferenceSelectionEnd === null
-  ) {
-    setProjectMessage(
-      "Set a start and end point before analysing the songwriter reference.",
-    );
-    return;
-  }
-
-  const selectionStart = Math.max(
-    0,
-    songwriterReferenceSelectionStart,
-  );
-
-  const selectionEnd = Math.min(
-    audioBuffer.duration,
-    songwriterReferenceSelectionEnd,
-  );
-
-  if (selectionEnd <= selectionStart) {
-    setProjectMessage("Choose a valid songwriter reference selection.");
-    return;
-  }
-
-  setAnalysingSongwriterReference(true);
-  setSongwriterReferenceTrace([]);
-  setProjectMessage(
-    `Analysing songwriter reference from ${formatGeneratedAudioTime(
-      selectionStart,
-    )} to ${formatGeneratedAudioTime(selectionEnd)}...`,
-  );
-
-  // Give React a chance to render the analysing state before
-  // the CPU-heavy pitch detection begins.
-  await new Promise<void>((resolve) => {
-    window.requestAnimationFrame(() => resolve());
-  });
-
-  try {
-    const sampleRate = audioBuffer.sampleRate;
-    const channelData = audioBuffer.getChannelData(0);
-
-    const frameSize = 2048;
-    const hopSize = 512;
-
-    const detector = PitchDetector.forFloat32Array(frameSize);
-
-    const startSample = Math.max(
-      0,
-      Math.floor(selectionStart * sampleRate),
+    const bestCandidate = candidates.reduce(
+      (best, candidate) =>
+        centsFromReference(candidate) < centsFromReference(best)
+          ? candidate
+          : best,
+      frequencyHz,
     );
 
-    const endSample = Math.min(
-      channelData.length,
-      Math.ceil(selectionEnd * sampleRate),
+    const bestDistance = centsFromReference(bestCandidate);
+
+    const shouldCorrect =
+      bestCandidate !== frequencyHz &&
+      rawDistance >= 650 &&
+      bestDistance <= 140;
+
+    return shouldCorrect ? bestCandidate : frequencyHz;
+  };
+
+  const frequencyToMidi = (frequencyHz: number) =>
+    69 + 12 * Math.log2(frequencyHz / 440);
+
+  const midiToNoteName = (midiNote: number) => {
+    const noteNames = [
+      "C",
+      "C#",
+      "D",
+      "D#",
+      "E",
+      "F",
+      "F#",
+      "G",
+      "G#",
+      "A",
+      "A#",
+      "B",
+    ];
+
+    const roundedMidi = Math.round(midiNote);
+    const noteName = noteNames[((roundedMidi % 12) + 12) % 12];
+    const octave = Math.floor(roundedMidi / 12) - 1;
+
+    return `${noteName}${octave}`;
+  };
+
+  const medianNumber = (values: number[]) => {
+    if (values.length === 0) {
+      return 0;
+    }
+
+    const sorted = [...values].sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+
+    return sorted.length % 2 === 0
+      ? (sorted[middle - 1] + sorted[middle]) / 2
+      : sorted[middle];
+  };
+
+  const buildSongwriterReferenceNoteCandidates = (
+    trace: SongwriterReferenceTracePoint[],
+  ) => {
+    if (trace.length === 0) {
+      return [];
+    }
+
+    const minimumDurationSeconds = 0.06;
+    const maximumGapFrames = 3;
+    const confirmationFrames = 3;
+    const localWindowRadius = 2;
+    const noteChangeHysteresisCents = 65;
+
+    type NoteFrame = SongwriterReferenceTracePoint & {
+      analysedFrequencyHz: number;
+      candidateMidiNote: number;
+    };
+
+    const analysedFrames: Array<NoteFrame | null> = trace.map(
+      (point, pointIndex) => {
+        if (
+          typeof point.correctedFrequencyHz !== "number" ||
+          !Number.isFinite(point.correctedFrequencyHz)
+        ) {
+          return null;
+        }
+
+        const nearbyPitches: number[] = [];
+
+        const windowStart = Math.max(0, pointIndex - localWindowRadius);
+
+        const windowEnd = Math.min(
+          trace.length - 1,
+          pointIndex + localWindowRadius,
+        );
+
+        for (let index = windowStart; index <= windowEnd; index += 1) {
+          const nearbyPitch = trace[index].correctedFrequencyHz;
+
+          if (typeof nearbyPitch === "number" && Number.isFinite(nearbyPitch)) {
+            nearbyPitches.push(nearbyPitch);
+          }
+        }
+
+        if (nearbyPitches.length === 0) {
+          return null;
+        }
+
+        const analysedFrequencyHz = medianNumber(nearbyPitches);
+
+        return {
+          ...point,
+          analysedFrequencyHz,
+          candidateMidiNote: Math.round(frequencyToMidi(analysedFrequencyHz)),
+        };
+      },
     );
 
-    const trace: SongwriterReferenceTracePoint[] = [];
+    const centsFromMidiNote = (frequencyHz: number, midiNote: number) => {
+      const noteFrequencyHz = 440 * Math.pow(2, (midiNote - 69) / 12);
 
-let processedFrames = 0;
-const recentReliablePitches: number[] = [];
-let consecutiveUnvoicedFrames = 0;
+      return 1200 * Math.log2(frequencyHz / noteFrequencyHz);
+    };
 
-for (
-  let frameStart = startSample;
-  frameStart + frameSize <= endSample;
-  frameStart += hopSize
-) {
-      const frame = channelData.subarray(
-        frameStart,
-        frameStart + frameSize,
-      );
+    const candidates: SongwriterReferenceNoteCandidate[] = [];
 
-      let energySum = 0;
+    let currentFrames: NoteFrame[] = [];
+    let currentMidiNote: number | null = null;
 
-      for (let index = 0; index < frame.length; index += 1) {
-        const sample = frame[index] || 0;
-        energySum += sample * sample;
+    let pendingFrames: NoteFrame[] = [];
+    let pendingMidiNote: number | null = null;
+
+    let gapFrames = 0;
+
+    const commitCurrentCandidate = () => {
+      if (currentFrames.length === 0 || currentMidiNote === null) {
+        currentFrames = [];
+        currentMidiNote = null;
+        return;
       }
 
-      const energy = Math.sqrt(energySum / frame.length);
+      const startTimeSeconds = currentFrames[0].timeSeconds;
 
-      const [frequencyHz, clarity] = detector.findPitch(
-        frame,
-        sampleRate,
-      );
+      const endTimeSeconds =
+        currentFrames[currentFrames.length - 1].timeSeconds;
 
-      const relativeTimeSeconds =
-        (frameStart - startSample) / sampleRate;
+      const durationSeconds = endTimeSeconds - startTimeSeconds;
 
-      const plausibleFrequency =
-        Number.isFinite(frequencyHz) &&
-        frequencyHz >= 60 &&
-        frequencyHz <= 1200;
+      if (durationSeconds >= minimumDurationSeconds) {
+        const frequencies = currentFrames.map(
+          (frame) => frame.analysedFrequencyHz,
+        );
 
-      const voiced =
-  energy >= 0.005 &&
-  clarity >= 0.6 &&
-  plausibleFrequency;
+        const medianFrequencyHz = medianNumber(frequencies);
 
-const rawFrequencyHz = voiced
-  ? frequencyHz
-  : null;
+        const averageClarity =
+          currentFrames.reduce((sum, frame) => sum + frame.clarity, 0) /
+          currentFrames.length;
 
-const correctedFrequencyHz =
-  rawFrequencyHz !== null
-    ? getContinuityCorrectedPitch({
-        frequencyHz: rawFrequencyHz,
-        recentReliablePitches,
-      })
-    : null;
+        const averageEnergy =
+          currentFrames.reduce((sum, frame) => sum + frame.energy, 0) /
+          currentFrames.length;
 
-trace.push({
-  timeSeconds: relativeTimeSeconds,
-  frequencyHz: rawFrequencyHz,
-  correctedFrequencyHz,
-  clarity: Number.isFinite(clarity) ? clarity : 0,
-  energy,
-});
-
-if (correctedFrequencyHz !== null) {
-  consecutiveUnvoicedFrames = 0;
-
-  if (clarity >= 0.8) {
-    recentReliablePitches.push(
-      correctedFrequencyHz,
-    );
-
-    if (recentReliablePitches.length > 7) {
-      recentReliablePitches.shift();
-    }
-  }
-} else {
-  consecutiveUnvoicedFrames += 1;
-
-  if (consecutiveUnvoicedFrames >= 12) {
-    recentReliablePitches.length = 0;
-  }
-}
-
-
-
-      processedFrames += 1;
-
-      // Periodically release the browser main thread so the UI
-      // remains responsive during longer selections.
-      if (processedFrames % 40 === 0) {
-        await new Promise<void>((resolve) => {
-          window.setTimeout(resolve, 0);
+        candidates.push({
+          startTimeSeconds,
+          endTimeSeconds,
+          medianFrequencyHz,
+          midiNote: currentMidiNote,
+          noteName: midiToNoteName(currentMidiNote),
+          averageClarity,
+          averageEnergy,
         });
       }
+
+      currentFrames = [];
+      currentMidiNote = null;
+    };
+
+    for (const frame of analysedFrames) {
+      if (!frame) {
+        gapFrames += 1;
+
+        if (gapFrames > maximumGapFrames) {
+          pendingFrames = [];
+          pendingMidiNote = null;
+
+          commitCurrentCandidate();
+        }
+
+        continue;
+      }
+
+      gapFrames = 0;
+
+      if (currentMidiNote === null) {
+        currentMidiNote = frame.candidateMidiNote;
+        currentFrames = [frame];
+        continue;
+      }
+
+      if (frame.candidateMidiNote === currentMidiNote) {
+        if (pendingFrames.length > 0) {
+          pendingFrames = [];
+          pendingMidiNote = null;
+        }
+
+        currentFrames.push(frame);
+        continue;
+      }
+
+      const centsFromCurrentNote = Math.abs(
+        centsFromMidiNote(frame.analysedFrequencyHz, currentMidiNote),
+      );
+
+      // Do not change note identity merely because the pitch has
+      // crossed the 50-cent rounding boundary. Require it to move
+      // materially into the neighbouring note first.
+      if (centsFromCurrentNote < noteChangeHysteresisCents) {
+        if (pendingFrames.length > 0) {
+          pendingFrames = [];
+          pendingMidiNote = null;
+        }
+
+        currentFrames.push(frame);
+        continue;
+      }
+
+      if (pendingMidiNote !== frame.candidateMidiNote) {
+        pendingMidiNote = frame.candidateMidiNote;
+        pendingFrames = [frame];
+        continue;
+      }
+
+      pendingFrames.push(frame);
+
+      if (pendingFrames.length >= confirmationFrames) {
+        const confirmedFrames = [...pendingFrames];
+
+        const confirmedMidiNote: number = pendingMidiNote;
+
+        pendingFrames = [];
+        pendingMidiNote = null;
+
+        commitCurrentCandidate();
+
+        currentMidiNote = confirmedMidiNote;
+
+        currentFrames = confirmedFrames;
+      }
     }
 
-    setSongwriterReferenceTrace(trace);
+    if (pendingFrames.length > 0 && currentMidiNote !== null) {
+      currentFrames.push(...pendingFrames);
+    }
 
-    const voicedFrames = trace.filter(
-      (point) => point.frequencyHz !== null,
-    ).length;
+    commitCurrentCandidate();
 
+    return candidates;
+  };
+
+  const detectSongwriterReferencePitchApproach = ({
+    trace,
+    candidate,
+    previousCandidateEndTimeSeconds,
+  }: {
+    trace: SongwriterReferenceTracePoint[];
+    candidate: SongwriterReferenceNoteCandidate;
+    previousCandidateEndTimeSeconds: number | null;
+  }): SongwriterReferencePitchApproach | null => {
+    const maximumLookbackSeconds = 0.22;
+    const minimumMovementCents = 90;
+    const minimumVoicedFrames = 5;
+
+    const searchStart = Math.max(
+      candidate.startTimeSeconds - maximumLookbackSeconds,
+      previousCandidateEndTimeSeconds ?? 0,
+    );
+
+    const approachFrames = trace.filter(
+      (point) =>
+        point.timeSeconds >= searchStart &&
+        point.timeSeconds < candidate.startTimeSeconds &&
+        typeof point.correctedFrequencyHz === "number" &&
+        Number.isFinite(point.correctedFrequencyHz),
+    );
+
+    if (approachFrames.length < minimumVoicedFrames) {
+      return null;
+    }
+
+    const frequencies = approachFrames.map(
+      (point) => point.correctedFrequencyHz as number,
+    );
+
+    const startFrequencyHz = medianNumber(
+      frequencies.slice(0, Math.min(3, frequencies.length)),
+    );
+
+    const endFrequencyHz = medianNumber(
+      frequencies.slice(Math.max(0, frequencies.length - 3)),
+    );
+
+    if (startFrequencyHz <= 0 || endFrequencyHz <= 0) {
+      return null;
+    }
+
+    const movementCents = 1200 * Math.log2(endFrequencyHz / startFrequencyHz);
+
+    if (Math.abs(movementCents) < minimumMovementCents) {
+      return null;
+    }
+
+    const direction =
+      movementCents > 0 ? "rising-from-below" : "falling-from-above";
+
+    // Require most of the small frame-to-frame moves to agree
+    // with the overall direction. This rejects random pitch scatter.
+    let agreeingMoves = 0;
+    let measuredMoves = 0;
+
+    for (let index = 1; index < frequencies.length; index += 1) {
+      const previous = frequencies[index - 1];
+      const current = frequencies[index];
+
+      if (!Number.isFinite(previous) || !Number.isFinite(current)) {
+        continue;
+      }
+
+      const frameMovement = 1200 * Math.log2(current / previous);
+
+      if (Math.abs(frameMovement) < 8) {
+        continue;
+      }
+
+      measuredMoves += 1;
+
+      if (
+        (movementCents > 0 && frameMovement > 0) ||
+        (movementCents < 0 && frameMovement < 0)
+      ) {
+        agreeingMoves += 1;
+      }
+    }
+
+    if (measuredMoves > 0 && agreeingMoves / measuredMoves < 0.65) {
+      return null;
+    }
+
+    return {
+      kind: direction,
+      startTimeSeconds: approachFrames[0].timeSeconds,
+      endTimeSeconds: approachFrames[approachFrames.length - 1].timeSeconds,
+      startFrequencyHz,
+      endFrequencyHz,
+      movementCents,
+    };
+  };
+
+  const buildSongwriterReferenceExpressiveEvents = (
+    candidates: SongwriterReferenceNoteCandidate[],
+    trace: SongwriterReferenceTracePoint[],
+  ) => {
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    const maximumInflectionDurationSeconds = 0.18;
+    const maximumAdjacentGapSeconds = 0.06;
+
+    const events: SongwriterReferenceExpressiveEvent[] = [];
+
+    const getDuration = (candidate: SongwriterReferenceNoteCandidate) =>
+      Math.max(0, candidate.endTimeSeconds - candidate.startTimeSeconds);
+
+    const getGap = (
+      first: SongwriterReferenceNoteCandidate,
+      second: SongwriterReferenceNoteCandidate,
+    ) => Math.max(0, second.startTimeSeconds - first.endTimeSeconds);
+
+    const getMidiFrequency = (midiNote: number) =>
+      440 * Math.pow(2, (midiNote - 69) / 12);
+
+    const getPitchOffsetCents = (
+      candidate: SongwriterReferenceNoteCandidate,
+    ) => {
+      const noteFrequencyHz = getMidiFrequency(candidate.midiNote);
+
+      return 1200 * Math.log2(candidate.medianFrequencyHz / noteFrequencyHz);
+    };
+
+    let index = 0;
+
+    while (index < candidates.length) {
+      const current = candidates[index];
+      const middle = candidates[index + 1];
+      const next = candidates[index + 2];
+
+      const isBriefNeighbourInflection =
+        middle !== undefined &&
+        next !== undefined &&
+        current.midiNote === next.midiNote &&
+        Math.abs(middle.midiNote - current.midiNote) === 1 &&
+        getDuration(middle) <= maximumInflectionDurationSeconds &&
+        getGap(current, middle) <= maximumAdjacentGapSeconds &&
+        getGap(middle, next) <= maximumAdjacentGapSeconds;
+
+      if (middle && next && isBriefNeighbourInflection) {
+        const kind: "expressive-dip" | "expressive-rise" =
+          middle.midiNote < current.midiNote
+            ? "expressive-dip"
+            : "expressive-rise";
+
+        const direction = kind === "expressive-dip" ? "dip" : "rise";
+
+        events.push({
+          approach: null,
+          kind,
+          startTimeSeconds: current.startTimeSeconds,
+          endTimeSeconds: next.endTimeSeconds,
+
+          anchorNoteName: current.noteName,
+          anchorMidiNote: current.midiNote,
+
+          inflectionNoteName: middle.noteName,
+          inflectionMidiNote: middle.midiNote,
+
+          pitchOffsetCents: null,
+
+          sourceCandidateIndexes: [index, index + 1, index + 2],
+
+          description:
+            `${current.noteName} with a brief expressive ${direction} toward ` +
+            `${middle.noteName}, returning to ${next.noteName}.`,
+        });
+
+        index += 3;
+        continue;
+      }
+
+      const pitchOffsetCents = getPitchOffsetCents(current);
+
+      const roundedOffsetCents = Math.round(pitchOffsetCents);
+
+      const pitchCharacter =
+        Math.abs(roundedOffsetCents) >= 25
+          ? ` Pitch centre sits ${
+              roundedOffsetCents > 0 ? "+" : ""
+            }${roundedOffsetCents} cents from ${current.noteName}.`
+          : "";
+
+      const previousCandidate = index > 0 ? candidates[index - 1] : null;
+
+      const approach = detectSongwriterReferencePitchApproach({
+        trace,
+        candidate: current,
+        previousCandidateEndTimeSeconds:
+          previousCandidate?.endTimeSeconds ?? null,
+      });
+
+      const approachCharacter =
+        approach?.kind === "rising-from-below"
+          ? ` Approaches ${current.noteName} by rising from below.`
+          : approach?.kind === "falling-from-above"
+            ? ` Approaches ${current.noteName} by falling from above.`
+            : "";
+
+      events.push({
+        kind: "stable-note",
+        startTimeSeconds: current.startTimeSeconds,
+        endTimeSeconds: current.endTimeSeconds,
+
+        anchorNoteName: current.noteName,
+        anchorMidiNote: current.midiNote,
+
+        inflectionNoteName: null,
+        inflectionMidiNote: null,
+
+        pitchOffsetCents,
+        approach,
+
+        sourceCandidateIndexes: [index],
+
+        description:
+          `Stable ${current.noteName} region.` +
+          approachCharacter +
+          pitchCharacter,
+      });
+
+      index += 1;
+    }
+
+    return events;
+  };
+
+  const stopSongwriterReferenceNoteAudition = () => {
+    if (songwriterReferenceNoteAuditionTimeoutRef.current !== null) {
+      window.clearTimeout(songwriterReferenceNoteAuditionTimeoutRef.current);
+
+      songwriterReferenceNoteAuditionTimeoutRef.current = null;
+    }
+
+    if (songwriterReferenceNoteAuditionSynthRef.current) {
+      songwriterReferenceNoteAuditionSynthRef.current.releaseAll();
+      songwriterReferenceNoteAuditionSynthRef.current.dispose();
+      songwriterReferenceNoteAuditionSynthRef.current = null;
+    }
+
+    setAuditioningSongwriterReferenceNotes(false);
+  };
+
+  const auditionSongwriterReferenceNoteCandidates = async () => {
+    if (songwriterReferenceNoteCandidates.length === 0) {
+      setProjectMessage(
+        "Analyse a songwriter reference selection before auditioning derived notes.",
+      );
+      return;
+    }
+
+    stopSongwriterReferenceNoteAudition();
+
+    try {
+      await Tone.start();
+
+      const synth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: {
+          type: "sine",
+        },
+        envelope: {
+          attack: 0.01,
+          decay: 0.05,
+          sustain: 0.65,
+          release: 0.08,
+        },
+      }).toDestination();
+
+      synth.volume.value = -6;
+
+      songwriterReferenceNoteAuditionSynthRef.current = synth;
+
+      const firstStartTime =
+        songwriterReferenceNoteCandidates[0].startTimeSeconds;
+
+      const toneStartTime = Tone.now() + 0.1;
+
+      songwriterReferenceNoteCandidates.forEach((note) => {
+        const relativeStart = note.startTimeSeconds - firstStartTime;
+
+        const duration = Math.max(
+          0.05,
+          note.endTimeSeconds - note.startTimeSeconds,
+        );
+
+        const velocity = Math.max(
+          0.55,
+          Math.min(0.95, 0.55 + note.averageEnergy * 4),
+        );
+
+        synth.triggerAttackRelease(
+          note.noteName,
+          duration,
+          toneStartTime + relativeStart,
+          velocity,
+        );
+      });
+
+      const finalNote =
+        songwriterReferenceNoteCandidates[
+          songwriterReferenceNoteCandidates.length - 1
+        ];
+
+      const auditionDurationSeconds = finalNote.endTimeSeconds - firstStartTime;
+
+      setAuditioningSongwriterReferenceNotes(true);
+
+      setProjectMessage(
+        `Auditioning ${songwriterReferenceNoteCandidates.length} derived note candidates.`,
+      );
+
+      songwriterReferenceNoteAuditionTimeoutRef.current = window.setTimeout(
+        () => {
+          stopSongwriterReferenceNoteAudition();
+        },
+        Math.ceil((auditionDurationSeconds + 0.5) * 1000),
+      );
+    } catch (error) {
+      console.error("Could not audition songwriter reference notes:", error);
+
+      stopSongwriterReferenceNoteAudition();
+
+      setProjectMessage(
+        error instanceof Error
+          ? `Could not audition derived notes: ${error.message}`
+          : "Could not audition derived notes.",
+      );
+    }
+  };
+
+  const analyseSongwriterReferenceSelection = async () => {
+    stopSongwriterReferenceNoteAudition();
+
+    const analysisSource = songwriterReferenceAnalysisSource;
+
+    const audioBuffer =
+      analysisSource === "vocal-stem"
+        ? songwriterAnalysisStemAudioBufferRef.current
+        : songwriterReferenceAudioBufferRef.current;
+
+    if (!audioBuffer) {
+      setProjectMessage(
+        songwriterReferenceAnalysisSource === "vocal-stem"
+          ? "The vocal analysis stem is not available."
+          : "The songwriter reference audio is not available for analysis.",
+      );
+      return;
+    }
+
+    if (
+      songwriterReferenceSelectionStart === null ||
+      songwriterReferenceSelectionEnd === null
+    ) {
+      setProjectMessage(
+        "Set a start and end point before analysing the songwriter reference.",
+      );
+      return;
+    }
+
+    const selectionStart = Math.max(0, songwriterReferenceSelectionStart);
+
+    const selectionEnd = Math.min(
+      audioBuffer.duration,
+      songwriterReferenceSelectionEnd,
+    );
+
+    if (selectionEnd <= selectionStart) {
+      setProjectMessage("Choose a valid songwriter reference selection.");
+      return;
+    }
+
+    setAnalysingSongwriterReference(true);
+    setSongwriterReferenceTrace([]);
+    setSongwriterReferenceNoteCandidates([]);
+    setSongwriterReferenceExpressiveEvents([]);
+    setSongwriterReferenceAnalysedSource(null);
     setProjectMessage(
-      `Analysed ${(selectionEnd - selectionStart).toFixed(
-        1,
-      )} seconds of songwriter reference: ${voicedFrames} voiced frames from ${
-        trace.length
-      } total frames.`,
-    );
-  } catch (error) {
-    console.error(
-      "Could not analyse songwriter reference:",
-      error,
+      `Analysing songwriter reference from ${formatGeneratedAudioTime(
+        selectionStart,
+      )} to ${formatGeneratedAudioTime(selectionEnd)}...`,
     );
 
-    setProjectMessage(
-      error instanceof Error
-        ? `Could not analyse songwriter reference: ${error.message}`
-        : "Could not analyse songwriter reference.",
-    );
-  } finally {
-    setAnalysingSongwriterReference(false);
-  }
-};
+    // Give React a chance to render the analysing state before
+    // the CPU-heavy pitch detection begins.
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+
+    try {
+      const sampleRate = audioBuffer.sampleRate;
+      const channelData = audioBuffer.getChannelData(0);
+
+      const frameSize = 2048;
+      const hopSize = 512;
+
+      const detector = PitchDetector.forFloat32Array(frameSize);
+
+      const startSample = Math.max(0, Math.floor(selectionStart * sampleRate));
+
+      const endSample = Math.min(
+        channelData.length,
+        Math.ceil(selectionEnd * sampleRate),
+      );
+
+      const trace: SongwriterReferenceTracePoint[] = [];
+
+      let processedFrames = 0;
+      const recentReliablePitches: number[] = [];
+      let consecutiveUnvoicedFrames = 0;
+
+      for (
+        let frameStart = startSample;
+        frameStart + frameSize <= endSample;
+        frameStart += hopSize
+      ) {
+        const frame = channelData.subarray(frameStart, frameStart + frameSize);
+
+        let energySum = 0;
+
+        for (let index = 0; index < frame.length; index += 1) {
+          const sample = frame[index] || 0;
+          energySum += sample * sample;
+        }
+
+        const energy = Math.sqrt(energySum / frame.length);
+
+        const [frequencyHz, clarity] = detector.findPitch(frame, sampleRate);
+
+        const relativeTimeSeconds = (frameStart - startSample) / sampleRate;
+
+        const plausibleFrequency =
+          Number.isFinite(frequencyHz) &&
+          frequencyHz >= 60 &&
+          frequencyHz <= 1200;
+
+        const voiced = energy >= 0.005 && clarity >= 0.6 && plausibleFrequency;
+
+        const rawFrequencyHz = voiced ? frequencyHz : null;
+
+        const correctedFrequencyHz =
+          rawFrequencyHz !== null
+            ? getContinuityCorrectedPitch({
+                frequencyHz: rawFrequencyHz,
+                recentReliablePitches,
+              })
+            : null;
+
+        trace.push({
+          timeSeconds: relativeTimeSeconds,
+          frequencyHz: rawFrequencyHz,
+          correctedFrequencyHz,
+          clarity: Number.isFinite(clarity) ? clarity : 0,
+          energy,
+        });
+
+        if (correctedFrequencyHz !== null) {
+          consecutiveUnvoicedFrames = 0;
+
+          if (clarity >= 0.8) {
+            recentReliablePitches.push(correctedFrequencyHz);
+
+            if (recentReliablePitches.length > 7) {
+              recentReliablePitches.shift();
+            }
+          }
+        } else {
+          consecutiveUnvoicedFrames += 1;
+
+          if (consecutiveUnvoicedFrames >= 12) {
+            recentReliablePitches.length = 0;
+          }
+        }
+
+        processedFrames += 1;
+
+        // Periodically release the browser main thread so the UI
+        // remains responsive during longer selections.
+        if (processedFrames % 40 === 0) {
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 0);
+          });
+        }
+      }
+
+      setSongwriterReferenceTrace(trace);
+      setSongwriterReferenceAnalysedSource(analysisSource);
+      const noteCandidates = buildSongwriterReferenceNoteCandidates(trace);
+
+      setSongwriterReferenceNoteCandidates(noteCandidates);
+
+      const expressiveEvents = buildSongwriterReferenceExpressiveEvents(
+        noteCandidates,
+        trace,
+      );
+
+      setSongwriterReferenceExpressiveEvents(expressiveEvents);
+
+      const voicedFrames = trace.filter(
+        (point) => point.frequencyHz !== null,
+      ).length;
+
+      setProjectMessage(
+        `Analysed ${(selectionEnd - selectionStart).toFixed(
+          1,
+        )} seconds of songwriter reference: ${voicedFrames} voiced frames, ${
+          noteCandidates.length
+        } note candidates, ${
+          expressiveEvents.length
+        } interpreted performance events.`,
+      );
+    } catch (error) {
+      console.error("Could not analyse songwriter reference:", error);
+
+      setProjectMessage(
+        error instanceof Error
+          ? `Could not analyse songwriter reference: ${error.message}`
+          : "Could not analyse songwriter reference.",
+      );
+    } finally {
+      setAnalysingSongwriterReference(false);
+    }
+  };
   const setSongwriterReferenceSelectionPoint = (point: "start" | "end") => {
     const audio = songwriterReferenceAudioRef.current;
 
@@ -23160,6 +23863,13 @@ ${buildRewriteInstruction(
                     ? "Simplify lyrics"
                     : "Default";
 
+  const songwriterReferenceAnalysedSourceLabel =
+    songwriterReferenceAnalysedSource === "vocal-stem"
+      ? "Vocal stem"
+      : songwriterReferenceAnalysedSource === "original"
+        ? "Original performance"
+        : "";
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900 text-white">
       <div
@@ -32826,19 +33536,21 @@ ${buildRewriteInstruction(
                             </button>
 
                             <button
-  type="button"
-  onClick={() => void analyseSongwriterReferenceSelection()}
-  disabled={
-    analysingSongwriterReference ||
-    songwriterReferenceSelectionStart === null ||
-    songwriterReferenceSelectionEnd === null
-  }
-  className="rounded border border-purple-700 px-3 py-1 text-purple-200 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-40"
->
-  {analysingSongwriterReference
-    ? "Analysing..."
-    : "Analyse selection"}
-</button>
+                              type="button"
+                              onClick={() =>
+                                void analyseSongwriterReferenceSelection()
+                              }
+                              disabled={
+                                analysingSongwriterReference ||
+                                songwriterReferenceSelectionStart === null ||
+                                songwriterReferenceSelectionEnd === null
+                              }
+                              className="rounded border border-purple-700 px-3 py-1 text-purple-200 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {analysingSongwriterReference
+                                ? "Analysing..."
+                                : "Analyse selection"}
+                            </button>
 
                             <button
                               type="button"
@@ -32872,46 +33584,247 @@ ${buildRewriteInstruction(
                             </span>
                           </div>
 
+                          <div className="rounded border border-purple-900 bg-purple-950/20 p-3">
+                            <div className="text-xs font-semibold text-purple-100">
+                              Analysis aid
+                            </div>
+
+                            <div className="mt-1 text-[11px] text-purple-300">
+                              Optional vocal-only stem used only for pitch
+                              analysis. The original songwriter performance
+                              remains the creative source.
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-3">
+                              <label className="cursor-pointer rounded border border-purple-700 px-3 py-1 text-xs text-purple-200 hover:bg-purple-900">
+                                Import vocal stem
+                                <input
+                                  type="file"
+                                  accept="audio/*,.wav,.mp3,.m4a,.webm"
+                                  className="hidden"
+                                  onChange={(event) => {
+                                    void importSongwriterAnalysisStem(
+                                      event.currentTarget.files?.[0] || null,
+                                    );
+
+                                    event.currentTarget.value = "";
+                                  }}
+                                />
+                              </label>
+
+                              {songwriterAnalysisStemFileName && (
+                                <span className="text-[11px] text-purple-300">
+                                  {songwriterAnalysisStemFileName}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-4 text-xs text-purple-200">
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="songwriter-analysis-source"
+                                  checked={
+                                    songwriterReferenceAnalysisSource ===
+                                    "original"
+                                  }
+                                  onChange={() => {
+                                    setSongwriterReferenceAnalysisSource(
+                                      "original",
+                                    );
+                                    setSongwriterReferenceTrace([]);
+                                    setSongwriterReferenceNoteCandidates([]);
+                                    setSongwriterReferenceExpressiveEvents([]);
+                                    setSongwriterReferenceAnalysedSource(null);
+                                  }}
+                                />
+                                Original performance
+                              </label>
+
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="songwriter-analysis-source"
+                                  checked={
+                                    songwriterReferenceAnalysisSource ===
+                                    "vocal-stem"
+                                  }
+                                  disabled={
+                                    !songwriterAnalysisStemAudioBufferRef.current
+                                  }
+                                  onChange={() => {
+                                    setSongwriterReferenceAnalysisSource(
+                                      "vocal-stem",
+                                    );
+                                    setSongwriterReferenceTrace([]);
+                                    setSongwriterReferenceNoteCandidates([]);
+                                    setSongwriterReferenceExpressiveEvents([]);
+                                    setSongwriterReferenceAnalysedSource(null);
+                                  }}
+                                />
+                                Vocal stem
+                              </label>
+                            </div>
+                          </div>
+
                           {songwriterReferenceTrace.length > 0 && (
-  <div className="rounded border border-purple-900 bg-black/20 p-3">
-    <div className="text-xs font-semibold text-purple-100">
-      Raw performance trace
-    </div>
+                            <div className="rounded border border-purple-900 bg-black/20 p-3">
+                              <div className="text-xs font-semibold text-purple-100">
+                                {songwriterReferenceAnalysedSourceLabel
+                                  ? `${songwriterReferenceAnalysedSourceLabel} — Raw performance trace`
+                                  : "Raw performance trace"}
+                              </div>
 
-    <div className="mt-1 text-[11px] text-purple-300">
-      {songwriterReferenceTrace.length} analysis frames ·{" "}
-      {
-        songwriterReferenceTrace.filter(
-          (point) => point.frequencyHz !== null,
-        ).length
-      }{" "}
-      voiced
-    </div>
+                              <div className="mt-1 text-[11px] text-purple-300">
+                                {songwriterReferenceTrace.length} analysis
+                                frames ·{" "}
+                                {
+                                  songwriterReferenceTrace.filter(
+                                    (point) => point.frequencyHz !== null,
+                                  ).length
+                                }{" "}
+                                voiced
+                              </div>
 
-    <div className="mt-3 max-h-48 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
-      {songwriterReferenceTrace.slice(0, 120).map((point, index) => (
-        <div key={`${point.timeSeconds}-${index}`}>
-          {point.timeSeconds.toFixed(3)}s{"  "}
-          raw{" "}
-{typeof point.frequencyHz === "number" &&
-Number.isFinite(point.frequencyHz)
-  ? `${point.frequencyHz.toFixed(1)} Hz`
-  : "—"}
-{"  "}
-corrected{" "}
-{typeof point.correctedFrequencyHz === "number" &&
-Number.isFinite(point.correctedFrequencyHz)
-  ? `${point.correctedFrequencyHz.toFixed(1)} Hz`
-  : "—"}
-{"  "}
-clarity {point.clarity.toFixed(2)}
-          {"  "}
-          energy {point.energy.toFixed(4)}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+                              <div className="mt-3 max-h-48 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
+                                {songwriterReferenceTrace
+                                  .slice(0, 120)
+                                  .map((point, index) => (
+                                    <div key={`${point.timeSeconds}-${index}`}>
+                                      {point.timeSeconds.toFixed(3)}s{"  "}
+                                      raw{" "}
+                                      {typeof point.frequencyHz === "number" &&
+                                      Number.isFinite(point.frequencyHz)
+                                        ? `${point.frequencyHz.toFixed(1)} Hz`
+                                        : "—"}
+                                      {"  "}
+                                      corrected{" "}
+                                      {typeof point.correctedFrequencyHz ===
+                                        "number" &&
+                                      Number.isFinite(
+                                        point.correctedFrequencyHz,
+                                      )
+                                        ? `${point.correctedFrequencyHz.toFixed(1)} Hz`
+                                        : "—"}
+                                      {"  "}
+                                      clarity {point.clarity.toFixed(2)}
+                                      {"  "}
+                                      energy {point.energy.toFixed(4)}
+                                    </div>
+                                  ))}
+                                {songwriterReferenceNoteCandidates.length >
+                                  0 && (
+                                  <div className="rounded border border-purple-900 bg-black/20 p-3">
+                                    <div className="text-xs font-semibold text-purple-100">
+                                      {songwriterReferenceAnalysedSourceLabel
+                                        ? `${songwriterReferenceAnalysedSourceLabel} — Derived note candidates`
+                                        : "Derived note candidates"}
+                                    </div>
+
+                                    <div className="mt-1 text-[11px] text-purple-300">
+                                      These are derived from the continuous
+                                      performance trace. Timing and pitch have
+                                      not been quantised.
+                                    </div>
+
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          void auditionSongwriterReferenceNoteCandidates()
+                                        }
+                                        disabled={
+                                          songwriterReferenceNoteCandidates.length ===
+                                            0 ||
+                                          auditioningSongwriterReferenceNotes
+                                        }
+                                        className="rounded border border-purple-700 px-3 py-1 text-xs text-purple-200 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-40"
+                                      >
+                                        {auditioningSongwriterReferenceNotes
+                                          ? "Auditioning..."
+                                          : "Audition derived notes"}
+                                      </button>
+
+                                      {auditioningSongwriterReferenceNotes && (
+                                        <button
+                                          type="button"
+                                          onClick={
+                                            stopSongwriterReferenceNoteAudition
+                                          }
+                                          className="rounded border border-purple-800 px-3 py-1 text-xs text-purple-300 hover:bg-purple-900"
+                                        >
+                                          Stop audition
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-3 max-h-48 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
+                                      {songwriterReferenceNoteCandidates.map(
+                                        (note, index) => (
+                                          <div
+                                            key={`${note.startTimeSeconds}-${index}`}
+                                          >
+                                            {note.startTimeSeconds.toFixed(3)}–
+                                            {note.endTimeSeconds.toFixed(3)}s
+                                            {"  "}
+                                            {note.noteName}
+                                            {"  "}
+                                            {note.medianFrequencyHz.toFixed(
+                                              1,
+                                            )}{" "}
+                                            Hz{"  "}
+                                            clarity{" "}
+                                            {note.averageClarity.toFixed(2)}
+                                            {"  "}
+                                            energy{" "}
+                                            {note.averageEnergy.toFixed(4)}
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {songwriterReferenceExpressiveEvents.length >
+                                  0 && (
+                                  <div className="rounded border border-purple-900 bg-black/20 p-3">
+                                    <div className="text-xs font-semibold text-purple-100">
+                                      {songwriterReferenceAnalysedSourceLabel
+                                        ? `${songwriterReferenceAnalysedSourceLabel} — Expressive performance interpretation`
+                                        : "Expressive performance interpretation"}
+                                    </div>
+
+                                    <div className="mt-1 text-[11px] text-purple-300">
+                                      Higher-level interpretation of the derived
+                                      notes. The original performance trace and
+                                      note candidates remain unchanged.
+                                    </div>
+
+                                    <div className="mt-3 max-h-56 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
+                                      {songwriterReferenceExpressiveEvents.map(
+                                        (event, index) => (
+                                          <div
+                                            key={`${event.startTimeSeconds}-${event.kind}-${index}`}
+                                          >
+                                            {event.startTimeSeconds.toFixed(3)}–
+                                            {event.endTimeSeconds.toFixed(3)}s
+                                            {"  "}
+                                            {event.kind === "stable-note"
+                                              ? `STABLE ${event.anchorNoteName}`
+                                              : event.kind === "expressive-dip"
+                                                ? `${event.anchorNoteName} · DIP → ${event.inflectionNoteName} → ${event.anchorNoteName}`
+                                                : `${event.anchorNoteName} · RISE → ${event.inflectionNoteName} → ${event.anchorNoteName}`}
+                                            {"  "}
+                                            {event.description}
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                           <canvas
                             ref={songwriterReferenceWaveformCanvasRef}
