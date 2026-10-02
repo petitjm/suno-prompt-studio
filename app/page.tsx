@@ -792,6 +792,12 @@ export default function Page() {
     internalPauseCount: number;
 
     deliveryDensity: "continuous" | "moderately-spaced" | "spacious";
+    finalNoteName: string;
+finalNoteDurationSeconds: number;
+
+    finalNoteBehaviour: "short" | "sustained";
+
+    spaceAfterSeconds: number | null;
 
     dynamicShape: "grows" | "falls" | "arches" | "dips" | "level";
   };
@@ -2564,6 +2570,29 @@ export default function Page() {
         const lastCandidate =
           candidates[group.candidateIndexes[group.candidateIndexes.length - 1]];
 
+        const nextGroup = candidateGroups[candidateGroups.indexOf(group) + 1];
+
+        const nextPhraseStartTimeSeconds = nextGroup
+          ? candidates[nextGroup.candidateIndexes[0]].startTimeSeconds
+          : null;
+
+        const spaceAfterSeconds =
+          nextPhraseStartTimeSeconds !== null
+            ? Math.max(
+                0,
+                nextPhraseStartTimeSeconds - lastCandidate.endTimeSeconds,
+              )
+            : null;
+
+        const lastCandidateDurationSeconds = Math.max(
+          0,
+          lastCandidate.endTimeSeconds - lastCandidate.startTimeSeconds,
+        );
+        const finalNoteBehaviour: SongwriterReferencePhrasePerformance["finalNoteBehaviour"] =
+          lastCandidateDurationSeconds >= 0.6 ? "sustained" : "short";
+
+        
+
         const startTimeSeconds = firstCandidate.startTimeSeconds;
 
         const endTimeSeconds = lastCandidate.endTimeSeconds;
@@ -2583,63 +2612,50 @@ export default function Page() {
         if (phraseFrames.length === 0) {
           return null;
         }
-        const phraseCandidates =
-  group.candidateIndexes.map(
-    (candidateIndex) => candidates[candidateIndex],
-  );
+        const phraseCandidates = group.candidateIndexes.map(
+          (candidateIndex) => candidates[candidateIndex],
+        );
 
-const occupiedDurationSeconds =
-  phraseCandidates.reduce(
-    (sum, candidate) =>
-      sum +
-      Math.max(
-        0,
-        candidate.endTimeSeconds -
-          candidate.startTimeSeconds,
-      ),
-    0,
-  );
+        const occupiedDurationSeconds = phraseCandidates.reduce(
+          (sum, candidate) =>
+            sum +
+            Math.max(0, candidate.endTimeSeconds - candidate.startTimeSeconds),
+          0,
+        );
 
-const voicedFrameRatio =
-  durationSeconds > 0
-    ? Math.min(
-        1,
-        occupiedDurationSeconds /
-          durationSeconds,
-      )
-    : 0;
+        const voicedFrameRatio =
+          durationSeconds > 0
+            ? Math.min(1, occupiedDurationSeconds / durationSeconds)
+            : 0;
 
-let internalPauseCount = 0;
-let longestInternalPauseSeconds = 0;
+        let internalPauseCount = 0;
+        let longestInternalPauseSeconds = 0;
 
-for (
-  let candidateIndex = 1;
-  candidateIndex < phraseCandidates.length;
-  candidateIndex += 1
-) {
-  const previousCandidate =
-    phraseCandidates[candidateIndex - 1];
+        for (
+          let candidateIndex = 1;
+          candidateIndex < phraseCandidates.length;
+          candidateIndex += 1
+        ) {
+          const previousCandidate = phraseCandidates[candidateIndex - 1];
 
-  const currentCandidate =
-    phraseCandidates[candidateIndex];
+          const currentCandidate = phraseCandidates[candidateIndex];
 
-  const gapSeconds =
-    currentCandidate.startTimeSeconds -
-    previousCandidate.endTimeSeconds;
+          const gapSeconds =
+            currentCandidate.startTimeSeconds -
+            previousCandidate.endTimeSeconds;
 
-  // Ignore tiny analysis boundaries between adjoining note regions.
-  if (gapSeconds < 0.08) {
-    continue;
-  }
+          // Ignore tiny analysis boundaries between adjoining note regions.
+          if (gapSeconds < 0.08) {
+            continue;
+          }
 
-  internalPauseCount += 1;
+          internalPauseCount += 1;
 
-  longestInternalPauseSeconds =
-    Math.max(
-      longestInternalPauseSeconds,
-      gapSeconds,
-    );
-}
+          longestInternalPauseSeconds = Math.max(
+            longestInternalPauseSeconds,
+            gapSeconds,
+          );
+        }
 
         let deliveryDensity: SongwriterReferencePhrasePerformance["deliveryDensity"] =
           "continuous";
@@ -2734,6 +2750,11 @@ for (
           longestInternalPauseSeconds,
           internalPauseCount,
           deliveryDensity,
+
+          finalNoteName: lastCandidate.noteName,
+finalNoteDurationSeconds: lastCandidateDurationSeconds,
+          finalNoteBehaviour,
+          spaceAfterSeconds,
 
           dynamicShape,
         };
@@ -34529,6 +34550,12 @@ ${buildRewriteInstruction(
                                       {"  "}
                                       {phrase.deliveryDensity.toUpperCase()}
                                       {"  "}
+                                      final note {phrase.finalNoteName}{" "}
+{Number.isFinite(phrase.finalNoteDurationSeconds)
+  ? `${phrase.finalNoteDurationSeconds.toFixed(2)}s`
+  : "—"}{" "}
+{phrase.finalNoteBehaviour.toUpperCase()}
+{"  "}
                                       voiced{" "}
                                       {(phrase.voicedFrameRatio * 100).toFixed(
                                         0,
@@ -34541,8 +34568,14 @@ ${buildRewriteInstruction(
                                         2,
                                       )}
                                       s{"  "}
-                                      energy{" "}
-                                      {phrase.entryEnergy.toFixed(4)}
+                                      {phrase.spaceAfterSeconds !== null && (
+                                        <>
+                                          space after{" "}
+                                          {phrase.spaceAfterSeconds.toFixed(2)}s
+                                          {"  "}
+                                        </>
+                                      )}
+                                      energy {phrase.entryEnergy.toFixed(4)}
                                       {" → "}
                                       {phrase.middleEnergy.toFixed(4)}
                                       {" → "}
