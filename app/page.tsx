@@ -787,6 +787,12 @@ export default function Page() {
     middleEnergy: number;
     exitEnergy: number;
 
+    voicedFrameRatio: number;
+    longestInternalPauseSeconds: number;
+    internalPauseCount: number;
+
+    deliveryDensity: "continuous" | "moderately-spaced" | "spacious";
+
     dynamicShape: "grows" | "falls" | "arches" | "dips" | "level";
   };
   type SongwriterReferenceExpressiveEvent = {
@@ -2577,6 +2583,76 @@ export default function Page() {
         if (phraseFrames.length === 0) {
           return null;
         }
+        const phraseCandidates =
+  group.candidateIndexes.map(
+    (candidateIndex) => candidates[candidateIndex],
+  );
+
+const occupiedDurationSeconds =
+  phraseCandidates.reduce(
+    (sum, candidate) =>
+      sum +
+      Math.max(
+        0,
+        candidate.endTimeSeconds -
+          candidate.startTimeSeconds,
+      ),
+    0,
+  );
+
+const voicedFrameRatio =
+  durationSeconds > 0
+    ? Math.min(
+        1,
+        occupiedDurationSeconds /
+          durationSeconds,
+      )
+    : 0;
+
+let internalPauseCount = 0;
+let longestInternalPauseSeconds = 0;
+
+for (
+  let candidateIndex = 1;
+  candidateIndex < phraseCandidates.length;
+  candidateIndex += 1
+) {
+  const previousCandidate =
+    phraseCandidates[candidateIndex - 1];
+
+  const currentCandidate =
+    phraseCandidates[candidateIndex];
+
+  const gapSeconds =
+    currentCandidate.startTimeSeconds -
+    previousCandidate.endTimeSeconds;
+
+  // Ignore tiny analysis boundaries between adjoining note regions.
+  if (gapSeconds < 0.08) {
+    continue;
+  }
+
+  internalPauseCount += 1;
+
+  longestInternalPauseSeconds =
+    Math.max(
+      longestInternalPauseSeconds,
+      gapSeconds,
+    );
+}
+
+        let deliveryDensity: SongwriterReferencePhrasePerformance["deliveryDensity"] =
+          "continuous";
+
+        if (voicedFrameRatio < 0.55 || longestInternalPauseSeconds >= 0.35) {
+          deliveryDensity = "spacious";
+        } else if (
+          voicedFrameRatio < 0.75 ||
+          longestInternalPauseSeconds >= 0.18 ||
+          internalPauseCount >= 2
+        ) {
+          deliveryDensity = "moderately-spaced";
+        }
 
         const thirdDuration = durationSeconds / 3;
 
@@ -2653,6 +2729,11 @@ export default function Page() {
           entryEnergy,
           middleEnergy,
           exitEnergy,
+
+          voicedFrameRatio,
+          longestInternalPauseSeconds,
+          internalPauseCount,
+          deliveryDensity,
 
           dynamicShape,
         };
@@ -34446,7 +34527,22 @@ ${buildRewriteInstruction(
                                       {phrase.durationSeconds.toFixed(2)}s{"  "}
                                       {phrase.dynamicShape.toUpperCase()}
                                       {"  "}
-                                      energy {phrase.entryEnergy.toFixed(4)}
+                                      {phrase.deliveryDensity.toUpperCase()}
+                                      {"  "}
+                                      voiced{" "}
+                                      {(phrase.voicedFrameRatio * 100).toFixed(
+                                        0,
+                                      )}
+                                      %{"  "}
+                                      pauses {phrase.internalPauseCount}
+                                      {"  "}
+                                      longest pause{" "}
+                                      {phrase.longestInternalPauseSeconds.toFixed(
+                                        2,
+                                      )}
+                                      s{"  "}
+                                      energy{" "}
+                                      {phrase.entryEnergy.toFixed(4)}
                                       {" → "}
                                       {phrase.middleEnergy.toFixed(4)}
                                       {" → "}
