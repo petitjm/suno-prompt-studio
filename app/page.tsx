@@ -698,6 +698,11 @@ export default function Page() {
   ] = useState<SongwriterReferenceExpressiveEvent[]>([]);
 
   const [
+    songwriterReferencePhrasePerformances,
+    setSongwriterReferencePhrasePerformances,
+  ] = useState<SongwriterReferencePhrasePerformance[]>([]);
+
+  const [
     auditioningSongwriterReferenceNotes,
     setAuditioningSongwriterReferenceNotes,
   ] = useState(false);
@@ -769,6 +774,20 @@ export default function Page() {
     extremeFrequencyHz: number;
     endFrequencyHz: number;
     movementCents: number;
+  };
+  type SongwriterReferencePhrasePerformance = {
+    startTimeSeconds: number;
+    endTimeSeconds: number;
+    durationSeconds: number;
+
+    sourceCandidateIndexes: number[];
+
+    averageEnergy: number;
+    entryEnergy: number;
+    middleEnergy: number;
+    exitEnergy: number;
+
+    dynamicShape: "grows" | "falls" | "arches" | "dips" | "level";
   };
   type SongwriterReferenceExpressiveEvent = {
     kind: "stable-note" | "expressive-dip" | "expressive-rise";
@@ -1175,6 +1194,7 @@ export default function Page() {
       setSongwriterReferenceTrace([]);
       setSongwriterReferenceNoteCandidates([]);
       setSongwriterReferenceExpressiveEvents([]);
+      setSongwriterReferencePhrasePerformances([]);
       setSongwriterReferenceAnalysedSource(null);
 
       setProjectMessage(`Loaded vocal stem for analysis: ${file.name}`);
@@ -1350,6 +1370,7 @@ export default function Page() {
       setSongwriterReferenceTrace([]);
       setSongwriterReferenceNoteCandidates([]);
       setSongwriterReferenceExpressiveEvents([]);
+      setSongwriterReferencePhrasePerformances([]);
       setSongwriterReferenceAnalysedSource(null);
 
       songwriterReferenceWaveformPeaksRef.current = [];
@@ -1401,6 +1422,7 @@ export default function Page() {
     setSongwriterReferenceTrace([]);
     setSongwriterReferenceNoteCandidates([]);
     setSongwriterReferenceExpressiveEvents([]);
+    setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
@@ -1571,6 +1593,7 @@ export default function Page() {
     setSongwriterReferenceTrace([]);
     setSongwriterReferenceNoteCandidates([]);
     setSongwriterReferenceExpressiveEvents([]);
+    setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
 
     songwriterReferenceWaveformProgressRef.current = 0;
@@ -2475,6 +2498,171 @@ export default function Page() {
     return events;
   };
 
+  const buildSongwriterReferencePhrasePerformances = ({
+    trace,
+    candidates,
+  }: {
+    trace: SongwriterReferenceTracePoint[];
+    candidates: SongwriterReferenceNoteCandidate[];
+  }) => {
+    if (trace.length === 0 || candidates.length === 0) {
+      return [];
+    }
+
+    const phraseGapSeconds = 0.5;
+
+    const candidateGroups: {
+      candidateIndexes: number[];
+    }[] = [];
+
+    candidates.forEach((candidate, candidateIndex) => {
+      const currentGroup = candidateGroups[candidateGroups.length - 1];
+
+      if (!currentGroup) {
+        candidateGroups.push({
+          candidateIndexes: [candidateIndex],
+        });
+        return;
+      }
+
+      const previousCandidateIndex =
+        currentGroup.candidateIndexes[currentGroup.candidateIndexes.length - 1];
+
+      const previousCandidate = candidates[previousCandidateIndex];
+
+      const gapSeconds =
+        candidate.startTimeSeconds - previousCandidate.endTimeSeconds;
+
+      if (gapSeconds <= phraseGapSeconds) {
+        currentGroup.candidateIndexes.push(candidateIndex);
+        return;
+      }
+
+      candidateGroups.push({
+        candidateIndexes: [candidateIndex],
+      });
+    });
+
+    const medianEnergy = (frames: SongwriterReferenceTracePoint[]) => {
+      const energies = frames
+        .map((point) => point.energy)
+        .filter((energy) => Number.isFinite(energy) && energy >= 0);
+
+      return medianNumber(energies);
+    };
+
+    return candidateGroups
+      .map((group): SongwriterReferencePhrasePerformance | null => {
+        const firstCandidate = candidates[group.candidateIndexes[0]];
+
+        const lastCandidate =
+          candidates[group.candidateIndexes[group.candidateIndexes.length - 1]];
+
+        const startTimeSeconds = firstCandidate.startTimeSeconds;
+
+        const endTimeSeconds = lastCandidate.endTimeSeconds;
+
+        const durationSeconds = endTimeSeconds - startTimeSeconds;
+
+        if (durationSeconds <= 0) {
+          return null;
+        }
+
+        const phraseFrames = trace.filter(
+          (point) =>
+            point.timeSeconds >= startTimeSeconds &&
+            point.timeSeconds <= endTimeSeconds,
+        );
+
+        if (phraseFrames.length === 0) {
+          return null;
+        }
+
+        const thirdDuration = durationSeconds / 3;
+
+        const entryFrames = phraseFrames.filter(
+          (point) => point.timeSeconds < startTimeSeconds + thirdDuration,
+        );
+
+        const middleFrames = phraseFrames.filter(
+          (point) =>
+            point.timeSeconds >= startTimeSeconds + thirdDuration &&
+            point.timeSeconds < startTimeSeconds + thirdDuration * 2,
+        );
+
+        const exitFrames = phraseFrames.filter(
+          (point) => point.timeSeconds >= startTimeSeconds + thirdDuration * 2,
+        );
+
+        const entryEnergy = medianEnergy(entryFrames);
+
+        const middleEnergy = medianEnergy(middleFrames);
+
+        const exitEnergy = medianEnergy(exitFrames);
+
+        const averageEnergy =
+          phraseFrames.reduce(
+            (sum, point) =>
+              sum + (Number.isFinite(point.energy) ? point.energy : 0),
+            0,
+          ) / phraseFrames.length;
+
+        const meaningfulDifference = (first: number, second: number) => {
+          const baseline = Math.max(first, second, 0.0001);
+
+          return Math.abs(first - second) / baseline >= 0.18;
+        };
+
+        let dynamicShape: SongwriterReferencePhrasePerformance["dynamicShape"] =
+          "level";
+
+        if (
+          middleEnergy > entryEnergy &&
+          middleEnergy > exitEnergy &&
+          meaningfulDifference(middleEnergy, entryEnergy) &&
+          meaningfulDifference(middleEnergy, exitEnergy)
+        ) {
+          dynamicShape = "arches";
+        } else if (
+          middleEnergy < entryEnergy &&
+          middleEnergy < exitEnergy &&
+          meaningfulDifference(middleEnergy, entryEnergy) &&
+          meaningfulDifference(middleEnergy, exitEnergy)
+        ) {
+          dynamicShape = "dips";
+        } else if (
+          exitEnergy > entryEnergy &&
+          meaningfulDifference(exitEnergy, entryEnergy)
+        ) {
+          dynamicShape = "grows";
+        } else if (
+          exitEnergy < entryEnergy &&
+          meaningfulDifference(exitEnergy, entryEnergy)
+        ) {
+          dynamicShape = "falls";
+        }
+
+        return {
+          startTimeSeconds,
+          endTimeSeconds,
+          durationSeconds,
+
+          sourceCandidateIndexes: group.candidateIndexes,
+
+          averageEnergy,
+          entryEnergy,
+          middleEnergy,
+          exitEnergy,
+
+          dynamicShape,
+        };
+      })
+      .filter(
+        (phrase): phrase is SongwriterReferencePhrasePerformance =>
+          phrase !== null,
+      );
+  };
+
   const stopSongwriterReferenceNoteAudition = () => {
     if (songwriterReferenceNoteAuditionTimeoutRef.current !== null) {
       window.clearTimeout(songwriterReferenceNoteAuditionTimeoutRef.current);
@@ -2623,6 +2811,7 @@ export default function Page() {
     setSongwriterReferenceTrace([]);
     setSongwriterReferenceNoteCandidates([]);
     setSongwriterReferenceExpressiveEvents([]);
+    setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
     setProjectMessage(
       `Analysing songwriter reference from ${formatGeneratedAudioTime(
@@ -2744,6 +2933,13 @@ export default function Page() {
       );
 
       setSongwriterReferenceExpressiveEvents(expressiveEvents);
+
+      const phrasePerformances = buildSongwriterReferencePhrasePerformances({
+        trace,
+        candidates: noteCandidates,
+      });
+
+      setSongwriterReferencePhrasePerformances(phrasePerformances);
 
       const voicedFrames = trace.filter(
         (point) => point.frequencyHz !== null,
@@ -34027,6 +34223,9 @@ ${buildRewriteInstruction(
                                     setSongwriterReferenceTrace([]);
                                     setSongwriterReferenceNoteCandidates([]);
                                     setSongwriterReferenceExpressiveEvents([]);
+                                    setSongwriterReferencePhrasePerformances(
+                                      [],
+                                    );
                                     setSongwriterReferenceAnalysedSource(null);
                                   }}
                                 />
@@ -34051,6 +34250,9 @@ ${buildRewriteInstruction(
                                     setSongwriterReferenceTrace([]);
                                     setSongwriterReferenceNoteCandidates([]);
                                     setSongwriterReferenceExpressiveEvents([]);
+                                    setSongwriterReferencePhrasePerformances(
+                                      [],
+                                    );
                                     setSongwriterReferenceAnalysedSource(null);
                                   }}
                                 />
@@ -34213,6 +34415,44 @@ ${buildRewriteInstruction(
                                       )}
                                     </div>
                                   </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {songwriterReferencePhrasePerformances.length > 0 && (
+                            <div className="rounded border border-purple-900 bg-black/20 p-3">
+                              <div className="text-xs font-semibold text-purple-100">
+                                {songwriterReferenceAnalysedSourceLabel
+                                  ? `${songwriterReferenceAnalysedSourceLabel} — Phrase performance`
+                                  : "Phrase performance"}
+                              </div>
+
+                              <div className="mt-1 text-[11px] text-purple-300">
+                                Broad phrase-level timing and energy shape
+                                derived from the analysed performance. This does
+                                not alter the original recording or pitch
+                                interpretation.
+                              </div>
+
+                              <div className="mt-3 max-h-56 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
+                                {songwriterReferencePhrasePerformances.map(
+                                  (phrase, index) => (
+                                    <div
+                                      key={`${phrase.startTimeSeconds}-${index}`}
+                                    >
+                                      {phrase.startTimeSeconds.toFixed(3)}–
+                                      {phrase.endTimeSeconds.toFixed(3)}s{"  "}
+                                      {phrase.durationSeconds.toFixed(2)}s{"  "}
+                                      {phrase.dynamicShape.toUpperCase()}
+                                      {"  "}
+                                      energy {phrase.entryEnergy.toFixed(4)}
+                                      {" → "}
+                                      {phrase.middleEnergy.toFixed(4)}
+                                      {" → "}
+                                      {phrase.exitEnergy.toFixed(4)}
+                                    </div>
+                                  ),
                                 )}
                               </div>
                             </div>
