@@ -703,6 +703,11 @@ export default function Page() {
   ] = useState<SongwriterReferencePhrasePerformance[]>([]);
 
   const [
+    songwriterReferenceMusicalObservations,
+    setSongwriterReferenceMusicalObservations,
+  ] = useState<SongwriterReferenceMusicalObservation[]>([]);
+
+  const [
     auditioningSongwriterReferenceNotes,
     setAuditioningSongwriterReferenceNotes,
   ] = useState(false);
@@ -776,6 +781,8 @@ export default function Page() {
     movementCents: number;
   };
   type SongwriterReferencePhrasePerformance = {
+    sourceStartTimeSeconds: number;
+    sourceEndTimeSeconds: number;
     startTimeSeconds: number;
     endTimeSeconds: number;
     durationSeconds: number;
@@ -793,13 +800,28 @@ export default function Page() {
 
     deliveryDensity: "continuous" | "moderately-spaced" | "spacious";
     finalNoteName: string;
-finalNoteDurationSeconds: number;
+    finalNoteDurationSeconds: number;
 
     finalNoteBehaviour: "short" | "sustained";
 
     spaceAfterSeconds: number | null;
 
     dynamicShape: "grows" | "falls" | "arches" | "dips" | "level";
+  };
+  type SongwriterReferenceObservationScope =
+    "unclassified" | "song-identity" | "artist-dna" | "rendition";
+
+  type SongwriterReferenceMusicalObservation = {
+    technicalDetail?: string;
+    id: string;
+
+    phraseIndex: number;
+
+    category: "dynamic-shape" | "delivery-spacing" | "phrase-ending";
+
+    description: string;
+
+    scope: SongwriterReferenceObservationScope;
   };
   type SongwriterReferenceExpressiveEvent = {
     kind: "stable-note" | "expressive-dip" | "expressive-rise";
@@ -838,7 +860,9 @@ finalNoteDurationSeconds: number;
   const [songwriterReferenceId, setSongwriterReferenceId] = useState("");
   const [songwriterReferenceSaved, setSongwriterReferenceSaved] =
     useState(false);
-
+  const songwriterReferencePhrasePlaybackCleanupRef = useRef<
+    (() => void) | null
+  >(null);
   const latestSongwriterReferenceLoadRef = useRef(0);
   const generatedAudioCurrentTimeTextRef = useRef<HTMLSpanElement | null>(null);
   const generatedAudioDurationTextRef = useRef<HTMLSpanElement | null>(null);
@@ -1208,6 +1232,7 @@ finalNoteDurationSeconds: number;
       setSongwriterReferenceExpressiveEvents([]);
       setSongwriterReferencePhrasePerformances([]);
       setSongwriterReferenceAnalysedSource(null);
+      setSongwriterReferenceMusicalObservations([]);
 
       setProjectMessage(`Loaded vocal stem for analysis: ${file.name}`);
     } catch (error) {
@@ -1384,6 +1409,7 @@ finalNoteDurationSeconds: number;
       setSongwriterReferenceExpressiveEvents([]);
       setSongwriterReferencePhrasePerformances([]);
       setSongwriterReferenceAnalysedSource(null);
+      setSongwriterReferenceMusicalObservations([]);
 
       songwriterReferenceWaveformPeaksRef.current = [];
       songwriterReferenceWaveformProgressRef.current = 0;
@@ -1436,6 +1462,7 @@ finalNoteDurationSeconds: number;
     setSongwriterReferenceExpressiveEvents([]);
     setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
+    setSongwriterReferenceMusicalObservations([]);
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
 
@@ -1607,6 +1634,7 @@ finalNoteDurationSeconds: number;
     setSongwriterReferenceExpressiveEvents([]);
     setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
+    setSongwriterReferenceMusicalObservations([]);
 
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
@@ -2513,9 +2541,11 @@ finalNoteDurationSeconds: number;
   const buildSongwriterReferencePhrasePerformances = ({
     trace,
     candidates,
+    selectionStartSeconds,
   }: {
     trace: SongwriterReferenceTracePoint[];
     candidates: SongwriterReferenceNoteCandidate[];
+    selectionStartSeconds: number;
   }) => {
     if (trace.length === 0 || candidates.length === 0) {
       return [];
@@ -2590,8 +2620,6 @@ finalNoteDurationSeconds: number;
         );
         const finalNoteBehaviour: SongwriterReferencePhrasePerformance["finalNoteBehaviour"] =
           lastCandidateDurationSeconds >= 0.6 ? "sustained" : "short";
-
-        
 
         const startTimeSeconds = firstCandidate.startTimeSeconds;
 
@@ -2735,6 +2763,9 @@ finalNoteDurationSeconds: number;
         }
 
         return {
+          sourceStartTimeSeconds: selectionStartSeconds + startTimeSeconds,
+
+          sourceEndTimeSeconds: selectionStartSeconds + endTimeSeconds,
           startTimeSeconds,
           endTimeSeconds,
           durationSeconds,
@@ -2752,7 +2783,7 @@ finalNoteDurationSeconds: number;
           deliveryDensity,
 
           finalNoteName: lastCandidate.noteName,
-finalNoteDurationSeconds: lastCandidateDurationSeconds,
+          finalNoteDurationSeconds: lastCandidateDurationSeconds,
           finalNoteBehaviour,
           spaceAfterSeconds,
 
@@ -2763,6 +2794,74 @@ finalNoteDurationSeconds: lastCandidateDurationSeconds,
         (phrase): phrase is SongwriterReferencePhrasePerformance =>
           phrase !== null,
       );
+  };
+
+  const buildSongwriterReferenceMusicalObservations = ({
+    performances,
+  }: {
+    performances: SongwriterReferencePhrasePerformance[];
+  }): SongwriterReferenceMusicalObservation[] => {
+    return performances.flatMap((phrase, phraseIndex) => {
+      const observations: SongwriterReferenceMusicalObservation[] = [];
+
+      observations.push({
+        id: `phrase-${phraseIndex}-dynamic-shape`,
+        phraseIndex,
+        category: "dynamic-shape",
+        description:
+          phrase.dynamicShape === "arches"
+            ? "Energy rises through the phrase and falls again."
+            : phrase.dynamicShape === "dips"
+              ? "Energy falls through the middle of the phrase and recovers."
+              : phrase.dynamicShape === "grows"
+                ? "Energy grows across the phrase."
+                : phrase.dynamicShape === "falls"
+                  ? "Energy falls across the phrase."
+                  : "Energy remains broadly level across the phrase.",
+        scope: "unclassified",
+      });
+
+      observations.push({
+        id: `phrase-${phraseIndex}-delivery-spacing`,
+        phraseIndex,
+        category: "delivery-spacing",
+        description:
+          phrase.deliveryDensity === "continuous"
+            ? "The words and notes flow fairly continuously through this phrase."
+            : phrase.deliveryDensity === "moderately-spaced"
+              ? "There are noticeable pauses or gaps within this phrase."
+              : "There are substantial pauses or gaps within this phrase.",
+        scope: "unclassified",
+      });
+
+      const endingParts = [
+        phrase.finalNoteBehaviour === "sustained"
+          ? "The phrase ends on a held note."
+          : "The phrase ends on a relatively short note.",
+      ];
+
+      if (
+        phrase.spaceAfterSeconds !== null &&
+        phrase.spaceAfterSeconds >= 0.5
+      ) {
+        endingParts.push(
+          `There is ${phrase.spaceAfterSeconds.toFixed(
+            2,
+          )}s of space before the next detected phrase.`,
+        );
+      }
+
+      observations.push({
+        id: `phrase-${phraseIndex}-phrase-ending`,
+        phraseIndex,
+        category: "phrase-ending",
+        description: endingParts.join(" "),
+        technicalDetail: `Detected final pitch: ${phrase.finalNoteName}`,
+        scope: "unclassified",
+      });
+
+      return observations;
+    });
   };
 
   const stopSongwriterReferenceNoteAudition = () => {
@@ -2915,6 +3014,7 @@ finalNoteDurationSeconds: lastCandidateDurationSeconds,
     setSongwriterReferenceExpressiveEvents([]);
     setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
+    setSongwriterReferenceMusicalObservations([]);
     setProjectMessage(
       `Analysing songwriter reference from ${formatGeneratedAudioTime(
         selectionStart,
@@ -3039,9 +3139,16 @@ finalNoteDurationSeconds: lastCandidateDurationSeconds,
       const phrasePerformances = buildSongwriterReferencePhrasePerformances({
         trace,
         candidates: noteCandidates,
+        selectionStartSeconds: selectionStart,
       });
 
       setSongwriterReferencePhrasePerformances(phrasePerformances);
+
+      const musicalObservations = buildSongwriterReferenceMusicalObservations({
+        performances: phrasePerformances,
+      });
+
+      setSongwriterReferenceMusicalObservations(musicalObservations);
 
       const voicedFrames = trace.filter(
         (point) => point.frequencyHz !== null,
@@ -3113,6 +3220,52 @@ finalNoteDurationSeconds: lastCandidateDurationSeconds,
 
     audio.currentTime = songwriterReferenceSelectionStart;
     void audio.play();
+  };
+
+  const playSongwriterReferencePhrase = (
+    startTimeSeconds: number,
+    endTimeSeconds: number,
+  ) => {
+    const audio = songwriterReferenceAudioRef.current;
+
+    if (
+      !audio ||
+      !Number.isFinite(startTimeSeconds) ||
+      !Number.isFinite(endTimeSeconds) ||
+      endTimeSeconds <= startTimeSeconds
+    ) {
+      return;
+    }
+
+    songwriterReferencePhrasePlaybackCleanupRef.current?.();
+    songwriterReferencePhrasePlaybackCleanupRef.current = null;
+
+    audio.pause();
+
+    const stopAtPhraseEnd = () => {
+      if (audio.currentTime >= endTimeSeconds - 0.05) {
+        audio.pause();
+        cleanup();
+      }
+    };
+
+    const cleanup = () => {
+      audio.removeEventListener("timeupdate", stopAtPhraseEnd);
+
+      if (songwriterReferencePhrasePlaybackCleanupRef.current === cleanup) {
+        songwriterReferencePhrasePlaybackCleanupRef.current = null;
+      }
+    };
+
+    songwriterReferencePhrasePlaybackCleanupRef.current = cleanup;
+
+    audio.addEventListener("timeupdate", stopAtPhraseEnd);
+
+    audio.currentTime = Math.max(0, startTimeSeconds);
+
+    void audio.play().catch(() => {
+      cleanup();
+    });
   };
 
   const revealGeneratedAudioWaveform = () => {
@@ -34329,6 +34482,9 @@ ${buildRewriteInstruction(
                                       [],
                                     );
                                     setSongwriterReferenceAnalysedSource(null);
+                                    setSongwriterReferenceMusicalObservations(
+                                      [],
+                                    );
                                   }}
                                 />
                                 Original performance
@@ -34356,6 +34512,9 @@ ${buildRewriteInstruction(
                                       [],
                                     );
                                     setSongwriterReferenceAnalysedSource(null);
+                                    setSongwriterReferenceMusicalObservations(
+                                      [],
+                                    );
                                   }}
                                 />
                                 Vocal stem
@@ -34551,11 +34710,13 @@ ${buildRewriteInstruction(
                                       {phrase.deliveryDensity.toUpperCase()}
                                       {"  "}
                                       final note {phrase.finalNoteName}{" "}
-{Number.isFinite(phrase.finalNoteDurationSeconds)
-  ? `${phrase.finalNoteDurationSeconds.toFixed(2)}s`
-  : "—"}{" "}
-{phrase.finalNoteBehaviour.toUpperCase()}
-{"  "}
+                                      {Number.isFinite(
+                                        phrase.finalNoteDurationSeconds,
+                                      )
+                                        ? `${phrase.finalNoteDurationSeconds.toFixed(2)}s`
+                                        : "—"}{" "}
+                                      {phrase.finalNoteBehaviour.toUpperCase()}
+                                      {"  "}
                                       voiced{" "}
                                       {(phrase.voicedFrameRatio * 100).toFixed(
                                         0,
@@ -34583,6 +34744,195 @@ ${buildRewriteInstruction(
                                     </div>
                                   ),
                                 )}
+                              </div>
+                            </div>
+                          )}
+
+                          {songwriterReferenceMusicalObservations.length >
+                            0 && (
+                            <div className="rounded border border-purple-900 bg-black/20 p-3">
+                              <div className="text-xs font-semibold text-purple-100">
+                                Candidate musical observations
+                              </div>
+
+                              <div className="mt-1 text-[11px] text-purple-300">
+                                These describe what was observed in this
+                                performance. They are not yet classified as Song
+                                Identity, Artist DNA, or rendition-specific
+                                behaviour.
+                                <div className="mt-2 rounded border border-purple-900/70 bg-black/20 p-2 text-[11px] text-purple-200">
+                                  <div>
+                                    <strong>Song Identity</strong> — something
+                                    you would normally want to remain
+                                    recognisable when the song is rearranged or
+                                    performed differently.
+                                  </div>
+
+                                  <div className="mt-1">
+                                    <strong>Artist DNA evidence</strong> —
+                                    something that may reflect how you
+                                    characteristically sing or perform across
+                                    different songs.
+                                  </div>
+
+                                  <div className="mt-1">
+                                    <strong>This rendition only</strong> —
+                                    something that belongs to this particular
+                                    performance and does not need to be
+                                    preserved in another version.
+                                  </div>
+
+                                  <div className="mt-1">
+                                    <strong>Unclassified</strong> — keep the
+                                    observation without deciding yet.
+                                  </div>
+                                </div>
+                                <div className="mt-2 text-[10px] text-purple-400">
+                                  These classifications are currently
+                                  working-session decisions only. They do not
+                                  yet change Artist DNA, Song Identity, or the
+                                  generated performance.
+                                </div>
+                              </div>
+
+                              <div className="mt-3 space-y-2">
+                                <div className="mt-3 space-y-3">
+                                  {songwriterReferencePhrasePerformances.map(
+                                    (performance, phraseIndex) => {
+                                      const observations =
+                                        songwriterReferenceMusicalObservations.filter(
+                                          (observation) =>
+                                            observation.phraseIndex ===
+                                            phraseIndex,
+                                        );
+
+                                      if (observations.length === 0) {
+                                        return null;
+                                      }
+
+                                      return (
+                                        <div
+                                          key={`songwriter-observation-phrase-${phraseIndex}`}
+                                          className="rounded border border-purple-950 bg-black/20 p-3"
+                                        >
+                                          <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="text-[11px] font-medium text-purple-200">
+                                              {formatGeneratedAudioTime(
+                                                performance.sourceStartTimeSeconds,
+                                              )}
+                                              {" – "}
+                                              {formatGeneratedAudioTime(
+                                                performance.sourceEndTimeSeconds,
+                                              )}
+                                            </div>
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                playSongwriterReferencePhrase(
+                                                  performance.sourceStartTimeSeconds,
+                                                  performance.sourceEndTimeSeconds,
+                                                )
+                                              }
+                                              className="rounded border border-purple-800 px-2 py-1 text-[11px] text-purple-200 hover:bg-purple-950"
+                                            >
+                                              Hear this passage
+                                            </button>
+                                          </div>
+
+                                          <div className="mt-3 space-y-3">
+                                            {observations.map((observation) => (
+                                              <div
+                                                key={observation.id}
+                                                className="rounded border border-purple-950/70 bg-black/20 p-2"
+                                              >
+                                                <div className="text-[11px] text-gray-300">
+                                                  {observation.description}
+                                                </div>
+
+                                                {observation.technicalDetail && (
+                                                  <details className="mt-2 text-[10px] text-purple-400">
+                                                    <summary className="cursor-pointer">
+                                                      Technical detail
+                                                    </summary>
+
+                                                    <div className="mt-1">
+                                                      {
+                                                        observation.technicalDetail
+                                                      }
+                                                    </div>
+                                                  </details>
+                                                )}
+
+                                                <div className="mt-2 flex items-center gap-2">
+                                                  <span className="text-[11px] text-purple-400">
+                                                    Scope:
+                                                  </span>
+
+                                                  <select
+                                                    value={observation.scope}
+                                                    onChange={(event) => {
+                                                      const nextScope = event
+                                                        .target
+                                                        .value as SongwriterReferenceObservationScope;
+
+                                                      setSongwriterReferenceMusicalObservations(
+                                                        (current) =>
+                                                          current.map(
+                                                            (candidate) =>
+                                                              candidate.id ===
+                                                              observation.id
+                                                                ? {
+                                                                    ...candidate,
+                                                                    scope:
+                                                                      nextScope,
+                                                                  }
+                                                                : candidate,
+                                                          ),
+                                                      );
+                                                    }}
+                                                    className="rounded border border-purple-900 bg-gray-950 px-2 py-1 text-[11px] text-white"
+                                                    style={{
+                                                      colorScheme: "dark",
+                                                    }}
+                                                  >
+                                                    <option
+                                                      value="unclassified"
+                                                      className="bg-gray-950 text-white"
+                                                    >
+                                                      Unclassified
+                                                    </option>
+
+                                                    <option
+                                                      value="song-identity"
+                                                      className="bg-gray-950 text-white"
+                                                    >
+                                                      Song Identity
+                                                    </option>
+
+                                                    <option
+                                                      value="artist-dna"
+                                                      className="bg-gray-950 text-white"
+                                                    >
+                                                      Artist DNA evidence
+                                                    </option>
+
+                                                    <option
+                                                      value="rendition"
+                                                      className="bg-gray-950 text-white"
+                                                    >
+                                                      This rendition only
+                                                    </option>
+                                                  </select>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
