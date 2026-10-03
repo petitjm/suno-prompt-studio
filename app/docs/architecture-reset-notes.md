@@ -44,7 +44,7 @@ Before changing an established area:
 
 The current development challenge is primarily **cohesion, discoverability, and musical fidelity**, not wholesale rebuilding.
 
-The building blocks of the songwriter's workbench are largely present. Current development is also establishing a songwriter-guided audio model so that the application can preserve and develop the musical identity already present in a human performance rather than relying only on generated melody and structured intent.
+The building blocks of the songwriter's workbench are largely present. Current development is establishing a broader songwriter musical model in which human-performance analysis is one evidence source for understanding song identity, Artist DNA, and rendition-specific performance. A recording can be highly informative, but it must not become a prerequisite for creating or developing a song, nor should one recorded rendition be mistaken for the permanent identity of the composition.
 
 ---
 
@@ -60,38 +60,36 @@ Ideas / incomplete song
         ↓
 Write / develop / compare
         ↓
-Choose musical-development route
+Build / refine durable musical knowledge
         │
-        ├─ Songwriter-guided
-        │      ↓
-        │  Original human performance
-        │      ↓
-        │  Songwriter Audio Model
-        │      ↓
-        │  Preserve / refine melody, phrasing and expressive identity
+        ├─ Song Identity Model
+        │    what should remain recognisably this song
         │
-        └─ AI-assisted
-               ↓
-           Song Creative Profile
-           + lyrics
-           + harmony
-           + structured musical intent
-               ↓
-           Generated melodic / performance interpretation
+        ├─ Artist DNA Model
+        │    how this artist characteristically expresses musical ideas
         │
-        └───────────────┬───────────────┘
-                        ↓
-              Saved song version
-              + chord checkpoint
-                        ↓
-                    Make Song
-                        ↓
-                  Musical guide
-                        ↓
-                Rehearse / Perform
-                        ↓
-          Suno / Video / Release support
-          where useful
+        └─ Optional performance evidence
+             recording / vocal stem / played fragment / rehearsal take
+             analysed without treating one rendition as permanent truth
+        ↓
+Choose rendition intent
+        genre / emotion / arrangement / instrumentation /
+        tempo / metre / performance direction
+        ↓
+Songwriter-guided and/or AI-assisted interpretation
+        ↓
+Performance / Rendition Model
+        ↓
+Saved song version
++ chord checkpoint
++ accepted musical intent
+        ↓
+Make Song
+        ↓
+Musical guide / rehearsal support
+        ↓
+Suno / Video / Release support
+where useful
 ```
 
 ## Songwriter-guided and AI-assisted musical development
@@ -130,13 +128,13 @@ AI assistance must not automatically imply polishing, smoothing, conventionalisi
 
 The two routes may be combined. For example, the songwriter's melodic and expressive identity may be preserved while AI explores a different arrangement, harmonic treatment, instrumentation, genre, or alternative section.
 
-## Why the Songwriter Audio Model exists
+## Why performance analysis exists
 
 Recent Make Song development exposed an important limitation in the previous architecture.
 
 A melody can be technically plausible, rhythmically aligned, harmonically compatible, and correctly rendered while still failing to feel like a convincing song.
 
-The missing information is often not another chord, scale rule, section label, or rendering parameter. It is the songwriter's own expressive intent as embodied in the performance.
+The missing information is often not another chord, scale rule, section label, or rendering parameter. It is musical identity and expressive intent: what makes the song recognisable, what the songwriter is trying to communicate, and how a particular artist or rendition chooses to embody that intent.
 
 A human performance may communicate musical meaning through:
 
@@ -152,13 +150,13 @@ A human performance may communicate musical meaning through:
 
 These characteristics may carry much of the sentiment of the song.
 
+However, one recording is only one rendition. Genre, emotional direction, time signature, instrumentation, arrangement, tempo, register, groove, and performance context may all change materially while the song remains recognisably the same song.
+
+A recording is therefore **evidence**, not the canonical song model.
+
 Previous generated-melody work largely attempted to construct a credible musical result from lyrics, harmony, timing, Song Creative Profile, section intent, and phrase intent. That remains valuable for AI-assisted development, especially when no established melody exists or when the songwriter deliberately wants a different musical interpretation.
 
-However, when a songwriter already has a musical idea, the system should not begin by replacing that idea with a newly fabricated melody.
-
-The songwriter-guided path should instead ask:
-
-> What musical and expressive information did the songwriter already put into this performance, and how can the application preserve it while helping develop the song?
+When a songwriter already has a musical idea, the system should not begin by replacing that idea with a newly fabricated melody. It should first ask what in the available evidence is likely to belong to the song itself, what belongs to the artist, and what belongs only to this particular rendition.
 
 This creates an important distinction:
 
@@ -167,20 +165,114 @@ AI-assisted
     creates or reinterprets musical possibilities
 
 Songwriter-guided
-    preserves, exposes and develops existing human musical identity
+    preserves, exposes and develops existing human musical decisions
+
+Performance analysis
+    measures one rendition and supplies evidence upward
+    into song identity, Artist DNA and performance interpretation
 ```
 
-The two approaches are complementary rather than competing.
+The approaches are complementary rather than competing.
 
-A songwriter may preserve the original melody and expressive identity while using AI to explore harmony, arrangement, instrumentation, genre, production direction, or alternative sections.
+A songwriter may preserve the original melodic identity while using AI to explore harmony, arrangement, instrumentation, genre, metre, tempo, production direction, or alternative sections. The system must therefore preserve identity without freezing one exact performance.
 
-The objective is therefore not to make every performance cleaner, smoother, more quantised, or more conventionally correct. The objective is to help create a stronger song without unnecessarily removing the human characteristics that gave the song its identity.
+## Song Identity, Artist DNA, and Rendition Model
 
-## Songwriter Audio Model
+The architecture should distinguish three reusable layers of musical knowledge.
+
+### Song Identity Model
+
+The Song Identity Model represents what should remain recognisably **this song** across materially different renditions.
+
+Candidate durable characteristics may include:
+
+- lyrical meaning and important lyrical-emotional relationships;
+- core melodic identity and memorable melodic gestures;
+- characteristic phrase shapes;
+- important tension-and-release relationships;
+- essential rhythmic identity;
+- deliberate unusual moments;
+- important harmonic relationships;
+- explicitly protected songwriter decisions.
+
+Song identity should be portable across genre, arrangement, instrumentation, tempo, metre, register, and production changes where musically appropriate.
+
+It should not automatically contain every measurable property of one performance.
+
+### Artist DNA Model
+
+Artist DNA represents persistent tendencies of the artist rather than properties of one song.
+
+It may include evidence-based tendencies such as:
+
+- vocal identity and usable register;
+- characteristic phrase entry and release behaviour;
+- melodic interval and contour tendencies;
+- preferred degrees of pitch stability or rawness;
+- recurring dynamic shapes;
+- characteristic use of space, held notes, breath, restraint, or force;
+- harmonic and genre tendencies;
+- rhythmic placement tendencies;
+- visual identity and other non-audio artist characteristics already supported elsewhere in the application.
+
+Artist DNA is not a rigid performance preset. It describes tendencies that may be applied where relevant and overridden by explicit song or rendition intent.
+
+Repeated evidence across multiple performances may strengthen an Artist DNA tendency. A single performance should not automatically become a permanent artist rule.
+
+### Performance / Rendition Model
+
+The Performance / Rendition Model represents how Song Identity and Artist DNA are expressed **this time**.
+
+It may be conditioned by:
+
+- genre;
+- emotion / delivery intention;
+- instrumentation;
+- arrangement density;
+- tempo;
+- time signature / metre;
+- groove;
+- register;
+- production direction;
+- rehearsal or performance context.
+
+A rendition may legitimately alter exact note timing, phrase duration, pauses, register, ornamentation, energy contour, or even some melodic treatment while preserving the song's essential identity.
+
+The intended relationship is:
+
+```text
+Song Identity Model
+        +
+Artist DNA Model
+        +
+Rendition Intent
+        ↓
+Performance / Rendition Model
+        ↓
+Make Song / rehearsal / downstream generation
+```
+
+Where Artist DNA is unavailable, the system may use general musical-performance principles. Where no recording is available, songwriter decisions, lyrics, melody, harmony, structured intent, notation-like controls, played fragments, or AI-assisted development may still populate the Song Identity and Rendition models.
+
+A recording must therefore remain optional.
+
+### Authority and override hierarchy
+
+The developing musical authority hierarchy should be:
+
+1. explicit songwriter decision;
+2. essential Song Identity;
+3. explicit Rendition Intent;
+4. relevant Artist DNA tendency;
+5. general musical default.
+
+Artist DNA must not override an explicit song-specific decision. Likewise, one historical performance must not silently override a deliberate reinterpretation.
+
+## Songwriter Audio Model and performance evidence
 
 A songwriter's original performance may contain musical information that cannot be represented adequately by note names alone.
 
-The Songwriter Audio Model should therefore preserve multiple layers of information.
+The Songwriter Audio Model remains useful, but its role is now more precisely defined: it is a structured model of **performance evidence**, not the permanent definition of the song.
 
 ```text
 Original human performance
@@ -196,24 +288,28 @@ Performance analysis
         └─ expressive delivery
         ↓
 Songwriter Audio Model
+        = structured evidence for this rendition
+        ↓
+Candidate durable knowledge
         │
-        ├─ melodic identity
-        └─ expressive identity
+        ├─ Song Identity evidence
+        ├─ Artist DNA evidence
+        └─ Rendition-specific behaviour
         ↓
-Editable / developable musical decisions
-        ↓
-Make Song / rehearsal / downstream tools
+Explicit songwriter review / acceptance where needed
 ```
 
-The original recording is the creative source of truth.
+The original recording remains the creative source of truth **for what was actually performed in that recording**.
+
+It is not automatically the source of truth for every future rendition of the song.
 
 Derived analysis is interpretation, not replacement.
 
-The current authority hierarchy is:
+The current authority hierarchy within audio analysis is:
 
 ```text
 Original songwriter performance
-        = creative authority
+        = authority for the captured performance
 
 Optional vocal stem
         = analysis aid
@@ -270,6 +366,8 @@ Local pitch interpretation
 Derived note candidates
         ↓
 Phrase and expressive-event interpretation
+        ↓
+Candidate higher-level musical knowledge
 ```
 
 Raw and corrected traces must remain available beneath later musical interpretations.
@@ -288,15 +386,28 @@ Short pitch movements may instead represent:
 
 The developing model should therefore distinguish stable pitch events from expressive transitions rather than forcing all pitch movement into discrete note changes.
 
-### Expressive identity is musical data
+### Expressive identity is musical data, but not every expressive detail is permanent
 
-Timing looseness, delayed attacks, breath, strain, unstable sustain, roughness, restrained delivery, and imperfect pitch movement may be intentional parts of the song's identity.
+Timing looseness, delayed attacks, breath, strain, unstable sustain, roughness, restrained delivery, and imperfect pitch movement may be intentional and musically important.
 
 They must not automatically be treated as defects to quantise, tune, smooth, or remove.
 
-Where the system produces a cleaner or more conventional interpretation, that should be an explicit creative choice rather than an automatic consequence of analysis.
+However, measured expressive behaviour must also be classified by scope:
 
-The long-term goal is for the Songwriter Audio Model to support descriptions such as:
+```text
+possible Song Identity
+    characteristic of the composition
+
+possible Artist DNA
+    characteristic of the artist across songs / performances
+
+Rendition-specific
+    characteristic of this particular performance only
+```
+
+Where the system produces a cleaner, more conventional, or stylistically different interpretation, that should be an explicit creative choice rather than an automatic consequence of analysis.
+
+A higher-level representation may support descriptions such as:
 
 ```text
 Phrase
@@ -309,7 +420,7 @@ Phrase
   release: falls away rather than ending cleanly
 ```
 
-This higher-level representation should remain linked back to the original performance trace so that musical interpretation can be reviewed against what the songwriter actually performed.
+But such a description remains evidence until the songwriter or broader cross-performance analysis establishes which parts are durable song identity, Artist DNA, or merely this rendition.
 
 ### Current songwriter-audio implementation direction
 
@@ -323,9 +434,19 @@ The current implementation has established the following foundation:
 - derived note candidates provide a simplified musical interpretation without replacing the continuous trace;
 - derived notes can be auditioned to check whether the analysis resembles the sung melody;
 - an optional vocal stem can be used as an analysis source without replacing the original performance as creative authority;
-- mixed-recording and vocal-stem comparison has demonstrated both accompaniment contamination and genuine expressive movement around note boundaries.
+- mixed-recording and vocal-stem comparison has demonstrated both accompaniment contamination and genuine expressive movement around note boundaries;
+- stable-note regions and brief expressive rises/dips are distinguished;
+- entry approaches, shared pitch transitions, and same-note internal settling can be classified without double-counting the same trace region;
+- phrase-level dynamic shape can distinguish patterns such as arches and falls;
+- phrase delivery can measure candidate-based occupancy, internal pauses, longest pause, inter-phrase space, and final-note duration.
 
-The next development direction is to classify stable notes and expressive transitions such as slides, scoops, dips, settling, and uncertain movement before attempting deeper integration with the existing melody engine.
+A diagnostic attempt to align recording time directly to the generated lyric/melody scaffold established that the two clocks are not inherently shared. This is expected, especially for live, rough, or freely timed performances.
+
+Do not assume one fixed offset between a human performance and a generated song timeline. A live performance may drift, stretch, compress, pause, or change tempo locally. Exact timing differences may themselves be expressive evidence.
+
+The immediate development direction is therefore **not** deeper transcription or forced timeline registration. It is to use the performance-analysis foundation to extract candidate portable knowledge for Song Identity, Artist DNA, and Rendition Intent while keeping those scopes distinct.
+
+Recording analysis must remain optional. The same higher-level models must also be supportable from explicit songwriter decisions, existing melody/harmony/lyric structures, partial sung or played fragments, and AI-assisted development where appropriate.
 
 ## Make Song and musical guide purpose
 
@@ -428,12 +549,14 @@ A saved song version should therefore increasingly act as a stable creative chec
 
 Do not make one feature-specific prompt or UI field the source of truth for shared creative knowledge. In particular, Suno Style text and OpenArt prompt text are downstream representations, not the canonical song identity.
 
-Artist-level identity and song-level identity should remain distinct:
+Artist-level identity, song-level identity, and rendition-specific intent must remain distinct:
 
-- Artist DNA describes persistent artist characteristics such as vocal identity, broad genre tendencies, performance identity, and visual identity.
-- Song Creative Profile describes the particular saved song version: its genre, moods, theme, and emotional centre.
+- Artist DNA describes persistent artist tendencies across songs and performances.
+- Song Creative Profile currently stores a small set of accepted song-level context such as genre, moods, theme, and emotional centre.
+- The developing Song Identity Model will hold more specifically musical, portable identity that should survive reinterpretation where appropriate.
+- Rendition Intent describes what is deliberately different about the current interpretation: genre, emotion, instrumentation, tempo, metre, arrangement, register, groove, production, and performance direction.
 
-Where useful, downstream systems may combine both.
+These layers may be combined downstream, but they must not be collapsed into one prompt or one recording. The existing Song Creative Profile remains useful and should evolve carefully rather than being replaced casually.
 
 ## Version provenance and working context
 
@@ -444,10 +567,30 @@ Songwriter source provenance is project-level:
 ```text
 Project
    ↓
-Original songwriter reference
+Original songwriter reference (optional human evidence)
    ↓
 Songwriter Audio Model / analysis derivatives
+   ↓
+Candidate Song Identity / Artist DNA / Rendition evidence
 ```
+
+Durable musical knowledge has separate scope:
+
+```text
+Artist
+  ↓
+Artist DNA Model
+
+Saved song / song family
+  ↓
+Song Identity Model
+
+Specific rendition / performance context
+  ↓
+Rendition Intent / Performance Model
+```
+
+A single recording may contribute evidence to all three scopes, but it must not silently populate permanent Artist DNA or Song Identity without sufficient evidence or explicit songwriter acceptance.
 
 The songwriter reference is human source material, not a generated Audio Guide and not a chord-checkpoint derivative.
 
