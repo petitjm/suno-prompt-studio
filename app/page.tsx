@@ -661,6 +661,19 @@ export default function Page() {
   const songwriterAnalysisStemAudioBufferRef = useRef<AudioBuffer | null>(null);
 
   const [
+    songwriterReferenceAnalysisSourceId,
+    setSongwriterReferenceAnalysisSourceId,
+  ] = useState<string | null>(null);
+
+  const [
+    songwriterReferenceAnalysedSourceId,
+    setSongwriterReferenceAnalysedSourceId,
+  ] = useState<string | null>(null);
+
+  const [songwriterReferenceAnalysisId, setSongwriterReferenceAnalysisId] =
+    useState<string | null>(null);
+
+  const [
     songwriterReferenceAnalysisSource,
     setSongwriterReferenceAnalysisSource,
   ] = useState<"original" | "vocal-stem">("original");
@@ -706,6 +719,16 @@ export default function Page() {
     songwriterReferenceMusicalObservations,
     setSongwriterReferenceMusicalObservations,
   ] = useState<SongwriterReferenceMusicalObservation[]>([]);
+
+  const [
+    savingSongwriterReferenceObservations,
+    setSavingSongwriterReferenceObservations,
+  ] = useState(false);
+
+  const [
+    songwriterReferenceObservationSaveMessage,
+    setSongwriterReferenceObservationSaveMessage,
+  ] = useState("");
 
   const [
     auditioningSongwriterReferenceNotes,
@@ -1192,6 +1215,8 @@ export default function Page() {
       return;
     }
 
+    let stemDurationSeconds = 0;
+
     try {
       if (songwriterAnalysisStemAudioUrl.startsWith("blob:")) {
         URL.revokeObjectURL(songwriterAnalysisStemAudioUrl);
@@ -1219,9 +1244,86 @@ export default function Page() {
         );
 
         songwriterAnalysisStemAudioBufferRef.current = audioBuffer;
+        stemDurationSeconds = audioBuffer.duration;
       } finally {
         await audioContext.close();
       }
+
+      if (!songwriterReferenceId || !activeProject?.id) {
+        throw new Error(
+          "Save the songwriter reference before importing a vocal analysis stem.",
+        );
+      }
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error(
+          "The vocal stem is available in this browser session, but could not be saved because the user session is unavailable.",
+        );
+      }
+
+      const analysisSourceId = crypto.randomUUID();
+
+      const safeFilename =
+        file.name
+          .trim()
+          .replace(/[^a-zA-Z0-9._-]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "vocal-stem";
+
+      const storagePath = [
+        user.id,
+        activeProject.id,
+        songwriterReferenceId,
+        "analysis-sources",
+        analysisSourceId,
+        safeFilename,
+      ].join("/");
+
+      const { error: uploadError } = await supabase.storage
+        .from("songwriter-references")
+        .upload(storagePath, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(
+          `The vocal stem is available in this browser session, but persistent upload failed: ${uploadError.message}`,
+        );
+      }
+
+      const { error: metadataError } = await supabase
+        .from("songwriter_reference_analysis_sources")
+        .insert({
+          id: analysisSourceId,
+          songwriter_reference_id: songwriterReferenceId,
+          project_id: activeProject.id,
+          source_kind: "vocal-stem",
+          storage_path: storagePath,
+          original_filename: file.name,
+          content_type: file.type || null,
+          duration_seconds: stemDurationSeconds,
+        });
+
+      if (metadataError) {
+        const { error: cleanupError } = await supabase.storage
+          .from("songwriter-references")
+          .remove([storagePath]);
+
+        if (cleanupError) {
+          console.error("Vocal stem upload cleanup failed:", cleanupError);
+        }
+
+        throw new Error(
+          `The vocal stem is available in this browser session, but its saved analysis-source record could not be created: ${metadataError.message}`,
+        );
+      }
+
+      setSongwriterReferenceAnalysisSourceId(analysisSourceId);
 
       setSongwriterAnalysisStemFileName(file.name);
       setSongwriterAnalysisStemAudioUrl(URL.createObjectURL(file));
@@ -1232,6 +1334,8 @@ export default function Page() {
       setSongwriterReferenceExpressiveEvents([]);
       setSongwriterReferencePhrasePerformances([]);
       setSongwriterReferenceAnalysedSource(null);
+      setSongwriterReferenceAnalysedSourceId(null);
+      setSongwriterReferenceAnalysisId(null);
       setSongwriterReferenceMusicalObservations([]);
 
       setProjectMessage(`Loaded vocal stem for analysis: ${file.name}`);
@@ -1326,8 +1430,6 @@ export default function Page() {
         arrayBuffer.slice(0),
       );
 
-      songwriterReferenceAudioBufferRef.current = audioBuffer;
-
       const channelData = audioBuffer.getChannelData(0);
       const barCount = 180;
       const samplesPerBar = Math.max(
@@ -1370,6 +1472,94 @@ export default function Page() {
     }
   };
 
+  const restoreLatestSongwriterReferenceAnalysisSource = async ({
+    songwriterReferenceId,
+    projectId,
+  }: {
+    songwriterReferenceId: string;
+    projectId: string;
+  }) => {
+    const { data: analysisSource, error: analysisSourceError } = await supabase
+      .from("songwriter_reference_analysis_sources")
+      .select(
+        "id, songwriter_reference_id, project_id, source_kind, storage_path, original_filename, content_type, duration_seconds, created_at",
+      )
+      .eq("songwriter_reference_id", songwriterReferenceId)
+      .eq("project_id", projectId)
+      .eq("source_kind", "vocal-stem")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (analysisSourceError) {
+      console.error(
+        "Could not restore songwriter reference analysis source:",
+        analysisSourceError,
+      );
+      return;
+    }
+
+    if (!analysisSource?.storage_path) {
+      songwriterAnalysisStemAudioBufferRef.current = null;
+      setSongwriterAnalysisStemFileName("");
+      setSongwriterAnalysisStemAudioUrl("");
+      setSongwriterReferenceAnalysisSourceId(null);
+      return;
+    }
+
+    const { data: signedStem, error: signedStemError } = await supabase.storage
+      .from("songwriter-references")
+      .createSignedUrl(analysisSource.storage_path, 60 * 60 * 24);
+
+    if (signedStemError || !signedStem?.signedUrl) {
+      console.error(
+        "Could not restore songwriter vocal stem URL:",
+        signedStemError,
+      );
+      return;
+    }
+
+    const response = await fetch(signedStem.signedUrl);
+
+    if (!response.ok) {
+      throw new Error(
+        `Could not load saved vocal stem: HTTP ${response.status}`,
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (
+        window as unknown as {
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).webkitAudioContext;
+
+    if (!AudioContextConstructor) {
+      throw new Error("Web Audio is not available in this browser.");
+    }
+
+    const audioContext = new AudioContextConstructor();
+
+    try {
+      const audioBuffer = await audioContext.decodeAudioData(
+        arrayBuffer.slice(0),
+      );
+
+      songwriterAnalysisStemAudioBufferRef.current = audioBuffer;
+    } finally {
+      await audioContext.close();
+    }
+
+    setSongwriterAnalysisStemFileName(
+      analysisSource.original_filename || "Saved vocal stem",
+    );
+    setSongwriterAnalysisStemAudioUrl(signedStem.signedUrl);
+    setSongwriterReferenceAnalysisSourceId(analysisSource.id);
+  };
+
   const restoreLatestSongwriterReference = async (projectId: string) => {
     const loadToken = Date.now();
     latestSongwriterReferenceLoadRef.current = loadToken;
@@ -1409,6 +1599,8 @@ export default function Page() {
       setSongwriterReferenceExpressiveEvents([]);
       setSongwriterReferencePhrasePerformances([]);
       setSongwriterReferenceAnalysedSource(null);
+      setSongwriterReferenceAnalysedSourceId(null);
+      setSongwriterReferenceAnalysisId(null);
       setSongwriterReferenceMusicalObservations([]);
 
       songwriterReferenceWaveformPeaksRef.current = [];
@@ -1447,6 +1639,12 @@ export default function Page() {
     }
 
     setSongwriterReferenceId(savedReference.id);
+
+    await restoreLatestSongwriterReferenceAnalysisSource({
+      songwriterReferenceId: savedReference.id,
+      projectId,
+    });
+
     setSongwriterReferenceSaved(true);
     setSongwriterReferenceFileName(savedReference.original_filename);
     setSongwriterReferenceAudioUrl(signedAudio.signedUrl);
@@ -1462,6 +1660,8 @@ export default function Page() {
     setSongwriterReferenceExpressiveEvents([]);
     setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
+    setSongwriterReferenceAnalysedSourceId(null);
+    setSongwriterReferenceAnalysisId(null);
     setSongwriterReferenceMusicalObservations([]);
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
@@ -1634,6 +1834,8 @@ export default function Page() {
     setSongwriterReferenceExpressiveEvents([]);
     setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
+    setSongwriterReferenceAnalysedSourceId(null);
+    setSongwriterReferenceAnalysisId(null);
     setSongwriterReferenceMusicalObservations([]);
 
     songwriterReferenceWaveformProgressRef.current = 0;
@@ -2864,6 +3066,36 @@ export default function Page() {
     });
   };
 
+  const buildSongwriterReferenceObservationKey = ({
+    analysisId,
+    songwriterReferenceId,
+    songVersionId,
+    analysisSource,
+    analysisSourceId,
+    sourceStartSeconds,
+    sourceEndSeconds,
+    category,
+  }: {
+    analysisId: string;
+    songwriterReferenceId: string;
+    songVersionId: string | null;
+    analysisSource: "original" | "vocal-stem";
+    analysisSourceId: string | null;
+    sourceStartSeconds: number;
+    sourceEndSeconds: number;
+    category: SongwriterReferenceMusicalObservation["category"];
+  }) =>
+    [
+      analysisId,
+      songwriterReferenceId,
+      songVersionId || "no-song-version",
+      analysisSource,
+      analysisSourceId || "original-source",
+      sourceStartSeconds.toFixed(3),
+      sourceEndSeconds.toFixed(3),
+      category,
+    ].join(":");
+
   const stopSongwriterReferenceNoteAudition = () => {
     if (songwriterReferenceNoteAuditionTimeoutRef.current !== null) {
       window.clearTimeout(songwriterReferenceNoteAuditionTimeoutRef.current);
@@ -2972,6 +3204,18 @@ export default function Page() {
 
     const analysisSource = songwriterReferenceAnalysisSource;
 
+    const analysisSourceId =
+      analysisSource === "vocal-stem"
+        ? songwriterReferenceAnalysisSourceId
+        : null;
+
+    if (analysisSource === "vocal-stem" && !analysisSourceId) {
+      setProjectMessage(
+        "The vocal analysis stem does not have a saved analysis-source identity.",
+      );
+      return;
+    }
+
     const audioBuffer =
       analysisSource === "vocal-stem"
         ? songwriterAnalysisStemAudioBufferRef.current
@@ -3014,7 +3258,10 @@ export default function Page() {
     setSongwriterReferenceExpressiveEvents([]);
     setSongwriterReferencePhrasePerformances([]);
     setSongwriterReferenceAnalysedSource(null);
+    setSongwriterReferenceAnalysedSourceId(null);
+    setSongwriterReferenceAnalysisId(null);
     setSongwriterReferenceMusicalObservations([]);
+    setSongwriterReferenceObservationSaveMessage("");
     setProjectMessage(
       `Analysing songwriter reference from ${formatGeneratedAudioTime(
         selectionStart,
@@ -3125,6 +3372,7 @@ export default function Page() {
 
       setSongwriterReferenceTrace(trace);
       setSongwriterReferenceAnalysedSource(analysisSource);
+      setSongwriterReferenceAnalysedSourceId(analysisSourceId);
       const noteCandidates = buildSongwriterReferenceNoteCandidates(trace);
 
       setSongwriterReferenceNoteCandidates(noteCandidates);
@@ -3147,6 +3395,34 @@ export default function Page() {
       const musicalObservations = buildSongwriterReferenceMusicalObservations({
         performances: phrasePerformances,
       });
+
+      if (!songwriterReferenceId || !activeProject?.id) {
+        throw new Error(
+          "The songwriter reference must be saved before its analysis can be preserved.",
+        );
+      }
+
+      const analysisId = crypto.randomUUID();
+
+      const { error: analysisRecordError } = await supabase
+        .from("songwriter_reference_analyses")
+        .insert({
+          id: analysisId,
+          songwriter_reference_id: songwriterReferenceId,
+          project_id: activeProject.id,
+          analysis_source: analysisSource,
+          analysis_source_id: analysisSourceId,
+          selection_start_seconds: selectionStart,
+          selection_end_seconds: selectionEnd,
+        });
+
+      if (analysisRecordError) {
+        throw new Error(
+          `The analysis completed, but its analysis record could not be saved: ${analysisRecordError.message}`,
+        );
+      }
+
+      setSongwriterReferenceAnalysisId(analysisId);
 
       setSongwriterReferenceMusicalObservations(musicalObservations);
 
@@ -3220,6 +3496,146 @@ export default function Page() {
 
     audio.currentTime = songwriterReferenceSelectionStart;
     void audio.play();
+  };
+
+  const saveSongwriterReferenceObservations = async () => {
+    if (!activeProject?.id) {
+      setSongwriterReferenceObservationSaveMessage(
+        "Select a project before saving reviewed observations.",
+      );
+      return;
+    }
+
+    if (!songwriterReferenceId) {
+      setSongwriterReferenceObservationSaveMessage(
+        "Save the songwriter reference before saving reviewed observations.",
+      );
+      return;
+    }
+
+    if (!songwriterReferenceAnalysedSource) {
+      setSongwriterReferenceObservationSaveMessage(
+        "Analyse the songwriter reference before saving reviewed observations.",
+      );
+      return;
+    }
+
+    if (
+      songwriterReferenceAnalysedSource === "vocal-stem" &&
+      !songwriterReferenceAnalysedSourceId
+    ) {
+      setSongwriterReferenceObservationSaveMessage(
+        "The analysed vocal stem does not have a saved source identity.",
+      );
+      return;
+    }
+
+    if (!songwriterReferenceAnalysisId) {
+      setSongwriterReferenceObservationSaveMessage(
+        "The current analysis does not have a saved analysis record.",
+      );
+      return;
+    }
+
+    const currentObservations = songwriterReferenceMusicalObservations.flatMap(
+      (observation) => {
+        const performance =
+          songwriterReferencePhrasePerformances[observation.phraseIndex];
+
+        if (!performance) {
+          return [];
+        }
+
+        const observationKey = buildSongwriterReferenceObservationKey({
+          analysisId: songwriterReferenceAnalysisId,
+          songwriterReferenceId,
+          songVersionId: activeSongVersionId || null,
+          analysisSource: songwriterReferenceAnalysedSource,
+          analysisSourceId: songwriterReferenceAnalysedSourceId,
+          sourceStartSeconds: performance.sourceStartTimeSeconds,
+          sourceEndSeconds: performance.sourceEndTimeSeconds,
+          category: observation.category,
+        });
+
+        return [
+          {
+            observation,
+            performance,
+            observationKey,
+          },
+        ];
+      },
+    );
+
+    if (currentObservations.length === 0) {
+      setSongwriterReferenceObservationSaveMessage(
+        "There are no analysed observations to save.",
+      );
+      return;
+    }
+
+    setSavingSongwriterReferenceObservations(true);
+    setSongwriterReferenceObservationSaveMessage(
+      "Saving reviewed observations...",
+    );
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("songwriter_reference_observations")
+        .delete()
+        .eq("analysis_id", songwriterReferenceAnalysisId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      const reviewedRows = currentObservations
+        .filter(({ observation }) => observation.scope !== "unclassified")
+        .map(({ observation, performance, observationKey }) => ({
+          observation_key: observationKey,
+          analysis_id: songwriterReferenceAnalysisId,
+          songwriter_reference_id: songwriterReferenceId,
+          project_id: activeProject.id,
+          song_version_id: activeSongVersionId || null,
+          analysis_source: songwriterReferenceAnalysedSource,
+          analysis_source_id: songwriterReferenceAnalysedSourceId,
+          source_start_seconds: performance.sourceStartTimeSeconds,
+          source_end_seconds: performance.sourceEndTimeSeconds,
+          category: observation.category,
+          description: observation.description,
+          technical_detail: observation.technicalDetail || null,
+          scope: observation.scope,
+          reviewed_at: new Date().toISOString(),
+        }));
+
+      if (reviewedRows.length > 0) {
+        const { error: insertError } = await supabase
+          .from("songwriter_reference_observations")
+          .insert(reviewedRows);
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+
+      setSongwriterReferenceObservationSaveMessage(
+        reviewedRows.length === 0
+          ? "No classified observations are currently saved."
+          : `Saved ${reviewedRows.length} reviewed observation${
+              reviewedRows.length === 1 ? "" : "s"
+            }.`,
+      );
+    } catch (error) {
+      console.error("Could not save songwriter reference observations:", error);
+
+      setSongwriterReferenceObservationSaveMessage(
+        error instanceof Error
+          ? `Could not save reviewed observations: ${error.message}`
+          : "Could not save reviewed observations.",
+      );
+    } finally {
+      setSavingSongwriterReferenceObservations(false);
+    }
   };
 
   const playSongwriterReferencePhrase = (
@@ -34482,6 +34898,9 @@ ${buildRewriteInstruction(
                                       [],
                                     );
                                     setSongwriterReferenceAnalysedSource(null);
+                                    setSongwriterReferenceAnalysedSourceId(
+                                      null,
+                                    );
                                     setSongwriterReferenceMusicalObservations(
                                       [],
                                     );
@@ -34512,6 +34931,9 @@ ${buildRewriteInstruction(
                                       [],
                                     );
                                     setSongwriterReferenceAnalysedSource(null);
+                                    setSongwriterReferenceAnalysedSourceId(
+                                      null,
+                                    );
                                     setSongwriterReferenceMusicalObservations(
                                       [],
                                     );
@@ -34793,6 +35215,33 @@ ${buildRewriteInstruction(
                                   yet change Artist DNA, Song Identity, or the
                                   generated performance.
                                 </div>
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void saveSongwriterReferenceObservations();
+                                  }}
+                                  disabled={
+                                    savingSongwriterReferenceObservations ||
+                                    !songwriterReferenceId ||
+                                    !songwriterReferenceAnalysedSource ||
+                                    songwriterReferenceMusicalObservations.length ===
+                                      0
+                                  }
+                                  className="rounded border border-purple-700 bg-purple-950 px-3 py-1.5 text-[11px] font-medium text-purple-100 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {savingSongwriterReferenceObservations
+                                    ? "Saving..."
+                                    : "Save reviewed observations"}
+                                </button>
+
+                                {songwriterReferenceObservationSaveMessage && (
+                                  <span className="text-[11px] text-purple-300">
+                                    {songwriterReferenceObservationSaveMessage}
+                                  </span>
+                                )}
                               </div>
 
                               <div className="mt-3 space-y-2">
