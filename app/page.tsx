@@ -3277,6 +3277,213 @@ export default function Page() {
     }
   };
 
+  const auditionSelectedSongwriterReferencePhrase = async () => {
+    if (!selectedSongwriterReferencePhrase) {
+      setProjectMessage(
+        "Select a phrase before auditioning its derived melody.",
+      );
+      return;
+    }
+
+    const phraseNotes = songwriterReferenceNoteCandidates.filter(
+      (note) =>
+        note.startTimeSeconds <
+          selectedSongwriterReferencePhrase.endTimeSeconds &&
+        note.endTimeSeconds >
+          selectedSongwriterReferencePhrase.startTimeSeconds,
+    );
+
+    const samePitchMergeGapSeconds = 0.12;
+    const briefNeighbourDurationSeconds = 0.18;
+    const briefNeighbourGapSeconds = 0.08;
+
+    const mergedSamePitchNotes: SongwriterReferenceNoteCandidate[] = [];
+
+    for (const note of phraseNotes) {
+      const previous = mergedSamePitchNotes[mergedSamePitchNotes.length - 1];
+
+      if (
+        previous &&
+        previous.midiNote === note.midiNote &&
+        note.startTimeSeconds - previous.endTimeSeconds <=
+          samePitchMergeGapSeconds
+      ) {
+        const previousDuration =
+          previous.endTimeSeconds - previous.startTimeSeconds;
+
+        const noteDuration = note.endTimeSeconds - note.startTimeSeconds;
+
+        const combinedDuration = previousDuration + noteDuration;
+
+        previous.endTimeSeconds = note.endTimeSeconds;
+
+        previous.averageEnergy =
+          combinedDuration > 0
+            ? (previous.averageEnergy * previousDuration +
+                note.averageEnergy * noteDuration) /
+              combinedDuration
+            : previous.averageEnergy;
+
+        continue;
+      }
+
+      mergedSamePitchNotes.push({
+        ...note,
+      });
+    }
+
+    const melodyGuideNotes: SongwriterReferenceNoteCandidate[] = [];
+
+    let guideIndex = 0;
+
+    while (guideIndex < mergedSamePitchNotes.length) {
+      const current = mergedSamePitchNotes[guideIndex];
+      const middle = mergedSamePitchNotes[guideIndex + 1];
+      const next = mergedSamePitchNotes[guideIndex + 2];
+
+      if (middle && next) {
+        const middleDuration = middle.endTimeSeconds - middle.startTimeSeconds;
+
+        const firstGap = middle.startTimeSeconds - current.endTimeSeconds;
+
+        const secondGap = next.startTimeSeconds - middle.endTimeSeconds;
+
+        const isBriefNeighbourExcursion =
+          current.midiNote === next.midiNote &&
+          Math.abs(middle.midiNote - current.midiNote) === 1 &&
+          middleDuration <= briefNeighbourDurationSeconds &&
+          firstGap <= briefNeighbourGapSeconds &&
+          secondGap <= briefNeighbourGapSeconds;
+
+        if (isBriefNeighbourExcursion) {
+          const combinedStart = current.startTimeSeconds;
+
+          const combinedEnd = next.endTimeSeconds;
+
+          const totalDuration = Math.max(0.001, combinedEnd - combinedStart);
+
+          const currentDuration =
+            current.endTimeSeconds - current.startTimeSeconds;
+
+          const nextDuration = next.endTimeSeconds - next.startTimeSeconds;
+
+          melodyGuideNotes.push({
+            ...current,
+            startTimeSeconds: combinedStart,
+            endTimeSeconds: combinedEnd,
+            averageEnergy:
+              (current.averageEnergy * currentDuration +
+                next.averageEnergy * nextDuration) /
+              Math.max(0.001, currentDuration + nextDuration),
+          });
+
+          guideIndex += 3;
+          continue;
+        }
+      }
+
+      melodyGuideNotes.push({
+        ...current,
+      });
+
+      guideIndex += 1;
+    }
+
+    
+
+    if (phraseNotes.length === 0) {
+      setProjectMessage(
+        "No derived note candidates were found for the selected phrase.",
+      );
+      return;
+    }
+
+    stopSongwriterReferenceNoteAudition();
+
+    try {
+      await Tone.start();
+
+      const synth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: {
+          type: "sine",
+        },
+        envelope: {
+          attack: 0.01,
+          decay: 0.05,
+          sustain: 0.65,
+          release: 0.08,
+        },
+      }).toDestination();
+
+      synth.volume.value = -6;
+
+      songwriterReferenceNoteAuditionSynthRef.current = synth;
+
+      const phraseStartTime =
+        selectedSongwriterReferencePhrase.startTimeSeconds;
+      const toneStartTime = Tone.now() + 0.1;
+
+      melodyGuideNotes.forEach((note) => {
+        const clippedStart = Math.max(
+          note.startTimeSeconds,
+          selectedSongwriterReferencePhrase.startTimeSeconds,
+        );
+
+        const clippedEnd = Math.min(
+          note.endTimeSeconds,
+          selectedSongwriterReferencePhrase.endTimeSeconds,
+        );
+
+        const relativeStart = clippedStart - phraseStartTime;
+
+        const duration = Math.max(0.05, clippedEnd - clippedStart);
+
+        const velocity = Math.max(
+          0.55,
+          Math.min(0.95, 0.55 + note.averageEnergy * 4),
+        );
+
+        synth.triggerAttackRelease(
+          note.noteName,
+          duration,
+          toneStartTime + relativeStart,
+          velocity,
+        );
+      });
+
+      const auditionDurationSeconds =
+        selectedSongwriterReferencePhrase.endTimeSeconds -
+        selectedSongwriterReferencePhrase.startTimeSeconds;
+
+      setAuditioningSongwriterReferenceNotes(true);
+
+      setProjectMessage(
+        `Auditioning melody interpretation for phrase ${
+          (selectedSongwriterReferencePhraseIndex ?? 0) + 1
+        }: ${melodyGuideNotes.length} guide notes from ${
+          phraseNotes.length
+        } detected candidates.`,
+      );
+
+      songwriterReferenceNoteAuditionTimeoutRef.current = window.setTimeout(
+        () => {
+          stopSongwriterReferenceNoteAudition();
+        },
+        Math.ceil((auditionDurationSeconds + 0.5) * 1000),
+      );
+    } catch (error) {
+      console.error("Could not audition selected phrase melody:", error);
+
+      stopSongwriterReferenceNoteAudition();
+
+      setProjectMessage(
+        error instanceof Error
+          ? `Could not audition selected phrase melody: ${error.message}`
+          : "Could not audition selected phrase melody.",
+      );
+    }
+  };
+
   const analyseSongwriterReferenceSelection = async (rangeOverride?: {
     startSeconds: number;
     endSeconds: number;
@@ -35518,17 +35725,31 @@ ${buildRewriteInstruction(
                                         </div>
                                       </div>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          reviewSongwriterReferencePhrase(
-                                            selectedSongwriterReferencePhrase,
-                                          );
-                                        }}
-                                        className="rounded border border-purple-700 px-3 py-1 text-[11px] text-purple-100 hover:bg-purple-900"
-                                      >
-                                        Play phrase
-                                      </button>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            reviewSongwriterReferencePhrase(
+                                              selectedSongwriterReferencePhrase,
+                                            );
+                                          }}
+                                          className="rounded border border-purple-700 px-3 py-1 text-[11px] text-purple-100 hover:bg-purple-900"
+                                        >
+                                          Play original
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            void auditionSelectedSongwriterReferencePhrase();
+                                          }}
+                                          className="rounded border border-purple-700 px-3 py-1 text-[11px] text-purple-100 hover:bg-purple-900"
+                                        >
+                                          {auditioningSongwriterReferenceNotes
+                                            ? "Stop melody guide"
+                                            : "Play melody guide"}
+                                        </button>
+                                      </div>
                                     </div>
 
                                     <div className="mt-3 space-y-3">
