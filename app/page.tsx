@@ -752,6 +752,25 @@ export default function Page() {
 
   const [songwriterReferenceSelectionEnd, setSongwriterReferenceSelectionEnd] =
     useState<number | null>(null);
+
+  const [
+    selectedSongwriterReferencePhraseIndex,
+    setSelectedSongwriterReferencePhraseIndex,
+  ] = useState<number | null>(null);
+  const selectedSongwriterReferencePhrase =
+    selectedSongwriterReferencePhraseIndex !== null
+      ? (songwriterReferencePhrasePerformances[
+          selectedSongwriterReferencePhraseIndex
+        ] ?? null)
+      : null;
+
+  const selectedSongwriterReferenceObservations =
+    selectedSongwriterReferencePhraseIndex !== null
+      ? songwriterReferenceMusicalObservations.filter(
+          (observation) =>
+            observation.phraseIndex === selectedSongwriterReferencePhraseIndex,
+        )
+      : [];
   type SongwriterReferenceTracePoint = {
     timeSeconds: number;
     frequencyHz: number | null;
@@ -1399,6 +1418,47 @@ export default function Page() {
       context.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
     });
 
+    if (
+      songwriterReferenceDuration > 0 &&
+      songwriterReferencePhrasePerformances.length > 0
+    ) {
+      songwriterReferencePhrasePerformances.forEach((phrase, phraseIndex) => {
+        const startProgress = Math.max(
+          0,
+          Math.min(1, phrase.startTimeSeconds / songwriterReferenceDuration),
+        );
+
+        const endProgress = Math.max(
+          startProgress,
+          Math.min(1, phrase.endTimeSeconds / songwriterReferenceDuration),
+        );
+
+        const startX = startProgress * canvasWidth;
+        const endX = endProgress * canvasWidth;
+        const phraseWidth = Math.max(2, endX - startX);
+
+        context.fillStyle = "rgba(192, 132, 252, 0.14)";
+        context.fillRect(startX, 0, phraseWidth, canvasHeight);
+
+        context.strokeStyle = "rgba(216, 180, 254, 0.9)";
+        context.lineWidth = 1;
+
+        context.beginPath();
+        context.moveTo(startX, 0);
+        context.lineTo(startX, canvasHeight);
+        context.stroke();
+
+        context.beginPath();
+        context.moveTo(endX, 0);
+        context.lineTo(endX, canvasHeight);
+        context.stroke();
+
+        context.fillStyle = "rgba(243, 232, 255, 0.95)";
+        context.font = "10px sans-serif";
+        context.fillText(String(phraseIndex + 1), startX + 3, 12);
+      });
+    }
+
     const safeProgress = Math.max(0, Math.min(1, progress));
 
     context.fillStyle = "rgba(192, 132, 252, 0.22)";
@@ -1407,6 +1467,24 @@ export default function Page() {
     context.fillStyle = "rgba(243, 232, 255, 0.95)";
     context.fillRect(canvasWidth * safeProgress, 0, 2, canvasHeight);
   };
+
+  useEffect(() => {
+    if (!songwriterReferenceAudioUrl) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      drawSongwriterReferenceWaveform(
+        songwriterReferenceWaveformProgressRef.current,
+      );
+    });
+  }, [
+    songwriterReferenceAudioUrl,
+    songwriterReferenceDuration,
+    songwriterReferencePhrasePerformances,
+    songwriterReferenceMusicalObservations.length,
+    selectedSongwriterReferencePhraseIndex,
+  ]);
 
   const loadSongwriterReferenceWaveformFromArrayBuffer = async (
     arrayBuffer: ArrayBuffer,
@@ -3199,7 +3277,10 @@ export default function Page() {
     }
   };
 
-  const analyseSongwriterReferenceSelection = async () => {
+  const analyseSongwriterReferenceSelection = async (rangeOverride?: {
+    startSeconds: number;
+    endSeconds: number;
+  }) => {
     stopSongwriterReferenceNoteAudition();
 
     const analysisSource = songwriterReferenceAnalysisSource;
@@ -3230,22 +3311,22 @@ export default function Page() {
       return;
     }
 
-    if (
-      songwriterReferenceSelectionStart === null ||
-      songwriterReferenceSelectionEnd === null
-    ) {
+    const requestedStart =
+      rangeOverride?.startSeconds ?? songwriterReferenceSelectionStart;
+
+    const requestedEnd =
+      rangeOverride?.endSeconds ?? songwriterReferenceSelectionEnd;
+
+    if (requestedStart === null || requestedEnd === null) {
       setProjectMessage(
         "Set a start and end point before analysing the songwriter reference.",
       );
       return;
     }
 
-    const selectionStart = Math.max(0, songwriterReferenceSelectionStart);
+    const selectionStart = Math.max(0, requestedStart);
 
-    const selectionEnd = Math.min(
-      audioBuffer.duration,
-      songwriterReferenceSelectionEnd,
-    );
+    const selectionEnd = Math.min(audioBuffer.duration, requestedEnd);
 
     if (selectionEnd <= selectionStart) {
       setProjectMessage("Choose a valid songwriter reference selection.");
@@ -3392,6 +3473,10 @@ export default function Page() {
 
       setSongwriterReferencePhrasePerformances(phrasePerformances);
 
+      setSelectedSongwriterReferencePhraseIndex(
+        phrasePerformances.length > 0 ? 0 : null,
+      );
+
       const musicalObservations = buildSongwriterReferenceMusicalObservations({
         performances: phrasePerformances,
       });
@@ -3451,6 +3536,31 @@ export default function Page() {
       setAnalysingSongwriterReference(false);
     }
   };
+
+  const analyseWholeSongwriterReference = async () => {
+    const audioBuffer =
+      songwriterReferenceAnalysisSource === "vocal-stem"
+        ? songwriterAnalysisStemAudioBufferRef.current
+        : songwriterReferenceAudioBufferRef.current;
+
+    if (!audioBuffer) {
+      setProjectMessage(
+        songwriterReferenceAnalysisSource === "vocal-stem"
+          ? "The vocal analysis stem is not available."
+          : "The songwriter reference audio is not available for analysis.",
+      );
+      return;
+    }
+
+    setSongwriterReferenceSelectionStart(0);
+    setSongwriterReferenceSelectionEnd(audioBuffer.duration);
+
+    await analyseSongwriterReferenceSelection({
+      startSeconds: 0,
+      endSeconds: audioBuffer.duration,
+    });
+  };
+
   const setSongwriterReferenceSelectionPoint = (point: "start" | "end") => {
     const audio = songwriterReferenceAudioRef.current;
 
@@ -3684,6 +3794,25 @@ export default function Page() {
     });
   };
 
+  const reviewSongwriterReferencePhrase = (
+    phrase: SongwriterReferencePhrasePerformance,
+  ) => {
+    const preRollSeconds = 1.5;
+    const tailSeconds = 0.8;
+
+    const playbackStart = Math.max(
+      0,
+      phrase.sourceStartTimeSeconds - preRollSeconds,
+    );
+
+    const playbackEnd = Math.min(
+      songwriterReferenceDuration,
+      phrase.sourceEndTimeSeconds + tailSeconds,
+    );
+
+    playSongwriterReferencePhrase(playbackStart, playbackEnd);
+  };
+
   const revealGeneratedAudioWaveform = () => {
     setAudioPreviewRendererPayloadOpen(true);
 
@@ -3747,6 +3876,64 @@ export default function Page() {
 
       context.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
     });
+
+    if (
+      songwriterReferenceDuration > 0 &&
+      songwriterReferencePhrasePerformances.length > 0
+    ) {
+      console.log(
+        "Drawing phrase markers:",
+        songwriterReferencePhrasePerformances.map((phrase) => ({
+          start: phrase.startTimeSeconds,
+          end: phrase.endTimeSeconds,
+        })),
+      );
+      songwriterReferencePhrasePerformances.forEach((phrase, phraseIndex) => {
+        const startProgress = Math.max(
+          0,
+          Math.min(1, phrase.startTimeSeconds / songwriterReferenceDuration),
+        );
+
+        const endProgress = Math.max(
+          startProgress,
+          Math.min(1, phrase.endTimeSeconds / songwriterReferenceDuration),
+        );
+
+        const startX = startProgress * canvasWidth;
+        const endX = endProgress * canvasWidth;
+        const phraseWidth = Math.max(2, endX - startX);
+
+        console.log("Phrase marker", {
+          phrase: phraseIndex + 1,
+          start: phrase.startTimeSeconds,
+          end: phrase.endTimeSeconds,
+          startX,
+          endX,
+          phraseWidth,
+          canvasWidth,
+        });
+
+        context.fillStyle = "rgba(192, 132, 252, 0.14)";
+        context.fillRect(startX, 0, phraseWidth, canvasHeight);
+
+        context.strokeStyle = "rgba(216, 180, 254, 0.9)";
+        context.lineWidth = 1;
+
+        context.beginPath();
+        context.moveTo(startX, 0);
+        context.lineTo(startX, canvasHeight);
+        context.stroke();
+
+        context.beginPath();
+        context.moveTo(endX, 0);
+        context.lineTo(endX, canvasHeight);
+        context.stroke();
+
+        context.fillStyle = "rgba(243, 232, 255, 0.95)";
+        context.font = "10px sans-serif";
+        context.fillText(String(phraseIndex + 1), startX + 3, 12);
+      });
+    }
 
     const safeProgress = Math.max(0, Math.min(1, progress));
 
@@ -30534,25 +30721,11 @@ ${buildRewriteInstruction(
                                     }}
                                   />
 
-                                  <canvas
-                                    ref={generatedAudioWaveformCanvasRef}
-                                    className="h-20 w-full cursor-pointer rounded border border-green-900 bg-green-950/40"
-                                    onClick={(event) => {
-                                      if (generatedAudioDuration <= 0) {
-                                        return;
-                                      }
-
-                                      const rect =
-                                        event.currentTarget.getBoundingClientRect();
-                                      const clickPosition =
-                                        (event.clientX - rect.left) /
-                                        rect.width;
-
-                                      seekGeneratedAudio(
-                                        generatedAudioDuration * clickPosition,
-                                      );
-                                    }}
-                                  />
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className="text-purple-300">
+                                      Waveform:
+                                    </span>
+                                  </div>
 
                                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                                     <span className="font-medium text-yellow-200">
@@ -34810,7 +34983,16 @@ ${buildRewriteInstruction(
                                 ? "Analysing..."
                                 : "Analyse selection"}
                             </button>
-
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void analyseWholeSongwriterReference();
+                              }}
+                              disabled={analysingSongwriterReference}
+                              className="rounded border border-purple-700 px-3 py-1 text-purple-200 hover:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Analyse whole track
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -35177,6 +35359,25 @@ ${buildRewriteInstruction(
                                 Candidate musical observations
                               </div>
 
+                              <canvas
+                                ref={generatedAudioWaveformCanvasRef}
+                                className="h-20 w-full cursor-pointer rounded border border-green-900 bg-green-950/40"
+                                onClick={(event) => {
+                                  if (generatedAudioDuration <= 0) {
+                                    return;
+                                  }
+
+                                  const rect =
+                                    event.currentTarget.getBoundingClientRect();
+                                  const clickPosition =
+                                    (event.clientX - rect.left) / rect.width;
+
+                                  seekGeneratedAudio(
+                                    generatedAudioDuration * clickPosition,
+                                  );
+                                }}
+                              />
+
                               <div className="mt-1 text-[11px] text-purple-300">
                                 These describe what was observed in this
                                 performance. They are not yet classified as Song
@@ -35218,6 +35419,56 @@ ${buildRewriteInstruction(
                               </div>
 
                               <div className="mt-3 flex flex-wrap items-center gap-3">
+                                <canvas
+                                  ref={songwriterReferenceWaveformCanvasRef}
+                                  className="h-20 w-full cursor-pointer rounded border border-purple-800 bg-purple-950/40"
+                                  onClick={(event) => {
+                                    const audio =
+                                      songwriterReferenceAudioRef.current;
+
+                                    if (
+                                      !audio ||
+                                      songwriterReferenceDuration <= 0
+                                    ) {
+                                      return;
+                                    }
+
+                                    const rect =
+                                      event.currentTarget.getBoundingClientRect();
+
+                                    const progress = Math.max(
+                                      0,
+                                      Math.min(
+                                        1,
+                                        (event.clientX - rect.left) /
+                                          rect.width,
+                                      ),
+                                    );
+
+                                    const clickedTime =
+                                      songwriterReferenceDuration * progress;
+
+                                    const clickedPhraseIndex =
+                                      songwriterReferencePhrasePerformances.findIndex(
+                                        (phrase) =>
+                                          clickedTime >=
+                                            phrase.sourceStartTimeSeconds &&
+                                          clickedTime <=
+                                            phrase.sourceEndTimeSeconds,
+                                      );
+
+                                    if (clickedPhraseIndex >= 0) {
+                                      setSelectedSongwriterReferencePhraseIndex(
+                                        clickedPhraseIndex,
+                                      );
+
+                                      return;
+                                    }
+
+                                    audio.currentTime = clickedTime;
+                                  }}
+                                />
+
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -35244,168 +35495,133 @@ ${buildRewriteInstruction(
                                 )}
                               </div>
 
-                              <div className="mt-3 space-y-2">
-                                <div className="mt-3 space-y-3">
-                                  {songwriterReferencePhrasePerformances.map(
-                                    (performance, phraseIndex) => {
-                                      const observations =
-                                        songwriterReferenceMusicalObservations.filter(
-                                          (observation) =>
-                                            observation.phraseIndex ===
-                                            phraseIndex,
-                                        );
+                              {selectedSongwriterReferencePhrase &&
+                                selectedSongwriterReferencePhraseIndex !==
+                                  null && (
+                                  <div className="mt-3 rounded border border-purple-400 bg-purple-950/30 p-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                      <div>
+                                        <div className="text-xs font-semibold text-purple-100">
+                                          Phrase{" "}
+                                          {selectedSongwriterReferencePhraseIndex +
+                                            1}
+                                        </div>
 
-                                      if (observations.length === 0) {
-                                        return null;
-                                      }
+                                        <div className="mt-0.5 text-[11px] text-purple-300">
+                                          {formatGeneratedAudioTime(
+                                            selectedSongwriterReferencePhrase.sourceStartTimeSeconds,
+                                          )}
+                                          {" – "}
+                                          {formatGeneratedAudioTime(
+                                            selectedSongwriterReferencePhrase.sourceEndTimeSeconds,
+                                          )}
+                                        </div>
+                                      </div>
 
-                                      return (
-                                        <div
-                                          key={`songwriter-observation-phrase-${phraseIndex}`}
-                                          className="rounded border border-purple-950 bg-black/20 p-3"
-                                        >
-                                          <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <div className="text-[11px] font-medium text-purple-200">
-                                              {formatGeneratedAudioTime(
-                                                performance.sourceStartTimeSeconds,
-                                              )}
-                                              {" – "}
-                                              {formatGeneratedAudioTime(
-                                                performance.sourceEndTimeSeconds,
-                                              )}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          reviewSongwriterReferencePhrase(
+                                            selectedSongwriterReferencePhrase,
+                                          );
+                                        }}
+                                        className="rounded border border-purple-700 px-3 py-1 text-[11px] text-purple-100 hover:bg-purple-900"
+                                      >
+                                        Play phrase
+                                      </button>
+                                    </div>
+
+                                    <div className="mt-3 space-y-3">
+                                      {selectedSongwriterReferenceObservations.map(
+                                        (observation) => (
+                                          <div
+                                            key={observation.id}
+                                            className="rounded border border-purple-950/70 bg-black/20 p-2"
+                                          >
+                                            <div className="text-[11px] text-gray-300">
+                                              {observation.description}
                                             </div>
 
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                playSongwriterReferencePhrase(
-                                                  performance.sourceStartTimeSeconds,
-                                                  performance.sourceEndTimeSeconds,
-                                                )
-                                              }
-                                              className="rounded border border-purple-800 px-2 py-1 text-[11px] text-purple-200 hover:bg-purple-950"
-                                            >
-                                              Hear this passage
-                                            </button>
-                                          </div>
+                                            {observation.technicalDetail && (
+                                              <details className="mt-2 text-[10px] text-purple-400">
+                                                <summary className="cursor-pointer">
+                                                  Technical detail
+                                                </summary>
 
-                                          <div className="mt-3 space-y-3">
-                                            {observations.map((observation) => (
-                                              <div
-                                                key={observation.id}
-                                                className="rounded border border-purple-950/70 bg-black/20 p-2"
+                                                <div className="mt-1">
+                                                  {observation.technicalDetail}
+                                                </div>
+                                              </details>
+                                            )}
+
+                                            <div className="mt-2 flex items-center gap-2">
+                                              <span className="text-[11px] text-purple-400">
+                                                Scope:
+                                              </span>
+
+                                              <select
+                                                value={observation.scope}
+                                                onChange={(event) => {
+                                                  const nextScope = event.target
+                                                    .value as SongwriterReferenceObservationScope;
+
+                                                  setSongwriterReferenceMusicalObservations(
+                                                    (current) =>
+                                                      current.map(
+                                                        (candidate) =>
+                                                          candidate.id ===
+                                                          observation.id
+                                                            ? {
+                                                                ...candidate,
+                                                                scope:
+                                                                  nextScope,
+                                                              }
+                                                            : candidate,
+                                                      ),
+                                                  );
+                                                }}
+                                                className="rounded border border-purple-900 bg-gray-950 px-2 py-1 text-[11px] text-white"
+                                                style={{
+                                                  colorScheme: "dark",
+                                                }}
                                               >
-                                                <div className="text-[11px] text-gray-300">
-                                                  {observation.description}
-                                                </div>
+                                                <option
+                                                  value="unclassified"
+                                                  className="bg-gray-950 text-white"
+                                                >
+                                                  Unclassified
+                                                </option>
 
-                                                {observation.technicalDetail && (
-                                                  <details className="mt-2 text-[10px] text-purple-400">
-                                                    <summary className="cursor-pointer">
-                                                      Technical detail
-                                                    </summary>
+                                                <option
+                                                  value="song-identity"
+                                                  className="bg-gray-950 text-white"
+                                                >
+                                                  Song Identity
+                                                </option>
 
-                                                    <div className="mt-1">
-                                                      {
-                                                        observation.technicalDetail
-                                                      }
-                                                    </div>
-                                                  </details>
-                                                )}
+                                                <option
+                                                  value="artist-dna"
+                                                  className="bg-gray-950 text-white"
+                                                >
+                                                  Artist DNA evidence
+                                                </option>
 
-                                                <div className="mt-2 flex items-center gap-2">
-                                                  <span className="text-[11px] text-purple-400">
-                                                    Scope:
-                                                  </span>
-
-                                                  <select
-                                                    value={observation.scope}
-                                                    onChange={(event) => {
-                                                      const nextScope = event
-                                                        .target
-                                                        .value as SongwriterReferenceObservationScope;
-
-                                                      setSongwriterReferenceMusicalObservations(
-                                                        (current) =>
-                                                          current.map(
-                                                            (candidate) =>
-                                                              candidate.id ===
-                                                              observation.id
-                                                                ? {
-                                                                    ...candidate,
-                                                                    scope:
-                                                                      nextScope,
-                                                                  }
-                                                                : candidate,
-                                                          ),
-                                                      );
-                                                    }}
-                                                    className="rounded border border-purple-900 bg-gray-950 px-2 py-1 text-[11px] text-white"
-                                                    style={{
-                                                      colorScheme: "dark",
-                                                    }}
-                                                  >
-                                                    <option
-                                                      value="unclassified"
-                                                      className="bg-gray-950 text-white"
-                                                    >
-                                                      Unclassified
-                                                    </option>
-
-                                                    <option
-                                                      value="song-identity"
-                                                      className="bg-gray-950 text-white"
-                                                    >
-                                                      Song Identity
-                                                    </option>
-
-                                                    <option
-                                                      value="artist-dna"
-                                                      className="bg-gray-950 text-white"
-                                                    >
-                                                      Artist DNA evidence
-                                                    </option>
-
-                                                    <option
-                                                      value="rendition"
-                                                      className="bg-gray-950 text-white"
-                                                    >
-                                                      This rendition only
-                                                    </option>
-                                                  </select>
-                                                </div>
-                                              </div>
-                                            ))}
+                                                <option
+                                                  value="rendition"
+                                                  className="bg-gray-950 text-white"
+                                                >
+                                                  This rendition only
+                                                </option>
+                                              </select>
+                                            </div>
                                           </div>
-                                        </div>
-                                      );
-                                    },
-                                  )}
-                                </div>
-                              </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                             </div>
                           )}
-
-                          <canvas
-                            ref={songwriterReferenceWaveformCanvasRef}
-                            className="h-20 w-full cursor-pointer rounded border border-purple-800 bg-purple-950/40"
-                            onClick={(event) => {
-                              const audio = songwriterReferenceAudioRef.current;
-
-                              if (!audio || songwriterReferenceDuration <= 0) {
-                                return;
-                              }
-
-                              const rect =
-                                event.currentTarget.getBoundingClientRect();
-                              const progress =
-                                (event.clientX - rect.left) / rect.width;
-
-                              audio.currentTime =
-                                songwriterReferenceDuration *
-                                Math.max(0, Math.min(1, progress));
-                            }}
-                          />
 
                           <div className="text-[11px] text-purple-300">
                             This is the human reference. Later analysis should
