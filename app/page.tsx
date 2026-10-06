@@ -3277,22 +3277,9 @@ export default function Page() {
     }
   };
 
-  const auditionSelectedSongwriterReferencePhrase = async () => {
-    if (!selectedSongwriterReferencePhrase) {
-      setProjectMessage(
-        "Select a phrase before auditioning its derived melody.",
-      );
-      return;
-    }
-
-    const phraseNotes = songwriterReferenceNoteCandidates.filter(
-      (note) =>
-        note.startTimeSeconds <
-          selectedSongwriterReferencePhrase.endTimeSeconds &&
-        note.endTimeSeconds >
-          selectedSongwriterReferencePhrase.startTimeSeconds,
-    );
-
+  const buildSongwriterReferenceMelodyGuideNotes = (
+    phraseNotes: SongwriterReferenceNoteCandidate[],
+  ) => {
     const samePitchMergeGapSeconds = 0.12;
     const briefNeighbourDurationSeconds = 0.18;
     const briefNeighbourGapSeconds = 0.08;
@@ -3356,12 +3343,6 @@ export default function Page() {
           secondGap <= briefNeighbourGapSeconds;
 
         if (isBriefNeighbourExcursion) {
-          const combinedStart = current.startTimeSeconds;
-
-          const combinedEnd = next.endTimeSeconds;
-
-          const totalDuration = Math.max(0.001, combinedEnd - combinedStart);
-
           const currentDuration =
             current.endTimeSeconds - current.startTimeSeconds;
 
@@ -3369,8 +3350,8 @@ export default function Page() {
 
           melodyGuideNotes.push({
             ...current,
-            startTimeSeconds: combinedStart,
-            endTimeSeconds: combinedEnd,
+            startTimeSeconds: current.startTimeSeconds,
+            endTimeSeconds: next.endTimeSeconds,
             averageEnergy:
               (current.averageEnergy * currentDuration +
                 next.averageEnergy * nextDuration) /
@@ -3389,7 +3370,27 @@ export default function Page() {
       guideIndex += 1;
     }
 
-    
+    return melodyGuideNotes;
+  };
+
+  const auditionSelectedSongwriterReferencePhrase = async () => {
+    if (!selectedSongwriterReferencePhrase) {
+      setProjectMessage(
+        "Select a phrase before auditioning its derived melody.",
+      );
+      return;
+    }
+
+    const phraseNotes = songwriterReferenceNoteCandidates.filter(
+      (note) =>
+        note.startTimeSeconds <
+          selectedSongwriterReferencePhrase.endTimeSeconds &&
+        note.endTimeSeconds >
+          selectedSongwriterReferencePhrase.startTimeSeconds,
+    );
+
+    const melodyGuideNotes =
+      buildSongwriterReferenceMelodyGuideNotes(phraseNotes);
 
     if (phraseNotes.length === 0) {
       setProjectMessage(
