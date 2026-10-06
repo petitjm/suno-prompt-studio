@@ -771,6 +771,7 @@ export default function Page() {
             observation.phraseIndex === selectedSongwriterReferencePhraseIndex,
         )
       : [];
+
   type SongwriterReferenceTracePoint = {
     timeSeconds: number;
     frequencyHz: number | null;
@@ -3372,6 +3373,22 @@ export default function Page() {
 
     return melodyGuideNotes;
   };
+
+  const selectedSongwriterReferencePhraseNotes =
+    selectedSongwriterReferencePhrase
+      ? songwriterReferenceNoteCandidates.filter(
+          (note) =>
+            note.startTimeSeconds <
+              selectedSongwriterReferencePhrase.endTimeSeconds &&
+            note.endTimeSeconds >
+              selectedSongwriterReferencePhrase.startTimeSeconds,
+        )
+      : [];
+
+  const selectedSongwriterReferenceMelodyGuideNotes =
+    buildSongwriterReferenceMelodyGuideNotes(
+      selectedSongwriterReferencePhraseNotes,
+    );
 
   const auditionSelectedSongwriterReferencePhrase = async () => {
     if (!selectedSongwriterReferencePhrase) {
@@ -35723,6 +35740,22 @@ ${buildRewriteInstruction(
                                           {formatGeneratedAudioTime(
                                             selectedSongwriterReferencePhrase.sourceEndTimeSeconds,
                                           )}
+                                        </div>
+                                        <div className="mt-1 text-[10px] text-purple-400">
+                                          {
+                                            selectedSongwriterReferencePhraseNotes.length
+                                          }{" "}
+                                          detected notes
+                                          {" → "}
+                                          {
+                                            selectedSongwriterReferenceMelodyGuideNotes.length
+                                          }{" "}
+                                          guide notes
+                                          {" · "}
+                                          {selectedSongwriterReferencePhrase.durationSeconds.toFixed(
+                                            2,
+                                          )}
+                                          s phrase
                                         </div>
                                       </div>
 
