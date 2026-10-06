@@ -759,9 +759,9 @@ export default function Page() {
   ] = useState<number | null>(null);
 
   const [
-    songwriterReferencePhraseLyricLineIndexes,
-    setSongwriterReferencePhraseLyricLineIndexes,
-  ] = useState<number[]>([]);
+    songwriterReferencePhraseContinuesPreviousLyric,
+    setSongwriterReferencePhraseContinuesPreviousLyric,
+  ] = useState<boolean[]>([]);
   const selectedSongwriterReferencePhrase =
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhrasePerformances[
@@ -3702,8 +3702,8 @@ export default function Page() {
       });
 
       setSongwriterReferencePhrasePerformances(phrasePerformances);
-      setSongwriterReferencePhraseLyricLineIndexes(
-        phrasePerformances.map((_, phraseIndex) => phraseIndex),
+      setSongwriterReferencePhraseContinuesPreviousLyric(
+        phrasePerformances.map(() => false),
       );
 
       setSelectedSongwriterReferencePhraseIndex(
@@ -5578,6 +5578,27 @@ export default function Page() {
         line.length > 0 && !isSectionHeader(line) && !looksLikeChordLine(line),
     );
 
+  const songwriterReferencePhraseLyricLineIndexes =
+    songwriterReferencePhraseContinuesPreviousLyric.reduce<number[]>(
+      (indexes, continuesPrevious, phraseIndex) => {
+        if (phraseIndex === 0) {
+          indexes.push(0);
+          return indexes;
+        }
+
+        const previousLyricLineIndex = indexes[phraseIndex - 1] ?? 0;
+
+        indexes.push(
+          continuesPrevious
+            ? previousLyricLineIndex
+            : previousLyricLineIndex + 1,
+        );
+
+        return indexes;
+      },
+      [],
+    );
+
   const selectedSongwriterReferenceLyricLineIndex =
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhraseLyricLineIndexes[
@@ -5592,7 +5613,35 @@ export default function Page() {
         ] ?? null)
       : null;
 
-  const usePreviousLyricLineForSelectedSongwriterReferencePhrase = () => {
+  const selectedSongwriterReferencePhraseContinuesPreviousLyric =
+    selectedSongwriterReferencePhraseIndex !== null
+      ? (songwriterReferencePhraseContinuesPreviousLyric[
+          selectedSongwriterReferencePhraseIndex
+        ] ?? false)
+      : false;
+
+  const selectedSongwriterReferenceLyricFragmentIndexes =
+    selectedSongwriterReferenceLyricLineIndex !== null
+      ? songwriterReferencePhraseLyricLineIndexes
+          .map((lyricLineIndex, phraseIndex) => ({
+            lyricLineIndex,
+            phraseIndex,
+          }))
+          .filter(
+            (item) =>
+              item.lyricLineIndex === selectedSongwriterReferenceLyricLineIndex,
+          )
+          .map((item) => item.phraseIndex)
+      : [];
+
+  const selectedSongwriterReferenceLyricFragmentPosition =
+    selectedSongwriterReferencePhraseIndex !== null
+      ? selectedSongwriterReferenceLyricFragmentIndexes.indexOf(
+          selectedSongwriterReferencePhraseIndex,
+        )
+      : -1;
+
+  const toggleSelectedSongwriterReferencePhraseLyricContinuation = () => {
     if (
       selectedSongwriterReferencePhraseIndex === null ||
       selectedSongwriterReferencePhraseIndex <= 0
@@ -5600,34 +5649,13 @@ export default function Page() {
       return;
     }
 
-    setSongwriterReferencePhraseLyricLineIndexes((current) => {
-      const previousLyricLineIndex =
-        current[selectedSongwriterReferencePhraseIndex - 1];
-
-      const currentLyricLineIndex =
-        current[selectedSongwriterReferencePhraseIndex];
-
-      if (
-        previousLyricLineIndex === undefined ||
-        currentLyricLineIndex === undefined
-      ) {
-        return current;
-      }
-
-      return current.map((lyricLineIndex, phraseIndex) => {
-        if (phraseIndex < selectedSongwriterReferencePhraseIndex) {
-          return lyricLineIndex;
-        }
-
-        if (phraseIndex === selectedSongwriterReferencePhraseIndex) {
-          return previousLyricLineIndex;
-        }
-
-        return lyricLineIndex > currentLyricLineIndex
-          ? lyricLineIndex - 1
-          : lyricLineIndex;
-      });
-    });
+    setSongwriterReferencePhraseContinuesPreviousLyric((current) =>
+      current.map((continuesPrevious, phraseIndex) =>
+        phraseIndex === selectedSongwriterReferencePhraseIndex
+          ? !continuesPrevious
+          : continuesPrevious,
+      ),
+    );
   };
 
   useEffect(() => {
@@ -35841,6 +35869,23 @@ ${buildRewriteInstruction(
                                               sequence.
                                             </span>
                                           )}
+
+                                          {selectedSongwriterReferenceLyricFragmentIndexes.length >
+                                            1 &&
+                                            selectedSongwriterReferenceLyricFragmentPosition >=
+                                              0 && (
+                                              <div className="mt-1 text-[10px] text-purple-300">
+                                                Performance fragment{" "}
+                                                {selectedSongwriterReferenceLyricFragmentPosition +
+                                                  1}{" "}
+                                                of{" "}
+                                                {
+                                                  selectedSongwriterReferenceLyricFragmentIndexes.length
+                                                }{" "}
+                                                for this lyric line
+                                              </div>
+                                            )}
+
                                           {selectedSongwriterReferencePhraseIndex !==
                                             null &&
                                             selectedSongwriterReferencePhraseIndex >
@@ -35848,11 +35893,13 @@ ${buildRewriteInstruction(
                                               <button
                                                 type="button"
                                                 onClick={
-                                                  usePreviousLyricLineForSelectedSongwriterReferencePhrase
+                                                  toggleSelectedSongwriterReferencePhraseLyricContinuation
                                                 }
                                                 className="mt-1 block rounded border border-purple-800 px-2 py-1 text-[10px] text-purple-200 hover:bg-purple-950"
                                               >
-                                                Same lyric as previous phrase
+                                                {selectedSongwriterReferencePhraseContinuesPreviousLyric
+                                                  ? "Start a new lyric line here"
+                                                  : "Same lyric as previous phrase"}
                                               </button>
                                             )}
                                         </div>
