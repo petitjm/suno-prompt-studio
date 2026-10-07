@@ -5781,6 +5781,27 @@ export default function Page() {
           : currentValue,
       ),
     );
+    if (activeProject?.id && songwriterReferenceAnalysisId !== null) {
+      void supabase
+        .from("songwriter_reference_phrase_associations")
+        .update({
+          continues_previous_lyric: continuesPrevious,
+          reviewed_source_structure_signature:
+            songwriterReferenceSourceStructureSignature,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("analysis_id", songwriterReferenceAnalysisId)
+        .eq("phrase_index", selectedSongwriterReferencePhraseIndex)
+        .eq("project_id", activeProject.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error(
+              "Failed to persist songwriter reference phrase continuation:",
+              error,
+            );
+          }
+        });
+    }
   };
 
   const setSelectedSongwriterReferencePhraseLyricLineOverride = (
@@ -5804,6 +5825,27 @@ export default function Page() {
           : currentValue,
       ),
     );
+    if (activeProject?.id && songwriterReferenceAnalysisId !== null) {
+      void supabase
+        .from("songwriter_reference_phrase_associations")
+        .update({
+          lyric_line_override: lyricLineIndex,
+          reviewed_source_structure_signature:
+            songwriterReferenceSourceStructureSignature,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("analysis_id", songwriterReferenceAnalysisId)
+        .eq("phrase_index", selectedSongwriterReferencePhraseIndex)
+        .eq("project_id", activeProject.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error(
+              "Failed to persist songwriter reference phrase lyric association:",
+              error,
+            );
+          }
+        });
+    }
   };
 
   useEffect(() => {
