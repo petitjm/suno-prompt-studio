@@ -761,7 +761,7 @@ export default function Page() {
   const [
     songwriterReferencePhraseContinuesPreviousLyric,
     setSongwriterReferencePhraseContinuesPreviousLyric,
-  ] = useState<boolean[]>([]);
+  ] = useState<Array<boolean | null>>([]);
   const selectedSongwriterReferencePhrase =
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhrasePerformances[
@@ -3703,7 +3703,7 @@ export default function Page() {
 
       setSongwriterReferencePhrasePerformances(phrasePerformances);
       setSongwriterReferencePhraseContinuesPreviousLyric(
-        phrasePerformances.map(() => false),
+        phrasePerformances.map(() => null),
       );
 
       setSelectedSongwriterReferencePhraseIndex(
@@ -5617,8 +5617,8 @@ export default function Page() {
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhraseContinuesPreviousLyric[
           selectedSongwriterReferencePhraseIndex
-        ] ?? false)
-      : false;
+        ] ?? null)
+      : null;
 
   const selectedSongwriterReferenceLyricFragmentIndexes =
     selectedSongwriterReferenceLyricLineIndex !== null
@@ -5641,7 +5641,9 @@ export default function Page() {
         )
       : -1;
 
-  const toggleSelectedSongwriterReferencePhraseLyricContinuation = () => {
+  const setSelectedSongwriterReferencePhraseLyricContinuation = (
+    continuesPrevious: boolean,
+  ) => {
     if (
       selectedSongwriterReferencePhraseIndex === null ||
       selectedSongwriterReferencePhraseIndex <= 0
@@ -5650,10 +5652,10 @@ export default function Page() {
     }
 
     setSongwriterReferencePhraseContinuesPreviousLyric((current) =>
-      current.map((continuesPrevious, phraseIndex) =>
+      current.map((currentValue, phraseIndex) =>
         phraseIndex === selectedSongwriterReferencePhraseIndex
-          ? !continuesPrevious
-          : continuesPrevious,
+          ? continuesPrevious
+          : currentValue,
       ),
     );
   };
@@ -35890,17 +35892,58 @@ ${buildRewriteInstruction(
                                             null &&
                                             selectedSongwriterReferencePhraseIndex >
                                               0 && (
-                                              <button
-                                                type="button"
-                                                onClick={
-                                                  toggleSelectedSongwriterReferencePhraseLyricContinuation
-                                                }
-                                                className="mt-1 block rounded border border-purple-800 px-2 py-1 text-[10px] text-purple-200 hover:bg-purple-950"
-                                              >
-                                                {selectedSongwriterReferencePhraseContinuesPreviousLyric
-                                                  ? "Start a new lyric line here"
-                                                  : "Same lyric as previous phrase"}
-                                              </button>
+                                              <div className="mt-2">
+                                                <div className="mb-1 text-[10px] text-purple-400">
+                                                  Performance fragment
+                                                  relationship
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                      setSelectedSongwriterReferencePhraseLyricContinuation(
+                                                        false,
+                                                      )
+                                                    }
+                                                    className={`rounded border px-2 py-1 text-[10px] ${
+                                                      selectedSongwriterReferencePhraseContinuesPreviousLyric ===
+                                                      false
+                                                        ? "border-purple-400 bg-purple-900 text-white"
+                                                        : "border-purple-800 text-purple-200 hover:bg-purple-950"
+                                                    }`}
+                                                  >
+                                                    Starts new lyric line
+                                                  </button>
+
+                                                  <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                      setSelectedSongwriterReferencePhraseLyricContinuation(
+                                                        true,
+                                                      )
+                                                    }
+                                                    className={`rounded border px-2 py-1 text-[10px] ${
+                                                      selectedSongwriterReferencePhraseContinuesPreviousLyric ===
+                                                      true
+                                                        ? "border-purple-400 bg-purple-900 text-white"
+                                                        : "border-purple-800 text-purple-200 hover:bg-purple-950"
+                                                    }`}
+                                                  >
+                                                    Continues previous lyric
+                                                    line
+                                                  </button>
+                                                </div>
+
+                                                {selectedSongwriterReferencePhraseContinuesPreviousLyric ===
+                                                  null && (
+                                                  <div className="mt-1 text-[10px] text-amber-300">
+                                                    Provisional relationship —
+                                                    not yet reviewed by the
+                                                    songwriter.
+                                                  </div>
+                                                )}
+                                              </div>
                                             )}
                                         </div>
 
