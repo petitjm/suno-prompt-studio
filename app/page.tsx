@@ -673,6 +673,19 @@ export default function Page() {
   const [songwriterReferenceAnalysisId, setSongwriterReferenceAnalysisId] =
     useState<string | null>(null);
 
+  type SongwriterReferenceAnalysisRun = {
+    id: string;
+    analysis_source: "original" | "vocal-stem";
+    analysis_source_id: string | null;
+    selection_start_seconds: number;
+    selection_end_seconds: number;
+    analysis_result: unknown;
+    created_at: string;
+  };
+
+  const [songwriterReferenceAnalysisRuns, setSongwriterReferenceAnalysisRuns] =
+    useState<SongwriterReferenceAnalysisRun[]>([]);
+
   const [
     songwriterReferenceAnalysisSource,
     setSongwriterReferenceAnalysisSource,
@@ -1660,6 +1673,90 @@ export default function Page() {
     setSongwriterReferenceAnalysisSourceId(analysisSource.id);
   };
 
+  const restoreSongwriterReferenceAnalysisRun = (
+    analysis: SongwriterReferenceAnalysisRun,
+  ) => {
+    if (
+      !analysis.analysis_result ||
+      typeof analysis.analysis_result !== "object" ||
+      Array.isArray(analysis.analysis_result)
+    ) {
+      return;
+    }
+
+    const analysisResult = analysis.analysis_result as {
+      trace?: SongwriterReferenceTracePoint[];
+      noteCandidates?: SongwriterReferenceNoteCandidate[];
+      expressiveEvents?: SongwriterReferenceExpressiveEvent[];
+      phrasePerformances?: SongwriterReferencePhrasePerformance[];
+      musicalObservations?: SongwriterReferenceMusicalObservation[];
+      sourceStructureSignature?: string;
+    };
+
+    const restoredTrace = Array.isArray(analysisResult.trace)
+      ? analysisResult.trace
+      : [];
+
+    const restoredNoteCandidates = Array.isArray(analysisResult.noteCandidates)
+      ? analysisResult.noteCandidates
+      : [];
+
+    const restoredExpressiveEvents = Array.isArray(
+      analysisResult.expressiveEvents,
+    )
+      ? analysisResult.expressiveEvents
+      : [];
+
+    const restoredPhrasePerformances = Array.isArray(
+      analysisResult.phrasePerformances,
+    )
+      ? analysisResult.phrasePerformances
+      : [];
+
+    const restoredMusicalObservations = Array.isArray(
+      analysisResult.musicalObservations,
+    )
+      ? analysisResult.musicalObservations
+      : [];
+
+    setSongwriterReferenceAnalysisId(analysis.id);
+
+    setSongwriterReferenceAnalysisSource(analysis.analysis_source);
+    setSongwriterReferenceAnalysedSource(analysis.analysis_source);
+
+    setSongwriterReferenceAnalysisSourceId(analysis.analysis_source_id);
+    setSongwriterReferenceAnalysedSourceId(analysis.analysis_source_id);
+
+    setSongwriterReferenceSelectionStart(analysis.selection_start_seconds);
+    setSongwriterReferenceSelectionEnd(analysis.selection_end_seconds);
+
+    setSongwriterReferenceTrace(restoredTrace);
+    setSongwriterReferenceNoteCandidates(restoredNoteCandidates);
+    setSongwriterReferenceExpressiveEvents(restoredExpressiveEvents);
+    setSongwriterReferencePhrasePerformances(restoredPhrasePerformances);
+    setSongwriterReferenceMusicalObservations(restoredMusicalObservations);
+
+    setSongwriterReferenceAnalysisSourceStructureSignature(
+      typeof analysisResult.sourceStructureSignature === "string"
+        ? analysisResult.sourceStructureSignature
+        : null,
+    );
+
+    setSongwriterReferencePhraseLyricLineOverrides(
+      restoredPhrasePerformances.map(() => null),
+    );
+    setSongwriterReferencePhraseContinuesPreviousLyric(
+      restoredPhrasePerformances.map(() => null),
+    );
+    setSongwriterReferencePhraseReviewedSourceStructureSignatures(
+      restoredPhrasePerformances.map(() => null),
+    );
+
+    setSelectedSongwriterReferencePhraseIndex(
+      restoredPhrasePerformances.length > 0 ? 0 : null,
+    );
+  };
+
   const restoreLatestSongwriterReference = async (projectId: string) => {
     const loadToken = Date.now();
     latestSongwriterReferenceLoadRef.current = loadToken;
@@ -1701,6 +1798,7 @@ export default function Page() {
       setSongwriterReferenceAnalysedSource(null);
       setSongwriterReferenceAnalysedSourceId(null);
       setSongwriterReferenceAnalysisId(null);
+      setSongwriterReferenceAnalysisRuns([]);
       setSongwriterReferenceMusicalObservations([]);
 
       songwriterReferenceWaveformPeaksRef.current = [];
@@ -1712,97 +1810,36 @@ export default function Page() {
 
     const savedReference = reference as SongwriterReferenceRecord;
 
-    const { data: latestAnalysis, error: latestAnalysisError } = await supabase
+    const { data: analysisRuns, error: analysisRunsError } = await supabase
       .from("songwriter_reference_analyses")
       .select(
         "id, analysis_source, analysis_source_id, selection_start_seconds, selection_end_seconds, analysis_result, created_at",
       )
       .eq("songwriter_reference_id", savedReference.id)
       .not("analysis_result", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("created_at", { ascending: false });
 
     if (latestSongwriterReferenceLoadRef.current !== loadToken) {
       return;
     }
 
-    if (latestAnalysisError) {
+    if (analysisRunsError) {
       console.error(
-        "Could not restore songwriter reference analysis:",
-        latestAnalysisError,
+        "Could not restore songwriter reference analysis history:",
+        analysisRunsError,
       );
-    } else if (
-      latestAnalysis &&
-      latestAnalysis.analysis_result &&
-      typeof latestAnalysis.analysis_result === "object" &&
-      !Array.isArray(latestAnalysis.analysis_result)
-    ) {
-      const analysisResult = latestAnalysis.analysis_result as {
-        trace?: SongwriterReferenceTracePoint[];
-        noteCandidates?: SongwriterReferenceNoteCandidate[];
-        expressiveEvents?: SongwriterReferenceExpressiveEvent[];
-        phrasePerformances?: SongwriterReferencePhrasePerformance[];
-        musicalObservations?: SongwriterReferenceMusicalObservation[];
-        sourceStructureSignature?: string;
-      };
+      setSongwriterReferenceAnalysisRuns([]);
+    } else {
+      const restoredAnalysisRuns = (analysisRuns ||
+        []) as SongwriterReferenceAnalysisRun[];
 
-      const restoredTrace = Array.isArray(analysisResult.trace)
-        ? analysisResult.trace
-        : [];
+      setSongwriterReferenceAnalysisRuns(restoredAnalysisRuns);
 
-      const restoredNoteCandidates = Array.isArray(
-        analysisResult.noteCandidates,
-      )
-        ? analysisResult.noteCandidates
-        : [];
+      const latestAnalysis = restoredAnalysisRuns[0];
 
-      const restoredExpressiveEvents = Array.isArray(
-        analysisResult.expressiveEvents,
-      )
-        ? analysisResult.expressiveEvents
-        : [];
-
-      const restoredPhrasePerformances = Array.isArray(
-        analysisResult.phrasePerformances,
-      )
-        ? analysisResult.phrasePerformances
-        : [];
-
-      const restoredMusicalObservations = Array.isArray(
-        analysisResult.musicalObservations,
-      )
-        ? analysisResult.musicalObservations
-        : [];
-
-      setSongwriterReferenceAnalysisId(latestAnalysis.id);
-
-      setSongwriterReferenceAnalysisSource(latestAnalysis.analysis_source);
-      setSongwriterReferenceAnalysedSource(latestAnalysis.analysis_source);
-
-      setSongwriterReferenceAnalysisSourceId(latestAnalysis.analysis_source_id);
-      setSongwriterReferenceAnalysedSourceId(latestAnalysis.analysis_source_id);
-
-      setSongwriterReferenceSelectionStart(
-        latestAnalysis.selection_start_seconds,
-      );
-      setSongwriterReferenceSelectionEnd(latestAnalysis.selection_end_seconds);
-
-      setSongwriterReferenceTrace(restoredTrace);
-      setSongwriterReferenceNoteCandidates(restoredNoteCandidates);
-      setSongwriterReferenceExpressiveEvents(restoredExpressiveEvents);
-      setSongwriterReferencePhrasePerformances(restoredPhrasePerformances);
-      setSongwriterReferenceMusicalObservations(restoredMusicalObservations);
-
-      setSongwriterReferenceAnalysisSourceStructureSignature(
-        typeof analysisResult.sourceStructureSignature === "string"
-          ? analysisResult.sourceStructureSignature
-          : null,
-      );
-
-      setSelectedSongwriterReferencePhraseIndex(
-        restoredPhrasePerformances.length > 0 ? 0 : null,
-      );
+      if (latestAnalysis) {
+        restoreSongwriterReferenceAnalysisRun(latestAnalysis);
+      }
     }
 
     const playbackPath =
@@ -3863,6 +3900,27 @@ export default function Page() {
       }
 
       setSongwriterReferenceAnalysisId(analysisId);
+
+      setSongwriterReferenceAnalysisRuns((current) => [
+        {
+          id: analysisId,
+          analysis_source: analysisSource,
+          analysis_source_id: analysisSourceId,
+          selection_start_seconds: selectionStart,
+          selection_end_seconds: selectionEnd,
+          analysis_result: {
+            trace,
+            noteCandidates,
+            expressiveEvents,
+            phrasePerformances,
+            musicalObservations,
+            sourceStructureSignature:
+              songwriterReferenceSourceStructureSignature,
+          },
+          created_at: new Date().toISOString(),
+        },
+        ...current.filter((analysis) => analysis.id !== analysisId),
+      ]);
 
       setSongwriterReferenceMusicalObservations(musicalObservations);
 
@@ -35979,6 +36037,63 @@ ${buildRewriteInstruction(
                                 not alter the original recording or pitch
                                 interpretation.
                               </div>
+
+                              {songwriterReferenceAnalysisRuns.length > 0 && (
+                                <div className="mb-3 rounded border border-purple-900 bg-black/20 p-3">
+                                  <div className="mb-1 text-[10px] text-purple-400">
+                                    Saved analysis run
+                                  </div>
+
+                                  <select
+                                    value={songwriterReferenceAnalysisId ?? ""}
+                                    onChange={(event) => {
+                                      const analysis =
+                                        songwriterReferenceAnalysisRuns.find(
+                                          (candidate) =>
+                                            candidate.id === event.target.value,
+                                        );
+
+                                      if (!analysis) {
+                                        return;
+                                      }
+
+                                      restoreSongwriterReferenceAnalysisRun(
+                                        analysis,
+                                      );
+                                    }}
+                                    className="max-w-full rounded border border-purple-800 bg-black px-2 py-1 text-[10px] text-purple-100"
+                                  >
+                                    {songwriterReferenceAnalysisRuns.map(
+                                      (analysis, analysisIndex) => (
+                                        <option
+                                          key={analysis.id}
+                                          value={analysis.id}
+                                        >
+                                          {analysisIndex === 0
+                                            ? "Latest · "
+                                            : ""}
+                                          {new Date(
+                                            analysis.created_at,
+                                          ).toLocaleString()}{" "}
+                                          ·{" "}
+                                          {analysis.analysis_source ===
+                                          "vocal-stem"
+                                            ? "Vocal stem"
+                                            : "Original"}{" "}
+                                          ·{" "}
+                                          {formatGeneratedAudioTime(
+                                            analysis.selection_start_seconds,
+                                          )}
+                                          {" – "}
+                                          {formatGeneratedAudioTime(
+                                            analysis.selection_end_seconds,
+                                          )}
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+                              )}
 
                               <div className="mt-3 max-h-56 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
                                 {songwriterReferencePhrasePerformances.map(
