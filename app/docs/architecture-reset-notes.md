@@ -128,6 +128,210 @@ AI assistance must not automatically imply polishing, smoothing, conventionalisi
 
 The two routes may be combined. For example, the songwriter's melodic and expressive identity may be preserved while AI explores a different arrangement, harmonic treatment, instrumentation, genre, or alternative section.
 
+## Evolving song structure and creative authority
+
+The application must model **evolving musical decisions**, not manufacture certainty from incomplete evidence.
+
+A song is not merely the sum of measurable properties extracted from one performance, nor should it be generated mechanically from a fixed collection of rules. Lyrics, phrase structure, melody, harmony, rhythm, and performance influence one another throughout development.
+
+The working relationship is therefore iterative:
+
+```text
+lyrics / story / emotional movement
+        ↕
+phrase structure
+        ↕
+melody / motifs
+        ↕
+harmony / tonal centre
+        ↕
+tempo / metre / rhythmic feel
+        ↕
+performance / rendition
+```
+
+A change in any one layer may reveal a reason to reconsider another.
+
+The system should preserve this creative feedback loop rather than prematurely converting provisional evidence into permanent song structure.
+
+### Lyrics as a songwriting foundation
+
+For many songs, the lyrics provide an important creative bedrock.
+
+The storyline, emotional movement, natural language stress, line shape, repeated ideas, tension, release, and conversational rhythm may suggest:
+
+- where musical phrases naturally begin and end;
+- where a thought carries forward rather than resolves;
+- likely points of emphasis or restraint;
+- possible melodic contour;
+- recurring motifs;
+- changes of register or intensity;
+- harmonic tension and release;
+- a natural tempo range or rhythmic feel;
+- places where silence, breath, or instrumental response may be expressive.
+
+These are **musical possibilities**, not deterministic rules.
+
+The system may use lyrical structure and meaning to expose or propose musical relationships, but it must not assume that a lyric uniquely determines its melody, harmony, tempo, metre, or phrasing.
+
+The purpose is to help musical ideas emerge from the song rather than impose a formula onto it.
+
+### Song phrase structure and performance fragmentation are different things
+
+The architecture must distinguish the underlying phrase structure of the song from the way one performer happens to realise it.
+
+For example:
+
+```text
+Song phrase
+"It won't be for-ever"
+
+Performance A
+"It won't be for" | "ever"
+
+Performance B
+"It won't be forever"
+
+Performance C
+"It won't" | "be forever"
+```
+
+All three performances may express the same underlying lyric or musical phrase.
+
+A detected acoustic break therefore means:
+
+> the captured performance separates here
+
+It does **not** necessarily mean:
+
+> the song itself has a phrase boundary here
+
+Likewise, a continuous vocal gesture across two written lyric lines does not automatically mean those lines belong to one permanent song phrase.
+
+The application should therefore maintain separate concepts for:
+
+```text
+SONG
+lyric / musical phrase structure
+        ↓ expressed through
+
+RENDITION
+the intended interpretation this time
+        ↓ realised as
+
+PERFORMANCE
+the actual captured timing, breaths, pauses,
+fragments, pitch gestures and expressive behaviour
+```
+
+Performance analysis supplies evidence about the rendition and may reveal important information about the song, but it must not silently redefine the song.
+
+### Phrase structure should remain reviewable
+
+Phrase structure may begin provisionally from:
+
+- lyric meaning and syntax;
+- natural spoken stress;
+- songwriter decisions;
+- existing melody or harmony;
+- an established previous version;
+- performance evidence;
+- AI-assisted suggestions.
+
+Those sources may disagree.
+
+The system should preserve the distinction between:
+
+```text
+provisional interpretation
+        ↓
+reviewed songwriter decision
+        ↓
+durable song knowledge
+```
+
+A detected performance fragment may therefore be associated with a song phrase without becoming identical to it.
+
+For example:
+
+```text
+Lyric phrase:
+"It won't be for-ever"
+
+Performance fragment 1:
+"It won't be for"
+
+Performance fragment 2:
+"ever"
+```
+
+The two fragments should remain separately observable as performance evidence while both may belong to the same reviewed song phrase.
+
+### Different renditions may legitimately reshape the song
+
+A completed song is not frozen into one exact performance.
+
+Another performer may legitimately alter:
+
+- breath placement;
+- phrase subdivision;
+- note duration;
+- ornamentation;
+- register;
+- timing;
+- tempo;
+- groove;
+- emotional emphasis;
+- melodic detail;
+- harmonic treatment;
+- arrangement.
+
+Some of those changes belong only to that rendition. Others may reveal a compelling improvement to the underlying song and be deliberately adopted by the songwriter.
+
+The architecture must therefore support movement in both directions:
+
+```text
+Song Identity
+        ↓
+informs rendition
+
+Performance / rendition evidence
+        ↓
+may suggest revisions to Song Identity
+
+Explicit songwriter review
+        ↓
+decides what becomes durable
+```
+
+No analysis layer should promote a performance characteristic into permanent Song Identity merely because it was measurable.
+
+### Anti-formula principle
+
+The application should help the songwriter discover, preserve, compare, and develop musical decisions.
+
+It should not converge every song toward a mechanically regular solution.
+
+In particular, the system must avoid assuming that:
+
+- every lyric line is one musical phrase;
+- every acoustic pause is a song phrase boundary;
+- every phrase should have similar duration;
+- every section should use a repeated contour pattern;
+- every strong syllable requires a high note;
+- every unstable pitch should be corrected;
+- every unusual timing decision is an error;
+- every song needs conventional harmonic or melodic resolution;
+- every performance should become cleaner, smoother, or more quantised.
+
+Regularity is valid when the song calls for it. Irregularity is equally valid when it carries musical or emotional meaning.
+
+The guiding principle is:
+
+> **Model evolving musical decisions; do not manufacture certainty from incomplete evidence.**
+
+The system should remain capable of offering structure, analysis, suggestions, and alternatives without replacing the songwriter's judgement or reducing songwriting to a formula.
+
 ## Why performance analysis exists
 
 Recent Make Song development exposed an important limitation in the previous architecture.
@@ -198,6 +402,10 @@ Candidate durable characteristics may include:
 Song identity should be portable across genre, arrangement, instrumentation, tempo, metre, register, and production changes where musically appropriate.
 
 It should not automatically contain every measurable property of one performance.
+
+Song Identity should also not be treated as permanently fixed once established. It is durable enough to preserve continuity across development, but the songwriter may deliberately revise it as lyrics, melody, harmony, phrasing, or repeated performance reveal a stronger version of the song.
+
+Durability means **preserve unless deliberately changed**, not **freeze permanently**.
 
 ### Artist DNA Model
 
