@@ -332,6 +332,286 @@ The guiding principle is:
 
 The system should remain capable of offering structure, analysis, suggestions, and alternatives without replacing the songwriter's judgement or reducing songwriting to a formula.
 
+## Songwriter-controlled song state
+
+The application's central creative object should be the **current songwriter-controlled state of the song**.
+
+This state is not a fixed input and not a generated output. It is the evolving body of musical decisions that the songwriter may deliberately edit as the song develops.
+
+It includes, at minimum:
+
+- lyrics and section order;
+- chord choices and chord placement;
+- phrase structure;
+- melody and recurring motifs;
+- rhythmic relationships;
+- important harmonic relationships;
+- accepted structural decisions;
+- other explicitly reviewed song-specific musical decisions.
+
+The application should distinguish this songwriter-controlled state from analysis, suggestions, and rendition evidence.
+
+```text
+SONGWRITER-CONTROLLED SONG STATE
+        │
+        ├─ lyrics
+        ├─ chords / harmony
+        ├─ phrase structure
+        ├─ melody / motifs
+        ├─ rhythm
+        └─ structure
+        ↓
+Rendition intent
+        ↓
+Performance / musical guide
+        ↓
+Performance evidence
+        ↓
+analysis / discoveries / suggestions
+        └──────────────→ may inform further songwriter edits
+```
+
+Analysis and AI may propose changes, expose problems, or offer alternatives, but they must not silently modify the songwriter-controlled song state.
+
+### Source as authoritative editable song material
+
+Within the current application workflow, **Source** is the authoritative editable representation of the song material supplied by the songwriter.
+
+Source may contain:
+
+- lyrics;
+- section markers and section order;
+- chords;
+- chord placements relative to the lyrics.
+
+The application may process that combined Source into separate structured working representations for lyrics, sections, harmony, phrasing, melody, and other musical development.
+
+That processing separation is an implementation and editing convenience. It must not imply that chords cease to belong to the songwriter-controlled song Source from which they originated.
+
+If new lyrics are introduced, existing lyrics are rewritten, a lyrical Intro is added, or source chords are changed, those edits belong to Source.
+
+Performance analysis and other downstream musical representations should then be associated against that updated Source. They should not redefine Source merely to preserve an old alignment or interpretation.
+
+For example:
+
+```text
+Source before edit
+[Verse 1]
+Am
+We went to war
+
+Source after edit
+[Intro]
+F
+Some opening lyric
+
+[Verse 1]
+Am
+We went to war
+```
+
+A historical performance that begins with `We went to war` should not cause the new Intro lyric or chord to disappear or be treated as invalid.
+
+Instead, its existing phrase-to-lyric and other downstream associations may require review against the changed Source.
+
+Source authority therefore means:
+
+> the current songwriter-controlled Source defines the song's present textual and source-level harmonic structure.
+
+It does not mean that every downstream musical association remains valid after Source changes.
+
+### Harmony is extracted from Source and remains editable
+
+When chords are present in Source, the application may extract them into the structured Chords workflow so that they can be inspected, generated from, edited, moved, added, deleted, or replaced.
+
+The existing ability to generate chords using the chords already provided by the song is an example of this relationship:
+
+```text
+Source containing lyrics + chords
+        ↓
+structured chord extraction
+        ↓
+Chords workflow
+        ↓
+preserve / edit / regenerate / develop
+```
+
+The extracted harmony remains part of the songwriter-controlled song state. Processing it separately does not make it independent of the Source from which it originated.
+
+Chords should therefore remain fully editable musical decisions. The songwriter must be able to:
+
+- change a chord name;
+- add a new chord;
+- delete a chord;
+- move a chord placement;
+- alter harmonic rhythm;
+- reshape a progression;
+- replace or simplify harmony;
+- preserve a progression while refitting it to changed lyrics.
+
+The existence of a chord in the current song state makes it the current harmonic decision. It does not make that chord permanently correct or immutable.
+
+For example:
+
+```text
+Current song state:
+Am
+
+Analysis:
+the vocal phrase creates tension against Am
+
+Possible suggestion:
+Fmaj7 may support the phrase differently
+```
+
+The analysis remains evidence and the suggested chord remains a possibility until the songwriter deliberately changes the harmony.
+
+The same principle should eventually apply to melody, phrase structure, and other musical layers.
+
+### Lyrics, harmony, melody and phrasing are peers
+
+The application should not assume a permanently linear creative pipeline such as:
+
+```text
+lyrics
+  ↓
+generate chords
+  ↓
+generate melody
+```
+
+That sequence may be useful operationally at some stages, but it is not an adequate model of songwriting.
+
+The underlying creative relationship is closer to:
+
+```text
+              LYRICS
+             ↙      ↘
+        PHRASING ↔ MELODY
+             ↘      ↙
+              CHORDS
+```
+
+with structure, rhythm, emotional intent, and performance interacting with all of them.
+
+A lyric edit may require a melody change.
+
+A melody may expose an awkward lyric.
+
+A chord substitution may reveal a stronger melodic destination.
+
+A phrase may require an extra bar.
+
+A rhythmic idea may alter the natural wording.
+
+An unusual harmonic moment may become part of the song's identity.
+
+The application should therefore support movement between these layers without treating one as permanently downstream from another.
+
+### Local changes should cause local review where possible
+
+A songwriting edit should not automatically discard all established musical work.
+
+Nor should the system silently assume that every existing relationship still fits.
+
+For example:
+
+```text
+Old lyric:
+"We didn't want to die"
+
+New lyric:
+"We never wanted to die"
+```
+
+The likely consequences may be:
+
+```text
+lyric text
+    changed
+
+phrase structure
+    may need review
+
+chord choice
+    may still be valid
+
+chord placement
+    may need review
+
+core melodic gesture
+    may remain useful
+
+exact melodic timing
+    may need review
+
+performance-fragment association
+    may need review
+```
+
+Likewise, changing one chord should not require wholesale regeneration of the song if the surrounding melody, lyric, and structure remain compatible.
+
+The preferred behaviour is:
+
+```text
+songwriter edit
+        ↓
+identify affected relationships
+        ↓
+preserve compatible accepted decisions
+        ↓
+flag only uncertain or invalidated relationships for review
+```
+
+This principle should guide future versioning, dependency tracking, and regeneration behaviour.
+
+### Editable authority versus derived evidence
+
+The architecture should preserve a strong distinction between:
+
+```text
+Songwriter-controlled decisions
+    lyrics
+    chords
+    melody
+    phrasing
+    structure
+
+Derived evidence
+    pitch traces
+    note candidates
+    detected pauses
+    performance fragments
+    energy shapes
+    analysis classifications
+
+Suggestions
+    AI alternatives
+    harmonic possibilities
+    melodic alternatives
+    structural recommendations
+```
+
+Derived evidence and suggestions may influence songwriter decisions, but they must not become authoritative merely because they were computed.
+
+The key rule is:
+
+> **The songwriter-controlled song state is editable and authoritative for the current song; analysis and generation exist to help develop that state rather than replace it.**
+
+### Relationship to Song Identity
+
+The songwriter-controlled song state and Song Identity are related but not identical.
+
+The current song state contains the songwriter's present decisions.
+
+Song Identity represents the subset of those decisions and relationships that should remain recognisably this song across materially different renditions.
+
+A current chord, exact note duration, lyric wording, or phrase division may later change while the song remains recognisably the same.
+
+Conversely, some unusual lyric, melodic, harmonic, or rhythmic decision may become essential to the song's identity.
+
+Promotion from current song state into durable Song Identity should therefore remain deliberate and reviewable rather than automatic.
+
 ## Why performance analysis exists
 
 Recent Make Song development exposed an important limitation in the previous architecture.
@@ -679,6 +959,8 @@ As a song develops:
 - creating a new song version should not blindly discard established musical work.
 
 The long-term target is a structured relationship between lyric phrases, phrase timing, chord events, and melody notes so that changes made during songwriting can be embodied reliably in subsequent song versions and musical guides.
+
+Those relationships should support dependency-aware editing rather than one-way generation. Lyrics, chords, melody, phrasing, and structure should remain independently editable, with compatible accepted work preserved and only affected relationships flagged for review when one layer changes.
 
 ### Song-specific musical intent
 
