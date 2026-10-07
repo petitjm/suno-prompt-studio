@@ -35859,7 +35859,12 @@ ${buildRewriteInstruction(
                                           {selectedSongwriterReferenceLyricLine ? (
                                             <>
                                               <span className="text-purple-400">
-                                                Provisional lyric:
+                                                {selectedSongwriterReferencePhraseIndex ===
+                                                  0 ||
+                                                selectedSongwriterReferencePhraseContinuesPreviousLyric !==
+                                                  null
+                                                  ? "Reviewed lyric association:"
+                                                  : "Provisional lyric association:"}
                                               </span>{" "}
                                               {
                                                 selectedSongwriterReferenceLyricLine
