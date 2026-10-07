@@ -1704,12 +1704,106 @@ export default function Page() {
       setSongwriterReferenceMusicalObservations([]);
 
       songwriterReferenceWaveformPeaksRef.current = [];
+
       songwriterReferenceWaveformProgressRef.current = 0;
 
       return;
     }
 
     const savedReference = reference as SongwriterReferenceRecord;
+
+    const { data: latestAnalysis, error: latestAnalysisError } = await supabase
+      .from("songwriter_reference_analyses")
+      .select(
+        "id, analysis_source, analysis_source_id, selection_start_seconds, selection_end_seconds, analysis_result, created_at",
+      )
+      .eq("songwriter_reference_id", savedReference.id)
+      .not("analysis_result", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestSongwriterReferenceLoadRef.current !== loadToken) {
+      return;
+    }
+
+    if (latestAnalysisError) {
+      console.error(
+        "Could not restore songwriter reference analysis:",
+        latestAnalysisError,
+      );
+    } else if (
+      latestAnalysis &&
+      latestAnalysis.analysis_result &&
+      typeof latestAnalysis.analysis_result === "object" &&
+      !Array.isArray(latestAnalysis.analysis_result)
+    ) {
+      const analysisResult = latestAnalysis.analysis_result as {
+        trace?: SongwriterReferenceTracePoint[];
+        noteCandidates?: SongwriterReferenceNoteCandidate[];
+        expressiveEvents?: SongwriterReferenceExpressiveEvent[];
+        phrasePerformances?: SongwriterReferencePhrasePerformance[];
+        musicalObservations?: SongwriterReferenceMusicalObservation[];
+        sourceStructureSignature?: string;
+      };
+
+      const restoredTrace = Array.isArray(analysisResult.trace)
+        ? analysisResult.trace
+        : [];
+
+      const restoredNoteCandidates = Array.isArray(
+        analysisResult.noteCandidates,
+      )
+        ? analysisResult.noteCandidates
+        : [];
+
+      const restoredExpressiveEvents = Array.isArray(
+        analysisResult.expressiveEvents,
+      )
+        ? analysisResult.expressiveEvents
+        : [];
+
+      const restoredPhrasePerformances = Array.isArray(
+        analysisResult.phrasePerformances,
+      )
+        ? analysisResult.phrasePerformances
+        : [];
+
+      const restoredMusicalObservations = Array.isArray(
+        analysisResult.musicalObservations,
+      )
+        ? analysisResult.musicalObservations
+        : [];
+
+      setSongwriterReferenceAnalysisId(latestAnalysis.id);
+
+      setSongwriterReferenceAnalysisSource(latestAnalysis.analysis_source);
+      setSongwriterReferenceAnalysedSource(latestAnalysis.analysis_source);
+
+      setSongwriterReferenceAnalysisSourceId(latestAnalysis.analysis_source_id);
+      setSongwriterReferenceAnalysedSourceId(latestAnalysis.analysis_source_id);
+
+      setSongwriterReferenceSelectionStart(
+        latestAnalysis.selection_start_seconds,
+      );
+      setSongwriterReferenceSelectionEnd(latestAnalysis.selection_end_seconds);
+
+      setSongwriterReferenceTrace(restoredTrace);
+      setSongwriterReferenceNoteCandidates(restoredNoteCandidates);
+      setSongwriterReferenceExpressiveEvents(restoredExpressiveEvents);
+      setSongwriterReferencePhrasePerformances(restoredPhrasePerformances);
+      setSongwriterReferenceMusicalObservations(restoredMusicalObservations);
+
+      setSongwriterReferenceAnalysisSourceStructureSignature(
+        typeof analysisResult.sourceStructureSignature === "string"
+          ? analysisResult.sourceStructureSignature
+          : null,
+      );
+
+      setSelectedSongwriterReferencePhraseIndex(
+        restoredPhrasePerformances.length > 0 ? 0 : null,
+      );
+    }
 
     const playbackPath =
       savedReference.playback_storage_path ||
@@ -1753,16 +1847,7 @@ export default function Page() {
         ? savedReference.duration_seconds
         : 0,
     );
-    setSongwriterReferenceSelectionStart(null);
-    setSongwriterReferenceSelectionEnd(null);
-    setSongwriterReferenceTrace([]);
-    setSongwriterReferenceNoteCandidates([]);
-    setSongwriterReferenceExpressiveEvents([]);
-    setSongwriterReferencePhrasePerformances([]);
-    setSongwriterReferenceAnalysedSource(null);
-    setSongwriterReferenceAnalysedSourceId(null);
-    setSongwriterReferenceAnalysisId(null);
-    setSongwriterReferenceMusicalObservations([]);
+    
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
 
@@ -3760,6 +3845,15 @@ export default function Page() {
           analysis_source_id: analysisSourceId,
           selection_start_seconds: selectionStart,
           selection_end_seconds: selectionEnd,
+          analysis_result: {
+            trace,
+            noteCandidates,
+            expressiveEvents,
+            phrasePerformances,
+            musicalObservations,
+            sourceStructureSignature:
+              songwriterReferenceSourceStructureSignature,
+          },
         });
 
       if (analysisRecordError) {
@@ -5644,6 +5738,7 @@ export default function Page() {
         .from("songwriter_reference_phrase_associations")
         .upsert(phraseAssociationRows, {
           onConflict: "analysis_id,phrase_index",
+          ignoreDuplicates: true,
         });
 
       if (error) {
@@ -5657,6 +5752,80 @@ export default function Page() {
     void persistPhraseAssociations();
   }, [
     activeProject?.id,
+    songwriterReferenceAnalysisId,
+    songwriterReferencePhrasePerformances,
+    supabase,
+  ]);
+
+  useEffect(() => {
+    if (
+      !songwriterReferenceAnalysisId ||
+      songwriterReferencePhrasePerformances.length === 0
+    ) {
+      return;
+    }
+
+    const restorePhraseAssociations = async () => {
+      const { data, error } = await supabase
+        .from("songwriter_reference_phrase_associations")
+        .select(
+          "phrase_index, lyric_line_override, continues_previous_lyric, reviewed_source_structure_signature",
+        )
+        .eq("analysis_id", songwriterReferenceAnalysisId)
+        .order("phrase_index");
+
+      if (error) {
+        console.error(
+          "Failed to restore songwriter reference phrase associations:",
+          error,
+        );
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        return;
+      }
+
+      const lyricLineOverrides = songwriterReferencePhrasePerformances.map(
+        () => null as number | null,
+      );
+
+      const continuesPreviousLyric = songwriterReferencePhrasePerformances.map(
+        () => null as boolean | null,
+      );
+
+      const reviewedSourceStructureSignatures =
+        songwriterReferencePhrasePerformances.map(() => null as string | null);
+
+      for (const row of data) {
+        if (
+          row.phrase_index < 0 ||
+          row.phrase_index >= songwriterReferencePhrasePerformances.length
+        ) {
+          continue;
+        }
+
+        lyricLineOverrides[row.phrase_index] = row.lyric_line_override;
+
+        continuesPreviousLyric[row.phrase_index] = row.continues_previous_lyric;
+
+        reviewedSourceStructureSignatures[row.phrase_index] =
+          row.reviewed_source_structure_signature;
+      }
+
+      setSongwriterReferencePhraseLyricLineOverrides(lyricLineOverrides);
+
+      setSongwriterReferencePhraseContinuesPreviousLyric(
+        continuesPreviousLyric,
+      );
+
+      setSongwriterReferencePhraseReviewedSourceStructureSignatures(
+        reviewedSourceStructureSignatures,
+      );
+    };
+
+    void restorePhraseAssociations();
+  }, [
     songwriterReferenceAnalysisId,
     songwriterReferencePhrasePerformances,
     supabase,
