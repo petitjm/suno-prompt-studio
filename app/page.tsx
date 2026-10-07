@@ -1847,7 +1847,7 @@ export default function Page() {
         ? savedReference.duration_seconds
         : 0,
     );
-    
+
     songwriterReferenceWaveformProgressRef.current = 0;
     songwriterReferenceWaveformPeaksRef.current = [];
 
@@ -3877,7 +3877,7 @@ export default function Page() {
           noteCandidates.length
         } note candidates, ${
           expressiveEvents.length
-        } interpreted performance events.`,
+        } interpreted performance events. This is a new analysis run; its lyric-fragment relationships start unreviewed. Reviews from earlier analysis runs remain preserved with those runs.`,
       );
     } catch (error) {
       console.error("Could not analyse songwriter reference:", error);
