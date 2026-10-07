@@ -762,6 +762,12 @@ export default function Page() {
     songwriterReferencePhraseContinuesPreviousLyric,
     setSongwriterReferencePhraseContinuesPreviousLyric,
   ] = useState<Array<boolean | null>>([]);
+
+  const [
+    songwriterReferencePhraseLyricLineOverrides,
+    setSongwriterReferencePhraseLyricLineOverrides,
+  ] = useState<Array<number | null>>([]);
+
   const selectedSongwriterReferencePhrase =
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhrasePerformances[
@@ -3706,6 +3712,10 @@ export default function Page() {
         phrasePerformances.map(() => null),
       );
 
+      setSongwriterReferencePhraseLyricLineOverrides(
+        phrasePerformances.map(() => null),
+      );
+
       setSelectedSongwriterReferencePhraseIndex(
         phrasePerformances.length > 0 ? 0 : null,
       );
@@ -5581,6 +5591,17 @@ export default function Page() {
   const songwriterReferencePhraseLyricLineIndexes =
     songwriterReferencePhraseContinuesPreviousLyric.reduce<number[]>(
       (indexes, continuesPrevious, phraseIndex) => {
+        const explicitLyricLineIndex =
+          songwriterReferencePhraseLyricLineOverrides[phraseIndex];
+
+        if (
+          explicitLyricLineIndex !== null &&
+          explicitLyricLineIndex !== undefined
+        ) {
+          indexes.push(explicitLyricLineIndex);
+          return indexes;
+        }
+
         if (phraseIndex === 0) {
           indexes.push(0);
           return indexes;
@@ -5620,6 +5641,13 @@ export default function Page() {
         ] ?? null)
       : null;
 
+  const selectedSongwriterReferencePhraseLyricLineOverride =
+    selectedSongwriterReferencePhraseIndex !== null
+      ? (songwriterReferencePhraseLyricLineOverrides[
+          selectedSongwriterReferencePhraseIndex
+        ] ?? null)
+      : null;
+
   const selectedSongwriterReferenceLyricFragmentIndexes =
     selectedSongwriterReferenceLyricLineIndex !== null
       ? songwriterReferencePhraseLyricLineIndexes
@@ -5655,6 +5683,22 @@ export default function Page() {
       current.map((currentValue, phraseIndex) =>
         phraseIndex === selectedSongwriterReferencePhraseIndex
           ? continuesPrevious
+          : currentValue,
+      ),
+    );
+  };
+
+  const setSelectedSongwriterReferencePhraseLyricLineOverride = (
+    lyricLineIndex: number | null,
+  ) => {
+    if (selectedSongwriterReferencePhraseIndex === null) {
+      return;
+    }
+
+    setSongwriterReferencePhraseLyricLineOverrides((current) =>
+      current.map((currentValue, phraseIndex) =>
+        phraseIndex === selectedSongwriterReferencePhraseIndex
+          ? lyricLineIndex
           : currentValue,
       ),
     );
@@ -35859,8 +35903,8 @@ ${buildRewriteInstruction(
                                           {selectedSongwriterReferenceLyricLine ? (
                                             <>
                                               <span className="text-purple-400">
-                                                {selectedSongwriterReferencePhraseIndex ===
-                                                  0 ||
+                                                {selectedSongwriterReferencePhraseLyricLineOverride !==
+                                                  null ||
                                                 selectedSongwriterReferencePhraseContinuesPreviousLyric !==
                                                   null
                                                   ? "Reviewed lyric association:"
@@ -35875,6 +35919,52 @@ ${buildRewriteInstruction(
                                               No corresponding lyric line by
                                               sequence.
                                             </span>
+                                          )}
+
+                                          {selectedSongwriterReferencePhraseIndex !==
+                                            null && (
+                                            <div className="mt-2">
+                                              <div className="mb-1 text-[10px] text-purple-400">
+                                                Source lyric association
+                                              </div>
+
+                                              <select
+                                                value={
+                                                  selectedSongwriterReferencePhraseLyricLineOverride ??
+                                                  ""
+                                                }
+                                                onChange={(event) => {
+                                                  const value =
+                                                    event.target.value;
+
+                                                  setSelectedSongwriterReferencePhraseLyricLineOverride(
+                                                    value === ""
+                                                      ? null
+                                                      : Number(value),
+                                                  );
+                                                }}
+                                                className="max-w-full rounded border border-purple-800 bg-black px-2 py-1 text-[10px] text-purple-100"
+                                              >
+                                                <option value="">
+                                                  Use provisional sequence
+                                                </option>
+
+                                                {songwriterReferenceLyricLines.map(
+                                                  (
+                                                    lyricLine,
+                                                    lyricLineIndex,
+                                                  ) => (
+                                                    <option
+                                                      key={`${lyricLineIndex}-${lyricLine}`}
+                                                      value={lyricLineIndex}
+                                                    >
+                                                      {lyricLineIndex + 1}.{" "}
+                                                      {lyricLine}
+                                                    </option>
+                                                  ),
+                                                )}
+                                              </select>
+                                            </div>
                                           )}
 
                                           {selectedSongwriterReferenceLyricFragmentIndexes.length >
