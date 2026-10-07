@@ -5617,6 +5617,51 @@ export default function Page() {
     songwriterReferenceAnalysisSourceStructureSignature !==
       songwriterReferenceSourceStructureSignature;
 
+  useEffect(() => {
+    if (
+      !activeProject?.id ||
+      !songwriterReferenceAnalysisId ||
+      songwriterReferencePhrasePerformances.length === 0
+    ) {
+      return;
+    }
+
+    const persistPhraseAssociations = async () => {
+      const phraseAssociationRows = songwriterReferencePhrasePerformances.map(
+        (phrase, phraseIndex) => ({
+          analysis_id: songwriterReferenceAnalysisId,
+          project_id: activeProject.id,
+          phrase_index: phraseIndex,
+          source_start_seconds: phrase.sourceStartTimeSeconds,
+          source_end_seconds: phrase.sourceEndTimeSeconds,
+          lyric_line_override: null,
+          continues_previous_lyric: null,
+          reviewed_source_structure_signature: null,
+        }),
+      );
+
+      const { error } = await supabase
+        .from("songwriter_reference_phrase_associations")
+        .upsert(phraseAssociationRows, {
+          onConflict: "analysis_id,phrase_index",
+        });
+
+      if (error) {
+        console.error(
+          "Failed to persist songwriter reference phrase associations:",
+          error,
+        );
+      }
+    };
+
+    void persistPhraseAssociations();
+  }, [
+    activeProject?.id,
+    songwriterReferenceAnalysisId,
+    songwriterReferencePhrasePerformances,
+    supabase,
+  ]);
+
   const songwriterReferencePhraseLyricLineIndexes =
     songwriterReferencePhraseContinuesPreviousLyric.reduce<number[]>(
       (indexes, continuesPrevious, phraseIndex) => {
