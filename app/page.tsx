@@ -773,6 +773,11 @@ export default function Page() {
     setSongwriterReferenceAnalysisSourceStructureSignature,
   ] = useState<string | null>(null);
 
+  const [
+    songwriterReferencePhraseReviewedSourceStructureSignatures,
+    setSongwriterReferencePhraseReviewedSourceStructureSignatures,
+  ] = useState<Array<string | null>>([]);
+
   const selectedSongwriterReferencePhrase =
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhrasePerformances[
@@ -3725,6 +3730,10 @@ export default function Page() {
         songwriterReferenceSourceStructureSignature,
       );
 
+      setSongwriterReferencePhraseReviewedSourceStructureSignatures(
+        phrasePerformances.map(() => null),
+      );
+
       setSelectedSongwriterReferencePhraseIndex(
         phrasePerformances.length > 0 ? 0 : null,
       );
@@ -5668,6 +5677,20 @@ export default function Page() {
         ] ?? null)
       : null;
 
+  const selectedSongwriterReferencePhraseReviewedSourceStructureSignature =
+    selectedSongwriterReferencePhraseIndex !== null
+      ? (songwriterReferencePhraseReviewedSourceStructureSignatures[
+          selectedSongwriterReferencePhraseIndex
+        ] ?? null)
+      : null;
+
+  const selectedSongwriterReferenceLyricAssociationNeedsReview =
+    songwriterReferenceAnalysisSourceStructureSignature !== null &&
+    songwriterReferenceAnalysisSourceStructureSignature !==
+      songwriterReferenceSourceStructureSignature &&
+    selectedSongwriterReferencePhraseReviewedSourceStructureSignature !==
+      songwriterReferenceSourceStructureSignature;
+
   const selectedSongwriterReferenceLyricFragmentIndexes =
     selectedSongwriterReferenceLyricLineIndex !== null
       ? songwriterReferencePhraseLyricLineIndexes
@@ -5706,6 +5729,13 @@ export default function Page() {
           : currentValue,
       ),
     );
+    setSongwriterReferencePhraseReviewedSourceStructureSignatures((current) =>
+      current.map((currentValue, phraseIndex) =>
+        phraseIndex === selectedSongwriterReferencePhraseIndex
+          ? songwriterReferenceSourceStructureSignature
+          : currentValue,
+      ),
+    );
   };
 
   const setSelectedSongwriterReferencePhraseLyricLineOverride = (
@@ -5719,6 +5749,13 @@ export default function Page() {
       current.map((currentValue, phraseIndex) =>
         phraseIndex === selectedSongwriterReferencePhraseIndex
           ? lyricLineIndex
+          : currentValue,
+      ),
+    );
+    setSongwriterReferencePhraseReviewedSourceStructureSignatures((current) =>
+      current.map((currentValue, phraseIndex) =>
+        phraseIndex === selectedSongwriterReferencePhraseIndex
+          ? songwriterReferenceSourceStructureSignature
           : currentValue,
       ),
     );
@@ -35923,12 +35960,10 @@ ${buildRewriteInstruction(
                                           {selectedSongwriterReferenceLyricLine ? (
                                             <>
                                               <span className="text-purple-400">
-                                                {songwriterReferenceLyricAssociationsNeedReview
+                                                {selectedSongwriterReferenceLyricAssociationNeedsReview
                                                   ? "Lyric association needs review:"
-                                                  : selectedSongwriterReferencePhraseLyricLineOverride !==
-                                                        null ||
-                                                      selectedSongwriterReferencePhraseContinuesPreviousLyric !==
-                                                        null
+                                                  : selectedSongwriterReferencePhraseReviewedSourceStructureSignature ===
+                                                      songwriterReferenceSourceStructureSignature
                                                     ? "Reviewed lyric association:"
                                                     : "Provisional lyric association:"}
                                               </span>{" "}
@@ -35946,7 +35981,7 @@ ${buildRewriteInstruction(
                                           {selectedSongwriterReferencePhraseIndex !==
                                             null && (
                                             <div className="mt-2">
-                                              {songwriterReferenceLyricAssociationsNeedReview && (
+                                              {selectedSongwriterReferenceLyricAssociationNeedsReview && (
                                                 <div className="mb-2 text-[10px] text-amber-300">
                                                   Source lyrics or section
                                                   structure have changed since
