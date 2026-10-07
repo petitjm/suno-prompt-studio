@@ -768,6 +768,11 @@ export default function Page() {
     setSongwriterReferencePhraseLyricLineOverrides,
   ] = useState<Array<number | null>>([]);
 
+  const [
+    songwriterReferenceAnalysisSourceStructureSignature,
+    setSongwriterReferenceAnalysisSourceStructureSignature,
+  ] = useState<string | null>(null);
+
   const selectedSongwriterReferencePhrase =
     selectedSongwriterReferencePhraseIndex !== null
       ? (songwriterReferencePhrasePerformances[
@@ -3716,6 +3721,10 @@ export default function Page() {
         phrasePerformances.map(() => null),
       );
 
+      setSongwriterReferenceAnalysisSourceStructureSignature(
+        songwriterReferenceSourceStructureSignature,
+      );
+
       setSelectedSongwriterReferencePhraseIndex(
         phrasePerformances.length > 0 ? 0 : null,
       );
@@ -5580,13 +5589,24 @@ export default function Page() {
     (version) => version.id === activeSongVersionId,
   );
 
-  const songwriterReferenceLyricLines = getSongVersionLyrics(activeSongVersion)
+  const songwriterReferenceLyricLines = performanceSheet
     .split("\n")
     .map((line) => line.trim())
     .filter(
       (line) =>
         line.length > 0 && !isSectionHeader(line) && !looksLikeChordLine(line),
     );
+
+  const songwriterReferenceSourceStructureSignature = performanceSheet
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !looksLikeChordLine(line))
+    .join("\n");
+
+  const songwriterReferenceLyricAssociationsNeedReview =
+    songwriterReferenceAnalysisSourceStructureSignature !== null &&
+    songwriterReferenceAnalysisSourceStructureSignature !==
+      songwriterReferenceSourceStructureSignature;
 
   const songwriterReferencePhraseLyricLineIndexes =
     songwriterReferencePhraseContinuesPreviousLyric.reduce<number[]>(
@@ -35903,12 +35923,14 @@ ${buildRewriteInstruction(
                                           {selectedSongwriterReferenceLyricLine ? (
                                             <>
                                               <span className="text-purple-400">
-                                                {selectedSongwriterReferencePhraseLyricLineOverride !==
-                                                  null ||
-                                                selectedSongwriterReferencePhraseContinuesPreviousLyric !==
-                                                  null
-                                                  ? "Reviewed lyric association:"
-                                                  : "Provisional lyric association:"}
+                                                {songwriterReferenceLyricAssociationsNeedReview
+                                                  ? "Lyric association needs review:"
+                                                  : selectedSongwriterReferencePhraseLyricLineOverride !==
+                                                        null ||
+                                                      selectedSongwriterReferencePhraseContinuesPreviousLyric !==
+                                                        null
+                                                    ? "Reviewed lyric association:"
+                                                    : "Provisional lyric association:"}
                                               </span>{" "}
                                               {
                                                 selectedSongwriterReferenceLyricLine
@@ -35924,6 +35946,15 @@ ${buildRewriteInstruction(
                                           {selectedSongwriterReferencePhraseIndex !==
                                             null && (
                                             <div className="mt-2">
+                                              {songwriterReferenceLyricAssociationsNeedReview && (
+                                                <div className="mb-2 text-[10px] text-amber-300">
+                                                  Source lyrics or section
+                                                  structure have changed since
+                                                  this performance analysis.
+                                                  Existing lyric associations
+                                                  are preserved but need review.
+                                                </div>
+                                              )}
                                               <div className="mb-1 text-[10px] text-purple-400">
                                                 Source lyric association
                                               </div>
