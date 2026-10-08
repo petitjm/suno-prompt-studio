@@ -7012,6 +7012,166 @@ export default function Page() {
     sectionIntents: melodyVersionData?.sectionIntents,
   });
 
+  const songwriterReferenceRenderLyricLineIndexes =
+    songwriterReferencePhrasePerformances.map((_, phraseIndex) => {
+      const explicitOverride =
+        songwriterReferencePhraseLyricLineOverrides[phraseIndex];
+
+      if (explicitOverride !== null && explicitOverride !== undefined) {
+        return explicitOverride;
+      }
+
+      if (phraseIndex === 0) {
+        return 0;
+      }
+
+      const previousLineIndex =
+        songwriterReferencePhraseLyricLineOverrides[phraseIndex - 1] ?? null;
+
+      const resolvedPreviousLineIndex =
+        previousLineIndex !== null
+          ? previousLineIndex
+          : songwriterReferencePhrasePerformances
+              .slice(0, phraseIndex)
+              .reduce((lineIndex, _phrase, previousPhraseIndex) => {
+                const override =
+                  songwriterReferencePhraseLyricLineOverrides[
+                    previousPhraseIndex
+                  ];
+
+                if (override !== null && override !== undefined) {
+                  return override;
+                }
+
+                if (previousPhraseIndex === 0) {
+                  return 0;
+                }
+
+                return songwriterReferencePhraseContinuesPreviousLyric[
+                  previousPhraseIndex
+                ] === true
+                  ? lineIndex
+                  : lineIndex + 1;
+              }, 0);
+
+      return songwriterReferencePhraseContinuesPreviousLyric[phraseIndex] ===
+        true
+        ? resolvedPreviousLineIndex
+        : resolvedPreviousLineIndex + 1;
+    });
+
+  const songwriterReferencePitchSequenceByLyricLine = new Map<
+    number,
+    number[]
+  >();
+
+  songwriterReferencePhrasePerformances.forEach((performance, phraseIndex) => {
+    const lyricLineIndex =
+      songwriterReferenceRenderLyricLineIndexes[phraseIndex];
+
+    if (
+      lyricLineIndex === null ||
+      lyricLineIndex === undefined ||
+      lyricLineIndex < 0
+    ) {
+      return;
+    }
+
+    const phraseCandidates = performance.sourceCandidateIndexes
+      .map(
+        (candidateIndex) => songwriterReferenceNoteCandidates[candidateIndex],
+      )
+      .filter((candidate): candidate is SongwriterReferenceNoteCandidate =>
+        Boolean(candidate),
+      );
+
+    const guideNotes =
+      buildSongwriterReferenceMelodyGuideNotes(phraseCandidates);
+
+    const pitches = guideNotes
+      .map((note) => note.midiNote)
+      .filter((pitch) => Number.isFinite(pitch));
+
+    if (pitches.length === 0) {
+      return;
+    }
+
+    const existing =
+      songwriterReferencePitchSequenceByLyricLine.get(lyricLineIndex) || [];
+
+    songwriterReferencePitchSequenceByLyricLine.set(lyricLineIndex, [
+      ...existing,
+      ...pitches,
+    ]);
+  });
+
+  const normalizeSongwriterReferenceLyric = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}' ]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const songwriterReferencePitchSequenceByLyricText = new Map<
+    string,
+    number[]
+  >();
+
+  songwriterReferencePitchSequenceByLyricLine.forEach(
+    (pitches, lyricLineIndex) => {
+      const lyric = songwriterReferenceLyricLines[lyricLineIndex];
+
+      if (!lyric) {
+        return;
+      }
+
+      const key = normalizeSongwriterReferenceLyric(lyric);
+
+      if (key && !songwriterReferencePitchSequenceByLyricText.has(key)) {
+        songwriterReferencePitchSequenceByLyricText.set(key, pitches);
+      }
+    },
+  );
+
+  const songwriterGuidedMelodyNotes = initialMelodyContours.flatMap(
+    (phrase) => {
+      if (phrase.notes.length === 0) {
+        return [];
+      }
+
+      const referencePitches =
+        (typeof phrase.sourceLineIndex === "number"
+          ? songwriterReferencePitchSequenceByLyricLine.get(
+              phrase.sourceLineIndex,
+            )
+          : undefined) ??
+        songwriterReferencePitchSequenceByLyricText.get(
+          normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
+        );
+
+      if (!referencePitches || referencePitches.length === 0) {
+        return phrase.notes;
+      }
+
+      return phrase.notes.map((note, noteIndex) => {
+        const referencePitchIndex =
+          phrase.notes.length === 1
+            ? 0
+            : Math.round(
+                (noteIndex * (referencePitches.length - 1)) /
+                  (phrase.notes.length - 1),
+              );
+
+        const referencePitch = referencePitches[referencePitchIndex];
+
+        return {
+          ...note,
+          pitchMidi: referencePitch + chordTransposeSemitones,
+        };
+      });
+    },
+  );
+
   const melodyRangeBySection = Array.from(
     initialMelodyContours
       .reduce(
@@ -11371,7 +11531,7 @@ export default function Page() {
           enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
           mixProfile: "musical-guide",
           musicalGuideMixLevels,
-          melodyNotes: initialMelodyContours.flatMap((phrase) => phrase.notes),
+          melodyNotes: songwriterGuidedMelodyNotes,
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id
@@ -20214,33 +20374,124 @@ export default function Page() {
 
   const getMainSheetAudioPreviewLines = (): PlacedSongSheetLine[] => {
     return performanceSections.flatMap((section) => {
-      if (isNonPerformanceSheetSection(section)) {
+      const isGenericWholeSongSection =
+        normalizeLyricMatchText(section.label) === "song" &&
+        performanceSections.length === 1;
+
+      if (isNonPerformanceSheetSection(section) && !isGenericWholeSongSection) {
         return [];
       }
 
       const sectionLabel = normalizeLyricMatchText(section.label);
+      const outputLines: PlacedSongSheetLine[] = [];
 
-      return section.content
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter((line) => {
-          if (!isSourceLyricContentLine(line)) {
-            return false;
+      let pendingChords: PlacedChord[] = [];
+      let songBlockIndex = 1;
+      let currentBlockHasSungContent = false;
+
+      const getCurrentSungSectionLabel = () =>
+        isGenericWholeSongSection
+          ? `Song block ${songBlockIndex}`
+          : section.label;
+
+      section.content.split(/\r?\n/).forEach((sourceLine) => {
+        const trimmed = sourceLine.trim();
+
+        if (!trimmed) {
+          if (pendingChords.length > 0) {
+            outputLines.push({
+              section:
+                isGenericWholeSongSection &&
+                outputLines.length === 0 &&
+                !currentBlockHasSungContent
+                  ? "Intro"
+                  : getCurrentSungSectionLabel(),
+              lyric: "",
+              chords: pendingChords.map((placement) => ({
+                ...placement,
+                charIndex: 0,
+              })),
+            });
+
+            pendingChords = [];
           }
 
-          const normalizedLine = normalizeLyricMatchText(line);
-
-          if (sectionLabel && normalizedLine === sectionLabel) {
-            return false;
+          if (isGenericWholeSongSection && currentBlockHasSungContent) {
+            songBlockIndex += 1;
+            currentBlockHasSungContent = false;
           }
 
-          return true;
-        })
-        .map((lyric) => ({
-          section: section.label,
-          lyric,
-          chords: [],
-        }));
+          return;
+        }
+
+        if (looksLikeChordLine(sourceLine)) {
+          pendingChords = Array.from(sourceLine.matchAll(/\S+/g)).flatMap(
+            (match) => {
+              const rawToken = match[0];
+
+              const chord = rawToken
+                .replace(/^[|:]+/, "")
+                .replace(/[|:]+$/, "")
+                .trim();
+
+              if (!chord || !looksLikeChordLine(chord)) {
+                return [];
+              }
+
+              return [
+                {
+                  chord,
+                  charIndex: Math.max(0, match.index ?? 0),
+                },
+              ];
+            },
+          );
+
+          return;
+        }
+
+        if (!isSourceLyricContentLine(trimmed)) {
+          return;
+        }
+
+        const normalizedLine = normalizeLyricMatchText(trimmed);
+
+        if (sectionLabel && normalizedLine === sectionLabel) {
+          return;
+        }
+
+        const maxLyricIndex = Math.max(0, trimmed.length - 1);
+
+        outputLines.push({
+          section: getCurrentSungSectionLabel(),
+          lyric: trimmed,
+          chords: pendingChords.map((placement) => ({
+            ...placement,
+            charIndex: Math.min(placement.charIndex, maxLyricIndex),
+          })),
+        });
+
+        pendingChords = [];
+        currentBlockHasSungContent = true;
+      });
+
+      if (pendingChords.length > 0) {
+        outputLines.push({
+          section:
+            isGenericWholeSongSection &&
+            outputLines.length === 0 &&
+            !currentBlockHasSungContent
+              ? "Intro"
+              : getCurrentSungSectionLabel(),
+          lyric: "",
+          chords: pendingChords.map((placement) => ({
+            ...placement,
+            charIndex: 0,
+          })),
+        });
+      }
+
+      return outputLines;
     });
   };
 
@@ -21535,6 +21786,24 @@ export default function Page() {
     };
   };
 
+  const currentChordSectionCount = (() => {
+    if (!chords || typeof chords !== "object" || Array.isArray(chords)) {
+      return 0;
+    }
+
+    const record = chords as Record<string, unknown>;
+
+    if (
+      !record.sections ||
+      typeof record.sections !== "object" ||
+      Array.isArray(record.sections)
+    ) {
+      return 0;
+    }
+
+    return Object.keys(record.sections as Record<string, unknown>).length;
+  })();
+
   const chordSummaryRows = getChordSummaryRows(chords);
   const harmonyRevisionComparisonRows =
     harmonyBeforeRevision && proposedHarmonyRevision
@@ -21551,6 +21820,7 @@ export default function Page() {
 
   const chordSheetPreview = buildChordSheetCopyText();
   const placedSongSheetPreview = buildPlacedSongSheetCopyText();
+  const currentSourceSongSheetLines = getPlacedSongSheetLines(chords);
   const placedSongSheetLines = getPlacedSongSheetLines(
     getChordDataFromEditorJson(),
   );
@@ -25553,15 +25823,75 @@ export default function Page() {
   };
 
   const extractChordsFromCurrentSong = () => {
-    const extracted = extractEmbeddedChordsToJson(performanceSheet);
+    const sourceSongSheetLines = getMainSheetAudioPreviewLines();
+
+    const extractedSections: Record<string, string[]> = {};
+    const sectionKeyByLabel = new Map<string, string>();
+    const sectionCounts = new Map<string, number>();
+
+    sourceSongSheetLines.forEach((line) => {
+      if (line.chords.length === 0) {
+        return;
+      }
+
+      const baseKey =
+        normaliseSectionName(line.section)
+          .replace(/\s+/g, "_")
+          .replace(/[^a-z0-9_]/gi, "")
+          .toLowerCase() || "section";
+
+      let sectionKey = sectionKeyByLabel.get(baseKey);
+
+      if (!sectionKey) {
+        const occurrence = (sectionCounts.get(baseKey) || 0) + 1;
+        sectionCounts.set(baseKey, occurrence);
+
+        sectionKey = /\d+$/.test(baseKey)
+          ? baseKey
+          : `${baseKey}_${occurrence}`;
+
+        sectionKeyByLabel.set(baseKey, sectionKey);
+      }
+
+      const chordLine = line.chords
+        .map((placement) => placement.chord)
+        .filter(Boolean)
+        .join(" ");
+
+      if (!chordLine) {
+        return;
+      }
+
+      if (!extractedSections[sectionKey]) {
+        extractedSections[sectionKey] = [];
+      }
+
+      extractedSections[sectionKey].push(chordLine);
+    });
+
+    const extracted = {
+      source: "embedded-song-sheet",
+      sections: Object.fromEntries(
+        Object.entries(extractedSections).map(([section, chordLines]) => [
+          section,
+          chordLines.join(" / "),
+        ]),
+      ),
+    };
+
     const savedKey = getSavedChordKeyForCurrentSong();
+
+    const extractedWithSourceStructure = {
+      ...extracted,
+      songSheetLines: sourceSongSheetLines,
+    };
 
     const extractedWithKey = savedKey
       ? {
-          ...extracted,
+          ...extractedWithSourceStructure,
           key: savedKey,
         }
-      : extracted;
+      : extractedWithSourceStructure;
 
     if (!Object.keys(extracted.sections).length) {
       setChordExtractionMessage(
@@ -26982,8 +27312,8 @@ ${buildRewriteInstruction(
                             {hasUsableChordData() ? (
                               <>
                                 <div className="mt-3 text-xs text-gray-500">
-                                  {chordSummaryRows.length} section
-                                  {chordSummaryRows.length === 1 ? "" : "s"}
+                                  {currentChordSectionCount} section
+                                  {currentChordSectionCount === 1 ? "" : "s"}
                                 </div>
 
                                 {chordSummaryRows.length > 0 ? (
@@ -27002,6 +27332,45 @@ ${buildRewriteInstruction(
                                         </pre>
                                       </div>
                                     ))}
+                                    {currentSourceSongSheetLines.length > 0 && (
+                                      <div className="mt-4 rounded border border-gray-800 bg-black/20 p-3">
+                                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                          Source structure
+                                        </div>
+
+                                        <div className="mt-3 space-y-3">
+                                          {currentSourceSongSheetLines.map(
+                                            (line, index) => (
+                                              <div
+                                                key={`${line.section}-${index}`}
+                                                className="rounded border border-gray-800 bg-gray-950 p-3"
+                                              >
+                                                <div className="text-xs font-medium text-purple-200">
+                                                  {line.section ||
+                                                    "Unsectioned"}
+                                                </div>
+
+                                                <div className="mt-1 text-xs text-gray-400">
+                                                  {line.lyric ||
+                                                    "(instrumental)"}
+                                                </div>
+
+                                                <div className="mt-2 text-sm text-gray-200">
+                                                  {line.chords.length > 0
+                                                    ? line.chords
+                                                        .map(
+                                                          (placement) =>
+                                                            placement.chord,
+                                                        )
+                                                        .join(" · ")
+                                                    : "No chords"}
+                                                </div>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <div className="mt-4 text-sm text-gray-500">

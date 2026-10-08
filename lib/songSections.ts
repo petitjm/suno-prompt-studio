@@ -27,6 +27,9 @@ export const isSectionHeader = (line: string) => {
   // Never treat chord-only lines as section headings
   if (looksLikeChordLine(trimmed)) return false;
 
+  // {section: Verse 1}
+  if (/^\{\s*section\s*:\s*[^}]+\}$/i.test(trimmed)) return true;
+
   // [Verse 1]
   if (/^\[.+\]$/.test(trimmed)) return true;
 
@@ -55,6 +58,8 @@ export type DetectedSection = {
 export const normaliseSectionName = (value: string) =>
   value
     .trim()
+    .replace(/^\{\s*section\s*:\s*/i, "")
+    .replace(/\}$/, "")
     .toLowerCase()
     .replace(/^\[/, "")
     .replace(/\]$/, "")
