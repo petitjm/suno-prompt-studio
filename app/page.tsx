@@ -23301,6 +23301,14 @@ export default function Page() {
 
     const existingPlacedLines = getPlacedSongSheetLines(chordData);
 
+    const currentSourceStructure = getMainSheetAudioPreviewLines().map(
+      (line) => ({
+        section: line.section,
+        lyric: line.lyric,
+        chords: [],
+      }),
+    );
+
     setGeneratingPlacedSongsheet(true);
     setChordExtractionMessage("Generating placed songsheet...");
     setProjectMessage("");
@@ -23313,7 +23321,10 @@ export default function Page() {
         },
         body: JSON.stringify({
           lyrics: performanceSheet,
-          chordData,
+          chordData: {
+            ...(getCompactChordContext(chordData) || {}),
+            songSheetLines: currentSourceStructure,
+          },
           tempoBpm: previewTempo,
           songTitle: activeProject?.title || "",
           songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
