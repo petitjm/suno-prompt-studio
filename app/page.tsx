@@ -3334,8 +3334,10 @@ export default function Page() {
     setAuditioningSongwriterReferenceNotes(false);
   };
 
-  const auditionSongwriterReferenceNoteCandidates = async () => {
-    if (songwriterReferenceNoteCandidates.length === 0) {
+  const auditionSongwriterReferenceNoteCandidates = async (
+    notes: SongwriterReferenceNoteCandidate[] = songwriterReferenceNoteCandidates,
+  ) => {
+    if (notes.length === 0) {
       setProjectMessage(
         "Analyse a songwriter reference selection before auditioning derived notes.",
       );
@@ -3363,12 +3365,11 @@ export default function Page() {
 
       songwriterReferenceNoteAuditionSynthRef.current = synth;
 
-      const firstStartTime =
-        songwriterReferenceNoteCandidates[0].startTimeSeconds;
+      const firstStartTime = notes[0].startTimeSeconds;
 
       const toneStartTime = Tone.now() + 0.1;
 
-      songwriterReferenceNoteCandidates.forEach((note) => {
+      notes.forEach((note) => {
         const relativeStart = note.startTimeSeconds - firstStartTime;
 
         const duration = Math.max(
@@ -3389,18 +3390,13 @@ export default function Page() {
         );
       });
 
-      const finalNote =
-        songwriterReferenceNoteCandidates[
-          songwriterReferenceNoteCandidates.length - 1
-        ];
+      const finalNote = notes[notes.length - 1];
 
       const auditionDurationSeconds = finalNote.endTimeSeconds - firstStartTime;
 
       setAuditioningSongwriterReferenceNotes(true);
 
-      setProjectMessage(
-        `Auditioning ${songwriterReferenceNoteCandidates.length} derived note candidates.`,
-      );
+      setProjectMessage(`Auditioning ${notes.length} derived note candidates.`);
 
       songwriterReferenceNoteAuditionTimeoutRef.current = window.setTimeout(
         () => {
@@ -36038,63 +36034,6 @@ ${buildRewriteInstruction(
                                 interpretation.
                               </div>
 
-                              {songwriterReferenceAnalysisRuns.length > 0 && (
-                                <div className="mb-3 rounded border border-purple-900 bg-black/20 p-3">
-                                  <div className="mb-1 text-[10px] text-purple-400">
-                                    Saved analysis run
-                                  </div>
-
-                                  <select
-                                    value={songwriterReferenceAnalysisId ?? ""}
-                                    onChange={(event) => {
-                                      const analysis =
-                                        songwriterReferenceAnalysisRuns.find(
-                                          (candidate) =>
-                                            candidate.id === event.target.value,
-                                        );
-
-                                      if (!analysis) {
-                                        return;
-                                      }
-
-                                      restoreSongwriterReferenceAnalysisRun(
-                                        analysis,
-                                      );
-                                    }}
-                                    className="max-w-full rounded border border-purple-800 bg-black px-2 py-1 text-[10px] text-purple-100"
-                                  >
-                                    {songwriterReferenceAnalysisRuns.map(
-                                      (analysis, analysisIndex) => (
-                                        <option
-                                          key={analysis.id}
-                                          value={analysis.id}
-                                        >
-                                          {analysisIndex === 0
-                                            ? "Latest · "
-                                            : ""}
-                                          {new Date(
-                                            analysis.created_at,
-                                          ).toLocaleString()}{" "}
-                                          ·{" "}
-                                          {analysis.analysis_source ===
-                                          "vocal-stem"
-                                            ? "Vocal stem"
-                                            : "Original"}{" "}
-                                          ·{" "}
-                                          {formatGeneratedAudioTime(
-                                            analysis.selection_start_seconds,
-                                          )}
-                                          {" – "}
-                                          {formatGeneratedAudioTime(
-                                            analysis.selection_end_seconds,
-                                          )}
-                                        </option>
-                                      ),
-                                    )}
-                                  </select>
-                                </div>
-                              )}
-
                               <div className="mt-3 max-h-56 overflow-auto font-mono text-[11px] leading-5 text-gray-300">
                                 {songwriterReferencePhrasePerformances.map(
                                   (phrase, index) => (
@@ -36153,25 +36092,6 @@ ${buildRewriteInstruction(
                               <div className="text-xs font-semibold text-purple-100">
                                 Candidate musical observations
                               </div>
-
-                              <canvas
-                                ref={generatedAudioWaveformCanvasRef}
-                                className="h-20 w-full cursor-pointer rounded border border-green-900 bg-green-950/40"
-                                onClick={(event) => {
-                                  if (generatedAudioDuration <= 0) {
-                                    return;
-                                  }
-
-                                  const rect =
-                                    event.currentTarget.getBoundingClientRect();
-                                  const clickPosition =
-                                    (event.clientX - rect.left) / rect.width;
-
-                                  seekGeneratedAudio(
-                                    generatedAudioDuration * clickPosition,
-                                  );
-                                }}
-                              />
 
                               <div className="mt-1 text-[11px] text-purple-300">
                                 These describe what was observed in this
@@ -36294,6 +36214,67 @@ ${buildRewriteInstruction(
                                 selectedSongwriterReferencePhraseIndex !==
                                   null && (
                                   <div className="mt-3 rounded border border-purple-400 bg-purple-950/30 p-3">
+                                    {songwriterReferenceAnalysisRuns.length >
+                                      0 && (
+                                      <div className="mb-3 rounded border border-purple-900 bg-black/20 p-3">
+                                        <div className="mb-1 text-[10px] text-purple-400">
+                                          Saved analysis run
+                                        </div>
+
+                                        <select
+                                          value={
+                                            songwriterReferenceAnalysisId ?? ""
+                                          }
+                                          onChange={(event) => {
+                                            const analysis =
+                                              songwriterReferenceAnalysisRuns.find(
+                                                (candidate) =>
+                                                  candidate.id ===
+                                                  event.target.value,
+                                              );
+
+                                            if (!analysis) {
+                                              return;
+                                            }
+
+                                            restoreSongwriterReferenceAnalysisRun(
+                                              analysis,
+                                            );
+                                          }}
+                                          className="max-w-full rounded border border-purple-800 bg-black px-2 py-1 text-[10px] text-purple-100"
+                                        >
+                                          {songwriterReferenceAnalysisRuns.map(
+                                            (analysis, analysisIndex) => (
+                                              <option
+                                                key={analysis.id}
+                                                value={analysis.id}
+                                              >
+                                                {analysisIndex === 0
+                                                  ? "Latest · "
+                                                  : ""}
+                                                {new Date(
+                                                  analysis.created_at,
+                                                ).toLocaleString()}{" "}
+                                                ·{" "}
+                                                {analysis.analysis_source ===
+                                                "vocal-stem"
+                                                  ? "Vocal stem"
+                                                  : "Original"}{" "}
+                                                ·{" "}
+                                                {formatGeneratedAudioTime(
+                                                  analysis.selection_start_seconds,
+                                                )}
+                                                {" – "}
+                                                {formatGeneratedAudioTime(
+                                                  analysis.selection_end_seconds,
+                                                )}
+                                              </option>
+                                            ),
+                                          )}
+                                        </select>
+                                      </div>
+                                    )}
+
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                       <div>
                                         <div className="text-xs font-semibold text-purple-100">
