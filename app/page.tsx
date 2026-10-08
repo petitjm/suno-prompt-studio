@@ -36250,8 +36250,9 @@ ${buildRewriteInstruction(
                                                 value={analysis.id}
                                               >
                                                 {analysisIndex === 0
-                                                  ? "Latest · "
-                                                  : ""}
+                                                  ? "Latest"
+                                                  : `Run ${songwriterReferenceAnalysisRuns.length - analysisIndex}`}{" "}
+                                                ·{" "}
                                                 {new Date(
                                                   analysis.created_at,
                                                 ).toLocaleString()}{" "}
@@ -36268,6 +36269,27 @@ ${buildRewriteInstruction(
                                                 {formatGeneratedAudioTime(
                                                   analysis.selection_end_seconds,
                                                 )}
+                                                {" · "}
+                                                {analysis.analysis_result &&
+                                                typeof analysis.analysis_result ===
+                                                  "object" &&
+                                                !Array.isArray(
+                                                  analysis.analysis_result,
+                                                ) &&
+                                                Array.isArray(
+                                                  (
+                                                    analysis.analysis_result as {
+                                                      phrasePerformances?: SongwriterReferencePhrasePerformance[];
+                                                    }
+                                                  ).phrasePerformances,
+                                                )
+                                                  ? (
+                                                      analysis.analysis_result as {
+                                                        phrasePerformances: SongwriterReferencePhrasePerformance[];
+                                                      }
+                                                    ).phrasePerformances.length
+                                                  : 0}{" "}
+                                                detected phrases
                                               </option>
                                             ),
                                           )}
