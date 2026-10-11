@@ -494,8 +494,16 @@ function getChordRootFrequencyHz(chord: string): number {
   }
 }
 
+function getChordBassNote(chord: string): string {
+  const slashBassMatch = chord.trim().match(/\/([A-G](?:#|b)?)\s*$/i);
+
+  return slashBassMatch ? slashBassMatch[1].toUpperCase() : getChordRoot(chord);
+}
+
 function getChordRootBassFrequencyHz(chord: string): number {
-  return getChordRootFrequencyHz(chord) / 4;
+  const bassNote = getChordBassNote(chord);
+
+  return getChordRootFrequencyHz(bassNote) / 4;
 }
 
 function getChordRootSemitone(chord: string): number | null {
@@ -607,6 +615,7 @@ function getVoiceLedChordFrequenciesHz({
 
 type ChordToneGuideSegment = {
   section: string;
+  chord: string;
   startSeconds: number;
   endSeconds: number;
   frequenciesHz: number[];
@@ -673,6 +682,7 @@ function getChordToneGuideSegments({
 
       return {
         section: marker.section,
+        chord: marker.chord,
         startSeconds: marker.startSeconds,
         endSeconds,
         frequenciesHz: voiceLedFrequenciesHz,
@@ -1842,8 +1852,14 @@ export function createClickTrackPcm16Samples(
       ? 60 / input.tempoBpm
       : 0;
 
-  if (secondsPerBassPulse > 0 && !bassExplicitlyDisabled) {
+  if (secondsPerBassPulse > 0) {
     for (const segment of chordToneGuideSegments) {
+      const hasExplicitSlashBass = /\/[A-G](?:#|b)?\s*$/i.test(segment.chord);
+
+      if (bassExplicitlyDisabled && !hasExplicitSlashBass) {
+        continue;
+      }
+
       const sectionLevel = isMusicalGuideMix
         ? getMusicalGuideSectionLevel({
             input,
@@ -1854,11 +1870,9 @@ export function createClickTrackPcm16Samples(
       const bassStepSeconds = isMusicalGuideMix
         ? segment.endSeconds - segment.startSeconds + 0.001
         : secondsPerBassPulse;
-      const bassPulseDurationSeconds = Math.min(
-        secondsPerBassPulse * 0.72,
-        bassStepSeconds * 0.82,
-      );
-
+      const bassPulseDurationSeconds = isMusicalGuideMix
+        ? bassStepSeconds * 0.82
+        : Math.min(secondsPerBassPulse * 0.72, bassStepSeconds * 0.82);
       let pulseIndex = 0;
 
       for (
@@ -1901,6 +1915,9 @@ export function createClickTrackPcm16Samples(
           humanisedBassStartSeconds + bassPulseDurationSeconds,
         );
 
+        if (segment.startSeconds < 12) {
+        }
+
         addWarmToneToSamples({
           samples,
           startSample: Math.round(
@@ -1910,8 +1927,8 @@ export function createClickTrackPcm16Samples(
           sampleRateHz: input.sampleRateHz,
           amplitude: humanisedBassAmplitude,
           frequencyHz: segment.bassFrequencyHz * bassFrequencyMultiplier,
-          secondHarmonicLevel: 0.18,
-          thirdHarmonicLevel: 0.05,
+          secondHarmonicLevel: 0.45,
+          thirdHarmonicLevel: 0.18,
           fadeInSeconds: 0.025,
           fadeOutSeconds: 0.16,
         });
@@ -2003,12 +2020,12 @@ export function createClickTrackPcm16Samples(
         startSample: Math.round(noteStartSeconds * input.sampleRateHz),
         endSample: Math.round(noteEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
-        amplitude: Math.round(melodyAmplitude),
+        amplitude: melodyAmplitude,
         frequencyHz,
-        secondHarmonicLevel: 0.24,
-        thirdHarmonicLevel: 0.06,
-        fadeInSeconds: melodyFadeInSeconds,
-        fadeOutSeconds: melodyFadeOutSeconds,
+        secondHarmonicLevel: 0.8,
+        thirdHarmonicLevel: 0.35,
+        fadeInSeconds: 0.008,
+        fadeOutSeconds: 0.045,
       });
     }
   }

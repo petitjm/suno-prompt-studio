@@ -437,6 +437,7 @@ ${JSON.stringify(chordData, null, 2)}
 Return this exact JSON shape:
 
     {
+        "key": "Am",
       "musicalTimingPlan": {
         "sections": [
           {
@@ -470,7 +471,11 @@ Return this exact JSON shape:
 
 Requirements:
 - Do not return lyric text.
-- Keep JSON compact. Return only musicalTimingPlan, songSheetLineRefs, and songsheetNotes at the top level.
+- Keep JSON compact. Return only key, musicalTimingPlan, songSheetLineRefs, and songsheetNotes at the top level.
+- key is metadata only. Infer the most likely tonal centre from the supplied existing harmony.
+- Do not change, replace, add, remove, or reharmonize chords in order to make them fit the inferred key.
+- Prefer the key that best explains the progression, recurring cadences, harmonic emphasis, section endings, and overall tonal centre.
+- Distinguish relative major/minor keys from the actual harmonic centre rather than choosing one merely because they share the same notes.
 - Within songSheetLineRefs, use only section, lineNumber, and chords.
 - For sung lyric rows, use lineNumber to refer to the numbered source sung lyric lines.
 - For sung lyric rows, lineNumber must be the 1-based number from the source lyric list.

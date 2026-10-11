@@ -60,7 +60,7 @@ function shouldHoldForMelodyMovement(
     return !isGestureAnchor && phraseNoteIndex % 3 !== 0;
   }
 
-  return !isGestureAnchor && phraseNoteIndex % 2 === 1;
+  return !isGestureAnchor;
 }
 
 function getSectionContourDirection(
@@ -132,11 +132,13 @@ function getRenderedMelodyDurationMultiplier(
   weight: number,
   isFinalWordInPhrase: boolean,
 ) {
-  const baseMultiplier = isFinalWordInPhrase ? 0.94 : 0.88;
+  const baseMultiplier = isFinalWordInPhrase ? 0.76 : 0.88;
 
   const weightAdjustment = Math.max(-0.06, Math.min(0.04, (weight - 1) * 0.04));
 
-  return Math.max(0.78, Math.min(0.98, baseMultiplier + weightAdjustment));
+  return isFinalWordInPhrase
+    ? Math.max(0.68, Math.min(0.82, baseMultiplier + weightAdjustment))
+    : Math.max(0.78, Math.min(0.94, baseMultiplier + weightAdjustment));
 }
 
 function getPitchCandidates(
@@ -454,7 +456,13 @@ export function buildInitialMelodyContours({
   character?: MelodyCharacter;
   sectionIntents?: MelodySectionIntent[];
 }): MelodyPhrase[] {
-  const establishedMotifs = new Map<string, ContourDirection[]>();
+  const establishedMotifs = new Map<
+    string,
+    {
+      contourIntent: MelodyPhrase["contourIntent"];
+      contourSequence: ContourDirection[];
+    }
+  >();
 
   let previousPhraseEndPitch: number | null = null;
   let previousPhraseSectionInstanceId: string | null | undefined;
@@ -534,7 +542,24 @@ export function buildInitialMelodyContours({
       frameworkPhrase,
       sectionPhraseIndex,
     );
-    const establishedContourSequence = establishedMotifs.get(motifKey);
+    const establishedMotif = establishedMotifs.get(motifKey);
+
+    const establishedContourSequence =
+      establishedMotif &&
+      establishedMotif.contourIntent === anchorPhrase.contourIntent
+        ? establishedMotif.contourSequence
+        : undefined;
+
+    if (establishedMotif) {
+      console.log("[melody] motif reuse candidate", {
+        phraseIndex,
+        section: anchorPhrase.section,
+        motifKey,
+        currentContourIntent: anchorPhrase.contourIntent,
+        establishedContourIntent: establishedMotif.contourIntent,
+        reused: Boolean(establishedContourSequence),
+      });
+    }
 
     if (
       establishedContourSequence &&
@@ -628,10 +653,7 @@ export function buildInitialMelodyContours({
             isFinalWordInUnit;
 
           const basePreferWiderStep =
-            isGesturePivot ||
-            entersAfterRhythmicSpace ||
-            harmonyChanged ||
-            isFinalWordInPhrase;
+            isGesturePivot || entersAfterRhythmicSpace || harmonyChanged;
 
           const preferWiderStep =
             !isFinalWordInPhrase && anchorPhrase.emphasisIntent === "restrained"
@@ -831,10 +853,7 @@ export function buildInitialMelodyContours({
           isFinalWordInUnit;
 
         const basePreferWiderStep =
-          isGesturePivot ||
-          entersAfterRhythmicSpace ||
-          harmonyChanged ||
-          isFinalWordInPhrase;
+          isGesturePivot || entersAfterRhythmicSpace || harmonyChanged;
 
         const preferWiderStep =
           !isFinalWordInPhrase && anchorPhrase.emphasisIntent === "restrained"
@@ -953,8 +972,11 @@ export function buildInitialMelodyContours({
       });
     });
 
-    if (!establishedContourSequence) {
-      establishedMotifs.set(motifKey, getMelodyContourSequence(notes));
+    if (!establishedMotif) {
+      establishedMotifs.set(motifKey, {
+        contourIntent: anchorPhrase.contourIntent,
+        contourSequence: getMelodyContourSequence(notes),
+      });
     }
 
     if (notes.length > 0) {

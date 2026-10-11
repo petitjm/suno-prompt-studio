@@ -331,6 +331,14 @@ export async function POST(req: Request) {
 
   const melodyNotes = getMelodyNotes(bodyRecord?.melodyNotes);
 
+  console.log("[real-render] melody input", {
+    receivedCount: Array.isArray(bodyRecord?.melodyNotes)
+      ? bodyRecord.melodyNotes.length
+      : 0,
+    usableCount: melodyNotes.length,
+    firstNotes: melodyNotes.slice(0, 8),
+  });
+
   const requestedTarget =
     getString(bodyRecord?.requestedTarget) ||
     (isRecord(firstRealRenderPlan)

@@ -476,6 +476,8 @@ export default function Page() {
     useState(false);
   const [generatingGuideTrackPlan, setGeneratingGuideTrackPlan] =
     useState(false);
+  const [generatingChordTimingPlans, setGeneratingChordTimingPlans] =
+    useState(false);
   const [makeSongStage, setMakeSongStage] = useState<
     | "idle"
     | "chords"
@@ -956,7 +958,8 @@ export default function Page() {
     useState(false);
 
   const musicalGuideMixStorageKey =
-    "suno-prompt-studio-musical-guide-mix-levels-v5";
+    "suno-prompt-studio-musical-guide-mix-levels-v6";
+
   const [musicalGuideMixLevels, setMusicalGuideMixLevels] = useState({
     click: 0.3,
     section: 0.45,
@@ -964,7 +967,7 @@ export default function Page() {
     pad: 0.28,
     arpeggio: 0.7,
     bass: 0.42,
-    melody: 0.6,
+    melody: 1.6,
   });
 
   useEffect(() => {
@@ -11019,6 +11022,10 @@ export default function Page() {
     setRealRenderRouteTestResponse(null);
 
     try {
+      const melodyNotesForRender = initialMelodyContours.flatMap(
+        (phrase) => phrase.notes,
+      );
+
       const response = await fetch("/api/audio-preview/real-render", {
         method: "POST",
         headers: {
@@ -22808,6 +22815,25 @@ export default function Page() {
 
   const chordTimingPlanIsValid = musicalTimingPlanValidationIssues.length === 0;
 
+  const currentChordDataForTiming = getChordDataFromEditorJson();
+
+  const currentChordRecordForTiming =
+    currentChordDataForTiming &&
+    typeof currentChordDataForTiming === "object" &&
+    !Array.isArray(currentChordDataForTiming)
+      ? (currentChordDataForTiming as Record<string, unknown>)
+      : null;
+
+  const hasLyricTimingPlan = Boolean(
+    currentChordRecordForTiming?.lyricTimingPlan,
+  );
+
+  const hasWordRhythmPlan = Boolean(
+    currentChordRecordForTiming?.wordRhythmPlan,
+  );
+
+  const hasCompleteVocalTiming = hasLyricTimingPlan && hasWordRhythmPlan;
+
   const chordTimingCanBeMarkedComplete = Boolean(
     musicalTimingProvenance &&
     getChordDataFromEditorJson() &&
@@ -23275,6 +23301,283 @@ export default function Page() {
       return null;
     } finally {
       setGeneratingGuideTrackPlan(false);
+    }
+  };
+
+  const generateTimingForCurrentChordDraft = async () => {
+    const chordData = getUsableChordDataFromEditor();
+
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      setChordExtractionMessage(
+        "Chord data is required before generating vocal timing.",
+      );
+      return null;
+    }
+
+    const chordRecord = chordData as Record<string, unknown>;
+
+    if (chordRecord.lyricTimingPlan && chordRecord.wordRhythmPlan) {
+      return chordData;
+    }
+
+    setChordExtractionMessage("Generating vocal phrase and word timing...");
+
+    try {
+      const response = await fetch("/api/chords", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lyrics: performanceSheet,
+          tempoBpm: previewTempo,
+          songTitle: activeProject?.title || "",
+          songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+          songCreativeProfile,
+          resumeChordData: chordData,
+        }),
+      });
+
+      const result = await readJsonSafe(response);
+
+      console.log("[chord-timing] response", {
+        ok: response.ok,
+        status: response.status,
+        hasLyricTimingPlan: Boolean(result?.lyricTimingPlan),
+        hasWordRhythmPlan: Boolean(result?.wordRhythmPlan),
+        hasResumeChordData: Boolean(result?.resumeChordData),
+        error: typeof result?.error === "string" ? result.error : null,
+      });
+
+      if (!response.ok) {
+        setChordExtractionMessage(
+          typeof result?.error === "string"
+            ? result.error
+            : "Could not generate vocal timing.",
+        );
+
+        return null;
+      }
+
+      setChords(result);
+      setChordsText(JSON.stringify(result, null, 2));
+      setActiveChordVersionId(null);
+      setLastAppliedTransposeSnapshot(null);
+      resetAudioPreviewRequestState();
+
+      setChordExtractionMessage("Vocal phrase and word timing generated.");
+
+      return result;
+    } catch {
+      setChordExtractionMessage(
+        "Could not generate vocal phrase and word timing.",
+      );
+
+      return null;
+    }
+  };
+
+  const generateChordTimingPlans = async () => {
+    console.log("[chord-timing] helper entered");
+    if (!performanceSheet.trim()) {
+      setChordExtractionMessage(
+        "Add the current song before generating vocal timing.",
+      );
+      return null;
+    }
+
+    const chordData = getUsableChordDataFromEditor();
+
+    if (
+      !chordData ||
+      typeof chordData !== "object" ||
+      Array.isArray(chordData)
+    ) {
+      setChordExtractionMessage(
+        "Fit the chords before generating vocal timing.",
+      );
+      return null;
+    }
+
+    const chordRecord = chordData as Record<string, unknown>;
+
+    const fittedSongSheetLines = getPlacedSongSheetLines(chordData);
+
+    const sectionIndexByLabel = new Map<string, number>();
+    const nextEventIndexBySection = new Map<string, number>();
+
+    const indexedSongSheetLines = fittedSongSheetLines.map((line) => {
+      const section = line.section.trim();
+
+      let sectionIndex = sectionIndexByLabel.get(section);
+
+      if (sectionIndex === undefined) {
+        sectionIndex = sectionIndexByLabel.size;
+        sectionIndexByLabel.set(section, sectionIndex);
+      }
+
+      const indexedChords = line.chords.map((placement) => {
+        const eventIndex = nextEventIndexBySection.get(section) ?? 0;
+
+        nextEventIndexBySection.set(section, eventIndex + 1);
+
+        return {
+          ...placement,
+          sectionIndex,
+          eventIndex,
+        };
+      });
+
+      return {
+        ...line,
+        sectionIndex,
+        chords: indexedChords,
+      };
+    });
+
+    const derivedHarmonicTimeline = Array.from(
+      indexedSongSheetLines
+        .reduce(
+          (timeline, line) => {
+            if (!line.section || line.chords.length === 0) {
+              return timeline;
+            }
+
+            let sectionTimeline = timeline.get(line.section);
+
+            if (!sectionTimeline) {
+              sectionTimeline = {
+                section: line.section,
+                events: [],
+              };
+
+              timeline.set(line.section, sectionTimeline);
+            }
+
+            line.chords.forEach((placement) => {
+              if (
+                typeof placement.bar !== "number" ||
+                !Number.isFinite(placement.bar) ||
+                typeof placement.beat !== "number" ||
+                !Number.isFinite(placement.beat)
+              ) {
+                return;
+              }
+
+              sectionTimeline.events.push({
+                chord: placement.chord,
+                bar: placement.bar,
+                beat: placement.beat,
+              });
+            });
+
+            return timeline;
+          },
+          new Map<
+            string,
+            {
+              section: string;
+              events: Array<{
+                chord: string;
+                bar: number;
+                beat: number;
+              }>;
+            }
+          >(),
+        )
+        .values(),
+    ).filter((section) => section.events.length > 0);
+
+    const timingResumeChordData = {
+      ...chordRecord,
+      songSheetLines: indexedSongSheetLines,
+      harmonicTimeline:
+        Array.isArray(chordRecord.harmonicTimeline) &&
+        chordRecord.harmonicTimeline.length > 0
+          ? chordRecord.harmonicTimeline
+          : derivedHarmonicTimeline,
+    };
+
+    if (chordRecord.lyricTimingPlan && chordRecord.wordRhythmPlan) {
+      setChordExtractionMessage(
+        "Vocal phrase timing and word rhythm are already available.",
+      );
+      return chordData;
+    }
+
+    setGeneratingChordTimingPlans(true);
+    setChordExtractionMessage(
+      "Generating vocal phrase timing and word rhythm...",
+    );
+    setProjectMessage("");
+
+    try {
+      console.log("[chord-timing] starting /api/chords request");
+      const response = await fetch("/api/chords", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lyrics: performanceSheet,
+          tempoBpm: previewTempo,
+          songTitle: activeProject?.title || "",
+          songVersionTitle: activeSongVersion?.title || songVersionTitle || "",
+          songCreativeProfile,
+          resumeChordData: timingResumeChordData,
+        }),
+      });
+
+      const result = await readJsonSafe(response);
+
+      console.log("[chord-timing] response", {
+        ok: response.ok,
+        status: response.status,
+        hasLyricTimingPlan: Boolean(result?.lyricTimingPlan),
+        hasWordRhythmPlan: Boolean(result?.wordRhythmPlan),
+        hasResumeChordData: Boolean(result?.resumeChordData),
+        error: typeof result?.error === "string" ? result.error : null,
+      });
+
+      if (!response.ok) {
+        setChordExtractionMessage(
+          typeof result?.error === "string"
+            ? result.error
+            : "Could not generate vocal timing.",
+        );
+
+        return null;
+      }
+
+      setChords(result as ChordResponse);
+      setChordsText(JSON.stringify(result, null, 2));
+
+      setReviewedChordTimingSignature(null);
+      setActiveChordVersionId(null);
+      setLastAppliedTransposeSnapshot(null);
+      resetAudioPreviewRequestState();
+
+      setChordExtractionMessage(
+        "Vocal phrase timing and word rhythm generated. Review the timing before confirming.",
+      );
+
+      return result;
+    } catch (error) {
+      console.error("[chord-timing] request failed", error);
+
+      setChordExtractionMessage(
+        error instanceof Error
+          ? `Could not generate vocal timing: ${error.message}`
+          : "Could not generate vocal timing.",
+      );
+
+      return null;
+    } finally {
+      setGeneratingChordTimingPlans(false);
     }
   };
 
@@ -24470,10 +24773,37 @@ export default function Page() {
         }
 
         if (makeSongStage === "guide") {
-          const chordData = getChordDataFromEditorJson();
+          let chordData = getChordDataFromEditorJson();
 
           if (!chordData) {
             throw new Error("No chord data is available for the guide plan.");
+          }
+
+          const chordRecord =
+            typeof chordData === "object" &&
+            chordData !== null &&
+            !Array.isArray(chordData)
+              ? (chordData as Record<string, unknown>)
+              : null;
+
+          const hasMelodyTiming =
+            Boolean(chordRecord?.lyricTimingPlan) &&
+            Boolean(chordRecord?.wordRhythmPlan);
+
+          if (!hasMelodyTiming) {
+            setMakeSongStatusMessage(
+              "Creating vocal phrase and word timing for the melody...",
+            );
+
+            const timedChordData = await generateTimingForCurrentChordDraft();
+
+            if (!timedChordData) {
+              throw new Error(
+                "Vocal timing generation failed. Melody cannot be created without lyricTimingPlan and wordRhythmPlan.",
+              );
+            }
+
+            chordData = timedChordData;
           }
 
           const placedLines = getPlacedSongSheetLines(chordData);
@@ -27986,6 +28316,61 @@ ${buildRewriteInstruction(
                                     {musicalTimingProvenance.detail}
                                   </div>
                                 )}
+
+                                <div className="mt-3 rounded border border-yellow-900/50 bg-black/20 p-3">
+                                  <div className="text-xs font-semibold text-yellow-100">
+                                    Vocal timing
+                                  </div>
+
+                                  <div className="mt-2 space-y-1 text-xs">
+                                    <div
+                                      className={
+                                        hasLyricTimingPlan
+                                          ? "text-green-200"
+                                          : "text-yellow-200"
+                                      }
+                                    >
+                                      {hasLyricTimingPlan ? "✓" : "○"} Phrase
+                                      timing
+                                    </div>
+
+                                    <div
+                                      className={
+                                        hasWordRhythmPlan
+                                          ? "text-green-200"
+                                          : "text-yellow-200"
+                                      }
+                                    >
+                                      {hasWordRhythmPlan ? "✓" : "○"} Word
+                                      rhythm
+                                    </div>
+                                  </div>
+
+                                  {!hasCompleteVocalTiming && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        void generateChordTimingPlans();
+                                      }}
+                                      disabled={
+                                        generatingChordTimingPlans ||
+                                        processedPreviewHasAlignmentIssue ||
+                                        processedPreviewSourceAlignmentIsChecking
+                                      }
+                                      className="mt-3 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                                    >
+                                      {generatingChordTimingPlans
+                                        ? "Generating vocal timing..."
+                                        : "Generate vocal timing"}
+                                    </button>
+                                  )}
+
+                                  {hasCompleteVocalTiming && (
+                                    <div className="mt-2 text-xs text-green-200">
+                                      ✓ Melody timing data is ready.
+                                    </div>
+                                  )}
+                                </div>
 
                                 {musicalTimingPlanValidationIssues.length >
                                   0 && (
