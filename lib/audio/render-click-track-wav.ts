@@ -1915,9 +1915,6 @@ export function createClickTrackPcm16Samples(
           humanisedBassStartSeconds + bassPulseDurationSeconds,
         );
 
-        if (segment.startSeconds < 12) {
-        }
-
         addWarmToneToSamples({
           samples,
           startSample: Math.round(

@@ -1139,7 +1139,7 @@ export default function Page() {
 
     const gainValue = Math.min(0.12, 0.045 * level);
 
-    if (key === "click") {
+            if (key === "click") {
       playMusicalGuideToneAudition({
         frequencyHz: 1800,
         startSeconds: 0,
@@ -1217,12 +1217,12 @@ export default function Page() {
       return;
     }
 
-    playMusicalGuideToneAudition({
+        playMusicalGuideToneAudition({
       frequencyHz: 130.81,
       startSeconds: 0,
-      durationSeconds: 0.35,
-      gainValue: gainValue * 1.2,
-      waveform: "sine",
+      durationSeconds: 0.75,
+      gainValue,
+      waveform: "triangle",
     });
   };
 
