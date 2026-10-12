@@ -7141,11 +7141,6 @@ export default function Page() {
       }
 
       const referencePitches =
-        (typeof phrase.sourceLineIndex === "number"
-          ? songwriterReferencePitchSequenceByLyricLine.get(
-              phrase.sourceLineIndex,
-            )
-          : undefined) ??
         songwriterReferencePitchSequenceByLyricText.get(
           normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
         );
