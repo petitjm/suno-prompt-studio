@@ -1853,12 +1853,38 @@ export function createClickTrackPcm16Samples(
       : 0;
 
   if (secondsPerBassPulse > 0) {
-    for (const segment of chordToneGuideSegments) {
-      const hasExplicitSlashBass = /\/[A-G](?:#|b)?\s*$/i.test(segment.chord);
+      for (
+        let segmentIndex = 0;
+        segmentIndex < chordToneGuideSegments.length;
+        segmentIndex += 1
+      ) {
+        const segment = chordToneGuideSegments[segmentIndex];
 
-      if (bassExplicitlyDisabled && !hasExplicitSlashBass) {
-        continue;
-      }
+        const hasExplicitSlashBass =
+          /\/[A-G](?:#|b)?\s*$/i.test(segment.chord);
+
+        const previousSegment =
+          segmentIndex > 0
+            ? chordToneGuideSegments[segmentIndex - 1]
+            : null;
+
+        const previousHasExplicitSlashBass = previousSegment
+          ? /\/[A-G](?:#|b)?\s*$/i.test(previousSegment.chord)
+          : false;
+
+        const resolvesSlashBass =
+          !hasExplicitSlashBass &&
+          previousHasExplicitSlashBass &&
+          previousSegment?.section === segment.section &&
+          getChordRoot(previousSegment.chord) === getChordRoot(segment.chord);
+
+    if (
+      bassExplicitlyDisabled &&
+      !hasExplicitSlashBass &&
+      !resolvesSlashBass
+    ) {
+      continue;
+    }
 
       const sectionLevel = isMusicalGuideMix
         ? getMusicalGuideSectionLevel({

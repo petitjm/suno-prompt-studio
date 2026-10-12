@@ -1053,12 +1053,10 @@ export default function Page() {
 
     const nextValue = Math.max(0, Math.min(2, value));
 
-    setMusicalGuideMixLevels((currentLevels) => ({
+        setMusicalGuideMixLevels((currentLevels) => ({
       ...currentLevels,
       [key]: nextValue,
     }));
-
-    resetGeneratedAudioState();
   };
 
   const getMusicalGuideAuditionAudioContext = () => {
