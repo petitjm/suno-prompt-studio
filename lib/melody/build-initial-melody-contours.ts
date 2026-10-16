@@ -132,13 +132,13 @@ function getRenderedMelodyDurationMultiplier(
   weight: number,
   isFinalWordInPhrase: boolean,
 ) {
-  const baseMultiplier = isFinalWordInPhrase ? 0.76 : 0.88;
+  const baseMultiplier = isFinalWordInPhrase ? 0.9 : 0.88;
 
   const weightAdjustment = Math.max(-0.06, Math.min(0.04, (weight - 1) * 0.04));
 
   return isFinalWordInPhrase
-    ? Math.max(0.68, Math.min(0.82, baseMultiplier + weightAdjustment))
-    : Math.max(0.78, Math.min(0.94, baseMultiplier + weightAdjustment));
+  ? Math.max(0.82, Math.min(0.96, baseMultiplier + weightAdjustment))
+  : Math.max(0.78, Math.min(0.94, baseMultiplier + weightAdjustment));
 }
 
 function getPitchCandidates(

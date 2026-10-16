@@ -6,11 +6,18 @@ import { buildMelodyPhraseScaffoldFromGuideSections } from "@/lib/melody/build-m
 
 import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
 
+import {
+  inspectSongwriterReferenceNoteOctaves,
+  buildReconciledSongwriterReferenceTrace,
+} from "@/lib/melody/reconcile-songwriter-reference-note-octaves";
+
 import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
 
 import { buildMelodySectionIntentTargets } from "@/lib/melody/build-section-intent-targets";
 
 import { buildInitialMelodyContours } from "@/lib/melody/build-initial-melody-contours";
+
+import { buildArticulatedMelodyNotes } from "@/lib/melody/build-articulated-melody-notes";
 
 import { buildLyricPhraseUnits } from "@/lib/melody/build-lyric-phrase-units";
 
@@ -1053,7 +1060,7 @@ export default function Page() {
 
     const nextValue = Math.max(0, Math.min(2, value));
 
-        setMusicalGuideMixLevels((currentLevels) => ({
+    setMusicalGuideMixLevels((currentLevels) => ({
       ...currentLevels,
       [key]: nextValue,
     }));
@@ -1137,7 +1144,7 @@ export default function Page() {
 
     const gainValue = Math.min(0.12, 0.045 * level);
 
-            if (key === "click") {
+    if (key === "click") {
       playMusicalGuideToneAudition({
         frequencyHz: 1800,
         startSeconds: 0,
@@ -1215,7 +1222,7 @@ export default function Page() {
       return;
     }
 
-        playMusicalGuideToneAudition({
+    playMusicalGuideToneAudition({
       frequencyHz: 130.81,
       startSeconds: 0,
       durationSeconds: 0.75,
@@ -2070,6 +2077,90 @@ export default function Page() {
     drawSongwriterReferenceWaveform(0);
   };
 
+  const inspectSongwriterReferenceFundamental = ({
+    frame,
+    sampleRate,
+    detectedFrequencyHz,
+  }: {
+    frame: Float32Array;
+    sampleRate: number;
+    detectedFrequencyHz: number;
+  }) => {
+    const measureEnergyAtFrequency = (frequencyHz: number) => {
+      if (
+        !Number.isFinite(frequencyHz) ||
+        frequencyHz < 60 ||
+        frequencyHz >= sampleRate / 2
+      ) {
+        return 0;
+      }
+
+      let real = 0;
+      let imaginary = 0;
+
+      for (let index = 0; index < frame.length; index += 1) {
+        const windowValue =
+          0.5 - 0.5 * Math.cos((2 * Math.PI * index) / (frame.length - 1));
+
+        const sample = frame[index] * windowValue;
+        const phase = (2 * Math.PI * frequencyHz * index) / sampleRate;
+
+        real += sample * Math.cos(phase);
+        imaginary -= sample * Math.sin(phase);
+      }
+
+      return Math.hypot(real, imaginary);
+    };
+
+    const detectedEnergy = measureEnergyAtFrequency(detectedFrequencyHz);
+
+    return [1, 2, 3, 4]
+      .map((divisor) => {
+        const fundamentalHz = detectedFrequencyHz / divisor;
+
+        if (fundamentalHz < 60) {
+          return null;
+        }
+
+        const harmonicEnergies = [1, 2, 3, 4].map((harmonic) =>
+          measureEnergyAtFrequency(fundamentalHz * harmonic),
+        );
+
+        const fundamentalEnergy = harmonicEnergies[0];
+
+        // Harmonics that are not integer multiples of the original
+        // detected frequency provide independent evidence for a
+        // lower fundamental.
+        const independentHarmonics = harmonicEnergies
+          .map((energy, index) => ({
+            harmonic: index + 1,
+            energy,
+          }))
+          .filter(({ harmonic }) => harmonic % divisor !== 0);
+
+        const independentEnergy = independentHarmonics.reduce(
+          (total, harmonic) => total + harmonic.energy,
+          0,
+        );
+
+        const independentSupportRatio =
+          detectedEnergy > 0 ? independentEnergy / detectedEnergy : 0;
+
+        return {
+          divisor,
+          fundamentalHz: Number(fundamentalHz.toFixed(2)),
+          fundamentalEnergy: Number(fundamentalEnergy.toFixed(3)),
+          detectedEnergy: Number(detectedEnergy.toFixed(3)),
+          independentHarmonicCount: independentHarmonics.length,
+          independentSupportRatio: Number(independentSupportRatio.toFixed(3)),
+          harmonicEnergies: harmonicEnergies.map((energy) =>
+            Number(energy.toFixed(3)),
+          ),
+        };
+      })
+      .filter((candidate) => candidate !== null);
+  };
+
   const getContinuityCorrectedPitch = ({
     frequencyHz,
     recentReliablePitches,
@@ -2100,6 +2191,8 @@ export default function Page() {
       frequencyHz * 2,
       frequencyHz / 3,
       frequencyHz * 3,
+      frequencyHz / 4,
+      frequencyHz * 4,
     ].filter(
       (candidate) =>
         Number.isFinite(candidate) && candidate >= 60 && candidate <= 1200,
@@ -3724,7 +3817,7 @@ export default function Page() {
       const sampleRate = audioBuffer.sampleRate;
       const channelData = audioBuffer.getChannelData(0);
 
-      const frameSize = 2048;
+      const frameSize = 4096;
       const hopSize = 512;
 
       const detector = PitchDetector.forFloat32Array(frameSize);
@@ -3741,6 +3834,12 @@ export default function Page() {
       let processedFrames = 0;
       const recentReliablePitches: number[] = [];
       let consecutiveUnvoicedFrames = 0;
+
+      // Sampled harmonic evidence used by note-level octave reconciliation.
+      const octaveProposalFrames: Array<{
+        timeSeconds: number;
+        harmonicEvidenceSupportsRawPitch: boolean | null;
+      }> = [];
 
       for (
         let frameStart = startSample;
@@ -3779,6 +3878,34 @@ export default function Page() {
               })
             : null;
 
+        if (rawFrequencyHz !== null && processedFrames % 10 === 0) {
+          const fundamentalCandidates = inspectSongwriterReferenceFundamental({
+            frame,
+            sampleRate,
+            detectedFrequencyHz: rawFrequencyHz,
+          });
+
+          const rawPitchEvidence = fundamentalCandidates.find(
+            (candidate) => candidate.divisor === 1,
+          );
+
+          const harmonicEnergies = rawPitchEvidence?.harmonicEnergies ?? [];
+
+          const fundamentalEnergy = harmonicEnergies[0] ?? 0;
+          const secondHarmonicEnergy = harmonicEnergies[1] ?? 0;
+          const thirdHarmonicEnergy = harmonicEnergies[2] ?? 0;
+
+          const harmonicEvidenceSupportsRawPitch =
+            fundamentalEnergy >= 1 &&
+            secondHarmonicEnergy >= fundamentalEnergy * 0.25 &&
+            thirdHarmonicEnergy >= fundamentalEnergy * 0.15;
+
+          octaveProposalFrames.push({
+            timeSeconds: relativeTimeSeconds,
+            harmonicEvidenceSupportsRawPitch,
+          });
+        }
+
         trace.push({
           timeSeconds: relativeTimeSeconds,
           frequencyHz: rawFrequencyHz,
@@ -3816,23 +3943,41 @@ export default function Page() {
         }
       }
 
-      setSongwriterReferenceTrace(trace);
       setSongwriterReferenceAnalysedSource(analysisSource);
       setSongwriterReferenceAnalysedSourceId(analysisSourceId);
       const noteCandidates = buildSongwriterReferenceNoteCandidates(trace);
 
-      setSongwriterReferenceNoteCandidates(noteCandidates);
+      const noteOctaveEvidence = inspectSongwriterReferenceNoteOctaves({
+        trace,
+        candidates: noteCandidates,
+        harmonicEvidence: octaveProposalFrames,
+      });
+
+      const finalSongwriterReferenceTrace =
+        buildReconciledSongwriterReferenceTrace({
+          trace,
+          evidence: noteOctaveEvidence,
+        });
+
+      const finalSongwriterReferenceNoteCandidates =
+        buildSongwriterReferenceNoteCandidates(finalSongwriterReferenceTrace);
+
+      setSongwriterReferenceTrace(finalSongwriterReferenceTrace);
+
+      setSongwriterReferenceNoteCandidates(
+        finalSongwriterReferenceNoteCandidates,
+      );
 
       const expressiveEvents = buildSongwriterReferenceExpressiveEvents(
-        noteCandidates,
-        trace,
+        finalSongwriterReferenceNoteCandidates,
+        finalSongwriterReferenceTrace,
       );
 
       setSongwriterReferenceExpressiveEvents(expressiveEvents);
 
       const phrasePerformances = buildSongwriterReferencePhrasePerformances({
-        trace,
-        candidates: noteCandidates,
+        trace: finalSongwriterReferenceTrace,
+        candidates: finalSongwriterReferenceNoteCandidates,
         selectionStartSeconds: selectionStart,
       });
 
@@ -3867,6 +4012,21 @@ export default function Page() {
         );
       }
 
+      const octaveReconciliationProvenance = {
+        method: "note-level-harmonic-reconciliation",
+        version: 1,
+        appliedCorrections: noteOctaveEvidence
+          .filter((item) => item.proposedMidiNote !== null)
+          .map((item) => ({
+            startSeconds: item.startSeconds,
+            endSeconds: item.endSeconds,
+            originalMidiNote: item.midiNote,
+            reconciledMidiNote: item.proposedMidiNote,
+            rawLowerOctaveRatio: item.lowerOctaveRatio,
+            harmonicSupportRatio: item.harmonicSupportRatio,
+          })),
+      };
+
       const analysisId = crypto.randomUUID();
 
       const { error: analysisRecordError } = await supabase
@@ -3880,11 +4040,12 @@ export default function Page() {
           selection_start_seconds: selectionStart,
           selection_end_seconds: selectionEnd,
           analysis_result: {
-            trace,
-            noteCandidates,
+            trace: finalSongwriterReferenceTrace,
+            noteCandidates: finalSongwriterReferenceNoteCandidates,
             expressiveEvents,
             phrasePerformances,
             musicalObservations,
+            octaveReconciliation: octaveReconciliationProvenance,
             sourceStructureSignature:
               songwriterReferenceSourceStructureSignature,
           },
@@ -3906,11 +4067,12 @@ export default function Page() {
           selection_start_seconds: selectionStart,
           selection_end_seconds: selectionEnd,
           analysis_result: {
-            trace,
-            noteCandidates,
+            trace: finalSongwriterReferenceTrace,
+            noteCandidates: finalSongwriterReferenceNoteCandidates,
             expressiveEvents,
             phrasePerformances,
             musicalObservations,
+            octaveReconciliation: octaveReconciliationProvenance,
             sourceStructureSignature:
               songwriterReferenceSourceStructureSignature,
           },
@@ -3929,7 +4091,7 @@ export default function Page() {
         `Analysed ${(selectionEnd - selectionStart).toFixed(
           1,
         )} seconds of songwriter reference: ${voicedFrames} voiced frames, ${
-          noteCandidates.length
+          finalSongwriterReferenceNoteCandidates.length
         } note candidates, ${
           expressiveEvents.length
         } interpreted performance events. This is a new analysis run; its lyric-fragment relationships start unreviewed. Reviews from earlier analysis runs remain preserved with those runs.`,
@@ -6999,6 +7161,70 @@ export default function Page() {
     melodyVersionData?.sectionIntents,
   );
 
+  console.table(
+    lyricWordTimings
+      .filter((group) =>
+        (group.sourceLyric || "").toLowerCase().includes("for-ever"),
+      )
+      .flatMap((group) =>
+        group.units.flatMap((unit) =>
+          unit.words.map((word) => ({
+            lyric: group.sourceLyric,
+            unit: unit.text,
+            word: word.word,
+            startSeconds: word.startSeconds,
+            endSeconds: word.endSeconds,
+            durationSeconds: word.durationSeconds,
+            weight: word.weight,
+          })),
+        ),
+      ),
+  );
+
+  const forEverRhythmEntries =
+    melodyWordTimingContext.wordRhythmPlan &&
+    typeof melodyWordTimingContext.wordRhythmPlan === "object" &&
+    "words" in melodyWordTimingContext.wordRhythmPlan &&
+    Array.isArray(melodyWordTimingContext.wordRhythmPlan.words)
+      ? melodyWordTimingContext.wordRhythmPlan.words.filter(
+          (entry: unknown) =>
+            entry !== null &&
+            typeof entry === "object" &&
+            "word" in entry &&
+            typeof entry.word === "string" &&
+            entry.word.toLowerCase().includes("for-ever"),
+        )
+      : [];
+
+  console.log(
+    "[melody] for-ever original rhythm entries",
+    JSON.stringify(forEverRhythmEntries, null, 2),
+  );
+
+  const wordTimingPlanRecord =
+    melodyWordTimingContext.wordRhythmPlan &&
+    typeof melodyWordTimingContext.wordRhythmPlan === "object"
+      ? melodyWordTimingContext.wordRhythmPlan
+      : null;
+
+  console.log("[melody] word timing context keys", {
+    rhythmPlanKeys: wordTimingPlanRecord
+      ? Object.keys(wordTimingPlanRecord)
+      : [],
+    chordDataKeys:
+      chords && typeof chords === "object" ? Object.keys(chords) : [],
+  });
+
+  const lyricTimingPlanForDiagnostic =
+    chords && typeof chords === "object" && "lyricTimingPlan" in chords
+      ? chords.lyricTimingPlan
+      : null;
+
+  console.log(
+    "[melody] lyric timing plan structure",
+    JSON.stringify(lyricTimingPlanForDiagnostic, null, 2),
+  );
+
   const melodyScale = buildMelodyScale({
     keyLabel: typeof chords?.key === "string" ? chords.key : "",
     transposeSemitones: chordTransposeSemitones,
@@ -7012,6 +7238,46 @@ export default function Page() {
     character: melodyVersionData?.character,
     sectionIntents: melodyVersionData?.sectionIntents,
   });
+
+  console.table(
+    melodyPitchFramework.flatMap((frameworkPhrase, phraseIndex) => {
+      const phrase = initialMelodyContours[phraseIndex];
+
+      if (
+        !phrase ||
+        !(phrase.sourceLyric || "").toLowerCase().includes("for-ever")
+      ) {
+        return [];
+      }
+
+      const note = phrase.notes.find((candidate) =>
+        (candidate.lyricText || "").toLowerCase().includes("for-ever"),
+      );
+
+      if (!note) {
+        return [];
+      }
+
+      const noteEndSeconds = note.startSeconds + note.durationSeconds;
+
+      return frameworkPhrase.harmonyEvents
+        .filter(
+          (event) =>
+            event.startSeconds < noteEndSeconds &&
+            event.endSeconds > note.startSeconds,
+        )
+        .map((event) => ({
+          lyric: note.lyricText,
+          pitchMidi: note.pitchMidi,
+          noteStart: note.startSeconds,
+          noteEnd: noteEndSeconds,
+          chord: event.chord,
+          chordStart: event.startSeconds,
+          chordEnd: event.endSeconds,
+          chordPitchClasses: event.pitchClasses.join(", "),
+        }));
+    }),
+  );
 
   const songwriterReferenceRenderLyricLineIndexes =
     songwriterReferencePhrasePerformances.map((_, phraseIndex) => {
@@ -7060,6 +7326,22 @@ export default function Page() {
         ? resolvedPreviousLineIndex
         : resolvedPreviousLineIndex + 1;
     });
+
+  console.table(
+    songwriterReferenceNoteCandidates
+      .filter((note) => note.midiNote >= 72 || note.midiNote <= 51)
+      .map((note) => ({
+        startSeconds: note.startTimeSeconds,
+        endSeconds: note.endTimeSeconds,
+        durationSeconds: Number(
+          (note.endTimeSeconds - note.startTimeSeconds).toFixed(3),
+        ),
+        midiNote: note.midiNote,
+        noteName: note.noteName,
+        clarity: Number(note.averageClarity.toFixed(3)),
+        energy: Number(note.averageEnergy.toFixed(3)),
+      })),
+  );
 
   const songwriterReferencePitchSequenceByLyricLine = new Map<
     number,
@@ -7134,16 +7416,41 @@ export default function Page() {
     },
   );
 
+  console.table(
+    initialMelodyContours
+      .filter((phrase) =>
+        (phrase.sourceLyric || "").toLowerCase().includes("for-ever"),
+      )
+      .map((phrase) => {
+        const referencePitches =
+          songwriterReferencePitchSequenceByLyricText.get(
+            normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
+          );
+
+        return {
+          section: phrase.section,
+          sourceLyric: phrase.sourceLyric,
+          generatedNoteCount: phrase.notes.length,
+          referencePitchCount: referencePitches?.length ?? 0,
+          generatedNotes: phrase.notes
+            .map((note) => note.lyricText)
+            .join(" | "),
+          noteDurations: phrase.notes
+            .map((note) => note.durationSeconds)
+            .join(" | "),
+        };
+      }),
+  );
+
   const songwriterGuidedMelodyNotes = initialMelodyContours.flatMap(
     (phrase) => {
       if (phrase.notes.length === 0) {
         return [];
       }
 
-      const referencePitches =
-        songwriterReferencePitchSequenceByLyricText.get(
-          normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
-        );
+      const referencePitches = songwriterReferencePitchSequenceByLyricText.get(
+        normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
+      );
 
       if (!referencePitches || referencePitches.length === 0) {
         return phrase.notes;
@@ -7167,6 +7474,104 @@ export default function Page() {
       });
     },
   );
+
+  console.table(
+    initialMelodyContours.flatMap((phrase) => {
+      const lyric = normalizeSongwriterReferenceLyric(phrase.sourceLyric || "");
+
+      const referencePitches =
+        songwriterReferencePitchSequenceByLyricText.get(lyric);
+
+      if (!referencePitches?.length) {
+        return [];
+      }
+
+      return [
+        {
+          section: phrase.section,
+          lyric: phrase.sourceLyric,
+          generatedPitches: phrase.notes
+            .map((note) => note.pitchMidi)
+            .join(", "),
+          referencePitches: referencePitches.join(", "),
+          transposeSemitones: chordTransposeSemitones,
+        },
+      ];
+    }),
+  );
+
+  const melodyHarmonySustainReport = initialMelodyContours.flatMap(
+    (phrase, phraseIndex) => {
+      const frameworkPhrase = melodyPitchFramework[phraseIndex];
+
+      if (!frameworkPhrase) {
+        return [];
+      }
+
+      const phraseNoteIndexes = initialMelodyContours
+        .slice(0, phraseIndex)
+        .reduce(
+          (count, previousPhrase) => count + previousPhrase.notes.length,
+          0,
+        );
+
+      return phrase.notes.flatMap((originalNote, noteIndex) => {
+        const note =
+          songwriterGuidedMelodyNotes[phraseNoteIndexes + noteIndex] ??
+          originalNote;
+        if (note.durationSeconds < 1.5) {
+          return [];
+        }
+
+        const noteEndSeconds = note.startSeconds + note.durationSeconds;
+
+        const overlappingHarmony = frameworkPhrase.harmonyEvents.filter(
+          (event) =>
+            event.startSeconds < noteEndSeconds &&
+            event.endSeconds > note.startSeconds,
+        );
+
+        if (overlappingHarmony.length < 2) {
+          return [];
+        }
+
+        const pitchClassNames = [
+          "C",
+          "C#",
+          "D",
+          "D#",
+          "E",
+          "F",
+          "F#",
+          "G",
+          "G#",
+          "A",
+          "A#",
+          "B",
+        ];
+
+        const notePitchClass =
+          pitchClassNames[((note.pitchMidi % 12) + 12) % 12];
+
+        return [
+          {
+            section: phrase.section,
+            lyric: note.lyricText || "",
+            pitchMidi: note.pitchMidi,
+            pitchClass: notePitchClass,
+            durationSeconds: note.durationSeconds,
+            chords: overlappingHarmony.map((event) => event.chord).join(" → "),
+            nonChordToneChords: overlappingHarmony
+              .filter((event) => !event.pitchClasses.includes(notePitchClass))
+              .map((event) => event.chord)
+              .join(", "),
+          },
+        ];
+      });
+    },
+  );
+
+  console.table(melodyHarmonySustainReport);
 
   const melodyRangeBySection = Array.from(
     initialMelodyContours
@@ -11531,7 +11936,7 @@ export default function Page() {
           enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
           mixProfile: "musical-guide",
           musicalGuideMixLevels,
-          melodyNotes: songwriterGuidedMelodyNotes,
+          melodyNotes: buildArticulatedMelodyNotes(songwriterGuidedMelodyNotes),
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id
@@ -36747,8 +37152,9 @@ ${buildRewriteInstruction(
 
                                     <div className="mt-1 text-[11px] text-purple-300">
                                       Higher-level interpretation of the derived
-                                      notes. The original performance trace and
-                                      note candidates remain unchanged.
+                                      notes, including note-level octave
+                                      reconciliation. Original raw pitch
+                                      measurements are preserved.
                                     </div>
 
                                     <div className="mt-3 max-h-56 overflow-auto font-mono text-[11px] leading-5 text-gray-300">

@@ -3963,6 +3963,13 @@ Return wordRhythmPlan only.
           return [];
         }
 
+                const originalWordTiming = {
+          startBar,
+          startBeat,
+          endBar,
+          endBeat,
+        };
+
         const expected = expectedWordRhythmEntries.get(wordIndex);
         const sourceWord = sungWordEntries[wordIndex];
 
@@ -4108,6 +4115,22 @@ Return wordRhythmPlan only.
                   currentStartQuarterNotes - previousEndQuarterNotes;
 
                 if (internalGapQuarterNotes > 1.001) {
+                    if (
+  sourceWord.word.toLowerCase().includes("for-ever")
+) {
+  console.log("[word-rhythm] long-gap repair candidate", {
+    word: sourceWord.word,
+    section: expected.section,
+    phraseIndex,
+    wordIndex,
+    originalStartBar: startBar,
+    originalStartBeat: startBeat,
+    endBar,
+    endBeat,
+    internalGapQuarterNotes,
+  });
+}
+
                   const repairedStartPosition =
                     getMusicalPositionFromQuarterNotes({
                       sectionRecord: timingSectionRecord,
@@ -4202,6 +4225,27 @@ Return wordRhythmPlan only.
           wordRhythmValidationErrors.push(
             `wordIndex ${wordIndex} has invalid bar/beat coordinates for section "${expected.section}".`,
           );
+        }
+
+                if (
+          startBar !== originalWordTiming.startBar ||
+          startBeat !== originalWordTiming.startBeat ||
+          endBar !== originalWordTiming.endBar ||
+          endBeat !== originalWordTiming.endBeat
+        ) {
+          console.log("[word-rhythm] validator timing adjustment", {
+            word: sourceWord.word,
+            section: expected.section,
+            phraseIndex,
+            wordIndex,
+            originalTiming: originalWordTiming,
+            validatedTiming: {
+              startBar,
+              startBeat,
+              endBar,
+              endBeat,
+            },
+          });
         }
 
         previousWordEndBar = endBar;
