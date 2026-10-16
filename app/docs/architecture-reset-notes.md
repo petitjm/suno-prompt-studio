@@ -1425,6 +1425,80 @@ For example:
 
 Existing functionality may remain technically located in its current implementation while the UI is progressively reorganised, but the long-term module boundaries should follow the user workflow.
 
+## Songwriter-reference pitch analysis and octave reconciliation
+
+### Architectural purpose
+
+The songwriter-reference analyser extracts melodic and expressive information from an uploaded vocal performance.
+
+Pitch detection is an intermediate measurement process, not an authoritative interpretation of the intended melody.
+
+The analysis must distinguish raw acoustic measurements, continuity-corrected estimates, and musically reconciled note identities.
+
+### Processing pipeline
+
+1. Detect raw pitch frequencies, clarity and energy from the vocal recording.
+2. Apply continuity correction to produce an initial pitch trace.
+3. Derive initial note candidates from the trace.
+4. Evaluate note-level octave ambiguity using sustained raw-pitch agreement and sampled harmonic evidence.
+5. Produce a reconciled pitch trace without modifying raw pitch measurements.
+6. Rebuild the final note candidates from the reconciled trace.
+7. Derive expressive events, phrase performances and musical observations from the final reconciled data.
+8. Persist the authoritative results alongside octave-reconciliation provenance.
+
+### Implementation ownership
+
+- `app/page.tsx` — analysis orchestration, audio-frame processing, harmonic sampling, application state and persistence.
+- `lib/melody/reconcile-songwriter-reference-note-octaves.ts` — note-level octave evidence and pure reconciliation functions.
+
+The reconciliation functions must not mutate their input arrays or objects.
+
+### Reconciliation policy
+
+The initial implementation considers downward octave correction when:
+
+- At least 75% of valid raw frames support a pitch approximately one octave below the detected candidate.
+- At least five raw frames support the lower octave.
+- At least three sampled harmonic assessments support the raw fundamental.
+- At least 60% of assessed harmonic frames support that interpretation.
+
+These are provisional engineering thresholds rather than universal musical rules.
+
+Corrections are applied consistently over the affected note region. Timing, raw frequency measurements, clarity and energy are preserved.
+
+### Data consistency and provenance
+
+The reconciled trace and note candidates are the authoritative outputs for new analysis runs using this processing method.
+
+Expressive events, phrase performances and musical observations must be derived from those same reconciled results.
+
+Saved analysis records include octave-reconciliation provenance describing the method, version and accepted note adjustments.
+
+Previously saved analysis runs must not be silently reinterpreted or overwritten.
+
+### Validation
+
+A 71.5-second vocal-stem recording established a reproducible continuity-induced octave error.
+
+The note at 59.200–60.224 seconds was initially identified as E5 (MIDI 76) but reconciled to E4 (MIDI 64).
+
+Supporting evidence included:
+
+- 80 of 96 raw frames favouring the lower octave.
+- 8 of 9 sampled harmonic assessments supporting the raw pitch.
+- Preservation of the 78 note candidates.
+- Preservation of the 64 expressive events, with the expected note identity updated.
+- Unchanged phrase-performance and musical-observation counts and content.
+- Successful restoration of the reconciled note from saved analysis.
+
+This validates the implementation for the tested recording, not for all singers or musical material.
+
+### Future development
+
+Validate octave reconciliation against additional vocal performances, particularly genuine register changes, low-register voices, and ambiguous harmonic content.
+
+The reference-analysis pipeline must support the central songwriting workflow by providing credible melodic evidence without treating pitch-detection output as an unquestionable musical authority.
+
 ### Chord-generation direction
 
 Do not expose the current `generateBasicChords` and `generateChords` implementations as two unexplained competing normal workflows.
