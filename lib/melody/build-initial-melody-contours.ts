@@ -7,6 +7,7 @@ import {
 } from "@/types/song";
 import type { LyricWordTimingGroup } from "@/lib/melody/build-lyric-word-timings";
 import type { MelodyPitchFrameworkPhrase } from "@/lib/melody/build-melody-pitch-framework";
+import { classifyExtendedVocalWord } from "./classify-extended-vocal-word";
 
 type ContourDirection = "up" | "down" | "level";
 function applyMelodyLiftBias(
@@ -739,6 +740,24 @@ export function buildInitialMelodyContours({
             );
           }
 
+          const vocalAssessment = classifyExtendedVocalWord({
+  word: word.word,
+  durationSeconds: word.durationSeconds,
+  isFinalWordInPhrase,
+});
+
+if (vocalAssessment.treatment !== "ordinary") {
+  console.log("[melody] EXTENDED VOCAL WORD", {
+    path: "motif-reuse",
+    word: word.word,
+    durationSeconds: word.durationSeconds,
+    weight: word.weight,
+    isFinalWordInPhrase,
+    treatment: vocalAssessment.treatment,
+    syllableCount: vocalAssessment.syllableCount,
+  });
+}
+
           const renderedDurationSeconds =
             word.durationSeconds *
             getRenderedMelodyDurationMultiplier(
@@ -954,6 +973,33 @@ export function buildInitialMelodyContours({
 
         previousHarmonyChord =
           activeHarmonyEvent?.chord ?? previousHarmonyChord;
+
+if (word.durationSeconds >= 2) {
+  console.log("[melody] EXTENDED WORD REACHED CONTOUR", {
+    word: word.word,
+    durationSeconds: word.durationSeconds,
+    startSeconds: word.startSeconds,
+    isFinalWordInPhrase,
+  });
+}
+
+          const vocalAssessment = classifyExtendedVocalWord({
+  word: word.word,
+  durationSeconds: word.durationSeconds,
+  isFinalWordInPhrase,
+});
+
+if (vocalAssessment.treatment !== "ordinary") {
+  console.log("[melody] EXTENDED VOCAL WORD", {
+    path: "normal",
+    word: word.word,
+    durationSeconds: word.durationSeconds,
+    weight: word.weight,
+    isFinalWordInPhrase,
+    treatment: vocalAssessment.treatment,
+    syllableCount: vocalAssessment.syllableCount,
+  });
+}
 
         const renderedDurationSeconds =
           word.durationSeconds *

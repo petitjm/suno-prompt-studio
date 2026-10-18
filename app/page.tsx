@@ -11,6 +11,8 @@ import {
   buildReconciledSongwriterReferenceTrace,
 } from "@/lib/melody/reconcile-songwriter-reference-note-octaves";
 
+import { buildArrangementChordPlacements } from "@/lib/audio/build-arrangement-chord-placements";
+
 import { assessSustainedNoteHarmony } from "@/lib/melody/assess-sustained-note-harmony";
 
 import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
@@ -6860,6 +6862,35 @@ export default function Page() {
     });
   })();
 
+const melodyArrangementSectionsWithChords = (() => {
+  const chordRecord =
+    chords && typeof chords === "object" && !Array.isArray(chords)
+      ? (chords as Record<string, unknown>)
+      : null;
+
+  if (!chordRecord || melodyArrangementCueSections.length === 0) {
+    return [];
+  }
+
+  const sourceSongSheetLines = Array.isArray(chordRecord.songSheetLines)
+    ? chordRecord.songSheetLines
+    : Array.isArray(chordRecord.songsheetLines)
+      ? chordRecord.songsheetLines
+      : Array.isArray(chordRecord.performanceSongSheetLines)
+        ? chordRecord.performanceSongSheetLines
+        : Array.isArray(chordRecord.performanceSheetLines)
+          ? chordRecord.performanceSheetLines
+          : Array.isArray(chordRecord.lines)
+            ? chordRecord.lines
+            : [];
+
+  return buildArrangementChordPlacements({
+    sections: melodyArrangementCueSections,
+    songsheetLines: sourceSongSheetLines,
+    tempoBpm: previewTempo,
+  });
+})();
+
   const melodyPhraseScaffold = (() => {
     const dryRunCueSheet =
       typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
@@ -7129,7 +7160,7 @@ export default function Page() {
     phrases: melodyPhraseScaffold,
   });
 
-  const melodyPitchFramework = (() => {
+   const melodyPitchFramework = (() => {
     const dryRunCueSheet =
       typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
       audioPreviewDryRunRenderPlan?.cueSheet !== null &&
@@ -7137,9 +7168,13 @@ export default function Page() {
         ? (audioPreviewDryRunRenderPlan.cueSheet as Record<string, unknown>)
         : null;
 
-    const cueSections = Array.isArray(dryRunCueSheet?.sections)
-      ? dryRunCueSheet.sections
-      : generatedAudioCueSections;
+    const cueSections =
+      melodyArrangementSectionsWithChords.length > 0
+        ? melodyArrangementSectionsWithChords
+        : Array.isArray(dryRunCueSheet?.sections) &&
+            dryRunCueSheet.sections.length > 0
+          ? dryRunCueSheet.sections
+          : generatedAudioCueSections;
 
     const chordMarkers = buildChordMarkersFromCueSheetSections(cueSections);
 
@@ -7150,6 +7185,37 @@ export default function Page() {
   })();
 
   const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
+  console.log("[melody] RESTORED HARMONY INPUT", {
+  arrangementSectionCount: melodyArrangementSectionsWithChords.length,
+
+  arrangementPlacementCount: melodyArrangementSectionsWithChords.reduce(
+    (total, section) => total + section.chordPlacements.length,
+    0,
+  ),
+
+  confirmedPlacementCount: melodyArrangementSectionsWithChords.reduce(
+    (total, section) =>
+      total +
+      section.chordPlacements.filter(
+        (placement) =>
+          placement.timingSource === "confirmed-bar-beat" &&
+          placement.absoluteSeconds !== null,
+      ).length,
+    0,
+  ),
+
+  chordMarkerCount: buildChordMarkersFromCueSheetSections(
+    melodyArrangementSectionsWithChords,
+  ).length,
+
+  anchorPhraseCount: initialMelodyAnchors.length,
+
+  anchorNoteCount: initialMelodyAnchors.reduce(
+    (total, phrase) => total + phrase.notes.length,
+    0,
+  ),
+});
+
   const lyricPhraseUnits = buildLyricPhraseUnits(initialMelodyAnchors);
 
   const melodyWordTimingContext = (() => {
