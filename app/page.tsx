@@ -11,6 +11,8 @@ import {
   buildReconciledSongwriterReferenceTrace,
 } from "@/lib/melody/reconcile-songwriter-reference-note-octaves";
 
+import { assessSustainedNoteHarmony } from "@/lib/melody/assess-sustained-note-harmony";
+
 import { buildMelodyPitchFramework } from "@/lib/melody/build-melody-pitch-framework";
 
 import { buildMelodySectionIntentTargets } from "@/lib/melody/build-section-intent-targets";
@@ -26,6 +28,8 @@ import { buildInitialMelodyAnchors } from "@/lib/melody/build-initial-melody-anc
 import { buildMelodyScale } from "@/lib/melody/build-melody-scale";
 
 import { buildLyricWordTimings } from "@/lib/melody/build-lyric-word-timings";
+
+import { buildSongSectionTiming } from "@/lib/audio/build-song-section-timing";
 
 import {
   buildChordMarkersFromCueSheetSections,
@@ -6826,6 +6830,36 @@ export default function Page() {
   };
 
   const cueSyncedSheetSectionDetails = getCueSyncedSheetSectionDetails();
+
+  const melodyArrangementCueSections = (() => {
+    const chordRecord =
+      chords && typeof chords === "object" && !Array.isArray(chords)
+        ? (chords as Record<string, unknown>)
+        : null;
+
+    if (!chordRecord) {
+      return [];
+    }
+
+    const sourceSongSheetLines = Array.isArray(chordRecord.songSheetLines)
+      ? chordRecord.songSheetLines
+      : Array.isArray(chordRecord.songsheetLines)
+        ? chordRecord.songsheetLines
+        : Array.isArray(chordRecord.performanceSongSheetLines)
+          ? chordRecord.performanceSongSheetLines
+          : Array.isArray(chordRecord.performanceSheetLines)
+            ? chordRecord.performanceSheetLines
+            : Array.isArray(chordRecord.lines)
+              ? chordRecord.lines
+              : [];
+
+    return buildSongSectionTiming({
+      songsheetLines: sourceSongSheetLines,
+      musicalTimingPlan: chordRecord.musicalTimingPlan,
+      tempoBpm: previewTempo,
+    });
+  })();
+
   const melodyPhraseScaffold = (() => {
     const dryRunCueSheet =
       typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
@@ -6875,9 +6909,13 @@ export default function Page() {
       return "";
     });
 
-    const sections = Array.isArray(dryRunCueSheet?.sections)
-      ? dryRunCueSheet.sections
-      : generatedAudioCueSections;
+    const sections =
+      melodyArrangementCueSections.length > 0
+        ? melodyArrangementCueSections
+        : Array.isArray(dryRunCueSheet?.sections) &&
+            dryRunCueSheet.sections.length > 0
+          ? dryRunCueSheet.sections
+          : generatedAudioCueSections;
 
     const lyricTimingPlan =
       chordRecord &&
@@ -7127,9 +7165,34 @@ export default function Page() {
         ? (chords as Record<string, unknown>)
         : null;
 
-    const sections = Array.isArray(dryRunCueSheet?.sections)
-      ? dryRunCueSheet.sections
-      : generatedAudioCueSections;
+    console.log("[melody] GUIDE SECTION SOURCE", {
+      dryRunSectionCount: Array.isArray(dryRunCueSheet?.sections)
+        ? dryRunCueSheet.sections.length
+        : null,
+      generatedSectionCount: Array.isArray(generatedAudioCueSections)
+        ? generatedAudioCueSections.length
+        : null,
+    });
+
+    const sections =
+      melodyArrangementCueSections.length > 0
+        ? melodyArrangementCueSections
+        : Array.isArray(dryRunCueSheet?.sections) &&
+            dryRunCueSheet.sections.length > 0
+          ? dryRunCueSheet.sections
+          : generatedAudioCueSections;
+
+    console.log("[melody] ARRANGEMENT TIMING RESTORE", {
+      sectionCount: melodyArrangementCueSections.length,
+      totalSourceLines: melodyArrangementCueSections.reduce(
+        (total, section) => total + section.sourceLineIndexes.length,
+        0,
+      ),
+      firstSection: melodyArrangementCueSections[0]?.section ?? null,
+      lastSection:
+        melodyArrangementCueSections[melodyArrangementCueSections.length - 1]
+          ?.section ?? null,
+    });
 
     const tempoBpm =
       typeof dryRunCueSheet?.tempoBpm === "number" &&
@@ -7153,6 +7216,23 @@ export default function Page() {
     };
   })();
 
+  console.log("[melody] WORD TIMING INPUT STATUS", {
+    hasWordRhythmPlan: Boolean(melodyWordTimingContext.wordRhythmPlan),
+    wordRhythmEntryCount:
+      melodyWordTimingContext.wordRhythmPlan &&
+      typeof melodyWordTimingContext.wordRhythmPlan === "object" &&
+      "words" in melodyWordTimingContext.wordRhythmPlan &&
+      Array.isArray(melodyWordTimingContext.wordRhythmPlan.words)
+        ? melodyWordTimingContext.wordRhythmPlan.words.length
+        : null,
+    sectionsIsArray: Array.isArray(melodyWordTimingContext.sections),
+    sectionCount: Array.isArray(melodyWordTimingContext.sections)
+      ? melodyWordTimingContext.sections.length
+      : null,
+    tempoBpm: melodyWordTimingContext.tempoBpm,
+    lyricPhraseUnitCount: lyricPhraseUnits.length,
+  });
+
   const lyricWordTimings = buildLyricWordTimings(
     lyricPhraseUnits,
     melodyWordTimingContext.wordRhythmPlan,
@@ -7160,6 +7240,35 @@ export default function Page() {
     melodyWordTimingContext.tempoBpm,
     melodyVersionData?.sectionIntents,
   );
+
+  const melodyLongWordTimingReport = lyricWordTimings.flatMap((group) =>
+    group.units.flatMap((unit) =>
+      unit.words
+        .filter((word) => word.durationSeconds >= 2)
+        .map((word) => ({
+          section: group.section,
+          lyric: word.word,
+          startSeconds: word.startSeconds,
+          durationSeconds: word.durationSeconds,
+          weight: word.weight,
+        })),
+    ),
+  );
+
+  console.log("[melody] LONG WORD TIMING BASELINE", {
+    timingGroupCount: lyricWordTimings.length,
+    totalWordCount: lyricWordTimings.reduce(
+      (total, group) =>
+        total +
+        group.units.reduce(
+          (unitTotal, unit) => unitTotal + unit.words.length,
+          0,
+        ),
+      0,
+    ),
+    longWordCount: melodyLongWordTimingReport.length,
+    entries: melodyLongWordTimingReport,
+  });
 
   console.table(
     lyricWordTimings
@@ -7181,25 +7290,35 @@ export default function Page() {
       ),
   );
 
-  const forEverRhythmEntries =
+  const wordRhythmEntries =
     melodyWordTimingContext.wordRhythmPlan &&
     typeof melodyWordTimingContext.wordRhythmPlan === "object" &&
     "words" in melodyWordTimingContext.wordRhythmPlan &&
     Array.isArray(melodyWordTimingContext.wordRhythmPlan.words)
-      ? melodyWordTimingContext.wordRhythmPlan.words.filter(
-          (entry: unknown) =>
-            entry !== null &&
-            typeof entry === "object" &&
-            "word" in entry &&
-            typeof entry.word === "string" &&
-            entry.word.toLowerCase().includes("for-ever"),
-        )
+      ? melodyWordTimingContext.wordRhythmPlan.words
       : [];
 
-  console.log(
-    "[melody] for-ever original rhythm entries",
-    JSON.stringify(forEverRhythmEntries, null, 2),
-  );
+  const normaliseRhythmWord = (value: string) =>
+    value.toLowerCase().replace(/[-‐‑‒–—\s]/g, "");
+
+  const matchingForEverEntries = wordRhythmEntries.filter((entry: unknown) => {
+    if (
+      entry === null ||
+      typeof entry !== "object" ||
+      !("word" in entry) ||
+      typeof entry.word !== "string"
+    ) {
+      return false;
+    }
+
+    return normaliseRhythmWord(entry.word).includes("forever");
+  });
+
+  console.log("[melody] FOREVER RHYTHM INSPECTION", {
+    totalWordEntries: wordRhythmEntries.length,
+    matchingEntries: matchingForEverEntries,
+    firstFiveEntries: wordRhythmEntries.slice(0, 5),
+  });
 
   const wordTimingPlanRecord =
     melodyWordTimingContext.wordRhythmPlan &&
@@ -7500,6 +7619,10 @@ export default function Page() {
     }),
   );
 
+  const melodyHarmonyTimeline = melodyPitchFramework
+    .flatMap((frameworkPhrase) => frameworkPhrase.harmonyEvents)
+    .sort((a, b) => a.startSeconds - b.startSeconds);
+
   const melodyHarmonySustainReport = initialMelodyContours.flatMap(
     (phrase, phraseIndex) => {
       const frameworkPhrase = melodyPitchFramework[phraseIndex];
@@ -7508,7 +7631,7 @@ export default function Page() {
         return [];
       }
 
-      const phraseNoteIndexes = initialMelodyContours
+      const phraseNoteOffset = initialMelodyContours
         .slice(0, phraseIndex)
         .reduce(
           (count, previousPhrase) => count + previousPhrase.notes.length,
@@ -7517,61 +7640,86 @@ export default function Page() {
 
       return phrase.notes.flatMap((originalNote, noteIndex) => {
         const note =
-          songwriterGuidedMelodyNotes[phraseNoteIndexes + noteIndex] ??
+          songwriterGuidedMelodyNotes[phraseNoteOffset + noteIndex] ??
           originalNote;
+
         if (note.durationSeconds < 1.5) {
           return [];
         }
 
-        const noteEndSeconds = note.startSeconds + note.durationSeconds;
+        const currentFlatNoteIndex = phraseNoteOffset + noteIndex;
 
-        const overlappingHarmony = frameworkPhrase.harmonyEvents.filter(
-          (event) =>
-            event.startSeconds < noteEndSeconds &&
-            event.endSeconds > note.startSeconds,
-        );
+        const nextNote =
+          songwriterGuidedMelodyNotes[currentFlatNoteIndex + 1] ?? null;
 
-        if (overlappingHarmony.length < 2) {
+        const assessment = assessSustainedNoteHarmony({
+          note,
+          nextNote,
+          harmonyEvents: frameworkPhrase.harmonyEvents,
+          nextNoteHarmonyEvents: melodyHarmonyTimeline,
+        });
+
+        if (assessment.overlaps.length < 2) {
           return [];
         }
-
-        const pitchClassNames = [
-          "C",
-          "C#",
-          "D",
-          "D#",
-          "E",
-          "F",
-          "F#",
-          "G",
-          "G#",
-          "A",
-          "A#",
-          "B",
-        ];
-
-        const notePitchClass =
-          pitchClassNames[((note.pitchMidi % 12) + 12) % 12];
 
         return [
           {
             section: phrase.section,
-            lyric: note.lyricText || "",
-            pitchMidi: note.pitchMidi,
-            pitchClass: notePitchClass,
-            durationSeconds: note.durationSeconds,
-            chords: overlappingHarmony.map((event) => event.chord).join(" → "),
-            nonChordToneChords: overlappingHarmony
-              .filter((event) => !event.pitchClasses.includes(notePitchClass))
-              .map((event) => event.chord)
+            lyric: assessment.lyric,
+            pitchMidi: assessment.pitchMidi,
+            pitchClass: assessment.pitchClass,
+            durationSeconds: Number(assessment.durationSeconds.toFixed(3)),
+            chords: assessment.overlaps
+              .map((overlap) => overlap.chord)
+              .join(" → "),
+            nonChordToneChords: assessment.overlaps
+              .filter((overlap) => !overlap.isChordTone)
+              .map((overlap) => overlap.chord)
               .join(", "),
+            nonChordToneSeconds: Number(
+              assessment.nonChordToneSeconds.toFixed(3),
+            ),
+            nonChordToneExposureRatio: Number(
+              assessment.nonChordToneExposureRatio.toFixed(3),
+            ),
+            harmonyChangeCount: assessment.harmonyChangeCount,
+            returnsToChordTone: assessment.returnsToChordTone,
+            nextNotePitchMidi: assessment.nextNotePitchMidi,
+            nextNoteIntervalSemitones: assessment.nextNoteIntervalSemitones,
+            nextNoteGapSeconds: assessment.nextNoteGapSeconds,
+            nextNoteIsChordTone: assessment.nextNoteIsChordTone,
+            nextNoteResolvesTension: assessment.nextNoteResolvesTension,
+            overlapDetails: assessment.overlaps.map((overlap) => ({
+              chord: overlap.chord,
+              overlapSeconds: Number(overlap.overlapSeconds.toFixed(3)),
+              isChordTone: overlap.isChordTone,
+            })),
           },
         ];
       });
     },
   );
 
-  console.table(melodyHarmonySustainReport);
+  console.table(
+    melodyHarmonySustainReport.map((item) => ({
+      section: item.section,
+      lyric: item.lyric,
+      pitchMidi: item.pitchMidi,
+      pitchClass: item.pitchClass,
+      durationSeconds: item.durationSeconds,
+      chords: item.chords,
+      nonChordToneSeconds: item.nonChordToneSeconds,
+      exposureRatio: item.nonChordToneExposureRatio,
+      harmonyChanges: item.harmonyChangeCount,
+      returnsToChordTone: item.returnsToChordTone,
+      nextPitch: item.nextNotePitchMidi,
+      nextInterval: item.nextNoteIntervalSemitones,
+      nextGap: item.nextNoteGapSeconds,
+      nextChordTone: item.nextNoteIsChordTone,
+      melodicResolution: item.nextNoteResolvesTension,
+    })),
+  );
 
   const melodyRangeBySection = Array.from(
     initialMelodyContours
@@ -23231,6 +23379,29 @@ export default function Page() {
   );
 
   const hasCompleteVocalTiming = hasLyricTimingPlan && hasWordRhythmPlan;
+
+  console.log("[melody] TIMING SOURCE COMPARISON", {
+    chordsHasLyricTimingPlan: Boolean(
+      chords && typeof chords === "object" && chords.lyricTimingPlan,
+    ),
+    chordsHasWordRhythmPlan: Boolean(
+      chords && typeof chords === "object" && chords.wordRhythmPlan,
+    ),
+    editorHasLyricTimingPlan: hasLyricTimingPlan,
+    editorHasWordRhythmPlan: hasWordRhythmPlan,
+    chordsWordRhythmKeys:
+      chords &&
+      typeof chords === "object" &&
+      chords.wordRhythmPlan &&
+      typeof chords.wordRhythmPlan === "object"
+        ? Object.keys(chords.wordRhythmPlan)
+        : [],
+    editorWordRhythmKeys:
+      currentChordRecordForTiming?.wordRhythmPlan &&
+      typeof currentChordRecordForTiming.wordRhythmPlan === "object"
+        ? Object.keys(currentChordRecordForTiming.wordRhythmPlan)
+        : [],
+  });
 
   const chordTimingCanBeMarkedComplete = Boolean(
     musicalTimingProvenance &&

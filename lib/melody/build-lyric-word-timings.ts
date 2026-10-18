@@ -211,9 +211,13 @@ function musicalPositionToSeconds({
 
   const activeBar = barTiming.find((entry) => entry.bar === bar);
 
-  if (!activeBar || beat < 1 || beat > activeBar.beatsPerBar) {
-    return null;
-  }
+  if (
+  !activeBar ||
+  beat < 1 ||
+  beat >= activeBar.beatsPerBar + 1
+) {
+  return null;
+}
 
   const quarterNotesBeforeBar = barTiming
     .filter((entry) => entry.bar < bar)
@@ -380,12 +384,12 @@ export function buildLyricWordTimings(
         });
 
         if (
-          startSeconds === null ||
-          endSeconds === null ||
-          endSeconds <= startSeconds
-        ) {
-          return [];
-        }
+  startSeconds === null ||
+  endSeconds === null ||
+  endSeconds <= startSeconds
+) {
+  return [];
+}
 
         const baseWeight = getWordWeight(entry.word);
         const isFinalWord = wordPosition === phraseRhythmEntries.length - 1;

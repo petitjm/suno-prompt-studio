@@ -147,9 +147,13 @@ function musicalPositionToSeconds({
 
   const activeBar = barTiming.find((entry) => entry.bar === bar);
 
-  if (!activeBar || beat < 1 || beat > activeBar.beatsPerBar) {
-    return null;
-  }
+  if (
+  !activeBar ||
+  beat < 1 ||
+  beat >= activeBar.beatsPerBar + 1
+) {
+  return null;
+}
 
   const quarterNotesBeforeBar = barTiming
     .filter((entry) => entry.bar < bar)

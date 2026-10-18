@@ -3647,12 +3647,22 @@ Rhythmic decisions should reflect how a singer would actually deliver the lyric:
 - section character and vocal delivery
 - melodic continuity
 
-Do not divide a phrase evenly by word count.
-Do not assign identical durations merely because words have similar lengths.
-Do not use lexical word length as the primary timing rule.
-Do not automatically stretch only the final word.
-Do not force every word onto a main beat.
-Do not force every word boundary onto a chord change.
+- Do not divide a phrase evenly by word count.
+- Do not assign identical durations merely because words have similar lengths.
+- Do not use lexical word length as the primary timing rule.
+- Do not automatically stretch only the final word.
+- Do not force every word onto a main beat.
+- Do not force every word boundary onto a chord change.
+- Vocal duration and musical space:
+
+- Each word's start and end coordinates describe the actual intended sung duration, not an allocation of time until the next word or phrase.
+- Do not extend a word merely to occupy unused phrase space.
+- When a word finishes singing, leave the remaining time as an explicit gap before the next word or the phrase end.
+- Short, normally unstressed words should generally receive short vocal durations unless a clear expressive emphasis justifies otherwise.
+- Longer sustained words are permitted when musically intentional, particularly on emotionally important syllables or phrase endings.
+- A phrase may finish singing substantially before its confirmed end position, leaving breathing room or an instrumental response.
+- Do not distribute leftover phrase time by lengthening the final word.
+- Preserve natural articulation and lyrical intelligibility when deciding whether a word deserves an extended sustain.
 
 musicalTimingPlan is authoritative for meter and bar structure.
 harmonicTimeline is authoritative for harmonic context.
