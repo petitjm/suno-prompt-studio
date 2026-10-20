@@ -6862,34 +6862,34 @@ export default function Page() {
     });
   })();
 
-const melodyArrangementSectionsWithChords = (() => {
-  const chordRecord =
-    chords && typeof chords === "object" && !Array.isArray(chords)
-      ? (chords as Record<string, unknown>)
-      : null;
+  const melodyArrangementSectionsWithChords = (() => {
+    const chordRecord =
+      chords && typeof chords === "object" && !Array.isArray(chords)
+        ? (chords as Record<string, unknown>)
+        : null;
 
-  if (!chordRecord || melodyArrangementCueSections.length === 0) {
-    return [];
-  }
+    if (!chordRecord || melodyArrangementCueSections.length === 0) {
+      return [];
+    }
 
-  const sourceSongSheetLines = Array.isArray(chordRecord.songSheetLines)
-    ? chordRecord.songSheetLines
-    : Array.isArray(chordRecord.songsheetLines)
-      ? chordRecord.songsheetLines
-      : Array.isArray(chordRecord.performanceSongSheetLines)
-        ? chordRecord.performanceSongSheetLines
-        : Array.isArray(chordRecord.performanceSheetLines)
-          ? chordRecord.performanceSheetLines
-          : Array.isArray(chordRecord.lines)
-            ? chordRecord.lines
-            : [];
+    const sourceSongSheetLines = Array.isArray(chordRecord.songSheetLines)
+      ? chordRecord.songSheetLines
+      : Array.isArray(chordRecord.songsheetLines)
+        ? chordRecord.songsheetLines
+        : Array.isArray(chordRecord.performanceSongSheetLines)
+          ? chordRecord.performanceSongSheetLines
+          : Array.isArray(chordRecord.performanceSheetLines)
+            ? chordRecord.performanceSheetLines
+            : Array.isArray(chordRecord.lines)
+              ? chordRecord.lines
+              : [];
 
-  return buildArrangementChordPlacements({
-    sections: melodyArrangementCueSections,
-    songsheetLines: sourceSongSheetLines,
-    tempoBpm: previewTempo,
-  });
-})();
+    return buildArrangementChordPlacements({
+      sections: melodyArrangementCueSections,
+      songsheetLines: sourceSongSheetLines,
+      tempoBpm: previewTempo,
+    });
+  })();
 
   const melodyPhraseScaffold = (() => {
     const dryRunCueSheet =
@@ -7160,7 +7160,7 @@ const melodyArrangementSectionsWithChords = (() => {
     phrases: melodyPhraseScaffold,
   });
 
-   const melodyPitchFramework = (() => {
+  const melodyPitchFramework = (() => {
     const dryRunCueSheet =
       typeof audioPreviewDryRunRenderPlan?.cueSheet === "object" &&
       audioPreviewDryRunRenderPlan?.cueSheet !== null &&
@@ -7186,35 +7186,35 @@ const melodyArrangementSectionsWithChords = (() => {
 
   const initialMelodyAnchors = buildInitialMelodyAnchors(melodyPitchFramework);
   console.log("[melody] RESTORED HARMONY INPUT", {
-  arrangementSectionCount: melodyArrangementSectionsWithChords.length,
+    arrangementSectionCount: melodyArrangementSectionsWithChords.length,
 
-  arrangementPlacementCount: melodyArrangementSectionsWithChords.reduce(
-    (total, section) => total + section.chordPlacements.length,
-    0,
-  ),
+    arrangementPlacementCount: melodyArrangementSectionsWithChords.reduce(
+      (total, section) => total + section.chordPlacements.length,
+      0,
+    ),
 
-  confirmedPlacementCount: melodyArrangementSectionsWithChords.reduce(
-    (total, section) =>
-      total +
-      section.chordPlacements.filter(
-        (placement) =>
-          placement.timingSource === "confirmed-bar-beat" &&
-          placement.absoluteSeconds !== null,
-      ).length,
-    0,
-  ),
+    confirmedPlacementCount: melodyArrangementSectionsWithChords.reduce(
+      (total, section) =>
+        total +
+        section.chordPlacements.filter(
+          (placement) =>
+            placement.timingSource === "confirmed-bar-beat" &&
+            placement.absoluteSeconds !== null,
+        ).length,
+      0,
+    ),
 
-  chordMarkerCount: buildChordMarkersFromCueSheetSections(
-    melodyArrangementSectionsWithChords,
-  ).length,
+    chordMarkerCount: buildChordMarkersFromCueSheetSections(
+      melodyArrangementSectionsWithChords,
+    ).length,
 
-  anchorPhraseCount: initialMelodyAnchors.length,
+    anchorPhraseCount: initialMelodyAnchors.length,
 
-  anchorNoteCount: initialMelodyAnchors.reduce(
-    (total, phrase) => total + phrase.notes.length,
-    0,
-  ),
-});
+    anchorNoteCount: initialMelodyAnchors.reduce(
+      (total, phrase) => total + phrase.notes.length,
+      0,
+    ),
+  });
 
   const lyricPhraseUnits = buildLyricPhraseUnits(initialMelodyAnchors);
 

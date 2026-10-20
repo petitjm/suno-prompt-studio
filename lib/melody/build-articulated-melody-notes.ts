@@ -4,7 +4,17 @@ export function buildArticulatedMelodyNotes(
   notes: MelodyNote[],
 ): MelodyNote[] {
   return notes.flatMap((note) => {
-    const lyricText = note.lyricText?.trim() || "";
+  // A melody note with an explicit syllable assignment
+  // has already been articulated by the composer.
+  // Do not split it again.
+  if (
+    typeof note.syllableText === "string" &&
+    note.syllableText.trim().length > 0
+  ) {
+    return [note];
+  }
+
+  const lyricText = note.lyricText?.trim() || "";
 
     const syllables = lyricText
       .split(/[-‐‑‒–—]/)

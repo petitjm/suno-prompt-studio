@@ -8,6 +8,13 @@ import {
 import type { LyricWordTimingGroup } from "@/lib/melody/build-lyric-word-timings";
 import type { MelodyPitchFrameworkPhrase } from "@/lib/melody/build-melody-pitch-framework";
 import { classifyExtendedVocalWord } from "./classify-extended-vocal-word";
+import { getExtendedVocalDuration } from "./get-extended-vocal-duration";
+import { buildSyllabicMelodyNotes } from "./build-syllabic-melody-notes";
+import { buildSyllableResolutionNotes } from "./build-syllable-resolution-notes";
+import { selectSyllableHarmonyResolution } from "./select-syllable-harmony-resolution";
+import { getSyllableDurationWeights } from "./get-syllable-duration-weights";
+import type { LyricSyllableProsody } from "./lyric-syllable-prosody";
+import { getLyricSyllableProsody } from "./get-lyric-syllable-prosody";
 
 type ContourDirection = "up" | "down" | "level";
 function applyMelodyLiftBias(
@@ -138,8 +145,8 @@ function getRenderedMelodyDurationMultiplier(
   const weightAdjustment = Math.max(-0.06, Math.min(0.04, (weight - 1) * 0.04));
 
   return isFinalWordInPhrase
-  ? Math.max(0.82, Math.min(0.96, baseMultiplier + weightAdjustment))
-  : Math.max(0.78, Math.min(0.94, baseMultiplier + weightAdjustment));
+    ? Math.max(0.82, Math.min(0.96, baseMultiplier + weightAdjustment))
+    : Math.max(0.78, Math.min(0.94, baseMultiplier + weightAdjustment));
 }
 
 function getPitchCandidates(
@@ -449,6 +456,7 @@ export function buildInitialMelodyContours({
   scalePitchClasses,
   character = DEFAULT_MELODY_CHARACTER,
   sectionIntents = [],
+  syllableProsody = [],
 }: {
   anchors: MelodyPhrase[];
   wordTimings: LyricWordTimingGroup[];
@@ -456,6 +464,7 @@ export function buildInitialMelodyContours({
   scalePitchClasses: string[];
   character?: MelodyCharacter;
   sectionIntents?: MelodySectionIntent[];
+  syllableProsody?: LyricSyllableProsody[];
 }): MelodyPhrase[] {
   const establishedMotifs = new Map<
     string,
@@ -741,22 +750,10 @@ export function buildInitialMelodyContours({
           }
 
           const vocalAssessment = classifyExtendedVocalWord({
-  word: word.word,
-  durationSeconds: word.durationSeconds,
-  isFinalWordInPhrase,
-});
-
-if (vocalAssessment.treatment !== "ordinary") {
-  console.log("[melody] EXTENDED VOCAL WORD", {
-    path: "motif-reuse",
-    word: word.word,
-    durationSeconds: word.durationSeconds,
-    weight: word.weight,
-    isFinalWordInPhrase,
-    treatment: vocalAssessment.treatment,
-    syllableCount: vocalAssessment.syllableCount,
-  });
-}
+            word: word.word,
+            durationSeconds: word.durationSeconds,
+            isFinalWordInPhrase,
+          });
 
           const renderedDurationSeconds =
             word.durationSeconds *
@@ -765,11 +762,17 @@ if (vocalAssessment.treatment !== "ordinary") {
               isFinalWordInPhrase,
             );
 
+          const treatedDurationSeconds = getExtendedVocalDuration({
+            assessment: vocalAssessment,
+            originalDurationSeconds: word.durationSeconds,
+            renderedDurationSeconds,
+          });
+
           reusedNotes.push({
             pitchMidi: currentPitch,
             startSeconds: word.startSeconds,
             durationSeconds: Number(
-              Math.max(0.1, renderedDurationSeconds).toFixed(3),
+              Math.max(0.1, treatedDurationSeconds).toFixed(3),
             ),
             lyricText: word.word,
           });
@@ -974,45 +977,185 @@ if (vocalAssessment.treatment !== "ordinary") {
         previousHarmonyChord =
           activeHarmonyEvent?.chord ?? previousHarmonyChord;
 
-if (word.durationSeconds >= 2) {
-  console.log("[melody] EXTENDED WORD REACHED CONTOUR", {
-    word: word.word,
-    durationSeconds: word.durationSeconds,
-    startSeconds: word.startSeconds,
-    isFinalWordInPhrase,
-  });
-}
-
-          const vocalAssessment = classifyExtendedVocalWord({
-  word: word.word,
-  durationSeconds: word.durationSeconds,
-  isFinalWordInPhrase,
-});
-
-if (vocalAssessment.treatment !== "ordinary") {
-  console.log("[melody] EXTENDED VOCAL WORD", {
-    path: "normal",
-    word: word.word,
-    durationSeconds: word.durationSeconds,
-    weight: word.weight,
-    isFinalWordInPhrase,
-    treatment: vocalAssessment.treatment,
-    syllableCount: vocalAssessment.syllableCount,
-  });
-}
+        const vocalAssessment = classifyExtendedVocalWord({
+          word: word.word,
+          durationSeconds: word.durationSeconds,
+          isFinalWordInPhrase,
+        });
 
         const renderedDurationSeconds =
           word.durationSeconds *
           getRenderedMelodyDurationMultiplier(word.weight, isFinalWordInPhrase);
 
-        notes.push({
+        const treatedDurationSeconds = getExtendedVocalDuration({
+          assessment: vocalAssessment,
+          originalDurationSeconds: word.durationSeconds,
+          renderedDurationSeconds,
+        });
+
+        const wordMelodyNote: MelodyNote = {
           pitchMidi: currentPitch,
           startSeconds: word.startSeconds,
           durationSeconds: Number(
-            Math.max(0.1, renderedDurationSeconds).toFixed(3),
+            Math.max(0.1, treatedDurationSeconds).toFixed(3),
           ),
           lyricText: word.word,
+        };
+
+        const wordProsody = getLyricSyllableProsody({
+          word: word.word,
+          annotations: syllableProsody,
         });
+
+        const hasExplicitProsody =
+          wordProsody !== null && wordProsody.syllables.length >= 2;
+
+        if (
+          vocalAssessment.treatment === "syllabic-development-candidate" ||
+          hasExplicitProsody
+        ) {
+          const syllables = (
+            hasExplicitProsody
+              ? wordProsody.syllables
+              : word.word.split(/[-‐‑‒–—]/)
+          )
+            .map((part) => part.trim())
+            .filter(Boolean);
+
+          if (syllables.length >= 2) {
+            const syllablePitches = [currentPitch];
+
+            for (let index = 1; index < syllables.length; index += 1) {
+              const syllableMidpointSeconds =
+                wordMelodyNote.startSeconds +
+                ((index + 0.5) * wordMelodyNote.durationSeconds) /
+                  syllables.length;
+
+              const syllableHarmony = getActiveHarmonyEvent(
+                frameworkPhrase,
+                syllableMidpointSeconds,
+              );
+
+              const syllablePitchClasses = Array.from(
+                new Set([
+                  ...scalePitchClasses,
+                  ...(syllableHarmony?.pitchClasses ??
+                    frameworkPhrase.pitchClasses),
+                ]),
+              );
+
+              const syllableCandidates = getPitchCandidates(
+                syllablePitchClasses,
+                melodyRange.minimumMidi,
+                melodyRange.maximumMidi,
+              );
+
+              const previousSyllablePitch =
+                syllablePitches[syllablePitches.length - 1];
+
+              const direction = getPhraseShapeDirection({
+                section: anchorPhrase.section,
+                progress:
+                  (syllableMidpointSeconds - anchorPhrase.startSeconds) /
+                  Math.max(
+                    0.001,
+                    anchorPhrase.endSeconds - anchorPhrase.startSeconds,
+                  ),
+                lift: effectiveCharacter.lift,
+                sectionPhraseIndex,
+                contourIntent: anchorPhrase.contourIntent,
+              });
+
+              const movingCandidates = syllableCandidates.filter(
+                (pitch) =>
+                  pitch !== previousSyllablePitch &&
+                  Math.abs(pitch - previousSyllablePitch) <= 4,
+              );
+
+              const nextPitch =
+                movingCandidates.length > 0
+                  ? chooseNearbyPitch(
+                      movingCandidates,
+                      previousSyllablePitch,
+                      direction,
+                      false,
+                    )
+                  : previousSyllablePitch;
+
+              syllablePitches.push(nextPitch);
+            }
+
+            const normalizedSyllabicWord = word.word
+              .trim()
+              .toLowerCase()
+              .replace(/[-‐‑‒–—]/g, "-");
+
+            const stressedSyllableIndex = hasExplicitProsody
+              ? wordProsody.stressedSyllableIndex
+              : normalizedSyllabicWord === "a-lone" && syllables.length === 2
+                ? 1
+                : null;
+
+            const durationWeights = getSyllableDurationWeights({
+              syllableCount: syllables.length,
+              stressedSyllableIndex,
+            });
+
+            const syllabicNotes = buildSyllabicMelodyNotes({
+              note: wordMelodyNote,
+              pitches: syllablePitches,
+              durationWeights,
+              explicitSyllables: hasExplicitProsody ? syllables : undefined,
+            });
+
+            // Evaluate sustained syllables for a possible
+            // nearby harmonic resolution.
+            const resolvedSyllabicNotes: MelodyNote[] = [];
+
+            for (
+              let syllableIndex = 0;
+              syllableIndex < syllabicNotes.length;
+              syllableIndex += 1
+            ) {
+              const syllableNote = syllabicNotes[syllableIndex];
+
+              const isFinalSyllable =
+                syllableIndex === syllabicNotes.length - 1;
+
+              const resolution = isFinalSyllable
+                ? selectSyllableHarmonyResolution({
+                    note: syllableNote,
+                    harmonyEvents: frameworkPhrase.harmonyEvents,
+                    candidatePitches: getPitchCandidates(
+                      scalePitchClasses,
+                      melodyRange.minimumMidi,
+                      melodyRange.maximumMidi,
+                    ),
+                  })
+                : null;
+
+              if (resolution) {
+                resolvedSyllabicNotes.push(
+                  ...buildSyllableResolutionNotes({
+                    note: syllableNote,
+                    resolutionPitchMidi: resolution.resolutionPitchMidi,
+                    tensionDurationSeconds: resolution.tensionDurationSeconds,
+                  }),
+                );
+              } else {
+                resolvedSyllabicNotes.push(syllableNote);
+              }
+            }
+
+            notes.push(...resolvedSyllabicNotes);
+          } else {
+            notes.push(wordMelodyNote);
+          }
+        } else {
+          notes.push(wordMelodyNote);
+        }
+
+        currentPitch = notes[notes.length - 1]?.pitchMidi ?? currentPitch;
 
         phraseNoteIndex += 1;
       });
