@@ -516,12 +516,40 @@ function developWordMelodyNotes({
     return [wordMelodyNote];
   }
 
+  const normalizedSyllabicWord = word
+    .trim()
+    .toLowerCase()
+    .replace(/[-‐‑‒–—]/g, "-");
+
+  const stressedSyllableIndex = hasExplicitProsody
+    ? wordProsody.stressedSyllableIndex
+    : normalizedSyllabicWord === "a-lone" && syllables.length === 2
+      ? 1
+      : null;
+
+  const durationWeights = getSyllableDurationWeights({
+    syllableCount: syllables.length,
+    stressedSyllableIndex,
+  });
+
+  const syllableTimingNotes = buildSyllabicMelodyNotes({
+    note: wordMelodyNote,
+    pitches: syllables.map(() => wordMelodyNote.pitchMidi),
+    durationWeights,
+    explicitSyllables: hasExplicitProsody ? syllables : undefined,
+  });
+
   const syllablePitches = [wordMelodyNote.pitchMidi];
 
   for (let index = 1; index < syllables.length; index += 1) {
-    const syllableMidpointSeconds =
-      wordMelodyNote.startSeconds +
-      ((index + 0.5) * wordMelodyNote.durationSeconds) / syllables.length;
+    const syllableTimingNote = syllableTimingNotes[index];
+
+    const syllableMidpointSeconds = syllableTimingNote
+      ? syllableTimingNote.startSeconds +
+        syllableTimingNote.durationSeconds / 2
+      : wordMelodyNote.startSeconds +
+        ((index + 0.5) * wordMelodyNote.durationSeconds) /
+          syllables.length;
 
     const syllableHarmony = getActiveHarmonyEvent(
       frameworkPhrase,
@@ -575,22 +603,6 @@ function developWordMelodyNotes({
 
     syllablePitches.push(nextPitch);
   }
-
-  const normalizedSyllabicWord = word
-    .trim()
-    .toLowerCase()
-    .replace(/[-‐‑‒–—]/g, "-");
-
-  const stressedSyllableIndex = hasExplicitProsody
-    ? wordProsody.stressedSyllableIndex
-    : normalizedSyllabicWord === "a-lone" && syllables.length === 2
-      ? 1
-      : null;
-
-  const durationWeights = getSyllableDurationWeights({
-    syllableCount: syllables.length,
-    stressedSyllableIndex,
-  });
 
   const syllabicNotes = buildSyllabicMelodyNotes({
     note: wordMelodyNote,
