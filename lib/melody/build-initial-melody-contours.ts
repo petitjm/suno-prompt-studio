@@ -1115,7 +1115,12 @@ export function buildInitialMelodyContours({
           averageWordDuration > 0 &&
           word.durationSeconds >= averageWordDuration * 1.45;
 
+        const isLyricalEmphasisWord =
+          anchorPhrase.emphasisWordOffset !== undefined &&
+          phraseNoteIndex === anchorPhrase.emphasisWordOffset;
+
         const isGestureAnchor =
+          isLyricalEmphasisWord ||
           isGestureStart ||
           isGesturePivot ||
           entersAfterRhythmicSpace ||
@@ -1143,6 +1148,7 @@ export function buildInitialMelodyContours({
 
         const holdPreviousPitch =
           phraseNoteIndex > 0 &&
+          !isLyricalEmphasisWord &&
           (shouldHoldPreviousMelodyPitch(word.word) || holdForMovement) &&
           !harmonyChanged &&
           !isFinalWordInUnit;
