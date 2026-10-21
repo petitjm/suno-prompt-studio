@@ -7627,37 +7627,39 @@ export default function Page() {
       }),
   );
 
-  const songwriterGuidedMelodyNotes = initialMelodyContours.flatMap(
-    (phrase) => {
-      if (phrase.notes.length === 0) {
-        return [];
-      }
+  const completedMelodyPhrases = initialMelodyContours.map((phrase) => {
+    const referencePitches = songwriterReferencePitchSequenceByLyricText.get(
+      normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
+    );
 
-      const referencePitches = songwriterReferencePitchSequenceByLyricText.get(
-        normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
-      );
+    if (!referencePitches?.length || phrase.notes.length === 0) {
+      return phrase;
+    }
 
-      if (!referencePitches || referencePitches.length === 0) {
-        return phrase.notes;
-      }
+    const notes = phrase.notes.map((note, noteIndex) => {
+      const referencePitchIndex =
+        phrase.notes.length === 1
+          ? 0
+          : Math.round(
+              (noteIndex * (referencePitches.length - 1)) /
+                (phrase.notes.length - 1),
+            );
 
-      return phrase.notes.map((note, noteIndex) => {
-        const referencePitchIndex =
-          phrase.notes.length === 1
-            ? 0
-            : Math.round(
-                (noteIndex * (referencePitches.length - 1)) /
-                  (phrase.notes.length - 1),
-              );
+      return {
+        ...note,
+        pitchMidi:
+          referencePitches[referencePitchIndex] + chordTransposeSemitones,
+      };
+    });
 
-        const referencePitch = referencePitches[referencePitchIndex];
+    return {
+      ...phrase,
+      notes,
+    };
+  });
 
-        return {
-          ...note,
-          pitchMidi: referencePitch + chordTransposeSemitones,
-        };
-      });
-    },
+  const songwriterGuidedMelodyNotes = completedMelodyPhrases.flatMap(
+    (phrase) => phrase.notes,
   );
 
   console.table(
