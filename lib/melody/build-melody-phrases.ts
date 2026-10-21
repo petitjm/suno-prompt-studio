@@ -29,7 +29,7 @@ type LyricTimingPhraseLike = {
   contourIntent?: unknown;
   emphasisIntent?: unknown;
   resolutionIntent?: unknown;
-    emphasisWordOffset?: unknown;
+  emphasisWordOffset?: unknown;
 };
 
 type LyricTimingPlanLike = {
@@ -335,12 +335,12 @@ export function buildMelodyPhraseScaffoldFromGuideSections({
         ? phrase.resolutionIntent
         : undefined;
 
-    const emphasisWordOffset =
-      typeof phrase.emphasisWordOffset === "number" &&
-      Number.isInteger(phrase.emphasisWordOffset) &&
-      phrase.emphasisWordOffset >= 0
-        ? phrase.emphasisWordOffset
-        : undefined;
+    const requestedEmphasisWordOffset =
+  typeof phrase.emphasisWordOffset === "number" &&
+  Number.isInteger(phrase.emphasisWordOffset) &&
+  phrase.emphasisWordOffset >= 0
+    ? phrase.emphasisWordOffset
+    : undefined;
 
     if (
       !section ||
@@ -383,6 +383,17 @@ export function buildMelodyPhraseScaffoldFromGuideSections({
     if (!sourceLyric) {
       return;
     }
+
+        const phraseWordCount = sourceLyric
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+
+    const emphasisWordOffset =
+      requestedEmphasisWordOffset !== undefined &&
+      requestedEmphasisWordOffset < phraseWordCount
+        ? requestedEmphasisWordOffset
+        : undefined;
 
     const startSeconds = musicalPositionToSeconds({
       section: matchingSection,
