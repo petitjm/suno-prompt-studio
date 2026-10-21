@@ -660,6 +660,7 @@ export function buildInitialMelodyContours({
     {
       contourIntent: MelodyPhrase["contourIntent"];
       contourSequence: ContourDirection[];
+      wordPitchSequence: number[];
     }
   >();
 
@@ -904,6 +905,15 @@ export function buildInitialMelodyContours({
           const motifContourDirection =
             establishedContourSequence[reusedNoteIndex] ?? "level";
 
+          const establishedWordPitches =
+            establishedMotif?.wordPitchSequence;
+
+          const originalInterval =
+            establishedWordPitches && reusedNoteIndex > 0
+              ? establishedWordPitches[reusedNoteIndex] -
+                establishedWordPitches[reusedNoteIndex - 1]
+              : null;
+
           const liftedContourDirection = applyMelodyLiftBias(
             motifContourDirection,
             effectiveCharacter.lift,
@@ -917,11 +927,18 @@ export function buildInitialMelodyContours({
             : liftedContourDirection;
 
           if (reusedNoteIndex === 0 && preferChordTone) {
+           const originalStartPitch =
+              establishedMotif?.wordPitchSequence[0];
+
             const phraseStartReferencePitch =
-              previousPhraseEndPitch !== null &&
-              anchorPhrase.sectionInstanceId === previousPhraseSectionInstanceId
-                ? previousPhraseEndPitch
-                : currentPitch;
+              originalStartPitch !== undefined &&
+              preferredCandidates.includes(originalStartPitch)
+                ? originalStartPitch
+                : previousPhraseEndPitch !== null &&
+                    anchorPhrase.sectionInstanceId ===
+                      previousPhraseSectionInstanceId
+                  ? previousPhraseEndPitch
+                  : currentPitch;
 
             currentPitch = preferredCandidates.reduce((best, candidate) =>
               Math.abs(candidate - phraseStartReferencePitch) <
@@ -930,12 +947,26 @@ export function buildInitialMelodyContours({
                 : best,
             );
           } else if (reusedNoteIndex > 0 && !holdPreviousPitch) {
-            currentPitch = chooseNearbyPitch(
-              preferredCandidates,
-              currentPitch,
-              realisedContourDirection,
-              preferWiderStep,
-            );
+            const targetPitch =
+              originalInterval !== null
+                ? currentPitch + originalInterval
+                : null;
+
+            const matchingIntervalPitch =
+              targetPitch !== null &&
+              preferredCandidates.includes(targetPitch)
+                ? targetPitch
+                : null;
+
+            currentPitch =
+              matchingIntervalPitch !== null
+                ? matchingIntervalPitch
+                : chooseNearbyPitch(
+                    preferredCandidates,
+                    currentPitch,
+                    realisedContourDirection,
+                    preferWiderStep,
+                  );
           }
 
           const vocalAssessment = classifyExtendedVocalWord({
@@ -1233,10 +1264,13 @@ export function buildInitialMelodyContours({
       });
     });
 
-        if (!establishedMotif) {
+    if (!establishedMotif) {
       establishedMotifs.set(motifKey, {
         contourIntent: anchorPhrase.contourIntent,
         contourSequence: getMelodyContourSequence(wordLevelMotifNotes),
+        wordPitchSequence: wordLevelMotifNotes.map(
+          (note) => note.pitchMidi,
+        ),
       });
     }
 
@@ -1249,5 +1283,5 @@ export function buildInitialMelodyContours({
       ...anchorPhrase,
       notes,
     };
-  });
+    });
 }
