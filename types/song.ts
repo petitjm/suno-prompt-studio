@@ -116,6 +116,9 @@ export type MelodyPhrase = {
   contourIntent?: "settle" | "rise" | "arch" | "fall" | "suspend";
   emphasisIntent?: "restrained" | "normal" | "strong";
   resolutionIntent?: "open" | "partial" | "resolved";
+  // Zero-based index of the principal expressive word within this phrase.
+  // Optional for compatibility with existing saved timing plans.
+  emphasisWordOffset?: number;
   notes: MelodyNote[];
 };
 

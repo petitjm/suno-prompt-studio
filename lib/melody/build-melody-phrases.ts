@@ -29,6 +29,7 @@ type LyricTimingPhraseLike = {
   contourIntent?: unknown;
   emphasisIntent?: unknown;
   resolutionIntent?: unknown;
+    emphasisWordOffset?: unknown;
 };
 
 type LyricTimingPlanLike = {
@@ -334,6 +335,13 @@ export function buildMelodyPhraseScaffoldFromGuideSections({
         ? phrase.resolutionIntent
         : undefined;
 
+    const emphasisWordOffset =
+      typeof phrase.emphasisWordOffset === "number" &&
+      Number.isInteger(phrase.emphasisWordOffset) &&
+      phrase.emphasisWordOffset >= 0
+        ? phrase.emphasisWordOffset
+        : undefined;
+
     if (
       !section ||
       startSourceLineIndex === null ||
@@ -424,6 +432,7 @@ export function buildMelodyPhraseScaffoldFromGuideSections({
       contourIntent,
       emphasisIntent,
       resolutionIntent,
+      emphasisWordOffset,
       notes: [],
     });
   });

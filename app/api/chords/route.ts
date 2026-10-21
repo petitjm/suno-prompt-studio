@@ -1199,7 +1199,8 @@ Return ONLY valid JSON using this exact top-level shape:
   "endBeat": 3,
   "contourIntent": "arch",
   "emphasisIntent": "normal",
-  "resolutionIntent": "partial"
+  "resolutionIntent": "partial",
+  "emphasisWordIndex": 4
 },
       {
   "section": "Verse 1",
@@ -1211,7 +1212,8 @@ Return ONLY valid JSON using this exact top-level shape:
   "endBeat": 4,
   "contourIntent": "settle",
   "emphasisIntent": "restrained",
-  "resolutionIntent": "resolved"
+  "resolutionIntent": "resolved",
+  "emphasisWordIndex": 9
 }
     ]
   }
@@ -1245,7 +1247,15 @@ Phrase-construction requirements:
 - Repeated choruses may use similar phrasing when musically justified.
 
 Phrase melodic-intent requirements:
-- For every phrase, also return contourIntent, emphasisIntent, and resolutionIntent.
+- For every phrase, return contourIntent, emphasisIntent, and resolutionIntent.
+- Also identify the principal expressive word using emphasisWordIndex when the phrase has a clear lyrical focus.
+- emphasisWordIndex is the zero-based GLOBAL sung-word index from the supplied indexed word stream.
+- It must be greater than or equal to startWordIndex and strictly less than endWordIndexExclusive.
+- Omit emphasisWordIndex when no single word deserves principal emphasis.
+- Choose the emphasis word from lyric meaning, natural language stress, emotional significance, genre-informed delivery, and the surrounding musical context.
+- Do not automatically select the longest word, final word, first word, or a word following a pause.
+- An emphasis anchor identifies a musical focus; it does not require the melody to rise or the word to be sustained.
+- Preserve the distinction between the phrase's overall emphasisIntent and the location of its principal expressive word.
 - Choose these from the lyric meaning, emotional movement, natural language stress, vocal delivery, surrounding phrases, and existing musical context.
 - Do not choose them mechanically from section labels, phrase length, punctuation, or word count.
 - Punctuation may provide expressive context when useful, but it must not determine the result.
@@ -1571,6 +1581,8 @@ Return wordTimingPlan only.
           contourIntent: "settle" | "rise" | "arch" | "fall" | "suspend";
           emphasisIntent: "restrained" | "normal" | "strong";
           resolutionIntent: "open" | "partial" | "resolved";
+          emphasisWordOffset?: number;
+
         }> => {
           if (!phrase || typeof phrase !== "object" || Array.isArray(phrase)) {
             conversionErrors.push(
@@ -1645,6 +1657,26 @@ Return wordTimingPlan only.
               ? phraseRecord.resolutionIntent
               : null;
 
+          const hasSuppliedEmphasisWordIndex =
+            phraseRecord.emphasisWordIndex !== undefined &&
+            phraseRecord.emphasisWordIndex !== null;
+
+          const emphasisWordIndex =
+            typeof phraseRecord.emphasisWordIndex === "number" &&
+            Number.isInteger(phraseRecord.emphasisWordIndex)
+              ? phraseRecord.emphasisWordIndex
+              : null;
+
+          if (
+            hasSuppliedEmphasisWordIndex &&
+            emphasisWordIndex === null
+          ) {
+            conversionErrors.push(
+              `Phrase ${phraseIndex + 1} has an invalid emphasisWordIndex.`,
+            );
+            return [];
+          }
+
           if (
             !section ||
             startWordIndex === null ||
@@ -1673,6 +1705,22 @@ Return wordTimingPlan only.
             );
             return [];
           }
+
+          if (
+            emphasisWordIndex !== null &&
+            (emphasisWordIndex < startWordIndex ||
+              emphasisWordIndex >= endWordIndexExclusive)
+          ) {
+            conversionErrors.push(
+              `Phrase ${phraseIndex + 1} has an emphasis word outside its phrase.`,
+            );
+            return [];
+          }
+
+          const emphasisWordOffset =
+            emphasisWordIndex !== null
+              ? emphasisWordIndex - startWordIndex
+              : undefined;
 
           const phraseWords = sungWordEntries.slice(
             startWordIndex,
@@ -1720,6 +1768,7 @@ Return wordTimingPlan only.
               contourIntent,
               emphasisIntent,
               resolutionIntent,
+              emphasisWordOffset,
             },
           ];
         },
@@ -1829,6 +1878,9 @@ Repair requirements:
 - Preserve the exact phrase order from the previous attempt.
 - Preserve each phrase's section exactly.
 - Preserve each phrase's contourIntent, emphasisIntent, and resolutionIntent exactly. This repair is for timing validation, not emotional or melodic reinterpretation.
+- Preserve each phrase's emphasisWordIndex when supplied, provided it remains inside that phrase's repaired word span.
+- If a necessary word-span correction excludes the original emphasis word, select an appropriate emphasisWordIndex within the repaired phrase, or omit it if there is no clear expressive focus.
+- Do not change emphasisWordIndex solely to alter the rhythmic placement of a word.
 - Normally preserve each phrase's startWordIndex and endWordIndexExclusive exactly.
 - If a validation error says that a phrase crosses a section boundary or has the wrong section label, adjust that phrase's word-span boundary and, if necessary, its immediately adjacent phrase as little as possible so every phrase contains words from its own section only.
 - If a validation error says that a phrase overlaps or appears out of lyric order, adjust that phrase's word-span boundary and, if necessary, its immediately adjacent phrase as little as possible to restore ascending, non-overlapping lyric order.
@@ -3342,6 +3394,10 @@ Repair requirements:
 - Preserve the exact number of phrases from the previous attempt.
 - Preserve the exact phrase order from the previous attempt.
 - Preserve each phrase's section exactly.
+- Preserve each phrase's contourIntent, emphasisIntent, and resolutionIntent exactly. This repair must not reinterpret the phrase's musical character.
+- Preserve emphasisWordIndex when supplied and when it remains inside the repaired phrase's word span.
+- If a necessary word-span correction excludes the original emphasis word, choose an appropriate emphasisWordIndex within the repaired phrase, or omit it when no clear expressive focus remains.
+- Do not introduce or change emphasisWordIndex solely to repair bar/beat timing.
 - Normally preserve each phrase's startWordIndex and endWordIndexExclusive exactly.
 - If, and only if, a validation error explicitly says that a phrase overlaps or appears out of lyric order, you may adjust the word-span boundary of that phrase and its immediately adjacent phrase as little as necessary to restore ascending, non-overlapping lyric order.
 - Do NOT merge phrases.
@@ -3465,6 +3521,7 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
         contourIntent: "settle" | "rise" | "arch" | "fall" | "suspend";
         emphasisIntent: "restrained" | "normal" | "strong";
         resolutionIntent: "open" | "partial" | "resolved";
+        emphasisWordOffset?: number;
       }> => {
         if (
           !rawPhrase ||
@@ -3517,6 +3574,7 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
             contourIntent: convertedPhrase.contourIntent,
             emphasisIntent: convertedPhrase.emphasisIntent,
             resolutionIntent: convertedPhrase.resolutionIntent,
+            emphasisWordOffset: convertedPhrase.emphasisWordOffset,
           },
         ];
       },
@@ -3549,6 +3607,10 @@ Return ONLY valid JSON in the same wordTimingPlan shape requested above.
         contourIntent: phrase.contourIntent,
         emphasisIntent: phrase.emphasisIntent,
         resolutionIntent: phrase.resolutionIntent,
+        emphasisWordIndex:
+          phrase.emphasisWordOffset !== undefined
+            ? phrase.startWordIndex + phrase.emphasisWordOffset
+            : undefined,
       })),
     };
 
