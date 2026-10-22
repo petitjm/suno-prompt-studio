@@ -1,0 +1,68 @@
+
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
+  try {
+    const { projectId } = await params;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 },
+      );
+    }
+
+    const { data: project, error: projectError } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (projectError || !project) {
+      return NextResponse.json(
+        { error: "Project not found" },
+        { status: 404 },
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("melody_versions")
+      .select(
+        "id, project_id, song_version_id, chord_version_id, title, melody_data, created_at",
+      )
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("melody_versions fetch error:", error);
+
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      versions: data || [],
+      latest: data?.[0] || null,
+    });
+  } catch (error) {
+    console.error("melody_versions GET route failure:", error);
+
+    return NextResponse.json(
+      { error: "Failed to load melody versions" },
+      { status: 500 },
+    );
+  }
+}

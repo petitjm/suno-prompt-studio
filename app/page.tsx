@@ -63,6 +63,7 @@ import type {
   AppMode,
   MelodyCharacter,
   MelodySectionIntent,
+  MelodyVersionData,
   SongCreativeProfile,
 } from "@/types/song";
 
@@ -596,6 +597,29 @@ export default function Page() {
     review_note: string | null;
     reviewed_at: string | null;
   };
+
+  type SavedMelodyVersion = {
+    id: string;
+    project_id: string;
+    song_version_id: string;
+    chord_version_id: string | null;
+    title: string;
+    melody_data: MelodyVersionData;
+    created_at: string;
+  };
+
+  const [savedMelodyVersions, setSavedMelodyVersions] = useState<
+    SavedMelodyVersion[]
+  >([]);
+
+  const [selectedSavedMelodyVersionId, setSelectedSavedMelodyVersionId] =
+    useState("");
+
+  const [loadingSavedMelodyVersions, setLoadingSavedMelodyVersions] =
+    useState(false);
+
+  const [savedMelodyVersionsStatus, setSavedMelodyVersionsStatus] =
+    useState("");
 
   const [savedMusicalGuideVersions, setSavedMusicalGuideVersions] = useState<
     SavedMusicalGuideVersion[]
@@ -7673,6 +7697,28 @@ export default function Page() {
     phrases: completedMelodyPhrases,
   });
 
+  const selectedSavedMelodyVersion =
+    savedMelodyVersions.find(
+      (version) =>
+        version.id === selectedSavedMelodyVersionId &&
+        version.project_id === activeProject?.id &&
+        version.song_version_id === activeSongVersionId &&
+        version.chord_version_id === activeChordVersionId &&
+        version.melody_data.songVersionId === activeSongVersionId &&
+        version.melody_data.chordVersionId === activeChordVersionId &&
+        version.melody_data.tempoBpm === previewTempo,
+    ) ?? null;
+
+  const melodyNotesForRendering = selectedSavedMelodyVersion
+    ? selectedSavedMelodyVersion.melody_data.phrases.flatMap(
+        (phrase) => phrase.notes,
+      )
+    : songwriterGuidedMelodyNotes;
+
+  const melodyRenderSourceLabel = selectedSavedMelodyVersion
+    ? `Saved melody: ${selectedSavedMelodyVersion.title}`
+    : "Current generated melody";
+
   console.table(
     initialMelodyContours.flatMap((phrase) => {
       const lyric = normalizeSongwriterReferenceLyric(phrase.sourceLyric || "");
@@ -8172,6 +8218,38 @@ export default function Page() {
     setSavedMusicalGuideVersions((data || []) as SavedMusicalGuideVersion[]);
   };
 
+  const loadProjectSavedMelodyVersions = async (projectId: string) => {
+    setLoadingSavedMelodyVersions(true);
+    setSavedMelodyVersionsStatus("");
+
+    try {
+      const response = await fetch(
+        `/api/melody-versions/${encodeURIComponent(projectId)}`,
+      );
+
+      const data = await readJsonSafe(response);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load melody versions.");
+      }
+
+      const versions = Array.isArray(data.versions)
+        ? (data.versions as SavedMelodyVersion[])
+        : [];
+
+      setSavedMelodyVersions(versions);
+    } catch (error) {
+      setSavedMelodyVersions([]);
+      setSavedMelodyVersionsStatus(
+        error instanceof Error
+          ? `Could not load melody versions: ${error.message}`
+          : "Could not load melody versions.",
+      );
+    } finally {
+      setLoadingSavedMelodyVersions(false);
+    }
+  };
+
   const loadProjectSavedMusicalGuideVersions = async (projectId: string) => {
     const { data, error } = await supabase
       .from("audio_versions")
@@ -8191,6 +8269,21 @@ export default function Page() {
       (data || []) as SavedMusicalGuideVersion[],
     );
   };
+
+  useEffect(() => {
+    const projectId = activeProject?.id;
+
+    // Clear previous-project data and selection.
+    setSavedMelodyVersions([]);
+    setSelectedSavedMelodyVersionId("");
+    setSavedMelodyVersionsStatus("");
+
+    if (!projectId) {
+      return;
+    }
+
+    void loadProjectSavedMelodyVersions(projectId);
+  }, [activeProject?.id]);
 
   useEffect(() => {
     if (!activeProject?.id) {
@@ -12131,7 +12224,7 @@ export default function Page() {
     };
   };
 
-    const saveCompletedMelodyVersion = async () => {
+  const saveCompletedMelodyVersion = async () => {
     if (savingMelodyVersion) {
       return;
     }
@@ -12149,9 +12242,7 @@ export default function Page() {
     );
 
     if (noteCount === 0) {
-      setSaveMelodyVersionStatus(
-        "The completed melody contains no notes.",
-      );
+      setSaveMelodyVersionStatus("The completed melody contains no notes.");
       return;
     }
 
@@ -12198,6 +12289,13 @@ export default function Page() {
   };
 
   const downloadMusicalGuide = async () => {
+    if (selectedSavedMelodyVersionId && !selectedSavedMelodyVersion) {
+      setClickTrackDownloadStatus(
+        "The selected saved melody is incompatible with the current song, chord version, or tempo. Select Current generated melody or restore the matching musical context.",
+      );
+      return;
+    }
+
     if (chordActionBlockedReason) {
       setClickTrackDownloadStatus(chordActionBlockedReason);
       return;
@@ -12229,7 +12327,7 @@ export default function Page() {
           enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
           mixProfile: "musical-guide",
           musicalGuideMixLevels,
-          melodyNotes: buildArticulatedMelodyNotes(songwriterGuidedMelodyNotes),
+          melodyNotes: buildArticulatedMelodyNotes(melodyNotesForRendering),
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id
@@ -39227,6 +39325,13 @@ ${buildRewriteInstruction(
                       Melody Versions
                     </div>
 
+                    <div className="mb-3 text-xs text-blue-200">
+                      Melody source for next Audio Guide:{" "}
+                      <span className="font-semibold">
+                        {melodyRenderSourceLabel}
+                      </span>
+                    </div>
+
                     <button
                       type="button"
                       onClick={saveCompletedMelodyVersion}
@@ -39246,13 +39351,91 @@ ${buildRewriteInstruction(
                     </button>
 
                     {saveMelodyVersionStatus && (
-                      <div
-                        role="status"
-                        className="mt-2 text-xs text-gray-300"
-                      >
+                      <div role="status" className="mt-2 text-xs text-gray-300">
                         {saveMelodyVersionStatus}
                       </div>
                     )}
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor="saved-melody-version"
+                        className="mb-1 block text-xs font-medium text-gray-300"
+                      >
+                        Saved melody versions
+                      </label>
+
+                      <select
+                        id="saved-melody-version"
+                        value={selectedSavedMelodyVersionId}
+                        onChange={(event) => {
+                          setSelectedSavedMelodyVersionId(event.target.value);
+                        }}
+                        disabled={loadingSavedMelodyVersions}
+                        className="w-full rounded border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white disabled:opacity-40"
+                      >
+                        <option value="">Current generated melody</option>
+
+                        {savedMelodyVersions
+                          .filter(
+                            (version) =>
+                              version.song_version_id === activeSongVersionId &&
+                              version.chord_version_id === activeChordVersionId,
+                          )
+                          .map((version) => (
+                            <option key={version.id} value={version.id}>
+                              {version.title}
+                            </option>
+                          ))}
+                      </select>
+
+                      {loadingSavedMelodyVersions && (
+                        <div className="mt-2 text-xs text-gray-400">
+                          Loading saved melody versions...
+                        </div>
+                      )}
+
+                      {savedMelodyVersionsStatus && (
+                        <div
+                          role="status"
+                          className="mt-2 text-xs text-red-300"
+                        >
+                          {savedMelodyVersionsStatus}
+                        </div>
+                      )}
+
+                      {selectedSavedMelodyVersionId &&
+                        (() => {
+                          const selected = savedMelodyVersions.find(
+                            (version) =>
+                              version.id === selectedSavedMelodyVersionId &&
+                              version.song_version_id === activeSongVersionId &&
+                              version.chord_version_id === activeChordVersionId,
+                          );
+
+                          if (!selected) {
+                            return null;
+                          }
+
+                          const noteCount = selected.melody_data.phrases.reduce(
+                            (total, phrase) => total + phrase.notes.length,
+                            0,
+                          );
+
+                          return (
+                            <div className="mt-2 rounded border border-gray-700 bg-gray-900 p-2 text-xs text-gray-300">
+                              <div>Selected: {selected.title}</div>
+                              <div>
+                                {selected.melody_data.phrases.length} phrases,{" "}
+                                {noteCount} notes
+                              </div>
+                              <div className="mt-1 text-green-300">
+                                This saved melody will be used for the next
+                                Audio Guide render.
+                              </div>
+                            </div>
+                          );
+                        })()}
+                    </div>
                   </div>
 
                   <details className="mb-4 rounded border border-yellow-800 bg-yellow-950/30 p-3 text-xs text-yellow-100">
