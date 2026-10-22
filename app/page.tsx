@@ -556,6 +556,8 @@ export default function Page() {
     useState(false);
   const [testingRealRenderRoute, setTestingRealRenderRoute] = useState(false);
   const [clickTrackDownloadStatus, setClickTrackDownloadStatus] = useState("");
+  const [savingMelodyVersion, setSavingMelodyVersion] = useState(false);
+  const [saveMelodyVersionStatus, setSaveMelodyVersionStatus] = useState("");
   const [clickTrackAudioUrl, setClickTrackAudioUrl] = useState("");
   const [clickTrackAudioLabel, setClickTrackAudioLabel] = useState(
     "Latest generated WAV",
@@ -7662,6 +7664,15 @@ export default function Page() {
     (phrase) => phrase.notes,
   );
 
+  const completedMelodyVersionData = buildMelodyVersionData({
+    songVersionId: activeSongVersionId || "",
+    chordVersionId: activeChordVersionId,
+    tempoBpm: previewTempo,
+    character: melodyCharacter,
+    sectionIntents: melodySectionIntents,
+    phrases: completedMelodyPhrases,
+  });
+
   console.table(
     initialMelodyContours.flatMap((phrase) => {
       const lyric = normalizeSongwriterReferenceLyric(phrase.sourceLyric || "");
@@ -12118,6 +12129,72 @@ export default function Page() {
       storagePath,
       message: "Generated Audio Guide saved for this song version.",
     };
+  };
+
+    const saveCompletedMelodyVersion = async () => {
+    if (savingMelodyVersion) {
+      return;
+    }
+
+    if (!activeProject?.id || !completedMelodyVersionData) {
+      setSaveMelodyVersionStatus(
+        "Select a saved song and a completed melody before saving.",
+      );
+      return;
+    }
+
+    const noteCount = completedMelodyVersionData.phrases.reduce(
+      (total, phrase) => total + phrase.notes.length,
+      0,
+    );
+
+    if (noteCount === 0) {
+      setSaveMelodyVersionStatus(
+        "The completed melody contains no notes.",
+      );
+      return;
+    }
+
+    setSavingMelodyVersion(true);
+    setSaveMelodyVersionStatus("Saving melody version...");
+
+    try {
+      const response = await fetch("/api/melody-versions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          title: "Musical Guide Melody 1",
+          melody_data: completedMelodyVersionData,
+        }),
+      });
+
+      const data = await readJsonSafe(response);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save melody version.");
+      }
+
+      if (!data.version?.id) {
+        throw new Error(
+          "The save response did not include a melody version ID.",
+        );
+      }
+
+      setSaveMelodyVersionStatus(
+        `Saved melody version: ${data.version.title || "Musical Guide Melody 1"} (${noteCount} notes).`,
+      );
+    } catch (error) {
+      setSaveMelodyVersionStatus(
+        error instanceof Error
+          ? `Could not save melody version: ${error.message}`
+          : "Could not save melody version.",
+      );
+    } finally {
+      setSavingMelodyVersion(false);
+    }
   };
 
   const downloadMusicalGuide = async () => {
@@ -39145,6 +39222,39 @@ ${buildRewriteInstruction(
                     </div>
                   )}
 
+                  <div className="mb-4 rounded border border-gray-700 bg-gray-950 p-3">
+                    <div className="mb-2 text-sm font-semibold text-gray-100">
+                      Melody Versions
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={saveCompletedMelodyVersion}
+                      disabled={
+                        savingMelodyVersion ||
+                        !activeProject?.id ||
+                        !completedMelodyVersionData ||
+                        !completedMelodyVersionData.phrases.some(
+                          (phrase) => phrase.notes.length > 0,
+                        )
+                      }
+                      className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {savingMelodyVersion
+                        ? "Saving melody..."
+                        : "Save Melody Version"}
+                    </button>
+
+                    {saveMelodyVersionStatus && (
+                      <div
+                        role="status"
+                        className="mt-2 text-xs text-gray-300"
+                      >
+                        {saveMelodyVersionStatus}
+                      </div>
+                    )}
+                  </div>
+
                   <details className="mb-4 rounded border border-yellow-800 bg-yellow-950/30 p-3 text-xs text-yellow-100">
                     <summary className="cursor-pointer font-semibold">
                       Advanced guide diagnostics
@@ -39259,23 +39369,29 @@ ${buildRewriteInstruction(
 
                       <div>
                         <div className="mb-1 font-semibold text-yellow-200">
-                          Melody version data
+                          Completed melody version data
                         </div>
                         <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2">
                           {JSON.stringify(
-                            melodyVersionData
+                            completedMelodyVersionData
                               ? {
                                   songVersionId:
-                                    melodyVersionData.songVersionId,
+                                    completedMelodyVersionData.songVersionId,
                                   chordVersionId:
-                                    melodyVersionData.chordVersionId,
-                                  tempoBpm: melodyVersionData.tempoBpm,
-                                  phraseCount: melodyVersionData.phrases.length,
-                                  noteCount: melodyVersionData.phrases.reduce(
-                                    (total, phrase) =>
-                                      total + phrase.notes.length,
-                                    0,
-                                  ),
+                                    completedMelodyVersionData.chordVersionId,
+                                  tempoBpm: completedMelodyVersionData.tempoBpm,
+                                  phraseCount:
+                                    completedMelodyVersionData.phrases.length,
+                                  noteCount:
+                                    completedMelodyVersionData.phrases.reduce(
+                                      (total, phrase) =>
+                                        total + phrase.notes.length,
+                                      0,
+                                    ),
+                                  readyToSave:
+                                    completedMelodyVersionData.phrases.some(
+                                      (phrase) => phrase.notes.length > 0,
+                                    ),
                                 }
                               : null,
                             null,
