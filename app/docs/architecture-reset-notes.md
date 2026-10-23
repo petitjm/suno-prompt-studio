@@ -1544,3 +1544,39 @@ tempo map / expressive timing
         ↓
 Rendered seconds / Audio Guide
 ```
+
+
+---
+
+## Melody versions, interpretive layers and Audio Guide rendering — 23 October 2026
+
+This section supplements the established song-version/chord-checkpoint provenance rules while preserving the document's existing priorities, workflow and model descriptions.
+
+### Durable melodic composition versus audible rendering
+
+- A completed melody can be saved as a linked `melody_versions` checkpoint. The saved musical data belongs to a specified project, saved song version, chord checkpoint and tempo; do not silently reuse it with incompatible context.
+- Musical note decisions, syllabic development and render-time articulation are different layers. `build-initial-melody-contours.ts` creates principal word-level melodic decisions and may develop them into multiple syllable-level note events.
+- `app/page.tsx` may apply songwriter-reference pitches to the developed notes, replacing their MIDI pitches while leaving note timings unchanged. This reference mapping is currently by normalized lyric and proportional note index, **not verified per-word or per-syllable alignment**. Any future precedence/alignment change must explicitly account for this.
+- `build-rendered-phrase-ending-notes.ts` is a **render-only** transformation. When the current generated melody ends a `resolved` phrase on contiguous, distinct syllables of the same lyric word, the final two are combined into a single sustained event using the preceding syllable's pitch. Source composition and saved melody versions are not changed. Saved-melody playback bypasses this transformation.
+- `build-articulated-melody-notes.ts` preserves explicitly labelled syllabic notes, prevents double-splitting, and merges contiguous same-word/same-pitch syllabic events where appropriate. This is a note-articulation choice, not a revision to the saved composition. Future work should represent musical ties and intentional retriggers explicitly.
+
+### Motif continuity
+
+- Motif storage is word-level; rendered syllabic ornaments must not silently expand the stored motif.
+- When a compatible established motif is reused, retain nonzero established pitch intervals wherever allowable under current harmony and vocal range. A general word-hold heuristic must not suppress a defined nonzero motif interval. Current tested guard: `(originalInterval === null || originalInterval === 0)` in the reuse hold decision.
+- Exact interval match is a useful diagnostic, but musical quality requires actual listening and contextual evaluation.
+
+### Natural instrumental decay
+
+- The melody renderer's `addWarmToneToSamples` accepts an optional exponential `decayTimeSeconds`; the melody currently uses an experimental 2.5-second decay constant with a short smoothing release. Other layers are unaffected unless they opt into this parameter.
+- All struck/plucked instrumental melody notes should exhibit appropriate amplitude evolution; silence following a lyric line makes this decay more audible. Decay and rearticulation must not be confused with pitch selection.
+- Audio Guide melody remains an instrumental aid, **not synthesized vocal syllable performance**.
+
+### Current development standard and open questions
+
+- Technical validity, version compatibility and note timings are necessary but **not sufficient**. The creative test is whether a complete song melody is recognisable, expressive and pleasant to rehearse/listen to.
+- The presently generated melody still requires substantial work on phrase entrances, cadences, between-phrase continuity, rhythm, lyrical stress and purposeful section-to-section development. Relatively stronger middle notes are not yet good enough musically.
+- Experimental `plan-melody-cadence.ts` and `tests/melody-cadence.test.mjs` were preserved in Git stash (`WIP experimental melody cadence planner`) and remain unintegrated because selection rules alone had not shown musical benefit. Do not treat the planner as adopted architecture.
+- Preserve the human-songwriter authority of reference performances while addressing the current ambiguity of lyric/pitch alignment and treatment of final syllables. Avoid global last-note rules that erase meaningful composition choices.
+
+**Status at handoff:** tested Audio Guide improvements committed on branch `architecture-reset`, working tree clean as reported by user on 23 October 2026; preserve existing saved melody checkpoints and experimental stash.
