@@ -1037,6 +1037,7 @@ function addWarmToneToSamples({
   thirdHarmonicLevel = 0.12,
   fadeInSeconds = 0.08,
   fadeOutSeconds = 0.18,
+  decayTimeSeconds,
 }: {
   samples: Float32Array;
   startSample: number;
@@ -1048,6 +1049,7 @@ function addWarmToneToSamples({
   thirdHarmonicLevel?: number;
   fadeInSeconds?: number;
   fadeOutSeconds?: number;
+  decayTimeSeconds?: number;
 }) {
   const safeStartSample = Math.max(0, startSample);
   const safeEndSample = Math.min(samples.length, endSample);
@@ -1082,7 +1084,15 @@ function addWarmToneToSamples({
         Math.sin(phase * 3) * thirdHarmonicLevel) /
       harmonicNormaliser;
 
-    const value = shapedTone * amplitude * envelope;
+    const elapsedSeconds = offset / sampleRateHz;
+
+    const naturalDecay =
+      decayTimeSeconds !== undefined && decayTimeSeconds > 0
+        ? Math.exp(-elapsedSeconds / decayTimeSeconds)
+        : 1;
+
+    const value =
+      shapedTone * amplitude * envelope * naturalDecay;
 
     samples[sampleIndex] += value;
   }
@@ -2034,9 +2044,11 @@ export function createClickTrackPcm16Samples(
       );
 
       const melodyFadeOutSeconds = Math.min(
-        0.055,
-        renderedNoteDurationSeconds * 0.3,
+        0.12,
+        renderedNoteDurationSeconds * 0.2,
       );
+
+      const melodyDecayTimeSeconds = 2.5;
 
       addWarmToneToSamples({
         samples,
@@ -2047,8 +2059,9 @@ export function createClickTrackPcm16Samples(
         frequencyHz,
         secondHarmonicLevel: 0.8,
         thirdHarmonicLevel: 0.35,
-        fadeInSeconds: 0.008,
-        fadeOutSeconds: 0.045,
+        fadeInSeconds: melodyFadeInSeconds,
+        fadeOutSeconds: melodyFadeOutSeconds,
+        decayTimeSeconds: melodyDecayTimeSeconds,
       });
     }
   }

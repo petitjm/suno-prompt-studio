@@ -3,18 +3,17 @@ import type { MelodyNote } from "@/types/song";
 export function buildArticulatedMelodyNotes(
   notes: MelodyNote[],
 ): MelodyNote[] {
-  return notes.flatMap((note) => {
-  // A melody note with an explicit syllable assignment
-  // has already been articulated by the composer.
-  // Do not split it again.
-  if (
-    typeof note.syllableText === "string" &&
-    note.syllableText.trim().length > 0
-  ) {
-    return [note];
-  }
+  const articulatedNotes = notes.flatMap((note) => {
+    // Notes with explicit syllable assignments have already
+    // been articulated by the melody generator.
+    if (
+      typeof note.syllableText === "string" &&
+      note.syllableText.trim().length > 0
+    ) {
+      return [note];
+    }
 
-  const lyricText = note.lyricText?.trim() || "";
+    const lyricText = note.lyricText?.trim() || "";
 
     const syllables = lyricText
       .split(/[-‐‑‒–—]/)
@@ -41,4 +40,54 @@ export function buildArticulatedMelodyNotes(
       syllableText,
     }));
   });
+
+  const sustainedNotes: MelodyNote[] = [];
+
+  for (const note of articulatedNotes) {
+    const previous = sustainedNotes[sustainedNotes.length - 1];
+
+    const previousEndSeconds = previous
+      ? previous.startSeconds + previous.durationSeconds
+      : null;
+
+    const sameWord =
+      Boolean(previous?.lyricText) &&
+      previous?.lyricText === note.lyricText;
+
+    const samePitch =
+      previous?.pitchMidi === note.pitchMidi;
+
+    const contiguous =
+      previousEndSeconds !== null &&
+      Math.abs(previousEndSeconds - note.startSeconds) <= 0.002;
+
+    const explicitlySyllabic =
+      Boolean(previous?.syllableText) &&
+      Boolean(note.syllableText);
+
+    if (
+      previous &&
+      sameWord &&
+      samePitch &&
+      contiguous &&
+      explicitlySyllabic
+    ) {
+      sustainedNotes[sustainedNotes.length - 1] = {
+        ...previous,
+        durationSeconds: Number(
+          (
+            note.startSeconds +
+            note.durationSeconds -
+            previous.startSeconds
+          ).toFixed(3),
+        ),
+      };
+
+      continue;
+    }
+
+    sustainedNotes.push(note);
+  }
+
+  return sustainedNotes;
 }

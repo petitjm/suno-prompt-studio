@@ -23,6 +23,8 @@ import { buildInitialMelodyContours } from "@/lib/melody/build-initial-melody-co
 
 import { buildArticulatedMelodyNotes } from "@/lib/melody/build-articulated-melody-notes";
 
+import { buildRenderedPhraseEndingNotes } from "@/lib/melody/build-rendered-phrase-ending-notes";
+
 import { buildLyricPhraseUnits } from "@/lib/melody/build-lyric-phrase-units";
 
 import { buildInitialMelodyAnchors } from "@/lib/melody/build-initial-melody-anchors";
@@ -12327,7 +12329,11 @@ export default function Page() {
           enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
           mixProfile: "musical-guide",
           musicalGuideMixLevels,
-          melodyNotes: buildArticulatedMelodyNotes(melodyNotesForRendering),
+          melodyNotes: buildArticulatedMelodyNotes(
+            selectedSavedMelodyVersion
+              ? melodyNotesForRendering
+              : buildRenderedPhraseEndingNotes(completedMelodyPhrases),
+          ),
           renderJobId:
             typeof audioPreviewRenderJob?.id === "string"
               ? audioPreviewRenderJob.id

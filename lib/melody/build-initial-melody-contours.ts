@@ -471,6 +471,7 @@ function getMelodyContourSequence(notes: MelodyNote[]): ContourDirection[] {
 function developWordMelodyNotes({
   wordMelodyNote,
   word,
+  isFinalWordInPhrase,
   vocalTreatment,
   frameworkPhrase,
   anchorPhrase,
@@ -482,6 +483,7 @@ function developWordMelodyNotes({
 }: {
   wordMelodyNote: MelodyNote;
   word: string;
+  isFinalWordInPhrase: boolean;
   vocalTreatment: ReturnType<typeof classifyExtendedVocalWord>["treatment"];
   frameworkPhrase: MelodyPitchFrameworkPhrase;
   anchorPhrase: MelodyPhrase;
@@ -591,8 +593,14 @@ function developWordMelodyNotes({
         Math.abs(pitch - previousSyllablePitch) <= 4,
     );
 
-    const nextPitch =
-      movingCandidates.length > 0
+    const isFinalSyllableOfResolvedPhrase =
+      isFinalWordInPhrase &&
+      anchorPhrase.resolutionIntent === "resolved" &&
+      index === syllables.length - 1;
+
+    const nextPitch = isFinalSyllableOfResolvedPhrase
+      ? wordMelodyNote.pitchMidi
+      : movingCandidates.length > 0
         ? chooseNearbyPitch(
             movingCandidates,
             previousSyllablePitch,
@@ -762,17 +770,6 @@ export function buildInitialMelodyContours({
         ? establishedMotif.contourSequence
         : undefined;
 
-    if (establishedMotif) {
-      console.log("[melody] motif reuse candidate", {
-        phraseIndex,
-        section: anchorPhrase.section,
-        motifKey,
-        currentContourIntent: anchorPhrase.contourIntent,
-        establishedContourIntent: establishedMotif.contourIntent,
-        reused: Boolean(establishedContourSequence),
-      });
-    }
-
     if (
       establishedContourSequence &&
       establishedContourSequence.length === totalWordCount
@@ -882,8 +879,18 @@ export function buildInitialMelodyContours({
             reusedNoteIndex,
           );
 
+          const establishedWordPitches =
+            establishedMotif?.wordPitchSequence;
+
+          const originalInterval =
+            establishedWordPitches && reusedNoteIndex > 0
+              ? establishedWordPitches[reusedNoteIndex] -
+                establishedWordPitches[reusedNoteIndex - 1]
+              : null;
+
           const holdPreviousPitch =
             reusedNoteIndex > 0 &&
+            (originalInterval === null || originalInterval === 0) &&
             (shouldHoldPreviousMelodyPitch(word.word) || holdForMovement) &&
             !harmonyChanged &&
             !isFinalWordInUnit;
@@ -916,15 +923,6 @@ export function buildInitialMelodyContours({
 
           const motifContourDirection =
             establishedContourSequence[reusedNoteIndex] ?? "level";
-
-          const establishedWordPitches =
-            establishedMotif?.wordPitchSequence;
-
-          const originalInterval =
-            establishedWordPitches && reusedNoteIndex > 0
-              ? establishedWordPitches[reusedNoteIndex] -
-                establishedWordPitches[reusedNoteIndex - 1]
-              : null;
 
           const liftedContourDirection = applyMelodyLiftBias(
             motifContourDirection,
@@ -1013,6 +1011,7 @@ export function buildInitialMelodyContours({
             ...developWordMelodyNotes({
               wordMelodyNote,
               word: word.word,
+              isFinalWordInPhrase,
               vocalTreatment: vocalAssessment.treatment,
               frameworkPhrase,
               anchorPhrase,
@@ -1265,6 +1264,7 @@ export function buildInitialMelodyContours({
           ...developWordMelodyNotes({
             wordMelodyNote,
             word: word.word,
+            isFinalWordInPhrase,
             vocalTreatment: vocalAssessment.treatment,
             frameworkPhrase,
             anchorPhrase,
