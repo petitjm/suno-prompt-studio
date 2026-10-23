@@ -617,6 +617,9 @@ export default function Page() {
   const [selectedSavedMelodyVersionId, setSelectedSavedMelodyVersionId] =
     useState("");
 
+  const [currentMelodyInterpretation, setCurrentMelodyInterpretation] =
+    useState<"songwriter-guided" | "fresh-generated">("songwriter-guided");
+
   const [loadingSavedMelodyVersions, setLoadingSavedMelodyVersions] =
     useState(false);
 
@@ -7660,7 +7663,11 @@ export default function Page() {
       normalizeSongwriterReferenceLyric(phrase.sourceLyric || ""),
     );
 
-    if (!referencePitches?.length || phrase.notes.length === 0) {
+    if (
+      currentMelodyInterpretation === "fresh-generated" ||
+      !referencePitches?.length ||
+      phrase.notes.length === 0
+    ) {
       return phrase;
     }
 
@@ -7719,7 +7726,9 @@ export default function Page() {
 
   const melodyRenderSourceLabel = selectedSavedMelodyVersion
     ? `Saved melody: ${selectedSavedMelodyVersion.title}`
-    : "Current generated melody";
+    : currentMelodyInterpretation === "fresh-generated"
+      ? "Current generated melody — fresh interpretation"
+      : "Current generated melody — songwriter-guided";
 
   console.table(
     initialMelodyContours.flatMap((phrase) => {
@@ -39361,6 +39370,40 @@ ${buildRewriteInstruction(
                         {saveMelodyVersionStatus}
                       </div>
                     )}
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor="current-melody-interpretation"
+                        className="mb-1 block text-xs font-medium text-gray-300"
+                      >
+                        Current melody interpretation
+                      </label>
+
+                      <select
+                        id="current-melody-interpretation"
+                        value={currentMelodyInterpretation}
+                        onChange={(event) => {
+                          setCurrentMelodyInterpretation(
+                            event.target.value as
+                              "songwriter-guided" | "fresh-generated",
+                          );
+                        }}
+                        disabled={Boolean(selectedSavedMelodyVersionId)}
+                        className="w-full rounded border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white disabled:opacity-40"
+                      >
+                        <option value="songwriter-guided">
+                          Songwriter-guided — use matching reference pitches
+                        </option>
+                        <option value="fresh-generated">
+                          Fresh generated — use generated pitches
+                        </option>
+                      </select>
+
+                      <div className="mt-1 text-xs text-gray-400">
+                        Applies to Current generated melody only. A selected
+                        saved melody takes precedence.
+                      </div>
+                    </div>
 
                     <div className="mt-4">
                       <label
