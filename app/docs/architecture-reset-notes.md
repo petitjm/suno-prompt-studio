@@ -1545,7 +1545,6 @@ tempo map / expressive timing
 Rendered seconds / Audio Guide
 ```
 
-
 ---
 
 ## Melody versions, interpretive layers and Audio Guide rendering — 23 October 2026
@@ -1578,5 +1577,75 @@ This section supplements the established song-version/chord-checkpoint provenanc
 - The presently generated melody still requires substantial work on phrase entrances, cadences, between-phrase continuity, rhythm, lyrical stress and purposeful section-to-section development. Relatively stronger middle notes are not yet good enough musically.
 - Experimental `plan-melody-cadence.ts` and `tests/melody-cadence.test.mjs` were preserved in Git stash (`WIP experimental melody cadence planner`) and remain unintegrated because selection rules alone had not shown musical benefit. Do not treat the planner as adopted architecture.
 - Preserve the human-songwriter authority of reference performances while addressing the current ambiguity of lyric/pitch alignment and treatment of final syllables. Avoid global last-note rules that erase meaningful composition choices.
+
+### Musical quality, artistic versatility and experimental development — 24 October 2026
+
+#### Musical quality is the primary success criterion
+
+Suno Prompt Studio exists to help create credible, distinctive and enjoyable songs.
+
+Technical correctness, valid timing, harmonic compatibility, saved versions and successful audio rendering are necessary engineering capabilities, but they do not establish musical quality.
+
+The primary creative test is whether the resulting composition demonstrates convincing melody, phrasing, rhythmic identity, emotional expression, continuity and purposeful musical development.
+
+Development should follow a practical cycle:
+
+**Generate → Listen → Identify musical weakness → Make one focused improvement → Generate again → Compare.**
+
+Engineering work should directly support this cycle rather than become a substitute for musical evaluation.
+
+#### Artist DNA must support artistic versatility
+
+**Artist DNA must support artistic versatility, not enforce stylistic consistency. An individual rendition may deliberately depart from an artist's usual vocal and musical behaviour without being considered incorrect or inauthentic.**
+
+Artist DNA describes capabilities and evidence-based tendencies. It must not become a compulsory vocal, melodic, rhythmic or expressive template.
+
+Song Identity and Rendition Intent remain distinct. A songwriter may deliberately choose contrasting vocal approaches, musical genres, registers, phrasing, arrangements and expressive deliveries across different songs or performances.
+
+An unusual performance of one song must not automatically become a general rule for other compositions.
+
+The songwriter's explicit artistic intention takes precedence over inferred habitual behaviour.
+
+#### Original creative sources versus experimental database records
+
+The songwriter maintains an independent library of original lyrics and recordings.
+
+Current application database records are development material and may be regenerated, revised, migrated or replaced where doing so supports better musical architecture or creative results.
+
+Existing experimental data and historical generated outputs must not unnecessarily constrain future implementation.
+
+Preserve original source material and deliberately accepted creative decisions where appropriate, but do not treat unproven AI-generated melodies, word-rhythm plans, arrangements or analysis derivatives as artistically authoritative merely because they have been saved.
+
+Destructive changes should remain deliberate and understood, but backwards compatibility with experimental musical data is not an overriding objective.
+
+#### Musical reinterpretation requires reconsidering dependent decisions
+
+A change in genre, metre, tempo, harmony or expressive intention may require new melodic, rhythmic, phrase-length and arrangement decisions.
+
+The application must not assume that musical decisions generated for one rendition remain appropriate for another.
+
+In particular, changing from 4/4 to 3/4 should not merely reinterpret existing 4/4 word positions as timestamps.
+
+Where a change materially alters the rhythmic framework, the preferred creative approach may be to regenerate or deliberately revise the affected phrase and word-rhythm decisions.
+
+Technical validation should identify real problems, but should not become an elaborate mechanism for preserving musically unsuitable intermediate data.
+
+#### Cross-rendition and cross-song evaluation
+
+_We Went To War_ remains a useful reference composition because its lyrics, harmony, vocal reference, generated melody and Audio Guide have undergone extensive investigation.
+
+However, improvements observed in that song must not automatically be considered general musical improvements.
+
+Development should deliberately test contrasting interpretations of the same composition, including changes of genre and metre, followed by testing with other compositions.
+
+Distinguish between:
+
+- preserving an established song while changing its arrangement;
+- generating a fresh musical interpretation of the same song;
+- generating a musically distinct composition from different source material.
+
+The goal is not to make every song conform to one preferred melodic or expressive formula.
+
+The goal is to provide a flexible songwriter's workbench capable of developing different musical identities while respecting the songwriter's creative authority.
 
 **Status at handoff:** tested Audio Guide improvements committed on branch `architecture-reset`, working tree clean as reported by user on 23 October 2026; preserve existing saved melody checkpoints and experimental stash.
