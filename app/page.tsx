@@ -374,7 +374,8 @@ export default function Page() {
         number: 4,
         label: "Fit chords and lyrics",
         status:
-          chordsTask === "check" && generatingPlacedSongsheet
+          (chordsTask === "check" && generatingPlacedSongsheet) ||
+          generatingChordTimingPlans
             ? ("working" as const)
             : placedSongSheetPreview
               ? chordFitReviewAccepted && chordTimingReviewAccepted
@@ -24319,8 +24320,15 @@ export default function Page() {
         .values(),
     ).filter((section) => section.events.length > 0);
 
+    const {
+      lyricTimingPlan: _previousLyricTimingPlan,
+      wordRhythmPlan: _previousWordRhythmPlan,
+      resumeWordTimingPhrases: _previousResumeWordTimingPhrases,
+      ...chordDataWithoutPreviousVocalTiming
+    } = chordRecord;
+
     const timingResumeChordData = {
-      ...chordRecord,
+      ...chordDataWithoutPreviousVocalTiming,
       songSheetLines: indexedSongSheetLines,
       harmonicTimeline:
         Array.isArray(chordRecord.harmonicTimeline) &&
@@ -24328,13 +24336,6 @@ export default function Page() {
           ? chordRecord.harmonicTimeline
           : derivedHarmonicTimeline,
     };
-
-    if (chordRecord.lyricTimingPlan && chordRecord.wordRhythmPlan) {
-      setChordExtractionMessage(
-        "Vocal phrase timing and word rhythm are already available.",
-      );
-      return chordData;
-    }
 
     setGeneratingChordTimingPlans(true);
     setChordExtractionMessage(
@@ -29149,31 +29150,31 @@ ${buildRewriteInstruction(
                                     Vocal timing
                                   </div>
 
-                                  <div className="mt-2 space-y-1 text-xs">
-                                    <div
-                                      className={
-                                        hasLyricTimingPlan
-                                          ? "text-green-200"
-                                          : "text-yellow-200"
-                                      }
-                                    >
-                                      {hasLyricTimingPlan ? "✓" : "○"} Phrase
-                                      timing
+                                  <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                                    <div className="space-y-1 text-xs">
+                                      <div
+                                        className={
+                                          hasLyricTimingPlan
+                                            ? "text-green-200"
+                                            : "text-yellow-200"
+                                        }
+                                      >
+                                        {hasLyricTimingPlan ? "✓" : "○"} Phrase
+                                        timing
+                                      </div>
+
+                                      <div
+                                        className={
+                                          hasWordRhythmPlan
+                                            ? "text-green-200"
+                                            : "text-yellow-200"
+                                        }
+                                      >
+                                        {hasWordRhythmPlan ? "✓" : "○"} Word
+                                        rhythm
+                                      </div>
                                     </div>
 
-                                    <div
-                                      className={
-                                        hasWordRhythmPlan
-                                          ? "text-green-200"
-                                          : "text-yellow-200"
-                                      }
-                                    >
-                                      {hasWordRhythmPlan ? "✓" : "○"} Word
-                                      rhythm
-                                    </div>
-                                  </div>
-
-                                  {!hasCompleteVocalTiming && (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -29184,13 +29185,16 @@ ${buildRewriteInstruction(
                                         processedPreviewHasAlignmentIssue ||
                                         processedPreviewSourceAlignmentIsChecking
                                       }
-                                      className="mt-3 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+                                      aria-busy={generatingChordTimingPlans}
+                                      className="ml-auto rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
                                     >
                                       {generatingChordTimingPlans
                                         ? "Generating vocal timing..."
-                                        : "Generate vocal timing"}
+                                        : hasCompleteVocalTiming
+                                          ? "Regenerate vocal timing"
+                                          : "Generate vocal timing"}
                                     </button>
-                                  )}
+                                  </div>
 
                                   {hasCompleteVocalTiming && (
                                     <div className="mt-2 text-xs text-green-200">
