@@ -1091,8 +1091,7 @@ function addWarmToneToSamples({
         ? Math.exp(-elapsedSeconds / decayTimeSeconds)
         : 1;
 
-    const value =
-      shapedTone * amplitude * envelope * naturalDecay;
+    const value = shapedTone * amplitude * envelope * naturalDecay;
 
     samples[sampleIndex] += value;
   }
@@ -1610,6 +1609,8 @@ export function createClickTrackPcm16Samples(
             barEndSeconds,
             subdivisionCount,
             subdivisionSeconds,
+            beatsPerBar: barTiming.beatsPerBar,
+            quarterNotesPerBeat: barTiming.quarterNotesPerBeat,
           },
         ];
       });
@@ -1640,8 +1641,6 @@ export function createClickTrackPcm16Samples(
         segmentStartSeconds: segment.startSeconds,
         countInDurationSeconds,
       });
-      let strumIndex = 0;
-
       const matchingBar = meterAwareBars.find(
         (bar) =>
           segment.startSeconds >= bar.barStartSeconds &&
@@ -1652,76 +1651,111 @@ export function createClickTrackPcm16Samples(
         continue;
       }
 
-      const scheduledStartSeconds = segment.startSeconds;
+      const isThreeFour =
+        matchingBar.beatsPerBar === 3 &&
+        matchingBar.quarterNotesPerBeat === 1 &&
+        accompanimentRole === "strum";
 
-      const isUpStrum = false;
-      const isStrongBeat = true;
+      const strumEvents = isThreeFour
+        ? meterAwareBars
+            .filter(
+              (bar) =>
+                bar.beatsPerBar === 3 &&
+                bar.quarterNotesPerBeat === 1 &&
+                segment.startSeconds < bar.barEndSeconds &&
+                segment.endSeconds > bar.barStartSeconds,
+            )
+            .flatMap((bar) => {
+              const beatDurationSeconds =
+                (bar.barEndSeconds - bar.barStartSeconds) / 3;
 
-      const humanisedStartSeconds = Math.max(
-        segment.startSeconds,
-        scheduledStartSeconds +
-          getMusicalGuideHumanisedTimingOffsetSeconds({
-            section: segment.section,
-            index: strumIndex,
-            maxOffsetSeconds: 0.012,
-          }),
-      );
+              return [0, 1, 2]
+                .map((beatIndex) => ({
+                  scheduledStartSeconds:
+                    bar.barStartSeconds + beatIndex * beatDurationSeconds,
+                  isUpStrum: beatIndex === 2,
+                  levelMultiplier:
+                    beatIndex === 0 ? 1 : beatIndex === 1 ? 0.65 : 0.55,
+                }))
+                .filter(
+                  (event) =>
+                    event.scheduledStartSeconds >=
+                      segment.startSeconds - 0.001 &&
+                    event.scheduledStartSeconds < segment.endSeconds - 0.001,
+                );
+            })
+        : [
+            {
+              scheduledStartSeconds: segment.startSeconds,
+              isUpStrum: false,
+              levelMultiplier: 1,
+            },
+          ];
 
-      const baseStrumAmplitude =
-        arpeggioAmplitude *
-        0.22 *
-        sectionLevel *
-        (isStrongBeat ? 1 : isUpStrum ? 0.78 : 0.92);
+      strumEvents.forEach((event, strumIndex) => {
+        const { scheduledStartSeconds, isUpStrum, levelMultiplier } = event;
 
-      const humanisedStrumAmplitude = getMusicalGuideHumanisedLevel({
-        baseAmplitude: baseStrumAmplitude,
-        section: segment.section,
-        index: strumIndex,
-        variationDepth: 0.1,
-      });
-
-      const orderedFrequenciesHz = isUpStrum
-        ? [...segment.frequenciesHz].reverse()
-        : segment.frequenciesHz;
-
-      const strumVoiceAmplitude =
-        humanisedStrumAmplitude /
-        Math.sqrt(Math.max(1, orderedFrequenciesHz.length));
-
-      orderedFrequenciesHz.forEach((frequencyHz, noteIndex) => {
-        const noteStartSeconds =
-          humanisedStartSeconds + noteIndex * strumNoteStaggerSeconds;
-
-        const strumReleaseEndSeconds = Math.min(
-          totalDurationSeconds,
-          segment.endSeconds + 0.12,
+        const humanisedStartSeconds = Math.max(
+          segment.startSeconds,
+          scheduledStartSeconds +
+            getMusicalGuideHumanisedTimingOffsetSeconds({
+              section: segment.section,
+              index: strumIndex,
+              maxOffsetSeconds: 0.012,
+            }),
         );
 
-        const noteEndSeconds = Math.min(
-          strumReleaseEndSeconds,
-          noteStartSeconds +
-            Math.min(matchingBar.subdivisionSeconds * 0.7, 0.32),
-        );
+        const baseStrumAmplitude =
+          arpeggioAmplitude * 0.22 * sectionLevel * levelMultiplier;
 
-        if (noteEndSeconds <= noteStartSeconds) {
-          return;
-        }
+        const humanisedStrumAmplitude = getMusicalGuideHumanisedLevel({
+          baseAmplitude: baseStrumAmplitude,
+          section: segment.section,
+          index: strumIndex,
+          variationDepth: 0.1,
+        });
 
-        addWarmToneToSamples({
-          samples,
-          startSample: Math.round(noteStartSeconds * input.sampleRateHz),
-          endSample: Math.round(noteEndSeconds * input.sampleRateHz),
-          sampleRateHz: input.sampleRateHz,
-          amplitude: Math.round(strumVoiceAmplitude),
-          frequencyHz,
-          secondHarmonicLevel: 0.16,
-          thirdHarmonicLevel: 0.035,
-          fadeInSeconds: 0.012,
-          fadeOutSeconds: 0.12,
+        const orderedFrequenciesHz = isUpStrum
+          ? [...segment.frequenciesHz].reverse()
+          : segment.frequenciesHz;
+
+        const strumVoiceAmplitude =
+          humanisedStrumAmplitude /
+          Math.sqrt(Math.max(1, orderedFrequenciesHz.length));
+
+        orderedFrequenciesHz.forEach((frequencyHz, noteIndex) => {
+          const noteStartSeconds =
+            humanisedStartSeconds + noteIndex * strumNoteStaggerSeconds;
+
+          const strumReleaseEndSeconds = Math.min(
+            totalDurationSeconds,
+            segment.endSeconds + 0.12,
+          );
+
+          const noteEndSeconds = Math.min(
+            strumReleaseEndSeconds,
+            noteStartSeconds +
+              Math.min(matchingBar.subdivisionSeconds * 0.7, 0.32),
+          );
+
+          if (noteEndSeconds <= noteStartSeconds) {
+            return;
+          }
+
+          addWarmToneToSamples({
+            samples,
+            startSample: Math.round(noteStartSeconds * input.sampleRateHz),
+            endSample: Math.round(noteEndSeconds * input.sampleRateHz),
+            sampleRateHz: input.sampleRateHz,
+            amplitude: Math.round(strumVoiceAmplitude),
+            frequencyHz,
+            secondHarmonicLevel: 0.16,
+            thirdHarmonicLevel: 0.035,
+            fadeInSeconds: 0.012,
+            fadeOutSeconds: 0.12,
+          });
         });
       });
-
-      strumIndex += 1;
     }
   }
 
@@ -1730,6 +1764,52 @@ export function createClickTrackPcm16Samples(
       ? 60 / input.tempoBpm / 2
       : 0;
   const arpeggioNoteDurationSeconds = secondsPerArpeggioNote * 0.82;
+
+  const arpeggioBarTimings =
+    isMusicalGuideMix && Array.isArray(input.cueSheetSections)
+      ? input.cueSheetSections.flatMap((section) => {
+          if (!Array.isArray(section.barTiming)) {
+            return [];
+          }
+
+          let quarterNotesFromSectionStart = 0;
+
+          return section.barTiming.flatMap((barTiming) => {
+            const quarterNotesPerBar = barTiming.quarterNotesPerBar;
+
+            if (
+              !Number.isFinite(quarterNotesPerBar) ||
+              quarterNotesPerBar <= 0 ||
+              !Number.isFinite(barTiming.beatsPerBar) ||
+              !Number.isFinite(barTiming.quarterNotesPerBeat)
+            ) {
+              return [];
+            }
+
+            const barStartSeconds =
+              countInDurationSeconds +
+              section.startSeconds +
+              quarterNotesFromSectionStart * secondsPerBeat;
+
+            const barEndSeconds =
+              barStartSeconds + quarterNotesPerBar * secondsPerBeat;
+
+            quarterNotesFromSectionStart += quarterNotesPerBar;
+
+            const isThreeFour =
+              barTiming.beatsPerBar === 3 &&
+              barTiming.quarterNotesPerBeat === 1;
+
+            return [
+              {
+                barStartSeconds,
+                barEndSeconds,
+                isThreeFour,
+              },
+            ];
+          });
+        })
+      : [];
 
   if (secondsPerArpeggioNote > 0) {
     for (const segment of chordToneGuideSegments) {
@@ -1782,22 +1862,72 @@ export function createClickTrackPcm16Samples(
         continue;
       }
 
-      for (
-        let noteIndex = 0;
-        noteIndex < arpeggioPattern.length;
-        noteIndex += 1
-      ) {
-        const noteStartSeconds =
-          segment.startSeconds +
-          noteIndex * Math.min(arpeggioStepSeconds, 0.055);
+      const overlappingBars = arpeggioBarTimings.filter(
+        (bar) =>
+          segment.startSeconds < bar.barEndSeconds &&
+          segment.endSeconds > bar.barStartSeconds,
+      );
 
-        if (noteStartSeconds >= segment.endSeconds) {
-          break;
+      const useThreeFourPattern =
+        isMusicalGuideMix &&
+        overlappingBars.length > 0 &&
+        overlappingBars.every((bar) => bar.isThreeFour);
+
+      const scheduledArpeggioNotes: Array<{
+        startSeconds: number;
+        patternIndex: number;
+      }> = [];
+
+      if (useThreeFourPattern) {
+        const threeFourPattern = [0, 2, 1];
+
+        overlappingBars.forEach((bar) => {
+          const beatDurationSeconds =
+            (bar.barEndSeconds - bar.barStartSeconds) / 3;
+
+          for (let beatIndex = 0; beatIndex < 3; beatIndex += 1) {
+            const beatStartSeconds =
+              bar.barStartSeconds + beatIndex * beatDurationSeconds;
+
+            if (
+              beatStartSeconds < segment.startSeconds - 0.001 ||
+              beatStartSeconds >= segment.endSeconds - 0.001
+            ) {
+              continue;
+            }
+
+            scheduledArpeggioNotes.push({
+              startSeconds: Math.max(segment.startSeconds, beatStartSeconds),
+              patternIndex: threeFourPattern[beatIndex],
+            });
+          }
+        });
+      } else {
+        for (
+          let noteIndex = 0;
+          noteIndex < arpeggioPattern.length;
+          noteIndex += 1
+        ) {
+          const noteStartSeconds =
+            segment.startSeconds +
+            noteIndex * Math.min(arpeggioStepSeconds, 0.055);
+
+          if (noteStartSeconds >= segment.endSeconds) {
+            break;
+          }
+
+          scheduledArpeggioNotes.push({
+            startSeconds: noteStartSeconds,
+            patternIndex: arpeggioPattern[noteIndex % arpeggioPattern.length],
+          });
         }
-        const patternIndex =
-          arpeggioPattern[noteIndex % arpeggioPattern.length];
+      }
+
+      scheduledArpeggioNotes.forEach((scheduledNote, noteIndex) => {
         const frequencyHz =
-          segment.frequenciesHz[patternIndex % segment.frequenciesHz.length];
+          segment.frequenciesHz[
+            scheduledNote.patternIndex % segment.frequenciesHz.length
+          ];
 
         const humanisedArpeggioAmplitude = isMusicalGuideMix
           ? getMusicalGuideHumanisedLevel({
@@ -1811,14 +1941,14 @@ export function createClickTrackPcm16Samples(
         const humanisedArpeggioStartSeconds = isMusicalGuideMix
           ? Math.max(
               segment.startSeconds,
-              noteStartSeconds +
+              scheduledNote.startSeconds +
                 getMusicalGuideHumanisedTimingOffsetSeconds({
                   section: segment.section,
                   index: noteIndex,
                   maxOffsetSeconds: 0.016,
                 }),
             )
-          : noteStartSeconds;
+          : scheduledNote.startSeconds;
 
         const arpeggioReleaseEndSeconds = Math.min(
           totalDurationSeconds,
@@ -1829,6 +1959,10 @@ export function createClickTrackPcm16Samples(
           arpeggioReleaseEndSeconds,
           humanisedArpeggioStartSeconds + sectionArpeggioNoteDurationSeconds,
         );
+
+        if (humanisedArpeggioEndSeconds <= humanisedArpeggioStartSeconds) {
+          return;
+        }
 
         addWarmToneToSamples({
           samples,
@@ -1846,7 +1980,7 @@ export function createClickTrackPcm16Samples(
           fadeInSeconds: 0.018,
           fadeOutSeconds: 0.11,
         });
-      }
+      });
     }
   }
 
@@ -1863,38 +1997,35 @@ export function createClickTrackPcm16Samples(
       : 0;
 
   if (secondsPerBassPulse > 0) {
-      for (
-        let segmentIndex = 0;
-        segmentIndex < chordToneGuideSegments.length;
-        segmentIndex += 1
-      ) {
-        const segment = chordToneGuideSegments[segmentIndex];
-
-        const hasExplicitSlashBass =
-          /\/[A-G](?:#|b)?\s*$/i.test(segment.chord);
-
-        const previousSegment =
-          segmentIndex > 0
-            ? chordToneGuideSegments[segmentIndex - 1]
-            : null;
-
-        const previousHasExplicitSlashBass = previousSegment
-          ? /\/[A-G](?:#|b)?\s*$/i.test(previousSegment.chord)
-          : false;
-
-        const resolvesSlashBass =
-          !hasExplicitSlashBass &&
-          previousHasExplicitSlashBass &&
-          previousSegment?.section === segment.section &&
-          getChordRoot(previousSegment.chord) === getChordRoot(segment.chord);
-
-    if (
-      bassExplicitlyDisabled &&
-      !hasExplicitSlashBass &&
-      !resolvesSlashBass
+    for (
+      let segmentIndex = 0;
+      segmentIndex < chordToneGuideSegments.length;
+      segmentIndex += 1
     ) {
-      continue;
-    }
+      const segment = chordToneGuideSegments[segmentIndex];
+
+      const hasExplicitSlashBass = /\/[A-G](?:#|b)?\s*$/i.test(segment.chord);
+
+      const previousSegment =
+        segmentIndex > 0 ? chordToneGuideSegments[segmentIndex - 1] : null;
+
+      const previousHasExplicitSlashBass = previousSegment
+        ? /\/[A-G](?:#|b)?\s*$/i.test(previousSegment.chord)
+        : false;
+
+      const resolvesSlashBass =
+        !hasExplicitSlashBass &&
+        previousHasExplicitSlashBass &&
+        previousSegment?.section === segment.section &&
+        getChordRoot(previousSegment.chord) === getChordRoot(segment.chord);
+
+      if (
+        bassExplicitlyDisabled &&
+        !hasExplicitSlashBass &&
+        !resolvesSlashBass
+      ) {
+        continue;
+      }
 
       const sectionLevel = isMusicalGuideMix
         ? getMusicalGuideSectionLevel({
