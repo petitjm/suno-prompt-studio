@@ -1665,4 +1665,134 @@ The goal is not to make every song conform to one preferred melodic or expressiv
 
 The goal is to provide a flexible songwriter's workbench capable of developing different musical identities while respecting the songwriter's creative authority.
 
+### Integrated musical development and outcome-led implementation — 25 October 2026
+
+#### Development philosophy
+
+Suno Prompt Studio must be developed as an integrated songwriting and musical creation workbench, not as a collection of independently optimised technical components.
+
+The primary measure of progress is the quality, usefulness and artistic versatility of the musical outcomes.
+
+Technical correctness, successful builds, valid data structures, accurate timing and reliable rendering remain essential, but they are supporting capabilities rather than the ultimate objectives.
+
+Development must continually consider how lyrics, harmony, melody, rhythm, phrasing, arrangement, performance intention and audio rendering interact to create a convincing song.
+
+**Prefer coherent musical improvements over isolated technical refinements that do not demonstrably advance the songwriting outcome.**
+
+#### Examine existing capabilities before creating new ones
+
+Before proposing new generators, planners, data models or processing pipelines, investigate the capabilities and musical information already present in the application.
+
+The Full Performance Pack, Section Plan, Guide Track Plan, renderer payload and existing musical versions may already contain much of the required creative intelligence.
+
+A weakness in the audible result does not necessarily indicate a failure of musical generation. It may indicate that existing musical decisions are lost, simplified, misinterpreted or inadequately performed downstream.
+
+Development should trace musical information through the complete workflow before introducing additional mechanisms.
+
+Avoid duplicating established capabilities or creating competing sources of musical authority.
+
+#### Musical intention must survive the complete pipeline
+
+Generated or songwriter-approved musical intentions must remain meaningful throughout the process from planning to rendering.
+
+Section-specific instructions concerning accompaniment technique, rhythmic subdivision, accents, dynamics, articulation, density, transitions and expressive development should not be reduced unnecessarily to generic classifications.
+
+Natural-language interpretation must distinguish positive instructions from restrictions or negations.
+
+For example, an instruction to avoid full strumming must not be interpreted as a requirement to strum simply because the word "strum" appears.
+
+Where practical, translate existing musical instructions into explicit, structured performance decisions before scheduling and audio synthesis.
+
+The audio renderer should perform the intended arrangement rather than inventing a generic arrangement from metre or chord changes alone.
+
+Preserve the songwriter's creative authority and the distinction between Song Identity, Rendition Intent and Artist DNA.
+
+#### Develop complete musical capabilities
+
+Development work should be organised around coherent functional milestones rather than artificially small code changes.
+
+A milestone may legitimately involve multiple files, data transformations, musical interpretation, event scheduling, rendering and tests where these collectively deliver one identifiable improvement.
+
+Prefer:
+
+**Musical objective → Existing capability review → End-to-end design → Integrated implementation → Technical verification → Listening evaluation → Refinement → Commit.**
+
+Avoid repeated cycles of small edits, builds and full-song generation when a connected implementation can be designed and tested more effectively as one package.
+
+Larger implementation steps must retain clear responsibilities, understandable integration points, test coverage and reversible commits.
+
+Where practical, provide complete function replacements or self-contained modules rather than numerous scattered manual edits within large files.
+
+#### Technical tests and musical listening serve different purposes
+
+Automated tests should verify deterministic behaviours such as timing, event ordering, chord boundaries, data interpretation, compatibility and rendering consistency.
+
+Listening tests should determine whether those technically valid behaviours produce musically convincing results.
+
+Neither form of evaluation replaces the other.
+
+Full Audio Guide generation should be reserved primarily for meaningful musical comparisons, rather than repeated verification of minor code changes.
+
+During development, use local deterministic testing where practical while retaining the existing application and Supabase-backed workflow as the authoritative integration environment.
+
+MP3 remains the preferred routine listening format. WAV remains available when uncompressed audio is required.
+
+Experimental outputs need not automatically become persistent cloud assets. Accepted creative work and its provenance should continue to be managed through the established saved-version architecture.
+
+#### Musical versatility and interpretation
+
+Successful behaviour in one song, genre, metre or rendition must not automatically become a universal rule.
+
+Accompaniment, melody and expression must remain responsive to the individual composition.
+
+For example, beat-aware accompaniment scheduling should provide a reliable rhythmic framework without imposing the same picking or strumming pattern on every 4/4 song.
+
+Artist DNA represents capabilities and observed tendencies, not compulsory stylistic behaviour.
+
+The songwriter may deliberately choose contrasting musical interpretations across songs and renditions.
+
+#### Audio Guide purpose and quality
+
+The Audio Guide is a songwriting, rehearsal and musical evaluation tool rather than a substitute for finished production.
+
+It should communicate enough musical character, rhythmic identity, harmonic movement, phrasing and expressive development to permit meaningful evaluation of the composition.
+
+Realistic instrumentation and elaborate production are not prerequisites, but mechanical repetition, missing expressive contrast or incorrect interpretation of the Section Plan must not be accepted merely because the rendered audio is technically valid.
+
+The renderer must support the musical intention of the arrangement.
+
+#### Development priorities
+
+Prioritise improvements according to their expected contribution to the complete songwriting experience.
+
+When assessing a proposed development task, consider:
+
+- What musical weakness or creative limitation are we addressing?
+- Does the application already contain the information or capability required?
+- Where in the existing workflow is the intended musical outcome being lost?
+- Which connected components must change to deliver a complete improvement?
+- How will we establish technical correctness?
+- How will we evaluate whether the resulting music is genuinely better?
+- Can the improvement accommodate contrasting songs, genres and renditions?
+
+Do not confuse implementation volume, test coverage or successful rendering with artistic progress.
+
+**The ultimate measure of development success is whether Suno Prompt Studio enables the songwriter to create, develop, evaluate and preserve better songs.**
+
+#### Immediate application — Musically Informed Accompaniment
+
+The next development milestone is Musically Informed Accompaniment — Phase 1.
+
+Its purpose is to translate existing Section Plan instructions into meaningful accompaniment behaviour using the established musical timing and audio rendering framework.
+
+The milestone should examine the complete path from Guide Track Plan and renderer payload through accompaniment interpretation, event scheduling and audible output.
+
+It should address incorrect interpretation of musical instructions, particularly negations, rhythmic subdivision, dynamic development and differences between sections.
+
+The current experimental 4/4 arpeggio scheduling remains uncommitted pending integration and musical evaluation.
+
+Do not create another independent arrangement generator unless investigation demonstrates that the existing musical planning capabilities are insufficient.
+
+Evaluate the resulting accompaniment within the full composition, then return development attention to melodic quality, vocal phrasing and expressive continuity.
+
 **Status at handoff:** tested Audio Guide improvements committed on branch `architecture-reset`, working tree clean as reported by user on 23 October 2026; preserve existing saved melody checkpoints and experimental stash.
