@@ -1341,6 +1341,23 @@ Task availability and status should be derived from real application state rathe
 
 Tasks should remain visible even when unavailable, with a useful Waiting, Ready, In progress, Complete, or review-type status where appropriate.
 
+### Persistent action visibility and readiness
+
+Within the relevant task workspace, action buttons should remain visible regardless of whether the action is currently available.
+
+Availability should be communicated through clearly distinguishable enabled and disabled states rather than conditional removal of the action.
+
+- Disabled actions must remain legible and visually recognisable.
+- Where the reason for disabling an action is not obvious, provide a concise explanation of the unmet prerequisite.
+- Button labels should describe the intended songwriting action.
+- Action availability must be derived from actual application state.
+- Completed actions should provide visible confirmation without unnecessarily disappearing.
+- Controls belonging to unrelated tasks may remain within their respective task panels to avoid overcrowding.
+
+The songwriter should be able to understand what actions exist, which are currently available, and what must happen next without discovering functionality through trial and error.
+
+Prefer stable task layouts over interfaces that repeatedly change structure as readiness conditions change.
+
 ### Choice and action hierarchy
 
 Equivalent user choices must be presented consistently:
