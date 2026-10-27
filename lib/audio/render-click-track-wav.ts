@@ -1,3 +1,9 @@
+import {
+  AUDIO_STEM_KEYS,
+  type AudioStemBuffers,
+  type AudioStemKey,
+} from "./mix-audio-stems";
+
 export type ClickTrackBarTiming = {
   bar: number;
   timeSignature: string;
@@ -1248,6 +1254,7 @@ function getMidiFrequencyHz(pitchMidi: number) {
 
 export function createClickTrackPcm16Samples(
   input: ClickTrackWavRenderInput,
+  stemOutput?: AudioStemBuffers,
 ): Int16Array {
   const songDurationSeconds = getResolvedTotalDurationSeconds(input);
   const countInDurationSeconds = getCountInDurationSeconds(input);
@@ -1269,6 +1276,12 @@ export function createClickTrackPcm16Samples(
     totalDurationSeconds: songEndSeconds,
   });
   const samples = new Float32Array(totalSamples);
+
+  if (stemOutput) {
+    for (const key of AUDIO_STEM_KEYS) {
+      stemOutput[key] = new Float32Array(totalSamples);
+    }
+  }
 
   if (input.tempoBpm <= 0 || !Number.isFinite(input.tempoBpm)) {
     return convertFloatSamplesToPcm16Samples(
@@ -1418,7 +1431,7 @@ export function createClickTrackPcm16Samples(
       }
 
       addClickToSamples({
-        samples,
+        samples: stemOutput?.section ?? samples,
         startSample: beatStartSample,
         sampleRateHz: input.sampleRateHz,
         lengthSamples: sectionClickLengthSamples,
@@ -1453,7 +1466,7 @@ export function createClickTrackPcm16Samples(
 
         if (backbeatLevel > 0) {
           addTonePulseToSamples({
-            samples,
+            samples: stemOutput?.click ?? samples,
             startSample: beatStartSample,
             durationSamples: Math.max(1, Math.round(input.sampleRateHz * 0.11)),
             sampleRateHz: input.sampleRateHz,
@@ -1471,7 +1484,7 @@ export function createClickTrackPcm16Samples(
 
       if (isSectionStart) {
         addClickToSamples({
-          samples,
+          samples: stemOutput?.section ?? samples,
           startSample: beatStartSample,
           sampleRateHz: input.sampleRateHz,
           lengthSamples: sectionClickLengthSamples,
@@ -1480,7 +1493,7 @@ export function createClickTrackPcm16Samples(
         });
 
         addClickToSamples({
-          samples,
+          samples: stemOutput?.section ?? samples,
           startSample: beatStartSample + Math.round(input.sampleRateHz * 0.09),
           sampleRateHz: input.sampleRateHz,
           lengthSamples: sectionClickLengthSamples,
@@ -1496,7 +1509,7 @@ export function createClickTrackPcm16Samples(
       }
 
       addClickToSamples({
-        samples,
+        samples: stemOutput?.click ?? samples,
         startSample: beatStartSample,
         sampleRateHz: input.sampleRateHz,
         lengthSamples: clickLengthSamples,
@@ -1508,7 +1521,7 @@ export function createClickTrackPcm16Samples(
 
   for (const chordMarkerEvent of chordMarkerEvents) {
     addClickToSamples({
-      samples,
+      samples: stemOutput?.chordMarker ?? samples,
       startSample: chordMarkerEvent.startSample,
       sampleRateHz: input.sampleRateHz,
       lengthSamples: chordMarkerLengthSamples,
@@ -1540,7 +1553,7 @@ export function createClickTrackPcm16Samples(
 
     segment.frequenciesHz.forEach((frequencyHz) => {
       addWarmToneToSamples({
-        samples,
+        samples: stemOutput?.pad ?? samples,
         startSample: Math.round(padStartSeconds * input.sampleRateHz),
         endSample: Math.round(padEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
@@ -1743,7 +1756,7 @@ export function createClickTrackPcm16Samples(
           }
 
           addWarmToneToSamples({
-            samples,
+            samples: stemOutput?.arpeggio ?? samples,
             startSample: Math.round(noteStartSeconds * input.sampleRateHz),
             endSample: Math.round(noteEndSeconds * input.sampleRateHz),
             sampleRateHz: input.sampleRateHz,
@@ -1763,6 +1776,7 @@ export function createClickTrackPcm16Samples(
     input.tempoBpm > 0 && Number.isFinite(input.tempoBpm)
       ? 60 / input.tempoBpm / 2
       : 0;
+
   const arpeggioNoteDurationSeconds = secondsPerArpeggioNote * 0.82;
 
   const arpeggioBarTimings =
@@ -1800,11 +1814,16 @@ export function createClickTrackPcm16Samples(
               barTiming.beatsPerBar === 3 &&
               barTiming.quarterNotesPerBeat === 1;
 
+            const isFourFour =
+              barTiming.beatsPerBar === 4 &&
+              barTiming.quarterNotesPerBeat === 1;
+
             return [
               {
                 barStartSeconds,
                 barEndSeconds,
                 isThreeFour,
+                isFourFour,
               },
             ];
           });
@@ -1873,6 +1892,11 @@ export function createClickTrackPcm16Samples(
         overlappingBars.length > 0 &&
         overlappingBars.every((bar) => bar.isThreeFour);
 
+      const useFourFourPattern =
+        isMusicalGuideMix &&
+        overlappingBars.length > 0 &&
+        overlappingBars.every((bar) => bar.isFourFour);
+
       const scheduledArpeggioNotes: Array<{
         startSeconds: number;
         patternIndex: number;
@@ -1899,6 +1923,30 @@ export function createClickTrackPcm16Samples(
             scheduledArpeggioNotes.push({
               startSeconds: Math.max(segment.startSeconds, beatStartSeconds),
               patternIndex: threeFourPattern[beatIndex],
+            });
+          }
+        });
+      } else if (useFourFourPattern) {
+        const fourFourPattern = [0, 1, 2, 1];
+
+        overlappingBars.forEach((bar) => {
+          const beatDurationSeconds =
+            (bar.barEndSeconds - bar.barStartSeconds) / 4;
+
+          for (let beatIndex = 0; beatIndex < 4; beatIndex += 1) {
+            const beatStartSeconds =
+              bar.barStartSeconds + beatIndex * beatDurationSeconds;
+
+            if (
+              beatStartSeconds < segment.startSeconds - 0.001 ||
+              beatStartSeconds >= segment.endSeconds - 0.001
+            ) {
+              continue;
+            }
+
+            scheduledArpeggioNotes.push({
+              startSeconds: Math.max(segment.startSeconds, beatStartSeconds),
+              patternIndex: fourFourPattern[beatIndex],
             });
           }
         });
@@ -1965,7 +2013,7 @@ export function createClickTrackPcm16Samples(
         }
 
         addWarmToneToSamples({
-          samples,
+          samples: stemOutput?.arpeggio ?? samples,
           startSample: Math.round(
             humanisedArpeggioStartSeconds * input.sampleRateHz,
           ),
@@ -2083,7 +2131,7 @@ export function createClickTrackPcm16Samples(
         );
 
         addWarmToneToSamples({
-          samples,
+          samples: stemOutput?.bass ?? samples,
           startSample: Math.round(
             humanisedBassStartSeconds * input.sampleRateHz,
           ),
@@ -2112,7 +2160,7 @@ export function createClickTrackPcm16Samples(
 
     finalChordSegment.frequenciesHz.forEach((frequencyHz) => {
       addWarmToneToSamples({
-        samples,
+        samples: stemOutput?.pad ?? samples,
         startSample: Math.round(songEndSeconds * input.sampleRateHz),
         endSample: Math.round(totalDurationSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
@@ -2126,7 +2174,7 @@ export function createClickTrackPcm16Samples(
     });
 
     addWarmToneToSamples({
-      samples,
+      samples: stemOutput?.bass ?? samples,
       startSample: Math.round(songEndSeconds * input.sampleRateHz),
       endSample: Math.round(totalDurationSeconds * input.sampleRateHz),
       sampleRateHz: input.sampleRateHz,
@@ -2182,7 +2230,7 @@ export function createClickTrackPcm16Samples(
       const melodyDecayTimeSeconds = 2.5;
 
       addWarmToneToSamples({
-        samples,
+        samples: stemOutput?.melody ?? samples,
         startSample: Math.round(noteStartSeconds * input.sampleRateHz),
         endSample: Math.round(noteEndSeconds * input.sampleRateHz),
         sampleRateHz: input.sampleRateHz,
@@ -2205,6 +2253,44 @@ export function createClickTrackPcm16Samples(
     samples,
     isMusicalGuideMix ? 31000 : 32767,
   );
+}
+
+export function createClickTrackAudioStems(
+  input: ClickTrackWavRenderInput,
+): AudioStemBuffers {
+  const stems: AudioStemBuffers = {};
+
+  const unityLevels = Object.fromEntries(
+    AUDIO_STEM_KEYS.map((key) => [key, 1]),
+  ) as Record<AudioStemKey, number>;
+
+  createClickTrackPcm16Samples(
+    {
+      ...input,
+      mixProfile: "musical-guide",
+      musicalGuideMixLevels: unityLevels,
+    },
+    stems,
+  );
+
+  // Existing synthesis uses PCM16-scale floating-point amplitudes.
+  // Convert to normalised floating-point audio for the mixer.
+  // Retain the renderer's established Musical Guide output gain.
+  const scale = 3.8 / 32768;
+
+  for (const key of AUDIO_STEM_KEYS) {
+    const stem = stems[key];
+
+    if (!stem) {
+      continue;
+    }
+
+    for (let index = 0; index < stem.length; index += 1) {
+      stem[index] *= scale;
+    }
+  }
+
+  return stems;
 }
 
 export function encodePcm16MonoWav(

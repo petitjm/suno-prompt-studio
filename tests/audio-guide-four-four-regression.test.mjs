@@ -17,9 +17,32 @@ async function loadRenderer(source, directory, filename) {
     },
   }).outputText;
 
+  // Compile the renderer's audio-stem dependency.
+  const mixerSource = await fs.readFile(
+    path.resolve("lib/audio/mix-audio-stems.ts"),
+    "utf8",
+  );
+
+  const compiledMixer = ts.transpileModule(mixerSource, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+
+  // Both compiled modules must live in the same temporary directory.
+  const mixerPath = path.join(directory, "mix-audio-stems.mjs");
   const compiledPath = path.join(directory, filename);
 
-  await fs.writeFile(compiledPath, compiled);
+  await fs.writeFile(mixerPath, compiledMixer);
+
+  // Node requires an explicit file extension for local ES module imports.
+  const compiledWithImports = compiled.replace(
+    /(["'])\.\/mix-audio-stems\1/g,
+    '"./mix-audio-stems.mjs"',
+  );
+
+  await fs.writeFile(compiledPath, compiledWithImports);
 
   const module = await import(pathToFileURL(compiledPath).href);
 

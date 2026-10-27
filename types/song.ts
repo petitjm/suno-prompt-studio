@@ -199,6 +199,7 @@ export type AppMode =
   | "write"
   | "develop"
   | "chords"
+  | "settings"
   | "rehearse"
   | "perform"
   | "video";

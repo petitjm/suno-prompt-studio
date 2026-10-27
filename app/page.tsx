@@ -2,6 +2,12 @@
 
 import SongWorkshopPanel from "@/components/SongWorkshopPanel";
 
+import MusicalConfigurationSummary from "./components/MusicalConfigurationSummary";
+
+import MusicalSettingsPanel from "./components/MusicalSettingsPanel";
+
+import CurrentAudioGuidePlayer from "./components/CurrentAudioGuidePlayer";
+
 import { buildMelodyPhraseScaffoldFromGuideSections } from "@/lib/melody/build-melody-phrases";
 
 import { buildMelodyVersionData } from "@/lib/melody/build-melody-version-data";
@@ -10,6 +16,8 @@ import {
   inspectSongwriterReferenceNoteOctaves,
   buildReconciledSongwriterReferenceTrace,
 } from "@/lib/melody/reconcile-songwriter-reference-note-octaves";
+
+import LiveAudioGuideMixer from "./components/LiveAudioGuideMixer";
 
 import { buildArrangementChordPlacements } from "@/lib/audio/build-arrangement-chord-placements";
 
@@ -207,6 +215,7 @@ export default function Page() {
   const supabase = React.useMemo(() => createClient(), []);
 
   const [mode, setMode] = useState<AppMode>("write");
+  const [liveMixerOpen, setLiveMixerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   type WriteTask = "song" | "compare" | "suno";
 
@@ -12300,6 +12309,35 @@ export default function Page() {
     }
   };
 
+  const buildMusicalGuideRenderRequestBody = () => ({
+    requestedTarget: "clickTrack",
+    enableRealClickTrackWavDownload: musicalGuideAudioFormat === "wav",
+    enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
+    mixProfile: "musical-guide",
+    musicalGuideMixLevels,
+    melodyNotes: buildArticulatedMelodyNotes(
+      selectedSavedMelodyVersion
+        ? melodyNotesForRendering
+        : buildRenderedPhraseEndingNotes(completedMelodyPhrases),
+    ),
+    renderJobId:
+      typeof audioPreviewRenderJob?.id === "string"
+        ? audioPreviewRenderJob.id
+        : undefined,
+    tempoBpm: previewTempo,
+    includeCountIn: includeClickTrackCountIn,
+    includeBeatClicks: includeClickTrackBeatClicks,
+    includeSectionMarkers: includeClickTrackSectionMarkers,
+    includeChordMarkers: includeClickTrackChordMarkers,
+    includeChordToneGuide: true,
+    dryRunRenderPlan: audioPreviewDryRunRenderPlan,
+    dryRunCueSheetValidation: dryRunArtifactPackage?.dryRunCueSheetValidation,
+    rendererInputContract: dryRunArtifactPackage?.rendererInputContract,
+    realRenderGate: dryRunArtifactPackage?.realRenderGate,
+    firstRealRenderPlan: dryRunArtifactPackage?.firstRealRenderPlan,
+    realRenderConfiguration: dryRunArtifactPackage?.realRenderConfiguration,
+  });
+
   const downloadMusicalGuide = async () => {
     if (selectedSavedMelodyVersionId && !selectedSavedMelodyVersion) {
       setClickTrackDownloadStatus(
@@ -12333,36 +12371,7 @@ export default function Page() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          requestedTarget: "clickTrack",
-          enableRealClickTrackWavDownload: musicalGuideAudioFormat === "wav",
-          enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
-          mixProfile: "musical-guide",
-          musicalGuideMixLevels,
-          melodyNotes: buildArticulatedMelodyNotes(
-            selectedSavedMelodyVersion
-              ? melodyNotesForRendering
-              : buildRenderedPhraseEndingNotes(completedMelodyPhrases),
-          ),
-          renderJobId:
-            typeof audioPreviewRenderJob?.id === "string"
-              ? audioPreviewRenderJob.id
-              : undefined,
-          tempoBpm: previewTempo,
-          includeCountIn: includeClickTrackCountIn,
-          includeBeatClicks: includeClickTrackBeatClicks,
-          includeSectionMarkers: includeClickTrackSectionMarkers,
-          includeChordMarkers: includeClickTrackChordMarkers,
-          includeChordToneGuide: true,
-          dryRunRenderPlan: audioPreviewDryRunRenderPlan,
-          dryRunCueSheetValidation:
-            dryRunArtifactPackage.dryRunCueSheetValidation,
-          rendererInputContract: dryRunArtifactPackage.rendererInputContract,
-          realRenderGate: dryRunArtifactPackage.realRenderGate,
-          firstRealRenderPlan: dryRunArtifactPackage.firstRealRenderPlan,
-          realRenderConfiguration:
-            dryRunArtifactPackage.realRenderConfiguration,
-        }),
+        body: JSON.stringify(buildMusicalGuideRenderRequestBody()),
       });
 
       if (!response.ok) {
@@ -27599,6 +27608,14 @@ ${buildRewriteInstruction(
           />
 
           <SidebarItem
+            icon="🎛️"
+            label="Musical Settings"
+            active={mode === "settings"}
+            collapsed={sidebarCollapsed}
+            onClick={() => handleModeChange("settings")}
+          />
+
+          <SidebarItem
             icon="🎧"
             label="Rehearse"
             active={mode === "rehearse"}
@@ -27642,6 +27659,68 @@ ${buildRewriteInstruction(
           </div>
 
           <div className="ml-auto flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setLiveMixerOpen((open) => !open)}
+              aria-expanded={liveMixerOpen}
+              aria-controls="shared-live-audio-mixer"
+              className="shrink-0 rounded border border-blue-700 px-3 py-1.5 text-xs font-medium text-blue-100 hover:bg-blue-950"
+            >
+              {liveMixerOpen ? "Hide Mixer" : "Audio Mixer"}
+            </button>
+
+            <div
+              id="shared-live-audio-mixer"
+              className={`fixed bottom-4 right-4 z-50 max-h-[85vh] w-[min(450px,calc(100vw-32px))] overflow-y-auto rounded-lg border border-blue-700 bg-gray-950 p-3 shadow-2xl ${
+                liveMixerOpen ? "" : "hidden"
+              }`}
+            >
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-blue-100">
+                  Audio Guide Mixer
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setLiveMixerOpen(false)}
+                  aria-label="Close Audio Guide mixer panel"
+                  className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+
+              <LiveAudioGuideMixer
+                enabled={
+                  Boolean(dryRunArtifactPackage) &&
+                  dryRunArtifactPackageValidation?.ready === true &&
+                  !Boolean(chordActionBlockedReason) &&
+                  !downloadingMusicalGuideWav
+                }
+                blockedReason={
+                  chordActionBlockedReason ||
+                  (downloadingMusicalGuideWav
+                    ? "An Audio Guide render is currently in progress."
+                    : !dryRunArtifactPackage
+                      ? "A new live preview needs the Audio Guide preparation completed in Make Song."
+                      : dryRunArtifactPackageValidation?.ready !== true
+                        ? typeof dryRunArtifactPackageValidation?.detail ===
+                          "string"
+                          ? dryRunArtifactPackageValidation.detail
+                          : "The Audio Guide preparation needs review."
+                        : "Audio Guide preparation is not available.")
+                }
+                onResolveBlocked={() => {
+                  handleModeChange("chords");
+                  setChordsTask("make");
+                  setLiveMixerOpen(false);
+                }}
+                getRequestBody={buildMusicalGuideRenderRequestBody}
+                levels={musicalGuideMixLevels}
+                onLevelChange={updateMusicalGuideMixLevel}
+              />
+            </div>
+
             <span className="text-xs text-green-400">{userEmail}</span>
 
             <button
@@ -32983,6 +33062,14 @@ ${buildRewriteInstruction(
                                 {downloadingMusicalGuideWav
                                   ? "Downloading Audio Guide WAV..."
                                   : "Download Audio Guide WAV"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setLiveMixerOpen(true)}
+                                className="mt-3 rounded border border-blue-700 bg-blue-950/30 px-3 py-2 text-xs font-medium text-blue-100 hover:bg-blue-900/40"
+                              >
+                                Open Live Audio Guide Mixer
                               </button>
 
                               {clickTrackDownloadStatus ? (
@@ -39139,8 +39226,87 @@ ${buildRewriteInstruction(
             </div>
           </div>
 
+          {mode === "settings" && (
+            <div className="mx-auto max-w-5xl">
+              <CurrentAudioGuidePlayer
+                audioUrl={clickTrackAudioUrl}
+                audioLabel={clickTrackAudioLabel}
+                audioSource={generatedAudioSource}
+                audioFormat={
+                  generatedAudioSource === "persisted"
+                    ? (restoredAudioFormat ?? musicalGuideAudioFormat)
+                    : musicalGuideAudioFormat
+                }
+                audioVersionId={currentMusicalGuideAudioVersionId}
+                tempoBpm={previewTempo}
+                onOpenLiveMixer={() => setLiveMixerOpen(true)}
+              />
+
+              <MusicalConfigurationSummary
+                originalKey={getOriginalKeyLabel()}
+                performanceKey={getDisplayedKeyLabel()}
+                transposeSemitones={chordTransposeSemitones}
+                tempoBpm={previewTempo}
+                rehearsalInstrument={previewInstrument}
+                melodySource={
+                  selectedSavedMelodyVersion
+                    ? "Selected saved melody"
+                    : "Current generated melody"
+                }
+                countInEnabled={includeClickTrackCountIn}
+                beatClicksEnabled={includeClickTrackBeatClicks}
+              />
+
+              <MusicalSettingsPanel
+                originalKey={getOriginalKeyLabel()}
+                performanceKey={getDisplayedKeyLabel()}
+                transposeSemitones={chordTransposeSemitones}
+                onTransposeChange={setChordTransposeSemitones}
+                tempoBpm={previewTempo}
+                onTempoChange={handlePreviewTempoChange}
+                instrument={previewInstrument}
+                onInstrumentChange={setPreviewInstrument}
+                feel={previewFeel}
+                onFeelChange={setPreviewFeel}
+                pattern={previewPattern}
+                onPatternChange={setPreviewPattern}
+                melodySource={
+                  selectedSavedMelodyVersion
+                    ? "Selected saved melody"
+                    : "Current generated melody"
+                }
+                countIn={includeClickTrackCountIn}
+                onCountInChange={setIncludeClickTrackCountIn}
+                beatClicks={includeClickTrackBeatClicks}
+                onBeatClicksChange={setIncludeClickTrackBeatClicks}
+                sectionMarkers={includeClickTrackSectionMarkers}
+                onSectionMarkersChange={setIncludeClickTrackSectionMarkers}
+                chordMarkers={includeClickTrackChordMarkers}
+                onChordMarkersChange={setIncludeClickTrackChordMarkers}
+                mixLevels={musicalGuideMixLevels}
+                onMixLevelChange={updateMusicalGuideMixLevel}
+                onOpenLiveMixer={() => setLiveMixerOpen(true)}
+              />
+            </div>
+          )}
+
           {mode === "rehearse" && (
             <div className="h-full">
+              <MusicalConfigurationSummary
+                originalKey={getOriginalKeyLabel()}
+                performanceKey={getDisplayedKeyLabel()}
+                transposeSemitones={chordTransposeSemitones}
+                tempoBpm={previewTempo}
+                rehearsalInstrument={previewInstrument}
+                melodySource={
+                  selectedSavedMelodyVersion
+                    ? "Selected saved melody"
+                    : "Current generated melody"
+                }
+                countInEnabled={includeClickTrackCountIn}
+                beatClicksEnabled={includeClickTrackBeatClicks}
+              />
+
               {clickTrackAudioUrl ? (
                 <audio
                   ref={sheetGuideAudioRef}
@@ -39203,6 +39369,21 @@ ${buildRewriteInstruction(
 
           {mode === "perform" && (
             <div className="relative h-full">
+              <MusicalConfigurationSummary
+                originalKey={getOriginalKeyLabel()}
+                performanceKey={getDisplayedKeyLabel()}
+                transposeSemitones={chordTransposeSemitones}
+                tempoBpm={previewTempo}
+                rehearsalInstrument={previewInstrument}
+                melodySource={
+                  selectedSavedMelodyVersion
+                    ? "Selected saved melody"
+                    : "Current generated melody"
+                }
+                countInEnabled={includeClickTrackCountIn}
+                beatClicksEnabled={includeClickTrackBeatClicks}
+              />
+
               <button
                 type="button"
                 onClick={() => setPerformControlsOpen((open) => !open)}

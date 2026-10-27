@@ -8,6 +8,10 @@ import {
 
 import { encodePcm16MonoMp3 } from "@/lib/audio/encode-mp3";
 
+import { createClickTrackAudioStems } from "@/lib/audio/render-click-track-wav";
+
+import { encodeAudioStemPackage } from "@/lib/audio/audio-stem-transport";
+
 export const runtime = "nodejs";
 
 type RealRenderBlockedResponse = {
@@ -535,6 +539,53 @@ export async function POST(req: Request) {
     requestBody.enableRealClickTrackWavDownload === true;
 
   const persistentMp3Requested = requestBody.enablePersistentMp3Render === true;
+
+  const liveStemPreviewRequested = requestBody.enableLiveStemPreview === true;
+
+  if (
+    liveStemPreviewRequested &&
+    missingOrInvalidContractFields.length === 0 &&
+    missingOrInvalidConfigurationFields.length === 0
+  ) {
+    try {
+      const stems = createClickTrackAudioStems(clickTrackRenderInput);
+
+      const binaryPackage = encodeAudioStemPackage({
+        sampleRateHz: clickTrackRenderInput.sampleRateHz,
+        stems,
+      });
+
+      return new Response(binaryPackage, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Length": String(binaryPackage.byteLength),
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+          "X-Renderer-Status": "ready-for-live-mixing",
+          "X-Renderer-Job-ID": clickTrackRenderInput.renderJobId,
+          "X-Renderer-Sample-Rate": String(clickTrackRenderInput.sampleRateHz),
+          "X-Audio-Stem-Format": "SPSTEM01",
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not prepare live Audio Guide stems.";
+
+      const tooLarge = message.includes("exceeds the memory limit");
+
+      return Response.json(
+        {
+          ok: false,
+          status: "stem-preview-failed",
+          message,
+        },
+        { status: tooLarge ? 413 : 500 },
+      );
+    }
+  }
 
   if (
     persistentMp3Requested &&
