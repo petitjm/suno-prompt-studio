@@ -1779,6 +1779,126 @@ Do not confuse implementation volume, test coverage or successful rendering with
 
 **The ultimate measure of development success is whether Suno Prompt Studio enables the songwriter to create, develop, evaluate and preserve better songs.**
 
+
+### Unified Musical Settings and Configuration Visibility — 26 October 2026
+
+#### Purpose
+
+Suno Prompt Studio must provide a coherent, visible musical configuration across the complete songwriting workflow.
+
+The songwriter should not need to remember which application page owns a particular setting or how that setting influences the Audio Guide.
+
+Settings affecting the musical outcome must be discoverable, understandable and consistent across Write, Chords, Make Song, Rehearse, Performance and Audio Guide workflows.
+
+#### Reuse existing settings and musical intelligence
+
+Before introducing new state, controls, persistence mechanisms or configuration models, identify the existing authoritative implementation.
+
+Existing capabilities include song and chord versions, key and transposition, rehearsal tempo, musical timing plans, Section Plans, melody selection, audio rendering options and the seven-component Audio Guide mixer.
+
+These must be reused rather than reimplemented.
+
+A Musical Settings workspace should provide coordinated access to existing settings, not become a competing source of musical truth.
+
+#### Configuration ownership
+
+Settings must be distinguished according to their musical responsibilities.
+
+Song Identity:
+- Original key and underlying harmonic structure
+- Song and chord version identity
+- Accepted metre and harmonic timing information
+
+Rendition Intent:
+- Performed key and transposition
+- Performance tempo and groove
+- Selected melody and performance interpretation
+- Instrumentation and arrangement intention
+- Section-specific technique, dynamics and articulation
+
+Listening and Rendering:
+- Count-in, beat clicks and timing markers
+- Individual audio-component mix levels
+- Mute, solo and master output
+- Audio format and rendering options
+- Temporary listening mix versus accepted exported mix
+
+These categories describe responsibilities rather than requiring three new persistent data models.
+
+Preserve existing saved-version provenance.
+
+#### Shared access, single authority
+
+Controls may appear in multiple relevant workspaces, but must reference the same authoritative setting.
+
+Changing a setting in Rehearse must not create an inconsistent value in Musical Settings or Make Song.
+
+A shared configuration summary should display the effective musical settings for the currently selected composition and rendition.
+
+The summary must be derived from the actual application state and accepted musical versions.
+
+#### Changes and rendering consequences
+
+The application must distinguish between:
+
+- Musical changes that invalidate an existing rendered preview
+- Rendering options that require new audio components
+- Listening adjustments that can be applied immediately to existing stems
+
+Changing a mixer level, mute, solo or master level should not regenerate musical events.
+
+Changing key, tempo, melody, instrumentation or arrangement may require a new render, depending on the established audio pipeline.
+
+An outdated preview must not silently appear to represent the newly selected musical configuration.
+
+#### Instrument and accompaniment distinctions
+
+Instrument selection, playing technique, rhythmic subdivision and mixer-component identity are separate concepts.
+
+A mixer stem labelled Arpeggio must not be assumed to represent acoustic guitar when the selected preview instrument may be piano.
+
+The Section Plan remains an authoritative source for accompaniment intention.
+
+Instrument-specific synthesis must be traced and verified before claiming a selected instrument affects the final Audio Guide sound.
+
+#### Interface requirements
+
+Provide a dedicated Musical Settings workspace with clearly organised controls.
+
+Provide a compact current-configuration summary within relevant songwriting, rehearsal and listening workflows.
+
+Show unavailable controls with meaningful explanations instead of hiding them unnecessarily.
+
+Where helpful, retain task-specific controls in their existing locations.
+
+Avoid duplicating settings state merely to support multiple interface locations.
+
+#### Audio Guide mixing integration
+
+The working live Audio Guide mixer remains part of the established audio workflow.
+
+Temporary mix adjustments must not automatically modify song identity, overwrite saved audio or consume persistent cloud storage.
+
+Accepted-mix export must eventually preserve the actual reviewed balance, instrument settings, selected melody and source-version provenance.
+
+The existing MP3/WAV playback and Supabase versioning paths remain supported.
+
+#### Development approach
+
+Implement this capability as a coordinated functional milestone:
+
+1. Inventory existing settings, owners and rendering dependencies.
+2. Establish an effective-configuration model derived from current state.
+3. Implement the Musical Settings workspace using existing actions.
+4. Add current-configuration summaries to relevant workflows.
+5. Test cross-page consistency and render invalidation.
+6. Integrate accepted-mix export and musical listening evaluation.
+
+Do not introduce an independent arrangement generator, additional synthesis engine or second settings architecture.
+
+The success criterion is that the songwriter can see, understand and control the musical decisions governing the current performance without navigating through unrelated technical tools.
+
+
 #### Immediate application — Musically Informed Accompaniment
 
 The next development milestone is Musically Informed Accompaniment — Phase 1.
