@@ -134,8 +134,19 @@ function createFourFourInput() {
   };
 }
 
-test("4/4 Musical Guide PCM matches established baseline", async () => {
+test("Historical 4/4 PCM baseline is preserved without new scheduling", async () => {
   const modifiedSource = await fs.readFile(rendererPath, "utf8");
+
+  const historicalFourFourSource = modifiedSource.replace(
+    /const useFourFourPattern =[\s\S]*?overlappingBars\.every\(\(bar\) => bar\.isFourFour\);/,
+    "const useFourFourPattern = false;",
+  );
+
+  assert.notEqual(
+    historicalFourFourSource,
+    modifiedSource,
+    "Could not locate the experimental 4/4 scheduling condition",
+  );
 
   const temporaryDirectory = await fs.mkdtemp(
     path.join(os.tmpdir(), "audio-guide-regression-"),
@@ -143,7 +154,7 @@ test("4/4 Musical Guide PCM matches established baseline", async () => {
 
   try {
     const renderModified = await loadRenderer(
-      modifiedSource,
+      historicalFourFourSource,
       temporaryDirectory,
       "modified-renderer.mjs",
     );
@@ -178,6 +189,55 @@ test("4/4 Musical Guide PCM matches established baseline", async () => {
 
     console.log(
       `4/4 baseline verified: ${modifiedSamples.length} PCM samples.`,
+    );
+  } finally {
+    await fs.rm(temporaryDirectory, {
+      recursive: true,
+      force: true,
+    });
+  }
+});
+
+test("Current beat-aware 4/4 scheduling is deterministic", async () => {
+  const source = await fs.readFile(rendererPath, "utf8");
+
+  const temporaryDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "audio-guide-four-four-current-"),
+  );
+
+  try {
+    const render = await loadRenderer(
+      source,
+      temporaryDirectory,
+      "current-renderer.mjs",
+    );
+
+    const input = createFourFourInput();
+
+    const firstSamples = render(input);
+    const secondSamples = render(input);
+
+    assert.ok(firstSamples instanceof Int16Array);
+    assert.equal(firstSamples.length, 566014);
+
+    assert.deepEqual(
+      firstSamples,
+      secondSamples,
+      "4/4 rendering must be deterministic",
+    );
+
+    const bytes = Buffer.from(
+      firstSamples.buffer,
+      firstSamples.byteOffset,
+      firstSamples.byteLength,
+    );
+
+    const hash = createHash("sha256").update(bytes).digest("hex");
+
+    assert.equal(
+      hash,
+      "112723968025c7ec9aaed62b27abe1c05bfb31a0b7bffca2a0df0d913388c895",
+      "Current 4/4 rendering differs from its established technical reference",
     );
   } finally {
     await fs.rm(temporaryDirectory, {
