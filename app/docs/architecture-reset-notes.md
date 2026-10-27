@@ -1665,6 +1665,135 @@ The goal is not to make every song conform to one preferred melodic or expressiv
 
 The goal is to provide a flexible songwriter's workbench capable of developing different musical identities while respecting the songwriter's creative authority.
 
+### Consistency, Reusability and Unified User Experience — 27 October 2026
+
+#### Architectural principle
+
+Suno Prompt Studio must provide a coherent and consistent songwriting environment across all its workspaces.
+
+Where capabilities serve the same purpose, they should use shared components, common terminology, authoritative state and predictable behaviour.
+
+Differences between workspaces should reflect genuine musical or functional requirements, rather than independent implementations of equivalent features.
+
+**Consistency and reusability are architectural requirements, not merely visual design preferences.**
+
+#### Reuse existing functionality before introducing new implementations
+
+Before creating or modifying a component, control, workflow or processing capability, examine equivalent functionality already present in the application.
+
+Determine whether that functionality should be reused, extended, consolidated or, where justified, replaced.
+
+Avoid independently implementing equivalent capabilities in different workspaces.
+
+Where the same capability is required in several locations, prefer one authoritative implementation with context-sensitive presentation.
+
+This principle reinforces the existing requirement:
+
+**Existing musical intelligence should be used before creating new systems.**
+
+#### Consistency across the application
+
+Development should promote consistency in five areas:
+
+**User interface**
+
+- Equivalent controls should have recognisable appearance, placement, terminology and behaviour.
+- Common functionality should be provided through reusable components.
+- Compact, expanded and advanced presentations should share the same interaction conventions.
+- Workspace-specific controls should extend common functionality rather than duplicate it.
+
+**Musical concepts and terminology**
+
+- Key, tempo, metre, transposition, melody, arrangement, rendition and performance intent must have consistent meanings.
+- Distinguish musical identity from performance interpretation and listening configuration.
+- Avoid presenting the same musical concept under different labels without a genuine distinction.
+
+**State and functionality**
+
+- Shared capabilities must use authoritative state rather than maintain competing copies.
+- Changes made in one workspace should be reflected consistently wherever the same setting or capability is available.
+- Navigation must not unnecessarily reset musical context, playback state or working selections.
+- Common validation, readiness and recovery behaviour should be implemented consistently.
+
+**Data, persistence and provenance**
+
+- Song versions, chord checkpoints, melody versions, Audio Guides and other generated artefacts must maintain reliable relationships.
+- Saved musical decisions should remain distinguishable from temporary working settings.
+- Restoring an existing artefact should not silently overwrite deliberate working changes unless the restoration action explicitly requires it.
+- Existing completed work should be recognised and reused before offering regeneration.
+
+**Workflow and user guidance**
+
+- Equivalent actions should produce predictable results throughout the application.
+- Warnings should describe genuine problems and provide useful recovery actions.
+- Temporary technical preparation states should not be presented as missing musical capabilities.
+- Important controls should be discoverable without requiring knowledge of the application's internal architecture.
+
+#### Consistency must support musical versatility
+
+Consistency of tools must not impose uniformity on musical outcomes.
+
+Different songs, genres, metres, playing techniques and renditions may require different creative treatments.
+
+The application should provide consistent mechanisms through which the songwriter can explore diverse musical possibilities.
+
+**Standardise the tools and interactions, not the artistic decisions.**
+
+#### Shared components and context-sensitive functionality
+
+Where several workspaces need related functionality, favour a common underlying capability with appropriately specialised interfaces.
+
+A shared component may provide compact, expanded and advanced presentations without creating independent implementations of its core behaviour.
+
+Specialised workspace requirements should be expressed through explicit configuration, callbacks or extensions.
+
+Do not duplicate complex functionality simply because its presentation differs between workspaces.
+
+#### Immediate application — Unified Audio Playback and Player Design
+
+The Shared Saved Audio Guide Transport milestone will serve as an initial implementation of these principles.
+
+The application should provide:
+
+- One authoritative playback transport for the currently selected saved Audio Guide.
+- One reusable player interface with consistent playback controls.
+- Compact and expanded presentations appropriate to different workspaces.
+- Shared playback position, seeking, source identity and transport state.
+- Preservation of waveform navigation, sounding-chord tracking and section synchronisation.
+- Performance-specific lead-in behaviour without imposing that behaviour on ordinary playback.
+- Coordination with the Tone.js rehearsal preview.
+- A separate seven-stem live mixing engine where required, using consistent visual and interaction conventions.
+- Preservation of independently functioning songwriter-reference playback where appropriate.
+
+The common player should support Make Song, Musical Settings, Technical Tools, Rehearse and Performance without creating competing playback sessions.
+
+Existing musical playback intelligence must be preserved during consolidation.
+
+The live mixer and other specialised audio engines should not be unnecessarily replaced merely to achieve visual uniformity.
+
+#### Development and acceptance requirements
+
+Future implementation milestones should assess consistency and reuse alongside musical quality and technical correctness.
+
+Before accepting a new capability, consider:
+
+- Does equivalent functionality already exist?
+- Can the implementation be shared across workspaces?
+- Are terminology, controls and behaviours consistent?
+- Is there one authoritative source of state?
+- Have established musical capabilities been preserved?
+- Are genuine workspace-specific differences supported?
+- Does the implementation reduce duplication and future maintenance?
+- Does it improve the songwriter's experience of the complete application?
+
+Automated testing should verify shared behaviour, state consistency and compatibility.
+
+Browser testing should verify that equivalent interactions remain predictable across workspaces.
+
+Listening evaluation remains necessary wherever changes affect musical playback or sound.
+
+**The objective is one coherent songwriting workbench, not a collection of individually developed pages.**
+
 ### Integrated musical development and outcome-led implementation — 25 October 2026
 
 #### Development philosophy
