@@ -51,8 +51,6 @@ export default function CurrentAudioGuidePlayer({
         {audioVersionId && <span>Audio version: {audioVersionId}</span>}
       </div>
 
-      <audio controls src={audioUrl} className="w-full" preload="metadata" />
-
       <p className="text-xs text-gray-400">
         This is an existing mixed recording. Use the live mixer to adjust
         independently rendered audio components.

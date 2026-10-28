@@ -19,6 +19,10 @@ import {
 
 import LiveAudioGuideMixer from "./components/LiveAudioGuideMixer";
 
+import { SharedSavedAudioTransport } from "../lib/audio/shared-saved-audio-transport";
+
+import UnifiedAudioPlayer from "./components/UnifiedAudioPlayer";
+
 import { buildArrangementChordPlacements } from "@/lib/audio/build-arrangement-chord-placements";
 
 import { assessSustainedNoteHarmony } from "@/lib/melody/assess-sustained-note-harmony";
@@ -117,7 +121,13 @@ import { requestRewrite } from "@/lib/rewriteApi";
 
 import { buildRewriteInstruction, rewritePresets } from "@/lib/rewritePrompts";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import * as Tone from "tone";
 
 import RehearsePanel from "@/components/RehearsePanel";
@@ -706,8 +716,30 @@ export default function Page() {
   >(null);
   const [sheetGuideActiveSectionIndex, setSheetGuideActiveSectionIndex] =
     useState<number | null>(null);
-  const clickTrackAudioRef = useRef<HTMLAudioElement | null>(null);
-  const sheetGuideAudioRef = useRef<HTMLAudioElement | null>(null);
+  const sharedSavedAudioTransportRef = useRef<SharedSavedAudioTransport | null>(
+    null,
+  );
+
+  if (!sharedSavedAudioTransportRef.current) {
+    sharedSavedAudioTransportRef.current = new SharedSavedAudioTransport();
+  }
+
+  const sharedSavedAudioTransport = sharedSavedAudioTransportRef.current;
+
+  const persistentSavedAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const attachPersistentSavedAudio = useCallback(
+    (element: HTMLAudioElement | null) => {
+      persistentSavedAudioRef.current = element;
+
+      if (element) {
+        sharedSavedAudioTransport.attach(element);
+      } else {
+        sharedSavedAudioTransport.detach();
+      }
+    },
+    [sharedSavedAudioTransport],
+  );
   const [songwriterAnalysisStemFileName, setSongwriterAnalysisStemFileName] =
     useState("");
 
@@ -1002,6 +1034,12 @@ export default function Page() {
   const generatedAudioSeekInputRef = useRef<HTMLInputElement | null>(null);
   const generatedAudioWaveformCanvasRef = useRef<HTMLCanvasElement | null>(
     null,
+  );
+  const attachGeneratedAudioWaveformCanvas = useCallback(
+    (canvas: HTMLCanvasElement | null) => {
+      generatedAudioWaveformCanvasRef.current = canvas;
+    },
+    [],
   );
   const audioPreviewRendererPayloadDetailsRef =
     useRef<HTMLDetailsElement | null>(null);
@@ -4433,14 +4471,10 @@ export default function Page() {
   };
 
   const revealGeneratedAudioWaveform = () => {
-    setAudioPreviewRendererPayloadOpen(true);
-
-    window.setTimeout(() => {
-      generatedAudioWaveformCanvasRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 150);
+    generatedAudioWaveformCanvasRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   };
 
   const drawGeneratedAudioWaveform = (progress = 0) => {
@@ -4618,6 +4652,23 @@ export default function Page() {
     context.fillStyle = "rgba(240, 253, 244, 0.9)";
     context.fillRect(canvasWidth * safeProgress, 0, 2, canvasHeight);
   };
+
+  const redrawGeneratedAudioWaveformOnMount = useCallback(
+    (canvas: HTMLCanvasElement | null) => {
+      attachGeneratedAudioWaveformCanvas(canvas);
+
+      if (canvas) {
+        requestAnimationFrame(() => {
+          if (generatedAudioWaveformCanvasRef.current === canvas) {
+            drawGeneratedAudioWaveform(
+              generatedAudioWaveformProgressRef.current,
+            );
+          }
+        });
+      }
+    },
+    [attachGeneratedAudioWaveformCanvas],
+  );
 
   const loadGeneratedAudioWaveform = async (audioUrl: string) => {
     generatedAudioWaveformPeaksRef.current = [];
@@ -4890,20 +4941,23 @@ export default function Page() {
       return;
     }
 
-    const audioElement = clickTrackAudioRef.current;
-    const nextTime =
-      generatedAudioDuration > 0
-        ? Math.min(seconds, generatedAudioDuration)
-        : seconds;
+    const snapshot = sharedSavedAudioTransport.getSnapshot();
 
-    if (audioElement) {
-      audioElement.currentTime = nextTime;
-    }
+    const duration =
+      snapshot.duration > 0 ? snapshot.duration : generatedAudioDuration;
+
+    const nextTime = duration > 0 ? Math.min(seconds, duration) : seconds;
+
+    sharedSavedAudioTransport.seek(nextTime);
 
     updateGeneratedAudioPlaybackUi({
       currentTime: nextTime,
-      duration: generatedAudioDuration,
+      duration,
     });
+
+    updateGeneratedAudioActiveChord(nextTime);
+
+    updateSheetGuideActiveSection(nextTime);
   };
 
   const normaliseGuideSectionLabel = (value: string) => {
@@ -5077,13 +5131,13 @@ export default function Page() {
   };
 
   const seekSheetGuideAudio = (seconds: number) => {
-    const audioElement = sheetGuideAudioRef.current;
-
-    if (!audioElement || !Number.isFinite(seconds) || seconds < 0) {
+    if (!Number.isFinite(seconds) || seconds < 0) {
       return;
     }
 
-    audioElement.currentTime = seconds;
+    sharedSavedAudioTransport.seek(seconds);
+    updateSheetGuideActiveSection(seconds);
+    updateGeneratedAudioActiveChord(seconds);
   };
 
   const sheetGuideLeadInSeconds = 4;
@@ -5356,28 +5410,47 @@ export default function Page() {
   const availablePreviewSections = React.useMemo<PreviewSectionKey[]>(() => {
     const available = new Set<PreviewSectionKey>();
 
-    performanceSections.forEach((section) => {
-      const label = section.label.trim().toLowerCase();
+    const sectionTypes: PreviewSectionKey[] = ["verse", "chorus", "bridge"];
 
-      if (/^verse(?:\s*\d+)?(?:\s*outro)?$/.test(label)) {
-        available.add("verse");
+    for (const sectionType of sectionTypes) {
+      if (buildPreviewBars(chords, sectionType).length > 0) {
+        available.add(sectionType);
       }
+    }
 
-      if (/^chorus(?:\s*\d+)?$/.test(label) || /^final chorus$/.test(label)) {
-        available.add("chorus");
-      }
-
-      if (/^bridge(?:\s*\d+)?$/.test(label)) {
-        available.add("bridge");
-      }
-    });
-
-    if (available.size > 0) {
+    if (performanceSheet.trim().length > 0) {
       available.add("full_song");
     }
 
     return Array.from(available);
-  }, [performanceSections]);
+  }, [chords, performanceSheet]);
+
+  React.useEffect(() => {
+    if (!performanceSheet.trim()) return;
+
+    console.log("[rehearse-section-debug]", {
+      performanceSheetLength: performanceSheet.length,
+      performanceSectionLabels: performanceSections.map(
+        (section) => section.label,
+      ),
+      availablePreviewSections,
+      sheetLines: performanceSheet
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 40),
+    });
+  }, [performanceSheet, performanceSections, availablePreviewSections]);
+
+  console.log(
+    "[rehearse-sheet-lines]",
+    performanceSheet
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 35),
+  );
+
   const previewBars = React.useMemo(() => {
     if (!chords) return [];
 
@@ -5718,11 +5791,7 @@ export default function Page() {
   };
 
   const startPreviewPlayback = async () => {
-    const generatedAudio = sheetGuideAudioRef.current;
-
-    if (generatedAudio && !generatedAudio.paused) {
-      generatedAudio.pause();
-    }
+    sharedSavedAudioTransport.pause();
 
     await Tone.start();
 
@@ -27733,6 +27802,78 @@ ${buildRewriteInstruction(
           </div>
         </div>
 
+        <audio
+          ref={attachPersistentSavedAudio}
+          src={clickTrackAudioUrl || undefined}
+          preload="metadata"
+          className="hidden"
+          onLoadedMetadata={(event) => {
+            const audio = event.currentTarget;
+            const duration = audio.duration;
+
+            if (Number.isFinite(duration) && duration > 0) {
+              setGeneratedAudioDuration(duration);
+            }
+
+            updateGeneratedAudioPlaybackUi({
+              currentTime: audio.currentTime,
+              duration: audio.duration,
+            });
+
+            drawGeneratedAudioWaveform(
+              Number.isFinite(audio.duration) && audio.duration > 0
+                ? Math.min(audio.currentTime / audio.duration, 1)
+                : 0,
+            );
+          }}
+          onTimeUpdate={(event) => {
+            const audio = event.currentTarget;
+            const currentTime = audio.currentTime;
+
+            updateGeneratedAudioPlaybackUi({
+              currentTime,
+              duration: audio.duration,
+            });
+
+            updateGeneratedAudioActiveChord(currentTime);
+            updateSheetGuideActiveSection(currentTime);
+          }}
+          onSeeked={(event) => {
+            const audio = event.currentTarget;
+            const currentTime = audio.currentTime;
+
+            updateGeneratedAudioPlaybackUi({
+              currentTime,
+              duration: audio.duration,
+            });
+
+            updateGeneratedAudioActiveChord(currentTime);
+            updateSheetGuideActiveSection(currentTime);
+          }}
+          onEnded={(event) => {
+            const audio = event.currentTarget;
+
+            updateGeneratedAudioPlaybackUi({
+              currentTime: audio.currentTime,
+              duration: audio.duration,
+            });
+          }}
+        />
+
+        {clickTrackAudioUrl && (
+          <div className="border-b border-gray-800 bg-gray-950 px-6 py-2">
+            <UnifiedAudioPlayer
+              transport={sharedSavedAudioTransport}
+              title="Current Audio Guide"
+              subtitle={clickTrackAudioLabel}
+              variant="compact"
+              beforePlay={() => {
+                stopPreviewPlayback();
+              }}
+            />
+          </div>
+        )}
+
         <div
           ref={performanceScrollRef}
           onScroll={handleWorkspaceScroll}
@@ -31274,26 +31415,6 @@ ${buildRewriteInstruction(
                             </div>
                           )}
 
-                        {clickTrackAudioUrl && (
-                          <audio
-                            controls
-                            src={clickTrackAudioUrl}
-                            className="mt-3 w-full"
-                            onLoadedMetadata={(event) => {
-                              const duration = event.currentTarget.duration;
-
-                              const safeDuration =
-                                Number.isFinite(duration) && duration > 0
-                                  ? duration
-                                  : 0;
-
-                              if (safeDuration > 0) {
-                                setGeneratedAudioDuration(safeDuration);
-                              }
-                            }}
-                          />
-                        )}
-
                         <div className="mt-6 border-t-2 border-gray-700 pt-4">
                           <button
                             type="button"
@@ -32762,276 +32883,6 @@ ${buildRewriteInstruction(
                                   : "Test blocked route"}
                               </button>
 
-                              <div className="space-y-2">
-                                <div className="text-xs font-medium text-gray-200">
-                                  Click-track layer presets
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      applyClickTrackLayerPreset({
-                                        countIn: false,
-                                        sectionMarkers: false,
-                                        chordMarkers: false,
-                                        chordToneGuide: false,
-                                        beatClicks: true,
-                                      })
-                                    }
-                                    className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                                  >
-                                    Plain click
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      applyClickTrackLayerPreset({
-                                        countIn: true,
-                                        sectionMarkers: false,
-                                        chordMarkers: false,
-                                        chordToneGuide: false,
-                                        beatClicks: true,
-                                      })
-                                    }
-                                    className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                                  >
-                                    Basic count-in
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      applyClickTrackLayerPreset({
-                                        countIn: true,
-                                        sectionMarkers: true,
-                                        chordMarkers: false,
-                                        chordToneGuide: false,
-                                        beatClicks: true,
-                                      })
-                                    }
-                                    className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                                  >
-                                    Structure guide
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      applyClickTrackLayerPreset({
-                                        countIn: true,
-                                        sectionMarkers: true,
-                                        chordMarkers: false,
-                                        chordToneGuide: true,
-                                        beatClicks: true,
-                                      })
-                                    }
-                                    className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
-                                  >
-                                    Audio Guide
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    className="rounded-md border border-slate-500 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                    onClick={() =>
-                                      applyClickTrackLayerPreset({
-                                        countIn: false,
-                                        beatClicks: false,
-                                        sectionMarkers: false,
-                                        chordMarkers: false,
-                                        chordToneGuide: true,
-                                      })
-                                    }
-                                  >
-                                    Music only
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      applyClickTrackLayerPreset({
-                                        countIn: true,
-                                        sectionMarkers: true,
-                                        chordMarkers: true,
-                                        chordToneGuide: true,
-                                        beatClicks: true,
-                                      })
-                                    }
-                                    className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
-                                  >
-                                    Full rehearsal
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="flex flex-wrap gap-3 text-xs text-gray-300">
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={includeClickTrackCountIn}
-                                    onChange={(event) => {
-                                      setIncludeClickTrackCountIn(
-                                        event.target.checked,
-                                      );
-                                      resetGeneratedAudioState();
-                                    }}
-                                  />
-                                  Count-in
-                                </label>
-
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={includeClickTrackBeatClicks}
-                                    onChange={(event) => {
-                                      setIncludeClickTrackBeatClicks(
-                                        event.target.checked,
-                                      );
-                                      resetGeneratedAudioState();
-                                    }}
-                                  />
-                                  Beat clicks
-                                </label>
-
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={includeClickTrackSectionMarkers}
-                                    onChange={(event) => {
-                                      setIncludeClickTrackSectionMarkers(
-                                        event.target.checked,
-                                      );
-                                      resetGeneratedAudioState();
-                                    }}
-                                  />
-                                  Section markers
-                                </label>
-
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={includeClickTrackChordMarkers}
-                                    onChange={(event) => {
-                                      setIncludeClickTrackChordMarkers(
-                                        event.target.checked,
-                                      );
-                                      resetGeneratedAudioState();
-                                    }}
-                                  />
-                                  Chord markers
-                                </label>
-
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={includeClickTrackChordToneGuide}
-                                    onChange={(event) => {
-                                      setIncludeClickTrackChordToneGuide(
-                                        event.target.checked,
-                                      );
-                                      resetGeneratedAudioState();
-                                    }}
-                                  />
-                                  Chord guide tones
-                                </label>
-
-                                <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
-                                  <div className="mb-2 text-xs font-semibold text-blue-100">
-                                    Audio Guide mix for next render
-                                  </div>
-
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    {[
-                                      ["click", "Beat click"],
-                                      ["section", "Section marker"],
-                                      ["chordMarker", "Chord tick"],
-                                      ["pad", "Chord pad"],
-                                      ["arpeggio", "Arpeggio"],
-                                      ["bass", "Bass root"],
-                                      ["melody", "Melody guide"],
-                                    ].map(([key, label]) => {
-                                      const typedKey = key as
-                                        | "click"
-                                        | "section"
-                                        | "chordMarker"
-                                        | "pad"
-                                        | "arpeggio"
-                                        | "bass"
-                                        | "melody";
-                                      const value =
-                                        musicalGuideMixLevels[typedKey];
-
-                                      return (
-                                        <label
-                                          key={key}
-                                          className="space-y-1 text-[11px] text-blue-100"
-                                        >
-                                          <div className="flex items-center justify-between gap-3">
-                                            <span>{label}</span>
-                                            <div className="flex items-center gap-2">
-                                              <span>
-                                                {Math.round(value * 100)}%
-                                              </span>
-                                              <button
-                                                type="button"
-                                                className="rounded border border-blue-700 px-2 py-0.5 text-[10px] text-blue-100 hover:bg-blue-950"
-                                                onClick={() =>
-                                                  playMusicalGuideMixAudition(
-                                                    typedKey,
-                                                  )
-                                                }
-                                              >
-                                                Audition
-                                              </button>
-                                            </div>
-                                          </div>
-                                          <input
-                                            type="range"
-                                            min={0}
-                                            max={2}
-                                            step={0.05}
-                                            value={value}
-                                            onChange={(event) =>
-                                              updateMusicalGuideMixLevel(
-                                                typedKey,
-                                                Number(event.target.value),
-                                              )
-                                            }
-                                            onPointerUp={() =>
-                                              playMusicalGuideMixAudition(
-                                                typedKey,
-                                              )
-                                            }
-                                            onKeyUp={(event) => {
-                                              if (
-                                                event.key === "ArrowLeft" ||
-                                                event.key === "ArrowRight" ||
-                                                event.key === "Home" ||
-                                                event.key === "End"
-                                              ) {
-                                                playMusicalGuideMixAudition(
-                                                  typedKey,
-                                                );
-                                              }
-                                            }}
-                                            className="w-full"
-                                          />
-                                        </label>
-                                      );
-                                    })}
-                                  </div>
-
-                                  <div className="mt-2 text-[11px] text-blue-200">
-                                    These levels are saved in this browser and
-                                    apply when you generate the next musical
-                                    guide WAV. They do not change an
-                                    already-rendered WAV during playback.
-                                  </div>
-                                </div>
-                              </div>
-
                               <button
                                 type="button"
                                 onClick={() => downloadClickTrackWav()}
@@ -33075,196 +32926,6 @@ ${buildRewriteInstruction(
                               {clickTrackDownloadStatus ? (
                                 <div className="text-xs text-green-200">
                                   {clickTrackDownloadStatus}
-                                </div>
-                              ) : null}
-
-                              {clickTrackAudioUrl ? (
-                                <div className="mt-2 space-y-2 rounded border border-green-900 bg-green-950/20 p-3">
-                                  <div className="text-xs font-medium text-green-100">
-                                    {clickTrackAudioLabel}
-                                  </div>
-
-                                  <audio
-                                    ref={clickTrackAudioRef}
-                                    controls
-                                    src={clickTrackAudioUrl}
-                                    className="w-full"
-                                    onLoadedMetadata={(event) => {
-                                      const duration =
-                                        event.currentTarget.duration;
-                                      const safeDuration =
-                                        Number.isFinite(duration) &&
-                                        duration > 0
-                                          ? duration
-                                          : 0;
-
-                                      setGeneratedAudioDuration(safeDuration);
-                                      updateGeneratedAudioPlaybackUi({
-                                        currentTime:
-                                          event.currentTarget.currentTime || 0,
-                                        duration: safeDuration,
-                                      });
-
-                                      drawGeneratedAudioWaveform(
-                                        safeDuration > 0
-                                          ? Math.min(
-                                              (event.currentTarget
-                                                .currentTime || 0) /
-                                                safeDuration,
-                                              1,
-                                            )
-                                          : 0,
-                                      );
-                                    }}
-                                    onTimeUpdate={(event) => {
-                                      const currentTime =
-                                        event.currentTarget.currentTime || 0;
-
-                                      updateGeneratedAudioPlaybackUi({
-                                        currentTime,
-                                        duration: generatedAudioDuration,
-                                      });
-
-                                      updateGeneratedAudioActiveChord(
-                                        currentTime,
-                                      );
-                                    }}
-                                    onEnded={(event) => {
-                                      updateGeneratedAudioPlaybackUi({
-                                        currentTime:
-                                          event.currentTarget.currentTime || 0,
-                                        duration: generatedAudioDuration,
-                                      });
-                                    }}
-                                  />
-
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <span className="text-purple-300">
-                                      Waveform:
-                                    </span>
-                                  </div>
-
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                                    <span className="font-medium text-yellow-200">
-                                      Active chord:{" "}
-                                      {generatedAudioActiveChord?.chord || "—"}
-                                    </span>
-
-                                    {generatedAudioActiveChord ? (
-                                      <span className="text-green-200">
-                                        {generatedAudioActiveChord.section} ·{" "}
-                                        {formatGeneratedAudioTime(
-                                          generatedAudioActiveChord.timeSeconds,
-                                        )}
-                                      </span>
-                                    ) : null}
-                                  </div>
-
-                                  <div className="text-[11px] text-green-200">
-                                    Waveform shows generated audio shape,
-                                    section markers, chord-change markers, and
-                                    current playback position. Click the
-                                    waveform to jump.
-                                  </div>
-
-                                  <div className="space-y-1">
-                                    <div className="flex items-center justify-between text-[11px] text-green-200">
-                                      <span
-                                        ref={generatedAudioCurrentTimeTextRef}
-                                      >
-                                        00:00
-                                      </span>
-                                      <span ref={generatedAudioDurationTextRef}>
-                                        {formatGeneratedAudioTime(
-                                          generatedAudioDuration,
-                                        )}
-                                      </span>
-                                    </div>
-
-                                    <input
-                                      ref={generatedAudioSeekInputRef}
-                                      type="range"
-                                      min={0}
-                                      max={
-                                        generatedAudioDuration > 0
-                                          ? generatedAudioDuration
-                                          : 0
-                                      }
-                                      step={0.01}
-                                      defaultValue={0}
-                                      disabled={generatedAudioDuration <= 0}
-                                      onChange={(event) => {
-                                        updateGeneratedAudioPlaybackUi({
-                                          currentTime: Number(
-                                            event.target.value,
-                                          ),
-                                          duration: generatedAudioDuration,
-                                        });
-                                      }}
-                                      onPointerUp={(event) => {
-                                        seekGeneratedAudio(
-                                          Number(event.currentTarget.value),
-                                        );
-                                      }}
-                                      onKeyUp={(event) => {
-                                        if (
-                                          event.key === "ArrowLeft" ||
-                                          event.key === "ArrowRight" ||
-                                          event.key === "Home" ||
-                                          event.key === "End"
-                                        ) {
-                                          seekGeneratedAudio(
-                                            Number(event.currentTarget.value),
-                                          );
-                                        }
-                                      }}
-                                      className="w-full"
-                                    />
-
-                                    {getGeneratedAudioSectionJumpSummaries()
-                                      .length ? (
-                                      <div className="pt-2">
-                                        <div className="mb-1 text-[11px] font-medium text-green-100">
-                                          Jump to section
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                          {getGeneratedAudioSectionJumpSummaries()
-                                            .slice(0, 16)
-                                            .map((section) => (
-                                              <button
-                                                key={`${section.order}-${section.section}-${section.startSeconds}`}
-                                                type="button"
-                                                className="rounded border border-green-800 px-2 py-1 text-[11px] text-green-100 hover:bg-green-950"
-                                                onClick={() => {
-                                                  if (
-                                                    typeof section.startSeconds ===
-                                                    "number"
-                                                  ) {
-                                                    seekGeneratedAudio(
-                                                      section.startSeconds,
-                                                    );
-                                                  }
-                                                }}
-                                                title={`Jump to ${section.section} at ${formatGeneratedAudioTime(
-                                                  typeof section.startSeconds ===
-                                                    "number"
-                                                    ? section.startSeconds
-                                                    : 0,
-                                                )}`}
-                                              >
-                                                {section.section} ·{" "}
-                                                {formatGeneratedAudioTime(
-                                                  typeof section.startSeconds ===
-                                                    "number"
-                                                    ? section.startSeconds
-                                                    : 0,
-                                                )}
-                                              </button>
-                                            ))}
-                                        </div>
-                                      </div>
-                                    ) : null}
-                                  </div>
                                 </div>
                               ) : null}
 
@@ -36387,6 +36048,403 @@ ${buildRewriteInstruction(
                       </div>
                     ) : null}
 
+                    {clickTrackAudioUrl ? (
+                      <div className="mt-2 space-y-2 rounded border border-green-900 bg-green-950/20 p-3">
+                        <div className="text-xs font-medium text-green-100">
+                          {clickTrackAudioLabel}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-purple-300">Waveform:</span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                          <span className="font-medium text-yellow-200">
+                            Active chord:{" "}
+                            {generatedAudioActiveChord?.chord || "—"}
+                          </span>
+
+                          {generatedAudioActiveChord ? (
+                            <span className="text-green-200">
+                              {generatedAudioActiveChord.section} ·{" "}
+                              {formatGeneratedAudioTime(
+                                generatedAudioActiveChord.timeSeconds,
+                              )}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="text-[11px] text-green-200">
+                          Waveform shows generated audio shape, section markers,
+                          chord-change markers, and current playback position.
+                          Click the waveform to jump.
+                        </div>
+
+                        <canvas
+                          id="current-audio-guide-waveform"
+                          ref={redrawGeneratedAudioWaveformOnMount}
+                          width={1000}
+                          height={120}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            height: "120px",
+                          }}
+                          className="rounded border border-green-900 bg-gray-950"
+                        />
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px] text-green-200">
+                            <span ref={generatedAudioCurrentTimeTextRef}>
+                              00:00
+                            </span>
+                            <span ref={generatedAudioDurationTextRef}>
+                              {formatGeneratedAudioTime(generatedAudioDuration)}
+                            </span>
+                          </div>
+
+                          <input
+                            ref={generatedAudioSeekInputRef}
+                            type="range"
+                            min={0}
+                            max={
+                              generatedAudioDuration > 0
+                                ? generatedAudioDuration
+                                : 0
+                            }
+                            step={0.01}
+                            defaultValue={0}
+                            disabled={generatedAudioDuration <= 0}
+                            onChange={(event) => {
+                              updateGeneratedAudioPlaybackUi({
+                                currentTime: Number(event.target.value),
+                                duration: generatedAudioDuration,
+                              });
+                            }}
+                            onPointerUp={(event) => {
+                              seekGeneratedAudio(
+                                Number(event.currentTarget.value),
+                              );
+                            }}
+                            onKeyUp={(event) => {
+                              if (
+                                event.key === "ArrowLeft" ||
+                                event.key === "ArrowRight" ||
+                                event.key === "Home" ||
+                                event.key === "End"
+                              ) {
+                                seekGeneratedAudio(
+                                  Number(event.currentTarget.value),
+                                );
+                              }
+                            }}
+                            className="w-full"
+                          />
+
+                          {getGeneratedAudioSectionJumpSummaries().length ? (
+                            <div className="pt-2">
+                              <div className="mb-1 text-[11px] font-medium text-green-100">
+                                Jump to section
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {getGeneratedAudioSectionJumpSummaries()
+                                  .slice(0, 16)
+                                  .map((section) => (
+                                    <button
+                                      key={`${section.order}-${section.section}-${section.startSeconds}`}
+                                      type="button"
+                                      className="rounded border border-green-800 px-2 py-1 text-[11px] text-green-100 hover:bg-green-950"
+                                      onClick={() => {
+                                        if (
+                                          typeof section.startSeconds ===
+                                          "number"
+                                        ) {
+                                          seekGeneratedAudio(
+                                            section.startSeconds,
+                                          );
+                                        }
+                                      }}
+                                      title={`Jump to ${section.section} at ${formatGeneratedAudioTime(
+                                        typeof section.startSeconds === "number"
+                                          ? section.startSeconds
+                                          : 0,
+                                      )}`}
+                                    >
+                                      {section.section} ·{" "}
+                                      {formatGeneratedAudioTime(
+                                        typeof section.startSeconds === "number"
+                                          ? section.startSeconds
+                                          : 0,
+                                      )}
+                                    </button>
+                                  ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
+                      <div className="mb-3 text-sm font-semibold text-gray-200">
+                        Audio Guide Configuration
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-gray-200">
+                          Click-track layer presets
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyClickTrackLayerPreset({
+                                countIn: false,
+                                sectionMarkers: false,
+                                chordMarkers: false,
+                                chordToneGuide: false,
+                                beatClicks: true,
+                              })
+                            }
+                            className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                          >
+                            Plain click
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyClickTrackLayerPreset({
+                                countIn: true,
+                                sectionMarkers: false,
+                                chordMarkers: false,
+                                chordToneGuide: false,
+                                beatClicks: true,
+                              })
+                            }
+                            className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                          >
+                            Basic count-in
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyClickTrackLayerPreset({
+                                countIn: true,
+                                sectionMarkers: true,
+                                chordMarkers: false,
+                                chordToneGuide: false,
+                                beatClicks: true,
+                              })
+                            }
+                            className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                          >
+                            Structure guide
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyClickTrackLayerPreset({
+                                countIn: true,
+                                sectionMarkers: true,
+                                chordMarkers: false,
+                                chordToneGuide: true,
+                                beatClicks: true,
+                              })
+                            }
+                            className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
+                          >
+                            Audio Guide
+                          </button>
+
+                          <button
+                            type="button"
+                            className="rounded-md border border-slate-500 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={() =>
+                              applyClickTrackLayerPreset({
+                                countIn: false,
+                                beatClicks: false,
+                                sectionMarkers: false,
+                                chordMarkers: false,
+                                chordToneGuide: true,
+                              })
+                            }
+                          >
+                            Music only
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyClickTrackLayerPreset({
+                                countIn: true,
+                                sectionMarkers: true,
+                                chordMarkers: true,
+                                chordToneGuide: true,
+                                beatClicks: true,
+                              })
+                            }
+                            className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
+                          >
+                            Full rehearsal
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-300">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={includeClickTrackCountIn}
+                            onChange={(event) => {
+                              setIncludeClickTrackCountIn(event.target.checked);
+                            }}
+                          />
+                          Count-in
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={includeClickTrackBeatClicks}
+                            onChange={(event) => {
+                              setIncludeClickTrackBeatClicks(
+                                event.target.checked,
+                              );
+                            }}
+                          />
+                          Beat clicks
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={includeClickTrackSectionMarkers}
+                            onChange={(event) => {
+                              setIncludeClickTrackSectionMarkers(
+                                event.target.checked,
+                              );
+                            }}
+                          />
+                          Section markers
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={includeClickTrackChordMarkers}
+                            onChange={(event) => {
+                              setIncludeClickTrackChordMarkers(
+                                event.target.checked,
+                              );
+                            }}
+                          />
+                          Chord markers
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={includeClickTrackChordToneGuide}
+                            onChange={(event) => {
+                              setIncludeClickTrackChordToneGuide(
+                                event.target.checked,
+                              );
+                            }}
+                          />
+                          Chord guide tones
+                        </label>
+
+                        <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
+                          <div className="mb-2 text-xs font-semibold text-blue-100">
+                            Audio Guide mix for next render
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {[
+                              ["click", "Beat click"],
+                              ["section", "Section marker"],
+                              ["chordMarker", "Chord tick"],
+                              ["pad", "Chord pad"],
+                              ["arpeggio", "Arpeggio"],
+                              ["bass", "Bass root"],
+                              ["melody", "Melody guide"],
+                            ].map(([key, label]) => {
+                              const typedKey = key as
+                                | "click"
+                                | "section"
+                                | "chordMarker"
+                                | "pad"
+                                | "arpeggio"
+                                | "bass"
+                                | "melody";
+                              const value = musicalGuideMixLevels[typedKey];
+
+                              return (
+                                <label
+                                  key={key}
+                                  className="space-y-1 text-[11px] text-blue-100"
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span>{label}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span>{Math.round(value * 100)}%</span>
+                                      <button
+                                        type="button"
+                                        className="rounded border border-blue-700 px-2 py-0.5 text-[10px] text-blue-100 hover:bg-blue-950"
+                                        onClick={() =>
+                                          playMusicalGuideMixAudition(typedKey)
+                                        }
+                                      >
+                                        Audition
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min={0}
+                                    max={2}
+                                    step={0.05}
+                                    value={value}
+                                    onChange={(event) =>
+                                      updateMusicalGuideMixLevel(
+                                        typedKey,
+                                        Number(event.target.value),
+                                      )
+                                    }
+                                    onPointerUp={() =>
+                                      playMusicalGuideMixAudition(typedKey)
+                                    }
+                                    onKeyUp={(event) => {
+                                      if (
+                                        event.key === "ArrowLeft" ||
+                                        event.key === "ArrowRight" ||
+                                        event.key === "Home" ||
+                                        event.key === "End"
+                                      ) {
+                                        playMusicalGuideMixAudition(typedKey);
+                                      }
+                                    }}
+                                    className="w-full"
+                                  />
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-2 text-[11px] text-blue-200">
+                            These levels are saved in this browser and apply
+                            when you generate the next musical guide WAV. They
+                            do not change an already-rendered WAV during
+                            playback.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {audioPreviewSpecPreview ? (
                       <details className="mt-3 rounded border border-gray-800 bg-gray-900 p-3">
                         <summary className="cursor-pointer text-sm font-medium text-gray-200">
@@ -39307,36 +39365,6 @@ ${buildRewriteInstruction(
                 beatClicksEnabled={includeClickTrackBeatClicks}
               />
 
-              {clickTrackAudioUrl ? (
-                <audio
-                  ref={sheetGuideAudioRef}
-                  src={clickTrackAudioUrl}
-                  controls
-                  className="mb-4 w-full"
-                  onPlay={() => {
-                    stopPreviewPlayback();
-                  }}
-
-                  onEnded={() => {
-                    setSheetGuideActiveSectionId(null);
-                    setSheetGuideActiveSectionIndex(null);
-                  }}
-                  onLoadedMetadata={(event) => {
-                    const duration = event.currentTarget.duration;
-
-                    const safeDuration =
-                      Number.isFinite(duration) && duration > 0 ? duration : 0;
-
-                    setGeneratedAudioDuration(safeDuration);
-                  }}
-                  onTimeUpdate={(event) => {
-                    updateSheetGuideActiveSection(
-                      event.currentTarget.currentTime || 0,
-                    );
-                  }}
-                />
-              ) : null}
-
               <RehearsePanel
                 disabled={false}
                 previewSection={previewSection}
@@ -39438,65 +39466,6 @@ ${buildRewriteInstruction(
                           playback.
                         </div>
                       </div>
-
-                      <audio
-                        ref={sheetGuideAudioRef}
-                        controls
-                        src={clickTrackAudioUrl}
-                        className="w-full"
-                        onPlay={(event) => {
-                          stopPreviewPlayback();
-
-                          const audioElement = event.currentTarget;
-
-                          if (audioElement.currentTime <= 0.5) {
-                            const initialSeekSeconds =
-                              getSheetGuideInitialSeekSeconds();
-
-                            if (initialSeekSeconds !== null) {
-                              audioElement.currentTime = initialSeekSeconds;
-                              updateSheetGuideActiveSection(initialSeekSeconds);
-                              updateGeneratedAudioActiveChord(
-                                initialSeekSeconds,
-                              );
-                            }
-                          }
-                        }}
-
-                        onEnded={() => {
-                          setSheetGuideActiveSectionId(null);
-                          setSheetGuideActiveSectionIndex(null);
-                          setGeneratedAudioActiveChord(null);
-                        }}
-                        onLoadedMetadata={(event) => {
-                          const duration = event.currentTarget.duration;
-
-                          const safeDuration =
-                            Number.isFinite(duration) && duration > 0
-                              ? duration
-                              : 0;
-
-                          setGeneratedAudioDuration(safeDuration);
-
-                          updateSheetGuideActiveSection(
-                            event.currentTarget.currentTime || 0,
-                          );
-                        }}
-                        onTimeUpdate={(event) => {
-                          const currentTime =
-                            event.currentTarget.currentTime || 0;
-
-                          updateSheetGuideActiveSection(currentTime);
-                          updateGeneratedAudioActiveChord(currentTime);
-                        }}
-                        onSeeked={(event) => {
-                          const currentTime =
-                            event.currentTarget.currentTime || 0;
-
-                          updateSheetGuideActiveSection(currentTime);
-                          updateGeneratedAudioActiveChord(currentTime);
-                        }}
-                      />
 
                       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-yellow-900/60 bg-yellow-950/20 px-3 py-2">
                         <span className="text-sm font-medium text-yellow-200">
