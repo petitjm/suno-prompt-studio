@@ -1,5 +1,7 @@
 "use client";
 
+import AudioGuideConfigurationPanel from "./AudioGuideConfigurationPanel";
+
 import type {
   PreviewFeel,
   PreviewInstrument,
@@ -10,6 +12,14 @@ type MixKey =
   "click" | "section" | "chordMarker" | "pad" | "arpeggio" | "bass" | "melody";
 
 type Props = {
+  onApplyPreset?: (layers: {
+    countIn: boolean;
+    beatClicks: boolean;
+    sectionMarkers: boolean;
+    chordMarkers: boolean;
+    chordToneGuide: boolean;
+  }) => void;
+
   onOpenLiveMixer: () => void;
   originalKey: string;
   performanceKey: string;
@@ -42,6 +52,19 @@ type Props = {
   chordMarkers: boolean;
   onChordMarkersChange: (value: boolean) => void;
 
+  chordToneGuide: boolean;
+  onChordToneGuideChange: (value: boolean) => void;
+  onAudition?: (
+    key:
+      | "click"
+      | "section"
+      | "chordMarker"
+      | "pad"
+      | "arpeggio"
+      | "bass"
+      | "melody",
+  ) => void;
+
   mixLevels: Record<MixKey, number>;
   onMixLevelChange: (key: MixKey, value: number) => void;
 };
@@ -57,6 +80,7 @@ const MIX_LABELS: Record<MixKey, string> = {
 };
 
 export default function MusicalSettingsPanel({
+  onApplyPreset,
   originalKey,
   performanceKey,
   transposeSemitones,
@@ -78,6 +102,9 @@ export default function MusicalSettingsPanel({
   onSectionMarkersChange,
   chordMarkers,
   onChordMarkersChange,
+  chordToneGuide,
+  onChordToneGuideChange,
+  onAudition,
   mixLevels,
   onMixLevelChange,
   onOpenLiveMixer,
@@ -225,79 +252,36 @@ export default function MusicalSettingsPanel({
         </p>
       </section>
 
-      <section className="rounded border border-gray-700 bg-gray-950 p-4">
-        <h3 className="mb-3 font-semibold text-blue-100">
-          Audio Guide options
-        </h3>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[
-            ["Include count-in", countIn, onCountInChange],
-            ["Include beat clicks", beatClicks, onBeatClicksChange],
-            ["Include section markers", sectionMarkers, onSectionMarkersChange],
-            ["Include chord markers", chordMarkers, onChordMarkersChange],
-          ].map(([label, value, onChange]) => (
-            <label
-              key={String(label)}
-              className="flex items-center gap-2 text-sm"
-            >
-              <input
-                type="checkbox"
-                checked={value as boolean}
-                onChange={(event) =>
-                  (onChange as (value: boolean) => void)(event.target.checked)
-                }
-              />
-              {String(label)}
-            </label>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded border border-gray-700 bg-gray-950 p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-semibold text-blue-100">
-            Audio Guide mix and listening
-          </h3>
-
-          <button
-            type="button"
-            onClick={onOpenLiveMixer}
-            className="rounded border border-blue-600 bg-blue-950 px-3 py-2 text-xs font-medium text-blue-100 hover:bg-blue-900"
-          >
-            Open Live Mixer / Listen
-          </button>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {(Object.keys(MIX_LABELS) as MixKey[]).map((key) => (
-            <label key={key} className="block text-sm">
-              <span className="flex justify-between gap-2">
-                <span>{MIX_LABELS[key]}</span>
-                <span>{Math.round(mixLevels[key] * 100)}%</span>
-              </span>
-
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.05}
-                value={mixLevels[key]}
-                onChange={(event) =>
-                  onMixLevelChange(key, Number(event.target.value))
-                }
-                className="mt-2 w-full"
-              />
-            </label>
-          ))}
-        </div>
-
-        <p className="mt-3 text-xs text-gray-400">
-          These levels also control a loaded live Audio Guide preview. Saved
-          MP3/WAV recordings retain their existing mix until a new version is
-          rendered or exported.
-        </p>
-      </section>
+      <AudioGuideConfigurationPanel
+        layers={{
+          countIn,
+          beatClicks,
+          sectionMarkers,
+          chordMarkers,
+          chordToneGuide,
+        }}
+        onLayersChange={(next) => {
+          if (next.countIn !== countIn) {
+            onCountInChange(next.countIn);
+          }
+          if (next.beatClicks !== beatClicks) {
+            onBeatClicksChange(next.beatClicks);
+          }
+          if (next.sectionMarkers !== sectionMarkers) {
+            onSectionMarkersChange(next.sectionMarkers);
+          }
+          if (next.chordMarkers !== chordMarkers) {
+            onChordMarkersChange(next.chordMarkers);
+          }
+          if (next.chordToneGuide !== chordToneGuide) {
+            onChordToneGuideChange(next.chordToneGuide);
+          }
+        }}
+        mixLevels={mixLevels}
+        onMixLevelChange={onMixLevelChange}
+        onAudition={onAudition}
+        onOpenLiveMixer={onOpenLiveMixer}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import MusicalConfigurationSummary from "./components/MusicalConfigurationSummar
 import MusicalSettingsPanel from "./components/MusicalSettingsPanel";
 
 import CurrentAudioGuidePlayer from "./components/CurrentAudioGuidePlayer";
+import AudioGuideConfigurationPanel from "./components/AudioGuideConfigurationPanel";
 
 import { buildMelodyPhraseScaffoldFromGuideSections } from "@/lib/melody/build-melody-phrases";
 
@@ -36190,259 +36191,31 @@ ${buildRewriteInstruction(
                         Audio Guide Configuration
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="text-xs font-medium text-gray-200">
-                          Click-track layer presets
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyClickTrackLayerPreset({
-                                countIn: false,
-                                sectionMarkers: false,
-                                chordMarkers: false,
-                                chordToneGuide: false,
-                                beatClicks: true,
-                              })
-                            }
-                            className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                          >
-                            Plain click
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyClickTrackLayerPreset({
-                                countIn: true,
-                                sectionMarkers: false,
-                                chordMarkers: false,
-                                chordToneGuide: false,
-                                beatClicks: true,
-                              })
-                            }
-                            className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                          >
-                            Basic count-in
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyClickTrackLayerPreset({
-                                countIn: true,
-                                sectionMarkers: true,
-                                chordMarkers: false,
-                                chordToneGuide: false,
-                                beatClicks: true,
-                              })
-                            }
-                            className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
-                          >
-                            Structure guide
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyClickTrackLayerPreset({
-                                countIn: true,
-                                sectionMarkers: true,
-                                chordMarkers: false,
-                                chordToneGuide: true,
-                                beatClicks: true,
-                              })
-                            }
-                            className="rounded border border-blue-800 px-2 py-1 text-xs text-blue-100 hover:bg-blue-950"
-                          >
-                            Audio Guide
-                          </button>
-
-                          <button
-                            type="button"
-                            className="rounded-md border border-slate-500 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                            onClick={() =>
-                              applyClickTrackLayerPreset({
-                                countIn: false,
-                                beatClicks: false,
-                                sectionMarkers: false,
-                                chordMarkers: false,
-                                chordToneGuide: true,
-                              })
-                            }
-                          >
-                            Music only
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyClickTrackLayerPreset({
-                                countIn: true,
-                                sectionMarkers: true,
-                                chordMarkers: true,
-                                chordToneGuide: true,
-                                beatClicks: true,
-                              })
-                            }
-                            className="rounded border border-green-800 px-2 py-1 text-xs text-green-100 hover:bg-green-950"
-                          >
-                            Full rehearsal
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-300">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeClickTrackCountIn}
-                            onChange={(event) => {
-                              setIncludeClickTrackCountIn(event.target.checked);
-                            }}
-                          />
-                          Count-in
-                        </label>
-
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeClickTrackBeatClicks}
-                            onChange={(event) => {
-                              setIncludeClickTrackBeatClicks(
-                                event.target.checked,
-                              );
-                            }}
-                          />
-                          Beat clicks
-                        </label>
-
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeClickTrackSectionMarkers}
-                            onChange={(event) => {
-                              setIncludeClickTrackSectionMarkers(
-                                event.target.checked,
-                              );
-                            }}
-                          />
-                          Section markers
-                        </label>
-
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeClickTrackChordMarkers}
-                            onChange={(event) => {
-                              setIncludeClickTrackChordMarkers(
-                                event.target.checked,
-                              );
-                            }}
-                          />
-                          Chord markers
-                        </label>
-
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeClickTrackChordToneGuide}
-                            onChange={(event) => {
-                              setIncludeClickTrackChordToneGuide(
-                                event.target.checked,
-                              );
-                            }}
-                          />
-                          Chord guide tones
-                        </label>
-
-                        <div className="col-span-full mt-2 rounded border border-blue-900 bg-blue-950/20 p-3">
-                          <div className="mb-2 text-xs font-semibold text-blue-100">
-                            Audio Guide mix for next render
-                          </div>
-
-                          <div className="grid gap-3 md:grid-cols-2">
-                            {[
-                              ["click", "Beat click"],
-                              ["section", "Section marker"],
-                              ["chordMarker", "Chord tick"],
-                              ["pad", "Chord pad"],
-                              ["arpeggio", "Arpeggio"],
-                              ["bass", "Bass root"],
-                              ["melody", "Melody guide"],
-                            ].map(([key, label]) => {
-                              const typedKey = key as
-                                | "click"
-                                | "section"
-                                | "chordMarker"
-                                | "pad"
-                                | "arpeggio"
-                                | "bass"
-                                | "melody";
-                              const value = musicalGuideMixLevels[typedKey];
-
-                              return (
-                                <label
-                                  key={key}
-                                  className="space-y-1 text-[11px] text-blue-100"
-                                >
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span>{label}</span>
-                                    <div className="flex items-center gap-2">
-                                      <span>{Math.round(value * 100)}%</span>
-                                      <button
-                                        type="button"
-                                        className="rounded border border-blue-700 px-2 py-0.5 text-[10px] text-blue-100 hover:bg-blue-950"
-                                        onClick={() =>
-                                          playMusicalGuideMixAudition(typedKey)
-                                        }
-                                      >
-                                        Audition
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <input
-                                    type="range"
-                                    min={0}
-                                    max={2}
-                                    step={0.05}
-                                    value={value}
-                                    onChange={(event) =>
-                                      updateMusicalGuideMixLevel(
-                                        typedKey,
-                                        Number(event.target.value),
-                                      )
-                                    }
-                                    onPointerUp={() =>
-                                      playMusicalGuideMixAudition(typedKey)
-                                    }
-                                    onKeyUp={(event) => {
-                                      if (
-                                        event.key === "ArrowLeft" ||
-                                        event.key === "ArrowRight" ||
-                                        event.key === "Home" ||
-                                        event.key === "End"
-                                      ) {
-                                        playMusicalGuideMixAudition(typedKey);
-                                      }
-                                    }}
-                                    className="w-full"
-                                  />
-                                </label>
-                              );
-                            })}
-                          </div>
-
-                          <div className="mt-2 text-[11px] text-blue-200">
-                            These levels are saved in this browser and apply
-                            when you generate the next musical guide WAV. They
-                            do not change an already-rendered WAV during
-                            playback.
-                          </div>
-                        </div>
-                      </div>
+                      <AudioGuideConfigurationPanel
+                        layers={{
+                          countIn: includeClickTrackCountIn,
+                          beatClicks: includeClickTrackBeatClicks,
+                          sectionMarkers: includeClickTrackSectionMarkers,
+                          chordMarkers: includeClickTrackChordMarkers,
+                          chordToneGuide: includeClickTrackChordToneGuide,
+                        }}
+                        onLayersChange={(next) => {
+                          setIncludeClickTrackCountIn(next.countIn);
+                          setIncludeClickTrackBeatClicks(next.beatClicks);
+                          setIncludeClickTrackSectionMarkers(
+                            next.sectionMarkers,
+                          );
+                          setIncludeClickTrackChordMarkers(next.chordMarkers);
+                          setIncludeClickTrackChordToneGuide(
+                            next.chordToneGuide,
+                          );
+                        }}
+                        mixLevels={musicalGuideMixLevels}
+                        onMixLevelChange={updateMusicalGuideMixLevel}
+                        onAudition={playMusicalGuideMixAudition}
+                        onOpenLiveMixer={() => setLiveMixerOpen(true)}
+                        onApplyPreset={applyClickTrackLayerPreset}
+                      />
                     </div>
 
                     {audioPreviewSpecPreview ? (
@@ -39316,6 +39089,7 @@ ${buildRewriteInstruction(
               />
 
               <MusicalSettingsPanel
+                onApplyPreset={applyClickTrackLayerPreset}
                 originalKey={getOriginalKeyLabel()}
                 performanceKey={getDisplayedKeyLabel()}
                 transposeSemitones={chordTransposeSemitones}
@@ -39341,6 +39115,9 @@ ${buildRewriteInstruction(
                 onSectionMarkersChange={setIncludeClickTrackSectionMarkers}
                 chordMarkers={includeClickTrackChordMarkers}
                 onChordMarkersChange={setIncludeClickTrackChordMarkers}
+                chordToneGuide={includeClickTrackChordToneGuide}
+                onChordToneGuideChange={setIncludeClickTrackChordToneGuide}
+                onAudition={playMusicalGuideMixAudition}
                 mixLevels={musicalGuideMixLevels}
                 onMixLevelChange={updateMusicalGuideMixLevel}
                 onOpenLiveMixer={() => setLiveMixerOpen(true)}
