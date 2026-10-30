@@ -1,8 +1,6 @@
 import type { MelodyNote } from "@/types/song";
 
-export function buildArticulatedMelodyNotes(
-  notes: MelodyNote[],
-): MelodyNote[] {
+export function buildArticulatedMelodyNotes(notes: MelodyNote[]): MelodyNote[] {
   const articulatedNotes = notes.flatMap((note) => {
     // Notes with explicit syllable assignments have already
     // been articulated by the melody generator.
@@ -29,13 +27,11 @@ export function buildArticulatedMelodyNotes(
       return [note];
     }
 
-    const syllableDurationSeconds =
-      note.durationSeconds / syllables.length;
+    const syllableDurationSeconds = note.durationSeconds / syllables.length;
 
     return syllables.map((syllableText, index) => ({
       ...note,
-      startSeconds:
-        note.startSeconds + index * syllableDurationSeconds,
+      startSeconds: note.startSeconds + index * syllableDurationSeconds,
       durationSeconds: syllableDurationSeconds,
       syllableText,
     }));
@@ -51,26 +47,26 @@ export function buildArticulatedMelodyNotes(
       : null;
 
     const sameWord =
-      Boolean(previous?.lyricText) &&
-      previous?.lyricText === note.lyricText;
+      Boolean(previous?.lyricText) && previous?.lyricText === note.lyricText;
 
-    const samePitch =
-      previous?.pitchMidi === note.pitchMidi;
+    const samePitch = previous?.pitchMidi === note.pitchMidi;
 
     const contiguous =
       previousEndSeconds !== null &&
       Math.abs(previousEndSeconds - note.startSeconds) <= 0.002;
 
     const explicitlySyllabic =
-      Boolean(previous?.syllableText) &&
-      Boolean(note.syllableText);
+      Boolean(previous?.syllableText) && Boolean(note.syllableText);
+
+    const sameSyllable = previous?.syllableText === note.syllableText;
 
     if (
       previous &&
       sameWord &&
       samePitch &&
       contiguous &&
-      explicitlySyllabic
+      explicitlySyllabic &&
+      sameSyllable
     ) {
       sustainedNotes[sustainedNotes.length - 1] = {
         ...previous,

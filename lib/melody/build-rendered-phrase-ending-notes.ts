@@ -20,10 +20,12 @@ export function buildRenderedPhraseEndingNotes(
       Boolean(previous.lyricText) &&
       previous.lyricText === final.lyricText;
 
-    const distinctSyllables =
+    const sameSyllable =
       Boolean(previous.syllableText?.trim()) &&
       Boolean(final.syllableText?.trim()) &&
-      previous.syllableText !== final.syllableText;
+      previous.syllableText === final.syllableText;
+
+    const samePitch = previous.pitchMidi === final.pitchMidi;
 
     const validTiming =
       Number.isFinite(previous.startSeconds) &&
@@ -41,7 +43,12 @@ export function buildRenderedPhraseEndingNotes(
           final.startSeconds,
       ) <= 0.002;
 
-    if (!sameWord || !distinctSyllables || !contiguous) {
+    if (
+      !sameWord ||
+      !sameSyllable ||
+      !samePitch ||
+      !contiguous
+    ) {
       return notes;
     }
 

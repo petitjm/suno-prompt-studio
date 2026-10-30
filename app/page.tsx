@@ -34,9 +34,7 @@ import { buildMelodySectionIntentTargets } from "@/lib/melody/build-section-inte
 
 import { buildInitialMelodyContours } from "@/lib/melody/build-initial-melody-contours";
 
-import { buildArticulatedMelodyNotes } from "@/lib/melody/build-articulated-melody-notes";
-
-import { buildRenderedPhraseEndingNotes } from "@/lib/melody/build-rendered-phrase-ending-notes";
+import { prepareMelodyNotesForRender } from "@/lib/melody/prepare-melody-notes-for-render";
 
 import { buildLyricPhraseUnits } from "@/lib/melody/build-lyric-phrase-units";
 
@@ -7777,6 +7775,32 @@ export default function Page() {
     (phrase) => phrase.notes,
   );
 
+  console.log(
+    "[melody-block-boundary]",
+    completedMelodyPhrases
+      .map((phrase, index) => ({
+        index,
+        section: phrase.section,
+        sectionInstanceId: phrase.sectionInstanceId,
+        sourceLyric: phrase.sourceLyric,
+        resolutionIntent: phrase.resolutionIntent,
+        notes: phrase.notes.map((note) => ({
+          lyricText: note.lyricText,
+          syllableText: note.syllableText,
+          startSeconds: note.startSeconds,
+          durationSeconds: note.durationSeconds,
+          pitchMidi: note.pitchMidi,
+        })),
+      }))
+      .filter(
+        (phrase) =>
+          /didn.t want to die/i.test(phrase.sourceLyric || "") ||
+          /didn.t want to die/i.test(
+            phrase.notes.map((note) => note.lyricText).join(" "),
+          ),
+      ),
+  );
+
   const completedMelodyVersionData = buildMelodyVersionData({
     songVersionId: activeSongVersionId || "",
     chordVersionId: activeChordVersionId,
@@ -12385,10 +12409,10 @@ export default function Page() {
     enablePersistentMp3Render: musicalGuideAudioFormat === "mp3",
     mixProfile: "musical-guide",
     musicalGuideMixLevels,
-    melodyNotes: buildArticulatedMelodyNotes(
+    melodyNotes: prepareMelodyNotesForRender(
       selectedSavedMelodyVersion
-        ? melodyNotesForRendering
-        : buildRenderedPhraseEndingNotes(completedMelodyPhrases),
+        ? selectedSavedMelodyVersion.melody_data.phrases
+        : completedMelodyPhrases,
     ),
     renderJobId:
       typeof audioPreviewRenderJob?.id === "string"
@@ -36086,10 +36110,37 @@ ${buildRewriteInstruction(
                           ref={redrawGeneratedAudioWaveformOnMount}
                           width={1000}
                           height={120}
+                          onClick={(event) => {
+                            const rect =
+                              event.currentTarget.getBoundingClientRect();
+
+                            if (rect.width <= 0) {
+                              return;
+                            }
+
+                            const duration =
+                              sharedSavedAudioTransport.getSnapshot()
+                                .duration || generatedAudioDuration;
+
+                            if (duration <= 0) {
+                              return;
+                            }
+
+                            const position = Math.max(
+                              0,
+                              Math.min(
+                                1,
+                                (event.clientX - rect.left) / rect.width,
+                              ),
+                            );
+
+                            seekGeneratedAudio(position * duration);
+                          }}
                           style={{
                             display: "block",
                             width: "100%",
                             height: "120px",
+                            cursor: "pointer",
                           }}
                           className="rounded border border-green-900 bg-gray-950"
                         />
