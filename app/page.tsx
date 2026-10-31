@@ -7129,7 +7129,6 @@ export default function Page() {
       return [...current, nextIntent];
     });
 
-    resetGeneratedAudioState();
   };
 
   const updateMelodySectionDelivery = (
@@ -7193,7 +7192,6 @@ export default function Page() {
       ];
     });
 
-    resetGeneratedAudioState();
   };
 
   const updateMelodySectionEntry = (
@@ -31062,7 +31060,6 @@ ${buildRewriteInstruction(
                                 setChordTransposeSemitones(
                                   (value) => value - 1,
                                 );
-                                resetGeneratedAudioState();
                               }}
                               disabled={
                                 makeSongIsRunning || !placedSongSheetPreview
@@ -31076,7 +31073,6 @@ ${buildRewriteInstruction(
                               type="button"
                               onClick={() => {
                                 setChordTransposeSemitones(0);
-                                resetGeneratedAudioState();
                               }}
                               disabled={
                                 makeSongIsRunning ||
@@ -31093,7 +31089,6 @@ ${buildRewriteInstruction(
                                 setChordTransposeSemitones(
                                   (value) => value + 1,
                                 );
-                                resetGeneratedAudioState();
                               }}
                               disabled={
                                 makeSongIsRunning || !placedSongSheetPreview
